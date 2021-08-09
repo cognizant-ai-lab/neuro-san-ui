@@ -1,0 +1,37 @@
+{
+  "name": "nextfront",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@blueprintjs/core": "^3.47.0",
+    "antd": "^4.16.8",
+    "aws-sdk": "^2.951.0",
+    "axios": "^0.21.1",
+    "bootstrap": "^5.0.2",
+    "dockerode": "^3.3.0",
+    "evergreen-ui": "^6.1.0",
+    "fast-csv": "^4.3.6",
+    "next": "11.0.1",
+    "react": "17.0.2",
+    "react-bootstrap": "^1.6.1",
+    "react-dom": "17.0.2",
+    "react-flow-renderer": "^9.6.6",
+    "react-icons": "^4.2.0",
+    "react-pro-sidebar": "^0.6.0",
+    "react-uuid": "^1.0.2"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.3.1",
+    "eslint": "7.31.0",
+    "eslint-config-next": "11.0.1",
+    "postcss": "^8.3.5",
+    "tailwindcss": "^2.2.4",
+    "typescript": "^4.3.5"
+  }
+}
