@@ -1,0 +1,902 @@
+[
+    {
+        "cid": "1_1",
+        "identity": "(none)",
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 6935946.605196845,
+        "score": 1157592.87457573
+    },
+    {
+        "cid": "1_2",
+        "identity": "(none)",
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 8362553.48663629,
+        "score": 195174.2583290057
+    },
+    {
+        "cid": "19_38",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.696009545,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 8070150.846233067,
+        "score": 532244.3908050386
+    },
+    {
+        "cid": "11_59",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.397468807,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7381222.034333756,
+        "score": 1069225.1776757124
+    },
+    {
+        "cid": "6_68",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3811732476,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7605279.892099494,
+        "score": 1017667.0253882718
+    },
+    {
+        "cid": "17_83",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1773199353,
+        "NSGA-II_rank": 1,
+        "is_elite": false,
+        "naa": 7972522.077352171,
+        "score": 601903.5163885792
+    },
+    {
+        "cid": "14_29",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3054986456,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7700317.920105331,
+        "score": 917645.6566618584
+    },
+    {
+        "cid": "14_35",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3474170533,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7892723.572954839,
+        "score": 741062.9473212801
+    },
+    {
+        "cid": "12_65",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.4039403831,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7169471.943028314,
+        "score": 1106193.3155623914
+    },
+    {
+        "cid": "18_18",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.6510368147,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7777474.811770583,
+        "score": 850218.980262202
+    },
+    {
+        "cid": "20_11",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.908336329,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7344515.442727672,
+        "score": 696515.3223442053
+    },
+    {
+        "cid": "20_12",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2444242324,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7547115.409354388,
+        "score": 764575.4620223223
+    },
+    {
+        "cid": "20_13",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3289833574,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7219500.105261814,
+        "score": 954969.0840534176
+    },
+    {
+        "cid": "20_14",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7033140.828831235,
+        "score": 1030760.9929506176
+    },
+    {
+        "cid": "20_15",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1809842242,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7231736.698061582,
+        "score": 950693.1276815912
+    },
+    {
+        "cid": "20_16",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2224867662,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7044316.117187126,
+        "score": 1011041.5448070904
+    },
+    {
+        "cid": "20_17",
+        "identity": null,
+        "NSGA-II_crowding_distance": 1.1406637523,
+        "NSGA-II_rank": 9,
+        "is_elite": false,
+        "naa": 7480845.498443857,
+        "score": 612791.9796349475
+    },
+    {
+        "cid": "20_18",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1661731007,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7612984.85111092,
+        "score": 662149.5408251736
+    },
+    {
+        "cid": "20_19",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.6669280258,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7243367.115670812,
+        "score": 898523.525338117
+    },
+    {
+        "cid": "20_20",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7762921.296502733,
+        "score": 724637.596863625
+    },
+    {
+        "cid": "20_21",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2558180467,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7635617.614977343,
+        "score": 644274.6482293992
+    },
+    {
+        "cid": "20_22",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2660372531,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7492088.767983857,
+        "score": 770030.7880906065
+    },
+    {
+        "cid": "20_23",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.303847312,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7262237.785865656,
+        "score": 914631.497315678
+    },
+    {
+        "cid": "20_24",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2153817091,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7192218.355256367,
+        "score": 921749.7876586048
+    },
+    {
+        "cid": "20_25",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.312712151,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7369179.83717761,
+        "score": 774712.7011718831
+    },
+    {
+        "cid": "20_26",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.7398290033,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7118847.790481148,
+        "score": 891308.5971252666
+    },
+    {
+        "cid": "20_27",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.281072899,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7147410.956466294,
+        "score": 986429.0909832816
+    },
+    {
+        "cid": "20_28",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2332372787,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7044408.07804408,
+        "score": 949797.9789899868
+    },
+    {
+        "cid": "20_29",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 8,
+        "is_elite": false,
+        "naa": 7629258.915001863,
+        "score": 627430.1182705975
+    },
+    {
+        "cid": "20_30",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.6075011887,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7205810.341447515,
+        "score": 1047661.5736540912
+    },
+    {
+        "cid": "20_31",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7784551.831194983,
+        "score": 720846.047979188
+    },
+    {
+        "cid": "20_32",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1697232808,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7545064.594351324,
+        "score": 787457.5577920964
+    },
+    {
+        "cid": "20_33",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2609604459,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7589637.115995583,
+        "score": 692429.0952041788
+    },
+    {
+        "cid": "20_34",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.605617054,
+        "NSGA-II_rank": 9,
+        "is_elite": false,
+        "naa": 7121872.980303217,
+        "score": 817871.61288262
+    },
+    {
+        "cid": "20_35",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3336925343,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 6919591.618482175,
+        "score": 955773.0236740762
+    },
+    {
+        "cid": "20_36",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7710712.291805913,
+        "score": 699096.2355828108
+    },
+    {
+        "cid": "20_37",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7656391.977065247,
+        "score": 659116.2918792588
+    },
+    {
+        "cid": "20_38",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 6810676.971761994,
+        "score": 993054.3775679128
+    },
+    {
+        "cid": "20_39",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2203035793,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7513927.253673161,
+        "score": 774742.9444054037
+    },
+    {
+        "cid": "20_40",
+        "identity": null,
+        "NSGA-II_crowding_distance": 1.1559738503,
+        "NSGA-II_rank": 9,
+        "is_elite": false,
+        "naa": 7181033.536229021,
+        "score": 670925.2691542635
+    },
+    {
+        "cid": "20_41",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 6744648.959388793,
+        "score": 1027040.415717138
+    },
+    {
+        "cid": "20_42",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7123104.556540187,
+        "score": 1037625.0670147724
+    },
+    {
+        "cid": "20_43",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 6893792.578967315,
+        "score": 1066837.3333626334
+    },
+    {
+        "cid": "20_44",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 11,
+        "is_elite": false,
+        "naa": 6933597.855262648,
+        "score": 826325.7071238803
+    },
+    {
+        "cid": "20_45",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3317954829,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7411265.9065233795,
+        "score": 681090.9026530491
+    },
+    {
+        "cid": "20_46",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1115156445,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7238363.506635659,
+        "score": 948147.725121472
+    },
+    {
+        "cid": "20_47",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3371035291,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7397994.447631698,
+        "score": 712942.9880177554
+    },
+    {
+        "cid": "20_48",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2287193036,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7492272.875594864,
+        "score": 790868.6872873461
+    },
+    {
+        "cid": "20_49",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3275193732,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 6983121.929531924,
+        "score": 989835.753111915
+    },
+    {
+        "cid": "20_50",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2263622859,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7103494.225868491,
+        "score": 991407.2893059064
+    },
+    {
+        "cid": "20_51",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2140614926,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7651639.45361245,
+        "score": 763090.444675295
+    },
+    {
+        "cid": "20_52",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.8364532633,
+        "NSGA-II_rank": 8,
+        "is_elite": false,
+        "naa": 7187960.730029617,
+        "score": 869054.081709463
+    },
+    {
+        "cid": "20_53",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7644858.114969036,
+        "score": 594813.6575691511
+    },
+    {
+        "cid": "20_54",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.4879041408,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7340673.370486245,
+        "score": 845081.209730317
+    },
+    {
+        "cid": "20_55",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2895012632,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7411752.779612923,
+        "score": 844889.0939384362
+    },
+    {
+        "cid": "20_56",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.9610270047,
+        "NSGA-II_rank": 8,
+        "is_elite": false,
+        "naa": 7546567.652468545,
+        "score": 646439.4256340874
+    },
+    {
+        "cid": "20_57",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2242229566,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7173305.842392849,
+        "score": 940052.7982212616
+    },
+    {
+        "cid": "20_58",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 9,
+        "is_elite": false,
+        "naa": 7511926.445836469,
+        "score": 562618.8933985512
+    },
+    {
+        "cid": "20_59",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3909138015,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7226028.766831451,
+        "score": 983068.4669343102
+    },
+    {
+        "cid": "20_60",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3649923969,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7661243.263559048,
+        "score": 676476.3477316167
+    },
+    {
+        "cid": "20_61",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.4801462121,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7559671.485119159,
+        "score": 656022.4537764895
+    },
+    {
+        "cid": "20_62",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.5101567959,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7298695.71792313,
+        "score": 951369.350890865
+    },
+    {
+        "cid": "20_63",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2740597544,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7501343.248960713,
+        "score": 717667.440856037
+    },
+    {
+        "cid": "20_64",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3183474962,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7798995.730834065,
+        "score": 854334.1676259794
+    },
+    {
+        "cid": "20_65",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3512367299,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7122041.320701326,
+        "score": 974067.0095199496
+    },
+    {
+        "cid": "20_66",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 10,
+        "is_elite": false,
+        "naa": 7110752.251470954,
+        "score": 772177.9899529351
+    },
+    {
+        "cid": "20_67",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3293989945,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7553398.40686424,
+        "score": 856313.8305953996
+    },
+    {
+        "cid": "20_68",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2703199242,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7512442.692334697,
+        "score": 861243.6193051141
+    },
+    {
+        "cid": "20_69",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3351743558,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7151351.543220054,
+        "score": 988782.1577701658
+    },
+    {
+        "cid": "20_70",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.6226218524,
+        "NSGA-II_rank": 9,
+        "is_elite": false,
+        "naa": 7132652.418958211,
+        "score": 713253.3233389653
+    },
+    {
+        "cid": "20_71",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2155190641,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7316431.782659794,
+        "score": 827175.3924032985
+    },
+    {
+        "cid": "20_72",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 9,
+        "is_elite": false,
+        "naa": 7090534.902821553,
+        "score": 867342.3440921702
+    },
+    {
+        "cid": "20_73",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.7555894265,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7354770.458468995,
+        "score": 769352.9796228292
+    },
+    {
+        "cid": "20_74",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 6890473.158513858,
+        "score": 994277.8796688212
+    },
+    {
+        "cid": "20_75",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2005293281,
+        "NSGA-II_rank": 1,
+        "is_elite": true,
+        "naa": 7948820.925094321,
+        "score": 621048.7141261101
+    },
+    {
+        "cid": "20_76",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7680851.4691890655,
+        "score": 570194.3315203264
+    },
+    {
+        "cid": "20_77",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2036933049,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7489631.960039425,
+        "score": 831927.1318246752
+    },
+    {
+        "cid": "20_78",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 10,
+        "is_elite": false,
+        "naa": 7085252.4291076185,
+        "score": 860614.5243890357
+    },
+    {
+        "cid": "20_79",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1826772434,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7358586.196468963,
+        "score": 986543.1289266754
+    },
+    {
+        "cid": "20_80",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3198826897,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7550752.641493951,
+        "score": 668583.977818099
+    },
+    {
+        "cid": "20_81",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.6447487269,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7214148.881350303,
+        "score": 852805.3819749788
+    },
+    {
+        "cid": "20_82",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.249321552,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 7290330.934736272,
+        "score": 834695.2240772708
+    },
+    {
+        "cid": "20_83",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.4985580172,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7456674.777146911,
+        "score": 912272.4965885665
+    },
+    {
+        "cid": "20_84",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3076865655,
+        "NSGA-II_rank": 8,
+        "is_elite": false,
+        "naa": 7192056.680180159,
+        "score": 837325.0129507568
+    },
+    {
+        "cid": "20_85",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.324778361,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7378406.906650846,
+        "score": 981677.780912876
+    },
+    {
+        "cid": "20_86",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1915449813,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 6849599.239200415,
+        "score": 1019404.956398508
+    },
+    {
+        "cid": "20_87",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3481593015,
+        "NSGA-II_rank": 2,
+        "is_elite": false,
+        "naa": 7343617.71016006,
+        "score": 1031369.5948302904
+    },
+    {
+        "cid": "20_88",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2109283496,
+        "NSGA-II_rank": 7,
+        "is_elite": false,
+        "naa": 7193654.115487202,
+        "score": 881258.8441072828
+    },
+    {
+        "cid": "20_89",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 12,
+        "is_elite": false,
+        "naa": 6901751.09798867,
+        "score": 834377.831410852
+    },
+    {
+        "cid": "20_90",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2073462406,
+        "NSGA-II_rank": 5,
+        "is_elite": false,
+        "naa": 6898735.191579798,
+        "score": 1014724.5087477812
+    },
+    {
+        "cid": "20_91",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.6389550741,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7478984.118456039,
+        "score": 848121.505436885
+    },
+    {
+        "cid": "20_92",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.4874903671,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7526640.706979821,
+        "score": 767026.1447414563
+    },
+    {
+        "cid": "20_93",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.2967851497,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7671133.319567,
+        "score": 758244.3499633152
+    },
+    {
+        "cid": "20_94",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 8,
+        "is_elite": false,
+        "naa": 6752671.642416043,
+        "score": 943160.3913303628
+    },
+    {
+        "cid": "20_95",
+        "identity": null,
+        "NSGA-II_crowding_distance": null,
+        "NSGA-II_rank": 11,
+        "is_elite": false,
+        "naa": 6908049.333335286,
+        "score": 844715.7936888058
+    },
+    {
+        "cid": "20_96",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.4764786964,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7691976.90366519,
+        "score": 700213.1726065674
+    },
+    {
+        "cid": "20_97",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.8265136566,
+        "NSGA-II_rank": 3,
+        "is_elite": false,
+        "naa": 7332150.13806194,
+        "score": 954874.634415319
+    },
+    {
+        "cid": "20_98",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.3622922717,
+        "NSGA-II_rank": 4,
+        "is_elite": false,
+        "naa": 7431926.661624277,
+        "score": 793731.4576592968
+    },
+    {
+        "cid": "20_99",
+        "identity": null,
+        "NSGA-II_crowding_distance": 0.1973677465,
+        "NSGA-II_rank": 6,
+        "is_elite": false,
+        "naa": 7065693.886294205,
+        "score": 941534.3434392782
+    },
+    {
+        "cid": "20_100",
+        "identity": null,
+        "NSGA-II_crowding_distance": 1.0090061325,
+        "NSGA-II_rank": 8,
+        "is_elite": false,
+        "naa": 7212389.252026964,
+        "score": 780706.8132018913
+    }
+]
