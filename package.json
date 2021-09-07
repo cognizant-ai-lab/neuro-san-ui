@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@blueprintjs/core": "^3.47.0",
+    "@nivo/bar": "^0.73.1",
+    "@nivo/bump": "^0.73.0",
+    "@nivo/core": "^0.73.0",
     "antd": "^4.16.8",
     "aws-sdk": "^2.951.0",
     "axios": "^0.21.1",
@@ -19,6 +22,7 @@
     "evergreen-ui": "^6.1.0",
     "fast-csv": "^4.3.6",
     "next": "11.0.1",
+    "nivo": "^0.31.0",
     "react": "17.0.2",
     "react-bootstrap": "^1.6.1",
     "react-codemirror2": "^7.2.1",
@@ -26,6 +30,7 @@
     "react-flow-renderer": "^9.6.6",
     "react-icons": "^4.2.0",
     "react-pro-sidebar": "^0.6.0",
+    "react-spinners": "^0.11.0",
     "react-uuid": "^1.0.2",
     "zustand": "^3.5.8"
   },

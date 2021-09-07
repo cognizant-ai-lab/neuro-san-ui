@@ -472,7 +472,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             id: uuid(), 
             source: InputDataNodeID, 
             target: NodeID, 
-            animated: false 
+            animated: false,
+            type: 'predictoredge'
         })
     
         // Check if Prescriptor Node exists

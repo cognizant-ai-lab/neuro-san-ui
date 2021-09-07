@@ -69,3 +69,14 @@ in the node.
 
 return predictions        
 `
+
+export const ESPResultverbs = [
+    'max',
+    'min',
+    'mean',
+    'elites_mean'
+]
+export const DummyObjectives = [
+    'naa',
+    'score'
+]
