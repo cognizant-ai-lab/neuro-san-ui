@@ -1,13 +1,13 @@
 import uuid from 'react-uuid'
 import { ResponsiveBump } from '@nivo/bump'
 
-export function BumpESPPlot({ RunsResultData, Verb }) {
+export function ESPPlot({ RunsResultData, VerbObjectiveMap, Verb }) {
 
     // const numObjectives = Object.keys(RunsResultData).length
     // const sampleObj = Object.keys(RunsResultData)[0]
     // const columnVerbNames = Object.keys(RunsResultData[sampleObj])
     // const numColumns = columnVerbNames.length
-    const TableHeaderNames = ['Objectives', Verb]
+    const TableHeaderNames = ['Objectives', "Graph"]
 
     let tableHeaderElements = []
     TableHeaderNames.forEach(header => {
@@ -24,12 +24,24 @@ export function BumpESPPlot({ RunsResultData, Verb }) {
 
     for (const objective of Object.keys(RunsResultData)) {
 
-        
+        let VerbToUse
+        if (Verb) {
+            VerbToUse = Verb
+        } else {
+            console.log(VerbObjectiveMap, objective)
+            let isVerbMax = VerbObjectiveMap.filter(obj => obj.metric_name === objective)[0].maximize
+            if (isVerbMax) {
+                VerbToUse = "max"
+            } else {
+                VerbToUse = "min"
+            }
+        }
+
         const metricCol = <td key={`${objective}-${Verb}`} className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
                 { 
                     <div className="pl-4" style={{height: "50rem", width: "100%"}}>
                         <ResponsiveBump
-                            data={RunsResultData[objective][Verb]}
+                            data={RunsResultData[objective][VerbToUse]}
                             margin={{ top: 40, right: 100, bottom: 40, left: 60 }}
                             colors={{ scheme: 'spectral' }}
                             lineWidth={3}
@@ -47,7 +59,7 @@ export function BumpESPPlot({ RunsResultData, Verb }) {
                                 tickSize: 5,
                                 tickPadding: 5,
                                 tickRotation: 0,
-                                legend: "",
+                                legend: `${VerbToUse} ${objective}`,
                                 legendPosition: 'middle',
                                 legendOffset: -36
                             }}

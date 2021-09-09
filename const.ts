@@ -74,7 +74,8 @@ export const ESPResultverbs = [
     'max',
     'min',
     'mean',
-    'elites_mean'
+    'elites_mean',
+    'pareto'
 ]
 export const DummyObjectives = [
     'naa',
