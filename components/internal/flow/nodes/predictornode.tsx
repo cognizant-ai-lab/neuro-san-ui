@@ -396,11 +396,8 @@ export default function PredictorNode(props): React.ReactElement {
                                             
                                         </Card.Body>
 
-    // Create the data split
-    // onDragStart={ event => {event.preventDefault(); event.stopPropagation();} }
-
+    // Create the data split card
     const DataSplitConfigurationPanel = <Card.Body>
-        {/*onChange={this.changeText.bind(this)}*/}
         <div className="flex justify-between mb-4 content-center"
              onMouseDown={ (event) => { event.stopPropagation() } }
         >

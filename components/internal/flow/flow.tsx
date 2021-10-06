@@ -426,7 +426,9 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 "context": {},
                 "action": {},
                 "outcome": {}
-            }
+            },
+            trainSliderValue: 80,
+            testSliderValue: 20
         }
     }
     _addPredictorNode() {
