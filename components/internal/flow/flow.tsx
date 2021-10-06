@@ -130,7 +130,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
                         ...node.data,
                         state: newState
                     }
-                    console.log("UPDATING PREDICTOR NODE DATA: ", newState)
                 }
 
                 // We also need to edit the data
@@ -243,7 +242,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
         */
         const flow = this.state.flow
 
-        console.log("State while Initializing inside Handler: ", newState)
         this.setState({
             flow: flow.map(node => {
                 if (node.id === NodeID) {
@@ -251,7 +249,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
                         ...node.data,
                         state: newState
                     }
-                    console.log("New Node Data", node.data)
                 }
                 return node
             })
@@ -454,7 +451,6 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             flowInstanceElem[0].position.y - 100
         )
 
-        console.log(MaxPredictorNodeY)
         graphCopy.push({
             id: NodeID,
             type: 'predictornode',

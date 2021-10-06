@@ -4,7 +4,10 @@ import {
     useEffect 
 } from 'react'
 
-// Import 3rd pary components
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
+
+// Import 3rd party components
 import { 
     Card
 } from "react-bootstrap"
@@ -57,6 +60,7 @@ export interface PredictorNodeData {
     readonly setState: any
 }
 
+const SliderComponent = Slider.createSliderWithTooltip(Slider);
 
 export default function PredictorNode(props): React.ReactElement {
     /*
@@ -66,14 +70,13 @@ export default function PredictorNode(props): React.ReactElement {
     */
 
     const data: PredictorNodeData = props.data
-    console.log("SELECTED DATA TAG: ", data.SelectedDataTag)
 
     // Unpack the data
     const { NodeID, state, setState } = data
 
     const initialize = () => {
         /*
-        This controller invokation is used for the fetching of the predictors and the
+        This controller invocation is used for the fetching of the predictors and the
         metrics of a certain kind of predictor. This only needs to be used once
         when the content is being rendered
         */
@@ -83,10 +86,8 @@ export default function PredictorNode(props): React.ReactElement {
         const metricsFetched = FetchMetrics()
 
         // Run Fetch Parameters
-        const params = FetchParams(state.selectedPredictorType, 
-            predictorsFetched[0])
-        
-    
+        const params = FetchParams(state.selectedPredictorType, predictorsFetched[0])
+
         // We add a key called value to adjust for user input
         Object.keys(params).forEach(key => {
             if (typeof(params[key].default_value) === "object") {
@@ -119,8 +120,6 @@ export default function PredictorNode(props): React.ReactElement {
             }
         })
 
-        console.log("DATA: ", data)
-
         // Create the initial state for the CAO Map
         let CAOState = {
             "context": {},
@@ -145,7 +144,9 @@ export default function PredictorNode(props): React.ReactElement {
             metrics: metricsFetched,
             selectedMetric: state.selectedMetric || metricsFetched[0],
             predictorParams: state.predictorParams || params,
-            caoState: CAOState
+            caoState: CAOState,
+            trainSliderValue: 80,
+            testSliderValue: 20
         })
     }
 
@@ -229,6 +230,24 @@ export default function PredictorNode(props): React.ReactElement {
         })
     }
 
+    const onTrainSliderChange = newValue => {
+        let newTestSliderValue = 100 - newValue
+        setState({
+            ...state,
+            testSliderValue: newTestSliderValue,
+            trainSliderValue: newValue
+        });
+    };
+
+    const onTestSliderChange = newValue => {
+        let newTrainSliderValue = 100 - newValue
+        setState({
+            ...state,
+            testSliderValue: newValue,
+            trainSliderValue: newTrainSliderValue
+        });
+    };
+
     const updateCAOState = ( event, espType: string ) => {
         const { name, checked } = event.target
         let caoStateCopy = { ...state.caoState }
@@ -259,74 +278,6 @@ export default function PredictorNode(props): React.ReactElement {
     useEffect(() => {
         initialize()
     }, [data.SelectedDataTag])
-
-
-    // useEffect(() => {
-    //
-    //
-    //     // Construct the CAO Map
-    //     let CAOMapping = {
-    //         context: [],
-    //         action: [],
-    //         outcome: []
-    //     }
-    //     Object.keys(data.SelectedDataTag.fields).forEach(fieldName => {
-    //         const field = data.SelectedDataTag.fields[fieldName]
-    //         switch (field.espType) {
-    //             case CAOType[1]:
-    //                 CAOMapping.context.push(fieldName)
-    //                 break
-    //             case CAOType[2]:
-    //                 CAOMapping.action.push(fieldName)
-    //                 break
-    //             case CAOType[3]:
-    //                 CAOMapping.outcome.push(fieldName)
-    //                 break
-    //         }
-    //     })
-    //
-    //     // Create the initial state for the CAO Map
-    //     let CAOState = {
-    //         context: {},
-    //         action: {},
-    //         outcome: {}
-    //     }
-    //
-    //     CAOMapping.context.forEach(context => {
-    //         if (context in state.caoState.context) {
-    //             CAOState.context[context] = state.caoState.context[context]
-    //         } else {
-    //             CAOState.context[context] = true
-    //         }
-    //
-    //     })
-    //     CAOMapping.action.forEach(action => {
-    //         if (action in state.caoState.action) {
-    //             CAOState.action[action] = state.caoState.action[action]
-    //         } else {
-    //             CAOState.action[action] = true
-    //         }
-    //     })
-    //     CAOMapping.outcome.forEach(outcome => {
-    //         if (outcome in state.caoState.outcome) {
-    //             CAOState.outcome[outcome] = state.caoState.outcome[outcome]
-    //         } else {
-    //             CAOState.outcome[outcome] = false
-    //         }
-    //     })
-    //
-    //     console.log("State in CAO: ", {
-    //         ...state,
-    //         caoState: CAOState
-    //     })
-    //
-    //     setState({
-    //         ...state,
-    //         caoState: CAOState
-    //     })
-    //
-    // }, [data.SelectedDataTag])
-
 
     // We want to have a tabbed predictor configuration
     // and thus we build the following component
@@ -407,7 +358,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                         <input 
                                                         name={param} 
                                                         type="number" 
-                                                        step="0.1" 
+                                                        step="0.1"
                                                         defaultValue={ state.predictorParams[param].default_value }
                                                         value={ state.predictorParams[param].value }
                                                         onChange={onParamChange}
@@ -446,17 +397,40 @@ export default function PredictorNode(props): React.ReactElement {
                                         </Card.Body>
 
     // Create the data split
+    // onDragStart={ event => {event.preventDefault(); event.stopPropagation();} }
+
     const DataSplitConfigurationPanel = <Card.Body>
-        <div className="flex justify-between mb-4 content-center">
+        {/*onChange={this.changeText.bind(this)}*/}
+        <div className="flex justify-between mb-4 content-center"
+             onMouseDown={ (event) => { event.stopPropagation() } }
+        >
             <label className="m-0 mr-2">Train: </label>
             <label>0%</label>
-            <input type="range" id="train" min="0" max="100"></input>
+
+            <SliderComponent
+                onChange={ event => onTrainSliderChange(event) }
+                min={0}
+                max={100}
+                value={state.trainSliderValue}
+                defaultValue={80}
+            >
+            </SliderComponent>
             <label>100%</label>
         </div>
-        <div className="flex justify-between mb-4 content-center">
-            <label style={{width: "60"}} className="m-0 mr-2">Test: </label>
+        <div className="flex justify-between mb-4 content-center"
+             onMouseDown={ (event) => { event.stopPropagation() } }
+        >
+            <label className="m-0 mr-2">Test: </label>
             <label>0%</label>
-            <input type="range" id="test" min="0" max="100"></input>
+
+            <SliderComponent
+                onChange={ event => onTestSliderChange(event) }
+                min={0}
+                max={100}
+                value={state.testSliderValue}
+                defaultValue={20}
+            >
+            </SliderComponent>
             <label>100%</label>
         </div>
     </Card.Body>

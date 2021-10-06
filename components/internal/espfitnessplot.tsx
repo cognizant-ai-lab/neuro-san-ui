@@ -28,7 +28,6 @@ export function ESPPlot({ RunsResultData, VerbObjectiveMap, Verb }) {
         if (Verb) {
             VerbToUse = Verb
         } else {
-            console.log(VerbObjectiveMap, objective)
             let isVerbMax = VerbObjectiveMap.filter(obj => obj.metric_name === objective)[0].maximize
             if (isVerbMax) {
                 VerbToUse = "max"
