@@ -12,7 +12,7 @@ export default function Index(): React.ReactElement {
         <meta name="description" content="Evolutionary AI" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      Under Pressure
+      LEAF v0.0.1
     </div>
   )
 }
