@@ -10,7 +10,7 @@ import AccessionProject from "../../controller/projects/accession"
 import { Project } from "../../controller/projects/types"
 import { Profile } from "../../controller/dataprofile/types"
 import { DataSource } from "../../controller/datasources/types"
-import {DataTag, DataTagField, DataTagFields, DiscreteCategoricalValues, Valued} from "../../controller/datatag/types";
+import {DataTag, DataTagFields} from "../../controller/datatag/types";
 import { AccessionDatasourceS3 } from "../../controller/datasources/accession"
 import AccessionDataTag from "../../controller/datatag/accession";
 
@@ -20,8 +20,6 @@ import { MaximumBlue } from "../../const"
 // Import Utils
 import uuid from 'react-uuid'
 import AWSUtils from "../../utils/aws"
-
-
 
 // Declare the Props for this component
 export interface NewProps {

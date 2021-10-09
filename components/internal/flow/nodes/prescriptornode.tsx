@@ -464,7 +464,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                                 })
                                                             }
                                                     >
-                                                        <option value="tournament">Torunament</option>
+                                                        <option value="tournament">Tournament</option>
                                                     </select>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
