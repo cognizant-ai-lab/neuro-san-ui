@@ -13,7 +13,7 @@ export const StatusColors = {
 
 export const InputDataNodeID: string = 'root'
 export const TRAIN_SERVER: string = "http://localhost:8080"
-export const MD_BASE_URL: string = "http://localhost:30002"
+export const MD_BASE_URL: string = "http://gateway.staging.unileaf.evolution.ml:30002"
 export const THIS_SERVER: string = "http://localhost:3000"
 export const AUTHOR: string = "mohak"
 export const DEFAULT_DATA_ROOT_KEY: string = "data"
