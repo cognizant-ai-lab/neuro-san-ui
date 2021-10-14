@@ -26,3 +26,7 @@
 .ant-drawer-body, .ant-drawer-body > .container {
     padding: 0 !important;
 }
+
+.input-field {
+    background-color: #f7f7f9;
+}
