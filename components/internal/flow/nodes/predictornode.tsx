@@ -145,9 +145,9 @@ export default function PredictorNode(props): React.ReactElement {
             selectedMetric: state.selectedMetric || metricsFetched[0],
             predictorParams: state.predictorParams || params,
             caoState: CAOState,
-            trainSliderValue: 80,
-            testSliderValue: 20,
-            rngSeedValue: ''
+            trainSliderValue: state.trainSliderValue || '80',
+            testSliderValue: state.testSliderValue || '20',
+            rngSeedValue: state.rngSeedValue || ''
         })
     }
 
