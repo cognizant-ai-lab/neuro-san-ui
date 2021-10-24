@@ -656,10 +656,13 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         
     }
 
-    _onMove(event, node) {
-        let movedNode = this.state.flow.find(n => n.id === node.id);
+    onNodeDragStop(event, node) {
+        const graphCopy = this.state.flow.slice()
+
+        const movedNode = graphCopy.find(n => n.id === node.id);
         if (movedNode) {
             movedNode.position = node.position
+            this.setState({flow: graphCopy})
         }
     }
 
@@ -715,8 +718,8 @@ export default class Flow extends FlowUtils {
                     snapGrid={[10, 10]}
                     nodeTypes={NodeTypes}
                     edgeTypes={EdgeTypes}
-                    onNodeDrag={this._onMove.bind(this)}
-                    >
+                    onNodeDragStop={this.onNodeDragStop.bind(this)}
+                >
                     <Background color="#000" gap={5} />
                 </ReactFlow>
             </div>
