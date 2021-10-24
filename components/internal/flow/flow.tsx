@@ -657,7 +657,10 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     }
 
     _onMove(event, node) {
-        this.state.flow.find(n => n.id === node.id).position = node.position
+        let movedNode = this.state.flow.find(n => n.id === node.id);
+        if (movedNode) {
+            movedNode.position = node.position
+        }
     }
 
 }
