@@ -742,6 +742,21 @@ export default class Flow extends FlowUtils {
                     edgeTypes={EdgeTypes}
                     onNodeDragStop={this.onNodeDragStop.bind(this)}
                 >
+                    <Button size="sm"
+                            onClick={_ => {
+                                if (this.state.flowInstance != null) {
+                                    this.state.flowInstance.fitView()
+                                }
+                            }}
+                            style={{
+                                position: "absolute",
+                                right: "0px",
+                                top: "0px",
+                                zIndex: 1000,
+                                background: MaximumBlue,
+                                borderColor: MaximumBlue
+                            }}
+                    >Fit diagram</Button>
                     <Background color="#000" gap={5} />
                 </ReactFlow>
             </div>
