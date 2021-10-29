@@ -301,8 +301,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                                 predictorNodeID, 
                                 outcomeName, maximize
                         ),
-                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(
-                            node.id, value)
+                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(node.id, value)
                     }
                 }
 
@@ -742,21 +741,7 @@ export default class Flow extends FlowUtils {
                     edgeTypes={EdgeTypes}
                     onNodeDragStop={this.onNodeDragStop.bind(this)}
                 >
-                    <Button size="sm"
-                            onClick={_ => {
-                                if (this.state.flowInstance != null) {
-                                    this.state.flowInstance.fitView()
-                                }
-                            }}
-                            style={{
-                                position: "absolute",
-                                right: "0px",
-                                top: "0px",
-                                zIndex: 1000,
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue
-                            }}
-                    >Fit diagram</Button>
+                    <Controls />
                     <Background color="#000" gap={5} />
                 </ReactFlow>
             </div>
