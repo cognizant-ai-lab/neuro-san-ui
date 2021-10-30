@@ -740,8 +740,16 @@ export default class Flow extends FlowUtils {
                     nodeTypes={NodeTypes}
                     edgeTypes={EdgeTypes}
                     onNodeDragStop={this.onNodeDragStop.bind(this)}
+                    style={{zIndex: 0}}
                 >
-                    <Controls />
+                    <Controls
+                        style={{
+                            position: "absolute",
+                            top: "0px",
+                            left: "0px",
+                            zIndex: 100
+                        }}
+                    />
                     <Background color="#000" gap={5} />
                 </ReactFlow>
             </div>
