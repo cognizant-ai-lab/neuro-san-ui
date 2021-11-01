@@ -37,18 +37,11 @@ import {
     CAOType
 } from "../../../../controller/datatag/types"
 
-// Import Code Mirror
 import { Controlled as CodeMirror } from 'react-codemirror2'
-// require('codemirror/mode/python/python');
-
-// const CodeMirror2 = dynamic(() => {
-//     require('codemirror/mode/python/python')
-//     import('react-codemirror2').then(module => module.Controlled)
-// }, {ssr: false})
 
 // Define an interface for the structure
 // of the nodes
-export interface PredictorNodeData {
+export interface PrescriptorNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus
@@ -77,17 +70,17 @@ export interface PredictorNodeData {
 
 export default function PrescriptorNode(props): React.ReactElement {
     /*
-    This function is responsible to render the Predictor Node
+    This function is responsible for rendering the prescriptor node.
     NOTE: THIS RENDERS FORMS ELEMENT BUT NOT THE FORM ITSELF
     THE FORM MUST BE RENDERED AS A PARENT CONTAINER OF THIS.
     */
 
-    const data: PredictorNodeData = props.data
+    const data: PrescriptorNodeData = props.data
 
     // Unpack the mapping
     const { 
         NodeID, 
-        state, setState, 
+        state, setState,
         MarkedOutcomes, UpdateMarkedOutcomes,
         EvaluatorOverrideCode, UpdateEvaluateOverrideCode 
     } = data
@@ -96,14 +89,10 @@ export default function PrescriptorNode(props): React.ReactElement {
         const { name, checked } = event.target
         let caoStateCopy = { ...state.caoState }
 
-        if (espType === "outcome") {
-            caoStateCopy[espType][name]["checked"] = checked
-        } else {
-            caoStateCopy[espType][name] = checked
-        }
-        
+        caoStateCopy[espType][name] = checked
+
         setState({
-            ...state, 
+            ...state,
             caoState: caoStateCopy
         })
     }
@@ -125,8 +114,8 @@ export default function PrescriptorNode(props): React.ReactElement {
                 case CAOType[2]:
                     CAOMapping.action.push(fieldName)
                     break
-                case CAOType[2]:
-                    CAOMapping.action.push(fieldName)
+                case CAOType[3]:
+                    CAOMapping.outcome.push(fieldName)
                     break
             }
         })
@@ -153,12 +142,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                 CAOState.action[action] = true
             }
         })
-        CAOMapping.outcome.forEach(
-            outcome => CAOState.outcome[outcome] = {
-                checked: false,
-                maximize: true
-            }
-        )
+
         CAOMapping.outcome.forEach(outcome => {
             if (outcome in state.caoState.outcome) {
                 CAOState.outcome[outcome] = {
@@ -178,7 +162,7 @@ export default function PrescriptorNode(props): React.ReactElement {
         initializedState.network.inputs[0].size = CAOMapping.context.length
         initializedState.network.hidden_layers[0].layer_params.units = 2 * CAOMapping.context.length
         initializedState.network.outputs[0].size = CAOMapping.action.length
-        
+
         setState({
             ...state,
             caoState: CAOState
@@ -219,9 +203,7 @@ export default function PrescriptorNode(props): React.ReactElement {
         </div>
     })
     
-
-
-    const EvaluatorOverridePanel = <Card.Body> 
+    const EvaluatorOverridePanel = <Card.Body>
                                         <CodeMirror
                                             value={EvaluatorOverrideCode}
                                             options={{
@@ -237,8 +219,6 @@ export default function PrescriptorNode(props): React.ReactElement {
                                             />
 
                                     </Card.Body>
-    
-
     
     // We need to maintain state for selected Representation
     // Possible options are: 
