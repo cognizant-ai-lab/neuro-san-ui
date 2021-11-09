@@ -1,11 +1,12 @@
 // Import React
-import React from "react";
+import React, {useState} from "react";
 
 // Import Next Components
 import Link, { LinkProps } from "next/link";
 
 // Import Icons
 import { BsFillPlusSquareFill } from 'react-icons/bs';
+import {AiFillEdit} from "react-icons/ai";
 
 // Define the Props Interface
 export interface NavbarProps {
@@ -13,7 +14,9 @@ export interface NavbarProps {
     LinkComponentProps?: LinkProps,
     DisplayNewLink?: boolean,
     LinkCallback?: any,
-    ButtonComponent?: any
+    ButtonComponent?: any,
+
+    EditableCallback?: any
 }
 
 export default function NewBar(props: NavbarProps) {
@@ -36,10 +39,46 @@ export default function NewBar(props: NavbarProps) {
         } else if (props.ButtonComponent) {
             newButton = props.ButtonComponent
         }
-    } 
+    }
+
+    const [editing, setEditing] = useState(false)
+    let title
+    if (props.EditableCallback && !editing) {
+        title = <h3 className="h3">
+            {props.Title}
+            <button onClick={() => {
+                setEditing(true)
+            }}> <AiFillEdit /> </button>
+        </h3>
+    } else if (props.EditableCallback && editing) {
+        title = <h3 className="h3">
+            <input type="text"
+                   autoFocus={true}
+                   disabled={false}
+                   defaultValue={props.Title}
+                   onBlur={
+                       event => {
+                            props.EditableCallback(event.target.value)
+                            setEditing(false)
+                       }
+                   }
+                   onKeyUp={
+                       event => {
+                           if (event.keyCode == 13) {
+                               // @ts-ignore
+                               props.EditableCallback(event.target.value)
+                               setEditing(false)
+                           }
+                       }
+                   }
+                   />
+        </h3>
+    } else {
+        title = <h3 className="h3">{ props.Title }</h3>
+    }
 
     return <div className="flex justify-between py-6 items-center border-b-2 border-black">
-                <h3 className="h3">{props.Title}</h3>
+                {title}
                 { newButton }
             </div>
 

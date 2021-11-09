@@ -14,6 +14,7 @@ import {
     Container, 
     Navbar as BootstrapNavbar 
 } from "react-bootstrap";
+import Link from "next/link";
 
 // Define Constants
 const BG_COLOR: string = "white";
@@ -41,19 +42,16 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                 { props.Logo }
             </BootstrapNavbar.Brand>
             <BootstrapNavbar.Collapse id="responsive-navbar-nav">
-                <Nav className="me-auto"></Nav>
+                <Nav className="me-auto"/>
                 <Nav>
-                    <Nav.Link href="/" style={{color: NAV_ITEMS_COLOR}}>Home</Nav.Link>
-                    <Nav.Link href="/projects" style={{color: NAV_ITEMS_COLOR}}>Projects</Nav.Link>
-                    <NavDropdown title="Settings" id="collasible-nav-dropdown" style={{color: NAV_ITEMS_COLOR}}>
-                        <NavDropdown.Item href="#action/3.1" >Action</NavDropdown.Item>
-                        <NavDropdown.Item href="#action/3.2">Another action</NavDropdown.Item>
-                        <NavDropdown.Item href="#action/3.3">Something</NavDropdown.Item>
-                        <NavDropdown.Divider />
-                        <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
-                    </NavDropdown>
-                    <Nav.Link href="#logout" style={{color: NAV_ITEMS_COLOR}}>Log Out</Nav.Link>
+                    <Nav.Item>
+                        <Link href={`/projects`} >
+                            <a style={{color: NAV_ITEMS_COLOR}}>Projects</a>
+                        </Link>
+                    </Nav.Item>
+
                 </Nav>
+
             </BootstrapNavbar.Collapse>
         </Container>
     </BootstrapNavbar>

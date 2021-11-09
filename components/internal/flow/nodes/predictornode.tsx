@@ -107,18 +107,19 @@ export default function PredictorNode(props): React.ReactElement {
         Object.keys(data.SelectedDataTag.fields).forEach(fieldName => {
             const field = data.SelectedDataTag.fields[fieldName]
             // debugger
-            switch (field.espType) {
-                case CAOType[1]:
+            switch (field.esp_type) {
+                case CAOType.CONTEXT:
                     CAOMapping.context.push(fieldName)
                     break
-                case CAOType[2]:
+                case CAOType.ACTION:
                     CAOMapping.action.push(fieldName)
                     break
-                case CAOType[3]:
+                case CAOType.OUTCOME:
                     CAOMapping.outcome.push(fieldName)
                     break
             }
         })
+        console.log("CAO MAP: ", CAOMapping)
 
         // Create the initial state for the CAO Map
         let CAOState = {

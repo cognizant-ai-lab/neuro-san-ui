@@ -44,7 +44,7 @@ that the flow expects.
 */
 export interface FlowProps {
     // The project id this experiment belongs to
-    readonly ProjectID: string,
+    readonly ProjectID: number,
 
     // The Data sources and data tags avalaible to this
     // project
@@ -60,7 +60,7 @@ export interface FlowProps {
 
 class FlowState extends React.Component {
     // Declare class Variables
-    ProjectID: string
+    ProjectID: number
     TaggedDataList: TaggedDataInfoList
     SetParentState: any
 
@@ -95,11 +95,10 @@ class FlowNodeStateUpdateHandler extends FlowState {
 
         const flow = this.state.flow
 
-        debug("State in Data Node: ", state)
+        console.log("State in Data Node: ", state)
 
         // Update the selected data source
         this.setState({
-            // datanodeState: state,
             flow: flow.map(node => {
                 if (node.type === 'predictornode' || node.type === 'prescriptornode') {
                     debug("Recreating node: ", node.type)
@@ -277,7 +276,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 if (node.type === 'datanode') {
                     node.data = {
                         ...node.data,
-                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
+                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this),
+                        TaggedDataList: props.TaggedDataList
                     }
                 } else if (node.type === 'predictornode') {
                     node.data = {

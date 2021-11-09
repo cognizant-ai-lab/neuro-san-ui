@@ -118,15 +118,15 @@ export default function PrescriptorNode(props): React.ReactElement {
         }
         Object.keys(data.SelectedDataTag.fields).forEach(fieldName => {
             const field = data.SelectedDataTag.fields[fieldName]
-            switch (field.espType) {
-                case CAOType[1]:
+            switch (field.esp_type) {
+                case CAOType.CONTEXT:
                     CAOMapping.context.push(fieldName)
                     break
-                case CAOType[2]:
+                case CAOType.ACTION:
                     CAOMapping.action.push(fieldName)
                     break
-                case CAOType[2]:
-                    CAOMapping.action.push(fieldName)
+                case CAOType.OUTCOME:
+                    CAOMapping.outcome.push(fieldName)
                     break
             }
         })

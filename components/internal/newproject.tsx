@@ -7,7 +7,6 @@ import { Container, Form, Button } from "react-bootstrap"
 
 // Import required interface to create a new project
 import AccessionProject from "../../controller/projects/accession"
-import { Project } from "../../controller/projects/types"
 import { Profile } from "../../controller/dataprofile/types"
 import { DataSource } from "../../controller/datasources/types"
 import {DataTag, DataTagFields} from "../../controller/datatag/types";
@@ -20,6 +19,7 @@ import { MaximumBlue } from "../../const"
 // Import Utils
 import uuid from 'react-uuid'
 import AWSUtils from "../../utils/aws"
+import {Project} from "../../controller/projects/types";
 
 var debug = require('debug')('new_project')
 
@@ -28,7 +28,7 @@ export interface NewProps {
 
     // A flag to tell if it is to be used in a 
     // DataSource mode only
-    ProjectID?: string
+    ProjectID?: number
 
     // A call back function that tells the view
     // to update its state to reflect the new addition 
@@ -46,7 +46,7 @@ export default function NewProject(props: NewProps) {
     */
 
     const [inputFields, setInputFields] = useState({
-        "projectName": "", 
+        "projectName": "",
         "description": "", 
         "datasetName": "",
         "bucketName": "",
@@ -54,23 +54,23 @@ export default function NewProject(props: NewProps) {
         "region": "",
     })
 
+    const [projectId, setProjectId] = useState(props.ProjectID)
     const [profile, setProfile] = useState(null)
 
     // Define a function to unpack the form and trigger the controller
     // to register the project
     const TriggerProjectDataSourceAccessionController = async () => {
 
+        let projectId
         // ################################ Accession Project ###########################
-        let name
         if (!props.ProjectID) {
             // Unpack the Project Variables
             let {projectName, description} = inputFields
 
             // Create the Project message
             let projectMessage: Project = {
-                id: projectName,
-                description: description,
-                // time: new Date().toString()
+                name: projectName,
+                description: description
             }
             debug("Project: ", projectMessage)
 
@@ -80,10 +80,12 @@ export default function NewProject(props: NewProps) {
             // If Project creation failed, everything fails
             if (accessionProjectResp === null) { return }
 
-            name = projectName
+            projectId = accessionProjectResp.id
+            setProjectId(accessionProjectResp.id)
 
         } else {
-            name = props.ProjectID
+            projectId = props.ProjectID
+            setProjectId(props.ProjectID)
         }
 
         // ################################ Accession Data Source ###########################
@@ -92,14 +94,15 @@ export default function NewProject(props: NewProps) {
 
         // Create the Data source Message
         let dataSourceMessage: DataSource = {
-            project: name,
-            id: datasetName,
+            project_id: projectId,
+            name: datasetName,
             s3_url: new AWSUtils().ConstructURL(
                 bucketName,
                 region,
                 s3Key
             )
         }
+
         debug("Datasource: ", dataSourceMessage)
 
          // Trigger the Data Source Controller
@@ -113,33 +116,26 @@ export default function NewProject(props: NewProps) {
 
     const TriggerDataTagAccession = async () => {
         // ################################ Accession Data Tag ###########################
-        let projectName
-
-        if (props.ProjectID) {
-            projectName = props.ProjectID
-        } else {
-            projectName = inputFields.projectName
-        }
 
         // Unpack the values for datafields
         let inputFieldsMapped: DataTagFields = {}
         // Loop over the Data fields
-        Object.keys(profile.dataTag.fields).forEach(fieldName => {
+        Object.keys(profile.data_tag.fields).forEach(fieldName => {
 
-            const datafield = profile.dataTag.fields[fieldName]
+            const datafield = profile.data_tag.fields[fieldName]
 
             // Set the value
             inputFieldsMapped[fieldName] = {
                 // Get the esp-type
-                esp_type: datafield.espType,
+                esp_type: datafield.esp_type,
 
                 // Get the Data type
-                data_type: datafield.dataType,
+                data_type: datafield.data_type,
                 sum: datafield.sum,
-                std_dev: datafield.stdDev,
+                std_dev: datafield.std_dev,
                 range: datafield.range,
-                discrete_categorical_values: datafield.discreteCategoricalValues,
-                has_nan: datafield.hasNan,
+                discrete_categorical_values: datafield.discrete_categorical_values,
+                has_nan: datafield.has_nan,
                 valued: datafield.valued,
                 mean: datafield.mean
             }
@@ -150,11 +146,11 @@ export default function NewProject(props: NewProps) {
         const dataTagMessage: DataTag = {
             // time: new Date().toDateString(),
             fields: inputFieldsMapped,
-            data_source: inputFields.datasetName,
-            id: uuid()
+            data_source_id: profile.data_source.id
         }
 
         debug("DataTag: ", dataTagMessage)
+        console.log("DT: ", dataTagMessage)
 
         // Trigger the Data tag Controller
         const savedDataTag = await AccessionDataTag(dataTagMessage)
@@ -164,7 +160,7 @@ export default function NewProject(props: NewProps) {
         props.UpdateHook && props.UpdateHook()
 
         // Redirect
-        window.location.href = `/projects/${projectName}`
+        window.location.href = `/projects/${projectId}`
     }
 
     const EnabledDataSourceSection = props.ProjectID || (inputFields.projectName && 
@@ -282,17 +278,17 @@ export default function NewProject(props: NewProps) {
                         <h6>Data Type</h6>
                         <h6>Valued</h6>
                     </div>
-                    {profile != null && Object.keys(profile.dataTag.fields).map((field, _) =>
+                    {profile != null && Object.keys(profile.data_tag.fields).map((field, _) =>
                         <>
                             <div key={`${field}-row`} className="grid grid-cols-4 gap-4 mb-2" >
                                 <label>{ field }</label>
                                 <select
                                     name={`${field}-esp_type`}
-                                    value={ profile.dataTag.fields[field].espType }
+                                    value={ profile.data_tag.fields[field].esp_type }
                                     className="w-32"
                                     onChange={event => {
                                         let profileCopy = {...profile}
-                                        profileCopy.dataTag.fields[field].espType = event.target.value
+                                        profileCopy.data_tag.fields[field].esp_type = event.target.value
                                         setProfile(profileCopy)
                                     }}
                                 >
@@ -302,11 +298,11 @@ export default function NewProject(props: NewProps) {
                                 </select>
                                 <select
                                     name={`${field}-data_type`}
-                                    value={ profile.dataTag.fields[field].dataType }
+                                    value={ profile.data_tag.fields[field].data_type }
                                     className="w-32"
                                     onChange={event => {
                                         let profileCopy = {...profile}
-                                        profileCopy.dataTag.fields[field].dataType = event.target.value
+                                        profileCopy.data_tag.fields[field].data_type = event.target.value
                                         setProfile(profileCopy)
                                     }}
                                     >
@@ -317,11 +313,11 @@ export default function NewProject(props: NewProps) {
                                 </select>
                                 <select
                                     name={`${field}-valued`}
-                                    value={ profile.dataTag.fields[field].valued }
+                                    value={ profile.data_tag.fields[field].valued }
                                     className="w-32"
                                     onChange={event => {
                                         let profileCopy = {...profile}
-                                        profileCopy.dataTag.fields[field].valued = event.target.value
+                                        profileCopy.data_tag.fields[field].valued = event.target.value
                                         setProfile(profileCopy)
                                     }}
                                 >
@@ -331,17 +327,17 @@ export default function NewProject(props: NewProps) {
                             </div>
                             <div>
                                 {
-                                    profile.dataTag.fields[field].valued === "CONTINUOUS" &&
+                                    profile.data_tag.fields[field].valued === "CONTINUOUS" &&
                                     <div className="grid grid-cols-6 gap-4 mb-2">
                                         <Form.Group className="mb-3">
                                             <Form.Label className="text-left w-full">Min</Form.Label>
                                             <Form.Control
                                                 name={`${field}-min-range`}
                                                 type="number"
-                                                value={profile.dataTag.fields[field].range[0]}
+                                                value={profile.data_tag.fields[field].range[0]}
                                                 onChange={event => {
                                                     let profileCopy = {...profile}
-                                                    profileCopy.dataTag.fields[field].range[0] = parseFloat(event.target.value)
+                                                    profileCopy.data_tag.fields[field].range[0] = parseFloat(event.target.value)
                                                     setProfile(profileCopy)
                                                 }} />
                                         </Form.Group>
@@ -350,23 +346,23 @@ export default function NewProject(props: NewProps) {
                                             <Form.Control
                                                 name={`${field}-max-range`}
                                                 type="number"
-                                                value={profile.dataTag.fields[field].range[1]}
+                                                value={profile.data_tag.fields[field].range[1]}
                                                 onChange={event => {
                                                     let profileCopy = {...profile}
-                                                    profileCopy.dataTag.fields[field].range[1] = parseFloat(event.target.value)
+                                                    profileCopy.data_tag.fields[field].range[1] = parseFloat(event.target.value)
                                                     setProfile(profileCopy)
                                                 }} />
                                         </Form.Group>
-                                        <div>Mean: {profile.dataTag.fields[field].mean}</div>
-                                        <div>Sum: {profile.dataTag.fields[field].sum}</div>
-                                        <div>Std Dev: {profile.dataTag.fields[field].stdDev}</div>
-                                        <div>Has Nan: {profile.dataTag.fields[field].hasNan.toString()}</div>
+                                        <div>Mean: {profile.data_tag.fields[field].mean}</div>
+                                        <div>Sum: {profile.data_tag.fields[field].sum}</div>
+                                        <div>Std Dev: {profile.data_tag.fields[field].std_dev}</div>
+                                        <div>Has Nan: {profile.data_tag.fields[field].has_nan.toString()}</div>
                                     </div>
                                 }
                                 {
-                                    profile.dataTag.fields[field].valued === "CATEGORICAL" &&
+                                    profile.data_tag.fields[field].valued === "CATEGORICAL" &&
                                     <>
-                                        <div>Has Nan: {profile.dataTag.fields[field].hasNan.toString()}</div>
+                                        <div>Has Nan: {profile.data_tag.fields[field].has_nan.toString()}</div>
                                     </>
                                 }
                             </div>
