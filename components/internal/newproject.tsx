@@ -10,7 +10,7 @@ import AccessionProject from "../../controller/projects/accession"
 import { Profile } from "../../controller/dataprofile/types"
 import { DataSource } from "../../controller/datasources/types"
 import {DataTag, DataTagFields} from "../../controller/datatag/types";
-import { AccessionDatasourceS3 } from "../../controller/datasources/accession"
+import { AccessionDatasource } from "../../controller/datasources/accession"
 import AccessionDataTag from "../../controller/datatag/accession";
 
 // Import constants
@@ -20,6 +20,9 @@ import { MaximumBlue } from "../../const"
 import uuid from 'react-uuid'
 import AWSUtils from "../../utils/aws"
 import {Project} from "../../controller/projects/types";
+import {FiSettings} from "react-icons/all";
+import ProfileTable from "./flow/profiletable";
+import {BrowserFetchProfile} from "../../controller/dataprofile/generate";
 
 var debug = require('debug')('new_project')
 
@@ -59,11 +62,38 @@ export default function NewProject(props: NewProps) {
 
     // Define a function to unpack the form and trigger the controller
     // to register the project
-    const TriggerProjectDataSourceAccessionController = async () => {
+    const TriggerProfileGeneration = async () => {
 
-        let projectId
-        // ################################ Accession Project ###########################
-        if (!props.ProjectID) {
+        // Unpack Data Source Variables
+        let {bucketName, s3Key, region} = inputFields
+
+        // Create the Data source Message
+        let dataSourceMessage: DataSource = {
+            s3_url: new AWSUtils().ConstructURL(
+                bucketName,
+                region,
+                s3Key
+            )
+        }
+
+        debug("Datasource: ", dataSourceMessage)
+
+         // Trigger the Data Source Controller
+         const profile: Profile = await BrowserFetchProfile(dataSourceMessage)
+
+         // If Data Source creation failed, everything fails
+         if (profile === null) { return }
+        console.log(profile)
+        setProfile(profile)
+
+    }
+
+    const TriggerProjectDataSourceDataTagAccession = async () => {
+
+
+        let projectId = props.ProjectID
+        // Create the project if the project does not exist
+        if (!projectId) {
             // Unpack the Project Variables
             let {projectName, description} = inputFields
 
@@ -83,16 +113,10 @@ export default function NewProject(props: NewProps) {
             projectId = accessionProjectResp.id
             setProjectId(accessionProjectResp.id)
 
-        } else {
-            projectId = props.ProjectID
-            setProjectId(props.ProjectID)
         }
 
-        // ################################ Accession Data Source ###########################
         // Unpack Data Source Variables
         let {datasetName, bucketName, s3Key, region} = inputFields
-
-        // Create the Data source Message
         let dataSourceMessage: DataSource = {
             project_id: projectId,
             name: datasetName,
@@ -103,19 +127,8 @@ export default function NewProject(props: NewProps) {
             )
         }
 
-        debug("Datasource: ", dataSourceMessage)
-
-         // Trigger the Data Source Controller
-         const profile: Profile = await AccessionDatasourceS3(dataSourceMessage)
-
-         // If Data Source creation failed, everything fails
-         if (profile === null) { return }
-        setProfile(profile)
-
-    }
-
-    const TriggerDataTagAccession = async () => {
-        // ################################ Accession Data Tag ###########################
+        const savedDataSource = await AccessionDatasource(dataSourceMessage)
+        console.log("Saved Data Source: ", savedDataSource)
 
         // Unpack the values for datafields
         let inputFieldsMapped: DataTagFields = {}
@@ -144,23 +157,25 @@ export default function NewProject(props: NewProps) {
 
         // Construct the Data tag Message
         const dataTagMessage: DataTag = {
-            // time: new Date().toDateString(),
             fields: inputFieldsMapped,
-            data_source_id: profile.data_source.id
+            data_source_id: savedDataSource.id
         }
 
         debug("DataTag: ", dataTagMessage)
         console.log("DT: ", dataTagMessage)
 
         // Trigger the Data tag Controller
+
         const savedDataTag = await AccessionDataTag(dataTagMessage)
-        debug("Saved DT: ", savedDataTag)
+        console.log("Saved DT: ", savedDataTag)
 
         // Inform the view to update its state
-        props.UpdateHook && props.UpdateHook()
+        props.UpdateHook && props.UpdateHook(savedDataSource)
 
-        // Redirect
-        window.location.href = `/projects/${projectId}`
+        // Redirect if new project creation
+        if (!props.ProjectID) {
+            window.location.href = `/projects/${projectId}`
+        }
     }
 
     const EnabledDataSourceSection = props.ProjectID || (inputFields.projectName && 
@@ -174,9 +189,12 @@ export default function NewProject(props: NewProps) {
 
     const startIndexOffset = props.ProjectID ? -1 : 0
 
+
+    let profileTable = <ProfileTable Profile={profile} ProfileUpdateHandler={setProfile} />
+
     return <Container>
 
-        <Form onSubmit={event => {event.preventDefault(); TriggerDataTagAccession()}} target="_blank">
+        <Form onSubmit={event => {event.preventDefault(); TriggerProjectDataSourceDataTagAccession()}} target="_blank">
 
             <Collapse accordion expandIconPosition="right">
                 { startIndexOffset === 0 && 
@@ -227,6 +245,7 @@ export default function NewProject(props: NewProps) {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
+
                         <Form.Label className="text-left w-full">Bucket Name</Form.Label>
                         <Form.Control 
                             name="bucketName" 
@@ -268,106 +287,12 @@ export default function NewProject(props: NewProps) {
                         {
                             background: MaximumBlue, 
                             borderColor: MaximumBlue
-                        }} type="button" onClick={TriggerProjectDataSourceAccessionController}>Connect</Button>
+                        }} type="button" onClick={TriggerProfileGeneration}>Connect</Button>
 
                 </Panel>
+
                 <Panel header={`${3 + startIndexOffset}. Tag your Data`} key="3" disabled={!EnabledDataTagSection}>
-                    <div className="grid grid-cols-4 gap-4 mb-2 border-b-2 border-b-black" >
-                        <h6>Field</h6>
-                        <h6>ESP Type</h6>
-                        <h6>Data Type</h6>
-                        <h6>Valued</h6>
-                    </div>
-                    {profile != null && Object.keys(profile.data_tag.fields).map((field, _) =>
-                        <>
-                            <div key={`${field}-row`} className="grid grid-cols-4 gap-4 mb-2" >
-                                <label>{ field }</label>
-                                <select
-                                    name={`${field}-esp_type`}
-                                    value={ profile.data_tag.fields[field].esp_type }
-                                    className="w-32"
-                                    onChange={event => {
-                                        let profileCopy = {...profile}
-                                        profileCopy.data_tag.fields[field].esp_type = event.target.value
-                                        setProfile(profileCopy)
-                                    }}
-                                >
-                                        <option value="CONTEXT">CONTEXT</option>
-                                        <option value="ACTION">ACTION</option>
-                                        <option value="OUTCOME">OUTCOME</option>
-                                </select>
-                                <select
-                                    name={`${field}-data_type`}
-                                    value={ profile.data_tag.fields[field].data_type }
-                                    className="w-32"
-                                    onChange={event => {
-                                        let profileCopy = {...profile}
-                                        profileCopy.data_tag.fields[field].data_type = event.target.value
-                                        setProfile(profileCopy)
-                                    }}
-                                    >
-                                        <option value="INT">INT</option>
-                                        <option value="STRING">STRING</option>
-                                        <option value="FLOAT">FLOAT</option>
-                                        <option value="BOOL">BOOL</option>
-                                </select>
-                                <select
-                                    name={`${field}-valued`}
-                                    value={ profile.data_tag.fields[field].valued }
-                                    className="w-32"
-                                    onChange={event => {
-                                        let profileCopy = {...profile}
-                                        profileCopy.data_tag.fields[field].valued = event.target.value
-                                        setProfile(profileCopy)
-                                    }}
-                                >
-                                    <option value="CATEGORICAL">CATEGORICAL</option>
-                                    <option value="CONTINUOUS">CONTINUOUS</option>
-                                </select>
-                            </div>
-                            <div>
-                                {
-                                    profile.data_tag.fields[field].valued === "CONTINUOUS" &&
-                                    <div className="grid grid-cols-6 gap-4 mb-2">
-                                        <Form.Group className="mb-3">
-                                            <Form.Label className="text-left w-full">Min</Form.Label>
-                                            <Form.Control
-                                                name={`${field}-min-range`}
-                                                type="number"
-                                                value={profile.data_tag.fields[field].range[0]}
-                                                onChange={event => {
-                                                    let profileCopy = {...profile}
-                                                    profileCopy.data_tag.fields[field].range[0] = parseFloat(event.target.value)
-                                                    setProfile(profileCopy)
-                                                }} />
-                                        </Form.Group>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label className="text-left w-full">Max</Form.Label>
-                                            <Form.Control
-                                                name={`${field}-max-range`}
-                                                type="number"
-                                                value={profile.data_tag.fields[field].range[1]}
-                                                onChange={event => {
-                                                    let profileCopy = {...profile}
-                                                    profileCopy.data_tag.fields[field].range[1] = parseFloat(event.target.value)
-                                                    setProfile(profileCopy)
-                                                }} />
-                                        </Form.Group>
-                                        <div>Mean: {profile.data_tag.fields[field].mean}</div>
-                                        <div>Sum: {profile.data_tag.fields[field].sum}</div>
-                                        <div>Std Dev: {profile.data_tag.fields[field].std_dev}</div>
-                                        <div>Has Nan: {profile.data_tag.fields[field].has_nan.toString()}</div>
-                                    </div>
-                                }
-                                {
-                                    profile.data_tag.fields[field].valued === "CATEGORICAL" &&
-                                    <>
-                                        <div>Has Nan: {profile.data_tag.fields[field].has_nan.toString()}</div>
-                                    </>
-                                }
-                            </div>
-                        </>
-                    )}
+                    {profileTable}
                 </Panel>
             </Collapse>
 

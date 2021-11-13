@@ -2,8 +2,7 @@
 import ReactFlow, {
     addEdge,
     Background,
-    removeElements, 
-    useZoomPanHelper
+    removeElements
 } from 'react-flow-renderer'
 
 // Import Framework
@@ -36,6 +35,7 @@ import {
 } from '../../../pages/projects/[projectID]/experiments/new'
 import Notification, {NotificationProps} from "../../../controller/notification";
 
+
 var debug = require('debug')('flow')
 
 /*
@@ -44,18 +44,21 @@ that the flow expects.
 */
 export interface FlowProps {
     // The project id this experiment belongs to
-    readonly ProjectID: number,
+    ProjectID: number,
 
-    // The Data sources and data tags avalaible to this
+    // The Data sources and data tags available to this
     // project
-    readonly TaggedDataList: TaggedDataInfoList
+    TaggedDataList: TaggedDataInfoList
 
     // A parent state update handle such that it can
     // update the flow in the parent container.
-    readonly SetParentState?: any
+    SetParentState?: any
 
     // Flow passed down if it exists
-    readonly Flow?: any
+    Flow?: any
+
+    // readonly NodesDraggable?: boolean
+    ElementsSelectable: boolean
 }
 
 class FlowState extends React.Component {
@@ -63,6 +66,7 @@ class FlowState extends React.Component {
     ProjectID: number
     TaggedDataList: TaggedDataInfoList
     SetParentState: any
+    protected ElementsSelectable: boolean
 
     constructor(props: FlowProps) {
 
@@ -73,6 +77,7 @@ class FlowState extends React.Component {
         this.ProjectID = props.ProjectID
         this.TaggedDataList = props.TaggedDataList
         this.SetParentState = props.SetParentState
+        this.ElementsSelectable = props.ElementsSelectable
 
     }
 }
@@ -692,6 +697,10 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
 
 export default class Flow extends FlowUtils {
 
+    constructor(props: FlowProps) {
+        super(props);
+    }
+
     _onElementsRemove(elementsToRemove) {
         this._deleteNode(elementsToRemove, this.state.flow)
     }
@@ -707,29 +716,30 @@ export default class Flow extends FlowUtils {
         this.setState({flowInstance: reactFlowInstance})
     }
 
-    componentDidUpdate(prevProps, newProps, snapshot) {
+    componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<{}>, snapshot?: any) {
         this.SetParentState && this.SetParentState(this.state.flow)
     }
 
     render() {
         // Build the Contents of the Flow
         return <Container>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-                    <Button size="sm" 
-                    onClick={this._addPredictorNode.bind(this)}
-                    type="button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
-                    >
-                        Add Predictor
-                    </Button>
-                    <Button size="sm" 
-                    onClick={this._addPrescriptorNode.bind(this)}
-                    type="button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
-                    >
-                        Add Prescriptor
-                    </Button>
-            </div>
+
+            {this.ElementsSelectable && <div className="grid grid-cols-2 gap-4 mb-4">
+                <Button size="sm"
+                        onClick={this._addPredictorNode.bind(this)}
+                        type="button"
+                        style={{background: MaximumBlue, borderColor: MaximumBlue}}
+                >
+                    Add Predictor
+                </Button>
+                <Button size="sm"
+                        onClick={this._addPrescriptorNode.bind(this)}
+                        type="button"
+                        style={{background: MaximumBlue, borderColor: MaximumBlue}}
+                >
+                    Add Prescriptor
+                </Button>
+            </div>}
             <div style={{width: '100%', height: "50vh"}}>
                 <ReactFlow
                     elements={this.state.flow}
@@ -743,19 +753,19 @@ export default class Flow extends FlowUtils {
                     onNodeDragStop={this.onNodeDragStop.bind(this)}
                 >
                     <Button size="sm"
-                            onClick={_ => {
-                                if (this.state.flowInstance != null) {
-                                    this.state.flowInstance.fitView()
-                                }
-                            }}
-                            style={{
-                                position: "absolute",
-                                right: "0px",
-                                top: "0px",
-                                zIndex: 1000,
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue
-                            }}
+                             onClick={_ => {
+                                 if (this.state.flowInstance != null) {
+                                     this.state.flowInstance.fitView()
+                                 }
+                             }}
+                             style={{
+                                 position: "absolute",
+                                 right: "0px",
+                                 top: "0px",
+                                 zIndex: 1000,
+                                 background: MaximumBlue,
+                                 borderColor: MaximumBlue
+                             }}
                     >Fit diagram</Button>
                     <Background color="#000" gap={5} />
                 </ReactFlow>
