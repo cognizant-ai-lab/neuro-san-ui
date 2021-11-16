@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from "react";
-import {NextRouter, useRouter} from "next/router";
 import {Run, Runs} from "../../controller/run/types";
 import {BrowserFetchRuns} from "../../controller/run/fetch";
 import {
@@ -18,6 +17,8 @@ export interface RunProps {
     ProjectId: number,
     Run: Run
 }
+
+var debug = require('debug')('run')
 
 export default function RunPage(props: RunProps): React.ReactElement {
 
@@ -54,7 +55,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }, 10000)
 
             return function cleanup() {
-                console.log("Cleaning Up");
+                debug("Cleaning Up");
                 clearInterval(RunTimer)
             }
 
@@ -87,9 +88,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
             </div>
         )
     }
-
-    console.log("Predictors: ", flow.filter(n => n.type === "predictornode").length)
-
 
     return <>
         {/* Create the title bar */}

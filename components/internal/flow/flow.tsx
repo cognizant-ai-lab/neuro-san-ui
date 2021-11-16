@@ -100,7 +100,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
 
         const flow = this.state.flow
 
-        console.log("State in Data Node: ", state)
+        debug("State in Data Node: ", state)
 
         // Update the selected data source
         this.setState({

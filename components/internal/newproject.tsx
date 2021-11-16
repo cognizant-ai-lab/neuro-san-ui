@@ -65,7 +65,7 @@ export default function NewProject(props: NewProps) {
     const TriggerProfileGeneration = async () => {
 
         // Unpack Data Source Variables
-        let {bucketName, s3Key, region} = inputFields
+        const {bucketName, s3Key, region} = inputFields
 
         // Create the Data source Message
         let dataSourceMessage: DataSource = {
@@ -83,7 +83,7 @@ export default function NewProject(props: NewProps) {
 
          // If Data Source creation failed, everything fails
          if (profile === null) { return }
-        console.log(profile)
+        debug(profile)
         setProfile(profile)
 
     }
@@ -95,7 +95,7 @@ export default function NewProject(props: NewProps) {
         // Create the project if the project does not exist
         if (!projectId) {
             // Unpack the Project Variables
-            let {projectName, description} = inputFields
+            const {projectName, description} = inputFields
 
             // Create the Project message
             let projectMessage: Project = {
@@ -116,8 +116,8 @@ export default function NewProject(props: NewProps) {
         }
 
         // Unpack Data Source Variables
-        let {datasetName, bucketName, s3Key, region} = inputFields
-        let dataSourceMessage: DataSource = {
+        const {datasetName, bucketName, s3Key, region} = inputFields
+        const dataSourceMessage: DataSource = {
             project_id: projectId,
             name: datasetName,
             s3_url: new AWSUtils().ConstructURL(
@@ -128,7 +128,7 @@ export default function NewProject(props: NewProps) {
         }
 
         const savedDataSource = await AccessionDatasource(dataSourceMessage)
-        console.log("Saved Data Source: ", savedDataSource)
+        debug("Saved Data Source: ", savedDataSource)
 
         // Unpack the values for datafields
         let inputFieldsMapped: DataTagFields = {}
@@ -162,12 +162,10 @@ export default function NewProject(props: NewProps) {
         }
 
         debug("DataTag: ", dataTagMessage)
-        console.log("DT: ", dataTagMessage)
-
         // Trigger the Data tag Controller
 
         const savedDataTag = await AccessionDataTag(dataTagMessage)
-        console.log("Saved DT: ", savedDataTag)
+        debug("Saved DT: ", savedDataTag)
 
         // Inform the view to update its state
         props.UpdateHook && props.UpdateHook(savedDataSource)
