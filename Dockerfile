@@ -11,8 +11,11 @@ FROM node:alpine AS builder
 WORKDIR /app
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
-RUN yarn build && yarn install --silent --production --ignore-scripts --prefer-offline
-
+#RUN yarn build && yarn install --silent --production --ignore-scripts --prefer-offline
+# NODE_OPTIONS is just a hack to get around
+# https://stackoverflow.com/questions/69692842/error0308010cdigital-envelope-routinesunsupported
+# Need to solve for real, this is just to unblock testing
+RUN export NODE_OPTIONS=--openssl-legacy-provider && yarn build && yarn install --silent --production --ignore-scripts --prefer-offline
 # Production image, copy all the files and run next
 FROM node:alpine AS runner
 WORKDIR /app
