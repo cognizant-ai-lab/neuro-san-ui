@@ -2,6 +2,7 @@
 import ReactFlow, {
     addEdge,
     Background,
+    Controls,
     removeElements
 } from 'react-flow-renderer'
 
@@ -16,25 +17,24 @@ import EdgeTypes from './edges/types'
 import NodeTypes from './nodes/types'
 
 // Import 3rd party components
-import { 
-    Button, 
-    Container 
+import {
+    Button,
+    Container
 } from "react-bootstrap"
 
 // Import Constants
-import { 
-    MaximumBlue, 
+import {
+    MaximumBlue,
     InputDataNodeID,
     OutputOverrideCode,
     EvaluateCandidateCode
 } from '../../../const'
 
 // Import types
-import { 
-    TaggedDataInfoList 
+import {
+    TaggedDataInfoList
 } from '../../../pages/projects/[projectID]/experiments/new'
 import Notification, {NotificationProps} from "../../../controller/notification";
-
 
 var debug = require('debug')('flow')
 
@@ -131,8 +131,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
 
         this.setState({
             flow: flow.map(node => {
-
-                // If this is the predictor node
+                // If this is the right predictor node
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
@@ -148,7 +147,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
                     // selected
                     const outcomeData = newState.caoState.outcome
                     let fitness = []
-                    
+
                     Object.keys(outcomeData).forEach(outcome => {
                         if (outcomeData[outcome]) {
                             fitness.push({
@@ -307,8 +306,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                                 predictorNodeID, 
                                 outcomeName, maximize
                         ),
-                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(
-                            node.id, value)
+                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(node.id, value)
                     }
                 }
 
@@ -490,9 +488,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         // Check if Prescriptor Node exists
         const prescriptorNodes = this._getPrescriptorNodes(this.state.flow)
     
-        // If it already exists add edge to that
+        // If there's already a prescriptor node, add edge to that
         if (prescriptorNodes.length != 0) { 
-
             const prescriptorNode = prescriptorNodes[0]
             graphCopy = this._addEdgeToPrescriptorNode(
                 graphCopy, 
@@ -500,7 +497,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 NodeID, prescriptorNode.id
             )
         }
-        
+
         this.setState({flow: graphCopy})
     }
 
@@ -598,9 +595,9 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         // If above conditions are satisfied edit the graph
         let graphCopy = this.state.flow.slice()
     
-        // Create an unique ID
+        // Create a unique ID
         const NodeID = uuid()
-    
+
         // Add a Prescriptor Node
         const flowInstanceElem = this.state.flowInstance.getElements()
         graphCopy.push({
@@ -754,21 +751,14 @@ export default class Flow extends FlowUtils {
                     edgeTypes={EdgeTypes}
                     onNodeDragStop={this.onNodeDragStop.bind(this)}
                 >
-                    <Button size="sm"
-                             onClick={_ => {
-                                 if (this.state.flowInstance != null) {
-                                     this.state.flowInstance.fitView()
-                                 }
-                             }}
-                             style={{
-                                 position: "absolute",
-                                 right: "0px",
-                                 top: "0px",
-                                 zIndex: 1000,
-                                 background: MaximumBlue,
-                                 borderColor: MaximumBlue
-                             }}
-                    >Fit diagram</Button>
+                    <Controls
+                        style={{
+                            position: "absolute",
+                            top: "0px",
+                            left: "0px",
+                            zIndex: 100
+                        }}
+                    />
                     <Background color="#000" gap={5} />
                 </ReactFlow>
             </div>
