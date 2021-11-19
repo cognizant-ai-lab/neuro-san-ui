@@ -94,6 +94,10 @@ class FlowNodeStateUpdateHandler extends FlowState {
     }
 
     extractCheckedOutcomes(predictorNodes) {
+        /*
+        The function extracts all the outcome names
+        that are checked across predictors
+         */
         const outcomes = []
         predictorNodes.forEach(node => {
             const nodeOutcomes = node.data.state.caoState.outcome
