@@ -1,3 +1,5 @@
+import getConfig from 'next/config'
+
 // Define the Base Colors
 export const BaseBlack: string = "#231f20"
 export const MayaBlue: string  = "#4CB3CF"
@@ -11,9 +13,13 @@ export const StatusColors = {
     Queued: "yellow"
 }
 
+const { publicRuntimeConfig } = getConfig()
+
 export const InputDataNodeID: string = 'root'
 export const TRAIN_SERVER: string = "http://localhost:8080"
-export const MD_BASE_URL: string = "http://gateway.staging.unileaf.evolution.ml:30002"
+
+// Set the env var MD_SERVER_URL
+export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url
 export const THIS_SERVER: string = "http://localhost:3000"
 export const AUTHOR: string = "mohak"
 export const DEFAULT_DATA_ROOT_KEY: string = "data"

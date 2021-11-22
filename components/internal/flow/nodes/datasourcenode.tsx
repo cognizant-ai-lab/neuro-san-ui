@@ -43,7 +43,7 @@ export default function DataSourceNode(props): React.ReactElement {
     const data: DataSourceNodeData = props.data
 
     // Extract the DataTag Names
-    const DataSourceNames: string[] = data.TaggedDataList.map(data => data.DataSource.id)
+    const DataSourceNames: string[] = data.TaggedDataList.map(data => data.DataSource.name)
 
     // Create the Component structure
     return <BleuprintCard 
@@ -60,7 +60,7 @@ export default function DataSourceNode(props): React.ReactElement {
                                     event => {
                                         debug("Selected: ", event.target.value)
                                         const filteredSelectedData = data.TaggedDataList.filter(
-                                            data => event.target.value === data.DataSource.id
+                                            data => event.target.value === data.DataSource.name
                                         )[0]
                                         debug("FDS: ", filteredSelectedData)
                                         data.SelfStateUpdateHandler(

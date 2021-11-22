@@ -97,14 +97,14 @@ export default function PrescriptorNode(props): React.ReactElement {
         }
         Object.keys(data.SelectedDataTag.fields).forEach(fieldName => {
             const field = data.SelectedDataTag.fields[fieldName]
-            switch (field.espType) {
-                case CAOType[1]:
+            switch (field.esp_type.toString()) {
+                case "CONTEXT":
                     CAOMapping.context.push(fieldName)
                     break
-                case CAOType[2]:
+                case "ACTION":
                     CAOMapping.action.push(fieldName)
                     break
-                case CAOType[3]:
+                case "OUTCOME":
                     CAOMapping.outcome.push(fieldName)
                     break
             }
@@ -167,7 +167,6 @@ export default function PrescriptorNode(props): React.ReactElement {
     const [tabs] = useState(['Representation', 'Evolution Parameters', 'Objective Configuration', 'Override Evaluator'])
 
     // Create a min/max selector for each desired outcome
-    // TODO: filtering by checked outcomes only currently not working
     const ObjectiveConfigurationPanel = state.evolution.fitness
         .map((metric, _) => {
             return <div className="p-2 grid grid-cols-2 gap-4 mb-2" key={metric.metric_name} >
@@ -178,7 +177,16 @@ export default function PrescriptorNode(props): React.ReactElement {
                     onChange={event => {
                         // Update maximize/minimize status for selected outcome
                         let fitness = state.evolution.fitness
-                            .map(f => {return ({metric_name: f.metric_name, maximize: event.target.value})})
+                            .map(f => {
+                                if (f.metric_name === metric.metric_name) {
+                                    return {
+                                        metric_name: f.metric_name,
+                                        maximize: event.target.value
+                                    }
+                                } else {
+                                    return f
+                                }
+                            })
 
                         console.log('New fitness: ' + JSON.stringify(fitness))
                         // Update settings for this objective in the state
