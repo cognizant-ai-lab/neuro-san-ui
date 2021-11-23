@@ -97,7 +97,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
             <ReactFlowProvider>
                 <Flow
                     ProjectID={props.ProjectId}
-                    TaggedDataList={[...flow[0].data.TaggedDataList]}
                     Flow={flow}
                     ElementsSelectable={false}
                 />

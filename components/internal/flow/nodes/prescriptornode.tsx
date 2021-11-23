@@ -113,9 +113,12 @@ export default function PrescriptorNode(props): React.ReactElement {
 
             let initializedState = {...ParentPrescriptorState}
             initializedState.caoState = CAOState
-            initializedState.network.inputs[0].size = CAOState.context.length
-            initializedState.network.hidden_layers[0].layer_params.units = 2 * CAOState.context.length
-            initializedState.network.outputs[0].size = CAOState.action.length
+
+            if (ParentPrescriptorState.network.hidden_layers[0].layer_params.units === 0) {
+                initializedState.network.inputs[0].size = CAOState.context.length
+                initializedState.network.hidden_layers[0].layer_params.units = 2 * CAOState.context.length
+                initializedState.network.outputs[0].size = CAOState.action.length
+            }
 
             SetParentPrescriptorState({
                 ...initializedState,
