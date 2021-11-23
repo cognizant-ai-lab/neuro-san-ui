@@ -110,6 +110,8 @@ export default function PredictorNode(props): React.ReactElement {
 
     // Fetch the Data Tag
     useEffect(() => {
+        //TODO: If the data node has the data source and tag available we should not fetch it but use that.
+        //TODO: Reason: Data Tags can change and we don't version them explicitly - this will be an easy way of doing that. If they were to change and we had to re-run a run it might fail
         (async () => setTaggedData(await loadDataTag(data.SelectedDataSourceId)))()
     }, [data.SelectedDataSourceId])
 

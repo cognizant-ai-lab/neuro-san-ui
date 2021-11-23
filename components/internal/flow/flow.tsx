@@ -215,8 +215,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
                         }
                     })
 
-                    console.log("SETTING PRES STATE")
-
                     node.data = {
                         ...node.data,
                         ParentPrescriptorState: {
@@ -740,7 +738,6 @@ export default class Flow extends FlowUtils {
     }
 
     render() {
-        console.log(this.state.flow)
         // Build the Contents of the Flow
         return <Container>
 

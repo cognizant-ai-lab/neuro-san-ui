@@ -68,8 +68,6 @@ export default function PrescriptorNode(props): React.ReactElement {
         EvaluatorOverrideCode, UpdateEvaluateOverrideCode
     } = data
 
-     console.log(ParentPrescriptorState)
-
     const updateCAOState = ( event, espType: string ) => {
         const { name, checked } = event.target
         let caoStateCopy = { ...ParentPrescriptorState.caoState }
@@ -87,6 +85,8 @@ export default function PrescriptorNode(props): React.ReactElement {
 
     // Fetch the Data Tag
     useEffect(() => {
+        //TODO: If the data node has the data source and tag available we should not fetch it but use that.
+        //TODO: Reason: Data Tags can change and we don't version them explicitly - this will be an easy way of doing that. If they were to change and we had to re-run a run it might fail
         (async () => setTaggedData(await loadDataTag(data.SelectedDataSourceId)))()
     }, [data.SelectedDataSourceId])
 
@@ -131,7 +131,6 @@ export default function PrescriptorNode(props): React.ReactElement {
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [tabs] = useState(['Representation', 'Evolution Parameters', 'Objective Configuration', 'Override Evaluator'])
-    console.log(ParentPrescriptorState.evolution.fitness)
 
     // Create a min/max selector for each desired outcome
     const ObjectiveConfigurationPanel = ParentPrescriptorState.evolution.fitness
