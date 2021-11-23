@@ -11,9 +11,6 @@ import {
 import { Card as BleuprintCard, Elevation } from "@blueprintjs/core";
 
 // Import types
-import {
-    TaggedDataInfoList
-} from '../../../../pages/projects/[projectID]/experiments/new'
 import loadTaggedDataList from "../../../../controller/fetchdatataglist";
 import {DataSource} from "../../../../controller/datasources/types";
 import {DataTag} from "../../../../controller/datatag/types";
@@ -43,7 +40,8 @@ export default function DataSourceNode(props): React.ReactElement {
 
     // Fetch the Data Sources and the Data Tags
     useEffect(() => {
-        (async () => setTaggedDataList(await loadTaggedDataList(projectId)))()
+        async function loadDataTag() { setTaggedDataList(await loadTaggedDataList(projectId)) }
+        loadDataTag()
     }, [projectId])
 
     // Set the Selected Data Source Id at initialization of data tags
@@ -51,7 +49,7 @@ export default function DataSourceNode(props): React.ReactElement {
         if (taggedDataList.length > 0) {
             data.SelfStateUpdateHandler(
                 taggedDataList[0].DataSource,
-                taggedDataList[0].DataTag
+                taggedDataList[0].LatestDataTag
             )
         }
     }, [taggedDataList])
@@ -79,7 +77,7 @@ export default function DataSourceNode(props): React.ReactElement {
                                                  debug("FDS: ", filteredSelectedData)
                                                  data.SelfStateUpdateHandler(
                                                      filteredSelectedData.DataSource,
-                                                     filteredSelectedData.DataTag
+                                                     filteredSelectedData.LatestDataTag
                                                  )
                                              }
                                          }

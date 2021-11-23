@@ -32,15 +32,12 @@ import {
 
 // Import types
 import {
-    TaggedDataInfoList
-} from '../../../pages/projects/[projectID]/experiments/new'
-import {
     CAOChecked,
     PredictorState
 } from "./nodes/predictornode"
 import Notification, {NotificationProps} from "../../../controller/notification";
 import {PredictorParams} from "../../../predictorinfo";
-import {DataSource, DataSourceResponseWrapper} from "../../../controller/datasources/types";
+import {DataSource} from "../../../controller/datasources/types";
 import {DataTag} from "../../../controller/datatag/types";
 
 var debug = require('debug')('flow')
@@ -52,10 +49,6 @@ that the flow expects.
 export interface FlowProps {
     // The project id this experiment belongs to
     ProjectID: number,
-
-    // The Data sources and data tags available to this
-    // project
-    TaggedDataList: TaggedDataInfoList
 
     // A parent state update handle such that it can
     // update the flow in the parent container.
@@ -72,7 +65,6 @@ export interface FlowProps {
 class FlowState extends React.Component {
     // Declare class Variables
     ProjectID: number
-    TaggedDataList: TaggedDataInfoList
     SetParentState: any
     protected ElementsSelectable: boolean
 
@@ -83,7 +75,6 @@ class FlowState extends React.Component {
 
         // Unpack the variables
         this.ProjectID = props.ProjectID
-        this.TaggedDataList = props.TaggedDataList
         this.SetParentState = props.SetParentState
         this.ElementsSelectable = props.ElementsSelectable
 
@@ -309,8 +300,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 if (node.type === 'datanode') {
                     node.data = {
                         ...node.data,
-                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this),
-                        TaggedDataList: props.TaggedDataList
+                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
                     }
                 } else if (node.type === 'predictornode') {
                     node.data = {
