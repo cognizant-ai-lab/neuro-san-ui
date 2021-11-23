@@ -1,5 +1,6 @@
 import sortByTime from "../utils/sort"
 import Notification, {NotificationProps} from "./notification";
+import {MDServerObject, MDServerResponse} from "./base_types";
 
 // HackyStream implements streaming a specific resource from the MD Server using a regex hack
 // By virtue of this hack it currently stores the whole stream in memory.

@@ -31,13 +31,8 @@ import {
     Position as HandlePosition
 } from 'react-flow-renderer'
 
-// Import Controller
-import {
-    DataTag,
-    CAOType
-} from "../../../../controller/datatag/types"
-
 import { Controlled as CodeMirror } from 'react-codemirror2'
+import {loadDataTag} from "../../../../controller/fetchdatataglist";
 
 // Define an interface for the structure
 // of the nodes
@@ -49,21 +44,19 @@ export interface PrescriptorNodeData {
     readonly NodeID: string,
 
     // This map describes the field names
-    readonly SelectedDataTag: DataTag,
+    readonly SelectedDataSourceId: number
 
     readonly EvaluatorOverrideCode: any,
     readonly UpdateEvaluateOverrideCode: any,
 
-    readonly state: any,
-    readonly setState: any
+    readonly ParentPrescriptorState: any,
+    readonly SetParentPrescriptorState: any
 }
 
 
 export default function PrescriptorNode(props): React.ReactElement {
     /*
     This function is responsible for rendering the prescriptor node.
-    NOTE: THIS RENDERS FORMS ELEMENT BUT NOT THE FORM ITSELF
-    THE FORM MUST BE RENDERED AS A PARENT CONTAINER OF THIS.
     */
 
     const data: PrescriptorNodeData = props.data
@@ -71,103 +64,77 @@ export default function PrescriptorNode(props): React.ReactElement {
     // Unpack the mapping
     const { 
         NodeID, 
-        state, setState,
+        ParentPrescriptorState, SetParentPrescriptorState,
         EvaluatorOverrideCode, UpdateEvaluateOverrideCode
     } = data
 
+     console.log(ParentPrescriptorState)
+
     const updateCAOState = ( event, espType: string ) => {
         const { name, checked } = event.target
-        let caoStateCopy = { ...state.caoState }
+        let caoStateCopy = { ...ParentPrescriptorState.caoState }
 
         caoStateCopy[espType][name] = checked
 
-        setState({
-            ...state,
+        SetParentPrescriptorState({
+            ...ParentPrescriptorState,
             caoState: caoStateCopy
         })
     }
 
+    // Since predictors change
+    const [taggedData, setTaggedData] = useState(null)
+
+    // Fetch the Data Tag
+    useEffect(() => {
+        (async () => setTaggedData(await loadDataTag(data.SelectedDataSourceId)))()
+    }, [data.SelectedDataSourceId])
+
     useEffect(() => {
 
-        // Construct the CAO Map
-        let CAOMapping = {
-            context: [],
-            action: [],
-            outcome: []
+        if (taggedData) {
+
+            // Build the CAO State for the data tag from the given data source id
+            const CAOState = ParentPrescriptorState.caoState
+
+            if (taggedData) {
+                Object.keys(taggedData.fields).forEach(fieldName => {
+                    const field = taggedData.fields[fieldName]
+                    switch (field.esp_type.toString()) {
+                        case "CONTEXT":
+                            CAOState.context[fieldName] = CAOState.context[fieldName] ?? true
+                            break
+                        case "ACTION":
+                            CAOState.action[fieldName] = CAOState.action[fieldName] ?? true
+                            break
+                    }
+                })
+            }
+
+            let initializedState = {...ParentPrescriptorState}
+            initializedState.caoState = CAOState
+            initializedState.network.inputs[0].size = CAOState.context.length
+            initializedState.network.hidden_layers[0].layer_params.units = 2 * CAOState.context.length
+            initializedState.network.outputs[0].size = CAOState.action.length
+
+            SetParentPrescriptorState({
+                ...initializedState,
+                caoState: CAOState
+            })
+
         }
-        Object.keys(data.SelectedDataTag.fields).forEach(fieldName => {
-            const field = data.SelectedDataTag.fields[fieldName]
-            switch (field.esp_type.toString()) {
-                case "CONTEXT":
-                    CAOMapping.context.push(fieldName)
-                    break
-                case "ACTION":
-                    CAOMapping.action.push(fieldName)
-                    break
-                case "OUTCOME":
-                    CAOMapping.outcome.push(fieldName)
-                    break
-            }
-        })
-
-        // Create the initial state for the CAO Map
-        let CAOState = {
-            context: {},
-            action: {},
-            outcome: {}
-        }
-
-        CAOMapping.context.forEach(context => {
-            if (context in state.caoState.context) {
-                CAOState.context[context] = state.caoState.context[context]
-            } else {
-                CAOState.context[context] = true
-            }
-            
-        })
-        CAOMapping.action.forEach(action => {
-            if (action in state.caoState.action) {
-                CAOState.action[action] = state.caoState.action[action]
-            } else {
-                CAOState.action[action] = true
-            }
-        })
-
-        CAOMapping.outcome.forEach(outcome => {
-            if (outcome in state.caoState.outcome) {
-                CAOState.outcome[outcome] = {
-                    checked: state.caoState.outcome[outcome].checked,
-                    maximize: state.caoState.outcome[outcome].maximize
-                }
-            } else {
-                CAOState.outcome[outcome] = {
-                    checked: false,
-                    maximize: true
-                }
-            }
-        })
         
-        let initializedState = {...state}
-        initializedState.caoState = CAOState
-        initializedState.network.inputs[0].size = CAOMapping.context.length
-        initializedState.network.hidden_layers[0].layer_params.units = 2 * CAOMapping.context.length
-        initializedState.network.outputs[0].size = CAOMapping.action.length
-
-        setState({
-            ...initializedState,
-            caoState: CAOState
-        })
-        
-    }, [data.SelectedDataTag])
+    }, [taggedData])
 
     // We want to have a tabbed prescriptor configuration
     // and thus we build the following component
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [tabs] = useState(['Representation', 'Evolution Parameters', 'Objective Configuration', 'Override Evaluator'])
+    console.log(ParentPrescriptorState.evolution.fitness)
 
     // Create a min/max selector for each desired outcome
-    const ObjectiveConfigurationPanel = state.evolution.fitness
+    const ObjectiveConfigurationPanel = ParentPrescriptorState.evolution.fitness
         .map((metric, _) => {
             return <div className="p-2 grid grid-cols-2 gap-4 mb-2" key={metric.metric_name} >
                 <label>{metric.metric_name}: </label>
@@ -176,7 +143,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                     value={metric.maximize}
                     onChange={event => {
                         // Update maximize/minimize status for selected outcome
-                        let fitness = state.evolution.fitness
+                        let fitness = ParentPrescriptorState.evolution.fitness
                             .map(f => {
                                 if (f.metric_name === metric.metric_name) {
                                     return {
@@ -190,10 +157,10 @@ export default function PrescriptorNode(props): React.ReactElement {
 
                         console.log('New fitness: ' + JSON.stringify(fitness))
                         // Update settings for this objective in the state
-                        setState({
-                            ...state,
+                        SetParentPrescriptorState({
+                            ...ParentPrescriptorState,
                             evolution: {
-                                ...state.evolution,
+                                ...ParentPrescriptorState.evolution,
                                 fitness: fitness
                             },
                         })
@@ -244,9 +211,9 @@ export default function PrescriptorNode(props): React.ReactElement {
                 style={{width: "1rem"}}
                 className="mb-2"
                 type="button" onClick={_ => {
-                    let stateCopy = {...state}
+                    let stateCopy = {...ParentPrescriptorState}
                     stateCopy.network.hidden_layers.splice(idx, 1)
-                    setState(stateCopy)
+                    SetParentPrescriptorState(stateCopy)
                 }}><MdDelete /></button>
             <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
             >
@@ -257,9 +224,9 @@ export default function PrescriptorNode(props): React.ReactElement {
                         step="1" 
                         value={ hiddenLayer.layer_params.units }
                         onChange={event => {
-                            let modifiedHiddenLayerState = {...state}
+                            let modifiedHiddenLayerState = {...ParentPrescriptorState}
                             modifiedHiddenLayerState.network.hidden_layers[idx].layer_params.units = parseInt(event.target.value)
-                            setState(modifiedHiddenLayerState)
+                            SetParentPrescriptorState(modifiedHiddenLayerState)
                         }}
                     /> 
                 </div>
@@ -269,9 +236,9 @@ export default function PrescriptorNode(props): React.ReactElement {
                         defaultValue="tanh"
                         value={ hiddenLayer.layer_params.activation }
                         onChange={event => {
-                            let modifiedHiddenLayerState = {...state}
+                            let modifiedHiddenLayerState = {...ParentPrescriptorState}
                             modifiedHiddenLayerState.network.hidden_layers[idx].layer_params.activation = event.target.value
-                            setState(modifiedHiddenLayerState)
+                            SetParentPrescriptorState(modifiedHiddenLayerState)
                         }}
                     >
                         {ActivationFunctions.map((activationFn, _) => <option value={activationFn}>{activationFn}</option>)}
@@ -285,16 +252,16 @@ export default function PrescriptorNode(props): React.ReactElement {
                         defaultChecked={ true }
                         checked={ hiddenLayer.layer_params.use_bias }
                         onChange={event => {
-                            let modifiedHiddenLayerState = {...state}
+                            let modifiedHiddenLayerState = {...ParentPrescriptorState}
                             modifiedHiddenLayerState.network.hidden_layers[idx].layer_params.use_bias = event.target.checked
-                            setState(modifiedHiddenLayerState)
+                            SetParentPrescriptorState(modifiedHiddenLayerState)
                         }}
                     />
                 </div>
             </div>
         </div>
     )
-    const NeuralNetworkConfiguration = state.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
+    const NeuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
 
     const PrescriptorRepresentationPanel = <Card.Body>
 
@@ -302,14 +269,14 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                     <label>Representation: </label>
                                                     <select 
                                                         name={ `${NodeID}-representation` } 
-                                                        onChange={ event => setState({
-                                                            ...state,
+                                                        onChange={ event => SetParentPrescriptorState({
+                                                            ...ParentPrescriptorState,
                                                             LEAF: {
-                                                                ...state.LEAF,
+                                                                ...ParentPrescriptorState.LEAF,
                                                                 representation: event.target.value
                                                             }
                                                         })} 
-                                                        value={state.LEAF.representation}
+                                                        value={ParentPrescriptorState.LEAF.representation}
                                                         className="w-32" >
                                                             <option value="NNWeights">Neural Network</option>
                                                             <option disabled value="RuleSet">Rules (Coming Soon)</option>
@@ -318,20 +285,20 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 <hr />
                                                 <div className="mb-4">
                                                     {
-                                                        state.LEAF.representation === "NNWeights" && <div>
+                                                        ParentPrescriptorState.LEAF.representation === "NNWeights" && <div>
                                                             {NeuralNetworkConfiguration}
                                                             <button type="button" className="float-right" onClick={_ => {
-                                                                let stateCopy = {...state}
+                                                                let stateCopy = {...ParentPrescriptorState}
                                                                 stateCopy.network.hidden_layers.push({
-                                                                    layer_name: `hidden-${state.network.hidden_layers.length}`,
+                                                                    layer_name: `hidden-${ParentPrescriptorState.network.hidden_layers.length}`,
                                                                     layer_type: 'dense',
                                                                     layer_params: {
-                                                                        units: 2 * Object.keys(state.caoState.context).length,
+                                                                        units: 2 * Object.keys(ParentPrescriptorState.caoState.context).length,
                                                                         activation: 'tanh',
                                                                         use_bias: true
                                                                     }  
                                                                 })
-                                                                setState(stateCopy)
+                                                                SetParentPrescriptorState(stateCopy)
                                                             }}><BiPlusMedical /></button><br />
                                                             <hr />
                                                             <div key={`${NodeID}-op-layer`}>
@@ -342,11 +309,11 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                                         <label className="mr-2">Activation: </label>
                                                                         <select 
                                                                             defaultValue="relu"
-                                                                            value={ state.network.outputs[0].activation }
+                                                                            value={ ParentPrescriptorState.network.outputs[0].activation }
                                                                             onChange={event => {
-                                                                                let modifiedOpLayerState = {...state}
+                                                                                let modifiedOpLayerState = {...ParentPrescriptorState}
                                                                                 modifiedOpLayerState.network.outputs[0].activation = event.target.value
-                                                                                setState(modifiedOpLayerState)
+                                                                                SetParentPrescriptorState(modifiedOpLayerState)
                                                                             }}
                                                                         >
                                                                             {ActivationFunctions.map((activationFn, _) => <option value={activationFn}>{activationFn}</option>)}
@@ -358,11 +325,11 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                                         <input 
                                                                             type="checkbox" 
                                                                             defaultChecked={ true }
-                                                                            checked={ state.network.outputs[0].use_bias }
+                                                                            checked={ ParentPrescriptorState.network.outputs[0].use_bias }
                                                                             onChange={event => {
-                                                                                let modifiedOpLayerState = {...state}
+                                                                                let modifiedOpLayerState = {...ParentPrescriptorState}
                                                                                 modifiedOpLayerState.network.outputs[0].use_bias = event.target.checked
-                                                                                setState(modifiedOpLayerState)
+                                                                                SetParentPrescriptorState(modifiedOpLayerState)
                                                                             }}
                                                                         />
                                                                     </div>
@@ -384,12 +351,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 10 }
-                                                        value={ state.evolution.nb_generations }
+                                                        value={ ParentPrescriptorState.evolution.nb_generations }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         nb_generations: parseInt(event.target.value)
                                                                     }
                                                                 })
@@ -402,12 +369,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 10 }
-                                                        value={ state.evolution.population_size }
+                                                        value={ ParentPrescriptorState.evolution.population_size }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         population_size: parseInt(event.target.value)
                                                                     }
                                                                 })
@@ -420,12 +387,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 2 }
-                                                        value={ state.evolution.nb_elites }
+                                                        value={ ParentPrescriptorState.evolution.nb_elites }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         nb_elites: parseInt(event.target.value)
                                                                     }
                                                                 })
@@ -435,12 +402,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Parent Selection</label>
                                                     <select defaultValue="tournament"
-                                                        value={ state.evolution.parent_selection }
+                                                        value={ ParentPrescriptorState.evolution.parent_selection }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         parent_selection: event.target.value
                                                                     }
                                                                 })
@@ -455,12 +422,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.8 }
-                                                        value={ state.evolution.remove_population_pct }
+                                                        value={ ParentPrescriptorState.evolution.remove_population_pct }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         remove_population_pct: parseFloat(event.target.value)
                                                                     }
                                                                 })
@@ -470,12 +437,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Mutation Type</label>
                                                     <select defaultValue="gaussian_noise_percentage"
-                                                        value={ state.evolution.mutation_type }
+                                                        value={ ParentPrescriptorState.evolution.mutation_type }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         mutation_type: event.target.value
                                                                     }
                                                                 })
@@ -492,12 +459,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.1 }
-                                                        value={ state.evolution.mutation_probability }
+                                                        value={ ParentPrescriptorState.evolution.mutation_probability }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         mutation_probability: parseFloat(event.target.value)
                                                                     }
                                                                 })
@@ -510,12 +477,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.1 }
-                                                        value={ state.evolution.mutation_factor }
+                                                        value={ ParentPrescriptorState.evolution.mutation_factor }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         mutation_factor: parseFloat(event.target.value)
                                                                     }
                                                                 })
@@ -525,12 +492,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Initialization Distribution</label>
                                                     <select defaultValue="orthogonal"
-                                                        value={ state.evolution.initialization_distribution }
+                                                        value={ ParentPrescriptorState.evolution.initialization_distribution }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         initialization_distribution: event.target.value
                                                                     }
                                                                 })
@@ -548,12 +515,12 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 1 }
-                                                        value={ state.evolution.initialization_range }
+                                                        value={ ParentPrescriptorState.evolution.initialization_range }
                                                         onChange={
-                                                            event => setState({
-                                                                    ...state,
+                                                            event => SetParentPrescriptorState({
+                                                                    ...ParentPrescriptorState,
                                                                     evolution: {
-                                                                        ...state.evolution,
+                                                                        ...ParentPrescriptorState.evolution,
                                                                         initialization_range: parseFloat(event.target.value)
                                                                     }
                                                                 })
@@ -572,7 +539,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                 
             <Card border="warning" style={{ height: "100%" }}>
                     <Card.Body className="flex justify-center content-center">
-                        <Text className="mr-2">{ state.selectedPredictor || "Prescriptor" }</Text>
+                        <Text className="mr-2">{ ParentPrescriptorState.selectedPredictor || "Prescriptor" }</Text>
                         <Popover
                         content={
                             <>
@@ -608,14 +575,14 @@ export default function PrescriptorNode(props): React.ReactElement {
                                 className="overflow-y-auto h-40 text-xs">
                                     <Text className="mb-2">Context</Text>
                                     {
-                                        Object.keys(state.caoState.context).map(element => 
+                                        Object.keys(ParentPrescriptorState.caoState.context).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
                                             <input 
                                             name={element}
                                             type="checkbox" 
                                             defaultChecked={true}
-                                            checked={state.caoState.context[element]}
+                                            checked={ParentPrescriptorState.caoState.context[element]}
                                             onChange={event => updateCAOState(event, "context")}/>
                                         </div>)
                                     }
@@ -631,7 +598,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                 className="overflow-y-auto h-40 text-xs">
                                     <Text className="mb-2">Actions</Text>
                                     {
-                                        Object.keys(state.caoState.action).map(element => 
+                                        Object.keys(ParentPrescriptorState.caoState.action).map(element =>
                                         <div 
                                         key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
@@ -639,7 +606,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                             name={element}
                                             type="checkbox" 
                                             defaultChecked={true}
-                                            checked={state.caoState.action[element]}
+                                            checked={ParentPrescriptorState.caoState.action[element]}
                                             onChange={event => updateCAOState(event, "action")}/>
                                         </div>)
                                     }

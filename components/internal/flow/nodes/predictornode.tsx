@@ -91,8 +91,6 @@ const SliderComponent = Slider.createSliderWithTooltip(Slider);
 export default function PredictorNode(props): React.ReactElement {
     /*
     This function is responsible to render the Predictor Node
-    NOTE: THIS RENDERS FORMS ELEMENT BUT NOT THE FORM ITSELF
-    THE FORM MUST BE RENDERED AS A PARENT CONTAINER OF THIS.
     */
 
     const data: PredictorNodeData = props.data
@@ -109,8 +107,6 @@ export default function PredictorNode(props): React.ReactElement {
 
     // Since predictors change
     const [taggedData, setTaggedData] = useState(null)
-
-    console.log("PPS: ", ParentPredictorState)
 
     // Fetch the Data Tag
     useEffect(() => {
@@ -158,7 +154,7 @@ export default function PredictorNode(props): React.ReactElement {
                             CAOState.action[fieldName] = CAOState.action[fieldName] ?? true
                             break
                         case "OUTCOME":
-                            CAOState.outcome[fieldName] = CAOState.outcome[fieldName] ?? true
+                            CAOState.outcome[fieldName] = CAOState.outcome[fieldName] ?? false
                             break
                     }
                 })
@@ -294,28 +290,28 @@ export default function PredictorNode(props): React.ReactElement {
 
     }
 
-    const onParamChange = event => {
+    const onParamChange = (event, paramName) => {
         /* 
         This function is used to update the state of the predictor
         parameters.
         */
-        const { name, value } = event.target
+        const { value } = event.target
         let paramsCopy = {...ParentPredictorState.predictorParams}
-        paramsCopy[name].value = value
+        paramsCopy[paramName].value = value
         SetParentPredictorState({
             ...ParentPredictorState,
             predictorParams: paramsCopy
         })
     }
 
-    const onPredictorParamCheckBoxChange = event => {
+    const onPredictorParamCheckBoxChange = (event, paramName) => {
         /* 
         This function is used to update the state of the predictor
         parameter checkboxes.
         */
-        const { name, checked } = event.target
+        const { checked } = event.target
         let paramsCopy = {...ParentPredictorState.predictorParams}
-        paramsCopy[name].value = checked
+        paramsCopy[paramName].value = checked
         SetParentPredictorState({
             ...ParentPredictorState,
             predictorParams: paramsCopy
@@ -435,43 +431,39 @@ export default function PredictorNode(props): React.ReactElement {
                                                     <label className="capitalize">{ param }: </label>
                                                     { 
                                                         ParentPredictorState.predictorParams[param].type === "int" &&
-                                                        <input 
-                                                        name={param} 
+                                                        <input
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ ParentPredictorState.predictorParams[param].default_value.toString() }
                                                         value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                        onChange={onParamChange}
+                                                        onChange={event => onParamChange(event, param)}
                                                         /> 
                                                     }
                                                     { 
                                                         ParentPredictorState.predictorParams[param].type === "float" &&
-                                                        <input 
-                                                        name={param} 
+                                                        <input
                                                         type="number" 
                                                         step="0.1"
                                                         defaultValue={ ParentPredictorState.predictorParams[param].default_value.toString() }
                                                         value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                        onChange={onParamChange}
+                                                        onChange={event => onParamChange(event, param)}
                                                         /> 
                                                     }
                                                     { 
                                                         ParentPredictorState.predictorParams[param].type === "bool" && (
                                                         <input 
-                                                            type="checkbox" 
-                                                            name={param} 
+                                                            type="checkbox"
                                                             defaultChecked={ Boolean(ParentPredictorState.predictorParams[param].default_value) }
                                                             checked={ Boolean(ParentPredictorState.predictorParams[param].value) }
-                                                            onChange={onPredictorParamCheckBoxChange}
+                                                            onChange={event => onPredictorParamCheckBoxChange(event, param)}
                                                         />
                                                         )
                                                     }
                                                     { 
                                                         typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
-                                                        <select 
-                                                            name={param}
+                                                        <select
                                                             value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                            onChange={onParamChange}
+                                                            onChange={event => onParamChange(event, param)}
                                                             className="w-32">
                                                             {
                                                                 // This requirement to wrap the type in an Array arises

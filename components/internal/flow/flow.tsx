@@ -40,6 +40,8 @@ import {
 } from "./nodes/predictornode"
 import Notification, {NotificationProps} from "../../../controller/notification";
 import {PredictorParams} from "../../../predictorinfo";
+import {DataSource, DataSourceResponseWrapper} from "../../../controller/datasources/types";
+import {DataTag} from "../../../controller/datatag/types";
 
 var debug = require('debug')('flow')
 
@@ -105,7 +107,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
          */
         const outcomes = []
         predictorNodes.forEach(node => {
-            const nodeOutcomes = node.data.state.caoState.outcome
+            const nodeOutcomes = node.data.ParentPredictorState.caoState.outcome
             Object.keys(nodeOutcomes).forEach(outcome => {
                 if (nodeOutcomes[outcome]) {
                     outcomes.push(outcome)
@@ -115,7 +117,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
         return outcomes;
     }
 
-    DataNodeStateUpdateHandler(dataSourceId: number) {
+    DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
         This handler is used to update the predictor
         and prescriptor nodes with the new data tag
@@ -130,14 +132,15 @@ class FlowNodeStateUpdateHandler extends FlowState {
                     debug("Recreating Data node: ", node.type)
                     node.data = {
                         ...node.data,
-                        SelectedDataSourceId: dataSourceId
+                        DataSource: dataSource,
+                        DataTag: dataTag,
                     }
                 }
                 if (node.type === 'predictornode' || node.type === 'prescriptornode') {
                     debug("Recreating node: ", node.type)
                     node.data = {
                         ...node.data,
-                        // SelectedDataTag: state.LatestDataTag,
+                        SelectedDataSourceId: dataSource.id
                     }
                 }
                 return node
@@ -201,18 +204,25 @@ class FlowNodeStateUpdateHandler extends FlowState {
                     checkedOutcomes = checkedOutcomes.filter((value, index, self) => self.indexOf(value) === index)
 
                     let fitness = checkedOutcomes.map(outcome => {
+
+                        // Maintain the state if it exists otherwise set maximize to true
+                        const maximize = node.data.ParentPrescriptorState.evolution.fitness.filter(
+                            outcomeDict => outcomeDict.metric_name === outcome
+                        ).map(outcomeDict => outcomeDict.maximize)
                         return {
                             metric_name: outcome,
-                            maximize: "true"
+                            maximize: maximize[0] ?? "true"
                         }
                     })
 
+                    console.log("SETTING PRES STATE")
+
                     node.data = {
                         ...node.data,
-                        state: {
-                            ...node.data.state,
+                        ParentPrescriptorState: {
+                            ...node.data.ParentPrescriptorState,
                             evolution: {
-                                ...node.data.state.evolution,
+                                ...node.data.ParentPrescriptorState.evolution,
                                 fitness
                             }
                         }
@@ -274,7 +284,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
-                        state: newState
+                        ParentPrescriptorState: newState
                     }
                 }
                 return node
@@ -307,12 +317,12 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 } else if (node.type === 'predictornode') {
                     node.data = {
                         ...node.data,
-                        setState: state => this.PredictorSetStateHandler(state, node.id)
+                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id)
                     }
                 } else if (node.type === 'prescriptornode') {
                     node.data = {
                         ...node.data,
-                        setState: state => this.PrescriptorSetStateHandler(state, node.id)
+                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id)
                     }
                 } else if (node.type === "prescriptoredge") {
                     node.data = {
@@ -455,7 +465,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             type: 'predictornode',
             data: { 
                 NodeID: NodeID,
-                SelectedDataSourceId: this.state.flow[0].data.SelectedDataSourceId,
+                SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPredictorState: this._getInitialPredictorState(),
                 SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID)
             },
@@ -541,8 +551,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 "outcome": {}
             }
         }
-
     }
+
     _addPrescriptorNode() {
         /*
         This function adds a prescriptor node to the Graph. The only
@@ -601,9 +611,9 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             type: "prescriptornode",
             data:  { 
                 NodeID: NodeID,
-                SelectedDataTag: this.state.flow[0].data.SelectedDataTag.LatestDataTag,
-                state: this._getInitialPrescriptorState(fitness),
-                setState: state => this.PrescriptorSetStateHandler(state, NodeID),
+                SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
+                ParentPrescriptorState: this._getInitialPrescriptorState(fitness),
+                SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
                 UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value)
             },
@@ -661,10 +671,10 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 if (node.type === "prescriptornode") {
                     node.data = {
                         ...node.data,
-                        state: {
-                            ...node.data.state,
+                        ParentPrescriptorState: {
+                            ...node.data.ParentPrescriptorState,
                             evolution: {
-                                ...node.data.state.evolution,
+                                ...node.data.ParentPrescriptorState.evolution,
                                 fitness
                             }
                         }
@@ -730,6 +740,7 @@ export default class Flow extends FlowUtils {
     }
 
     render() {
+        console.log(this.state.flow)
         // Build the Contents of the Flow
         return <Container>
 
