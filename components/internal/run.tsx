@@ -99,6 +99,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     ProjectID={props.ProjectId}
                     Flow={flow}
                     ElementsSelectable={false}
+                    onLoad={reactFlowInstance => {reactFlowInstance.fitView()}}
                 />
             </ReactFlowProvider>
         </div>
