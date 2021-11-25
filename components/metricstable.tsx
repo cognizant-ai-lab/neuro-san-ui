@@ -1,5 +1,6 @@
 import NewBar from "./newbar";
 import {Table} from "evergreen-ui"
+import {node} from "prop-types";
 
 export interface MetricstableProps {
 
@@ -13,7 +14,7 @@ export default function MetricsTable(props: MetricstableProps) {
     let predictorRenders = []
     Object.keys(PredictorRunData).forEach(nodeID => {
 
-        const metrics = PredictorRunData[nodeID]
+        const metrics = PredictorRunData[nodeID].metrics
         let cells = Object.keys(metrics).map((metricName) => {
                 const value = metrics[metricName]
                 return <Table.Row key={`${nodeID}-${metricName}`}>
@@ -24,7 +25,8 @@ export default function MetricsTable(props: MetricstableProps) {
         )
         predictorRenders.push(
             <div>
-                <h4 className="mt-4 mb-4">Predictor {nodeID}</h4>
+                <h4 className="mt-4 mb-4">Predictor with Objectives: {PredictorRunData[nodeID].objectives}</h4>
+                <p>Node ID: {nodeID}</p>
                 <Table.Body>
                     <Table.Head>
                         <Table.TextCell>Metric</Table.TextCell>

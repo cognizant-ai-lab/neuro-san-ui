@@ -150,14 +150,13 @@ export default function PrescriptorNode(props): React.ReactElement {
                                 if (f.metric_name === metric.metric_name) {
                                     return {
                                         metric_name: f.metric_name,
-                                        maximize: event.target.value
+                                        maximize: event.target.value === "true"
                                     }
                                 } else {
                                     return f
                                 }
                             })
 
-                        console.log('New fitness: ' + JSON.stringify(fitness))
                         // Update settings for this objective in the state
                         SetParentPrescriptorState({
                             ...ParentPrescriptorState,
