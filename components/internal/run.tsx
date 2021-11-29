@@ -24,7 +24,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const [predictorPlotData, setPredictorPlotData] = useState(null)
     const [prescriptorPlotData, setPrescriptorPlotData] = useState(null)
-    const [artifacts, setArtifacts] = useState(null)
+    const [flowInstance, setFlowInstance] = useState(null)
 
     const flow = JSON.parse(props.Run.flow)
 
@@ -44,12 +44,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
                         setPredictorPlotData(constructedPredictorResults)
                         setPrescriptorPlotData(constructedPrescriptorResults)
                     }
-
-                    if (fetchedRun.output_artifacts) {
-                        setArtifacts(JSON.parse(fetchedRun.output_artifacts))
-                    }
-
-
                 }
 
             }, 10000)
@@ -60,6 +54,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }
 
         },[])
+
+    // Fit flow when displaying Run
+    useEffect(() => {
+        if (flowInstance) {
+            flowInstance.fitView()
+        }
+    }, [flow])
 
     let PlotDiv = []
     if (predictorPlotData) {
@@ -99,6 +100,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     ProjectID={props.ProjectId}
                     Flow={flow}
                     ElementsSelectable={false}
+                    onLoad={reactFlowInstance => {setFlowInstance(reactFlowInstance)}}
                 />
             </ReactFlowProvider>
         </div>
