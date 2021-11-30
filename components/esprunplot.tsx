@@ -1,7 +1,6 @@
 import NewBar from "./newbar";
 import {Table} from "evergreen-ui";
 import {ResponsiveLine} from "@nivo/line";
-import {ResponsiveScatterPlot} from '@nivo/scatterplot'
 import {useEffect, useMemo, useState} from "react";
 import { Slider } from 'antd';
 import {Button} from "react-bootstrap";
@@ -17,7 +16,13 @@ export interface EspRunPlotProps {
 
 export interface ParetoPlotProps {
 
+    // The pareto front data
     readonly Pareto: any
+
+    // A state handler for the parent object whoever needs to use it
+    // that maps the node id of the prescriptor(ESP Experiment) to the
+    // selected CID within that experiment so it can be used for inference
+    readonly PrescriptorNodeToCIDMapUpdater: any
 
 }
 
@@ -125,6 +130,7 @@ function ParetoPlot(props) {
     // Unpack props
     const { xLabel, yLabel } = props;
     const data = props.data
+    const selectedCIDStateUpdator = props.SelectedCIDStateUpdator
 
     // Compute the min and the max of all the values for the plot below
     // We do this rather than letting the plot decide because while animating
@@ -200,6 +206,15 @@ function ParetoPlot(props) {
     const marks = {}
     marks[numGen + 1] = `All Gen`
 
+    // On Click handler - only rendered at the last generation as those are the
+    // candidates we persist
+    let onClickHandler = null
+    if (selectedGen === numGen) {
+        onClickHandler = (node, _) => {
+            selectedCIDStateUpdator(node.data.cid)
+        }
+    }
+
     return <>
         <div className="flex mt-4 ">
             <Button
@@ -221,7 +236,7 @@ function ParetoPlot(props) {
                                 }
                                 return selectedGen + 1
                             })
-                        }, 500)
+                        }, 100)
                         setPlayingInterval(interval)
                     } else {
                         // If the timer was already started - meaning the stop button is
@@ -256,7 +271,7 @@ function ParetoPlot(props) {
         </div>
 
 
-        <ResponsiveScatterPlot
+        <ResponsiveLine
             data={cachedDataByGen[`Gen ${selectedGen}`] ?? data}
             margin={{top: 60, right: 140, bottom: 70, left: 90}}
             xScale={{type: 'linear', min: minX, max: maxX}}
@@ -309,6 +324,7 @@ function ParetoPlot(props) {
                     ]
                 }
             ]}
+            onClick={onClickHandler}
         />
     </>
 }
@@ -329,7 +345,19 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
             <Table.Row style={{height: "100%"}} key={`${nodeID}-pareto`} >
                 <Table.TextCell>
                     <div className="pl-4 pb-28" style={{height: "35rem", width: "100%"}}>
-                        <ParetoPlot data={node.data} xLabel={objectives[0]} yLabel={objectives[1]} />
+                        <ParetoPlot
+                            data={node.data}
+                            xLabel={objectives[0]}
+                            yLabel={objectives[1]}
+                            SelectedCIDStateUpdator={(cid: string) => {
+                                props.PrescriptorNodeToCIDMapUpdater(value => {
+                                    return {
+                                        ...value,
+                                        nodeID: cid
+                                    }
+                                })
+                            }}
+                        />
                     </div>
                 </Table.TextCell>
             </Table.Row>

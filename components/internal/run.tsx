@@ -26,6 +26,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [prescriptorPlotData, setPrescriptorPlotData] = useState(null)
     const [paretoPlotData, setParetoPlotData] = useState({})
     const [flowInstance, setFlowInstance] = useState(null)
+    const [nodeToCIDMap, updateNodeToCIDMap] = useState({})
 
     const flow = JSON.parse(props.Run.flow)
 
@@ -63,7 +64,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     if (Object.keys(paretoPlotData).length > 0) {
-        PlotDiv.push(<ParetoPlotTable Pareto={paretoPlotData} />)
+        PlotDiv.push(<ParetoPlotTable Pareto={paretoPlotData} PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap} />)
     }
 
     if (!predictorPlotData && !prescriptorPlotData) {
@@ -89,6 +90,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
             </Button>
         )
     }
+
+    console.log(nodeToCIDMap)
 
     return <div className="mr-8 ml-8">
         {/* Create the title bar */}
