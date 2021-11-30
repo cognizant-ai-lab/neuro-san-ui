@@ -5,7 +5,7 @@ import {
     constructRunMetricsForRunPlot
 } from "../../controller/run/results";
 import MetricsTable from "../metricstable";
-import ESPRunPlot, {ParetoPlot} from "../esprunplot";
+import ESPRunPlot, {ParetoPlotTable} from "../esprunplot";
 import {Button} from "react-bootstrap";
 import {MaximumBlue} from "../../const";
 import ClipLoader from "react-spinners/ClipLoader";
@@ -24,41 +24,24 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const [predictorPlotData, setPredictorPlotData] = useState(null)
     const [prescriptorPlotData, setPrescriptorPlotData] = useState(null)
-    const [paretoPlotData, setParetoPlotData] = useState(null)
+    const [paretoPlotData, setParetoPlotData] = useState({})
     const [artifacts, setArtifacts] = useState(null)
 
     const flow = JSON.parse(props.Run.flow)
 
+    const constructMetrics = metrics => {
+        let [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(flow, JSON.parse(props.Run.metrics))
+        setPredictorPlotData(constructedPredictorResults)
+        setPrescriptorPlotData(constructedPrescriptorResults)
+        setParetoPlotData(pareto)
+    }
 
     // Kick off a timer that updates the plot data and the artifacts at frequent intervals
     useEffect(() => {
 
-            const RunTimer = setInterval(async () => {
-                // Invoke the Run controller to keep triggering the fetch to update the run
-                const runs: Runs = await BrowserFetchRuns(null, props.Run.id)
-
-                if (runs.length === 1) {
-                    const fetchedRun: Run = runs[0]
-                    if (fetchedRun.metrics) {
-                        let [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(flow, JSON.parse(fetchedRun.metrics))
-                        setPredictorPlotData(constructedPredictorResults)
-                        setPrescriptorPlotData(constructedPrescriptorResults)
-                        setParetoPlotData(pareto)
-                        console.log(pareto)
-                    }
-
-                    if (fetchedRun.output_artifacts) {
-                        setArtifacts(JSON.parse(fetchedRun.output_artifacts))
-                    }
-
-
-                }
-
-            }, 10000)
-
-            return function cleanup() {
-                debug("Cleaning Up");
-                clearInterval(RunTimer)
+            // Build plot data if metrics exist
+            if (props.Run.metrics) {
+                constructMetrics(props.Run.metrics)
             }
 
         },[])
@@ -72,8 +55,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
         PlotDiv.push(<ESPRunPlot PrescriptorRunData={prescriptorPlotData} />)
     }
 
-    if (paretoPlotData) {
-        PlotDiv.push(<ParetoPlot Pareto={paretoPlotData} />)
+    if (Object.keys(paretoPlotData).length > 0) {
+        PlotDiv.push(<ParetoPlotTable Pareto={paretoPlotData} />)
     }
 
     if (!predictorPlotData && !prescriptorPlotData) {
@@ -84,13 +67,16 @@ export default function RunPage(props: RunProps): React.ReactElement {
         )
     } else {
         PlotDiv.push(
-            <Button size="lg" className="mt-4 mb-4 float-right"
-                // onClick={}
+            <Button size="lg" className="mt-4 mb-4"
                     type="button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
+                    style={{background: MaximumBlue, borderColor: MaximumBlue, width: "100%"}}
             >
-                <Link href={`/projects/${props.ProjectId}/experiments/${props.Run.experiment_id}/run/${props.Run.id}/ui`}>
-                    <a>Create UI</a>
+                <Link
+                    href={`/projects/${props.ProjectId}/experiments/${props.Run.experiment_id}/run/${props.Run.id}/ui`}
+                >
+                    <a style={{
+                        color: "white"
+                    }}>Go to Decision Making System</a>
                 </Link>
 
             </Button>
