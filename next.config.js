@@ -17,7 +17,7 @@ module.exports = {
   // Will be available on both server and client
   publicRuntimeConfig: {
     // if the md_server_url is not set it defaults to staging
-    md_server_url: process.env.MD_SERVER_URL ?? "http://gateway.staging.unileaf.evolution.ml:30002",
+    md_server_url: process.env.MD_SERVER_URL,
   },
   entry: path.resolve(__dirname, 'main.js'),
     output: {

@@ -25,6 +25,9 @@ const NAV_ITEMS_COLOR: string = "white";
 export interface NavbarProps {
     // Logo is the title of the NavBar
     readonly Logo: string,
+
+    // The name of the Page this component is being rendered in
+    readonly PageName: string
 }
 
 export function Navbar(props: NavbarProps): React.ReactElement {
@@ -51,7 +54,6 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                     </Nav.Item>
 
                 </Nav>
-
             </BootstrapNavbar.Collapse>
         </Container>
     </BootstrapNavbar>
