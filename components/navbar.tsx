@@ -24,7 +24,7 @@ const NAV_ITEMS_COLOR: string = "white";
 // Declare the Props Interface
 export interface NavbarProps {
     // Logo is the title of the NavBar
-    readonly Logo: string,
+    readonly Logo: string
 }
 
 export function Navbar(props: NavbarProps): React.ReactElement {
@@ -51,7 +51,6 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                     </Nav.Item>
 
                 </Nav>
-
             </BootstrapNavbar.Collapse>
         </Container>
     </BootstrapNavbar>

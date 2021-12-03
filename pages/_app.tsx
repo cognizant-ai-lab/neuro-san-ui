@@ -13,6 +13,9 @@ import { Container } from 'react-bootstrap'
 // Import React
 import React from 'react'
 
+// Import Next Components
+import Head from 'next/head'
+
 // Import Components
 import Navbar from "../components/navbar"
 import 'react-pro-sidebar/dist/css/styles.css';
@@ -22,12 +25,32 @@ import { LOGO } from "../const"
 
 export default function LEAF({ Component, pageProps }): React.ReactElement {
 
-  return (
-  <div>
-    <Navbar Logo={LOGO}></Navbar>
+  let Body
+  if (Component.name === "Index") {
+    Body = <div>
+      <Component {...pageProps} />
+    </div>
+  } else {
+    Body = <>
+      <Navbar Logo={LOGO}/>
       <Container>
         <Component {...pageProps} />
       </Container>
+    </>
+
+  }
+
+  return (
+  <div>
+    <Head>
+      <title>Unileaf</title>
+      <meta name="description" content="Evolutionary AI" />
+      <link rel="icon" href="/leaffavicon.png" />
+    </Head>
+    <body>
+      { Body }
+    </body>
+
   </div>
   )
 }
