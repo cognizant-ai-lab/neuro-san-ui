@@ -19,7 +19,7 @@ export const InputDataNodeID: string = 'root'
 export const TRAIN_SERVER: string = "http://localhost:8080"
 
 // Set the env var MD_SERVER_URL
-export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url ?? "http://gateway.staging.unileaf.evolution.ml:30002"
+export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url
 export const THIS_SERVER: string = "http://localhost:3000"
 export const AUTHOR: string = "mohak"
 export const DEFAULT_DATA_ROOT_KEY: string = "data"
