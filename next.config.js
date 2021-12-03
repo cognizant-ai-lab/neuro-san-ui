@@ -36,7 +36,7 @@ module.exports = {
                 patterns: [
                     {
                         from: 'node_modules/onnxruntime-web/dist/*.wasm',
-                        to: 'static/chunks/pages/projects/[projectID]/experiments/[experimentID]/run/[runID]/[name].[ext]'
+                        to: 'static/chunks/pages/projects/[projectID]/experiments/[experimentID]/runs/[runID]/prescriptors/[prescriptorID]/[name].[ext]'
                     }
                 ]
             })

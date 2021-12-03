@@ -116,7 +116,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     style={{background: MaximumBlue, borderColor: MaximumBlue, width: "100%"}}
             >
                 <Link
-                    href={`/projects/${props.ProjectId}/experiments/${props.Run.experiment_id}/run/${props.Run.id}/ui/${Object.values(nodeToCIDMap)[0]}`}
+                    href={`/projects/${props.ProjectId}/experiments/${props.Run.experiment_id}/runs/${props.Run.id}/prescriptors/${Object.values(nodeToCIDMap)[0]}`}
                 >
                     <a style={{
                         color: "white"
