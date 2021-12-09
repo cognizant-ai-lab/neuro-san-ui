@@ -23,7 +23,7 @@ import 'react-pro-sidebar/dist/css/styles.css';
 
 // import Constants
 import { LOGO } from "../const"
-// import {useRouter} from "next/router";
+import {useRouter} from "next/router";
 
 export default function LEAF({ Component, pageProps }): React.ReactElement {
 
