@@ -275,7 +275,7 @@ export default function NewProject(props: NewProps) {
                         <Form.Control 
                             name="region" 
                             type="text" 
-                            placeholder="us-east-2"
+                            placeholder="(one of the AWS regions, for example us-east-2)"
                             onChange={
                                 event => setInputFields(
                                     {...inputFields, region: event.target.value}
