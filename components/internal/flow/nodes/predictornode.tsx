@@ -290,6 +290,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                 onChange={ event => onPredictorTypeChange(event.target.value)}
                                                 className="w-32" >
                                                     <option value="regressor">Regressor</option>
+                                                    <option disabled value="byop">Bring your own (Coming Soon)</option>
                                                     <option disabled value="classifier">Classfier (Coming Soon)</option>
                                                     <option disabled value="evolution">Evolution (Coming Soon)</option>
                                             </select>    
