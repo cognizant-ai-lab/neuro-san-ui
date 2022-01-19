@@ -314,7 +314,7 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
     },
     "Databricks": {
         "model_uri": {
-            "default_value": "s3://my_bucket/path/to/model",
+            "default_value": "models:/<model_name>/<stage>",
             "description": `
             The location, in URI format, of the MLflow model. For example:
             s3://my_bucket/path/to/model
