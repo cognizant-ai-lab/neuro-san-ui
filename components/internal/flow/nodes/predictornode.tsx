@@ -389,8 +389,9 @@ export default function PredictorNode(props): React.ReactElement {
                                                                 <input
                                                                     className="w-full"
                                                                     type="text"
-                                                                    onChange={event => onParamChange(event, param)}
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                                                    onChange={event => onParamChange(event, param)}
                                                                 />
                                                             )
                                                         }
@@ -399,8 +400,9 @@ export default function PredictorNode(props): React.ReactElement {
                                                                 <input
                                                                     className="w-full"
                                                                     type="password"
-                                                                    onChange={event => onParamChange(event, param)}
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                                                    onChange={event => onParamChange(event, param)}
                                                                 />
                                                             )
                                                         }
