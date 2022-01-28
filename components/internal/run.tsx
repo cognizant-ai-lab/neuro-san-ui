@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Run, Runs} from "../../controller/run/types";
+import {Runs} from "../../controller/run/types";
 import {BrowserFetchRuns} from "../../controller/run/fetch";
 import {
     constructRunMetricsForRunPlot
@@ -12,14 +12,15 @@ import ClipLoader from "react-spinners/ClipLoader";
 import Link from "next/link";
 import Flow from "./flow/flow";
 import {ReactFlowProvider} from "react-flow-renderer";
-import {node} from "prop-types";
 
 export interface RunProps {
     ProjectId: number,
-    Run: Run
+    RunID: number,
+    RunName: string
 }
 
 var debug = require('debug')('run')
+
 
 export default function RunPage(props: RunProps): React.ReactElement {
 
@@ -28,33 +29,54 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [paretoPlotData, setParetoPlotData] = useState({})
     const [flowInstance, setFlowInstance] = useState(null)
     const [nodeToCIDMap, updateNodeToCIDMap] = useState({})
+    const [run, setRun] = useState(null)
 
-    const flow = JSON.parse(props.Run.flow)
+    // Maintain state for if something is being edited or deleted
+    const [editingLoading, setEditingLoading] = useState([])
 
-    const constructMetrics = metrics => {
-        let [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(flow, JSON.parse(metrics))
-        setPredictorPlotData(constructedPredictorResults)
-        setPrescriptorPlotData(constructedPrescriptorResults)
-        setParetoPlotData(pareto)
+    async function loadRun(runID: number) {
+        if (runID) {
+            const run: Runs = await BrowserFetchRuns(null, runID, ['output_artifacts', 'metrics', 'flow'])
+            setRun(run[0])
+            let editingLoading = Array(run.length).fill({
+                editing: false,
+                loading: false
+            })
+            setEditingLoading(editingLoading)
+        } else {
+            debug("Failed to load runs, no experiment id passed")
+        }
     }
 
-    // Kick off a timer that updates the plot data and the artifacts at frequent intervals
+    // Fetch the experiment and the runs
     useEffect(() => {
-            // Build plot data if metrics exist
-            if (props.Run.metrics) {
-                constructMetrics(props.Run.metrics)
-            }
-        },[])
+        loadRun(props.RunID)
+    }, [props.RunID])
 
     useEffect(() => {
-        if (paretoPlotData) {
+        if (run != null) {
+            constructMetrics(run.metrics)
+        }
+    }, [run])
+
+    const constructMetrics = metrics => {
+        if (metrics) {
+            let [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(JSON.parse(run.flow), JSON.parse(metrics))
+            setPredictorPlotData(constructedPredictorResults)
+            setPrescriptorPlotData(constructedPrescriptorResults)
+            setParetoPlotData(pareto)
+        }
+    }
+
+    useEffect(() => {
+        if (paretoPlotData && run) {
 
             const nodeToCIDMap = {}
 
             // This is the 1D case - if the Pareto does not exist
             if(Object.keys(paretoPlotData).length === 0) {
                 // Get all the artifacts that start with the keyword prescriptor
-                const prescriptorArtifactNames = Object.keys(JSON.parse(props.Run.output_artifacts)).filter(
+                const prescriptorArtifactNames = Object.keys(JSON.parse(run.output_artifacts)).filter(
                     name => name.startsWith("prescriptor")
                 )
 
@@ -85,7 +107,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         if (flowInstance) {
             flowInstance.fitView()
         }
-    }, [flow])
+    }, [flowInstance])
 
     let PlotDiv = []
     if (predictorPlotData) {
@@ -116,7 +138,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     style={{background: MaximumBlue, borderColor: MaximumBlue, width: "100%"}}
             >
                 <Link
-                    href={`/projects/${props.ProjectId}/experiments/${props.Run.experiment_id}/runs/${props.Run.id}/prescriptors/${Object.values(nodeToCIDMap)[0]}`}
+                    href={`/projects/${props.ProjectId}/experiments/${run.experiment_id}/runs/${run.id}/prescriptors/${Object.values(nodeToCIDMap)[0]}`}
                 >
                     <a style={{
                         color: "white"
@@ -127,20 +149,28 @@ export default function RunPage(props: RunProps): React.ReactElement {
         )
     }
     
-    return <div className="mr-8 ml-8">
-        {/* Create the title bar */}
-        <h1 className="mt-4 mb-4">{props.Run.name}</h1>
+    const flowDiv = []
 
-        <div>
+    if (run && run.flow) {
+        flowDiv.push(
+            <div>
             <ReactFlowProvider>
                 <Flow
                     ProjectID={props.ProjectId}
-                    Flow={flow}
+                    Flow={JSON.parse(run.flow)}
                     ElementsSelectable={false}
                     onLoad={reactFlowInstance => {setFlowInstance(reactFlowInstance)}}
                 />
             </ReactFlowProvider>
         </div>
+        )
+    }
+    
+    return <div className="mr-8 ml-8">
+        {/* Create the title bar */}
+        <h1 className="mt-4 mb-4">{props.RunName}</h1>
+
+        {flowDiv}       
 
         {PlotDiv}
     </div>

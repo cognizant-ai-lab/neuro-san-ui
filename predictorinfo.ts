@@ -1,6 +1,13 @@
+/*
+Configuration settings and constants for predictor configuration popup
+ */
+
 export interface PredictorParamFields {
     default_value: boolean | number | string,
     description: string,
+
+    // TODO: there's probably a safer and more elegant way to handle types with something like Typescript Generics,
+    // rather than putting the name of the type in a string
     type: string | string[] | number[],
 
     // Value is an optional field that can be used within a form
@@ -303,6 +310,29 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             either "gain", "weight", "cover", "total_gain" or "total_cover".
             `,
             "type": ["gain", "weight", "cover", "total_gain", "total_cover"]
+        }
+    },
+    "Databricks": {
+        "model_uri": {
+            "default_value": "models:/<model_name>/<stage>",
+            "description": `
+            The location, in URI format, of the MLflow model. For example:
+            s3://my_bucket/path/to/model
+            runs:/<mlflow_run_id>/run-relative/path/to/model
+            models:/<model_name>/<model_version>
+            models:/<model_name>/<stage>
+            `,
+            "type": "string"
+        },
+        "DATABRICKS_HOST": {
+            "default_value": "https://cog-leaftest.cloud.databricks.com",
+            "description": `The URL of the Databricks™ host`,
+            "type": "string",
+        },
+        "DATABRICKS_TOKEN": {
+            "default_value": "",
+            "description": `A generated token to access the Databricks™ instance`,
+            "type": "password",
         }
     }
 }

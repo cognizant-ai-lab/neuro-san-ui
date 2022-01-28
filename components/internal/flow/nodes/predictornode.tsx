@@ -336,56 +336,82 @@ export default function PredictorNode(props): React.ReactElement {
     const PredictorConfigurationPanel = <Card.Body className="overflow-y-auto h-40 text-xs" id={ `${NodeID}-predictorconfig` }>
                                         {   ParentPredictorState.predictorParams &&
                                             Object.keys(ParentPredictorState.predictorParams).map((param, _) =>
-                                                <div className="grid grid-cols-3 gap-4 mb-2" key={param} >
-                                                    <label className="capitalize">{ param }: </label>
-                                                    { 
-                                                        ParentPredictorState.predictorParams[param].type === "int" &&
-                                                        <input
-                                                        type="number" 
-                                                        step="1" 
-                                                        defaultValue={ ParentPredictorState.predictorParams[param].default_value.toString() }
-                                                        value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                        onChange={event => onParamChange(event, param)}
-                                                        /> 
-                                                    }
-                                                    { 
-                                                        ParentPredictorState.predictorParams[param].type === "float" &&
-                                                        <input
-                                                        type="number" 
-                                                        step="0.1"
-                                                        defaultValue={ ParentPredictorState.predictorParams[param].default_value.toString() }
-                                                        value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                        onChange={event => onParamChange(event, param)}
-                                                        /> 
-                                                    }
-                                                    { 
-                                                        ParentPredictorState.predictorParams[param].type === "bool" && (
-                                                        <input 
-                                                            type="checkbox"
-                                                            defaultChecked={ Boolean(ParentPredictorState.predictorParams[param].default_value) }
-                                                            checked={ Boolean(ParentPredictorState.predictorParams[param].value) }
-                                                            onChange={event => onPredictorParamCheckBoxChange(event, param)}
-                                                        />
-                                                        )
-                                                    }
-                                                    { 
-                                                        typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
-                                                        <select
-                                                            value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                            onChange={event => onParamChange(event, param)}
-                                                            className="w-32">
-                                                            {
-                                                                // This requirement to wrap the type in an Array arises
-                                                                // from a limitation of typescript where it lets ypu define a union
-                                                                // over several datatype but can't determine if you call any function on it
-                                                                Array(ParentPredictorState.predictorParams[param].type).map(
-                                                                (value: string, _) => <option key={value} value={ value }>{ value }</option>)
-                                                            }
-                                                        </select>
-                                                    }
-                                                    <Tooltip content={ ParentPredictorState.predictorParams[param].description } >
-                                                        <InfoSignIcon />
-                                                    </Tooltip>
+                                                <div className="grid grid-cols-12 gap-4 mb-2" key={param} >
+                                                    <div className="item1 col-span-3"><label className="capitalize">{param}: </label></div>
+                                                    <div className="item2 col-span-8">
+                                                        {
+                                                            ParentPredictorState.predictorParams[param].type === "int" &&
+                                                                <input
+                                                                    type="number"
+                                                                    step="1"
+                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                                                    onChange={event => onParamChange(event, param)}
+                                                                />
+                                                        }
+                                                        {
+                                                            ParentPredictorState.predictorParams[param].type === "float" &&
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.1"
+                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                                                    onChange={event => onParamChange(event, param)}
+                                                                />
+                                                        }
+                                                        {
+                                                            ParentPredictorState.predictorParams[param].type === "bool" && (
+                                                                <input
+                                                                    type="checkbox"
+                                                                    defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
+                                                                    checked={Boolean(ParentPredictorState.predictorParams[param].value)}
+                                                                    onChange={event => onPredictorParamCheckBoxChange(event, param)}
+                                                                />
+                                                            )
+                                                        }
+                                                        {
+                                                            typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
+                                                            <select
+                                                                value={ ParentPredictorState.predictorParams[param].value.toString() }
+                                                                onChange={event => onParamChange(event, param)}
+                                                                className="w-32">
+                                                                {
+                                                                    // This requirement to wrap the type in an Array arises
+                                                                    // from a limitation of typescript where it lets ypu define a union
+                                                                    // over several datatype but can't determine if you call any function on it
+                                                                    Array(ParentPredictorState.predictorParams[param].type).map(
+                                                                        (value: string, _) => <option key={value} value={ value }>{ value }</option>)
+                                                                }
+                                                            </select>
+                                                        }
+                                                        {
+                                                            ParentPredictorState.predictorParams[param].type === "string" && (
+                                                                <input
+                                                                    className="w-full"
+                                                                    type="text"
+                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                                                    onChange={event => onParamChange(event, param)}
+                                                                />
+                                                            )
+                                                        }
+                                                        {
+                                                            ParentPredictorState.predictorParams[param].type === "password" && (
+                                                                <input
+                                                                    className="w-full"
+                                                                    type="password"
+                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                                                    onChange={event => onParamChange(event, param)}
+                                                                />
+                                                            )
+                                                        }
+                                                    </div>
+                                                    <div className="item3 col-span-1">
+                                                        <Tooltip content={ParentPredictorState.predictorParams[param].description} >
+                                                            <InfoSignIcon />
+                                                        </Tooltip>
+                                                    </div>
                                                 </div>
                                             )
                                         }
