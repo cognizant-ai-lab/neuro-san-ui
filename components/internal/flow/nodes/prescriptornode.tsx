@@ -280,7 +280,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                         value={ParentPrescriptorState.LEAF.representation}
                                                         className="w-32" >
                                                             <option value="NNWeights">Neural Network</option>
-                                                            <option value="RuleBased">Rules (Coming Soon)</option>
+                                                            <option value="RuleBased">Rules</option>
                                                     </select>    
                                                 </div>
                                                 <hr />
