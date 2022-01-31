@@ -53,7 +53,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     // Fetch the experiment and the runs
     useEffect(() => {
-        if (props.CachedRun) {
+        // Make sure the cached run is the correct run
+        if (props.CachedRun && props.RunID == props.CachedRun.id) {
             console.log('Loading cached run.')
             setRun(props.CachedRun)
         }
