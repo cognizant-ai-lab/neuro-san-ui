@@ -309,8 +309,8 @@ export default function NewProject(props: NewProps) {
                                 {`${4 + startIndexOffset}. Create`}
                         </Button>} key="4" >
                         
-                    </Panel>
-                </Container>
+                </Panel>
+            </Container>
 
         </Form>
     </Container>
