@@ -201,7 +201,7 @@ export default function ProfileTable(props: ProfiletableProps) {
             />
         </Modal>
         
-    return <React.Fragment>
+    return <>
         <div className="flex flex-col mt-4">
             {editCategoryValuesModal}
             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -219,5 +219,5 @@ export default function ProfileTable(props: ProfiletableProps) {
                 </div>
             </div>
         </div>
-    </React.Fragment>
+    </>
 }
