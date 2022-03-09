@@ -103,12 +103,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     function isRuleBased(flow: JSON) {
         let prescriptorNode = FlowNodeQueries._getPrescriptorNodes(flow)[0]
         let representation = prescriptorNode.data.ParentPrescriptorState.LEAF.representation
-        if (representation === "RuleBased") {
-            return true
-        } 
-        else {
-            return false
-        }
+        return representation === "RuleBased"
     }
 
     function generateArtifactURL(flow: JSON) {
