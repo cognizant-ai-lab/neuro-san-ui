@@ -7,16 +7,26 @@ COPY package.json yarn.lock ./
 RUN yarn install --silent
 
 # Rebuild the source code only when needed
+
 FROM node:alpine AS builder
 WORKDIR /app
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
+
+# Pass in the gateway (production or staging) at docker build time
+# This value is provided in codefresh where we build both 
+# flavors in parallel. This env var needs to be set before
+# the yarn build command.
+ARG GATEWAY
+ENV MD_SERVER_URL ${GATEWAY}
+
 # NODE_OPTIONS is workaround for RR_OSSL_EVP_UNSUPPORTED error during build.
 # https://stackoverflow.com/questions/69692842/error0308010cdigital-envelope-routinesunsupported
 # I have not found any real fix for this issue, only this use-legacy-workaround.
 RUN export NODE_OPTIONS=--openssl-legacy-provider && yarn build && yarn install --silent --production --ignore-scripts --prefer-offline
 # Production image, copy all the files and run next
 FROM node:alpine AS runner
+
 WORKDIR /app
 
 ENV NODE_ENV production

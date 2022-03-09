@@ -14,10 +14,10 @@ module.exports = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
-  // Will be available on both server and client
   publicRuntimeConfig: {
-    // if the md_server_url is not set it defaults to staging
-    md_server_url: process.env.MD_SERVER_URL ?? "http://gateway.staging.unileaf.evolution.ml:30002",
+    // if the md_server_url is not set it defaults to invalid url
+    // this way we don't accidently point prod->staging or vice versa
+    md_server_url: process.env.MD_SERVER_URL ?? "MD_SERVER_URL_must_be_set",
   },
   entry: path.resolve(__dirname, 'main.js'),
     output: {
