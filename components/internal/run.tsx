@@ -79,24 +79,27 @@ export default function RunPage(props: RunProps): React.ReactElement {
         return selectedIndex
     }
 
-    function runIsCached(runID: number) {
+    function getRunFromCache(runID: number) {
         /*
-        Queries the run from props and checks if it has information
-        that a cached run would have and returns a boolean
-        value representing whether or not the run has already been
-        cached
+            Retrieves a run from the cache. If not found in the cache (cache miss), returns null.
         */
-        const runIndex = getRunIndexByID(runID)
-        let tempRun = null
-        if (runIndex != null) {
-            tempRun = props.runs[runIndex]
+        let runIndex = getRunIndexByID(runID)
+        if (runIndex == null) {
+            return null
         }
-        if (tempRun != null && tempRun.flow != null  && tempRun.output_artifacts != null
-            && tempRun.metrics != null) {
-            return true
-        }
-        else {
-            return false
+        const tempRun = props.runs[runIndex]
+        /* Queries the run props and checks if it has information that a cached run would have. We only consider it
+        a cache hit if the run has all these properties.
+         */
+        if (tempRun != null
+            && tempRun.flow != null
+            && tempRun.output_artifacts != null
+            && tempRun.metrics != null
+            && tempRun.experiment_id != null) {
+            return tempRun
+        } else {
+            // cache miss
+            return null
         }
     }
 
@@ -150,7 +153,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
     
     async function loadRun(runID: number) {
         if (runID) {
-            const run: Runs = await BrowserFetchRuns(null, runID, ['output_artifacts', 'metrics', 'flow', 'id'])
+            const propertiesToRetrieve = ['output_artifacts', 'metrics', 'flow', 'id', 'experiment_id'];
+            const run: Runs = await BrowserFetchRuns(null, runID, propertiesToRetrieve)
             setRun(run[0])
             cacheRun(run[0])
             let editingLoading = Array(run.length).fill({
@@ -166,7 +170,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
     // Fetch the experiment and the runs
     useEffect(() => {
         // Make sure the cached run is the correct run
-        if (runIsCached(props.RunID)) {
+        const run = getRunFromCache(props.RunID)
+        if (run) {
             setRun(props.runs[getRunIndexByID(props.RunID)])
         }
         else {
