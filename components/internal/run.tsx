@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Run, Runs, Artifact} from "../../controller/run/types";
 import {BrowserFetchRunArtifacts, BrowserFetchRuns} from "../../controller/run/fetch";
-import { BrowserFetchArtifact } from "../../controller/fetch_artifact";
 import {
     constructRunMetricsForRunPlot
 } from "../../controller/run/results";
