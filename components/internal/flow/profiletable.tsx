@@ -1,5 +1,5 @@
-import {Form, ListGroup} from "react-bootstrap"
-import {AiFillEdit} from "react-icons/ai";
+import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
+import {AiFillDelete, AiFillEdit} from "react-icons/ai";
 import React, {useState} from "react";
 import {Button, Checkbox, Input, Modal} from 'antd';
 import {CAOType} from "../../../controller/datatag/types";
@@ -178,6 +178,12 @@ export default function ProfileTable(props: ProfiletableProps) {
 
     }
 
+    function deleteValue(val: string) {
+        let tmpValues = currentCategoryValues.slice()
+        tmpValues = tmpValues.filter(item => item !== val)
+        setCurrentCategoryValues(tmpValues)
+    }
+
     const editCategoryValuesModal =
         <Modal title="Edit categorical values"
                visible={showFieldEditor}
@@ -198,70 +204,98 @@ export default function ProfileTable(props: ProfiletableProps) {
                    setFieldBeingEditedName(undefined)
                }}
         >
-            <p><label>Field: {fieldBeingEditedName}</label></p>
-            <p>
-                <Checkbox
-                    value={currentCategoryOrdered}
-                    onChange={e => setCurrentCategoryOrdered(e.target.value)}
-                >
-                    Ordered (drag to re-order)
-                </Checkbox>
-            </p>
-            {/* Drag-drop list of values */}
-            {<Droppable droppableId="values">
-                {(provided, snapshot) => (
-                    <>
-                        <ListGroup as="ol"
-                                   id="listgroup"
-                                   ref={provided.innerRef}
-                                   {...provided.droppableProps}
-                        >
-                            {
-                                profile && fieldBeingEditedName ?
-                                    currentCategoryValues.map((val, index) => {
-                                        return (
-                                            <Draggable key={val} draggableId={val} index={index}>
-                                                {(provided) => (
-                                                    <p>
-                                                        <ListGroup.Item as="li" className="values"
-                                                                        ref={provided.innerRef}
-                                                                        {...provided.draggableProps}
-                                                                        {...provided.dragHandleProps}>
-                                                            {val}
-                                                        </ListGroup.Item>
-                                                    </p>
+            <Container>
+                <Row>
+                    <label>Field: {fieldBeingEditedName}</label>
+                </Row>
+                <p/>
+                <Row>
+                    <Checkbox
+                        value={currentCategoryOrdered}
+                        onChange={e => setCurrentCategoryOrdered(e.target.value)}
+                    >
+                        Ordered (drag to re-order)
+                    </Checkbox>
+                </Row>
+                <p/>
+                <Row>
+                    {/* Drag-drop list of values */}
+                    {<Droppable droppableId="values">
+                        {(provided) => (
+                            <Container>
+                                <ListGroup as="ol"
+                                           id="listgroup"
+                                           ref={provided.innerRef}
+                                           {...provided.droppableProps}
+                                >
+                                    {
+                                        profile && fieldBeingEditedName ?
+                                            currentCategoryValues.map((val, index) => {
+                                                return (
+                                                    <Draggable key={val} draggableId={val} index={index}>
+                                                        {(provided) => (
+                                                            <Row className="my-1">
+                                                                <Col className="mx-0 px-1">
+                                                                    <ListGroup.Item as="li" className="values"
+                                                                                    ref={provided.innerRef}
+                                                                                    {...provided.draggableProps}
+                                                                                    >
+                                                                        <div {...provided.dragHandleProps}>
+                                                                            {val}
+                                                                        </div>
+                                                                    </ListGroup.Item>
+                                                                </Col>
+                                                                <Col className="d-flex vertical-align-middle mx-0 px-1">
+                                                                    <button onClick={() => {
+                                                                                deleteValue(val)
+                                                                            }
+                                                                            }> <AiFillDelete
+                                                                        size="14"
+                                                                        style={{
+                                                                            cursor: "pointer",
+                                                                        }}
+                                                                        className="hover:text-red-700"
+                                                                    /></button>
+
+                                                                </Col>
+                                                            </Row>
+                                                        )
+                                                        }
+                                                    </Draggable>
                                                 )
-                                                }
-                                            </Draggable>
-                                        )
-                                    }) : []
-                            }
-                        </ListGroup>
-                        {provided.placeholder}
-                    </>
-                )}
-            </Droppable>}
-            <p>
-                Add category value:
-                <Input.Group compact>
-                    <Input style={{width: 'calc(100% - 200px)'}}
+                                            }) : []
+                                    }
+                                </ListGroup>
+                                {provided.placeholder}
+                            </Container>
+                        )}
+                    </Droppable>}
+                </Row>
+                <p/>
+                <Row>
+                    <label>Add category value:</label>
+                    <Input.Group compact>
+                        <Input style={{width: 'calc(100% - 200px)'}}
                            placeholder="Enter value"
-                        onChange={
-                            event => {setNewItem(event.target.value)}
-                        }
-                    >
-                    </Input>
-                    <Button type="primary"
-                        onClick ={_ => {
-                            if (!currentCategoryValues.includes(newItem)) {
-                                setCurrentCategoryValues([...currentCategoryValues, newItem])
-                            }
-                        }}
-                    >
-                        Add
-                    </Button>
-                </Input.Group>
-            </p>
+                           onChange={
+                               event => {
+                                   setNewItem(event.target.value)
+                               }
+                           }
+                        >
+                        </Input>
+                        <Button type="primary"
+                            onClick ={_ => {
+                                if (!currentCategoryValues.includes(newItem)) {
+                                    setCurrentCategoryValues([...currentCategoryValues, newItem])
+                                }
+                            }}
+                        >
+                            Add
+                        </Button>
+                    </Input.Group>
+                </Row>
+            </Container>
         </Modal>
 
     // Wrap everything in a DragDropContext as recommended by react-beautiful-dnd doc
