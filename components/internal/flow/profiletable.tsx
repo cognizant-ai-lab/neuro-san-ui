@@ -4,6 +4,7 @@ import EditableList from 'react-list-editable';
 import 'react-list-editable/lib/react-list-editable.css';
 import React, {useState} from "react";
 import {Modal} from 'antd';
+import {CAOType} from "../../../controller/datatag/types";
 
 export interface ProfiletableProps {
     Profile: any
@@ -45,8 +46,16 @@ export default function ProfileTable(props: ProfiletableProps) {
     })
 
     let fieldRows = []
+
+    // To sort fields by CAOType
+    function compareEspTypes(esp_type1, esp_type2) {
+        return (CAOType[esp_type1] > CAOType[esp_type2]) ? 1 : -1
+    }
+
     if (profile != null) {
-        Object.keys(profile.data_tag.fields).map((field, _) =>
+        Object.keys(profile.data_tag.fields)
+            .sort((a, b) => compareEspTypes(profile.data_tag.fields[a].esp_type, profile.data_tag.fields[b].esp_type))
+            .map((field) =>
             fieldRows.push(
                 <tr key={field}>
                     <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
