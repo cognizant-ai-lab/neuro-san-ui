@@ -13,7 +13,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import Link from "next/link";
 import Flow, { FlowNodeQueries } from "./flow/flow";
 import {ReactFlowProvider} from "react-flow-renderer";
-import fromBinary from "../../utils/conversion";
+import decode from "../../utils/decode";
 
 export interface RunProps {
     /* 
@@ -129,10 +129,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
         return rulesURL
     }
 
-    function getDecodedRules() {
-        return new TextDecoder().decode(fromBinary(artifactObj.bytes))
-    }
-
     async function loadArtifactObj() {
         const parsedFlow = JSON.parse(run.flow)
         const rulesURL = generateArtifactURL(parsedFlow)
@@ -193,7 +189,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     // Decode the rules from the artifact obj
     useEffect(() => {
         if (artifactObj != null) {
-            const decodedRules = getDecodedRules()
+            const decodedRules = decode(artifactObj.bytes)
             if (decodedRules) {
                 setRules(decodedRules)
             }

@@ -285,7 +285,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
 }
 
 class FlowUtils extends FlowNodeStateUpdateHandler {
-        
+
     constructor(props) {
 
         // Pass Props to parent class
