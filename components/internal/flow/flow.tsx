@@ -420,7 +420,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         // Add the Predictor Node
         const flowInstanceElem = this.state.flowInstance.getElements()
         const MaxPredictorNodeY = Math.max(
-            ...FlowNodeQueries._getPredictorNodes(flowInstanceElem).map(node => node.position.y), 
+            ...FlowNodeQueries.getPredictorNodes(flowInstanceElem).map(node => node.position.y), 
             flowInstanceElem[0].position.y - 100
         )
 
@@ -449,7 +449,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         })
     
         // Check if Prescriptor Node exists
-        const prescriptorNodes = FlowNodeQueries._getPrescriptorNodes(this.state.flow)
+        const prescriptorNodes = FlowNodeQueries.getPrescriptorNodes(this.state.flow)
 
         // If there's already a prescriptor node, add edge to that prescriptor node
         if (prescriptorNodes.length != 0) { 
@@ -529,7 +529,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     
         // Check if Prescriptor Node exists
         const prescriptorExists = (
-            FlowNodeQueries._getPrescriptorNodes(this.state.flow)).length != 0
+            FlowNodeQueries.getPrescriptorNodes(this.state.flow)).length != 0
     
         // If it already exists, return
         if (prescriptorExists) {
@@ -543,7 +543,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         }
     
         // Make sure predictor nodes exist, if not alert
-        const predictorNodes = FlowNodeQueries._getPredictorNodes(this.state.flow)
+        const predictorNodes = FlowNodeQueries.getPredictorNodes(this.state.flow)
         if (predictorNodes.length == 0) {
             let notificationProps: NotificationProps = {
                 Type: "error",
@@ -611,13 +611,13 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         // Make sure there are no data nodes
         const removableElements = elementsToRemove.filter(element => element.type != "datanode")
 
-        const predictorIdsBeingRemoved = FlowNodeQueries._getPredictorNodes(elementsToRemove).
+        const predictorIdsBeingRemoved = FlowNodeQueries.getPredictorNodes(elementsToRemove).
             map(node => node.id)
 
         // If this delete will remove all predictors, also delete the prescriptor
-        const numPredictorNodesLeft = FlowNodeQueries._getPredictorNodes(graph).length - predictorIdsBeingRemoved.length
+        const numPredictorNodesLeft = FlowNodeQueries.getPredictorNodes(graph).length - predictorIdsBeingRemoved.length
         if (numPredictorNodesLeft == 0) {
-            removableElements.push(...FlowNodeQueries._getPrescriptorNodes(graph))
+            removableElements.push(...FlowNodeQueries.getPrescriptorNodes(graph))
 
 
         } else {
@@ -680,7 +680,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
 
 export class FlowNodeQueries {
 
-    static _getPredictorNodes(graph) {
+    static getPredictorNodes(graph) {
         /*
         This function filters the predictor nodes
         from the graph and returns them
@@ -688,7 +688,7 @@ export class FlowNodeQueries {
         return graph.filter(
             element => element.type === 'predictornode')
     }
-    static _getPrescriptorNodes(graph) { 
+    static getPrescriptorNodes(graph) { 
         /*
         This function filters the prescriptor nodes
         from the graph and returns them
@@ -696,7 +696,7 @@ export class FlowNodeQueries {
         return graph.filter(
             element => element.type === 'prescriptornode')
     }
-    static _getDataNodes(graph){ 
+    static getDataNodes(graph){ 
         /*
         This function filters the data nodes
         from the graph and returns them

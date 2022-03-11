@@ -14,6 +14,7 @@ import Link from "next/link";
 import Flow, { FlowNodeQueries } from "./flow/flow";
 import {ReactFlowProvider} from "react-flow-renderer";
 import decode from "../../utils/decode";
+import Notification, {NotificationProps} from "../../controller/notification";
 
 export interface RunProps {
     /* 
@@ -104,13 +105,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     function isRuleBased(flow: JSON) {
-        const prescriptorNode = FlowNodeQueries._getPrescriptorNodes(flow)[0]
+        const prescriptorNode = FlowNodeQueries.getPrescriptorNodes(flow)[0]
         const representation = prescriptorNode.data.ParentPrescriptorState.LEAF.representation
         return representation === "RuleBased"
     }
 
     function generateArtifactURL(flow: JSON) {
-        const prescriptorNode = FlowNodeQueries._getPrescriptorNodes(flow)[0]
+        const prescriptorNode = FlowNodeQueries.getPrescriptorNodes(flow)[0]
         let rulesURL = null
         if (prescriptorNode) {
             const nodeCID = nodeToCIDMap[prescriptorNode.id]
@@ -119,11 +120,23 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 rulesURL = JSON.parse(run.output_artifacts)[index]   
             }
             else {
-                debug("Failed to find nodeCID with prescriptor id.")
+                const notificationProps: NotificationProps = {
+                    Type: "error",
+                    Message: "Internal error",
+                    Description: "Failed to find nodeCID with prescriptor id."
+                }
+                console.error("Failed to find nodeCID with prescriptor id.")
+                Notification(notificationProps)
             }
         }
         else {
-            debug("Faled to load prescriptor node.")
+            const notificationProps: NotificationProps = {
+                Type: "error",
+                Message: "Internal error",
+                Description: "Retrieval of prescriptor node returned false"
+            }
+            console.error("Retrieval of prescriptor node returned false")
+            Notification(notificationProps)
         } 
 
         return rulesURL
@@ -133,17 +146,29 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const parsedFlow = JSON.parse(run.flow)
         const rulesURL = generateArtifactURL(parsedFlow)
         if (rulesURL) {
-            const artifactObj: Artifact[] = await BrowserFetchRunArtifacts(rulesURL)
+            const artifactObj: Artifact[] = await BrowserFetchRunArtifacts(null, rulesURL)
             
             if (artifactObj) {
                 setArtifactObj(artifactObj[0])
             }
             else {
-                debug('Failed to fetch Artifact object.')
+                const notificationProps: NotificationProps = {
+                    Type: "error",
+                    Message: "Internal error",
+                    Description: "Fetch for artifacts returned null"
+                }
+                console.error("BrowserFetchRunArtifacts returned null")
+                Notification(notificationProps)
             }
         }
         else {
-            debug("Failed to retrieve s3 url from output artifacts.")
+            const notificationProps: NotificationProps = {
+                Type: "error",
+                Message: "Internal error",
+                Description: "Generation of s3 url returned null."
+            }
+            console.error("Generation of s3 url returned null.")
+            Notification(notificationProps)
         }
     }
     
@@ -194,7 +219,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 setRules(decodedRules)
             }
             else {
-                debug("Failed to decode rules.")
+                const notificationProps: NotificationProps = {
+                    Type: "error",
+                    Message: "Internal error",
+                    Description: "Failed to decode rules"
+                }
+                console.error("Failed to decode rules")
+                Notification(notificationProps)
             }
         }
     }, [artifactObj])
