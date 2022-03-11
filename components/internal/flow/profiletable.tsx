@@ -1,8 +1,8 @@
 import {Form, ListGroup} from "react-bootstrap"
 import {AiFillEdit} from "react-icons/ai";
 import React, {useState} from "react";
+import {Button, Checkbox, Input, Modal} from 'antd';
 import {CAOType} from "../../../controller/datatag/types";
-import {Checkbox, Modal} from 'antd';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 
 export interface ProfiletableProps {
@@ -18,6 +18,7 @@ export default function ProfileTable(props: ProfiletableProps) {
     const [showFieldEditor, setFieldEditorVisible] = useState(false)
     const [currentCategoryValues, setCurrentCategoryValues] = useState([])
     const [currentCategoryOrdered, setCurrentCategoryOrdered] = useState(false)
+    const [newItem, setNewItem] = useState(null)
 
     // Declare table headers
     const TableHeaders = [
@@ -240,6 +241,27 @@ export default function ProfileTable(props: ProfiletableProps) {
                     </>
                 )}
             </Droppable>}
+            <p>
+                Add category value:
+                <Input.Group compact>
+                    <Input style={{width: 'calc(100% - 200px)'}}
+                           placeholder="Enter value"
+                        onChange={
+                            event => {setNewItem(event.target.value)}
+                        }
+                    >
+                    </Input>
+                    <Button type="primary"
+                        onClick ={_ => {
+                            if (!currentCategoryValues.includes(newItem)) {
+                                setCurrentCategoryValues([...currentCategoryValues, newItem])
+                            }
+                        }}
+                    >
+                        Add
+                    </Button>
+                </Input.Group>
+            </p>
         </Modal>
 
     // Wrap everything in a DragDropContext as recommended by react-beautiful-dnd doc
