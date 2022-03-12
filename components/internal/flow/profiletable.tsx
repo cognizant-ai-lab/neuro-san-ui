@@ -231,37 +231,36 @@ export default function ProfileTable(props: ProfiletableProps) {
                                         profile && fieldBeingEditedName ? currentCategoryValues.map((val, index) => {
                                             return (
                                                 <Draggable key={val} draggableId={val} index={index}>
-                                                    {(provided, snapshot) => (
-                                                        <div style={{opacity: snapshot.isDragging ? "50%": "100%"}}
-                                                             ref={provided.innerRef}
-                                                             {...provided.draggableProps}
-                                                             {...provided.dragHandleProps}
+                                                    {(provided, snapshot) => {
+                                                        const opacity =
+                                                            snapshot.isDragging ? "opacity-50" : "opacity-100"
+                                                        return <Row className={"my-1 " + opacity}
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
                                                         >
-                                                            <Row className="my-1">
-                                                                <Col className="mx-0 px-1"  >
-                                                                    <ListGroup.Item as="li" className="values">
-                                                                        <div>
-                                                                            {val}
-                                                                        </div>
-                                                                    </ListGroup.Item>
-                                                                </Col>
-                                                                <Col className="d-flex vertical-align-middle mx-0 px-1">
-                                                                    <button onClick={() => {
-                                                                                deleteValue(val)
-                                                                            }
-                                                                            }> <AiFillDelete
-                                                                        size="14"
-                                                                        style={{
-                                                                            cursor: "pointer",
-                                                                        }}
-                                                                        className="hover:text-red-700"
-                                                                    /></button>
+                                                            <Col className="mx-0 px-1">
+                                                                <ListGroup.Item as="li" className="values">
+                                                                    <div>
+                                                                        {val}
+                                                                    </div>
+                                                                </ListGroup.Item>
+                                                            </Col>
+                                                            <Col className="d-flex vertical-align-middle mx-0 px-1">
+                                                                <button onClick={() => {
+                                                                    deleteValue(val)
+                                                                }
+                                                                }><AiFillDelete
+                                                                    size="14"
+                                                                    style={{
+                                                                        cursor: "pointer",
+                                                                    }}
+                                                                    className="hover:text-red-700"
+                                                                /></button>
 
-                                                                </Col>
-                                                            </Row>
-                                                        </div>
-                                                    )
-                                                    }
+                                                            </Col>
+                                                        </Row>
+                                                    }}
                                                 </Draggable>
                                             )
                                         }) : [] // empty list by default
