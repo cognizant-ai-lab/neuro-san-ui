@@ -1,4 +1,3 @@
-const CopyPlugin = require("copy-webpack-plugin");
 const path = require("path");
 
 module.exports = {
@@ -28,20 +27,4 @@ module.exports = {
         }
     },
     mode: 'production',
-    webpack: (config, {buildId, dev, isServer, defaultLoaders, webpack}) => {
-
-        config.plugins.push(
-            new CopyPlugin({
-                // Use copy plugin to copy *.wasm to output folder.
-                patterns: [
-                    {
-                        from: 'node_modules/onnxruntime-web/dist/*.wasm',
-                        to: 'static/chunks/pages/projects/[projectID]/experiments/[experimentID]/runs/[runID]/prescriptors/[name].[ext]'
-                    }
-                ]
-            })
-        )
-
-        return config
-    }
 }
