@@ -102,7 +102,7 @@ export default function PredictorNode(props): React.ReactElement {
     const metrics = FetchMetrics()
     const predictors = {
         regressor: FetchPredictors("regressor"),
-        classifiers: FetchPredictors("classifier")
+        classifier: FetchPredictors("classifier")
     }
 
     // Since predictors change
@@ -183,20 +183,19 @@ export default function PredictorNode(props): React.ReactElement {
         metrics of a certain kind of predictor. This only needs to be used once
         when the content is being rendered
         */
-
         const NewPred = predictors[predictorType][0]
-        onPredictorChange(NewPred)
+        onPredictorChange(predictorType, NewPred)
 
     }
 
-    const onPredictorChange = (selectedPredictor: string) => {
+    const onPredictorChange = (predictorType: string, selectedPredictor: string) => {
         /*
         This function serves to fetch the parameters of the predictor,
         do some parameter state formatting and update the selected predictor state.
         */
 
         // Invoke the controller
-        const params = FetchParams(ParentPredictorState.selectedPredictorType,
+        const params = FetchParams(predictorType,
             selectedPredictor)
 
         // We add a key called value to adjust for user input
@@ -211,6 +210,7 @@ export default function PredictorNode(props): React.ReactElement {
         // Write the state.
         SetParentPredictorState({
             ...ParentPredictorState,
+            selectedPredictorType: predictorType,
             predictorParams: params,
             selectedPredictor: selectedPredictor
         })
@@ -290,8 +290,8 @@ export default function PredictorNode(props): React.ReactElement {
                                                 onChange={ event => onPredictorTypeChange(event.target.value)}
                                                 className="w-32" >
                                                     <option value="regressor">Regressor</option>
+                                                    <option value="classifier">Classfier</option>
                                                     <option disabled value="byop">Bring your own (Coming Soon)</option>
-                                                    <option disabled value="classifier">Classfier (Coming Soon)</option>
                                                     <option disabled value="evolution">Evolution (Coming Soon)</option>
                                             </select>    
                                         </div>
@@ -301,7 +301,7 @@ export default function PredictorNode(props): React.ReactElement {
                                             <select 
                                                 name={ `${NodeID}-predictor` } 
                                                 value={ ParentPredictorState.selectedPredictor }
-                                                onChange={ event => onPredictorChange(event.target.value) }
+                                                onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
                                                 className="w-32">
                                                     { ParentPredictorState.selectedPredictorType &&
                                                         predictors[ParentPredictorState.selectedPredictorType].map(
