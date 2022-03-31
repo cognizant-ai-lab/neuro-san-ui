@@ -20,7 +20,7 @@ export interface NotificationProps {
  * @param message Brief summary of the notification
  * @param description More complete description of the notification
  */
-export function sendNotification(nt: NotificationType, message: string, description: string): void {
+export function sendNotification(nt: NotificationType, message: string, description: string = ""): void {
     Notification({
         Type: NotificationType[nt],
         Message: message,
