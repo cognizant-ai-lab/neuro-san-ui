@@ -376,6 +376,9 @@ export default function PredictorNode(props): React.ReactElement {
                                                                 onChange={event => onParamChange(event, param)}
                                                                 className="w-32">
                                                                 {
+                                                                    // The code below works as long as the predictor parameter is a list
+                                                                    // containing elements of the same type. If that is not followed this is
+                                                                    // invalid TS code and we will need to fix this.
                                                                     ParentPredictorState.predictorParams[param].type.map(
                                                                         (value, _) => <option key={value} value={ value }>{ value }</option>)
                                                                 }
