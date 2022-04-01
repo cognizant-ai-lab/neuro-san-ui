@@ -348,7 +348,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                             <div className="flex flex-col mb-2">
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Num Generations</label>
-                                                    <input style={{width: "2rem"}}
+                                                    <input style={{width: "3rem"}}
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 10 }
@@ -366,7 +366,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Population Size</label>
-                                                    <input style={{width: "2rem"}}
+                                                    <input style={{width: "3rem"}}
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 10 }
@@ -384,7 +384,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Num Elites</label>
-                                                    <input style={{width: "2rem"}}
+                                                    <input style={{width: "3rem"}}
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 2 }
@@ -419,7 +419,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Remove Population %</label>
-                                                    <input style={{width: "2rem"}}
+                                                    <input style={{width: "3rem"}}
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.8 }
