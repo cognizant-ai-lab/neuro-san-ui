@@ -171,7 +171,7 @@ export default function PredictorNode(props): React.ReactElement {
                 caoState: CAOState,
                 trainSliderValue: ParentPredictorState.trainSliderValue || 80,
                 testSliderValue: ParentPredictorState.testSliderValue || 20,
-                rngSeedValue: ParentPredictorState.rngSeedValue || 0
+                rngSeedValue: ParentPredictorState.rngSeedValue || null
             })
 
     },
