@@ -1,28 +1,27 @@
 // Import React component
-import { useState } from 'react'
+import {useState} from 'react'
 
 // Import 3rd Party components
-import { Collapse } from 'antd'
-import { Container, Form, Button } from "react-bootstrap"
+import {Collapse} from 'antd'
+import {Button, Container, Form} from "react-bootstrap"
 
 // Import required interface to create a new project
 import AccessionProject from "../../controller/projects/accession"
-import { Profile } from "../../controller/dataprofile/types"
-import { DataSource } from "../../controller/datasources/types"
+import {Profile} from "../../controller/dataprofile/types"
+import {DataSource} from "../../controller/datasources/types"
 import {DataTag, DataTagFields} from "../../controller/datatag/types";
-import { AccessionDatasource } from "../../controller/datasources/accession"
+import {AccessionDatasource} from "../../controller/datasources/accession"
 import AccessionDataTag from "../../controller/datatag/accession";
 
 // Import constants
-import { MaximumBlue } from "../../const"
+import {MaximumBlue} from "../../const"
 
 // Import Utils
-import uuid from 'react-uuid'
 import AWSUtils from "../../utils/aws"
 import {Project} from "../../controller/projects/types";
-import {FiSettings} from "react-icons/all";
 import ProfileTable from "./flow/profiletable";
 import {BrowserFetchProfile} from "../../controller/dataprofile/generate";
+import {NotificationType, sendNotification} from "../../controller/notification";
 
 var debug = require('debug')('new_project')
 
@@ -128,6 +127,9 @@ export default function NewProject(props: NewProps) {
         }
 
         const savedDataSource = await AccessionDatasource(dataSourceMessage)
+        if (savedDataSource) {
+            sendNotification(NotificationType.success, `Data source ${datasetName} created`)
+        }
         debug("Saved Data Source: ", savedDataSource)
 
         // Unpack the values for datafields
