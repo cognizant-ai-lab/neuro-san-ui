@@ -448,7 +448,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                     layer_name: 'hidden_1',
                     layer_type: 'dense',
                     layer_params: {
-                        units: 1,
+                        units: 16,
                         activation: 'tanh',
                         use_bias: true
                     }  
