@@ -49,8 +49,8 @@ export default function ProfileTable(props: ProfiletableProps) {
     let fieldRows = []
 
     const caoColorCoding = {
-        "CONTEXT": "#D7A9E3FF",
-        "ACTION": "#8BBEE8FF",
+        "CONTEXT": "#8BBEE8FF",
+        "ACTION": "#D7A9E3FF",
         "OUTCOME": "#A8D5BAFF"
     }
 
