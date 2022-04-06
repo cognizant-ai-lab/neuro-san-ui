@@ -376,11 +376,11 @@ export default function PredictorNode(props): React.ReactElement {
                                                                 onChange={event => onParamChange(event, param)}
                                                                 className="w-32">
                                                                 {
-                                                                    // This requirement to wrap the type in an Array arises
-                                                                    // from a limitation of typescript where it lets ypu define a union
-                                                                    // over several datatype but can't determine if you call any function on it
-                                                                    Array(ParentPredictorState.predictorParams[param].type).map(
-                                                                        (value: string, _) => <option key={value} value={ value }>{ value }</option>)
+                                                                    // The code below works as long as the predictor parameter is a list
+                                                                    // containing elements of the same type. If that is not followed this is
+                                                                    // invalid TS code and we will need to fix this.
+                                                                    ParentPredictorState.predictorParams[param].type.map(
+                                                                        (value, _) => <option key={value} value={ value }>{ value }</option>)
                                                                 }
                                                             </select>
                                                         }
