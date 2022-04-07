@@ -207,7 +207,6 @@ export default function PredictorNode(props): React.ReactElement {
             }
         })
 
-        console.log("INVOKED: ", predictorType)
         // Write the state.
         SetParentPredictorState({
             ...ParentPredictorState,
