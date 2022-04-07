@@ -46,9 +46,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [rules, setRules] = useState(null)
     const [artifactObj, setArtifactObj] = useState(null)
     const [flow, setFlow] = useState(null)
-    const isDisabled = {
-        pointerEvents: 'none'
-    }
 
     function cacheRun(run: Run) {
         /*
