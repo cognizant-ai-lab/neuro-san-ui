@@ -377,6 +377,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                                 onChange={event => onParamChange(event, param)}
                                                                 className="w-32">
                                                                 {
+                                                                    // @ts-ignore
                                                                     ParentPredictorState.predictorParams[param].type.map(
                                                                         (value, _) => <option key={value} value={ value }>{ value }</option>)
                                                                 }

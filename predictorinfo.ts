@@ -8,7 +8,7 @@ export interface PredictorParamFields {
 
     // TODO: there's probably a safer and more elegant way to handle types with something like Typescript Generics,
     // rather than putting the name of the type in a string
-    type: any,
+    type: string | string[] | number[],
 
     // Value is an optional field that can be used within a form
     // etc to denote user input

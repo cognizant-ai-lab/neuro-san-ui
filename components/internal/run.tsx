@@ -349,6 +349,7 @@ prescriptors/${Object.values(nodeToCIDMap)[0]}/?dataprofile_id=${flow[0].data.Da
             <div>
             <ReactFlowProvider>
                 <Flow
+                    // @ts-ignore
                     ProjectID={props.ProjectId}
                     Flow={flow}
                     ElementsSelectable={false}

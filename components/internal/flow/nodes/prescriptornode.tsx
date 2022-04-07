@@ -242,7 +242,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                             SetParentPrescriptorState(modifiedHiddenLayerState)
                         }}
                     >
-                        {ActivationFunctions.map((activationFn, _) => <option value={activationFn}>{activationFn}</option>)}
+                        {ActivationFunctions.map((activationFn, _) => <option key={`hidden-layer-activation-${activationFn}`} value={activationFn}>{activationFn}</option>)}
                     </select> 
                 </div>
 
@@ -317,7 +317,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                                                 SetParentPrescriptorState(modifiedOpLayerState)
                                                                             }}
                                                                         >
-                                                                            {ActivationFunctions.map((activationFn, _) => <option value={activationFn}>{activationFn}</option>)}
+                                                                            {ActivationFunctions.map((activationFn, _) => <option key={`op-layer-activation-${activationFn}`} value={activationFn}>{activationFn}</option>)}
                                                                         </select> 
                                                                     </div>
 
