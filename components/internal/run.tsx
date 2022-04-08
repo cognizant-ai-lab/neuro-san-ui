@@ -321,9 +321,9 @@ export default function RunPage(props: RunProps): React.ReactElement {
                         background: MaximumBlue, 
                         borderColor: MaximumBlue, 
                         width: "100%",
-                        cursor: rules != null ? "pointer" : "not-allowed"
+                        cursor: rules == null ? "pointer" : "not-allowed"
                     }}
-                    disabled={rules == null}
+                    disabled={rules != null}
             >
                 <Link
                     href={`/projects/${props.ProjectId}/experiments/${run.experiment_id}/runs/${run.id}/
