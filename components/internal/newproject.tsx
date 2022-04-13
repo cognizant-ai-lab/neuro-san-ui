@@ -109,6 +109,7 @@ export default function NewProject(props: NewProps) {
             // If Project creation failed, everything fails
             if (accessionProjectResp === null) { return }
 
+            sendNotification(NotificationType.success, `Project ${projectName} created`)
             projectId = accessionProjectResp.id
             setProjectId(accessionProjectResp.id)
 
@@ -167,6 +168,9 @@ export default function NewProject(props: NewProps) {
         // Trigger the Data tag Controller
 
         const savedDataTag = await AccessionDataTag(dataTagMessage)
+        if (savedDataTag) {
+            sendNotification(NotificationType.success, "Data tag created")
+        }
         debug("Saved DT: ", savedDataTag)
 
         // Inform the view to update its state

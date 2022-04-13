@@ -20,7 +20,7 @@ export interface NotificationProps {
  * @param message Brief summary of the notification
  * @param description More complete description of the notification
  */
-export function sendNotification(nt: NotificationType, message: string, description: string = ""): void {
+export function sendNotification(nt: NotificationType, message: string, description = ""): void {
     Notification({
         Type: NotificationType[nt],
         Message: message,
@@ -30,7 +30,7 @@ export function sendNotification(nt: NotificationType, message: string, descript
 
 export default function Notification(props: NotificationProps) {
 
-    /* 
+    /*
     This function extends the AndD notification to be a repeatable,
     easy to use component
     */

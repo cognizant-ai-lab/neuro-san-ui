@@ -2,12 +2,11 @@ import NewBar from "./newbar";
 import {Table} from "evergreen-ui";
 import {ResponsiveLine} from "@nivo/line";
 import {useEffect, useMemo, useState} from "react";
-import { Slider } from 'antd';
+import {Slider} from 'antd';
 import {Button, Card, Container} from "react-bootstrap";
 import {FiPlay, FiStopCircle} from "react-icons/fi";
 import {MaximumBlue} from "../const";
-import Notification, {NotificationProps} from "../controller/notification";
-
+import {NotificationType, sendNotification} from "../controller/notification";
 
 export interface EspRunPlotProps {
 
@@ -240,12 +239,8 @@ function ParetoPlot(props) {
     // selected Candidate is not of the last generation - we cannot yet perform inference
     // on those as those don't exist
     let onClickHandler = (node, _) => {
-        let notificationProps: NotificationProps = {
-            Type: "error",
-            Message: "Model Selection Error",
-            Description: "Can't use model for inference unless it is from last generation"
-        }
-        Notification(notificationProps)
+        sendNotification(NotificationType.error, "Model Selection Error",
+            "Only models from the last generation can be used with the decision interface" )
     }
     // Override the default onclick handler to actually update the selected model
     // if it is selected from the last generation

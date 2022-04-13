@@ -1,5 +1,5 @@
 import sortByTime from "../utils/sort"
-import Notification, {NotificationProps} from "./notification";
+import {NotificationType, sendNotification} from "./notification";
 import {MDServerObject, MDServerResponse} from "./base_types";
 
 // HackyStream implements streaming a specific resource from the MD Server using a regex hack
@@ -25,13 +25,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
 
     // Check for error
     if (response.status != 200) {
-        let notificationProps: NotificationProps = {
-            Type: "error",
-            Message: `Failed to fetch ${resourceName}`,
-            Description: response.statusText
-        }
-        Notification(notificationProps)
-        return null
+        sendNotification(NotificationType.error, `Failed to fetch ${resourceName}`, response.statusText)
     }
 
     const reader = response.body.getReader();

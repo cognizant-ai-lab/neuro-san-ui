@@ -19,7 +19,7 @@ import {EvaluateCandidateCode, InputDataNodeID, MaximumBlue, OutputOverrideCode}
 
 // Import types
 import {CAOChecked, PredictorState} from "./nodes/predictornode"
-import Notification, {NotificationProps} from "../../../controller/notification";
+import {NotificationType, sendNotification} from "../../../controller/notification";
 import {PredictorParams} from "../../../predictorinfo";
 import {DataSource} from "../../../controller/datasources/types";
 import {CAOType, DataTag} from "../../../controller/datatag/types";
@@ -502,24 +502,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     
         // If it already exists, return
         if (prescriptorExists) {
-            let notificationProps: NotificationProps = {
-                Type: "error",
-                Message: "Only one prescriptor per experiment is currently supported",
-                Description: ``
-            }
-            Notification(notificationProps)
+            sendNotification(NotificationType.warning, "Only one prescriptor per experiment is currently supported")
             return this.state.flow
         }
     
         // Make sure predictor nodes exist, if not alert
         const predictorNodes = FlowQueries.getPredictorNodes(this.state.flow)
         if (predictorNodes.length == 0) {
-            let notificationProps: NotificationProps = {
-                Type: "error",
-                Message: "Add at least one predictor before adding a prescriptor",
-                Description: ``
-            }
-            Notification(notificationProps)
+            sendNotification(NotificationType.warning, "Add at least one predictor before adding a prescriptor")
             return this.state.flow
         }
         

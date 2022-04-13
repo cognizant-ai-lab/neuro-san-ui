@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk'
-import Notification, { NotificationProps } from '../controller/notification'
+import {NotificationType, sendNotification} from '../controller/notification'
 
 var debug = require('debug')('aws')
 
@@ -43,21 +43,11 @@ export default class AWSUtils {
             })
             .send((err) => {
                 // Notify the UI
-                let notificationProps: NotificationProps
                 if (!err) {
-                    notificationProps = {
-                        Type: "success",
-                        Message: "Successfully uploaded Dataset",
-                        Description: ""
-                    } 
+                    sendNotification(NotificationType.success, "Successfully uploaded Dataset")
                 } else {
-                    notificationProps = {
-                        Type: "error",
-                        Message: "Failed to upload Dataset",
-                        Description: `${err}`
-                    } 
+                    sendNotification(NotificationType.error, "Failed to upload Dataset", err.toString())
                 }
-                Notification(notificationProps)
             })
     
     }
