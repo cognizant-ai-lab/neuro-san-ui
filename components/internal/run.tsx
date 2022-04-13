@@ -14,6 +14,8 @@ import {ReactFlowProvider} from "react-flow-renderer";
 import decode from "../../utils/decode";
 import Notification, {NotificationProps} from "../../controller/notification";
 import {FlowQueries} from "./flow/flowqueries";
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { docco } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 
 export interface RunProps {
     /* 
@@ -223,7 +225,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
         if (artifactObj != null) {
             const decodedRules = decode(artifactObj.bytes)
             if (decodedRules) {
-                setRules(decodedRules)
+                const decodedRulesFormatted = decodedRules.trim()
+                setRules(decodedRulesFormatted)
             }
             else {
                 const notificationProps: NotificationProps = {
@@ -347,12 +350,22 @@ prescriptors/${Object.values(nodeToCIDMap)[0]}/?dataprofile_id=${flow[0].data.Da
     }
 
     if (rules) {
-        // Add rules
+        // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
+        // the rules are in to get a decent coloring scheme
         PlotDiv.push(
-            <div >
+            <>
                 <NewBar Title="Rules" DisplayNewLink={ false } />
-                <p>{rules}</p>
-            </div>
+                <div className="my-2 py-2"
+                     style={{
+                         whiteSpace: "pre",
+                         backgroundColor: "whitesmoke"
+                     }}
+                >
+                    <SyntaxHighlighter language="sql" style={docco} showLineNumbers={true}>
+                        {rules}
+                    </SyntaxHighlighter>
+                </div>
+            </>
         )
     }
     
