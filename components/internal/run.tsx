@@ -14,6 +14,8 @@ import {ReactFlowProvider} from "react-flow-renderer";
 import decode from "../../utils/decode";
 import {NotificationType, sendNotification} from "../../controller/notification";
 import {FlowQueries} from "./flow/flowqueries";
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { docco } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 
 export interface RunProps {
     /* 
@@ -195,7 +197,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
         if (artifactObj != null) {
             const decodedRules = decode(artifactObj.bytes)
             if (decodedRules) {
-                setRules(decodedRules)
+                const decodedRulesFormatted = decodedRules.trim()
+                setRules(decodedRulesFormatted)
             }
             else {
                 sendNotification(NotificationType.error, "Internal error", "Failed to decode rules")
@@ -273,7 +276,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             NodeToCIDMap={nodeToCIDMap}
             PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap} />)
     }
-
+    
     if (!predictorPlotData && !prescriptorPlotData) {
         PlotDiv.push(
             <div className="container">
@@ -281,31 +284,55 @@ export default function RunPage(props: RunProps): React.ReactElement {
             </div>
         )
     } else {
+        // Link to decision UI, or disabled and explanatory text if rules-based which decision UI does not support.
         PlotDiv.push(
-            <Button size="lg" className="mt-4 mb-4"
-                    type="button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue, width: "100%"}}
+            <div
+                style={{
+                    cursor: rules == null ? "pointer" : "not-allowed"
+                }}
             >
-                <Link
-                    href={`/projects/${props.ProjectId}/experiments/${run.experiment_id}/runs/${run.id}/
-prescriptors/${Object.values(nodeToCIDMap)[0]}/?dataprofile_id=${flow[0].data.DataTag.id}`}
+                <Button size="lg" className="mt-4 mb-4"
+                        type="button"
+                        style={{
+                            background: MaximumBlue,
+                            borderColor: MaximumBlue,
+                            width: "100%"
+                        }}
+                        disabled={rules != null}
                 >
-                    <a style={{
-                        color: "white"
-                    }}>Go to Decision Making System with Prescriptor: {Object.values(nodeToCIDMap)[0]}</a>
-                </Link>
+                    {rules == null ?
+                        <Link
+                            href={`/projects/${props.ProjectId}/experiments/${run.experiment_id}/runs/${run.id}/
+prescriptors/${Object.values(nodeToCIDMap)[0]}/?dataprofile_id=${flow[0].data.DataTag.id}`}
+                        >
+                            <a style={{
+                                color: "white"
+                            }}>Go to Decision Making System with Prescriptor: {Object.values(nodeToCIDMap)[0]}</a>
+                        </Link>
+                        : "(Decision Making System does not yet support rules-based models)"}
 
-            </Button>
+                </Button>
+            </div>
         )
     }
 
     if (rules) {
-        // Add rules
+        // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
+        // the rules are in to get a decent coloring scheme
         PlotDiv.push(
-            <div >
+            <>
                 <NewBar Title="Rules" DisplayNewLink={ false } />
-                <p>{rules}</p>
-            </div>
+                <div className="my-2 py-2"
+                     style={{
+                         whiteSpace: "pre",
+                         backgroundColor: "whitesmoke"
+                     }}
+                >
+                    <SyntaxHighlighter language="scala" style={docco} showLineNumbers={true}>
+                        {rules}
+                    </SyntaxHighlighter>
+                </div>
+            </>
         )
     }
     
