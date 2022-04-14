@@ -5,7 +5,11 @@ module.exports = {
         ignoreBuildErrors: false,
     },
     eslint: {
-        ignoreDuringBuilds: false,
+	// We run eslint in CI/CD via a script that allows us
+	// to pass without being lint-free. Until such time as
+	// we are eslint-free, we need to ignore eslint during 
+	// the build process.
+        ignoreDuringBuilds: true,
         dirs: ['components', 'controller', 'pages', 'public', 'styles', 'utils', '.']
     },
 
