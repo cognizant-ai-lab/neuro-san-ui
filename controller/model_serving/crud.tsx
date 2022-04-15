@@ -1,18 +1,20 @@
 import {
-    DeployedModel,
+    DeployedModel, Deployments,
     DeployRequest,
-    GetDeploymentRequest,
+    GetDeploymentsRequest,
     ModelFormat,
     ModelMetaData,
     ModelServingEnvironment
 } from "./types";
 import {StringString} from "../base_types";
-import {MD_BASE_URL} from "../../const";
+// import {MD_BASE_URL} from "../../const";
 import {NotificationType, sendNotification} from "../notification";
 import {Run} from "../run/types";
 
+const MD_BASE_URL = "http://localhost:30003"
 const DEPLOY_ROUTE = "/api/v1/serving/deploy"
 const GET_DEPLOYMENT_URL = "/api/v1/serving/deployment"
+const GET_DEPLOYMENTS_URL = "/api/v1/serving/deployments"
 
 export function determineModelFormat(model_uri: string): ModelFormat {
     // Determine the model format
@@ -43,6 +45,7 @@ export function GenerateDeploymentID(run_id: number,
 }
 
 export async function DeployModel(
+    deployment_id: string,
     model_uri: string,
     run_id: number,
     experiment_id: number,
@@ -59,12 +62,6 @@ export async function DeployModel(
         model_format: model_format
     }
 
-    const deployment_id: string = GenerateDeploymentID(
-        run_id,
-        experiment_id,
-        project_id,
-        node_id
-    )
     const labels: StringString = {
         run_id: run_id.toString(),
         experiment_id: experiment_id.toString(),
@@ -133,6 +130,10 @@ export async function DeployRun(
     model_serving_env: ModelServingEnvironment
     ) {
 
+    // Fetch the already deployed models
+    const deployed_models: Deployments = await GetDeployedModelsForRun(run.id, model_serving_env)
+    const deployed_ids: string[] = deployed_models.deployed_models.map(model => model.model_status.deployment_id)
+
     const flow = JSON.parse(run.flow)
     const output_artifacts: StringString = flow.output_artifacts
     Object.keys(output_artifacts).forEach((node, _) => {
@@ -144,12 +145,20 @@ export async function DeployRun(
             node_id = node.substr("prescriptor".length + 1).replace(`-${cid}`, "")
             cid = prescriptor_cid
         }
-
-        DeployModel(output_artifacts[node],
-            run.id, run.experiment_id, project_id, node_id,
-            run.name, min_replicas, model_serving_env, cid
+        const deployment_id: string = GenerateDeploymentID(
+            run.id,
+            run.experiment_id,
+            project_id,
+            node_id, cid
         )
 
+        // Only deploy the model if it is not deployed
+        if (!deployed_ids.includes(deployment_id)) {
+            DeployModel(deployment_id, output_artifacts[node],
+                run.id, run.experiment_id, project_id, node_id,
+                run.name, min_replicas, model_serving_env, cid
+            )
+        }
     })
 
 }
@@ -183,3 +192,42 @@ export async function GetDeployment(deployment_id: string, model_serving_environ
 
 }
 
+export async function GetDeployedModelsForRun(
+    run_id: number,
+    model_serving_environment: ModelServingEnvironment
+): Promise<Deployments> {
+
+    const labels: StringString = {
+        run_id: run_id.toString()
+    }
+    const request: GetDeploymentsRequest = {
+        labels: labels,
+        model_serving_environment: model_serving_environment
+    }
+
+    try {
+        const response = await fetch(MD_BASE_URL + GET_DEPLOYMENTS_URL, {
+            method: 'POST',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request)
+        })
+
+        if (response.status != 200) {
+            sendNotification(NotificationType.error, `Failed to fetch model for run id ${run_id}`, response.statusText)
+            return null
+        }
+
+        return await response.json()
+    } catch (e) {
+        sendNotification(NotificationType.error, "Model fetch error",
+            "Unable to fetch deployed model. See console for more details.")
+        console.error(e, e.stack)
+    }
+
+
+    return
+
+}

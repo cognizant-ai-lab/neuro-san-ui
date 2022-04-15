@@ -15,7 +15,9 @@ import decode from "../../utils/decode";
 import {NotificationType, sendNotification} from "../../controller/notification";
 import {FlowQueries} from "./flow/flowqueries";
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { docco } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import {GetDeployedModelsForRun} from "../../controller/model_serving/crud";
+import {ModelServingEnvironment} from "../../controller/model_serving/types";
 
 export interface RunProps {
     /* 
@@ -299,6 +301,12 @@ export default function RunPage(props: RunProps): React.ReactElement {
                             width: "100%"
                         }}
                         disabled={rules != null}
+                        onClick={async () => {
+                            const models = await GetDeployedModelsForRun(
+                                103, ModelServingEnvironment.KSERVE
+                            )
+                            console.log(models)
+                        }}
                 >
                     {rules == null ?
                         <Link
