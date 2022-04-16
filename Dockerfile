@@ -1,3 +1,11 @@
+#
+# This is the Dockerfile for building the UI/NodeJS Docker image.
+#
+# Taken from here with slight modifications: https://github.com/vercel/next.js/blob/main/examples/with-docker/Dockerfile
+#
+# It uses multi-stage builds for a smaller resulting image
+#
+
 # Install dependencies only when needed
 FROM node:16-alpine AS deps
 
