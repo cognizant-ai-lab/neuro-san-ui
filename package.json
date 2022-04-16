@@ -3,9 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "about:dev": "echo 'Starts the UI in dev mode on port 3000 on the local system'",
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
+    "about:lint": "echo 'Checks for issues in the Typescript and Javascript code using eslint'",
     "lint": "next lint",
+    "about:build": "echo 'Creates a production build of the UI project using `next build`'",
     "build": "next build",
+    "about:start": "echo 'Starts the UI in production mode. Requires `build` to have been run beforehand.'",
     "start": "next start"
   },
   "dependencies": {
@@ -19,7 +23,7 @@
     "codemirror": "^5.62.3",
     "debug": "^4.3.4",
     "evergreen-ui": "^6.7.1",
-    "next": "12.1.0",
+    "next": "12.1.5-canary.7",
     "prop-types": "^15.8.1",
     "rc-slider": "9.6.5",
     "react": "17.0.2",
@@ -37,14 +41,15 @@
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
+    "@jest/types": "^27.5.1",
+    "@types/react": "^18.0.5",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
+    "@typescript-eslint/parser": "^5.19.0",
     "autoprefixer": "^10.3.1",
     "eslint": "^8.12.0",
     "eslint-config-next": "^12.1.4",
-    "jest": "^27.5.1",
-    "@jest/types": "^27.5.1",
     "postcss": "^8.3.5",
     "tailwindcss": "^2.2.4",
-    "typescript": "^4.3.5"
+    "typescript": "4.6.3"
   }
 }
