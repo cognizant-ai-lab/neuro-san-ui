@@ -36,6 +36,7 @@ export interface ObjectiveData {
     readonly OutputOverrideCode: any
     readonly UpdateOutputOverrideCode: any
 
+    ReadOnly: boolean
 }
 
 export default function PrescriptorEdge({ id, sourceX, sourceY,
@@ -124,7 +125,10 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
                 }
                 >   
                     <div className="flex">
-                        <button type="button" className="mt-1"  style={{height: 0}}> <GrSettingsOption /></button>
+                        <button type="button" 
+                                className="mt-1"
+                                disabled={data.ReadOnly != null ? data.ReadOnly : false}  
+                                style={{height: 0}}> <GrSettingsOption /></button>
                     </div>
                 </Popover>
             </foreignObject>

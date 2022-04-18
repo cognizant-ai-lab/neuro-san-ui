@@ -82,6 +82,8 @@ export interface PredictorNodeData {
 
     readonly ParentPredictorState: PredictorState,
     readonly SetParentPredictorState: Dispatch<SetStateAction<PredictorState>>
+
+    ReadOnly: boolean
 }
 
 
@@ -289,7 +291,8 @@ export default function PredictorNode(props): React.ReactElement {
                                                 name={ `${NodeID}-predictorType` } 
                                                 onChange={ event => onPredictorTypeChange(event.target.value)}
                                                 value={ ParentPredictorState.selectedPredictorType }
-                                                className="w-32" >
+                                                className="w-32" 
+                                                disabled={data.ReadOnly != null ? data.ReadOnly : false}>
                                                     <option value="regressor">Regressor</option>
                                                     <option value="classifier">Classfier</option>
                                                     <option disabled value="byop">Bring your own (Coming Soon)</option>
@@ -303,7 +306,8 @@ export default function PredictorNode(props): React.ReactElement {
                                                 name={ `${NodeID}-predictor` } 
                                                 value={ ParentPredictorState.selectedPredictor }
                                                 onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
-                                                className="w-32">
+                                                className="w-32"
+                                                disabled={data.ReadOnly != null ? data.ReadOnly : false}>
                                                     { ParentPredictorState.selectedPredictorType &&
                                                         predictors[ParentPredictorState.selectedPredictorType].map(
                                                                 (predictor, _) => 
@@ -321,7 +325,8 @@ export default function PredictorNode(props): React.ReactElement {
                                                 name={ `${NodeID}-metric` } 
                                                 value={ ParentPredictorState.selectedMetric }
                                                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
-                                                className="w-32">
+                                                className="w-32"
+                                                disabled={data.ReadOnly != null ? data.ReadOnly : false}>
                                                      { metrics.map(
                                                                 (metric, _) => 
                                                                     <option key={metric} value={ metric }>
@@ -348,6 +353,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
                                                                     value={ParentPredictorState.predictorParams[param].value.toString()}
                                                                     onChange={event => onParamChange(event, param)}
+                                                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
                                                                 />
                                                         }
                                                         {
@@ -358,6 +364,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
                                                                     value={ParentPredictorState.predictorParams[param].value.toString()}
                                                                     onChange={event => onParamChange(event, param)}
+                                                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
                                                                 />
                                                         }
                                                         {
@@ -367,6 +374,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                                     defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
                                                                     checked={Boolean(ParentPredictorState.predictorParams[param].value)}
                                                                     onChange={event => onPredictorParamCheckBoxChange(event, param)}
+                                                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
                                                                 />
                                                             )
                                                         }
@@ -375,7 +383,8 @@ export default function PredictorNode(props): React.ReactElement {
                                                             <select
                                                                 value={ ParentPredictorState.predictorParams[param].value.toString() }
                                                                 onChange={event => onParamChange(event, param)}
-                                                                className="w-32">
+                                                                className="w-32"
+                                                                disabled={data.ReadOnly != null ? data.ReadOnly : false}>
                                                                 {
                                                                     // @ts-ignore
                                                                     ParentPredictorState.predictorParams[param].type.map(
@@ -391,6 +400,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
                                                                     value={ParentPredictorState.predictorParams[param].value.toString()}
                                                                     onChange={event => onParamChange(event, param)}
+                                                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
                                                                 />
                                                             )
                                                         }
@@ -402,6 +412,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
                                                                     value={ParentPredictorState.predictorParams[param].value.toString()}
                                                                     onChange={event => onParamChange(event, param)}
+                                                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
                                                                 />
                                                             )
                                                         }
@@ -497,7 +508,10 @@ export default function PredictorNode(props): React.ReactElement {
                         >   
                             <div className="flex">
                                 
-                                <button type="button" className="mt-1"  style={{height: 0}}> <GrSettingsOption /></button>
+                                <button type="button" 
+                                        className="mt-1"
+                                        disabled={data.ReadOnly != null ? data.ReadOnly : false}  
+                                        style={{height: 0}}> <GrSettingsOption /></button>
                             </div>
                         </Popover>
                         <Popover
@@ -545,7 +559,10 @@ export default function PredictorNode(props): React.ReactElement {
                                 </Card.Body>
                             }
                             >
-                            <button type="button" className="absolute bottom-6 -left-4" style={{height: 0}}>A</button>
+                            <button type="button" 
+                                    className="absolute bottom-6 -left-4"
+                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
+                                    style={{height: 0}}>A</button>
                         </Popover>
                         <Popover
                             position={Position.RIGHT}
@@ -568,7 +585,10 @@ export default function PredictorNode(props): React.ReactElement {
                                 </Card.Body>
                             }
                             >
-                            <button type="button" className="absolute top-5 -right-4" style={{height: 0}}>O</button>
+                            <button type="button" 
+                                    className="absolute top-5 -right-4"
+                                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
+                                    style={{height: 0}}>O</button>
                         </Popover>
                     </Card.Body>
                 </Card>

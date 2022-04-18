@@ -94,13 +94,15 @@ class FlowNodeStateUpdateHandler extends FlowState {
                         ...node.data,
                         DataSource: dataSource,
                         DataTag: dataTag,
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
                 if (node.type === 'predictornode' || node.type === 'prescriptornode') {
                     debug("Recreating node: ", node.type)
                     node.data = {
                         ...node.data,
-                        SelectedDataSourceId: dataSource.id
+                        SelectedDataSourceId: dataSource.id,
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
                 return node
@@ -134,7 +136,8 @@ class FlowNodeStateUpdateHandler extends FlowState {
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
-                        ParentPredictorState: newState
+                        ParentPredictorState: newState,
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
 
@@ -183,7 +186,8 @@ class FlowNodeStateUpdateHandler extends FlowState {
                                 ...node.data.ParentPrescriptorState.evolution,
                                 fitness
                             }
-                        }
+                        },
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
                 return node
@@ -202,7 +206,8 @@ class FlowNodeStateUpdateHandler extends FlowState {
                 if (node.id === prescriptorEdgeID) {
                     node.data = {
                         ...node.data,
-                        OutputOverrideCode: value
+                        OutputOverrideCode: value,
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
                 return node
@@ -221,7 +226,8 @@ class FlowNodeStateUpdateHandler extends FlowState {
                 if (node.id === prescriptorNodeID) {
                     node.data = {
                         ...node.data,
-                        EvaluatorOverrideCode: value
+                        EvaluatorOverrideCode: value,
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
                 return node
@@ -242,7 +248,8 @@ class FlowNodeStateUpdateHandler extends FlowState {
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
-                        ParentPrescriptorState: newState
+                        ParentPrescriptorState: newState,
+                        ReadOnly: !this.ElementsSelectable
                     }
                 }
                 return node
@@ -269,16 +276,19 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 if (node.type === 'datanode') {
                     node.data = {
                         ...node.data,
+                        ReadOnly: !this.ElementsSelectable,
                         SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
                     }
                 } else if (node.type === 'predictornode') {
                     node.data = {
                         ...node.data,
+                        ReadOnly: !this.ElementsSelectable,
                         SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id)
                     }
                 } else if (node.type === 'prescriptornode') {
                     node.data = {
                         ...node.data,
+                        ReadOnly: !this.ElementsSelectable,
                         SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id)
                     }
                 } else if (node.type === "prescriptoredge") {
