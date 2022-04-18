@@ -42,9 +42,6 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
 # You only need to copy next.config.js if you are NOT using the default configuration
 # COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
@@ -52,16 +49,15 @@ COPY --from=builder /app/package.json ./package.json
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
-# Not sure why we need this -- should have been copied over from the builder stage, but if we don't do this we get
-# "next not found" when running yarn start
-RUN yarn add next@12.1.5
+# The "node" non-privileged user is provided by the base image
+USER node
 
-USER nextjs
 EXPOSE 3000
+
 # Disable NextJS spyware
 ENV NEXT_TELEMETRY_DISABLED 1
 
-CMD ["yarn", "start"]
+CMD ["node", "server.js"]
