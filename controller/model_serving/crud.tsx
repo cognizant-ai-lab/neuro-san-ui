@@ -7,7 +7,8 @@ import {
     KServeModelServerStatusSummary,
     ModelFormat,
     ModelMetaData,
-    ModelServingEnvironment
+    ModelServingEnvironment,
+    ModelStatus, TearDownRequest
 } from "./types";
 import {StringBool, StringString} from "../base_types";
 // import {MD_BASE_URL} from "../../const";
@@ -18,6 +19,7 @@ const MD_BASE_URL = "http://localhost:30003"
 const DEPLOY_ROUTE = "/api/v1/serving/deploy"
 const GET_DEPLOYMENT_URL = "/api/v1/serving/deployment"
 const GET_DEPLOYMENTS_URL = "/api/v1/serving/deployments"
+const TEAR_DOWN_DEPLOYMENT_ROUTE = "/api/v1/serving/teardown"
 
 export function determineModelFormat(model_uri: string): ModelFormat {
     // Determine the model format
@@ -228,7 +230,7 @@ export async function IsRunDeployed(model_serving_environment: ModelServingEnvir
                                     experiment_id?: number,
                                     project_id?: number,
                                     cid?: string
-): Promise<boolean> {
+): Promise<string | boolean> {
 
     // Fetch the already deployed models
     const deployed_models: Deployments = await GetDeployedModelsForRun(run_id, model_serving_environment)
@@ -244,10 +246,16 @@ export async function IsRunDeployed(model_serving_environment: ModelServingEnvir
             )
 
         }
-        return deployed_ids.includes(deployment_id)
+
+        if (deployed_ids.includes(deployment_id)) {
+            return deployment_id
+        }
+
+        return false
     } else {
         return false
     }
+
 }
 
 
@@ -338,4 +346,61 @@ export async function GenerateKServeModelSummary(run: Run): Promise<KServeModelS
     }
 
     return model_summary
+}
+
+export async function TeardownDeployment(model_serving_environment: ModelServingEnvironment,
+                                         deployment_id?: string,
+                                         run_id?: number,
+                                         experiment_id?: number,
+                                         project_id?: number,
+                                         cid?: string): Promise<ModelStatus> {
+
+    let model_status: ModelStatus = {
+        status: DeploymentStatus.DEPLOYMENT_STATUS_UNKNOWN,
+        deployment_id: "",
+        labels: {}
+    }
+    const deployed_deployment_id = await IsRunDeployed(model_serving_environment,
+        deployment_id,
+        run_id,
+        experiment_id,
+        project_id,
+        cid)
+
+    if (deployed_deployment_id && typeof(deployed_deployment_id) == "string") {
+        model_status.deployment_id = deployed_deployment_id
+
+        // Generate the request
+        const tear_down_request: TearDownRequest = {
+            deployment_id: deployed_deployment_id,
+            model_serving_environment: model_serving_environment
+        }
+
+        try {
+            const response = await fetch(MD_BASE_URL + GET_DEPLOYMENTS_URL, {
+                method: 'DELETE',
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(tear_down_request)
+            })
+
+            if (response.status != 200) {
+                sendNotification(NotificationType.error, `Failed to delete model for run id ${run_id}`, response.statusText)
+                return null
+            }
+
+            model_status = await response.json()
+        } catch (e) {
+            sendNotification(NotificationType.error, "Model teardown error",
+                "Unable to delete deployed model. See console for more details.")
+            console.error(e, e.stack)
+        }
+
+    }
+
+
+    return model_status
+
 }
