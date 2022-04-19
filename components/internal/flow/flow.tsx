@@ -163,7 +163,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
                     // Make this a set
                     checkedOutcomes = checkedOutcomes.filter((value, index, self) => self.indexOf(value) === index)
 
-                    let fitness = checkedOutcomes.map(outcome => {
+                    const fitness = checkedOutcomes.map(outcome => {
 
                         // Maintain the state if it exists otherwise set maximize to true
                         const maximize = node.data.ParentPrescriptorState.evolution.fitness.filter(
@@ -305,7 +305,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         This function resets the graphs and attaches a Data node.
         */
         // Create an empty graph
-        let initialGraph = []
+        const initialGraph = []
 
         // Add Data Node. The Data node has a constant ID
         // described by the constant InputDataNodeID. At the moment
@@ -328,7 +328,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     _addEdgeToPrescriptorNode(graph,
         predictorNodeID, prescriptorNodeID) {
 
-        let graphCopy = [...graph]
+        const graphCopy = [...graph]
         const EdgeId = uuid()
         graphCopy.push({ 
             id: EdgeId, 
@@ -351,13 +351,13 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         /*
         This function returns the initial state of the predictor
         */
-        let initialCAOState: CAOChecked = {
+        const initialCAOState: CAOChecked = {
             context: {},
             action: {},
             outcome: {}
         }
-        let predictorParams: PredictorParams = {}
-        let initialState: PredictorState = {
+        const predictorParams: PredictorParams = {}
+        const initialState: PredictorState = {
             selectedPredictorType: "regressor",
             selectedPredictor: "",
             selectedMetric: "",
