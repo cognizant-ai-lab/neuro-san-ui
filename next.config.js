@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
     typescript: {
-        ignoreBuildErrors: true,
+        ignoreBuildErrors: false,
     },
     eslint: {
 	// We run eslint in CI/CD via a script that allows us
