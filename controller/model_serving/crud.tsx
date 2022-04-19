@@ -1,12 +1,15 @@
 import {
-    DeployedModel, Deployments,
+    DeployedModel,
+    Deployments,
+    DeploymentStatus,
     DeployRequest,
     GetDeploymentsRequest,
+    KServeModelServerStatusSummary,
     ModelFormat,
     ModelMetaData,
     ModelServingEnvironment
 } from "./types";
-import {StringString} from "../base_types";
+import {StringBool, StringString} from "../base_types";
 // import {MD_BASE_URL} from "../../const";
 import {NotificationType, sendNotification} from "../notification";
 import {Run} from "../run/types";
@@ -34,9 +37,9 @@ export function determineModelFormat(model_uri: string): ModelFormat {
 export function GenerateDeploymentID(run_id: number,
                                      experiment_id: number,
                                      project_id: number,
-                                     node_id: string, cid?: string): string {
+                                     cid?: string): string {
 
-    let deployment_id: string = `${project_id}-${experiment_id}-${run_id}-${node_id.substr(0, 5)}`
+    let deployment_id: string = `${project_id}-${experiment_id}-${run_id}}`
     if (cid) {
         deployment_id = `${deployment_id}-${cid}`
     }
@@ -46,19 +49,19 @@ export function GenerateDeploymentID(run_id: number,
 
 export async function DeployModel(
     deployment_id: string,
-    model_uri: string,
     run_id: number,
     experiment_id: number,
     project_id: number,
-    node_id: string,
     run_name: string,
     min_replicas: number,
     model_serving_environment: ModelServingEnvironment,
     cid?: string): Promise<DeployedModel> {
 
-    const model_format: ModelFormat = determineModelFormat(model_uri)
+    const model_format: ModelFormat = ModelFormat.CUSTOM_MODEL_FORMAT
     const model_meta_data: ModelMetaData = {
-        model_uri: model_uri,
+        // In our case our model urls are in the output artifacts
+        // and our predictor server takes care of it.
+        model_uri: "",
         model_format: model_format
     }
 
@@ -66,7 +69,6 @@ export async function DeployModel(
         run_id: run_id.toString(),
         experiment_id: experiment_id.toString(),
         project_id: project_id.toString(),
-        node_id: node_id,
         run_name: run_name
     }
     if (cid) {
@@ -76,11 +78,11 @@ export async function DeployModel(
     let custom_predictor_args: StringString
     if (model_serving_environment === ModelServingEnvironment.KSERVE) {
         custom_predictor_args = {
-            model_name: deployment_id,
-            model_uri: model_uri,
             gateway_url: MD_BASE_URL,
-            run_id: run_id.toString(),
-            node_id: node_id.toString()
+            run_id: run_id.toString()
+        }
+        if (cid) {
+            custom_predictor_args.prescriptor_cid = cid
         }
 
     } else {
@@ -107,7 +109,7 @@ export async function DeployModel(
         })
 
         if (response.status != 200) {
-            sendNotification(NotificationType.error, `Failed to deploy model for node id ${node_id}`, response.statusText)
+            sendNotification(NotificationType.error, `Failed to deploy models for run ${run_name}: ${run_id}`, response.statusText)
             return null
         }
 
@@ -131,35 +133,22 @@ export async function DeployRun(
     ) {
 
     // Fetch the already deployed models
-    const deployed_models: Deployments = await GetDeployedModelsForRun(run.id, model_serving_env)
-    const deployed_ids: string[] = deployed_models.deployed_models.map(model => model.model_status.deployment_id)
+    const deployment_id: string = GenerateDeploymentID(
+        run.id,
+        run.experiment_id,
+        project_id,
+        cid
+    )
 
-    const flow = JSON.parse(run.flow)
-    const output_artifacts: StringString = flow.output_artifacts
-    Object.keys(output_artifacts).forEach((node, _) => {
-        let prescriptor_cid = null
-        let node_id: string
-        if (node.startsWith("predictor")) {
-            node_id = node.substr("predictor".length + 1)
-        } else {
-            node_id = node.substr("prescriptor".length + 1).replace(`-${cid}`, "")
-            cid = prescriptor_cid
-        }
-        const deployment_id: string = GenerateDeploymentID(
-            run.id,
-            run.experiment_id,
-            project_id,
-            node_id, cid
+    // Only deploy the model if it is not deployed
+    if (!await IsRunDeployed(model_serving_env, deployment_id)) {
+        await DeployModel(deployment_id,
+            run.id, run.experiment_id, project_id,
+            run.name, min_replicas, model_serving_env, cid
         )
-
-        // Only deploy the model if it is not deployed
-        if (!deployed_ids.includes(deployment_id)) {
-            DeployModel(deployment_id, output_artifacts[node],
-                run.id, run.experiment_id, project_id, node_id,
-                run.name, min_replicas, model_serving_env, cid
-            )
-        }
-    })
+    } else {
+        sendNotification(NotificationType.info, `Deployment already exists for run ${run.name}: ${run.id} - ${deployment_id}`)
+    }
 
 }
 
@@ -228,6 +217,125 @@ export async function GetDeployedModelsForRun(
     }
 
 
+
     return
 
+}
+
+export async function IsRunDeployed(model_serving_environment: ModelServingEnvironment,
+                                    deployment_id?: string,
+                                    run_id?: number,
+                                    experiment_id?: number,
+                                    project_id?: number,
+                                    cid?: string
+): Promise<boolean> {
+
+    // Fetch the already deployed models
+    const deployed_models: Deployments = await GetDeployedModelsForRun(run_id, model_serving_environment)
+
+    if (Object.keys(deployed_models).length) {
+        const deployed_ids: string[] = deployed_models.deployed_models.map(model => model.model_status.deployment_id)
+        if (!deployment_id) {
+            deployment_id = GenerateDeploymentID(
+                run_id,
+                experiment_id,
+                project_id,
+                cid
+            )
+
+        }
+        return deployed_ids.includes(deployment_id)
+    } else {
+        return false
+    }
+}
+
+
+export async function IsKServeRunModelServerStatusAlive(run_id: number, base_url: string): Promise<boolean> {
+
+    try {
+        const response = await fetch(base_url, {
+            method: 'GET'
+        })
+
+        if (response.status != 200) {
+            sendNotification(NotificationType.error, `Failed to check model server status for run: ${run_id}`,
+                response.statusText)
+            return null
+        }
+
+        const responseJson = await response.json()
+        return responseJson.status === "alive"
+    } catch (e) {
+        sendNotification(NotificationType.error, "Model server status check error error",
+            "See console for more details.")
+        console.error(e, e.stack)
+    }
+
+    return false
+}
+
+export async function IsKServeModelV2Ready(run_id: number, base_url: string, model_name: string) {
+
+    try {
+        const response = await fetch(`${base_url}/v2/models/${model_name}/status`, {
+            method: 'GET'
+        })
+
+        if (response.status != 200) {
+            sendNotification(NotificationType.error, `Failed to check model status for run: ${run_id}`,
+                response.statusText)
+            return null
+        }
+
+        const responseJson = await response.json()
+        return "ready" in responseJson && responseJson.ready === true
+    } catch (e) {
+        sendNotification(NotificationType.error, "Model server status check error error",
+            "See console for more details.")
+        console.error(e, e.stack)
+    }
+
+    return false
+}
+
+export async function GenerateKServeModelSummary(run: Run): Promise<KServeModelServerStatusSummary> {
+
+    let model_summary: KServeModelServerStatusSummary = {
+        inference_server_status: DeploymentStatus.DEPLOYMENT_STATUS_UNKNOWN,
+        model_server_alive: false,
+        models_ready: {}
+    }
+
+    // Fetch the already deployed models pertaining to this run id
+    const deployments: Deployments = await GetDeployedModelsForRun(run.id, ModelServingEnvironment.KSERVE)
+
+    if (Object.keys(deployments).length) {
+
+        if (Object.keys(deployments).length != 1) {
+            sendNotification(NotificationType.error, `Could not find unique deployment for run: ${run.id}`)
+            return model_summary
+        }
+
+        model_summary.inference_server_status = deployments.deployed_models[0].model_status.status
+        const base_url: string = deployments.deployed_models[0].model_reference.base_url
+
+        // Check liveliness of model
+        const alive: boolean = await IsKServeRunModelServerStatusAlive(run.id, base_url)
+        model_summary.model_server_alive = alive
+
+        const model_status: StringBool = {}
+        if (alive) {
+            const model_names: string[] = Object.keys(run.output_artifacts)
+            for (const model_name of model_names) {
+                model_status[model_name] = await IsKServeModelV2Ready(run.id, base_url, model_name)
+            }
+        }
+        model_summary.models_ready = model_status
+
+    } else {
+        model_summary.inference_server_status = DeploymentStatus.DEPLOYMENT_DOES_NOT_EXIST
+    }
+
+    return model_summary
 }
