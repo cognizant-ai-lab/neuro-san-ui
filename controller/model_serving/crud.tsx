@@ -8,7 +8,8 @@ import {
     ModelFormat,
     ModelMetaData,
     ModelServingEnvironment,
-    ModelStatus, TearDownRequest
+    ModelStatus,
+    TearDownRequest
 } from "./types";
 import {StringBool, StringString} from "../base_types";
 // import {MD_BASE_URL} from "../../const";
@@ -41,12 +42,7 @@ export function GenerateDeploymentID(run_id: number,
                                      project_id: number,
                                      cid?: string): string {
 
-    let deployment_id: string = `${project_id}-${experiment_id}-${run_id}}`
-    if (cid) {
-        deployment_id = `${deployment_id}-${cid}`
-    }
-    return deployment_id
-
+    return cid || `${project_id}-${experiment_id}-${run_id}}`
 }
 
 export async function DeployModel(

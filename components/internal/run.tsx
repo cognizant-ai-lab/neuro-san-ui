@@ -317,7 +317,7 @@ prescriptors/${Object.values(nodeToCIDMap)[0]}/?dataprofile_id=${flow[0].data.Da
                                 color: "white"
                             }}>Go to Decision Making System with Prescriptor: {Object.values(nodeToCIDMap)[0]}</a>
                         </Link>
-                        : "(Decision Making System does not yet support rules-based models)"}
+                        : "(Decision Making System for rules-based models coming soon!)"}
 
                 </Button>
             </div>
