@@ -51,8 +51,6 @@ export interface PrescriptorNodeData {
 
     readonly ParentPrescriptorState: any,
     readonly SetParentPrescriptorState: any
-
-    ReadOnly: boolean
 }
 
 
@@ -145,7 +143,6 @@ export default function PrescriptorNode(props): React.ReactElement {
                 <select
                     key="objective-select"
                     value={metric.maximize}
-                    disabled={data.ReadOnly != null ? data.ReadOnly : false}
                     onChange={event => {
                         // Update maximize/minimize status for selected outcome
                         let fitness = ParentPrescriptorState.evolution.fitness

@@ -28,9 +28,6 @@ export interface DataSourceNodeData {
 
     // We get passed the Node Definitions and a hook to update the definition
     readonly SelfStateUpdateHandler: any,
-
-    // Disables/Enables the ability to edit the element
-    ReadOnly: boolean
 }
 
 
@@ -85,9 +82,6 @@ export default function DataSourceNode(props): React.ReactElement {
                                              }
                                          }
                                          defaultValue={taggedDataList.length > 0 && taggedDataList[0].DataSource.id}
-                                         // If the ReadOnly flag is null, don't disable the element, otherwhise use
-                                         // the flag (We want it enabled by default)
-                                         disabled={data.ReadOnly != null ? data.ReadOnly : false}
                                 >
                                     {taggedDataList.map(data =>
                                         <option key={data.DataSource.id}
