@@ -88,8 +88,6 @@ export interface PredictorNodeData {
 
 const SliderComponent = Slider.createSliderWithTooltip(Slider);
 
-// const InputComponents = document.querySelectorAll("button")
-
 export default function PredictorNode(props): React.ReactElement {
     /*
     This function is responsible to render the Predictor Node
