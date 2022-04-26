@@ -16,7 +16,7 @@ import {NotificationType, sendNotification} from "../../controller/notification"
 import {FlowQueries} from "./flow/flowqueries";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
-import {GetDeployedModelsForRun} from "../../controller/model_serving/crud";
+import {deployRun} from "../../controller/model_serving/crud";
 import {ModelServingEnvironment} from "../../controller/model_serving/types";
 
 export interface RunProps {
@@ -35,8 +35,6 @@ export interface RunProps {
     setRuns: (arg: Runs) => void,
     runs: Runs
 }
-
-var debug = require('debug')('run')
 
 
 export default function RunPage(props: RunProps): React.ReactElement {
@@ -57,8 +55,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
         the runs prop passed from the experiment page so they 
         won't have to be fetched again.
         */
-        let tempRuns = [...props.runs]
-        let runIndex = getRunIndexByID(run.id)
+        const runIndex = getRunIndexByID(run.id)
+        const tempRuns = [...props.runs]
         tempRuns[runIndex].output_artifacts = run.output_artifacts
         tempRuns[runIndex].metrics = run.metrics
         tempRuns[runIndex].flow = run.flow
@@ -70,7 +68,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         Finds a run by runID from the props and returns the 
         corresponding index so the run can be accessed
         */
-        let tempRuns = props.runs
+        const tempRuns = props.runs
         let selectedIndex = null
         tempRuns.forEach(((iterated_run, idx) => {
             if (runID == iterated_run.id) {
@@ -84,7 +82,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         /*
             Retrieves a run from the cache. If not found in the cache (cache miss), returns null.
         */
-        let runIndex = getRunIndexByID(runID)
+        const runIndex = getRunIndexByID(runID)
         if (runIndex == null) {
             return null
         }
@@ -169,6 +167,12 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }
 
+    // Eagerly deploy models for this run so they will be ready for the DMS.
+    // We currently deploy all prescriptors for the run which is a bit of overkill but fine for now.
+    async function deployModels(run: Run) {
+        await deployRun(props.ProjectId, run, 0, null, ModelServingEnvironment.KSERVE)
+    }
+
     // Fetch the experiment and the runs
     useEffect(() => {
         // Attempt to get the run from the cache
@@ -211,12 +215,14 @@ export default function RunPage(props: RunProps): React.ReactElement {
     useEffect(() => {
         if (run != null && flow != null) {
             constructMetrics(run.metrics)
+            deployModels(run)
         }
     }, [run])
 
     const constructMetrics = metrics => {
         if (metrics) {
-            let [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(flow, JSON.parse(metrics))
+            const [constructedPredictorResults, constructedPrescriptorResults, pareto] =
+                constructRunMetricsForRunPlot(flow, JSON.parse(metrics))
             setPredictorPlotData(constructedPredictorResults)
             setPrescriptorPlotData(constructedPrescriptorResults)
             setParetoPlotData(pareto)
@@ -263,7 +269,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }, [flowInstance])
 
-    let PlotDiv = []
+    const PlotDiv = []
     if (predictorPlotData) {
         PlotDiv.push(<MetricsTable PredictorRunData={predictorPlotData} />)
     }
@@ -301,12 +307,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
                             width: "100%"
                         }}
                         disabled={rules != null}
-                        onClick={async () => {
-                            const models = await GetDeployedModelsForRun(
-                                103, ModelServingEnvironment.KSERVE
-                            )
-                            console.log(models)
-                        }}
                 >
                     {rules == null ?
                         <Link
