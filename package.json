@@ -15,6 +15,7 @@
     "about:start": "echo 'Starts the UI in production mode. Requires `build` to have been run beforehand.'",
     "start": "next start",
 
+    "about:test": "echo 'Runs the front-end unit tests using `jest`'",
     "test": "jest"
   },
   "dependencies": {
