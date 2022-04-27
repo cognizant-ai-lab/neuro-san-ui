@@ -487,6 +487,8 @@ This list should match the list of supported metrics in the backend.
 See SUPPORTED_METRICS in framework/metrics/metrics_manager.py
 The string should match exactly the `name` property of the MetricsCalculator.
 For instance, "Mean Absolute Error" must match MeanAbsoluteError.name in framework/metrics/mean_absolute_error.py
+
+This list represents the metrics we want to be available for regressors
  */
     "Mean Absolute Error",
     "Mean Squared Error",
@@ -496,3 +498,15 @@ For instance, "Mean Absolute Error" must match MeanAbsoluteError.name in framewo
     "Accuracy score",
     "Matthews correlation coefficient"
 ]
+
+export const SUPPORTED_CLASSIFIER_METRICS: string[] = [
+    /*
+    This list represents the metrics we want to be available for classifiers
+     */
+        "F1 score",
+        "R2 score",
+        "Accuracy score",
+        "Matthews correlation coefficient"
+    ]
+
+

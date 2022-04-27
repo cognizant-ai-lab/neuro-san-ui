@@ -99,7 +99,10 @@ export default function PredictorNode(props): React.ReactElement {
     const { NodeID, ParentPredictorState, SetParentPredictorState } = data
 
     // Fetch the available metrics and predictors and these are not state dependant
-    const metrics = FetchMetrics()
+    const metrics = {
+        regressor: FetchMetrics("regressor"),
+        classifier: FetchMetrics("classifier")
+    }
     const predictors = {
         regressor: FetchPredictors("regressor"),
         classifier: FetchPredictors("classifier")
@@ -107,6 +110,10 @@ export default function PredictorNode(props): React.ReactElement {
 
     // Since predictors change
     const [taggedData, setTaggedData] = useState(null)
+
+    //Set the dropdown defaults here since the dropdown is created here
+    const DEFAULT_CLASSIFIER_METRIC = "F1 score"
+    const DEFAULT_REGRESSOR_METRIC = "Mean Absolute Error"
     
     // Fetch the Data Tag
     useEffect(() => {
@@ -121,7 +128,10 @@ export default function PredictorNode(props): React.ReactElement {
     useEffect(() => {
 
             const SelectedPredictor = ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
-            const SelectedMetric = ParentPredictorState.selectedMetric || metrics[0]
+ 
+            const SelectedMetric = ParentPredictorState.selectedPredictorType == "Classifier" ? 
+                                   ParentPredictorState.selectedMetric || DEFAULT_CLASSIFIER_METRIC : 
+                                   ParentPredictorState.selectedMetric || DEFAULT_REGRESSOR_METRIC
 
             // Initialize the parameters to be from the state
             let predictorParams = ParentPredictorState.predictorParams
@@ -325,7 +335,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
                                                 className="w-32"
                                                 >
-                                                     { metrics.map(
+                                                     { metrics[ParentPredictorState.selectedPredictorType].map(
                                                                 (metric, _) => 
                                                                     <option key={metric} value={ metric }>
                                                                         { metric }
