@@ -481,7 +481,7 @@ export const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
     }
 }
 
-export const SUPPORTED_METRICS: string[] = [
+export const SUPPORTED_REGRESSOR_METRICS: string[] = [
 /*
 This list should match the list of supported metrics in the backend.
 See SUPPORTED_METRICS in framework/metrics/metrics_manager.py

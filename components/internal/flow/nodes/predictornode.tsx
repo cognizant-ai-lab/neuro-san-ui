@@ -112,8 +112,8 @@ export default function PredictorNode(props): React.ReactElement {
     const [taggedData, setTaggedData] = useState(null)
 
     //Set the dropdown defaults here since the dropdown is created here
-    const DEFAULT_CLASSIFIER_METRIC = "F1 score"
-    const DEFAULT_REGRESSOR_METRIC = "Mean Absolute Error"
+    const DEFAULT_CLASSIFIER_METRIC = metrics["classifier"][0]
+    const DEFAULT_REGRESSOR_METRIC = metrics["regressor"][0]
     
     // Fetch the Data Tag
     useEffect(() => {

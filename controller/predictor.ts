@@ -2,7 +2,7 @@
 import {
     SUPPORTED_REGRESSION_MODELS,
     SUPPORTED_CLASSIFICATION_MODELS,
-    SUPPORTED_METRICS, SUPPORTED_CLASSIFIER_METRICS,
+    SUPPORTED_REGRESSOR_METRICS, SUPPORTED_CLASSIFIER_METRICS,
     PredictorParams
 
 } from "../predictorinfo"
@@ -33,7 +33,7 @@ export function FetchMetrics(predictorType: string): string[] {
     let metricsResp: string[]
     
     if (predictorType == "regressor") {
-        metricsResp = SUPPORTED_METRICS
+        metricsResp = SUPPORTED_REGRESSOR_METRICS
     } else if (predictorType == "classifier") {
         metricsResp = SUPPORTED_CLASSIFIER_METRICS
     }
