@@ -700,8 +700,7 @@ export default class Flow extends FlowUtils {
                         style={{
                             position: "absolute",
                             top: "0px",
-                            left: "0px",
-                            zIndex: 100
+                            left: "0px"
                         }}
                     />
                     <Background color="#000" gap={5} />
