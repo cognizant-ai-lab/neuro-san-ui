@@ -300,42 +300,7 @@ export default function PrescriptorNode(props): React.ReactElement {
                                                                     }  
                                                                 })
                                                                 SetParentPrescriptorState(stateCopy)
-                                                            }}><BiPlusMedical /></button><br />
-                                                            <hr />
-                                                            <div key={`${NodeID}-op-layer`}>
-                                                                <h6 className="mb-2">Output Layer</h6>
-                                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-center"
-                                                                >
-                                                                    <div>
-                                                                        <label className="mr-2">Activation: </label>
-                                                                        <select 
-                                                                            defaultValue="relu"
-                                                                            value={ ParentPrescriptorState.network.outputs[0].activation }
-                                                                            onChange={event => {
-                                                                                let modifiedOpLayerState = {...ParentPrescriptorState}
-                                                                                modifiedOpLayerState.network.outputs[0].activation = event.target.value
-                                                                                SetParentPrescriptorState(modifiedOpLayerState)
-                                                                            }}
-                                                                        >
-                                                                            {ActivationFunctions.map((activationFn, _) => <option key={`op-layer-activation-${activationFn}`} value={activationFn}>{activationFn}</option>)}
-                                                                        </select> 
-                                                                    </div>
-
-                                                                    <div>
-                                                                        <label className="mr-2">Use Bias: </label>
-                                                                        <input 
-                                                                            type="checkbox" 
-                                                                            defaultChecked={ true }
-                                                                            checked={ ParentPrescriptorState.network.outputs[0].use_bias }
-                                                                            onChange={event => {
-                                                                                let modifiedOpLayerState = {...ParentPrescriptorState}
-                                                                                modifiedOpLayerState.network.outputs[0].use_bias = event.target.checked
-                                                                                SetParentPrescriptorState(modifiedOpLayerState)
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                            }}><BiPlusMedical /></button>
                                                         </div>
                                                     }
                                                 </div>
