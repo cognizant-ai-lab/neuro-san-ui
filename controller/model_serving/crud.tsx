@@ -21,7 +21,12 @@ export function generateDeploymentID(run_id: number,
                                      project_id: number,
                                      cid?: string): string {
 
-    return cid || `deployment-${project_id}-${experiment_id}-${run_id}`
+    let deployment_id = `${project_id}-${experiment_id}-${run_id}}`
+    if (cid) {
+        deployment_id = `${deployment_id}-${cid}`
+    }
+    return deployment_id
+
 }
 
 export async function deployModel(
