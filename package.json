@@ -49,11 +49,10 @@
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.19.0",
-    "@typescript-eslint/parser": "^5.19.0",
+    "@jest/types": "^27.5.1",
     "@types/jest": "^27.4.1",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
-    "@jest/types": "^27.5.1",
+    "@typescript-eslint/parser": "^5.19.0",
     "autoprefixer": "^10.3.1",
     "eslint": "^8.12.0",
     "eslint-config-next": "^12.1.4",
