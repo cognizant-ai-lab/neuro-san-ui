@@ -489,8 +489,9 @@ The string should match exactly the `name` property of the MetricsCalculator.
 For instance, "Mean Absolute Error" must match MeanAbsoluteError.name in framework/metrics/mean_absolute_error.py
 
 This list represents the metrics we want to be available for regressors
+The first item in the list is the default value.
  */
-    "Mean Absolute Error",
+    "Mean Absolute Error", // Default Value
     "Mean Squared Error",
     "Root Mean Square Error",
     "F1 score",
@@ -501,9 +502,10 @@ This list represents the metrics we want to be available for regressors
 
 export const SUPPORTED_CLASSIFIER_METRICS: string[] = [
     /*
-    This list represents the metrics we want to be available for classifiers
+    This list represents the metrics we want to be available for classifiers.
+    The first item in the list is the default value.
      */
-        "F1 score",
+        "F1 score", // Default Value
         "R2 score",
         "Accuracy score",
         "Matthews correlation coefficient"
