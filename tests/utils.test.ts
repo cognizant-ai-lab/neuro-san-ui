@@ -7,6 +7,6 @@ import {removeItemOnce} from "../utils/transformation";
 describe('Various utilities', () => {
     it('removes first item from an array"', async () => {
         const res = removeItemOnce(["a", "b", "c"], "a")
-        expect(res).toEqual(["b", "c"])
+        expect(res).toEqual(["b", "c", "d"])
     })
 })
