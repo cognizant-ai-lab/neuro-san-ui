@@ -13,7 +13,10 @@
     "build": "next build",
 
     "about:start": "echo 'Starts the UI in production mode. Requires `build` to have been run beforehand.'",
-    "start": "next start"
+    "start": "next start",
+
+    "about:test": "echo 'Runs the front-end unit tests using `jest`'",
+    "test": "jest"
   },
   "dependencies": {
     "@blueprintjs/core": "^3.47.0",
@@ -46,15 +49,17 @@
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
+    "@types/jest": "^27.4.1",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "autoprefixer": "^10.3.1",
     "eslint": "^8.12.0",
     "eslint-config-next": "^12.1.4",
     "jest": "^27.5.1",
-    "@jest/types": "^27.5.1",
     "postcss": "^8.3.5",
     "tailwindcss": "^2.2.4",
+    "ts-jest": "^27.1.4",
+    "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   }
 }
