@@ -6074,11 +6074,6 @@ rc-virtual-list@^3.0.1, rc-virtual-list@^3.2.0:
     rc-resize-observer "^1.0.0"
     rc-util "^5.0.7"
 
-react-autosave@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/react-autosave/-/react-autosave-0.3.1.tgz#d07c8c9f72a3e647a330522e11b6f345566754bd"
-  integrity sha512-wPb2+JgcMNUiuTJ77yzxjeSU/JLouwREIHFVdaGtHBXua9GB787AQYlF4XRMAfG4tgdkb+g1TCwKdqf9TC0JwA==
-
 react-beautiful-dnd@^13.1.0:
   version "13.1.0"
   resolved "https://registry.yarnpkg.com/react-beautiful-dnd/-/react-beautiful-dnd-13.1.0.tgz#ec97c81093593526454b0de69852ae433783844d"
