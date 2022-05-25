@@ -16,6 +16,9 @@ import {NotificationType, sendNotification} from "../../controller/notification"
 import {FlowQueries} from "./flow/flowqueries";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import {deployRun} from "../../controller/model_serving/crud";
+import {ModelServingEnvironment} from "../../controller/model_serving/types";
+import {useLocalStorage} from "../../utils/use_local_storage";
 
 export interface RunProps {
     /* 
@@ -46,6 +49,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [rules, setRules] = useState(null)
     const [artifactObj, setArtifactObj] = useState(null)
     const [flow, setFlow] = useState(null)
+
+    const [prescriptors, setPrescriptors] = useLocalStorage("prescriptors", []);
 
     function cacheRun(run: Run) {
         /*
@@ -218,6 +223,9 @@ export default function RunPage(props: RunProps): React.ReactElement {
             setPredictorPlotData(constructedPredictorResults)
             setPrescriptorPlotData(constructedPrescriptorResults)
             setParetoPlotData(pareto)
+            console.debug("pareto", pareto)
+            const firstItem = Object.keys(pareto)[0]
+            setPrescriptors(pareto[firstItem].data[pareto[firstItem].data.length - 1].data.map(item => item.cid))
         }
     }
 
