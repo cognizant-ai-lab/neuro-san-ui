@@ -224,8 +224,11 @@ export default function RunPage(props: RunProps): React.ReactElement {
             setPrescriptorPlotData(constructedPrescriptorResults)
             setParetoPlotData(pareto)
             console.debug("pareto", pareto)
-            const firstItem = Object.keys(pareto)[0]
-            setPrescriptors(pareto[firstItem].data[pareto[firstItem].data.length - 1].data.map(item => item.cid))
+            const firstItem = pareto[Object.keys(pareto)[0]]
+            setPrescriptors({
+                "objectives": firstItem.objectives,
+                "prescriptors": firstItem.data[firstItem.data.length - 1].data
+            })
         }
     }
 
