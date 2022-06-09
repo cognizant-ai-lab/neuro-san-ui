@@ -234,7 +234,6 @@ export async function getModels(
             .filter(model => model.startsWith("prescriptor") && model.endsWith(`-${cid}`))
             .map(pres => getModelInferenceUrl(baseUrl, pres))
 
-        console.debug("prescriptors", prescriptors)
         return {
             predictors: predictors,
             prescriptors: prescriptors
