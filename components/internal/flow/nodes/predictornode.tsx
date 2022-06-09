@@ -302,7 +302,7 @@ export default function PredictorNode(props): React.ReactElement {
                                                 className="w-32" 
                                                 >
                                                     <option value="regressor">Regressor</option>
-                                                    <option value="classifier">Classfier</option>
+                                                    <option value="classifier">Classifier</option>
                                                     <option disabled value="byop">Bring your own (Coming Soon)</option>
                                                     <option disabled value="evolution">Evolution (Coming Soon)</option>
                                             </select>    
