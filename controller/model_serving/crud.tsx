@@ -1,6 +1,6 @@
 import {
     DeployedModel,
-    Deployments,
+    Deployments, DeploymentStatus,
     DeployRequest,
     GetDeploymentsRequest,
     ModelFormat,
@@ -245,3 +245,25 @@ export async function getModels(
         return null
     }
 }
+
+/**
+ * Polls the model server for a particular model for a given runID. If the models are "warmed up" and ready for use,
+ * return the predictor(s) and prescriptor for that runID and prescriptor ID.
+ * @param runID ID of the Run object to query
+ * @param prescriptorIDToDeploy Specific prescriptor ID to check for
+ */
+export async function checkIfModelsDeployed(runID: number, prescriptorIDToDeploy: string) {
+    const deploymentStatus = await getDeployments(runID)
+    if (deploymentStatus && deploymentStatus.deployed_models) {
+        const models = deploymentStatus.deployed_models
+        if (models.length == 1) {
+            const model = deploymentStatus.deployed_models[0]
+            // Check if model is ready for use
+            if (model.model_status.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_READY]) {
+                const baseUrl = model.model_reference.base_url
+                return await getModels(baseUrl, runID, prescriptorIDToDeploy)
+            }
+        }
+    }
+}
+
