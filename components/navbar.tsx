@@ -37,7 +37,7 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                     <BootstrapNavbar.Brand href="/" style={{color: LOGO_COLOR}} className="font-bold ml-2">
                         { props.Logo }
                     </BootstrapNavbar.Brand>
-            <BootstrapNavbar.Collapse id="responsive-navbar-nav">
+                    <BootstrapNavbar.Collapse id="responsive-navbar-nav">
                         <Nav className="me-auto"/>
                         <Nav>
                             <Nav.Item className="px-3">
@@ -52,6 +52,17 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                                         : <a style={{color: NAV_ITEMS_COLOR}} onClick={() => signIn()}>Sign In</a>
                                     }
                                 </button>
+                            </Nav.Item>
+                            <Nav.Item className="px-3">
+                                {signedIn &&
+                                    <img
+                                        src={session.user.image}
+                                        width="30"
+                                        height="30"
+                                        title={session.user.name}
+                                        alt="..."
+                                    />
+                                }
                             </Nav.Item>
                         </Nav>
                     </BootstrapNavbar.Collapse>

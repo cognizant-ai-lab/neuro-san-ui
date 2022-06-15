@@ -18,7 +18,9 @@ module.exports = {
         // this way we don't accidently point prod->staging or vice versa
         md_server_url: process.env.MD_SERVER_URL ?? "MD_SERVER_URL_must_be_set",
     },
+
     entry: path.resolve(__dirname, 'main.js'),
+
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.min.js',
@@ -26,8 +28,14 @@ module.exports = {
             type: 'umd'
         }
     },
+
     mode: 'production',
+
     experimental: {
         outputStandalone: true,
-    }
+    },
+
+    images: {
+        domains: ['avatars.githubusercontent.com'],
+    },
 }
