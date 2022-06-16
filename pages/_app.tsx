@@ -58,12 +58,9 @@ export default function LEAF({
       <meta name="description" content="Evolutionary AI" />
       <link rel="icon" href="/leaffavicon.png" />
     </Head>
-    <body>
-      {
-        Body
-      }
-    </body>
-
+    {
+      Body
+    }
   </div>
   )
 }
