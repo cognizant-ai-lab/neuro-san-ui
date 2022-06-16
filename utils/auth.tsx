@@ -2,6 +2,8 @@
  * Utility functions relating to authentication
  */
 
+import { Session } from "next-auth"
+
 
 /**
  * Helper method to determine if a user is signed in
@@ -10,7 +12,7 @@
  *
  * @return `true` if user is signed in (authenticated) with some provider, otherwise `false`
  */
-export function isSignedIn(session, status): boolean {
+export function isSignedIn(session: Session, status: string): boolean {
     const loading = status === "loading"
 
     // When rendering client side don't display anything until loading is complete
