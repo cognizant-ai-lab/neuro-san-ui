@@ -5,7 +5,7 @@
 import React from "react";
 import {signIn, useSession} from "next-auth/react";
 import { Session } from "next-auth"
-
+import {ENABLE_AUTHENTICATION} from "../const";
 
 /**
  * Helper method to determine if a user is signed in
@@ -15,6 +15,11 @@ import { Session } from "next-auth"
  * @return `true` if user is signed in (authenticated) with some provider, otherwise `false`
  */
 export function isSignedIn(session: Session, status: string): boolean {
+    // If authentication is disabled, pretend user is signed in
+    if (!ENABLE_AUTHENTICATION) {
+        return true
+    }
+
     const loading = status === "loading"
 
     // When rendering client side don't display anything until loading is complete

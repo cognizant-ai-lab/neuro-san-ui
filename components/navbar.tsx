@@ -1,8 +1,12 @@
-// Import Constants
-import {MaximumBlue} from '../const'
+/**
+ * Main navigation bar that appears at the top of each page
+ */
 
 // React
 import React from 'react'
+
+// Import Constants
+import {ENABLE_AUTHENTICATION, MaximumBlue} from '../const'
 
 // Styling Libraries
 import {Container, Nav, Navbar as BootstrapNavbar} from "react-bootstrap";
@@ -52,12 +56,12 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                             </Nav.Item>
                             <Nav.Item className="px-3">
                                 <button>
-                                    {signedIn &&
+                                    {(signedIn && ENABLE_AUTHENTICATION) &&
                                         <a style={{color: NAV_ITEMS_COLOR}} onClick={() => signOut()}>Sign out</a>}
                                 </button>
                             </Nav.Item>
                             <Nav.Item className="px-3">
-                                {signedIn &&
+                                {signedIn && ENABLE_AUTHENTICATION &&
                                     <Image
                                         src={session.user.image}
                                         width="30"

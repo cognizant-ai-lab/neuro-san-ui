@@ -25,7 +25,7 @@ import {SessionProvider} from "next-auth/react"
 import Navbar from "../components/navbar"
 
 // import Constants
-import {LOGO} from "../const"
+import {ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../utils/auth";
 
 export default function LEAF({
@@ -45,7 +45,7 @@ export default function LEAF({
       <SessionProvider session={session}>
         <Navbar Logo={LOGO} />
         <Container>
-          {Component.authRequired
+          {Component.authRequired && ENABLE_AUTHENTICATION
               ? <Auth><Component {...pageProps} /></Auth>
               : <Component {...pageProps} />
           }

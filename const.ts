@@ -1,28 +1,19 @@
 import getConfig from 'next/config'
 
 // Define the Base Colors
-export const BaseBlack: string = "#231f20"
-export const MayaBlue: string  = "#4CB3CF"
 export const MaximumBlue: string  = "#0033a0"
 export const Apple: string  = "#6BB445"
-
-export const StatusColors = {
-    Finished: "green",
-    Failed: "red",
-    "In Progress": "blue",
-    Queued: "yellow"
-}
-
 const { publicRuntimeConfig } = getConfig()
 
 export const InputDataNodeID: string = 'root'
-export const TRAIN_SERVER: string = "http://localhost:8080"
 
 // Set the env var MD_SERVER_URL
 export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url
-export const THIS_SERVER: string = "http://localhost:3000"
-export const AUTHOR: string = "mohak"
-export const DEFAULT_DATA_ROOT_KEY: string = "data"
+
+// Global system flag -- whether authentication (sign-in) is required
+export const ENABLE_AUTHENTICATION: boolean = Boolean(JSON.parse(publicRuntimeConfig.enableAuthentication))
+console.debug("auth?", ENABLE_AUTHENTICATION)
+
 export const LOGO: string = "UniLEAF"
 
 export const EvaluateCandidateCode: string = `def evaluate_candidate(self, candidate: object) -> Dict[str, object]:

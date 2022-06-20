@@ -15,8 +15,9 @@ module.exports = {
 
     publicRuntimeConfig: {
         // if the md_server_url is not set it defaults to invalid url
-        // this way we don't accidently point prod->staging or vice versa
+        // this way we don't accidentally point prod->staging or vice versa
         md_server_url: process.env.MD_SERVER_URL ?? "MD_SERVER_URL_must_be_set",
+        enableAuthentication: process.env.ENABLE_AUTHENTICATION ?? false
     },
 
     entry: path.resolve(__dirname, 'main.js'),
