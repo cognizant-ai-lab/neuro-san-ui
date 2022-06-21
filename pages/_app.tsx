@@ -26,7 +26,7 @@ import Navbar from "../components/navbar"
 
 // import Constants
 import {ENABLE_AUTHENTICATION, LOGO} from "../const"
-import {Auth} from "../utils/auth";
+import {Auth} from "../components/auth";
 
 export default function LEAF({
   Component,

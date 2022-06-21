@@ -17,7 +17,7 @@ import Link from "next/link";
 import {signOut, useSession} from "next-auth/react";
 
 // Custom components
-import {isSignedIn} from "../utils/auth";
+import {isSignedIn} from "./auth";
 
 // Define Constants
 const LOGO_COLOR: string = "white";
