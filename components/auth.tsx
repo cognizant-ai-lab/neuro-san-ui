@@ -49,7 +49,13 @@ export function Auth({ children }) {
 
     React.useEffect(() => {
         if (loading) return // Do nothing while loading
-        if (!isUser) signIn(AUTHENTICATION_PROVIDER) // If not authenticated, force log in
+
+        // If not authenticated, force log in.
+        // By explicitly specifying the provider here, it skips the annoying and unnecessary next-auth interstitial
+        // screen and goes straight to the login screen of AUTHENTICATION_PROVIDER.
+        if (!isUser) {
+            signIn(AUTHENTICATION_PROVIDER)
+        }
     }, [isUser, loading])
 
     if (isUser) {
