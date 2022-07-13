@@ -13,7 +13,11 @@ export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url
 // Global system flag -- whether authentication (sign-in) is required
 export const ENABLE_AUTHENTICATION: boolean = Boolean(JSON.parse(publicRuntimeConfig.enableAuthentication))
 
+// Name to use for application
 export const LOGO: string = "UniLEAF"
+
+// Build version (passed in from build system)
+export const UNILEAF_VERSION: string = publicRuntimeConfig.unileafVersion
 
 export const EvaluateCandidateCode: string = `def evaluate_candidate(self, candidate: object) -> Dict[str, object]:
 """

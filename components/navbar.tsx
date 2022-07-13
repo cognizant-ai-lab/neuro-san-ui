@@ -6,7 +6,7 @@
 import React from 'react'
 
 // Import Constants
-import {ENABLE_AUTHENTICATION, MaximumBlue} from '../const'
+import {UNILEAF_VERSION, ENABLE_AUTHENTICATION, MaximumBlue} from '../const'
 
 // Styling Libraries
 import {Container, Nav, Navbar as BootstrapNavbar} from "react-bootstrap";
@@ -49,6 +49,9 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                     <BootstrapNavbar.Collapse id="responsive-navbar-nav">
                         <Nav className="me-auto"/>
                         <Nav>
+                            <Nav.Item className="px-3" style={{color: NAV_ITEMS_COLOR}}>
+                                Build: {UNILEAF_VERSION ?? "Unknown"}
+                            </Nav.Item>
                             <Nav.Item className="px-3">
                                 <Link href={`/projects`} >
                                     <a style={{color: NAV_ITEMS_COLOR}}>Projects</a>
@@ -57,15 +60,17 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                             <Nav.Item className="px-3">
                                 <button>
                                     {(signedIn && ENABLE_AUTHENTICATION) &&
-                                        <a style={{color: NAV_ITEMS_COLOR}}
-                                           onClick={() => signOut({redirect: false})}>
-                                            Sign out
-                                        </a>
+                                        <Link href="">
+                                            <a style={{color: NAV_ITEMS_COLOR}}
+                                               onClick={() => signOut({redirect: false})}>
+                                                Sign out
+                                            </a>
+                                        </Link>
                                     }
                                 </button>
                             </Nav.Item>
                             <Nav.Item className="px-3">
-                                {signedIn && ENABLE_AUTHENTICATION &&
+                                {signedIn && ENABLE_AUTHENTICATION && session && session.user && session.user.image &&
                                     <Image
                                         src={session.user.image}
                                         width="30"

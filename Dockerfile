@@ -33,6 +33,10 @@ COPY . .
 ARG GATEWAY
 ENV MD_SERVER_URL ${GATEWAY}
 
+# Extract build version
+ARG UNILEAF_VERSION
+ENV UNILEAF_VERSION ${UNILEAF_VERSION}
+
 # Use yarn to build and install dependencies
 RUN yarn build
 

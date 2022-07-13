@@ -212,9 +212,16 @@ export async function getModels(
     runId: number,
     cid: string) {
 
+    const url = `http://${baseUrl}/${V2_MODELS_ENDPOINT}`
     try {
-        const response = await fetch(`http://${baseUrl}/${V2_MODELS_ENDPOINT}`, {
-            method: 'GET'
+        const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`,  {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({
+                url: url,
+                method: "GET",
+                payload: {}
+            })
         })
 
         if (response.status != 200) {
