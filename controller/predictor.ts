@@ -9,8 +9,8 @@ import {
 
 export function FetchPredictors(predictorType: string): string[] {
     /*
-    This function is the controller used to contact the backend to
-    fetch the type of predictors availaible
+    This function returns the types for predictor available within a given super-type such as "regressor" or
+    "classifier"
     */
     
     let predictorResp: string[]
@@ -27,8 +27,7 @@ export function FetchPredictors(predictorType: string): string[] {
 
 export function FetchMetrics(predictorType: string): string[] {
     /*
-    This function is the controller used to fetch the list of 
-    supported metrics based on the predictor type.
+    This function returns the list of supported metrics based on the predictor type.
     */
     let metricsResp: string[]
     
@@ -43,8 +42,7 @@ export function FetchMetrics(predictorType: string): string[] {
 
 export function FetchParams(predictorType: string, predictorName: string): PredictorParams {
     /*
-    This function is the controller used to contact the backend to
-    fetch the configuration parameters for the predictor
+    This function returns the configuration parameters for the predictor
     */
     let params
  

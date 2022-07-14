@@ -39,10 +39,7 @@ import {
     FetchMetrics,
     FetchParams
 } from '../../../../controller/predictor'
-import {
-    DataTag,
-    CAOType
-} from "../../../../controller/datatag/types"
+
 import {loadDataTag} from "../../../../controller/fetchdatataglist";
 import {StringBool} from "../../../../controller/base_types";
 import {PredictorParams} from "../../../../predictorinfo";
@@ -129,7 +126,7 @@ export default function PredictorNode(props): React.ReactElement {
 
             const SelectedPredictor = ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
  
-            const SelectedMetric = ParentPredictorState.selectedPredictorType == "Classifier" ? 
+            const SelectedMetric = ParentPredictorState.selectedPredictorType == "classifier" ?
                                    ParentPredictorState.selectedMetric || DEFAULT_CLASSIFIER_METRIC : 
                                    ParentPredictorState.selectedMetric || DEFAULT_REGRESSOR_METRIC
 
@@ -193,8 +190,8 @@ export default function PredictorNode(props): React.ReactElement {
         metrics of a certain kind of predictor. This only needs to be used once
         when the content is being rendered
         */
-        const NewPred = predictors[predictorType][0]
-        onPredictorChange(predictorType, NewPred)
+        const newPred = predictors[predictorType][0]
+        onPredictorChange(predictorType, newPred)
 
     }
 
@@ -205,8 +202,7 @@ export default function PredictorNode(props): React.ReactElement {
         */
 
         // Invoke the controller
-        const params = FetchParams(predictorType,
-            selectedPredictor)
+        const params = FetchParams(predictorType, selectedPredictor)
 
         // We add a key called value to adjust for user input
         Object.keys(params).forEach(key => {
@@ -217,12 +213,16 @@ export default function PredictorNode(props): React.ReactElement {
             }
         })
 
+        // Get default metric for new predictor type
+        const selectedMetric = FetchMetrics(predictorType)[0]
+
         // Write the state.
         SetParentPredictorState({
             ...ParentPredictorState,
             selectedPredictorType: predictorType,
             predictorParams: params,
-            selectedPredictor: selectedPredictor
+            selectedPredictor: selectedPredictor,
+            selectedMetric: selectedMetric
         })
 
     }
