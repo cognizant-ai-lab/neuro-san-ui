@@ -25,7 +25,7 @@
     "@nivo/line": "^0.73.0",
     "@types/react": "^17.0.39",
     "@types/node": "^17.0.25",
-    "antd": "^4.16.8",
+    "antd": "^4.21.6",
     "aws-sdk": "^2.951.0",
     "bootstrap": "^5.0.2",
     "codemirror": "^5.62.3",
