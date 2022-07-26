@@ -51,9 +51,7 @@ export default function NewProject(props: NewProps) {
         "projectName": "",
         "description": "", 
         "datasetName": "",
-        "bucketName": "",
         "s3Key": "",
-        "region": "",
     })
 
     const [projectId, setProjectId] = useState(props.ProjectID)
@@ -64,15 +62,11 @@ export default function NewProject(props: NewProps) {
     const TriggerProfileGeneration = async () => {
 
         // Unpack Data Source Variables
-        const {bucketName, s3Key, region} = inputFields
+        const {s3Key} = inputFields
 
         // Create the Data source Message
         let dataSourceMessage: DataSource = {
-            s3_url: new AWSUtils().ConstructURL(
-                bucketName,
-                region,
-                s3Key
-            )
+            s3_key: s3Key
         }
 
         debug("Datasource: ", dataSourceMessage)
@@ -116,15 +110,11 @@ export default function NewProject(props: NewProps) {
         }
 
         // Unpack Data Source Variables
-        const {datasetName, bucketName, s3Key, region} = inputFields
+        const {datasetName, s3Key} = inputFields
         const dataSourceMessage: DataSource = {
             project_id: projectId,
             name: datasetName,
-            s3_url: new AWSUtils().ConstructURL(
-                bucketName,
-                region,
-                s3Key
-            )
+            s3_key: s3Key
         }
 
         const savedDataSource = await AccessionDatasource(dataSourceMessage)
@@ -185,10 +175,8 @@ export default function NewProject(props: NewProps) {
     const EnabledDataSourceSection = props.ProjectID || (inputFields.projectName && 
                                         inputFields.description)
     const EnabledDataTagSection = EnabledDataSourceSection && 
-                                    inputFields.datasetName && 
-                                    inputFields.bucketName && 
-                                    inputFields.s3Key && 
-                                    inputFields.region &&
+                                    inputFields.datasetName &&
+                                    inputFields.s3Key &&
                                     profile != null
 
     const startIndexOffset = props.ProjectID ? -1 : 0
@@ -249,22 +237,6 @@ export default function NewProject(props: NewProps) {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-
-                        <Form.Label className="text-left w-full">Bucket Name</Form.Label>
-                        <Form.Control 
-                            name="bucketName" 
-                            type="text"
-                            placeholder="Enter Bucket name"
-                            onChange={
-                                event => setInputFields(
-                                    {...inputFields, bucketName: event.target.value}
-                            )}/>
-                        <Form.Text className="text-muted text-left">
-                        S3 Bucket where the file is located
-                        </Form.Text>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
                         <Form.Label className="text-left w-full">Key</Form.Label>
                         <Form.Control 
                             name="s3Key" 
@@ -276,17 +248,6 @@ export default function NewProject(props: NewProps) {
                             )} />
                     </Form.Group>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label className="text-left w-full">Bucket Region</Form.Label>
-                        <Form.Control 
-                            name="region" 
-                            type="text" 
-                            placeholder="(one of the AWS regions, for example us-east-2)"
-                            onChange={
-                                event => setInputFields(
-                                    {...inputFields, region: event.target.value}
-                            )} />
-                    </Form.Group>
                     <Button style={
                         {
                             background: MaximumBlue, 
