@@ -360,7 +360,7 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 !createButtonEnabled
                             }
                         >
-                            Create
+                            Create data source
                         </Button>
                     </Form.Group>
                 </Panel>
@@ -380,7 +380,7 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                     borderColor: MaximumBlue,
                                     color: "white"
                                 }}>
-                            {`${4 + startIndexOffset}. Create`}
+                            {`${4 + startIndexOffset}. Create data profile`}
                     </Button>} key="4" >
             </Panel>
         </Form>
