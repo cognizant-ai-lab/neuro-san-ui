@@ -1,9 +1,9 @@
 // React components
-import {useState} from 'react'
+import {useRef, useState} from 'react'
 import {useSession} from 'next-auth/react'
 
 // 3rd Party components
-import {Button, Collapse, Radio, RadioChangeEvent, Space, Upload, UploadProps} from 'antd'
+import {Button, Collapse, Radio, RadioChangeEvent, Space, Upload, UploadFile, UploadProps} from 'antd'
 import {Container, Form} from "react-bootstrap"
 import {UploadOutlined} from '@ant-design/icons'
 import prettyBytes from 'pretty-bytes'
@@ -70,27 +70,37 @@ export default function NewProject(props: NewProps) {
 
     const { data: session } = useSession()
 
+    const innerRef = useRef();
+
     // Decide which S3Key to use based on radio buttons
     function getS3Key() {
         return chosenDataSource === s3Option ? inputFields.s3Key : inputFields.uploadedFileS3Key;
     }
 
-    // Define a function to unpack the form and trigger the controller
-    // to register the project
-    const TriggerProfileGeneration = async () => {
+    /* Terminology:
+        data source = where to find the data (S3 URL, etc.), headers, stats about number of rows etc
+        data tag = list of fields with CAO type, data type, whether categorical or continuous etc.
+        data profile = data source + data tag
+
+        See proto/metadata.proto for specs.
+    */
+
+
+    // Create data source based on user selections
+    const CreateDataSource = async () => {
         const s3Key = getS3Key();
 
         console.debug("inputFields", inputFields)
 
         // Create the Data source Message
-        const dataSourceMessage: DataSource = {
+        const dataProfile: DataSource = {
             s3_key: s3Key
         }
 
-        debug("Datasource: ", dataSourceMessage)
+        debug("Data profile: ", dataProfile)
 
         // Trigger the Data Source Controller
-        const tmpProfile: Profile = await BrowserFetchProfile(dataSourceMessage)
+        const tmpProfile: Profile = await BrowserFetchProfile(dataProfile)
 
         // If Data Source creation failed, everything fails
         if (tmpProfile === null) {
@@ -100,7 +110,8 @@ export default function NewProject(props: NewProps) {
         setProfile(tmpProfile)
     }
 
-    const CreateDataTag = async () => {
+    //
+    const CreateDataProfile = async () => {
         const projectId = props.ProjectID
 
         // Create the project if the project does not exist
@@ -208,26 +219,60 @@ export default function NewProject(props: NewProps) {
     // Event handlers etc. for Upload component
     const uploadProps: UploadProps = {
         name: 'file',
-        action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-        // action: 'https://localhost:3000/upload',
-        headers: {
-            authorization: 'authorization-text',
-        },
+        multiple: false,
+        maxCount: 1,
+        disabled: chosenDataSource != localFileOption,
+        headers: null,
 
-        // tslint:disable-next-line:no-unused-variable  false positive
+        action: 'http://localhost:30003/api/v1/file_upload',
+        // action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
+
+        // tslint:disable-next-line:no-unused-variable (false positive)
         beforeUpload(file) {
+            console.debug("beforeUpload", file)
             const fileTooLarge = file.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES
             if (fileTooLarge) {
                 sendNotification(NotificationType.error,
                     `File "${file.name}" is ${prettyBytes(file.size)} in size, which exceeds the maximum allowed file size of \
 ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             }
-            return !fileTooLarge || Upload.LIST_IGNORE;
+
+            // bail if file exceeds size limit
+            if (fileTooLarge) {
+                return Upload.LIST_IGNORE
+            }
+
+            return new Promise(resolve => {
+                const reader = new FileReader()
+                reader.readAsText(file)
+                reader.onload = () => {
+                    // Create JSON payload required by backend service
+                    const fileContents = reader.result as string;
+                    const parts = [
+                        new Blob(
+                            [`{"metadata": {"name": "${file.name}", "type": "csv"}, "content": "${fileContents}"}`],
+                            {
+                                type: 'text/csv'
+                            }
+                        )
+                    ];
+
+                    // Create modified File object with JSON payload
+                    const fileAsJSON = new File(parts, file.name, {
+                        type: "text/plain"
+                    });
+
+                    // Return modified File to Upload component
+                    return resolve(fileAsJSON)
+                };
+            });
         },
 
         onChange(info) {
             console.debug("In onChange", info)
-            if (info.file.status === 'done' && info.fileList.length > 0) {
+            if (info.file.status === 'uploading') {
+
+            } else if (info.file.status === 'done' && info.fileList.length > 0) {
 
                 // For now, we upload to an S3 path that looks like this:
                 // s3://<bucket>/data/my_user_name/my_file_name
@@ -259,7 +304,7 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key)
 
     return <Container>
-        <Form onSubmit={event => {event.preventDefault(); CreateDataTag()}} target="_blank">
+        <Form onSubmit={event => {event.preventDefault(); CreateDataProfile()}} target="_blank" >
             <Collapse accordion expandIconPosition="right"
                       defaultActiveKey={startIndexOffset === 0 ? 1 : 2}
             >
@@ -296,12 +341,14 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                 }
                 <Panel header={`${2 + startIndexOffset}. Define your data source`} key={2}
                        disabled={!enabledDataSourceSection}>
-                    <Form.Group >
+                    <Form.Group>
                         Name
                         <Form.Control
                             name="datasetName"
+                            ref={innerRef}
                             type="text"
                             placeholder="Choose a name for your data source"
+                            autoFocus
                             onChange={
                                 event => setInputFields(
                                     {...inputFields, datasetName: event.target.value}
@@ -330,7 +377,7 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                             <Radio value={localFileOption}>
                                 <Space direction="vertical" size="middle">
                                     From a local file
-                                    <Upload {...uploadProps} multiple={false} maxCount={1} disabled={chosenDataSource != localFileOption}>
+                                    <Upload {...uploadProps}>
                                         <Button icon={<UploadOutlined />}
                                                 disabled={chosenDataSource != localFileOption}
                                                 style={{
@@ -355,12 +402,12 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 color: "white",
                                 opacity: createButtonEnabled ? 1.0 : 0.5
                             }}
-                            onClick={TriggerProfileGeneration}
+                            onClick={CreateDataSource}
                             disabled={
                                 !createButtonEnabled
                             }
                         >
-                            Create data source
+                            Connect
                         </Button>
                     </Form.Group>
                 </Panel>
