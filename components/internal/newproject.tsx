@@ -245,9 +245,9 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         uploadFile(selectedFile, s3Path)
     }
 
-    const createButtonEnabled: boolean = !!inputFields.datasetName &&
-        (chosenDataSource === s3Option && !!inputFields.s3Key) ||
-        (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key)
+    const connectButtonEnabled: boolean = !!inputFields.datasetName &&
+        ((chosenDataSource === s3Option && !!inputFields.s3Key) ||
+        (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key))
 
     const isUsingLocalFile = chosenDataSource === localFileOption;
 
@@ -362,11 +362,11 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 background: MaximumBlue,
                                 borderColor: MaximumBlue,
                                 color: "white",
-                                opacity: createButtonEnabled ? 1.0 : 0.5
+                                opacity: connectButtonEnabled ? 1.0 : 0.5
                             }}
                             onClick={CreateDataSource}
                             disabled={
-                                !createButtonEnabled
+                                !connectButtonEnabled
                             }
                         >
                             Connect
