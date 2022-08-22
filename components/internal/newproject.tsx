@@ -245,6 +245,11 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         uploadFile(selectedFile, s3Path)
     }
 
+    // Keys for the various panels
+    const projectDetailsPanelKey = 1;
+    const dataSourcePanelKey = 2;
+    const tagYourDataPanelKey = 3;
+
     const connectButtonEnabled: boolean = !!inputFields.datasetName &&
         ((chosenDataSource === s3Option && !!inputFields.s3Key) ||
         (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key))
@@ -266,10 +271,11 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
     return <Container>
         <Form onSubmit={event => {event.preventDefault(); CreateDataProfile()}} target="_blank" >
             <Collapse accordion expandIconPosition="right"
-                      defaultActiveKey={isNewProject ? 1 : 2}
+                      defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
             >
                 { isNewProject &&
-                    <Panel header="1. Project Details" key={1}>
+                    <Panel header="1. Project Details"
+                           key={projectDetailsPanelKey}>
                         <Form.Group className="mb-3">
                             <Form.Label className="text-left w-full">Project Name</Form.Label>
                             <Form.Control 
@@ -300,7 +306,8 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                         </Form.Group>      
                     </Panel>
                 }
-                <Panel header={`${2 + startIndexOffset}. Define your data source`} key={2}
+                <Panel header={`${2 + startIndexOffset}. Define your data source`}
+                       key={dataSourcePanelKey}
                        disabled={!enabledDataSourceSection}>
                     <Form.Group>
                         Name
@@ -383,7 +390,9 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                         </Button>
                     </Form.Group>
                 </Panel>
-                <Panel header={`${3 + startIndexOffset}. Tag your Data`} key="3" disabled={!enabledDataTagSection}>
+                <Panel header={`${3 + startIndexOffset}. Tag your Data`}
+                       key={tagYourDataPanelKey}
+                       disabled={!enabledDataTagSection}>
                     {profileTable}
                 </Panel>
             </Collapse>
