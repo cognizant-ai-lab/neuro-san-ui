@@ -252,7 +252,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
     const isUsingLocalFile = chosenDataSource === localFileOption;
 
     const datasetNameRef = useRef<HTMLInputElement>()
-    useEffect(() => datasetNameRef.current && datasetNameRef.current.focus())
+    useEffect(() => {setTimeout(() => datasetNameRef.current && datasetNameRef.current.focus(), 500)})
 
     return <Container>
         <Form onSubmit={event => {event.preventDefault(); CreateDataProfile()}} target="_blank" >
