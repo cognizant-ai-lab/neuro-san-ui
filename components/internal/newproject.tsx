@@ -341,12 +341,12 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                         <p>Select a file to show details</p>
                                     )}
                                     <div>
-                                        <Button disabled={!isUsingLocalFile}
+                                        <Button disabled={!isUsingLocalFile || !selectedFile}
                                                 style={{
                                                     background: MaximumBlue,
                                                     borderColor: MaximumBlue,
                                                     color: "white",
-                                                    opacity: isUsingLocalFile ? 1.0 : 0.5
+                                                    opacity: isUsingLocalFile && selectedFile ? 1.0 : 0.5
                                                 }}
                                                 onClick={handleSubmission}>
                                             Submit
