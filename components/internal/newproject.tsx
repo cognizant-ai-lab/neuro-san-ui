@@ -90,8 +90,6 @@ export default function NewProject(props: NewProps) {
     const CreateDataSource = async () => {
         const s3Key = getS3Key();
 
-        console.debug("inputFields", inputFields)
-
         // Create the Data source Message
         const dataProfile: DataSource = {
             s3_key: s3Key
@@ -106,7 +104,7 @@ export default function NewProject(props: NewProps) {
         if (tmpProfile === null) {
             return
         }
-        console.debug("profile", tmpProfile)
+
         setProfile(tmpProfile)
     }
 
@@ -232,7 +230,6 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
 
         // Prompt user if not CSV file
         if (selectedFile.type !== "text/csv") {
-            console.debug(selectedFile.type)
             if (!confirm("Only CSV files are supported, but the file you have selected " +
                 "does not appear to be a CSV file. Proceed anyway?")) {
                 return
