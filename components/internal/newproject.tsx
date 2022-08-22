@@ -1,11 +1,10 @@
 // React components
-import {useRef, useState} from 'react'
+import {useState} from 'react'
 import {useSession} from 'next-auth/react'
 
 // 3rd Party components
-import {Button, Collapse, Radio, RadioChangeEvent, Space, Upload, UploadFile, UploadProps} from 'antd'
+import {Button, Collapse, Radio, RadioChangeEvent, Space} from 'antd'
 import {Container, Form} from "react-bootstrap"
-import {UploadOutlined} from '@ant-design/icons'
 import prettyBytes from 'pretty-bytes'
 
 // Custom Components developed by us
@@ -13,6 +12,7 @@ import ProfileTable from "./flow/profiletable";
 import {NotificationType, sendNotification} from "../../controller/notification"
 import Debug from "debug";
 import {Project} from "../../controller/projects/types"
+import {uploadFile} from "../../controller/files/upload"
 
 // Controllers for new project
 import {BrowserFetchProfile} from "../../controller/dataprofile/generate"
@@ -70,7 +70,8 @@ export default function NewProject(props: NewProps) {
 
     const { data: session } = useSession()
 
-    const innerRef = useRef();
+    // For file upload
+    const [selectedFile, setSelectedFile] = useState(null);
 
     // Decide which S3Key to use based on radio buttons
     function getS3Key() {
@@ -84,7 +85,6 @@ export default function NewProject(props: NewProps) {
 
         See proto/metadata.proto for specs.
     */
-
 
     // Create data source based on user selections
     const CreateDataSource = async () => {
@@ -216,92 +216,43 @@ export default function NewProject(props: NewProps) {
 
     const profileTable = <ProfileTable Profile={profile} ProfileUpdateHandler={setProfile} />
 
-    // Event handlers etc. for Upload component
-    const uploadProps: UploadProps = {
-        name: 'file',
-        multiple: false,
-        maxCount: 1,
-        disabled: chosenDataSource != localFileOption,
-        headers: null,
+    const changeHandler = (event) => {
+        setSelectedFile(event.target.files[0])
+    }
 
-        action: 'http://localhost:30003/api/v1/file_upload',
-        // action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-
-        // tslint:disable-next-line:no-unused-variable (false positive)
-        beforeUpload(file) {
-            console.debug("beforeUpload", file)
-            const fileTooLarge = file.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES
-            if (fileTooLarge) {
-                sendNotification(NotificationType.error,
-                    `File "${file.name}" is ${prettyBytes(file.size)} in size, which exceeds the maximum allowed file size of \
-${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
-            }
-
-            // bail if file exceeds size limit
-            if (fileTooLarge) {
-                return Upload.LIST_IGNORE
-            }
-
-            return new Promise(resolve => {
-                const reader = new FileReader()
-                reader.readAsText(file)
-                reader.onload = () => {
-                    // Create JSON payload required by backend service
-                    const fileContents = reader.result as string;
-                    const parts = [
-                        new Blob(
-                            [`{"metadata": {"name": "${file.name}", "type": "csv"}, "content": "${fileContents}"}`],
-                            {
-                                type: 'text/csv'
-                            }
-                        )
-                    ];
-
-                    // Create modified File object with JSON payload
-                    const fileAsJSON = new File(parts, file.name, {
-                        type: "text/plain"
-                    });
-
-                    // Return modified File to Upload component
-                    return resolve(fileAsJSON)
-                };
-            });
-        },
-
-        onChange(info) {
-            console.debug("In onChange", info)
-            if (info.file.status === 'uploading') {
-
-            } else if (info.file.status === 'done' && info.fileList.length > 0) {
-
-                // For now, we upload to an S3 path that looks like this:
-                // s3://<bucket>/data/my_user_name/my_file_name
-                const s3Key = `data/${session.user.name}/${info.file.name}`
-                setInputFields({
-                    ...inputFields,
-                    uploadedFileS3Key: s3Key
-                })
-                sendNotification(NotificationType.success, `File "${info.file.name}" uploaded successfully`)
-            } else if (info.file.status === 'error' && info.fileList.length > 0) {
-                console.log(info)
-                sendNotification(NotificationType.error, `"${info.file.name}" file upload failed.`,
-                    `Response from server: ${info.file.response}`);
-            }
-        },
-
-        // tslint:disable-next-line:no-unused-variable
-        onRemove(file) {
-            sendNotification(NotificationType.success, `File "${file.name}" removed`)
-            setInputFields({
-                ...inputFields,
-                uploadedFileS3Key: undefined
-            })
+    const handleSubmission = () => {
+        // Make sure file is within our size limit
+        const fileTooLarge = (selectedFile.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES)
+        if (fileTooLarge) {
+            sendNotification(NotificationType.error,
+`File "${selectedFile.name}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum allowed file 
+size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
+            return
         }
-    };
+
+        // Prompt user if not CSV file
+        if (selectedFile.type !== "text/csv") {
+            console.debug(selectedFile.type)
+            if (!confirm("Only CSV files are supported, but the file you have selected " +
+                "does not appear to be a CSV file. Proceed anyway?")) {
+                return
+            }
+        }
+
+        // Determine where in S3 to store the file. For now, based on user name (from Github) and filename.
+        // Assumption: all Github usernames and all local filenames are valid for S3 paths. This...may be risky.
+        const s3Path = `data/${session.user.name}/${selectedFile.name}`
+        setInputFields(
+            {...inputFields, uploadedFileS3Key: s3Path}
+        )
+        uploadFile(selectedFile, s3Path)
+    }
 
     const createButtonEnabled: boolean = !!inputFields.datasetName &&
         (chosenDataSource === s3Option && !!inputFields.s3Key) ||
         (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key)
+
+    const isUsingLocalFile = chosenDataSource === localFileOption;
 
     return <Container>
         <Form onSubmit={event => {event.preventDefault(); CreateDataProfile()}} target="_blank" >
@@ -345,7 +296,6 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                         Name
                         <Form.Control
                             name="datasetName"
-                            ref={innerRef}
                             type="text"
                             placeholder="Choose a name for your data source"
                             autoFocus
@@ -370,26 +320,38 @@ ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                             event => setInputFields(
                                                 {...inputFields, s3Key: event.target.value}
                                         )}
-                                        disabled={chosenDataSource != s3Option}
+                                        disabled={isUsingLocalFile}
                                     />
                                 </Form.Group>
                             </Radio>
                             <Radio value={localFileOption}>
                                 <Space direction="vertical" size="middle">
                                     From a local file
-                                    <Upload {...uploadProps}>
-                                        <Button icon={<UploadOutlined />}
-                                                disabled={chosenDataSource != localFileOption}
+                                    <input type="file" name="file" onChange={changeHandler}
+                                           disabled={!isUsingLocalFile}/>
+                                    {selectedFile ? (
+                                        <div style={{
+                                            opacity: isUsingLocalFile ? 1.0 : 0.5,
+                                            fontSize: "90%"
+                                        }}>
+                                            <p><b>Filename: </b> {selectedFile.name}, <b>filetype: </b>
+                                                {selectedFile.type}, <b>size: </b> {prettyBytes(selectedFile.size)}</p>
+                                        </div>
+                                    ) : (
+                                        <p>Select a file to show details</p>
+                                    )}
+                                    <div>
+                                        <Button disabled={!isUsingLocalFile}
                                                 style={{
                                                     background: MaximumBlue,
                                                     borderColor: MaximumBlue,
                                                     color: "white",
-                                                    opacity: chosenDataSource === localFileOption ? 1.0 : 0.5
-                                        }}
-                                        >
-                                            Click to select
+                                                    opacity: isUsingLocalFile ? 1.0 : 0.5
+                                                }}
+                                                onClick={handleSubmission}>
+                                            Submit
                                         </Button>
-                                    </Upload>
+                                    </div>
                                 </Space>
                             </Radio>
                         </Space>
