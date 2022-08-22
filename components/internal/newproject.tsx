@@ -1,5 +1,5 @@
 // React components
-import {useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {useSession} from 'next-auth/react'
 
 // 3rd Party components
@@ -251,6 +251,9 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
 
     const isUsingLocalFile = chosenDataSource === localFileOption;
 
+    const datasetNameRef = useRef<HTMLInputElement>()
+    useEffect(() => datasetNameRef.current && datasetNameRef.current.focus())
+
     return <Container>
         <Form onSubmit={event => {event.preventDefault(); CreateDataProfile()}} target="_blank" >
             <Collapse accordion expandIconPosition="right"
@@ -293,9 +296,9 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                         Name
                         <Form.Control
                             name="datasetName"
+                            ref={datasetNameRef}
                             type="text"
                             placeholder="Choose a name for your data source"
-                            autoFocus
                             onChange={
                                 event => setInputFields(
                                     {...inputFields, datasetName: event.target.value}
