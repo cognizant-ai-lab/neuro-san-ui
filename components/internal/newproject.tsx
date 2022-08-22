@@ -251,20 +251,30 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
 
     const isUsingLocalFile = chosenDataSource === localFileOption;
 
+    const isNewProject = startIndexOffset === 0;
+
     const datasetNameRef = useRef<HTMLInputElement>()
-    useEffect(() => {setTimeout(() => datasetNameRef.current && datasetNameRef.current.focus(), 500)})
+    const projectNameRef = useRef<HTMLInputElement>()
+
+    // Set focus on relevant field depending on if we're creating a new project or modifying existing
+    useEffect(() => {setTimeout(() => isNewProject
+            ? projectNameRef.current && projectNameRef.current.focus()
+            : datasetNameRef.current && datasetNameRef.current.focus(),
+        500)
+    }, [])
 
     return <Container>
         <Form onSubmit={event => {event.preventDefault(); CreateDataProfile()}} target="_blank" >
             <Collapse accordion expandIconPosition="right"
-                      defaultActiveKey={startIndexOffset === 0 ? 1 : 2}
+                      defaultActiveKey={isNewProject ? 1 : 2}
             >
-                { startIndexOffset === 0 &&
+                { isNewProject &&
                     <Panel header="1. Project Details" key={1}>
                         <Form.Group className="mb-3">
                             <Form.Label className="text-left w-full">Project Name</Form.Label>
                             <Form.Control 
-                                name="name" 
+                                name="name"
+                                ref={projectNameRef}
                                 type="text" 
                                 placeholder="Enter project name" 
                                 onChange={
