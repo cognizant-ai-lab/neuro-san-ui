@@ -69,6 +69,7 @@ export default function NewProject(props: NewProps) {
     const [chosenDataSource, setChosenDataSource] = useState(s3Option)
 
     const { data: session } = useSession()
+    const currentUser: string = session.user.name
 
     // For file upload
     const [selectedFile, setSelectedFile] = useState(null);
@@ -140,7 +141,8 @@ export default function NewProject(props: NewProps) {
         const dataSourceMessage: DataSource = {
             project_id: projectId,
             name: datasetName,
-            s3_key: s3Key
+            s3_key: s3Key,
+            request_user: currentUser
         }
 
         const savedDataSource = await AccessionDatasource(dataSourceMessage)
@@ -178,7 +180,8 @@ export default function NewProject(props: NewProps) {
         // Construct the Data tag Message
         const dataTagMessage: DataTag = {
             fields: inputFieldsMapped,
-            data_source_id: savedDataSource.id
+            data_source_id: savedDataSource.id,
+            request_user: currentUser
         }
 
         debug("DataTag: ", dataTagMessage)
