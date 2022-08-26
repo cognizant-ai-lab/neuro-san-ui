@@ -6,6 +6,7 @@ import {useSession} from 'next-auth/react'
 import {Button, Collapse, Radio, RadioChangeEvent, Space} from 'antd'
 import {Container, Form} from "react-bootstrap"
 import prettyBytes from 'pretty-bytes'
+import ClipLoader from "react-spinners/ClipLoader";
 
 // Custom Components developed by us
 import ProfileTable from "./flow/profiletable";
@@ -71,11 +72,13 @@ export default function NewProject(props: NewProps) {
     // Data source currently chosen by the user using the radio buttons
     const [chosenDataSource, setChosenDataSource] = useState(s3Option)
 
+    // For access to logged in session and current user name
     const { data: session } = useSession()
     const currentUser: string = session.user.name
 
     // For file upload
     const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Decide which S3Key to use based on radio buttons
     function getS3Key() {
@@ -216,6 +219,7 @@ export default function NewProject(props: NewProps) {
     const enabledDataSourceSection = props.ProjectID || (inputFields.projectName && inputFields.description)
 
     const enabledDataTagSection = enabledDataSourceSection &&
+                                    !isUploading &&
                                     inputFields.datasetName &&
                                     profile &&
                                     ((chosenDataSource === s3Option && !!inputFields.s3Key) ||
@@ -229,12 +233,12 @@ export default function NewProject(props: NewProps) {
         setSelectedFile(event.target.files[0])
     }
 
-    const handleSubmission = () => {
+    const handleSubmission = async () => {
         // Make sure file is within our size limit
         const fileTooLarge = (selectedFile.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES)
         if (fileTooLarge) {
             sendNotification(NotificationType.error,
-`File "${selectedFile.name}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum allowed file 
+                `File "${selectedFile.name}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum allowed file 
 size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             return
         }
@@ -247,13 +251,19 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             }
         }
 
-        // Determine where in S3 to store the file. For now, based on user name (from Github) and filename.
-        // Assumption: all Github usernames and all local filenames are valid for S3 paths. This...may be risky.
-        const s3Path = `data/${session.user.name}/${selectedFile.name}`
-        setInputFields(
-            {...inputFields, uploadedFileS3Key: s3Path}
-        )
-        uploadFile(selectedFile, s3Path)
+        try {
+            // Determine where in S3 to store the file. For now, based on user name (from Github) and filename.
+            // Assumption: all Github usernames and all local filenames are valid for S3 paths. This...may be risky.
+            setIsUploading(true)
+            const s3Path = `data/${session.user.name}/${selectedFile.name}`
+            setInputFields(
+                {...inputFields, uploadedFileS3Key: s3Path}
+            )
+
+            uploadFile(selectedFile, s3Path)
+        } finally {
+            setIsUploading(false)
+        }
     }
 
     // Keys for the various panels
@@ -261,7 +271,9 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
     const dataSourcePanelKey = 2;
     const tagYourDataPanelKey = 3;
 
-    const createDataSourceButtonEnabled: boolean = !!inputFields.datasetName &&
+    const createDataSourceButtonEnabled: boolean =
+        !!inputFields.datasetName &&
+        !isUploading &&
         ((chosenDataSource === s3Option && !!inputFields.s3Key) ||
         (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key))
 
@@ -369,16 +381,24 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                         <p>Select a file to show details</p>
                                     )}
                                     <div>
-                                        <Button disabled={!isUsingLocalFile || !selectedFile}
-                                                style={{
-                                                    background: MaximumBlue,
-                                                    borderColor: MaximumBlue,
-                                                    color: "white",
-                                                    opacity: isUsingLocalFile && selectedFile ? 1.0 : 0.5
-                                                }}
-                                                onClick={handleSubmission}>
-                                            Upload
-                                        </Button>
+                                        {isUploading
+                                            ?   <label>
+                                                    Uploading {selectedFile.name}
+                                                    <span className="ml-2">
+                                                        <ClipLoader color={MaximumBlue} loading={true} size={14}/>
+                                                    </span>
+                                                </label>
+                                            :   <Button disabled={!isUsingLocalFile || !selectedFile}
+                                                        style={{
+                                                            background: MaximumBlue,
+                                                            borderColor: MaximumBlue,
+                                                            color: "white",
+                                                            opacity: isUsingLocalFile && selectedFile ? 1.0 : 0.5
+                                                        }}
+                                                        onClick={handleSubmission}>
+                                                    Upload
+                                                </Button>
+                                        }
                                     </div>
                                 </Space>
                             </Radio>
