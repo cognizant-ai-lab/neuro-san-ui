@@ -1,4 +1,5 @@
 import {notification} from 'antd';
+import {ReactNode} from "react";
 
 export enum NotificationType {
     "success",
@@ -20,7 +21,7 @@ const SUCCESS_NOTIFICATION_DURATION_SECS = 5;
  * @param message Brief summary of the notification
  * @param description More complete description of the notification
  */
-export function sendNotification(nt: NotificationType, message: string, description = ""): void {
+export function sendNotification(nt: NotificationType, message: string, description: string | ReactNode = ""): void {
     // Log a copy to the console for troubleshooting
     console.debug(`Notification: Message: "${message}" Description: "${description}"`)
 

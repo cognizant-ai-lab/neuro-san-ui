@@ -119,8 +119,14 @@ export default function NewProject(props: NewProps) {
                 .map(field => field[0]
             )
         if (columnsWithNaNs.length > 0) {
-            sendNotification(NotificationType.error, "Unable to use this dataset: some columns have missing (NaN) values",
-                `Please use a dataset with no missing values. Columns in error are: ${columnsWithNaNs.join(", ")}`)
+            const description =
+            <>
+                Please use a dataset with no missing values.<br />
+                Columns in error are:<br />
+                {`${columnsWithNaNs.join(", ")}`}
+            </>
+            sendNotification(NotificationType.error,
+                "Unable to use this dataset because some columns have missing (NaN) values", description)
             return
         }
 
