@@ -112,6 +112,19 @@ export default function NewProject(props: NewProps) {
             return
         }
 
+        // If data source has NaNs, inform user that we cannot use it
+        const columnsWithNaNs =
+            Object.entries(tmpProfile.data_tag.fields)
+                .filter(field => field[1].has_nan)
+                .map(field => field[0]
+            )
+        if (columnsWithNaNs.length > 0) {
+            sendNotification(NotificationType.error, "Unable to use this dataset: some columns have missing (NaN) values",
+                `Please use a dataset with no missing values. Columns in error are: ${columnsWithNaNs.join(", ")}`)
+            return
+        }
+
+        sendNotification(NotificationType.success, "Profile Successfully Created")
         setProfile(tmpProfile)
     }
 
