@@ -6,10 +6,10 @@
 import React from 'react'
 
 // Import Constants
-import {UNILEAF_VERSION, ENABLE_AUTHENTICATION, MaximumBlue} from '../const'
+import {ENABLE_AUTHENTICATION, MaximumBlue, UNILEAF_VERSION} from '../const'
 
 // Styling Libraries
-import {Container, Nav, Navbar as BootstrapNavbar} from "react-bootstrap";
+import {Container, Dropdown, Nav, Navbar as BootstrapNavbar, NavItem, NavLink} from "react-bootstrap";
 import Image from 'next/image'
 import Link from "next/link";
 
@@ -69,6 +69,17 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                                     }
                                 </button>
                             </Nav.Item>
+                            <Dropdown as={NavItem} >
+                              <Dropdown.Toggle as={NavLink} className="px-3 py-0"
+                                               style={{color: NAV_ITEMS_COLOR, background: MaximumBlue}}>
+                                  Help
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item href="/userguide" target="_blank">
+                                    User guide
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
                             <Nav.Item className="px-3">
                                 {signedIn && ENABLE_AUTHENTICATION && session && session.user && session.user.image &&
                                     <Image
