@@ -52,6 +52,7 @@
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.7",
     "@types/jest": "^27.4.1",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
@@ -60,7 +61,7 @@
     "eslint-config-next": "^12.1.4",
     "jest": "^27.5.1",
     "postcss": "^8.3.5",
-    "tailwindcss": "^2.2.4",
+    "tailwindcss": "^3.1.8",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.7.0",
     "typescript": "^4.3.5"

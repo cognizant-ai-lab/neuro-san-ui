@@ -24,7 +24,7 @@ export default function UserGuide() {
 
 
     return <>
-        <ReactMarkdown>{userGuide}</ReactMarkdown>
+        <ReactMarkdown className='prose'>{userGuide}</ReactMarkdown>
     </>
 }
 
