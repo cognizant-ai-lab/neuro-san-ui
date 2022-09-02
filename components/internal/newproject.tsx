@@ -152,12 +152,12 @@ export default function NewProject(props: NewProps) {
             debug("Project: ", projectMessage)
 
             // Trigger the Project Controller
-            const accessionProjectResp: Project = await AccessionProject(projectMessage)
+            const accessionProjectResp: Project = await AccessionProject(projectMessage, "create")
 
             // If Project creation failed, everything fails
             if (accessionProjectResp === null) { return }
 
-            sendNotification(NotificationType.success, `Project ${projectName} created`)
+            sendNotification(NotificationType.success, `Project "${projectName}" created`)
             setProjectId(accessionProjectResp.id)
 
             // capture the new ID for use below
