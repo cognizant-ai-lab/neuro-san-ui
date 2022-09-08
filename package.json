@@ -31,6 +31,7 @@
     "codemirror": "^5.62.3",
     "debug": "^4.3.4",
     "evergreen-ui": "^6.7.1",
+    "http-status": "^1.5.3",
     "next": "12.1.5",
     "next-auth": "^4.10.3",
     "pretty-bytes": "^6.0.0",
