@@ -1,5 +1,6 @@
 import {notification} from 'antd';
 import {ReactNode} from "react";
+import {renderToString} from "react-dom/server";
 
 export enum NotificationType {
     "success",
@@ -23,7 +24,7 @@ const SUCCESS_NOTIFICATION_DURATION_SECS = 5;
  */
 export function sendNotification(nt: NotificationType, message: string, description: string | ReactNode = ""): void {
     // Log a copy to the console for troubleshooting
-    console.debug(`Notification: Message: "${message}" Description: "${description}"`)
+    console.debug(`Notification: Message: "${message}" Description: "${renderToString(description)}"`)
 
     // Show error and warnings for longer
     let duration: number
