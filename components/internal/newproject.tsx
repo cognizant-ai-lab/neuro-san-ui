@@ -26,6 +26,7 @@ import {DataSource} from "../../controller/datasources/types"
 
 // Constants
 import {MaximumBlue} from "../../const"
+import {empty} from "../../utils/objects";
 
 const debug = Debug("new_project")
 
@@ -130,7 +131,23 @@ export default function NewProject(props: NewProps) {
             return
         }
 
-        sendNotification(NotificationType.success, "Profile Successfully Created")
+        // Notify user
+        // Check for any columns discarded by backend
+        const rejectedColumns = tmpProfile.data_source.rejectedColumns
+
+        const anyColumnsRejected = !empty(rejectedColumns)
+        const notificationType = anyColumnsRejected ? NotificationType.warning : NotificationType.success
+        const description =
+            <>
+                Rows: {`${tmpProfile.data_source.num_rows}`}<br />
+                Columns: {`${tmpProfile.data_source.num_cols}`}<br />
+                {anyColumnsRejected &&
+                    `WARNING: ${Object.keys(rejectedColumns).length} column(s) were rejected from your data source. Proceed to "Tag your Data" to see which columns and why.`}
+            </>
+
+        sendNotification(notificationType, "Data source successfully Created.", description)
+
+        // Save profile
         setProfile(tmpProfile)
     }
 
@@ -178,7 +195,11 @@ export default function NewProject(props: NewProps) {
         const savedDataSource = await AccessionDatasource(dataSourceMessage)
         if (savedDataSource) {
             sendNotification(NotificationType.success, `Data source ${datasetName} created`)
+        } else {
+            // Failed to save data source -- can't continue
+            return
         }
+
         debug("Saved Data Source: ", savedDataSource)
 
         // Unpack the values for datafields
@@ -252,7 +273,7 @@ export default function NewProject(props: NewProps) {
         setSelectedFile(event.target.files[0])
     }
 
-    const handleSubmission = async () => {
+    const handleFileUpload = async () => {
         // Make sure file is within our size limit
         const fileTooLarge = (selectedFile.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES)
         if (fileTooLarge) {
@@ -412,7 +433,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                                             color: "white",
                                                             opacity: isUsingLocalFile && selectedFile ? 1.0 : 0.5
                                                         }}
-                                                        onClick={handleSubmission}>
+                                                        onClick={handleFileUpload}>
                                                     Upload
                                                 </Button>
                                         }

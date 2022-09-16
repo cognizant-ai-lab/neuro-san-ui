@@ -1,9 +1,10 @@
 import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
-import {AiFillDelete, AiFillEdit} from "react-icons/ai";
+import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai";
 import React, {useState} from "react";
 import {Button, Checkbox, Input, Modal} from 'antd';
-import {CAOType} from "../../../controller/datatag/types";
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+import {empty} from "../../../utils/objects";
+import {reasonToHumanReadable} from "../../../controller/datasources/types";
 
 export interface ProfiletableProps {
     Profile: any
@@ -23,7 +24,7 @@ export default function ProfileTable(props: ProfiletableProps) {
     // Declare table headers
     const TableHeaders = [
         "Field Name",
-        "ESP Type",
+        "ESP Type/Error",
         "Data Type",
         "Valued",
         "Values",
@@ -35,148 +36,185 @@ export default function ProfileTable(props: ProfiletableProps) {
         "Has Nan",
     ]
     // Create Table header elements
-    let tableHeaderElements: React.ReactElement[] = []
+    const tableHeaderElements: React.ReactElement[] = [];
     TableHeaders.forEach(header => {
         tableHeaderElements.push(
             <th key={header}
                 scope="col"
-                className="px-10 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                className="px-10 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
                 { header }
             </th>
         )
     })
 
-    let fieldRows = []
-
     const caoColorCoding = {
         "CONTEXT": "#8BBEE8FF",
         "ACTION": "#D7A9E3FF",
-        "OUTCOME": "#A8D5BAFF"
+        "OUTCOME": "#A8D5BAFF",
+        "REJECTED": "#D4B4B4"
     }
 
-    if (profile != null) {
-        Object.keys(profile.data_tag.fields)
-            .map((field) =>
-            fieldRows.push(
-                <tr key={field} style={{backgroundColor: caoColorCoding[profile.data_tag.fields[field].esp_type]}}>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full`}>
-                            { field }
-                        </span>
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        <select
-                            name={`${field}-esp_type`}
-                            value={ profile.data_tag.fields[field].esp_type }
-                            className="w-32"
-                            onChange={event => {
-                                let profileCopy = {...profile}
-                                profileCopy.data_tag.fields[field].esp_type = event.target.value
-                                setProfile(profileCopy)
-                            }}
-                        >
-                            <option value="CONTEXT">CONTEXT</option>
-                            <option value="ACTION">ACTION</option>
-                            <option value="OUTCOME">OUTCOME</option>
-                        </select>
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        <select
-                            name={`${field}-data_type`}
-                            value={ profile.data_tag.fields[field].data_type }
-                            className="w-32"
-                            onChange={event => {
-                                let profileCopy = {...profile}
-                                profileCopy.data_tag.fields[field].data_type = event.target.value
-                                setProfile(profileCopy)
-                            }}
-                        >
-                            <option value="INT">INT</option>
-                            <option value="STRING">STRING</option>
-                            <option value="FLOAT">FLOAT</option>
-                            <option value="BOOL">BOOL</option>
-                        </select>
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        <select
-                            name={`${field}-valued`}
-                            value={ profile.data_tag.fields[field].valued }
-                            className="w-32"
-                            onChange={event => {
-                                let profileCopy = {...profile}
-                                profileCopy.data_tag.fields[field].valued = event.target.value
-                                setProfile(profileCopy)
-                            }}
-                        >
-                            <option value="CATEGORICAL">CATEGORICAL</option>
-                            <option value="CONTINUOUS">CONTINUOUS</option>
-                        </select>
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        { profile.data_tag.fields[field].valued === "CATEGORICAL" ?
-                            <span style={{"display": "flex"}}>
-                            <select
-                                name={`${field}-values`}
-                                className="w-32"
-                                >
-                                <option value="" disabled selected>Click for values:</option>
-                                {
-                                    profile.data_tag.fields[field].discrete_categorical_values.map(
-                                        (item, _) => (<option value={item} key={item} disabled>{item}</option>))
-                                }
-                            </select> <button onClick={() => {
-                                setFieldBeingEditedName(field)
-                                setCurrentCategoryValues(profile.data_tag.fields[field].discrete_categorical_values)
-                                setFieldEditorVisible(true)
-                            }}> <AiFillEdit size='14' style={{ cursor: "pointer" }}/> </button>
-                            </span> : "N/A"
-                        }
-                    </td>
-                    <td className="px-2 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        { profile.data_tag.fields[field].valued === "CONTINUOUS" ?
-                            <Form.Group className="mb-3">
-                                <Form.Control
-                                    name={`${field}-min-range`}
-                                    type="number"
-                                    value={profile.data_tag.fields[field].range[0]}
-                                    onChange={event => {
-                                        let profileCopy = {...profile}
-                                        profileCopy.data_tag.fields[field].range[0] = parseFloat(event.target.value)
-                                        setProfile(profileCopy)
-                                    }}/>
-                            </Form.Group> : "N/A"
-                        }
-                    </td>
-                    <td className="px-2 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        {profile.data_tag.fields[field].valued === "CONTINUOUS" ? <Form.Group className="mb-3">
-                            <Form.Control
-                                name={`${field}-max-range`}
-                                type="number"
-                                value={profile.data_tag.fields[field].range[1]}
-                                onChange={event => {
-                                    let profileCopy = {...profile}
-                                    profileCopy.data_tag.fields[field].range[1] = parseFloat(event.target.value)
-                                    setProfile(profileCopy)
-                                }}/>
-                        </Form.Group> : "N/A"
-                        }
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        { profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].mean : "N/A" }
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        { profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].sum : "N/A" }
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        { profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].std_dev : "N/A" }
-                    </td>
-                    <td className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                        { profile.data_tag.fields[field].has_nan.toString() }
-                    </td>
-                </tr>
-            ))
+    const tableCellClassName = "px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
+    const rangeTableCellClassName = "px-2 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
 
+    const fieldRows = profile != null
+    ? Object.keys(profile.data_tag.fields).map((field) =>
+        <tr key={field} style={{backgroundColor: caoColorCoding[profile.data_tag.fields[field].esp_type]}}>
+            <td className={tableCellClassName}>
+                <span className={"px-2 inline-flex text-xs leading-5 font-semibold rounded-full"}>
+                    {field}
+                </span>
+            </td>
+            <td className={tableCellClassName}>
+                <select
+                    name={`${field}-esp_type`}
+                    value={profile.data_tag.fields[field].esp_type}
+                    className="w-32"
+                    onChange={event => {
+                        const profileCopy = {...profile}
+                        profileCopy.data_tag.fields[field].esp_type = event.target.value
+                        setProfile(profileCopy)
+                    }}
+                >
+                    <option value="CONTEXT">CONTEXT</option>
+                    <option value="ACTION">ACTION</option>
+                    <option value="OUTCOME">OUTCOME</option>
+                </select>
+            </td>
+            <td className={tableCellClassName}>
+                <select
+                    name={`${field}-data_type`}
+                    value={profile.data_tag.fields[field].data_type}
+                    className="w-32"
+                    onChange={event => {
+                        const profileCopy = {...profile}
+                        profileCopy.data_tag.fields[field].data_type = event.target.value
+                        setProfile(profileCopy)
+                    }}
+                >
+                    <option value="INT">INT</option>
+                    <option value="STRING">STRING</option>
+                    <option value="FLOAT">FLOAT</option>
+                    <option value="BOOL">BOOL</option>
+                </select>
+            </td>
+            <td className={tableCellClassName}>
+                <select
+                    name={`${field}-valued`}
+                    value={profile.data_tag.fields[field].valued}
+                    className="w-32"
+                    onChange={event => {
+                        const profileCopy = {...profile}
+                        profileCopy.data_tag.fields[field].valued = event.target.value
+                        setProfile(profileCopy)
+                    }}
+                >
+                    <option value="CATEGORICAL">CATEGORICAL</option>
+                    <option value="CONTINUOUS">CONTINUOUS</option>
+                </select>
+            </td>
+            <td className={tableCellClassName}>
+                {profile.data_tag.fields[field].valued === "CATEGORICAL" ?
+                    <span style={{"display": "flex"}}>
+                    <select
+                        name={`${field}-values`}
+                        className="w-32"
+                    >
+                        <option value="" disabled selected>Click for values:</option>
+                        {
+                            profile.data_tag.fields[field].discrete_categorical_values.map(
+                                (item) => (<option value={item} key={item} disabled>{item}</option>))
+                        }
+                    </select> <button onClick={() => {
+                        setFieldBeingEditedName(field)
+                        setCurrentCategoryValues(profile.data_tag.fields[field].discrete_categorical_values)
+                        setFieldEditorVisible(true)
+                    }}> <AiFillEdit size='14' style={{cursor: "pointer"}}/> </button>
+                    </span> : "N/A"
+                }
+            </td>
+            <td className={rangeTableCellClassName}>
+                {profile.data_tag.fields[field].valued === "CONTINUOUS" ?
+                    <Form.Group className="mb-3">
+                        <Form.Control
+                            name={`${field}-min-range`}
+                            type="number"
+                            value={profile.data_tag.fields[field].range[0]}
+                            onChange={event => {
+                                const profileCopy = {...profile}
+                                profileCopy.data_tag.fields[field].range[0] = parseFloat(event.target.value)
+                                setProfile(profileCopy)
+                            }}/>
+                    </Form.Group> : "N/A"
+                }
+            </td>
+            <td className={rangeTableCellClassName}>
+                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? <Form.Group className="mb-3">
+                    <Form.Control
+                        name={`${field}-max-range`}
+                        type="number"
+                        value={profile.data_tag.fields[field].range[1]}
+                        onChange={event => {
+                            const profileCopy = {...profile};
+                            profileCopy.data_tag.fields[field].range[1] = parseFloat(event.target.value)
+                            setProfile(profileCopy)
+                        }}/>
+                </Form.Group> : "N/A"
+                }
+            </td>
+            <td className={tableCellClassName}>
+                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].mean : "N/A"}
+            </td>
+            <td className={tableCellClassName}>
+                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].sum : "N/A"}
+            </td>
+            <td className={tableCellClassName}>
+                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].std_dev : "N/A"}
+            </td>
+            <td className={tableCellClassName}>
+                {profile.data_tag.fields[field].has_nan.toString()}
+            </td>
+        </tr>
+    )
+    : []
+
+    function getRejectedColumnRows() {
+        if (!profile || !profile.data_source || !profile.data_source.rejectedColumns) {
+            return []
+        }
+
+        const rejectedColumns = profile.data_source.rejectedColumns;
+        console.debug({rejectedColumns})
+        return rejectedColumns && !empty(rejectedColumns)
+            ? Object.keys(rejectedColumns)
+                .map((name) =>
+                    <tr key={name} style={{backgroundColor: caoColorCoding.REJECTED, whiteSpace: "nowrap"}}>
+                        <td className={tableCellClassName}>
+                            <span className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}
+                                  style={{display: "flex", flexWrap: "nowrap"}}>
+                                <span style={{cursor: "pointer"}}><AiFillWarning size="20" className="mr-2"/></span>
+                                {name}
+                            </span>
+                        </td>
+                        <td className={tableCellClassName}>
+                            <span
+                                className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}>
+                                {`${rejectedColumns[name]}: ${reasonToHumanReadable(rejectedColumns[name])}`}
+                            </span>
+                        </td>
+                        {/* Hack to pad table row. There must be a better way. */}
+                        {[...Array(9)].map((_, i) => <td key={i}/>)}
+                    </tr>
+                )
+            : []
     }
+
+    // Separate set of rows for any columns the data profiler had issues with
+    const rejectedColumnRows = getRejectedColumnRows();
+
+    // Add together error rows + valid rows to get all table rows
+    const allRows = rejectedColumnRows.concat(fieldRows)
 
     function deleteValue(val: string) {
         let tmpValues = currentCategoryValues.slice()
@@ -286,7 +324,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                         >
                         </Input>
                         <Button type="primary"
-                            onClick ={_ => {
+                            onClick ={() => {
                                 setCurrentCategoryValues([...currentCategoryValues, newItem])
                             }}
                                 disabled={!Boolean(newItem) || currentCategoryValues.includes(newItem)}
@@ -321,7 +359,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                             <tr>{tableHeaderElements}</tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                            {fieldRows}
+                            {allRows}
                             </tbody>
                         </table>
                     </div>
