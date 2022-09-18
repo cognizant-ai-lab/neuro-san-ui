@@ -71,9 +71,9 @@ export default function DataSourceNode(props): React.ReactElement {
                     <div className="flex-col flex content-center">
                         <div className="flex justify-between mb-4 content-center">
                             {
-                                taggedDataList.length > 0 &&
-                                <select name='dataset' className="w-24"
-                                         onChange={
+                                taggedDataList.length > 0
+                                ?   <select name='dataset' className="w-24"
+                                        onChange={
                                              event => {
                                                  debug("Selected: ", event.target.value)
                                                  const filteredSelectedData = taggedDataList.filter(
@@ -93,6 +93,7 @@ export default function DataSourceNode(props): React.ReactElement {
                                                 value={data.DataSource.id}>{data.DataSource.name}</option>
                                     )}
                                 </select>
+                                : "<none>"
                             }
                         </div>
                     </div>

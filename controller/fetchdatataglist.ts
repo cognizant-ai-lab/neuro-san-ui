@@ -8,7 +8,7 @@ export default async function loadTaggedDataList(requestUser, projectId): Promis
     if (projectId) {
         const dataSources: DataSources = await BrowserFetchDataSources(requestUser, projectId)
         if (dataSources.length > 0) {
-            let taggedDataList: TaggedDataInfoList = []
+            const taggedDataList: TaggedDataInfoList = []
             for (let iter = 0; iter < dataSources.length; iter++) {
                 const dataSource = dataSources[iter]
                 const dataTags: DataTags = await BrowserFetchDataTags(requestUser, dataSource.id)
@@ -21,7 +21,11 @@ export default async function loadTaggedDataList(requestUser, projectId): Promis
                 }
             }
             return taggedDataList
+        } else {
+            return []
         }
+    } else {
+        return []
     }
 }
 
