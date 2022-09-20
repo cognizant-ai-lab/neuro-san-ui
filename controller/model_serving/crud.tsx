@@ -87,7 +87,8 @@ export async function deployModel(
         })
 
         if (response.status != 200) {
-            sendNotification(NotificationType.error, `Failed to deploy models for run ${run_name}: ${run_id}`,
+            sendNotification(NotificationType.error,
+                `Failed to deploy models for run ${run_name ?? "no name"}: ${run_id}`,
                 response.statusText)
             return null
         }
@@ -164,7 +165,7 @@ export async function getDeployments(
     }
 
     try {
-        const response = await fetch(QUERY_DEPLOYMENTS_URL, {
+        const response: Response = await fetch(QUERY_DEPLOYMENTS_URL, {
             method: 'POST',
             headers: {
                 "Accept": "application/json",
@@ -174,7 +175,6 @@ export async function getDeployments(
         })
 
         if (response.status != 200) {
-            sendNotification(NotificationType.error, `Failed to fetch models for run id ${run_id} `, response.statusText)
             return null
         }
 
@@ -261,16 +261,18 @@ export async function getModels(
  */
 export async function checkIfModelsDeployed(runID: number, prescriptorIDToDeploy: string) {
     const deploymentStatus = await getDeployments(runID)
+    let models = null
     if (deploymentStatus && deploymentStatus.deployed_models) {
-        const models = deploymentStatus.deployed_models
-        if (models.length == 1) {
+        const deployedModels = deploymentStatus.deployed_models
+        if (deployedModels.length == 1) {
             const model = deploymentStatus.deployed_models[0]
             // Check if model is ready for use
             if (model.model_status.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_READY]) {
                 const baseUrl = model.model_reference.base_url
-                return await getModels(baseUrl, runID, prescriptorIDToDeploy)
+                models =  await getModels(baseUrl, runID, prescriptorIDToDeploy);
             }
         }
     }
+    return models
 }
 
