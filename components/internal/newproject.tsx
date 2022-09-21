@@ -194,9 +194,7 @@ export default function NewProject(props: NewProps) {
         }
 
         const savedDataSource = await AccessionDatasource(dataSourceMessage)
-        if (savedDataSource) {
-            sendNotification(NotificationType.success, `Data source ${datasetName} created`)
-        } else {
+        if (!savedDataSource) {
             // Failed to save data source -- can't continue. For now, controller shows error popup.
             return
         }
@@ -241,7 +239,7 @@ export default function NewProject(props: NewProps) {
 
         const savedDataTag = await AccessionDataTag(dataTagMessage)
         if (savedDataTag) {
-            sendNotification(NotificationType.success, "Data tag created")
+            sendNotification(NotificationType.success, `Data profile "${datasetName}" created`)
         }
         debug("Saved DT: ", savedDataTag)
 
