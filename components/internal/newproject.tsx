@@ -3,10 +3,11 @@ import {useEffect, useRef, useState} from 'react'
 import {useSession} from 'next-auth/react'
 
 // 3rd Party components
+import ClipLoader from "react-spinners/ClipLoader";
+import prettyBytes from 'pretty-bytes'
+import status from "http-status"
 import {Button, Collapse, Radio, RadioChangeEvent, Space} from 'antd'
 import {Container, Form} from "react-bootstrap"
-import prettyBytes from 'pretty-bytes'
-import ClipLoader from "react-spinners/ClipLoader";
 
 // Custom Components developed by us
 import ProfileTable from "./flow/profiletable";
@@ -16,7 +17,7 @@ import {Project} from "../../controller/projects/types"
 import {uploadFile} from "../../controller/files/upload"
 
 // Controllers for new project
-import {BrowserFetchProfile} from "../../controller/dataprofile/generate"
+import {CreateProfile} from "../../controller/dataprofile/generate"
 import {DataTag, DataTagFields} from "../../controller/datatag/types"
 import {AccessionDatasource} from "../../controller/datasources/accession"
 import AccessionDataTag from "../../controller/datatag/accession"
@@ -26,7 +27,8 @@ import {DataSource} from "../../controller/datasources/types"
 
 // Constants
 import {MaximumBlue} from "../../const"
-import {empty} from "../../utils/objects";
+import {empty} from "../../utils/objects"
+import {GrpcError} from "../../controller/base_types"
 
 const debug = Debug("new_project")
 
@@ -106,12 +108,23 @@ export default function NewProject(props: NewProps) {
         debug("Data source: ", dataSource)
 
         // Trigger the Data Source Controller
-        const tmpProfile: Profile = await BrowserFetchProfile(dataSource)
-
-        // If Data Source creation failed, everything fails
-        if (tmpProfile === null) {
-            return
+        const response: Response = await CreateProfile(dataSource)
+        if (response.status != status.OK) {
+            // Maybe "invalid request"?
+            if (response.status == status.BAD_REQUEST) {
+                const status: GrpcError = await response.json()
+                sendNotification(NotificationType.error, "Failed to create profile", `"${status.message}"`)
+            } else {
+                // Something we're not expecting -- show error
+                console.error(await response.text())
+                sendNotification(NotificationType.error, `Failed to create profile: "${response.statusText}"`,
+                    "See browser console for more information")
+            }
+            return null
         }
+
+        // If we got this far, profile was created successfully
+        const tmpProfile: Profile = await response.json()
 
         // If data source has NaNs, inform user that we cannot use it
         const columnsWithNaNs =
