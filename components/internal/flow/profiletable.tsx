@@ -192,7 +192,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                         <td className={tableCellClassName}>
                             <span className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}
                                   style={{display: "flex", flexWrap: "nowrap"}}>
-                                <span style={{cursor: "pointer"}}><AiFillWarning size="20" className="mr-2"/></span>
+                                <AiFillWarning size="20" className="mr-2"/>
                                 {name}
                             </span>
                         </td>

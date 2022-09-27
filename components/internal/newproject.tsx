@@ -126,24 +126,6 @@ export default function NewProject(props: NewProps) {
         // If we got this far, profile was created successfully
         const tmpProfile: Profile = await response.json()
 
-        // If data source has NaNs, inform user that we cannot use it
-        const columnsWithNaNs =
-            Object.entries(tmpProfile.data_tag.fields)
-                .filter(field => field[1].has_nan)
-                .map(field => field[0]
-            )
-        if (columnsWithNaNs.length > 0) {
-            const description =
-            <>
-                Please use a dataset with no missing values.<br />
-                Columns in error are:<br />
-                {`${columnsWithNaNs.join(", ")}`}
-            </>
-            sendNotification(NotificationType.error,
-                "Unable to use this dataset because some columns have missing (NaN) values", description)
-            return
-        }
-
         // Notify user
         // Check for any columns discarded by backend
         const rejectedColumns = tmpProfile.data_source.rejectedColumns
