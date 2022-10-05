@@ -24,28 +24,6 @@ export interface SupportedModels {
 }
 
 export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
-    "Linear Regressor": {
-        "fit_intercept": {
-            "default_value": true,
-            "description": `Whether to calculate the intercept for this model. 
-                           If set to False, no intercept will be used in calculations 
-                           (i.e. data is expected to be centered).`,
-            "type": "bool"
-        },
-        "normalize": {
-            "default_value": false,
-            "description": `This parameter is ignored when fit_intercept is set to False. 
-                           If True, the regressors X will be normalized before regression by 
-                           subtracting the mean and dividing by the l2-norm.`,
-            "type": "bool"
-        },
-        "positive": {
-            "default_value": false,
-            "description": `When set to True, forces the coefficients to be positive. 
-                           This option is only supported for dense arrays.`,
-            "type": "bool"
-        }
-    },
     "Random Forest": {
         "n_estimators": {
             "default_value": 100,
@@ -186,6 +164,28 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             Thus, max_samples should be in the interval (0, 1).
             `,
             "type": "float"
+        }
+    },
+    "Linear Regressor": {
+        "fit_intercept": {
+            "default_value": true,
+            "description": `Whether to calculate the intercept for this model. 
+                           If set to False, no intercept will be used in calculations 
+                           (i.e. data is expected to be centered).`,
+            "type": "bool"
+        },
+        "normalize": {
+            "default_value": false,
+            "description": `This parameter is ignored when fit_intercept is set to False. 
+                           If True, the regressors X will be normalized before regression by 
+                           subtracting the mean and dividing by the l2-norm.`,
+            "type": "bool"
+        },
+        "positive": {
+            "default_value": false,
+            "description": `When set to True, forces the coefficients to be positive. 
+                           This option is only supported for dense arrays.`,
+            "type": "bool"
         }
     },
     "XGBoost": {

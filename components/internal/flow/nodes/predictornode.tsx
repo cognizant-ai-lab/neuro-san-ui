@@ -1,49 +1,50 @@
-// Import React components
+// React components
 import {
-    useState,
-    useEffect, SetStateAction, Dispatch
+    Dispatch,
+    ReactElement,
+    SetStateAction,
+    useEffect,
+    useState
 } from 'react'
 
-import Slider from 'rc-slider';
-import 'rc-slider/assets/index.css';
-
-// Import 3rd party components
+// 3rd party components
 import { 
     Card
 } from "react-bootstrap"
 import { 
-    Popover, 
-    Text, 
-    Position, 
-    Tablist, 
-    Tab, 
-    Tooltip, 
-    InfoSignIcon, 
+    InfoSignIcon,
+    Popover,
+    Position,
+    Tab,
+    Tablist,
+    Text,
+    Tooltip,
 } from "evergreen-ui"
 import { GrSettingsOption } from "react-icons/gr"
+import Slider from 'rc-slider'
+import 'rc-slider/assets/index.css'
 
-// Import React Flow
+// React Flow
 import {
     Handle,
     Position as HandlePosition
 } from 'react-flow-renderer'
 
 import { 
-    Card as BleuprintCard, 
+    Card as BlueprintCard,
     Elevation 
-} from "@blueprintjs/core";
+} from "@blueprintjs/core"
 
-// Import Controller
-import { 
-    FetchPredictors,
+// Controllers
+import {
     FetchMetrics,
-    FetchParams
+    FetchParams,
+    FetchPredictors
 } from '../../../../controller/predictor'
-
-import {loadDataTag} from "../../../../controller/fetchdatataglist";
-import {StringBool} from "../../../../controller/base_types";
-import {PredictorParams} from "../../../../predictorinfo";
-import {useSession} from "next-auth/react";
+import {loadDataTag} from "../../../../controller/fetchdatataglist"
+import {PredictorParams} from "../../../../predictorinfo"
+import {StringBool} from "../../../../controller/base_types"
+import {useSession} from "next-auth/react"
 
 
 // Interface for Predictor CAO
@@ -86,7 +87,7 @@ export interface PredictorNodeData {
 
 const SliderComponent = Slider.createSliderWithTooltip(Slider);
 
-export default function PredictorNode(props): React.ReactElement {
+export default function PredictorNode(props): ReactElement {
     /*
     This function is responsible to render the Predictor Node
     */
@@ -129,7 +130,8 @@ export default function PredictorNode(props): React.ReactElement {
     // once the data tags are loaded
     useEffect(() => {
 
-            const SelectedPredictor = ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
+            const SelectedPredictor =
+                ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
  
             const SelectedMetric = ParentPredictorState.selectedPredictorType == "classifier" ?
                                    ParentPredictorState.selectedMetric || DEFAULT_CLASSIFIER_METRIC : 
@@ -142,7 +144,7 @@ export default function PredictorNode(props): React.ReactElement {
             if (!predictorParams || Object.keys(predictorParams).length === 0) {
                 predictorParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
                 // We add a key called value to adjust for user input
-                Object.keys(predictorParams).forEach(key => {
+                predictorParams && Object.keys(predictorParams).forEach(key => {
                     if (typeof(predictorParams[key].default_value) === "object") {
                         // If the type has to be a choice, select the first choice
                         predictorParams[key].value = predictorParams[key].default_value[0]
@@ -191,13 +193,11 @@ export default function PredictorNode(props): React.ReactElement {
 
     const onPredictorTypeChange = (predictorType: string) => {
         /*
-        This controller invokation is used for the fetching of the predictors and the
-        metrics of a certain kind of predictor. This only needs to be used once
-        when the content is being rendered
+        This controller invocation is used for the fetching of the predictors and the
+        metrics of a certain kind of predictor.
         */
         const newPred = predictors[predictorType][0]
         onPredictorChange(predictorType, newPred)
-
     }
 
     const onPredictorChange = (predictorType: string, selectedPredictor: string) => {
@@ -210,7 +210,7 @@ export default function PredictorNode(props): React.ReactElement {
         const params = FetchParams(predictorType, selectedPredictor)
 
         // We add a key called value to adjust for user input
-        Object.keys(params).forEach(key => {
+        params && Object.keys(params).forEach(key => {
             if (typeof(params[key].default_value) === "object") {
                 params[key].value = params[key].default_value[0]
             } else {
@@ -233,12 +233,12 @@ export default function PredictorNode(props): React.ReactElement {
     }
 
     const onParamChange = (event, paramName) => {
-        /* 
+        /*
         This function is used to update the state of the predictor
         parameters.
         */
         const { value } = event.target
-        let paramsCopy = {...ParentPredictorState.predictorParams}
+        const paramsCopy = {...ParentPredictorState.predictorParams}
         paramsCopy[paramName].value = value
         SetParentPredictorState({
             ...ParentPredictorState,
@@ -252,7 +252,7 @@ export default function PredictorNode(props): React.ReactElement {
         parameter checkboxes.
         */
         const { checked } = event.target
-        let paramsCopy = {...ParentPredictorState.predictorParams}
+        const paramsCopy = {...ParentPredictorState.predictorParams}
         paramsCopy[paramName].value = checked
         SetParentPredictorState({
             ...ParentPredictorState,
@@ -261,7 +261,7 @@ export default function PredictorNode(props): React.ReactElement {
     }
 
     const onTrainSliderChange = newValue => {
-        let newTestSliderValue = 100 - newValue
+        const newTestSliderValue = 100 - newValue
         SetParentPredictorState({
             ...ParentPredictorState,
             testSliderValue: newTestSliderValue,
@@ -270,7 +270,7 @@ export default function PredictorNode(props): React.ReactElement {
     };
 
     const onTestSliderChange = newValue => {
-        let newTrainSliderValue = 100 - newValue
+        const newTrainSliderValue = 100 - newValue
         SetParentPredictorState({
             ...ParentPredictorState,
             testSliderValue: newValue,
@@ -280,7 +280,7 @@ export default function PredictorNode(props): React.ReactElement {
 
     const onUpdateCAOState = ( event, espType: string ) => {
         const { name, checked } = event.target
-        let caoStateCopy = { ...ParentPredictorState.caoState }
+        const caoStateCopy = { ...ParentPredictorState.caoState }
 
         caoStateCopy[espType][name] = checked
         
@@ -323,11 +323,11 @@ export default function PredictorNode(props): React.ReactElement {
                                                 >
                                                     { ParentPredictorState.selectedPredictorType &&
                                                         predictors[ParentPredictorState.selectedPredictorType].map(
-                                                                (predictor, _) => 
+                                                                predictor =>
                                                                     <option key={ predictor } value={ predictor }>
                                                                         { predictor }
                                                                     </option>
-                                                            ) 
+                                                            )
                                                     }
                                             </select>
                                         </div>
@@ -341,11 +341,11 @@ export default function PredictorNode(props): React.ReactElement {
                                                 className="w-32"
                                                 >
                                                      { metrics[ParentPredictorState.selectedPredictorType].map(
-                                                                (metric, _) => 
+                                                                metric =>
                                                                     <option key={metric} value={ metric }>
                                                                         { metric }
                                                                     </option>
-                                                            ) 
+                                                            )
                                                     }
                                             </select>
                                         </div>
@@ -354,7 +354,7 @@ export default function PredictorNode(props): React.ReactElement {
     // Create the configuration Panel
     const PredictorConfigurationPanel = <Card.Body className="overflow-y-auto h-40 text-xs" id={ `${NodeID}-predictorconfig` }>
                                         {   ParentPredictorState.predictorParams &&
-                                            Object.keys(ParentPredictorState.predictorParams).map((param, _) =>
+                                            Object.keys(ParentPredictorState.predictorParams).map(param =>
                                                 <div className="grid grid-cols-12 gap-4 mb-2" key={param} >
                                                     <div className="item1 col-span-3"><label className="capitalize">{param}: </label></div>
                                                     <div className="item2 col-span-8">
@@ -396,9 +396,10 @@ export default function PredictorNode(props): React.ReactElement {
                                                                 className="w-32"
                                                                 >
                                                                 {
+                                                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                                                     // @ts-ignore
                                                                     ParentPredictorState.predictorParams[param].type.map(
-                                                                        (value, _) => <option key={value} value={ value }>{ value }</option>)
+                                                                        value => <option key={value} value={ value }>{ value }</option>)
                                                                 }
                                                             </select>
                                                         }
@@ -484,7 +485,7 @@ export default function PredictorNode(props): React.ReactElement {
     </Card.Body>
 
     // Create the Component structure
-    return <BleuprintCard 
+    return <BlueprintCard
         interactive={ true } 
         elevation={ Elevation.TWO } 
         style={ { padding: 0, width: "10rem", height: "4rem" } }>
@@ -602,5 +603,5 @@ export default function PredictorNode(props): React.ReactElement {
 
                 <Handle type="source" position={HandlePosition.Right} />
                 <Handle type="target" position={HandlePosition.Left} />
-        </BleuprintCard>
+        </BlueprintCard>
 }
