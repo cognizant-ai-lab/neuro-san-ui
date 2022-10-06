@@ -1,21 +1,20 @@
+import React from "react";
+import {FiAlertCircle} from "react-icons/fi";
 import NewBar from "./newbar";
 import {Table} from "evergreen-ui"
-import {node} from "prop-types";
 
 export interface MetricstableProps {
-
     readonly PredictorRunData: any
-
 }
 
 export default function MetricsTable(props: MetricstableProps) {
 
     const PredictorRunData = props.PredictorRunData
-    let predictorRenders = []
+    const predictorRenders = []
     Object.keys(PredictorRunData).forEach(nodeID => {
 
         const metrics = PredictorRunData[nodeID].metrics
-        let cells = Object.keys(metrics).map((metricName) => {
+        const cells = Object.keys(metrics).map((metricName) => {
                 const value = metrics[metricName]
                 return <Table.Row key={`${nodeID}-${metricName}`}>
                     <Table.TextCell>{metricName}</Table.TextCell>
@@ -44,7 +43,17 @@ export default function MetricsTable(props: MetricstableProps) {
 
     return <>
         <NewBar Title="Predictor Metrics" DisplayNewLink={ false } />
-        {predictorRenders}
+        {predictorRenders && predictorRenders.length > 0
+            ?   predictorRenders
+            :   <>
+                    <span style={{display: "flex"}}>
+                        <FiAlertCircle color="red" size={50}/>
+                        <span className="ml-4 fs-4 my-auto">No predictors found</span>
+                    </span>
+                    <br />
+                    Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                </>
+        }
     </>
 }
 

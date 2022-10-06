@@ -1,10 +1,10 @@
 import NewBar from "./newbar";
 import {Table} from "evergreen-ui";
 import {ResponsiveLine} from "@nivo/line";
-import {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {Slider} from 'antd';
 import {Button, Card, Container} from "react-bootstrap";
-import {FiPlay, FiStopCircle} from "react-icons/fi";
+import {FiAlertCircle, FiPlay, FiStopCircle} from "react-icons/fi";
 import {MaximumBlue} from "../const";
 import {NotificationType, sendNotification} from "../controller/notification";
 
@@ -35,12 +35,12 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
 
     const Nodes: string[] = Object.keys(PrescriptorRunData)
 
-    let nodePlots = []
+    const nodePlots = []
     Nodes.forEach(nodeID => {
 
         const Objectives = Object.keys(PrescriptorRunData[nodeID])
 
-        let cells = []
+        const cells = []
         Objectives.forEach(objective => {
                 const bumpData = PrescriptorRunData[nodeID][objective]
                 cells.push(
@@ -123,7 +123,18 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
 
     return <>
         <NewBar Title="Prescriptor Metrics" DisplayNewLink={ false } />
-        {nodePlots}
+        {nodePlots && nodePlots.length > 0
+            ? nodePlots
+            :   <>
+                    <span style={{display: "flex"}}>
+                        <FiAlertCircle color="red" size={50}/>
+                        <span className="ml-4 fs-4 my-auto">No prescriptors found..</span>
+                        <div className="break"></div>
+                    </span>
+                    <br />
+                    Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                </>
+        }
     </>
 
 }
@@ -238,14 +249,17 @@ function ParetoPlot(props) {
     // The default click handler shows the Notification if the
     // selected Candidate is not of the last generation - we cannot yet perform inference
     // on those as those don't exist
-    let onClickHandler = (node, _) => {
+
+    let onClickHandler: (point, event) => void
+
+    onClickHandler = () => {
         sendNotification(NotificationType.error, "Model Selection Error",
             "Only models from the last generation can be used with the decision interface" )
     }
     // Override the default onclick handler to actually update the selected model
     // if it is selected from the last generation
     if (selectedGen === numGen) {
-        onClickHandler = (node, _) => {
+        onClickHandler = node => {
             selectedCIDStateUpdator(node.data.cid)
         }
     }
@@ -272,7 +286,7 @@ function ParetoPlot(props) {
                 style={{background: MaximumBlue, borderColor: MaximumBlue}}
                 type="button"
                 className="mr-4"
-                onClick={_ => {
+                onClick={() => {
                     // If the animation is not playing start the animation by using
                     // a setInterval that updates the states ever half second
                     if (!playing) {
@@ -331,6 +345,7 @@ function ParetoPlot(props) {
             }}
             curve="monotoneX"
             tooltip={({point}) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 return <Card>
                     <Container className="flex flex-col justify-space-between">
@@ -400,7 +415,7 @@ function ParetoPlot(props) {
 // render a table of Pareto Plots incase there are multiple Prescriptor nodes/experiments
 export function ParetoPlotTable(props: ParetoPlotProps) {
 
-    let nodePlots = []
+    const nodePlots = []
 
     // For Each node create a table
     Object.keys(props.Pareto).forEach(nodeID => {
@@ -408,7 +423,7 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
         const node = props.Pareto[nodeID]
         const objectives = node.objectives
 
-        let cells = []
+        const cells = []
 
         cells.push(
             <Table.Row style={{height: "100%"}} key={`${nodeID}-pareto`} >

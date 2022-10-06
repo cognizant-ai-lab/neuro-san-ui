@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Artifact, Run, Runs} from "../../controller/run/types";
 import {BrowserFetchRuns, FetchSingleRunArtifact} from "../../controller/run/fetch";
 import {constructRunMetricsForRunPlot} from "../../controller/run/results";
+import {empty} from "../../utils/objects";
 import MetricsTable from "../metricstable";
 import ESPRunPlot, {ParetoPlotTable} from "../esprunplot";
 import NewBar from "../newbar";
@@ -183,7 +184,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
         else {
             // Cache miss -- have to load from backend
-            loadRun(props.RunID)
+            void loadRun(props.RunID)
         }
     }, [props.RunID])
 
@@ -193,7 +194,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         if (run && nodeToCIDMap) {
             // If it contains a rule-based prescriptor, load the rules
             if (isRuleBased(flow)){
-                retrieveRulesPrescriptor()
+                void retrieveRulesPrescriptor()
             }
         }
     }, [nodeToCIDMap])
@@ -302,6 +303,42 @@ export default function RunPage(props: RunProps): React.ReactElement {
             PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap} />)
     }
 
+    // Decide whether DMS button should be enabled
+    function shouldEnableDMS() {
+        return !rules && !empty(nodeToCIDMap)
+    }
+
+    // Get verbiage for DMS button
+    function getDMSButton() {
+        // Rules not yet supported
+        if (rules) {
+            return "(Decision Making System for rules-based models coming soon!)"
+        }
+
+        // Can't use DMS if no prescriptors
+        if (empty(nodeToCIDMap)) {
+            return "(Decision Making System not available: no prescriptors found.)"
+        }
+
+        // Allow DMS access for currently chosen prescriptor
+        const prescriptorID = Object.values(nodeToCIDMap)[0]
+        const dataSourceId = flow[0].data.DataTag.data_source_id
+        const projectId = props.ProjectId;
+        const experimentId = run.experiment_id;
+        const runId = run.id;
+        const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/
+${prescriptorID}/?data_source_id=${dataSourceId}`
+        return <>
+            <Link
+                href={dmsLink}
+            >
+                <a style={{
+                    color: "white"
+                }}>Go to Decision Making System with Prescriptor: {prescriptorID}</a>
+            </Link>
+        </>
+    }
+
     if (!predictorPlotData && !prescriptorPlotData) {
         PlotDiv.push(
             <div className="container">
@@ -313,7 +350,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         PlotDiv.push(
             <div
                 style={{
-                    cursor: rules == null ? "pointer" : "not-allowed"
+                    cursor: shouldEnableDMS() ? "pointer" : "not-allowed"
                 }}
             >
                 <Button size="lg" className="mt-4 mb-4"
@@ -323,19 +360,9 @@ export default function RunPage(props: RunProps): React.ReactElement {
                             borderColor: MaximumBlue,
                             width: "100%"
                         }}
-                        disabled={rules != null}
+                        disabled={!shouldEnableDMS()}
                 >
-                    {rules == null ?
-                        <Link
-                            href={`/projects/${props.ProjectId}/experiments/${run.experiment_id}/runs/${run.id}/
-prescriptors/${Object.values(nodeToCIDMap)[0]}/?data_source_id=${flow[0].data.DataTag.data_source_id}`}
-                        >
-                            <a style={{
-                                color: "white"
-                            }}>Go to Decision Making System with Prescriptor: {Object.values(nodeToCIDMap)[0]}</a>
-                        </Link>
-                        : "(Decision Making System for rules-based models coming soon!)"}
-
+                    {getDMSButton()}
                 </Button>
             </div>
         )
