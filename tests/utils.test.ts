@@ -2,6 +2,7 @@
 Unit tests for the various small utility modules
  */
 
+import {arraysEqual} from "../utils/objects";
 import {removeItemOnce} from "../utils/transformation";
 import {getEnumKeyByEnumValue} from "../utils/enum";
 import sortByTime from "../utils/sort";
@@ -46,6 +47,32 @@ describe('Various utilities', () => {
             {"updated_at": "2022-04-29T16:17:06.865579Z"},
             {"updated_at": "2022-04-26T00:41:46.823011Z"}
         ])
+    })
+
+    it('compares arrays correctly', async () => {
+        let res
+
+        res = arraysEqual([], [])
+        expect(res).toEqual(true)
+
+        res = arraysEqual(undefined, [])
+        expect(res).toEqual(true) // non-array things get promoted to []
+
+        // happy path
+        res = arraysEqual(["a", "b", "c"], ["a", "b", "c"])
+        expect(res).toEqual(true)
+
+        // order doesn't matter
+        res = arraysEqual(["c", "b", "a"], ["a", "b", "c"])
+        expect(res).toEqual(true)
+
+        // different lengths
+        res = arraysEqual(["a", "b", "c"], ["a", "b"])
+        expect(res).toEqual(false)
+
+        // different contents
+        res = arraysEqual(["a", "b", "c"], ["a", "b", "d"])
+        expect(res).toEqual(false)
     })
 })
 

@@ -50,4 +50,16 @@ export class FlowQueries {
         })
         return checkedFields
     }
+
+    static extractCheckedFieldsForNode(node, caoType: CAOType): string[] {
+        /*
+       The function extracts all user-selected (checked) fields of the given CAOType from the
+       given node. For example, "get all checked Actions for this Predictor".
+        */
+        const parentNode = node.type === "prescriptornode" ? "ParentPrescriptorState" : "ParentPredictorState"
+        const caoTypeString = CAOType[caoType].toLowerCase()
+        return Object.entries(node.data[parentNode].caoState[caoTypeString])
+            .filter(e => e[1] === true) // only checked items
+            .map(e => e[0])
+    }
 }
