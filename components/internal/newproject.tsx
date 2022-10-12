@@ -223,7 +223,8 @@ export default function NewProject(props: NewProps) {
                 discrete_categorical_values: dataField.discrete_categorical_values,
                 has_nan: dataField.has_nan,
                 valued: dataField.valued,
-                mean: dataField.mean
+                mean: dataField.mean,
+                is_ordered: dataField.is_ordered
             }
 
         })
