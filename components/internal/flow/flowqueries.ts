@@ -10,8 +10,17 @@ export class FlowQueries {
         This function filters the predictor nodes
         from the graph and returns them
         */
-        return graph.filter(
-            element => element.type === 'predictornode')
+        return graph.filter(element => element.type === 'predictornode')
+    }
+
+    static getPredictorNode(graph, nodeID: string) {
+        /*
+        This function filters the predictor nodes
+        from the graph and returns the one with the supplied ID, or undefined if not found
+        */
+        console.debug({nodeID})
+        console.debug({graph})
+        return graph.find(element => (element.type === 'predictornode' && element.id === nodeID))
     }
 
     static getPrescriptorNodes(graph) {
@@ -19,16 +28,14 @@ export class FlowQueries {
         This function filters the prescriptor nodes
         from the graph and returns them
         */
-        return graph.filter(
-            element => element.type === 'prescriptornode')
+        return graph.filter(element => element.type === 'prescriptornode')
     }
 
     static getDataNodes(graph) {
         /*
         This function returns all nodes of type "data" from the graph
         */
-        return graph.filter(
-            element => element.type === 'datanode')
+        return graph.filter(element => element.type === 'datanode')
     }
 
     static extractCheckedFields(nodes, caoType: CAOType) {

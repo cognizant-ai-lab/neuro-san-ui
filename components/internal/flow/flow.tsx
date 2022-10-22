@@ -1,31 +1,38 @@
 // Import React Flow
-import ReactFlow, {addEdge, Background, Controls, removeElements} from 'react-flow-renderer'
+import Debug from "debug"
 
 // Import Framework
 import React from 'react'
 
+// Import 3rd party components
+import {Button, Container} from "react-bootstrap"
+import ReactFlow, {
+    addEdge,
+    Background,
+    Controls,
+    getConnectedEdges,
+    getOutgoers,
+    removeElements
+} from 'react-flow-renderer'
+
 // Import ID Gen
 import uuid from "react-uuid"
 
-// Import Custom Nodes and Edges
-import EdgeTypes from './edges/types'
-import NodeTypes from './nodes/types'
-
-// Import 3rd party components
-import {Button, Container} from "react-bootstrap"
-
 // Import Constants
 import {EvaluateCandidateCode, InputDataNodeID, MaximumBlue, OutputOverrideCode} from '../../../const'
+import {DataSource} from "../../../controller/datasources/types";
+import {CAOType, DataTag} from "../../../controller/datatag/types";
+import {NotificationType, sendNotification} from "../../../controller/notification";
+import {PredictorParams} from "../../../predictorinfo";
+
+// Import Custom Nodes and Edges
+import EdgeTypes from './edges/types'
+import {FlowQueries} from "./flowqueries";
 
 // Import types
 import {CAOChecked, PredictorState} from "./nodes/predictornode"
-import {NotificationType, sendNotification} from "../../../controller/notification";
-import {PredictorParams} from "../../../predictorinfo";
-import {DataSource} from "../../../controller/datasources/types";
-import {CAOType, DataTag} from "../../../controller/datatag/types";
-import {FlowQueries} from "./flowqueries";
+import NodeTypes from './nodes/types'
 
-import Debug from "debug"
 const debug = Debug("flow")
 
 /*
@@ -401,7 +408,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 NodeID: NodeID,
                 SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPredictorState: this._getInitialPredictorState(),
-                SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID)
+                SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID),
+                AddRioNode: predictorNodeId => this._addRioNode(predictorNodeId)
             },
             position: { 
                 x: flowInstanceElem[0].position.x + 250, 
@@ -498,8 +506,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         */
     
         // Check if Prescriptor Node exists
-        const prescriptorExists = (
-            FlowQueries.getPrescriptorNodes(this.state.flow)).length != 0
+        const prescriptorExists = (FlowQueries.getPrescriptorNodes(this.state.flow)).length != 0
     
         // If it already exists, return
         if (prescriptorExists) {
@@ -558,6 +565,97 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     
         this.setState({flow: graphCopy})
     }
+
+    // Adds a RIO node to the specified Predictor
+    _addRioNode(predictorNodeID: string): void {
+        const flow = this.state.flow;
+
+        // Find associated predictor for this RIO node
+        const predictorNode = FlowQueries.getPredictorNode(flow, predictorNodeID)
+        if (!predictorNode) {
+            console.error(`Unable to locate predictor with node ID ${predictorNodeID}`)
+            return
+        } else {
+            console.debug({predictorNode})
+        }
+
+        // Only one RIO node allowed per Predictor
+        const downstreamNodes = getOutgoers(predictorNode, flow)
+        if (downstreamNodes && downstreamNodes.length > 0) {
+            for (const node of downstreamNodes) {
+                if (node.type === "rionode") {
+                    sendNotification(NotificationType.warning, "This predictor already has a RIO node",
+                        "Only one RIO node is allowed per predictor")
+                    return
+                }
+            }
+        }
+
+        // Make a copy of the graph
+        let graphCopy = flow.slice()
+
+        // Check if Prescriptor Node exists
+        const prescriptorNodes = FlowQueries.getPrescriptorNodes(flow)
+        const prescriptorNode = prescriptorNodes && prescriptorNodes.length > 0 ? prescriptorNodes[0] : null
+
+        const rioNodeX = prescriptorNode
+            ? (predictorNode.position.x + prescriptorNode.position.x) / 2
+            : predictorNode.position.x + 200
+
+        // Create a unique ID
+        const newRioNodeID = uuid()
+
+        // Add the RIO node
+        graphCopy.push({
+            id: newRioNodeID,
+            type: "rionode",
+            data:  {
+                NodeID: newRioNodeID,
+                Placeholder: "My RIO node"
+            },
+            position: {
+                x: rioNodeX,
+                y: predictorNode.position.y
+            },
+        })
+
+        // Now wire up the RIO node in the graph
+        // Connect the Predictor to the RIO node
+        graphCopy.push({
+            id: uuid(),
+            source: predictorNode.id,
+            target: newRioNodeID,
+            animated: false,
+            type: 'predictoredge'
+        })
+
+        // If there's a Prescriptor, connect the new RIO node to that.
+        if (prescriptorNode) {
+            // Disconnect the existing edge from Predictor to Prescriptor
+            const edges = getConnectedEdges([predictorNode], flow)
+            for (const edge of edges) {
+                if (edge.type === "prescriptoredge") {
+                    console.debug("removing edge")
+                    graphCopy = removeElements([edge], graphCopy)
+                } else {
+                    console.debug("wrong node type", {edge})
+                }
+            }
+
+            // Connect the RIO node to the prescriptor
+            graphCopy.push({
+                id: uuid(),
+                source: newRioNodeID,
+                target: prescriptorNode.id,
+                animated: false,
+                type: 'predictoredge'
+            })
+        }
+
+        // Save the updated Flow
+        this.setState({flow: graphCopy})
+    }
+
 
     _deleteNode(elementsToRemove, graph) {
         /*
