@@ -1,8 +1,8 @@
 // React components
-import {Dispatch, ReactElement, SetStateAction} from 'react'
+import {Dispatch, ReactElement, SetStateAction, useState} from 'react'
 
 // 3rd party components
-import {Card} from "react-bootstrap"
+import {Card, Collapse} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
 import {Handle, Position as HandlePosition} from 'react-flow-renderer'
@@ -43,6 +43,9 @@ export default function UncertaintyModelNode(props): ReactElement {
 
     // Unpack the data
     const {ParentUncertaintyNodeState, SetParentUncertaintyNodeState} = data
+
+    // For showing advanced configuration settings
+    const [showAdvanced, setShowAdvanced] = useState(false)
 
     const onParamChange = (event, paramName) => {
         /*
@@ -147,15 +150,22 @@ export default function UncertaintyModelNode(props): ReactElement {
                                     <b>Advanced settings</b> (most users should not change these)
                                 </Text>
                             </div>
-                            <div className="mt-3 mb-4">
-                                {
-                                    Object.keys(UNCERTAINTY_MODEL_PARAMS)
-                                        .filter(key => UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
-                                        .map(key => {
-                                            return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
-                                        })
-                                }
-                            </div>
+                            <button
+                                onClick={() => setShowAdvanced(!showAdvanced)}
+                            >
+                                {showAdvanced ? <u>Hide</u> : <u>Show</u>}
+                            </button>
+                            <Collapse in={showAdvanced}>
+                                <div className="mt-3 mb-4">
+                                    {
+                                        Object.keys(UNCERTAINTY_MODEL_PARAMS)
+                                            .filter(key => UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
+                                            .map(key => {
+                                                return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
+                                            })
+                                    }
+                                </div>
+                            </Collapse>
                         </Card.Body>
                     </>
                 }
