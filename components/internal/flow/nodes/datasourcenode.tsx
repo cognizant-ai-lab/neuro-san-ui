@@ -73,6 +73,7 @@ export default function DataSourceNode(props): React.ReactElement {
                             {
                                 taggedDataList.length > 0
                                 ?   <select name='dataset' className="w-24"
+                                        id="data-source-node-select-dataset"
                                         onChange={
                                              event => {
                                                  debug("Selected: ", event.target.value)
@@ -90,6 +91,7 @@ export default function DataSourceNode(props): React.ReactElement {
                                 >
                                     {taggedDataList.map(data =>
                                         <option key={data.DataSource.id}
+                                                id={`data-source-node-option-${data.DataSource.id}`}
                                                 value={data.DataSource.id}>{data.DataSource.name}</option>
                                     )}
                                 </select>
