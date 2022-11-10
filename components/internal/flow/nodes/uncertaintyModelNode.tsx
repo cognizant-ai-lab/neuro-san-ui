@@ -50,38 +50,49 @@ export default function UncertaintyModelNode(props): ReactElement {
         parameters.
         */
         const { value } = event.target
+        console.debug({value})
         const paramsCopy = {...ParentUncertaintyNodeState}
         paramsCopy[paramName].value = value
         console.debug({paramsCopy})
         SetParentUncertaintyNodeState(paramsCopy)
     }
 
-    function getInputComponent(key, item) {
-        return <div className="grid grid-cols-8 gap-4 mb-2" key={key} >
-                <div className="item1 col-span-3"><label className="capitalize">{key}: </label></div>
+    const onCheckboxChange = (event, paramName) => {
+        /*
+        This function is used to update the state of any checkbox parameters
+        */
+        const { checked } = event.target
+        const paramsCopy = {...ParentUncertaintyNodeState}
+        paramsCopy[paramName].value = checked
+        SetParentUncertaintyNodeState(paramsCopy)
+    }
+
+    function getInputComponent(param, item) {
+        return <div className="grid grid-cols-8 gap-4 mb-2" key={param} >
+                <div className="item1 col-span-3"><label className="capitalize">{param}: </label></div>
                 <div className="item2 col-span-4">
                     {
                         item.type === ParamType.INT &&
                         <input
                             type="number"
                             step="1"
-                            value={ParentUncertaintyNodeState[key].value.toString()}
-                            onChange={event => onParamChange(event, key)}
+                            value={ParentUncertaintyNodeState[param].value.toString()}
+                            onChange={event => onParamChange(event, param)}
                         />
                     }
                     {
                         item.type === ParamType.BOOLEAN && 
                             <input
                                 type="checkbox"
-                                checked={item.defaultValue}
-                                onChange={event => onParamChange(event, key)}
+                                checked={Boolean(ParentUncertaintyNodeState[param].value)}
+                                onChange={event => onCheckboxChange(event, param)}
                             />
                     }
                     {
                         item.type === ParamType.ENUM &&
                         <select
-                            value={ item.defaultValue }
-                            onChange={event => onParamChange(event, key)}
+                            value={ParentUncertaintyNodeState[param].value.toString()}
+                            onChange={event => onParamChange(event, param)}
                             className="w-32"
                         >
                             {
