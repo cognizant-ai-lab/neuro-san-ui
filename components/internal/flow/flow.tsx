@@ -32,6 +32,7 @@ import {FlowQueries} from "./flowqueries";
 // Import types
 import {CAOChecked, PredictorState} from "./nodes/predictornode"
 import NodeTypes from './nodes/types'
+import {UNCERTAINTY_MODEL_PARAMS, UncertaintyModelParams} from "./uncertaintymodelinfo";
 
 const debug = Debug("flow")
 
@@ -115,6 +116,27 @@ class FlowNodeStateUpdateHandler extends FlowState {
             })
         })
 
+    }
+
+    UncertaintyNodeSetStateHandler(newState, NodeID) {
+        /*
+        Called by uncertainty model nodes to update their state in the flow
+         */
+        const flow = this.state.flow
+        this.setState({
+            flow: flow.map(node => {
+                if (node.id === NodeID) {
+                    // If this is the right uncertainty model node
+                    console.debug("found state, node:", {node}, "new state: ", {newState})
+
+                    node.data = {
+                        ...node.data,
+                        ParentUncertaintyNodeState: newState
+                    }
+                }
+                return node;
+            })
+        })
     }
 
     PredictorSetStateHandler(newState, NodeID) {
@@ -566,6 +588,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         this.setState({flow: graphCopy})
     }
 
+    private _getInitialUncertaintyNodeState(): UncertaintyModelParams {
+        /*
+       This function returns the initial uncertainty node state for when a user first adds the node to the flow
+       */
+
+        return {...UNCERTAINTY_MODEL_PARAMS}
+    }
+
     // Adds an uncertainty model node to the specified Predictor
     _addUncertaintyNode(predictorNodeID: string): void {
         const flow = this.state.flow;
@@ -579,14 +609,12 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
 
         // Only one RIO node allowed per Predictor
         const downstreamNodes = getOutgoers(predictorNode, flow)
-        if (downstreamNodes && downstreamNodes.length > 0) {
-            for (const node of downstreamNodes) {
-                if (node.type === "uncertaintymodelnode") {
-                    sendNotification(NotificationType.warning, "This predictor already has an uncertainty model node",
-                        "Only one uncertainty model node is allowed per predictor")
-                    return
-                }
-            }
+        const alreadyHasUncertaintyNode = downstreamNodes && downstreamNodes.length > 0 &&
+            downstreamNodes.filter(node => node.type === "uncertaintymodelnode").length > 0
+        if (alreadyHasUncertaintyNode) {
+            sendNotification(NotificationType.warning, "This predictor already has an uncertainty model node",
+                "Only one uncertainty model node is allowed per predictor")
+            return
         }
 
         // Make a copy of the graph
@@ -609,6 +637,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             type: "uncertaintymodelnode",
             data:  {
                 NodeID: newNodeID,
+                ParentUncertaintyNodeState: this._getInitialUncertaintyNodeState(),
+                SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, newNodeID)
             },
             position: {
                 x: uncertaintyNodeXPos,

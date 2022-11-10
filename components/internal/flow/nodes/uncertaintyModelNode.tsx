@@ -1,17 +1,25 @@
 // React components
-import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
-import {ReactElement} from 'react'
+import {Dispatch, ReactElement, SetStateAction} from 'react'
 
 // 3rd party components
 import {Card} from "react-bootstrap"
-
-// React Flow
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
 import {Handle, Position as HandlePosition} from 'react-flow-renderer'
 import {GrSettingsOption} from "react-icons/gr"
 
 // Custom components
 import {ParamType, UNCERTAINTY_MODEL_PARAMS} from "../uncertaintymodelinfo"
+
+// State of the uncertainty node
+export interface UncertaintyNodeState {
+    confidenceInterval: number,
+    useArd: boolean,
+    maxIterationsOptimizer: number,
+    numSvgInducingPoints: number,
+    frameworkVariant: string,
+    kernelType: string
+}
 
 // Define an interface for the structure
 // of the node
@@ -21,12 +29,32 @@ export interface UncertaintyModelNodeData {
     // form elements. The form elements thus
     // will be named nodeID-formElementType
     readonly NodeID: string,
+    readonly ParentUncertaintyNodeState: UncertaintyNodeState,
+    readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyNodeState>>,
 }
 
 export default function UncertaintyModelNode(props): ReactElement {
     /*
     This function renders the uncertainty model node
     */
+
+    // Unpack props
+    const data: UncertaintyModelNodeData = props.data
+
+    // Unpack the data
+    const {ParentUncertaintyNodeState, SetParentUncertaintyNodeState} = data
+
+    const onParamChange = (event, paramName) => {
+        /*
+        This function is used to update the state of the predictor
+        parameters.
+        */
+        const { value } = event.target
+        const paramsCopy = {...ParentUncertaintyNodeState}
+        paramsCopy[paramName].value = value
+        console.debug({paramsCopy})
+        SetParentUncertaintyNodeState(paramsCopy)
+    }
 
     function getInputComponent(key, item) {
         return <div className="grid grid-cols-8 gap-4 mb-2" key={key} >
@@ -37,25 +65,23 @@ export default function UncertaintyModelNode(props): ReactElement {
                         <input
                             type="number"
                             step="1"
-                            defaultValue={item.defaultValue.toString()}
-                            value={item.defaultValue.toString()}
-                            onChange={() => {}}
+                            value={ParentUncertaintyNodeState[key].value.toString()}
+                            onChange={event => onParamChange(event, key)}
                         />
                     }
                     {
                         item.type === ParamType.BOOLEAN && 
                             <input
                                 type="checkbox"
-                                defaultChecked={item.defaultValue}
                                 checked={item.defaultValue}
-                                onChange={() => {}}
+                                onChange={event => onParamChange(event, key)}
                             />
                     }
                     {
                         item.type === ParamType.ENUM &&
                         <select
                             value={ item.defaultValue }
-                            onChange={() => {}}
+                            onChange={event => onParamChange(event, key)}
                             className="w-32"
                         >
                             {

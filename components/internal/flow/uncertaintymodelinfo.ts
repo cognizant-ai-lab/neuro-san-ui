@@ -51,14 +51,15 @@ export interface UncertaintyModelParamField {
     isAdvanced: boolean
 }
 
-export interface UncertaintyModelParamMapping {
+export interface UncertaintyModelParams {
     [key: string]: UncertaintyModelParamField
 }
 
 
-export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParamMapping = {
+export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParams = {
     "confidence_interval": {
         defaultValue: ConfidenceInterval.C95.valueOf(),
+        value: ConfidenceInterval.C95.valueOf(),
         description: "Confidence level (in %) for the confidence intervals",
         type: ParamType.ENUM,
         allValues: Object.values(ConfidenceInterval).filter((v) => !isNaN(Number(v))).map(v => String(v)),
@@ -67,6 +68,7 @@ export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParamMapping = {
 
     "use_ard": {
         defaultValue: true,
+        value: true,
         description: "Enable Automatic Relevance Determination (ARD)",
         type: ParamType.BOOLEAN,
         isAdvanced: true
@@ -74,6 +76,7 @@ export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParamMapping = {
 
     "max_iterations_optimizer": {
         defaultValue: 1000,
+        value: 1000,
         description: "Maximum iterations for optimizer",
         type: ParamType.INT,
         isAdvanced: true
@@ -81,6 +84,7 @@ export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParamMapping = {
 
     "num_svgp_inducing_points": {
         defaultValue: 50,
+        value: 50,
         description: "Number of inducing points for the SVGP model",
         type: ParamType.INT,
         isAdvanced: true
@@ -88,6 +92,7 @@ export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParamMapping = {
 
     "framework_variant": {
         defaultValue: FrameworkVariant["GP Corrected"],
+        value: FrameworkVariant["GP Corrected"],
         description: "Framework variant; the default is the standard method",
         type: ParamType.ENUM,
         allValues: Object.keys(FrameworkVariant).filter((v) => isNaN(Number(v))).map(v => String(v)),
@@ -96,6 +101,7 @@ export const UNCERTAINTY_MODEL_PARAMS: UncertaintyModelParamMapping = {
 
     "kernel_type": {
         defaultValue: KernelType.RBF_PLUS_RBF,
+        value: KernelType.RBF_PLUS_RBF,
         description: "Kernel type for the Gaussian Processes model. The default is the I/O kernel with " +
             "radial basis function",
         type: ParamType.ENUM,
