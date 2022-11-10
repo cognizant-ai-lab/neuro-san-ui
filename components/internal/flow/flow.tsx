@@ -521,10 +521,9 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         /*
         This function adds a prescriptor node to the Graph. The only
         requirement for this is that at least one predictor exists.
-    
-    
-        @param graph: Current state of the graph
-        @param CAOMapping: CAOMapping for the Data Source that the user has selected
+
+        For predictor nodes that already have uncertainty nodes attached, the newly added prescriptor node is
+        connected to the uncertainty node(s) instead of directly to the predictor.
         */
     
         // Check if Prescriptor Node exists
@@ -579,10 +578,25 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     
         // Add edges to all the predictor nodes
         predictorNodes.forEach(predictorNode => {
-            graphCopy = this._addEdgeToPrescriptorNode(
-                graphCopy,
-                predictorNode.id, NodeID
-            )
+            const downstreamNodes = getOutgoers(predictorNode, graphCopy)
+            if (downstreamNodes && downstreamNodes.length > 0) {
+                const uncertaintyModelNodes = downstreamNodes.filter(node => node.type === "uncertaintymodelnode")
+                if (uncertaintyModelNodes && uncertaintyModelNodes.length === 1) {
+                    // should only be one uncertainty model node per predictor!
+                    const uncertaintyModelNode = uncertaintyModelNodes[0]
+                    graphCopy = this._addEdgeToPrescriptorNode(
+                        graphCopy,
+                        uncertaintyModelNode.id, NodeID
+                    )
+                }
+            } else {
+                // This predictor has no uncertainty model, so just connect the new prescriptor directly to the
+                // predictor.
+                graphCopy = this._addEdgeToPrescriptorNode(
+                    graphCopy,
+                    predictorNode.id, NodeID
+                )
+            }
         })
     
         this.setState({flow: graphCopy})

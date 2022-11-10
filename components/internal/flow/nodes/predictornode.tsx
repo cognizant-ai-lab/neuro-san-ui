@@ -525,7 +525,11 @@ export default function PredictorNode(props): ReactElement {
                             { selectedIndex === 1  && PredictorConfigurationPanel }
                             { selectedIndex === 2  && DataSplitConfigurationPanel }
                         </>
-                    }>
+                    }
+                         statelessProps={{
+                             backgroundColor: "ghostwhite"
+                         }}
+                    >
                         <div className="flex">
                             <button type="button"
                                         id={ `${NodeID}-predictor-gr-settings-option-button` }
