@@ -50,10 +50,8 @@ export default function UncertaintyModelNode(props): ReactElement {
         parameters.
         */
         const { value } = event.target
-        console.debug({value})
         const paramsCopy = {...ParentUncertaintyNodeState}
         paramsCopy[paramName].value = value
-        console.debug({paramsCopy})
         SetParentUncertaintyNodeState(paramsCopy)
     }
 
@@ -68,8 +66,10 @@ export default function UncertaintyModelNode(props): ReactElement {
     }
 
     function getInputComponent(param, item) {
-        return <div className="grid grid-cols-8 gap-4 mb-2" key={param} >
-                <div className="item1 col-span-3"><label className="capitalize">{param}: </label></div>
+        return <div className="grid grid-cols-10 gap-4 mb-2" key={param} >
+                <div className="item1 col-span-5">
+                    <label className="capitalize">{param}: </label>
+                </div>
                 <div className="item2 col-span-4">
                     {
                         item.type === ParamType.INT &&
@@ -78,6 +78,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                             step="1"
                             value={ParentUncertaintyNodeState[param].value.toString()}
                             onChange={event => onParamChange(event, param)}
+                            style={{width: "100%"}}
                         />
                     }
                     {
@@ -93,7 +94,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                         <select
                             value={ParentUncertaintyNodeState[param].value.toString()}
                             onChange={event => onParamChange(event, param)}
-                            className="w-32"
+                            style={{width: "100%"}}
                         >
                             {
                                 (item.allValues as Array<string>).map(
@@ -127,6 +128,11 @@ export default function UncertaintyModelNode(props): ReactElement {
                                     For more information on these settings, view the GPFlow documentation here.
                                 </a>
                             </div>
+                            <div className="mt-4 mb-2">
+                                <Text>
+                                    <b>Basic settings</b>
+                                </Text>
+                            </div>
                             <div className="mt-3">
                                 {
                                     Object.keys(UNCERTAINTY_MODEL_PARAMS)
@@ -138,7 +144,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                             </div>
                             <div className="mt-4 mb-2">
                                 <Text>
-                                    Advanced settings (most users should not change these):
+                                    <b>Advanced settings</b> (most users should not change these)
                                 </Text>
                             </div>
                             <div className="mt-3 mb-4">
@@ -154,7 +160,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                     </>
                 }
                      statelessProps={{
-                         height: "280px",
+                         height: "325px",
                          width: "700px",
                          backgroundColor: "ghostwhite"
                      }}
