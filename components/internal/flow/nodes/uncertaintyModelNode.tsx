@@ -155,7 +155,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                             >
                                 {showAdvanced ? <u>Hide</u> : <u>Show</u>}
                             </button>
-                            <Collapse in={showAdvanced}>
+                            <Collapse in={showAdvanced} timeout={5}>
                                 <div className="mt-3 mb-4">
                                     {
                                         Object.keys(UNCERTAINTY_MODEL_PARAMS)
