@@ -18,8 +18,6 @@ export class FlowQueries {
         This function filters the predictor nodes
         from the graph and returns the one with the supplied ID, or undefined if not found
         */
-        console.debug({nodeID})
-        console.debug({graph})
         return graph.find(element => (element.type === 'predictornode' && element.id === nodeID))
     }
 

@@ -77,6 +77,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                     {
                         item.type === ParamType.INT &&
                         <input
+                            id={`config-item-${param}`}
                             type="number"
                             step="1"
                             value={ParentUncertaintyNodeState[param].value.toString()}
@@ -87,6 +88,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                     {
                         item.type === ParamType.BOOLEAN && 
                             <input
+                                id={`config-item-${param}`}
                                 type="checkbox"
                                 checked={Boolean(ParentUncertaintyNodeState[param].value)}
                                 onChange={event => onCheckboxChange(event, param)}
@@ -95,13 +97,19 @@ export default function UncertaintyModelNode(props): ReactElement {
                     {
                         item.type === ParamType.ENUM &&
                         <select
+                            id={`config-item-${param}`}
                             value={ParentUncertaintyNodeState[param].value.toString()}
                             onChange={event => onParamChange(event, param)}
                             style={{width: "100%"}}
                         >
                             {
                                 (item.allValues as Array<string>).map(
-                                    value => <option key={value} value={ value }>{ value }</option>)
+                                    value =>
+                                        <option
+                                            id={`select-item-${value}`}
+                                            key={value} value={ value }>{ value }
+                                        </option>
+                                )
                             }
                         </select>
                     }
@@ -151,6 +159,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                                 </Text>
                             </div>
                             <button
+                                id="show-advanced-settings-uncert-model"
                                 onClick={() => setShowAdvanced(!showAdvanced)}
                             >
                                 {showAdvanced ? <u>Hide</u> : <u>Show</u>}
@@ -177,6 +186,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                 >
                 <div className="flex">
                     <button type="button"
+                            id="show-uncertainty-model-config"
                             className="mt-1"
                             style={{height: 0}}>
                         <GrSettingsOption/>

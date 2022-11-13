@@ -1,11 +1,4 @@
-// Import React Flow
-import Debug from "debug"
-
-// Import Framework
-import React from 'react'
-
-// Import 3rd party components
-import {Button, Container} from "react-bootstrap"
+// React Flow
 import ReactFlow, {
     addEdge,
     Background,
@@ -15,25 +8,33 @@ import ReactFlow, {
     removeElements
 } from 'react-flow-renderer'
 
-// Import ID Gen
+
+// Framework
+import React from 'react'
+
+// ID Gen
 import uuid from "react-uuid"
 
-// Import Constants
+// Custom components
+import {FlowQueries} from "./flowqueries"
+
+// 3rd party components
+import {Button, Container} from "react-bootstrap"
+
+//  Constants
 import {EvaluateCandidateCode, InputDataNodeID, MaximumBlue, OutputOverrideCode} from '../../../const'
+
+// Types
+import {CAOChecked, PredictorState} from "./nodes/predictornode"
+import EdgeTypes from './edges/types'
+import NodeTypes from './nodes/types'
+import {UNCERTAINTY_MODEL_PARAMS, UncertaintyModelParams} from "./uncertaintymodelinfo"
 import {DataSource} from "../../../controller/datasources/types";
 import {CAOType, DataTag} from "../../../controller/datatag/types";
 import {NotificationType, sendNotification} from "../../../controller/notification";
-import {PredictorParams} from "./predictorinfo";
+import {PredictorParams} from "./predictorinfo"
 
-// Import Custom Nodes and Edges
-import EdgeTypes from './edges/types'
-import {FlowQueries} from "./flowqueries";
-
-// Import types
-import {CAOChecked, PredictorState} from "./nodes/predictornode"
-import NodeTypes from './nodes/types'
-import {UNCERTAINTY_MODEL_PARAMS, UncertaintyModelParams} from "./uncertaintymodelinfo";
-
+import Debug from "debug"
 const debug = Debug("flow")
 
 /*
