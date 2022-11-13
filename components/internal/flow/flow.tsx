@@ -147,7 +147,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
         prescriptor edges linked to it.
         The NodeID parameter is used to bind it to the state
         */
-        // TODO: This logic will start to break when we have intermediate nodes for eg: RIO
 
         const flow = this.state.flow
 
@@ -175,10 +174,15 @@ class FlowNodeStateUpdateHandler extends FlowState {
                     // Find all the predictors connected to this node except the one that triggered
                     // this update. We don't fetch the one that just got updated because the data in
                     // that node is stale. Remember, we are inside the set state handler so the state there
-                    // is before the update
-                    const predictorIds = flow.
-                    filter(elem => elem.type === "prescriptoredge" && elem.target === node.id && elem.source != NodeID).
-                        map(elem => elem.source)
+                    // is before the update.
+                    // New: we have to filter out non-predictors connected to this node;
+                    // currently only uncertainty model nodes.
+                    const predictorIds = flow
+                        .filter(elem => elem.type === "prescriptoredge" && elem.target === node.id && elem.source != NodeID)
+                        .filter(elem => FlowQueries.getPredictorNode(flow, elem.id))
+                        .map(elem => elem.source)
+
+
                     const predictors = flow.filter(elem => predictorIds.includes(elem.id))
 
                     // Take the Union of all the checked outcomes on the predictors
