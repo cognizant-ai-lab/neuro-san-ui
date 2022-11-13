@@ -38,6 +38,13 @@ export class FlowQueries {
         return graph.filter(element => element.type === 'datanode')
     }
 
+    static getUncertaintyModelNodes(graph) {
+        /*
+        This function returns all nodes of type "uncertaintymodelnode" from the graph
+        */
+        return graph.filter(element => element.type === 'uncertaintymodelnode')
+    }
+
     static extractCheckedFields(nodes, caoType: CAOType) {
         /*
         The function extracts all user-selected (checked) fields of the given CAOType from the

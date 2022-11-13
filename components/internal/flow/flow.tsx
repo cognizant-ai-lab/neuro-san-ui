@@ -10,7 +10,7 @@ import ReactFlow, {
     addEdge,
     Background,
     Controls,
-    getConnectedEdges,
+    getConnectedEdges, getIncomers,
     getOutgoers,
     removeElements
 } from 'react-flow-renderer'
@@ -676,7 +676,6 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             const edges = getConnectedEdges([predictorNode], flow)
             for (const edge of edges) {
                 if (edge.type === "prescriptoredge") {
-                    console.debug("removing edge")
                     graphCopy = removeElements([edge], graphCopy)
                 }
             }
@@ -706,24 +705,48 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     
         Note: This edits the graph inPlace
         */
+
         // Make sure there are no data nodes
+        // BUG: need to handle edges connected to data sources here too
         const removableElements = elementsToRemove.filter(element => element.type != "datanode")
 
-        const predictorIdsBeingRemoved = FlowQueries.getPredictorNodes(elementsToRemove).
-            map(node => node.id)
+        const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes(elementsToRemove)
+        const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map(node => node.id)
+
+        const uncertaintyNodesBeingRemoved = FlowQueries.getUncertaintyModelNodes(elementsToRemove)
+
+        const prescriptorNodes = FlowQueries.getPrescriptorNodes(graph)
+
+        // // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
+        if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
+            const uncertaintyNodesToRemove = predictorNodesBeingRemoved.flatMap(node => getOutgoers(node, graph).filter(node => node.type === "uncertaintymodelnode"))
+            removableElements.push(...uncertaintyNodesToRemove)
+        }
 
         // If this delete will remove all predictors, also delete the prescriptor
         const numPredictorNodesLeft = FlowQueries.getPredictorNodes(graph).length - predictorIdsBeingRemoved.length
         if (numPredictorNodesLeft == 0) {
-            removableElements.push(...FlowQueries.getPrescriptorNodes(graph))
+            removableElements.push(...prescriptorNodes)
         } else {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor
             const predictorsLeft = graph.filter(node => node.type === "predictornode" && !predictorIdsBeingRemoved.includes(node.id))
+
+            // Connect any remaining predictors to the prescriptor
+            if (uncertaintyNodesBeingRemoved && prescriptorNodes.length > 0) {
+
+                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved.map(node => getIncomers(node, graph).map(node => node.type === "predictornode"))
+                for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
+                    graph = this._addEdgeToPrescriptorNode(graph, node.id, prescriptorNodes[0].id)
+                }
+            }
+
             // Get outcomes from all current predictors to use for prescriptor fitness
             let outcomes = FlowQueries.extractCheckedFields(predictorsLeft, CAOType.OUTCOME)
+
             // Make this a set
             outcomes = outcomes.filter((value, index, self) => self.indexOf(value) === index)
+
             // Default to maximizing outcomes until user tells us otherwise
             const fitness = outcomes.map(outcome => ({ metric_name: outcome, maximize: true}))
 
