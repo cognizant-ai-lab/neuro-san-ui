@@ -180,7 +180,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                 }
                      statelessProps={{
                          height: "325px",
-                         width: "700px",
+                         width: "650px",
                          backgroundColor: "ghostwhite"
                      }}
                 >

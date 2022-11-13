@@ -309,7 +309,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 } else if (node.type === 'predictornode') {
                     node.data = {
                         ...node.data,
-                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id)
+                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
+                        AddUncertaintyModelNode: nodeId => this._addUncertaintyNode(nodeId)
                     }
                 } else if (node.type === 'prescriptornode') {
                     node.data = {
