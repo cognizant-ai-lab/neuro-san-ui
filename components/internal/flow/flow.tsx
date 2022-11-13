@@ -680,14 +680,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 }
             }
 
-            // Connect the RIO node to the prescriptor
-            graphCopy.push({
-                id: uuid(),
-                source: newNodeID,
-                target: prescriptorNode.id,
-                animated: false,
-                type: 'predictoredge'
-            })
+            // Connect the uncertainty model node to the prescriptor
+            graphCopy = this._addEdgeToPrescriptorNode(graphCopy, newNodeID, prescriptorNode.id)
         }
 
         // Save the updated Flow
@@ -719,7 +713,9 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
 
         // // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
         if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
-            const uncertaintyNodesToRemove = predictorNodesBeingRemoved.flatMap(node => getOutgoers(node, graph).filter(node => node.type === "uncertaintymodelnode"))
+            const uncertaintyNodesToRemove = predictorNodesBeingRemoved
+                .flatMap(node => getOutgoers(node, graph)
+                    .filter(node => node.type === "uncertaintymodelnode"))
             removableElements.push(...uncertaintyNodesToRemove)
         }
 
@@ -730,12 +726,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         } else {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor
-            const predictorsLeft = graph.filter(node => node.type === "predictornode" && !predictorIdsBeingRemoved.includes(node.id))
+            const predictorsLeft = graph.filter(node => node.type === "predictornode" &&
+                !predictorIdsBeingRemoved.includes(node.id))
 
             // Connect any remaining predictors to the prescriptor
-            if (uncertaintyNodesBeingRemoved && prescriptorNodes.length > 0) {
-
-                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved.map(node => getIncomers(node, graph).map(node => node.type === "predictornode"))
+            if (uncertaintyNodesBeingRemoved && prescriptorNodes && prescriptorNodes.length > 0) {
+                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved
+                    .flatMap(node => getIncomers(node, graph)
+                        .filter(node => node.type === "predictornode"))
                 for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
                     graph = this._addEdgeToPrescriptorNode(graph, node.id, prescriptorNodes[0].id)
                 }
