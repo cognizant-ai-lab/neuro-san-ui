@@ -58,7 +58,7 @@ export function Navbar(props: NavbarProps): React.ReactElement {
                                 </Link>
                             </Nav.Item>
                             <Nav.Item className="px-3">
-                                <button>
+                                <button id="nav-bar-sign-out-button">
                                     {(signedIn && ENABLE_AUTHENTICATION) &&
                                         <Link href="">
                                             <a style={{color: NAV_ITEMS_COLOR}}
