@@ -72,7 +72,7 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
                                         }
                                     />
                                 </Card.Body>
-
+    const buttonId  = `gr-settings-option-${id}`
     return (
         <>
             <path
@@ -118,7 +118,10 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
                     <div className="flex">
                         <button type="button" 
                                 className="mt-1"
-                                style={{height: 0}}> <GrSettingsOption /></button>
+                                id={buttonId}
+                                style={{height: 0}}>
+                            <GrSettingsOption />
+                        </button>
                     </div>
                 </Popover>
             </foreignObject>
