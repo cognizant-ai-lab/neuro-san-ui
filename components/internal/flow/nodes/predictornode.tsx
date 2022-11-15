@@ -353,7 +353,7 @@ export default function PredictorNode(props): ReactElement {
                                                 >
                                                      { metrics[ParentPredictorState.selectedPredictorType].map(
                                                                 metric =>
-                                                                    <option id={ `${NodeID}-predictor-metric-${value}` }
+                                                                    <option id={ `${NodeID}-predictor-metric-${metric}` }
                                                                         key={metric} value={ metric }>
                                                                             { metric }
                                                                     </option>
