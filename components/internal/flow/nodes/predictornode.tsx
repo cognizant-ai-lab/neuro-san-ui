@@ -452,6 +452,8 @@ export default function PredictorNode(props): ReactElement {
                                         </Card.Body>
 
     // Create the data split card
+
+    const isRegressor: boolean = ParentPredictorState.selectedPredictorType === "regressor"
     const DataSplitConfigurationPanel = <Card.Body>
         <div className="flex justify-between mb-4 content-center"
              onMouseDown={ (event) => { event.stopPropagation() } }
@@ -619,20 +621,34 @@ export default function PredictorNode(props): ReactElement {
                                 className="absolute top-5 -right-4"
                                 style={{height: 0}}>O</button>
                     </Popover>
-                    <div className="px-1 my-1" style={{position: "absolute", right: "1px"}}>
-                        <Tooltip
-                            showDelay={1}
-                            content="Add uncertainty model node"
+                    <Tooltip
+                        showDelay={1}
+                        content={
+                            isRegressor
+                                ? "Add uncertainty model node"
+                                : "Uncertainty models are not currently supported for this type of predictor"
+                        }
+                    >
+                        <div className="px-1 my-1"
+                             style={{
+                                 position: "absolute",
+                                 right: "1px",
+                             }}
                         >
                             <button type="button"
                                     id="add-uncertainty-node-button"
-                                    style={{height: 15}}
+                                    disabled={!isRegressor}
+                                    style={{
+                                        height: 15,
+                                        cursor: isRegressor ? "pointer" : "not-allowed",
+                                        opacity: isRegressor ? "100%" : "50%"
+                                    }}
                                     onClick={() => AddUncertaintyModelNode(NodeID)}
                             >
                                 <BsPlusSquare size="0.6em" />
                             </button>
-                        </Tooltip>
-                    </div>
+                        </div>
+                    </Tooltip>
                 </Card.Body>
             </Card>
 
