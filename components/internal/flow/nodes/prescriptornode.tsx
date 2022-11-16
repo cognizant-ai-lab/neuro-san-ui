@@ -145,6 +145,7 @@ export default function PrescriptorNode(props): ReactElement {
             return <div className="p-2 grid grid-cols-2 gap-4 mb-2" key={metric.metric_name} >
                 <label>{metric.metric_name}: </label>
                 <select
+                    id={ `${NodeID}-prescriptor-objective-select-${metric.name}` }
                     key="objective-select"
                     value={metric.maximize}
                     onChange={event => {
@@ -171,8 +172,16 @@ export default function PrescriptorNode(props): ReactElement {
                         })
                     }}
                     >
-                    <option value="true">Maximize</option>
-                    <option value="false">Minimize</option>
+                    <option
+                        id={ `${NodeID}-prescriptor-objective-maximize-${metric.name}` }
+                        value="true">
+                        Maximize
+                    </option>
+                    <option
+                        id={ `${NodeID}-prescriptor-objective-minimize-${metric.name}` }
+                        value="false">
+                        Minimize
+                    </option>
                 </select>
             </div>
     })
@@ -212,6 +221,7 @@ export default function PrescriptorNode(props): ReactElement {
         <div key={`${NodeID}-hiddenlayer-${idx}`}>
             <h6 style={{display: "inline"}}>Hidden Layer {idx + 1} </h6>
             <button
+                id={ `${NodeID}-prescriptor-hidden-layer-${idx}` }
                 style={{width: "1rem"}}
                 className="mb-2"
                 type="button" onClick={() => {
@@ -224,6 +234,7 @@ export default function PrescriptorNode(props): ReactElement {
                 <div>
                     <label className="mr-2">Units: </label>
                     <input style={{width: "2rem"}}
+                        id={ `${NodeID}-prescriptor-units-input` }
                         type="number" 
                         step="1" 
                         value={ hiddenLayer.layer_params.units }
@@ -237,6 +248,7 @@ export default function PrescriptorNode(props): ReactElement {
                 <div>
                     <label className="mr-2">Activation: </label>
                     <select 
+                        id={ `${NodeID}-prescriptor-activation-select` }
                         defaultValue="tanh"
                         value={ hiddenLayer.layer_params.activation }
                         onChange={event => {
@@ -245,13 +257,20 @@ export default function PrescriptorNode(props): ReactElement {
                             SetParentPrescriptorState(modifiedHiddenLayerState)
                         }}
                     >
-                        {ActivationFunctions.map(activationFn => <option key={`hidden-layer-activation-${activationFn}`} value={activationFn}>{activationFn}</option>)}
+                        {ActivationFunctions.map(activationFn =>
+                            <option id={ `${NodeID}-prescriptor-activation-${activationFn}` }
+                                key={`hidden-layer-activation-${activationFn}`}
+                                value={activationFn}>
+                                    {activationFn}
+                            </option>)
+                        }
                     </select> 
                 </div>
 
                 <div>
                     <label className="mr-2">Use Bias: </label>
                     <input 
+                        id={ `${NodeID}-prescriptor-use-bias-input` }
                         type="checkbox" 
                         defaultChecked={ true }
                         checked={ hiddenLayer.layer_params.use_bias }
@@ -272,6 +291,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="flex justify-between mb-4 content-center">
                                                     <label>Representation: </label>
                                                     <select 
+                                                        id={ `${NodeID}-prescriptor-representation-select` }
                                                         name={ `${NodeID}-representation` } 
                                                         onChange={ event => SetParentPrescriptorState({
                                                             ...ParentPrescriptorState,
@@ -282,8 +302,16 @@ export default function PrescriptorNode(props): ReactElement {
                                                         })} 
                                                         value={ParentPrescriptorState.LEAF.representation}
                                                         className="w-32" >
-                                                            <option value="NNWeights">Neural Network</option>
-                                                            <option value="RuleBased">Rules</option>
+                                                            <option 
+                                                                id={ `${NodeID}-prescriptor-representation-nn-weights` }
+                                                                value="NNWeights">
+                                                                Neural Network
+                                                            </option>
+                                                            <option 
+                                                                id={ `${NodeID}-prescriptor-representation-rules` }
+                                                                value="RuleBased">
+                                                                Rules
+                                                            </option>
                                                     </select>    
                                                 </div>
                                                 <hr />
@@ -292,6 +320,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                         ParentPrescriptorState.LEAF.representation === "NNWeights" && <div>
                                                             {NeuralNetworkConfiguration}
                                                             <button type="button" className="float-right"
+                                                                id={ `${NodeID}-prescriptor-nn-weights-button` }
                                                                 onClick={() => {
                                                                     const stateCopy = {...ParentPrescriptorState}
                                                                     stateCopy.network.hidden_layers.push({
@@ -321,6 +350,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Num Generations</label>
                                                     <input style={{width: "3rem"}}
+                                                        id={ `${NodeID}-prescriptor-num-generations-input` }
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 10 }
@@ -339,6 +369,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Population Size</label>
                                                     <input style={{width: "3rem"}}
+                                                        id={ `${NodeID}-prescriptor-population-size-input` }
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 10 }
@@ -357,6 +388,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Num Elites</label>
                                                     <input style={{width: "3rem"}}
+                                                        id={ `${NodeID}-prescriptor-num-elites-input` }
                                                         type="number" 
                                                         step="1" 
                                                         defaultValue={ 2 }
@@ -375,6 +407,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Parent Selection</label>
                                                     <select defaultValue="tournament"
+                                                        id={ `${NodeID}-prescriptor-parent-selection-select` }
                                                         value={ ParentPrescriptorState.evolution.parent_selection }
                                                         onChange={
                                                             event => SetParentPrescriptorState({
@@ -386,12 +419,16 @@ export default function PrescriptorNode(props): ReactElement {
                                                                 })
                                                             }
                                                     >
-                                                        <option value="tournament">Tournament</option>
+                                                        <option id={ `${NodeID}-prescriptor-parent-selection-tournament` }
+                                                            value="tournament">
+                                                            Tournament
+                                                        </option>
                                                     </select>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Remove Population %</label>
                                                     <input style={{width: "3rem"}}
+                                                        id={ `${NodeID}-prescriptor-remove-population-percentage` }
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.8 }
@@ -410,6 +447,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Mutation Type</label>
                                                     <select defaultValue="gaussian_noise_percentage"
+                                                        id={ `${NodeID}-prescriptor-mutation-select` }
                                                         value={ ParentPrescriptorState.evolution.mutation_type }
                                                         onChange={
                                                             event => SetParentPrescriptorState({
@@ -421,14 +459,24 @@ export default function PrescriptorNode(props): ReactElement {
                                                                 })
                                                             }
                                                     >
-                                                        <option value="gaussian_noise_percentage">Gaussian Noise Percentage</option>
-                                                        <option value="gaussian_noise_fixed">Gaussian Noise Fixed</option>
-                                                        <option value="uniform_reset">Uniform Reset</option>
+                                                        <option id={ `${NodeID}-prescriptor-mutation-gaussian-noise-percentage` }
+                                                            value="gaussian_noise_percentage">
+                                                            Gaussian Noise Percentage
+                                                        </option>
+                                                        <option id={ `${NodeID}-prescriptor-mutation-gaussian-noise-fixed` }
+                                                            value="gaussian_noise_fixed">
+                                                            Gaussian Noise Fixed
+                                                        </option>
+                                                        <option id={ `${NodeID}-prescriptor-mutation-uniform-reset` }
+                                                            value="uniform_reset">
+                                                            Uniform Reset
+                                                        </option>
                                                     </select>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Mutation Probability</label>
                                                     <input style={{width: "2rem"}}
+                                                        id={ `${NodeID}-prescriptor-mutation-probability-input` }
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.1 }
@@ -447,6 +495,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Mutation Factor</label>
                                                     <input style={{width: "2rem"}}
+                                                        id={ `${NodeID}-prescriptor-mutation-factor-input` }
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 0.1 }
@@ -465,6 +514,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Initialization Distribution</label>
                                                     <select defaultValue="orthogonal"
+                                                        id={ `${NodeID}-prescriptor-distribution-select` }
                                                         value={ ParentPrescriptorState.evolution.initialization_distribution }
                                                         onChange={
                                                             event => SetParentPrescriptorState({
@@ -476,15 +526,28 @@ export default function PrescriptorNode(props): ReactElement {
                                                                 })
                                                             }
                                                     >
-                                                        <option value="orthogonal">Orthogonal</option>
-                                                        <option value="uniform">Uniform</option>
-                                                        <option value="normal">Normal</option>
-                                                        <option value="cauchy">Cauchy</option>
+                                                        <option id={ `${NodeID}-prescriptor-distribution-orthogonal` }
+                                                            value="orthogonal">
+                                                            Orthogonal
+                                                        </option>
+                                                        <option id={ `${NodeID}-prescriptor-distribution-uniform` }
+                                                            value="uniform">
+                                                            Uniform
+                                                        </option>
+                                                        <option id={ `${NodeID}-prescriptor-distribution-normal` }
+                                                            value="normal">
+                                                            Normal
+                                                        </option>
+                                                        <option id={ `${NodeID}-prescriptor-distribution-cauchy` }
+                                                            value="cauchy">
+                                                            Cauchy
+                                                        </option>
                                                     </select>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Initialization Range</label>
                                                     <input style={{width: "2rem"}}
+                                                        id={ `${NodeID}-prescriptor-initialization-range-input` }
                                                         type="number" 
                                                         step="0.01" 
                                                         defaultValue={ 1 }
@@ -538,7 +601,11 @@ export default function PrescriptorNode(props): ReactElement {
                         >   
                             <div className="flex">
                                 
-                                <button type="button" className="mt-1"  style={{height: 0}}> <GrSettingsOption /></button>
+                                <button type="button" 
+                                    id={ `${NodeID}-prescriptor-gr-settings-button` }
+                                    className="mt-1"  style={{height: 0}}>
+                                        <GrSettingsOption />
+                                </button>
                             </div>
                         </Popover>
                         <Popover
@@ -551,18 +618,21 @@ export default function PrescriptorNode(props): ReactElement {
                                         Object.keys(ParentPrescriptorState.caoState.context).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input 
-                                            name={element}
-                                            type="checkbox" 
-                                            defaultChecked={true}
-                                            checked={ParentPrescriptorState.caoState.context[element]}
-                                            onChange={event => updateCAOState(event, "context")}/>
+                                            <input id={ `${NodeID}-prescriptor-context-input` }
+                                                name={element}
+                                                type="checkbox" 
+                                                defaultChecked={true}
+                                                checked={ParentPrescriptorState.caoState.context[element]}
+                                                onChange={event => updateCAOState(event, "context")}/>
                                         </div>)
                                     }
                                 </Card.Body>
                             }
                             >
-                            <button type="button" className="absolute top-5 -left-4" style={{height: 0}}>C</button>
+                            <button type="button"
+                                id={ `${NodeID}-prescriptor-context-button` }
+                                className="absolute top-5 -left-4"
+                                style={{height: 0}}>C</button>
                         </Popover>
                         <Popover
                             position={Position.RIGHT}
@@ -572,21 +642,23 @@ export default function PrescriptorNode(props): ReactElement {
                                     <Text className="mb-2">Actions</Text>
                                     {
                                         Object.keys(ParentPrescriptorState.caoState.action).map(element =>
-                                        <div 
-                                        key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input 
-                                            name={element}
-                                            type="checkbox" 
-                                            defaultChecked={true}
-                                            checked={ParentPrescriptorState.caoState.action[element]}
-                                            onChange={event => updateCAOState(event, "action")}/>
+                                            <input id={ `${NodeID}-prescriptor-actions-input` }
+                                                name={element}
+                                                type="checkbox" 
+                                                defaultChecked={true}
+                                                checked={ParentPrescriptorState.caoState.action[element]}
+                                                onChange={event => updateCAOState(event, "action")}/>
                                         </div>)
                                     }
                                 </Card.Body>
                             }
                             >
-                            <button type="button" className="absolute top-5 -right-4" style={{height: 0}}>A</button>
+                            <button type="button"
+                                id={ `${NodeID}-prescriptor-action-button` }
+                                className="absolute top-5 -right-4"
+                                style={{height: 0}}>A</button>
                         </Popover>
 
                     </Card.Body>
