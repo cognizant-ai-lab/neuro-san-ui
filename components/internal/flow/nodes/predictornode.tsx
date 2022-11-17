@@ -300,22 +300,32 @@ export default function PredictorNode(props): ReactElement {
     const PredictorSelectionPanel = <Card.Body>
                                         <div className="flex justify-between mb-4 content-center">
                                             <label className="m-0 mr-2">Type: </label>
-                                            <select 
+                                            <select id={ `${NodeID}-predictor-type-select` }
                                                 name={ `${NodeID}-predictorType` } 
                                                 onChange={ event => onPredictorTypeChange(event.target.value)}
                                                 value={ ParentPredictorState.selectedPredictorType }
                                                 className="w-32" 
                                                 >
-                                                    <option value="regressor">Regressor</option>
-                                                    <option value="classifier">Classifier</option>
-                                                    <option disabled value="byop">Bring your own (Coming Soon)</option>
-                                                    <option disabled value="evolution">Evolution (Coming Soon)</option>
+                                                    <option id={ `${NodeID}-predictor-regressor` } value="regressor">
+                                                        Regressor
+                                                    </option>
+                                                    <option id={ `${NodeID}-predictor-classifier` } value="classifier">
+                                                        Classifier
+                                                    </option>
+                                                    <option disabled id={ `${NodeID}-predictor-byo` } 
+                                                        value="byop">
+                                                            Bring your own (Coming Soon)
+                                                    </option>
+                                                    <option disabled id={ `${NodeID}-predictor-evolution` }
+                                                        value="evolution">
+                                                            Evolution (Coming Soon)
+                                                    </option>
                                             </select>    
                                         </div>
                                         
                                         <div className="flex justify-between mb-4 content-center">
                                             <label className="m-0">Predictor: </label>
-                                            <select 
+                                            <select id={ `${NodeID}-predictor-select` }
                                                 name={ `${NodeID}-predictor` } 
                                                 value={ ParentPredictorState.selectedPredictor }
                                                 onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
@@ -324,8 +334,9 @@ export default function PredictorNode(props): ReactElement {
                                                     { ParentPredictorState.selectedPredictorType &&
                                                         predictors[ParentPredictorState.selectedPredictorType].map(
                                                                 predictor =>
-                                                                    <option key={ predictor } value={ predictor }>
-                                                                        { predictor }
+                                                                    <option id={ `${NodeID}-predictor-option-${predictor}` }
+                                                                        key={ predictor } value={ predictor }>
+                                                                            { predictor }
                                                                     </option>
                                                             )
                                                     }
@@ -334,7 +345,7 @@ export default function PredictorNode(props): ReactElement {
 
                                         <div className="flex justify-between mb-4 content-center">
                                             <label className="m-0">Metric: </label>
-                                            <select 
+                                            <select id={ `${NodeID}-predictor-metric-select` } 
                                                 name={ `${NodeID}-metric` } 
                                                 value={ ParentPredictorState.selectedMetric }
                                                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
@@ -342,8 +353,9 @@ export default function PredictorNode(props): ReactElement {
                                                 >
                                                      { metrics[ParentPredictorState.selectedPredictorType].map(
                                                                 metric =>
-                                                                    <option key={metric} value={ metric }>
-                                                                        { metric }
+                                                                    <option id={ `${NodeID}-predictor-metric-${metric}` }
+                                                                        key={metric} value={ metric }>
+                                                                            { metric }
                                                                     </option>
                                                             )
                                                     }
@@ -360,7 +372,7 @@ export default function PredictorNode(props): ReactElement {
                                                     <div className="item2 col-span-8">
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "int" &&
-                                                                <input
+                                                                <input id={ `${NodeID}-predictor-int-input` }
                                                                     type="number"
                                                                     step="1"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -370,7 +382,7 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "float" &&
-                                                                <input
+                                                                <input id={ `${NodeID}-predictor-float-input` }
                                                                     type="number"
                                                                     step="0.1"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -380,7 +392,7 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "bool" && (
-                                                                <input
+                                                                <input id={ `${NodeID}-predictor-bool-input` }
                                                                     type="checkbox"
                                                                     defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
                                                                     checked={Boolean(ParentPredictorState.predictorParams[param].value)}
@@ -390,20 +402,23 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
-                                                            <select
+                                                            <select id={ `${NodeID}-predictor-params-select` }
                                                                 value={ ParentPredictorState.predictorParams[param].value.toString() }
                                                                 onChange={event => onParamChange(event, param)}
                                                                 className="w-32"
                                                                 >
                                                                 {
                                                                     (ParentPredictorState.predictorParams[param].type as Array<string>).map(
-                                                                        value => <option key={value} value={ value }>{ value }</option>)
+                                                                        value => <option id={ `${NodeID}-predictor-object-${value}` }
+                                                                                    key={value} value={ value }>
+                                                                                        { value }
+                                                                                  </option>)
                                                                 }
                                                             </select>
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "string" && (
-                                                                <input
+                                                                <input id={ `${NodeID}-predictor-string-input` }
                                                                     className="w-full"
                                                                     type="text"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -414,7 +429,8 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "password" && (
-                                                                <input
+                                                                <input id={ `${NodeID}-predictor-password-input` }
+                                
                                                                     className="w-full"
                                                                     type="password"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -514,8 +530,8 @@ export default function PredictorNode(props): ReactElement {
                         }
                         >   
                             <div className="flex">
-                                
                                 <button type="button" 
+                                        id={ `${NodeID}-predictor-gr-settings-option-button` }
                                         className="mt-1"
                                         style={{height: 0}}> <GrSettingsOption /></button>
                             </div>
@@ -530,18 +546,21 @@ export default function PredictorNode(props): ReactElement {
                                         Object.keys(ParentPredictorState.caoState.context).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input 
-                                            name={element}
-                                            type="checkbox" 
-                                            defaultChecked={true}
-                                            checked={ParentPredictorState.caoState.context[element]}
-                                            onChange={event => onUpdateCAOState(event, "context")}/>
+                                            <input name={element}
+                                                id={ `${NodeID}-predictor-context-input` }
+                                                type="checkbox" 
+                                                defaultChecked={true}
+                                                checked={ParentPredictorState.caoState.context[element]}
+                                                onChange={event => onUpdateCAOState(event, "context")}/>
                                         </div>)
                                     }
                                 </Card.Body>
                             }
                             >
-                            <button type="button" className="absolute top-2 -left-4" style={{height: 0}}>C</button>
+                            <button type="button"
+                                id={ `${NodeID}-predictor-context-button` }
+                                className="absolute top-2 -left-4"
+                                style={{height: 0}}>C</button>
                         </Popover>
                         <Popover
                             position={Position.LEFT}
@@ -553,21 +572,21 @@ export default function PredictorNode(props): ReactElement {
                                     <Text className="mb-2">Actions</Text>
                                     {
                                         Object.keys(ParentPredictorState.caoState.action).map(element =>
-                                        <div 
-                                        key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input 
-                                            name={element}
-                                            type="checkbox" 
-                                            defaultChecked={true}
-                                            checked={ParentPredictorState.caoState.action[element]}
-                                            onChange={event => onUpdateCAOState(event, "action")}/>
+                                            <input id={ `${NodeID}-predictor-actions-input` }
+                                                name={element}
+                                                type="checkbox" 
+                                                defaultChecked={true}
+                                                checked={ParentPredictorState.caoState.action[element]}
+                                                onChange={event => onUpdateCAOState(event, "action")}/>
                                         </div>)
                                     }
                                 </Card.Body>
                             }
                             >
                             <button type="button" 
+                                    id={ `${NodeID}-predictor-actions-button` }
                                     className="absolute bottom-6 -left-4"
                                     style={{height: 0}}>A</button>
                         </Popover>
@@ -581,18 +600,19 @@ export default function PredictorNode(props): ReactElement {
                                         Object.keys(ParentPredictorState.caoState.outcome).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input 
-                                            name={element}
-                                            type="checkbox" 
-                                            defaultChecked={false}
-                                            checked={ParentPredictorState.caoState.outcome[element]}
-                                            onChange={event => onUpdateCAOState(event, "outcome")}/>
+                                            <input name={element}
+                                                id={ `${NodeID}-predictor-outcomes-input` }
+                                                type="checkbox" 
+                                                defaultChecked={false}
+                                                checked={ParentPredictorState.caoState.outcome[element]}
+                                                onChange={event => onUpdateCAOState(event, "outcome")}/>
                                         </div>)
                                     }
                                 </Card.Body>
                             }
                             >
                             <button type="button" 
+                                    id={ `${NodeID}-predictor-outcomes-button` }
                                     className="absolute top-5 -right-4"
                                     style={{height: 0}}>O</button>
                         </Popover>

@@ -61,6 +61,7 @@
     "autoprefixer": "^10.3.1",
     "eslint": "^8.12.0",
     "eslint-config-next": "^12.1.4",
+    "eslint-plugin-enforce-ids-in-jsx": "^1.0.0",
     "jest": "^27.5.1",
     "postcss": "^8.3.5",
     "tailwindcss": "^3.1.8",

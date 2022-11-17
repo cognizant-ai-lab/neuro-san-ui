@@ -70,7 +70,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                 </span>
             </td>
             <td className={tableCellClassName}>
-                <select
+                <select id="data-field-select"
                     name={`${field}-esp_type`}
                     value={profile.data_tag.fields[field].esp_type}
                     className="w-32"
@@ -80,13 +80,13 @@ export default function ProfileTable(props: ProfiletableProps) {
                         setProfile(profileCopy)
                     }}
                 >
-                    <option value="CONTEXT">CONTEXT</option>
-                    <option value="ACTION">ACTION</option>
-                    <option value="OUTCOME">OUTCOME</option>
+                    <option id="data-field-context" value="CONTEXT">CONTEXT</option>
+                    <option id="data-field-action" value="ACTION">ACTION</option>
+                    <option id="data-field-outcome" value="OUTCOME">OUTCOME</option>
                 </select>
             </td>
             <td className={tableCellClassName}>
-                <select
+                <select id="data-type-select"
                     name={`${field}-data_type`}
                     value={profile.data_tag.fields[field].data_type}
                     className="w-32"
@@ -96,14 +96,14 @@ export default function ProfileTable(props: ProfiletableProps) {
                         setProfile(profileCopy)
                     }}
                 >
-                    <option value="INT">INT</option>
-                    <option value="STRING">STRING</option>
-                    <option value="FLOAT">FLOAT</option>
-                    <option value="BOOL">BOOL</option>
+                    <option id="data-type-int" value="INT">INT</option>
+                    <option id="data-type-string" value="STRING">STRING</option>
+                    <option id="data-type-float" value="FLOAT">FLOAT</option>
+                    <option id="data-type-bool" value="BOOL">BOOL</option>
                 </select>
             </td>
             <td className={tableCellClassName}>
-                <select
+                <select id="data-continuity-select"
                     name={`${field}-valued`}
                     value={profile.data_tag.fields[field].valued}
                     className="w-32"
@@ -113,30 +113,43 @@ export default function ProfileTable(props: ProfiletableProps) {
                         setProfile(profileCopy)
                     }}
                 >
-                    <option value="CATEGORICAL">CATEGORICAL</option>
-                    <option value="CONTINUOUS">CONTINUOUS</option>
+                    <option id="categorical-option"
+                        value="CATEGORICAL">
+                        CATEGORICAL
+                    </option>
+                    <option id="continuous-option"
+                        value="CONTINUOUS">
+                        CONTINUOUS
+                    </option>
                 </select>
             </td>
             <td className={tableCellClassName}>
                 {profile.data_tag.fields[field].valued === "CATEGORICAL" ?
                     <span style={{"display": "flex"}}>
-                    <select
+                    <select id="categorical-select"
                         name={`${field}-values`}
                         className="w-32"
                     >
-                        <option value="" disabled selected>Click for values:</option>
+                        <option id="categorical-click-for-values"
+                            value="" disabled selected>
+                            Click for values:
+                        </option>
                         {
                             profile.data_tag.fields[field].discrete_categorical_values.map(
-                                (item) => (<option value={item} key={item} disabled>{item}</option>))
+                                (item) => (<option id={ `categorical-value-${item}` }
+                                                value={item} key={item} disabled>{item}</option>))
                         }
-                    </select> <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        // Don't want to submit form here!
-                        e.preventDefault()
+                    </select>
+                    <button id="set-current-category-values"
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            // Don't want to submit form here!
+                            e.preventDefault()
 
-                        setFieldBeingEditedName(field)
-                        setCurrentCategoryValues(profile.data_tag.fields[field].discrete_categorical_values)
-                        setFieldEditorVisible(true)
-                    }}> <AiFillEdit size='14' style={{cursor: "pointer"}}/> </button>
+                            setFieldBeingEditedName(field)
+                            setCurrentCategoryValues(profile.data_tag.fields[field].discrete_categorical_values)
+                            setFieldEditorVisible(true)
+                        }}
+                    > <AiFillEdit size='14' style={{cursor: "pointer"}}/> </button>
                     </span> : "N/A"
                 }
             </td>
@@ -293,16 +306,18 @@ export default function ProfileTable(props: ProfiletableProps) {
                                                                 </ListGroup.Item>
                                                             </Col>
                                                             <Col className="d-flex vertical-align-middle mx-0 px-1">
-                                                                <button onClick={() => {
-                                                                    deleteValue(val)
-                                                                }
-                                                                }><AiFillDelete
-                                                                    size="14"
-                                                                    style={{
-                                                                        cursor: "pointer",
+                                                                <button id="delete-value"
+                                                                    onClick={() => {
+                                                                        deleteValue(val)
                                                                     }}
-                                                                    className="hover:text-red-700"
-                                                                /></button>
+                                                                >
+                                                                    <AiFillDelete
+                                                                        size="14"
+                                                                        style={{
+                                                                            cursor: "pointer",
+                                                                        }}
+                                                                        className="hover:text-red-700"/>
+                                                                </button>
 
                                                             </Col>
                                                         </Row>

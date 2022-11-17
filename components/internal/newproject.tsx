@@ -482,6 +482,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 <Space direction="vertical" size="middle">
                                     From a local file
                                     <input type="file" name="file" onChange={changeHandler}
+                                           id="new-project-local-file" 
                                            disabled={!isUsingLocalFile}/>
                                     {selectedFile ? (
                                         <div style={{
