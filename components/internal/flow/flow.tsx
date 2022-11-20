@@ -1,7 +1,3 @@
-// React Flow
-import Debug from "debug"
-
-
 // Framework
 import React from 'react'
 
@@ -14,19 +10,21 @@ import uuid from "react-uuid"
 
 //  Constants
 import {EvaluateCandidateCode, InputDataNodeID, MaximumBlue, OutputOverrideCode} from '../../../const'
-import {DataSource} from "../../../controller/datasources/types";
-import {CAOType, DataTag} from "../../../controller/datatag/types";
-import {NotificationType, sendNotification} from "../../../controller/notification";
-import EdgeTypes from './edges/types'
 
 // Custom components
 import {FlowQueries} from "./flowqueries"
+import {NotificationType, sendNotification} from "../../../controller/notification"
 
 // Types
-import {CAOChecked, PredictorState} from "./nodes/predictornode"
+import EdgeTypes from './edges/types'
 import NodeTypes from './nodes/types'
+import {CAOChecked, PredictorState} from "./nodes/predictornode"
+import {CAOType, DataTag} from "../../../controller/datatag/types"
+import {DataSource} from "../../../controller/datasources/types"
 import {PredictorParams} from "./predictorinfo"
 
+// Debug
+import Debug from "debug"
 const debug = Debug("flow")
 
 /*
