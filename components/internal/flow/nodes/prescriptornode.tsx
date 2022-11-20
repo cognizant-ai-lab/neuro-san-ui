@@ -15,6 +15,7 @@ import {
     Tablist, 
     Tab
 } from "evergreen-ui"
+import {AiFillDelete} from "react-icons/ai";
 import { GrSettingsOption } from "react-icons/gr"
 import { MdDelete } from "react-icons/md"
 import { BiPlusMedical } from "react-icons/bi"
@@ -33,6 +34,7 @@ import {
 import { Controlled as CodeMirror } from 'react-codemirror2'
 import {loadDataTag} from "../../../../controller/fetchdatataglist";
 import {useSession} from "next-auth/react";
+import {NotificationType, sendNotification} from "../../../../controller/notification";
 
 // Define an interface for the structure
 // of the nodes
@@ -51,6 +53,9 @@ export interface PrescriptorNodeData {
 
     readonly ParentPrescriptorState
     readonly SetParentPrescriptorState
+
+    // Mutator method to delete this node from the parent flow
+    readonly DeleteNode: (nodeID: string) => void
 }
 
 
@@ -69,7 +74,9 @@ export default function PrescriptorNode(props): ReactElement {
     const { 
         NodeID, 
         ParentPrescriptorState, SetParentPrescriptorState,
-        EvaluatorOverrideCode, UpdateEvaluateOverrideCode
+        EvaluatorOverrideCode,
+        UpdateEvaluateOverrideCode,
+        DeleteNode
     } = data
 
     const updateCAOState = ( event, espType: string ) => {
@@ -662,6 +669,18 @@ export default function PrescriptorNode(props): ReactElement {
                         </Popover>
 
                     </Card.Body>
+                    <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                        <button type="button"
+                                id="delete-me"
+                                className="hover:text-red-700 text-xs"
+                                onClick={() => {
+                                    DeleteNode(NodeID)
+                                    sendNotification(NotificationType.success, "Prescriptor node deleted")
+                                }}
+                        >
+                            <AiFillDelete size="10"/>
+                        </button>
+                    </div>
                 </Card>
 
                 <Handle type="source" position={HandlePosition.Right} />

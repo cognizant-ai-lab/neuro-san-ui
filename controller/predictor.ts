@@ -5,7 +5,7 @@ import {
     SUPPORTED_REGRESSOR_METRICS, SUPPORTED_CLASSIFIER_METRICS,
     PredictorParams
 
-} from "../predictorinfo"
+} from "../components/internal/flow/predictorinfo"
 
 export function FetchPredictors(predictorType: string): string[] {
     /*

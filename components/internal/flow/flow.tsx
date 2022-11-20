@@ -1,31 +1,32 @@
-// Import React Flow
-import ReactFlow, {addEdge, Background, Controls, removeElements} from 'react-flow-renderer'
+// React Flow
+import Debug from "debug"
 
-// Import Framework
+
+// Framework
 import React from 'react'
 
-// Import ID Gen
+// 3rd party components
+import {Button, Container} from "react-bootstrap"
+import ReactFlow, {addEdge, Background, Controls, removeElements} from 'react-flow-renderer'
+
+// ID Gen
 import uuid from "react-uuid"
 
-// Import Custom Nodes and Edges
-import EdgeTypes from './edges/types'
-import NodeTypes from './nodes/types'
-
-// Import 3rd party components
-import {Button, Container} from "react-bootstrap"
-
-// Import Constants
+//  Constants
 import {EvaluateCandidateCode, InputDataNodeID, MaximumBlue, OutputOverrideCode} from '../../../const'
-
-// Import types
-import {CAOChecked, PredictorState} from "./nodes/predictornode"
-import {NotificationType, sendNotification} from "../../../controller/notification";
-import {PredictorParams} from "../../../predictorinfo";
 import {DataSource} from "../../../controller/datasources/types";
 import {CAOType, DataTag} from "../../../controller/datatag/types";
-import {FlowQueries} from "./flowqueries";
+import {NotificationType, sendNotification} from "../../../controller/notification";
+import EdgeTypes from './edges/types'
 
-import Debug from "debug"
+// Custom components
+import {FlowQueries} from "./flowqueries"
+
+// Types
+import {CAOChecked, PredictorState} from "./nodes/predictornode"
+import NodeTypes from './nodes/types'
+import {PredictorParams} from "./predictorinfo"
+
 const debug = Debug("flow")
 
 /*
@@ -275,12 +276,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 } else if (node.type === 'predictornode') {
                     node.data = {
                         ...node.data,
-                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id)
+                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
                     }
                 } else if (node.type === 'prescriptornode') {
                     node.data = {
                         ...node.data,
-                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id)
+                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
                     }
                 } else if (node.type === "prescriptoredge") {
                     node.data = {
@@ -401,7 +404,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 NodeID: NodeID,
                 SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPredictorState: this._getInitialPredictorState(),
-                SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID)
+                SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID),
+                DeleteNode: predictorNodeId => this._deleteNodeById(predictorNodeId)
             },
             position: { 
                 x: flowInstanceElem[0].position.x + 250, 
@@ -540,7 +544,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 ParentPrescriptorState: this._getInitialPrescriptorState(fitness),
                 SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
-                UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value)
+                UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value),
+                DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
             },
             position: { 
                 x: flowInstanceElem[0].position.x + 750, 
@@ -559,6 +564,15 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         this.setState({flow: graphCopy})
     }
 
+    _deleteNodeById(nodeID: string) {
+        /*
+        Simple "shim" method to allow nodes to delete themselves using their own NodeID, which
+        each node knows.
+         */
+        const graph = this.state.flow
+        this._deleteNode([FlowQueries.getNodeByID(graph, nodeID)], graph)
+    }
+
     _deleteNode(elementsToRemove, graph) {
         /*
         Since we supply constraints on how nodes interact, i.e in an ESP
@@ -569,18 +583,26 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     
         Note: This edits the graph inPlace
         */
-        // Make sure there are no data nodes
+
+        // Do not allow deletion of data nodes
+        const dataNodeDeleted = elementsToRemove.some(element => element.type === "datanode")
+        if (dataNodeDeleted) {
+            sendNotification(NotificationType.warning, "Data nodes cannot be deleted.", "In order to use a different " +
+                "data node, create a new experiment with the required data source.")
+            return
+        }
+
         const removableElements = elementsToRemove.filter(element => element.type != "datanode")
 
-        const predictorIdsBeingRemoved = FlowQueries.getPredictorNodes(elementsToRemove).
-            map(node => node.id)
+        const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes(elementsToRemove)
+        const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map(node => node.id)
+
+        const prescriptorNodes = FlowQueries.getPrescriptorNodes(graph)
 
         // If this delete will remove all predictors, also delete the prescriptor
         const numPredictorNodesLeft = FlowQueries.getPredictorNodes(graph).length - predictorIdsBeingRemoved.length
         if (numPredictorNodesLeft == 0) {
-            removableElements.push(...FlowQueries.getPrescriptorNodes(graph))
-
-
+            removableElements.push(...prescriptorNodes)
         } else {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor

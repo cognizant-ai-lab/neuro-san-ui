@@ -10,8 +10,7 @@ export class FlowQueries {
         This function filters the predictor nodes
         from the graph and returns them
         */
-        return graph.filter(
-            element => element.type === 'predictornode')
+        return graph.filter(element => element.type === 'predictornode')
     }
 
     static getPrescriptorNodes(graph) {
@@ -27,8 +26,7 @@ export class FlowQueries {
         /*
         This function returns all nodes of type "data" from the graph
         */
-        return graph.filter(
-            element => element.type === 'datanode')
+        return graph.filter(element => element.type === 'datanode')
     }
 
     static extractCheckedFields(nodes, caoType: CAOType) {
@@ -61,5 +59,12 @@ export class FlowQueries {
         return Object.entries(node.data[parentNode].caoState[caoTypeString])
             .filter(e => e[1] === true) // only checked items
             .map(e => e[0])
+    }
+
+    static getNodeByID(graph, nodeID: string) {
+        /*
+           Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
+        */
+        return  graph.find(element => element.id === nodeID)
     }
 }

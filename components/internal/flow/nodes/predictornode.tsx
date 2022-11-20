@@ -1,28 +1,14 @@
 // React components
-import {
-    Dispatch,
-    ReactElement,
-    SetStateAction,
-    useEffect,
-    useState
-} from 'react'
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {InfoSignIcon, Popover, Position, Tab, Tablist, Text, Tooltip,} from "evergreen-ui"
+import {useSession} from "next-auth/react"
 
-// 3rd party components
-import { 
-    Card
-} from "react-bootstrap"
-import { 
-    InfoSignIcon,
-    Popover,
-    Position,
-    Tab,
-    Tablist,
-    Text,
-    Tooltip,
-} from "evergreen-ui"
-import { GrSettingsOption } from "react-icons/gr"
 import Slider from 'rc-slider'
 import 'rc-slider/assets/index.css'
+import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react'
+
+// 3rd party components
+import {Card} from "react-bootstrap"
 
 // React Flow
 import {
@@ -30,21 +16,15 @@ import {
     Position as HandlePosition
 } from 'react-flow-renderer'
 
-import { 
-    Card as BlueprintCard,
-    Elevation 
-} from "@blueprintjs/core"
+import {AiFillDelete} from "react-icons/ai";
+import {GrSettingsOption} from "react-icons/gr"
+import {StringBool} from "../../../../controller/base_types"
+import {loadDataTag} from "../../../../controller/fetchdatataglist"
+import {NotificationType, sendNotification} from "../../../../controller/notification";
 
 // Controllers
-import {
-    FetchMetrics,
-    FetchParams,
-    FetchPredictors
-} from '../../../../controller/predictor'
-import {loadDataTag} from "../../../../controller/fetchdatataglist"
-import {PredictorParams} from "../../../../predictorinfo"
-import {StringBool} from "../../../../controller/base_types"
-import {useSession} from "next-auth/react"
+import {FetchMetrics, FetchParams, FetchPredictors} from '../../../../controller/predictor'
+import {PredictorParams} from "../predictorinfo"
 
 
 // Interface for Predictor CAO
@@ -67,8 +47,7 @@ export interface PredictorState {
     rngSeedValue: number
 }
 
-// Define an interface for the structure
-// of the nodes
+// Define an interface for the structure of the Predictor node
 export interface PredictorNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
@@ -80,9 +59,11 @@ export interface PredictorNodeData {
     readonly SelectedDataSourceId: number
 
     readonly ParentPredictorState: PredictorState,
-    readonly SetParentPredictorState: Dispatch<SetStateAction<PredictorState>>
-}
+    readonly SetParentPredictorState: Dispatch<SetStateAction<PredictorState>>,
 
+    // Mutator method to delete this node from the parent flow
+    readonly DeleteNode: (nodeID: string) => void
+}
 
 
 const SliderComponent = Slider.createSliderWithTooltip(Slider);
@@ -99,7 +80,7 @@ export default function PredictorNode(props): ReactElement {
     const currentUser: string = session.user.name
 
     // Unpack the data
-    const { NodeID, ParentPredictorState, SetParentPredictorState } = data
+    const { NodeID, ParentPredictorState, SetParentPredictorState, DeleteNode } = data
 
     // Fetch the available metrics and predictors and these are not state dependant
     const metrics = {
@@ -617,6 +598,18 @@ export default function PredictorNode(props): ReactElement {
                                     style={{height: 0}}>O</button>
                         </Popover>
                     </Card.Body>
+                    <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                        <button type="button"
+                                id="delete-me"
+                                className="hover:text-red-700 text-xs"
+                                onClick={() => {
+                                    DeleteNode(NodeID)
+                                    sendNotification(NotificationType.success, "Predictor node deleted")
+                                }}
+                        >
+                            <AiFillDelete size="10"/>
+                        </button>
+                    </div>
                 </Card>
 
                 <Handle type="source" position={HandlePosition.Right} />
