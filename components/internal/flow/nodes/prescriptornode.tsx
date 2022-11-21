@@ -197,7 +197,7 @@ export default function PrescriptorNode(props): ReactElement {
     
     const EvaluatorOverridePanel =
         <Card.Body>
-            <SyntaxHighlighter language="scala" style={docco} showLineNumbers={true}>
+            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
                 {EvaluatorOverrideCode}
             </SyntaxHighlighter>
         </Card.Body>

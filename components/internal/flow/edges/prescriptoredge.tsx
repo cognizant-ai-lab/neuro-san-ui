@@ -57,7 +57,7 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
 
     const PredictorOverride =
         <Card.Body>
-            <SyntaxHighlighter language="scala" style={docco} showLineNumbers={true}>
+            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
                 {data.OutputOverrideCode}
             </SyntaxHighlighter>
         </Card.Body>
