@@ -74,4 +74,11 @@ export class FlowQueries {
             .filter(e => e[1] === true) // only checked items
             .map(e => e[0])
     }
+
+    static getNodeByID(graph, nodeID: string) {
+        /*
+           Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
+        */
+        return  graph.find(element => element.id === nodeID)
+    }
 }

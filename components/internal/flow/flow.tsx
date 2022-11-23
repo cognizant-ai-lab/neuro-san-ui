@@ -34,6 +34,7 @@ import {CAOType, DataTag} from "../../../controller/datatag/types";
 import {NotificationType, sendNotification} from "../../../controller/notification";
 import {PredictorParams} from "./predictorinfo"
 
+// Debug
 import Debug from "debug"
 const debug = Debug("flow")
 
@@ -308,12 +309,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                     node.data = {
                         ...node.data,
                         SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId),
                         AddUncertaintyModelNode: nodeId => this._addUncertaintyNode(nodeId)
                     }
                 } else if (node.type === 'prescriptornode') {
                     node.data = {
                         ...node.data,
-                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id)
+                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
                     }
                 } else if (node.type === "prescriptoredge") {
                     node.data = {
@@ -435,6 +438,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPredictorState: this._getInitialPredictorState(),
                 SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID),
+                DeleteNode: predictorNodeId => this._deleteNodeById(predictorNodeId),
                 AddUncertaintyModelNode: predictorNodeId => this._addUncertaintyNode(predictorNodeId)
             },
             position: { 
@@ -572,7 +576,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 ParentPrescriptorState: this._getInitialPrescriptorState(fitness),
                 SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
-                UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value)
+                UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value),
+                DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
             },
             position: { 
                 x: flowInstanceElem[0].position.x + 750, 
@@ -692,6 +697,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         this.setState({flow: graphCopy})
     }
 
+    _deleteNodeById(nodeID: string) {
+        /*
+        Simple "shim" method to allow nodes to delete themselves using their own NodeID, which
+        each node knows.
+         */
+        const graph = this.state.flow
+        this._deleteNode([FlowQueries.getNodeByID(graph, nodeID)], graph)
+    }
 
     _deleteNode(elementsToRemove, graph) {
         /*
@@ -704,8 +717,14 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         Note: This edits the graph inPlace
         */
 
-        // Make sure there are no data nodes
-        // BUG: need to handle edges connected to data sources here too
+        // Do not allow deletion of data nodes
+        const dataNodeDeleted = elementsToRemove.some(element => element.type === "datanode")
+        if (dataNodeDeleted) {
+            sendNotification(NotificationType.warning, "Data nodes cannot be deleted.", "In order to use a different " +
+                "data node, create a new experiment with the required data source.")
+            return
+        }
+
         const removableElements = elementsToRemove.filter(element => element.type != "datanode")
 
         const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes(elementsToRemove)

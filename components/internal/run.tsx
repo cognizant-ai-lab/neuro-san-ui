@@ -305,16 +305,11 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     // Decide whether DMS button should be enabled
     function shouldEnableDMS() {
-        return !rules && !empty(nodeToCIDMap)
+        return !empty(nodeToCIDMap)
     }
 
     // Get verbiage for DMS button
     function getDMSButton() {
-        // Rules not yet supported
-        if (rules) {
-            return "(Decision Making System for rules-based models coming soon!)"
-        }
-
         // Can't use DMS if no prescriptors
         if (empty(nodeToCIDMap)) {
             return "(Decision Making System not available: no prescriptors found.)"
