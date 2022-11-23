@@ -1,9 +1,9 @@
 // React components
-import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {useSession} from "next-auth/react"
+import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react'
 
 // 3rd party components
 import {Card} from "react-bootstrap"
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {
     InfoSignIcon,
     Popover,
@@ -17,10 +17,7 @@ import {BsPlusSquare} from "react-icons/bs"
 import { GrSettingsOption } from "react-icons/gr"
 import Slider from 'rc-slider'
 import 'rc-slider/assets/index.css'
-import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react'
-
-// 3rd party components
-import {Card} from "react-bootstrap"
+import {useSession} from "next-auth/react"
 
 // React Flow
 import {
@@ -29,17 +26,17 @@ import {
 } from 'react-flow-renderer'
 
 import {AiFillDelete} from "react-icons/ai";
-import {GrSettingsOption} from "react-icons/gr"
 import {StringBool} from "../../../../controller/base_types"
-import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
 
 // Controllers
-import {FetchMetrics, FetchParams, FetchPredictors} from '../../../../controller/predictor'
+import {
+    FetchMetrics,
+    FetchParams,
+    FetchPredictors
+} from '../../../../controller/predictor'
+import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {PredictorParams} from "../predictorinfo"
-import {PredictorParams} from "../predictorinfo"
-import {StringBool} from "../../../../controller/base_types"
-import {useSession} from "next-auth/react"
 
 
 // Interface for Predictor CAO
@@ -78,7 +75,7 @@ export interface PredictorNodeData {
 
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void,
-}
+
     // Mutator method for adding an uncertainty model node to the parent Flow
     readonly AddUncertaintyModelNode: (nodeID: string) => void
 }
