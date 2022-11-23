@@ -6,7 +6,9 @@ import {Card, Collapse} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
 import {Handle, Position as HandlePosition} from 'react-flow-renderer'
+import {AiFillDelete} from "react-icons/ai";
 import {GrSettingsOption} from "react-icons/gr"
+import {NotificationType, sendNotification} from "../../../../controller/notification";
 
 // Custom components
 import {ParamType, UNCERTAINTY_MODEL_PARAMS} from "../uncertaintymodelinfo"
@@ -31,6 +33,9 @@ export interface UncertaintyModelNodeData {
     readonly NodeID: string,
     readonly ParentUncertaintyNodeState: UncertaintyNodeState,
     readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyNodeState>>,
+
+    // Mutator method to delete this node from the parent flow
+    readonly DeleteNode: (nodeID: string) => void
 }
 
 export default function UncertaintyModelNode(props): ReactElement {
@@ -42,7 +47,7 @@ export default function UncertaintyModelNode(props): ReactElement {
     const data: UncertaintyModelNodeData = props.data
 
     // Unpack the data
-    const {ParentUncertaintyNodeState, SetParentUncertaintyNodeState} = data
+    const {NodeID, ParentUncertaintyNodeState, DeleteNode, SetParentUncertaintyNodeState} = data
 
     // For showing advanced configuration settings
     const [showAdvanced, setShowAdvanced] = useState(false)
@@ -194,6 +199,18 @@ export default function UncertaintyModelNode(props): ReactElement {
                 </div>
                 </Popover>
             </Card.Body>
+            <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                <button type="button"
+                        id="delete-me"
+                        className="hover:text-red-700 text-xs"
+                        onClick={() => {
+                            DeleteNode(NodeID)
+                            sendNotification(NotificationType.success, "Uncertainty model node deleted")
+                        }}
+                >
+                    <AiFillDelete size="10"/>
+                </button>
+            </div>
         </Card>
             <Handle type="source" position={HandlePosition.Right} />
             <Handle type="target" position={HandlePosition.Left} />

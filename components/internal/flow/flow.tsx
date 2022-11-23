@@ -318,6 +318,12 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                         SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
                         DeleteNode: nodeId => this._deleteNodeById(nodeId)
                     }
+                } else if (node.type === 'uncertaintymodelnode') {
+                    node.data = {
+                        ...node.data,
+                        SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, node.id),
+                        DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
+                    }
                 } else if (node.type === "prescriptoredge") {
                     node.data = {
                         ...node.data,
@@ -566,7 +572,15 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         const fitness = outcomes.map(outcome => ({ metric_name: outcome, maximize: true}))
 
         // Add a Prescriptor Node
-        const flowInstanceElem = this.state.flowInstance.getElements()
+
+        // Figure out a logical x-y location for the new prescriptor node based on existing nodes
+        const uncertaintyModelNodes = FlowQueries.getUncertaintyModelNodes(this.state.flow)
+        const prescriptorNodeXPos = uncertaintyModelNodes.length > 0
+            ? uncertaintyModelNodes[uncertaintyModelNodes.length - 1].position.x + 250
+            : predictorNodes[predictorNodes.length - 1].position.x + 250
+        const prescriptorNodeYPos = uncertaintyModelNodes.length > 0
+            ? uncertaintyModelNodes[0].position.y
+            : predictorNodes[0].position.y;
         graphCopy.push({
             id: NodeID,
             type: "prescriptornode",
@@ -580,8 +594,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
             },
             position: { 
-                x: flowInstanceElem[0].position.x + 750, 
-                y: flowInstanceElem[0].position.y 
+                x: prescriptorNodeXPos,
+                y: prescriptorNodeYPos
             },
         })
     
@@ -661,7 +675,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             data:  {
                 NodeID: newNodeID,
                 ParentUncertaintyNodeState: this._getInitialUncertaintyNodeState(),
-                SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, newNodeID)
+                SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, newNodeID),
+                DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
             },
             position: {
                 x: uncertaintyNodeXPos,
