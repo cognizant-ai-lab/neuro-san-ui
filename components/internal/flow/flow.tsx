@@ -1,26 +1,37 @@
+// React Flow
+import ReactFlow, {
+    addEdge,
+    Background,
+    Controls,
+    getConnectedEdges, getIncomers,
+    getOutgoers,
+    removeElements
+} from 'react-flow-renderer'
+
+
 // Framework
 import React from 'react'
-
-// 3rd party components
-import {Button, Container} from "react-bootstrap"
-import ReactFlow, {addEdge, Background, Controls, removeElements} from 'react-flow-renderer'
 
 // ID Gen
 import uuid from "react-uuid"
 
+// Custom components
+import {FlowQueries} from "./flowqueries"
+
+// 3rd party components
+import {Button, Container} from "react-bootstrap"
+
 //  Constants
 import {EvaluateCandidateCode, InputDataNodeID, MaximumBlue, OutputOverrideCode} from '../../../const'
 
-// Custom components
-import {FlowQueries} from "./flowqueries"
-import {NotificationType, sendNotification} from "../../../controller/notification"
-
 // Types
+import {CAOChecked, PredictorState} from "./nodes/predictornode"
 import EdgeTypes from './edges/types'
 import NodeTypes from './nodes/types'
-import {CAOChecked, PredictorState} from "./nodes/predictornode"
-import {CAOType, DataTag} from "../../../controller/datatag/types"
-import {DataSource} from "../../../controller/datasources/types"
+import {UNCERTAINTY_MODEL_PARAMS, UncertaintyModelParams} from "./uncertaintymodelinfo"
+import {DataSource} from "../../../controller/datasources/types";
+import {CAOType, DataTag} from "../../../controller/datatag/types";
+import {NotificationType, sendNotification} from "../../../controller/notification";
 import {PredictorParams} from "./predictorinfo"
 
 // Debug
@@ -109,6 +120,25 @@ class FlowNodeStateUpdateHandler extends FlowState {
 
     }
 
+    UncertaintyNodeSetStateHandler(newState, NodeID) {
+        /*
+        Called by uncertainty model nodes to update their state in the flow
+         */
+        const flow = this.state.flow
+        this.setState({
+            flow: flow.map(node => {
+                // If this is the right uncertainty model node
+                if (node.id === NodeID) {
+                    node.data = {
+                        ...node.data,
+                        ParentUncertaintyNodeState: newState
+                    }
+                }
+                return node;
+            })
+        })
+    }
+
     PredictorSetStateHandler(newState, NodeID) {
         /*
         This Handler is supposed to be triggered by a predictor node
@@ -116,7 +146,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
         prescriptor edges linked to it.
         The NodeID parameter is used to bind it to the state
         */
-        // TODO: This logic will start to break when we have intermediate nodes for eg: RIO
 
         const flow = this.state.flow
 
@@ -144,10 +173,15 @@ class FlowNodeStateUpdateHandler extends FlowState {
                     // Find all the predictors connected to this node except the one that triggered
                     // this update. We don't fetch the one that just got updated because the data in
                     // that node is stale. Remember, we are inside the set state handler so the state there
-                    // is before the update
-                    const predictorIds = flow.
-                    filter(elem => elem.type === "prescriptoredge" && elem.target === node.id && elem.source != NodeID).
-                        map(elem => elem.source)
+                    // is before the update.
+                    // New: we have to filter out non-predictors connected to this node;
+                    // currently only uncertainty model nodes.
+                    const predictorIds = flow
+                        .filter(elem => elem.type === "prescriptoredge" && elem.target === node.id && elem.source != NodeID)
+                        .filter(elem => FlowQueries.getPredictorNode(flow, elem.id))
+                        .map(elem => elem.source)
+
+
                     const predictors = flow.filter(elem => predictorIds.includes(elem.id))
 
                     // Take the Union of all the checked outcomes on the predictors
@@ -275,13 +309,20 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                     node.data = {
                         ...node.data,
                         SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
-                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId),
+                        AddUncertaintyModelNode: nodeId => this._addUncertaintyNode(nodeId)
                     }
                 } else if (node.type === 'prescriptornode') {
                     node.data = {
                         ...node.data,
                         SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
                         DeleteNode: nodeId => this._deleteNodeById(nodeId)
+                    }
+                } else if (node.type === 'uncertaintymodelnode') {
+                    node.data = {
+                        ...node.data,
+                        SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, node.id),
+                        DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
                     }
                 } else if (node.type === "prescriptoredge") {
                     node.data = {
@@ -403,7 +444,8 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPredictorState: this._getInitialPredictorState(),
                 SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID),
-                DeleteNode: predictorNodeId => this._deleteNodeById(predictorNodeId)
+                DeleteNode: predictorNodeId => this._deleteNodeById(predictorNodeId),
+                AddUncertaintyModelNode: predictorNodeId => this._addUncertaintyNode(predictorNodeId)
             },
             position: { 
                 x: flowInstanceElem[0].position.x + 250, 
@@ -493,15 +535,13 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         /*
         This function adds a prescriptor node to the Graph. The only
         requirement for this is that at least one predictor exists.
-    
-    
-        @param graph: Current state of the graph
-        @param CAOMapping: CAOMapping for the Data Source that the user has selected
+
+        For predictor nodes that already have uncertainty nodes attached, the newly added prescriptor node is
+        connected to the uncertainty node(s) instead of directly to the predictor.
         */
     
         // Check if Prescriptor Node exists
-        const prescriptorExists = (
-            FlowQueries.getPrescriptorNodes(this.state.flow)).length != 0
+        const prescriptorExists = (FlowQueries.getPrescriptorNodes(this.state.flow)).length != 0
     
         // If it already exists, return
         if (prescriptorExists) {
@@ -532,7 +572,15 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         const fitness = outcomes.map(outcome => ({ metric_name: outcome, maximize: true}))
 
         // Add a Prescriptor Node
-        const flowInstanceElem = this.state.flowInstance.getElements()
+
+        // Figure out a logical x-y location for the new prescriptor node based on existing nodes
+        const uncertaintyModelNodes = FlowQueries.getUncertaintyModelNodes(this.state.flow)
+        const prescriptorNodeXPos = uncertaintyModelNodes.length > 0
+            ? uncertaintyModelNodes[uncertaintyModelNodes.length - 1].position.x + 250
+            : predictorNodes[predictorNodes.length - 1].position.x + 250
+        const prescriptorNodeYPos = uncertaintyModelNodes.length > 0
+            ? uncertaintyModelNodes[0].position.y
+            : predictorNodes[0].position.y;
         graphCopy.push({
             id: NodeID,
             type: "prescriptornode",
@@ -546,19 +594,121 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
             },
             position: { 
-                x: flowInstanceElem[0].position.x + 750, 
-                y: flowInstanceElem[0].position.y 
+                x: prescriptorNodeXPos,
+                y: prescriptorNodeYPos
             },
         })
     
         // Add edges to all the predictor nodes
         predictorNodes.forEach(predictorNode => {
-            graphCopy = this._addEdgeToPrescriptorNode(
-                graphCopy,
-                predictorNode.id, NodeID
-            )
+            const downstreamNodes = getOutgoers(predictorNode, graphCopy)
+            if (downstreamNodes && downstreamNodes.length > 0) {
+                const uncertaintyModelNodes = downstreamNodes.filter(node => node.type === "uncertaintymodelnode")
+                if (uncertaintyModelNodes && uncertaintyModelNodes.length === 1) {
+                    // should only be one uncertainty model node per predictor!
+                    const uncertaintyModelNode = uncertaintyModelNodes[0]
+                    graphCopy = this._addEdgeToPrescriptorNode(
+                        graphCopy,
+                        uncertaintyModelNode.id, NodeID
+                    )
+                }
+            } else {
+                // This predictor has no uncertainty model, so just connect the new prescriptor directly to the
+                // predictor.
+                graphCopy = this._addEdgeToPrescriptorNode(
+                    graphCopy,
+                    predictorNode.id, NodeID
+                )
+            }
         })
     
+        this.setState({flow: graphCopy})
+    }
+
+    private _getInitialUncertaintyNodeState(): UncertaintyModelParams {
+        /*
+       This function returns the initial uncertainty node state for when a user first adds the node to the flow
+       */
+
+        return {...UNCERTAINTY_MODEL_PARAMS}
+    }
+
+    // Adds an uncertainty model node to the specified Predictor
+    _addUncertaintyNode(predictorNodeID: string): void {
+        const flow = this.state.flow;
+
+        // Find associated predictor for this RIO node
+        const predictorNode = FlowQueries.getPredictorNode(flow, predictorNodeID)
+        if (!predictorNode) {
+            console.error(`Unable to locate predictor with node ID ${predictorNodeID}`)
+            return
+        }
+
+        // Only one RIO node allowed per Predictor
+        const downstreamNodes = getOutgoers(predictorNode, flow)
+        const alreadyHasUncertaintyNode = downstreamNodes && downstreamNodes.length > 0 &&
+            downstreamNodes.some(node => node.type === "uncertaintymodelnode")
+        if (alreadyHasUncertaintyNode) {
+            sendNotification(NotificationType.warning, "This predictor already has an uncertainty model node",
+                "Only one uncertainty model node is allowed per predictor")
+            return
+        }
+
+        // Make a copy of the graph
+        let graphCopy = flow.slice()
+
+        // Check if Prescriptor Node exists
+        const prescriptorNodes = FlowQueries.getPrescriptorNodes(flow)
+        const prescriptorNode = prescriptorNodes && prescriptorNodes.length > 0 ? prescriptorNodes[0] : null
+
+        const uncertaintyNodeXPos = prescriptorNode
+            ? (predictorNode.position.x + prescriptorNode.position.x) / 2
+            : predictorNode.position.x + 200
+
+        // Create a unique ID
+        const newNodeID = uuid()
+
+        // Add the uncertainty model node
+        graphCopy.push({
+            id: newNodeID,
+            type: "uncertaintymodelnode",
+            data:  {
+                NodeID: newNodeID,
+                ParentUncertaintyNodeState: this._getInitialUncertaintyNodeState(),
+                SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, newNodeID),
+                DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
+            },
+            position: {
+                x: uncertaintyNodeXPos,
+                y: predictorNode.position.y
+            },
+        })
+
+        // Now wire up the uncertainty model node in the graph
+        // Connect the Predictor to the uncertainty model node
+        graphCopy.push({
+            id: uuid(),
+            source: predictorNode.id,
+            target: newNodeID,
+            animated: false,
+            type: 'predictoredge'
+        })
+
+        // If there's a Prescriptor, connect the new uncertainty model node to that.
+        if (prescriptorNode) {
+            // Disconnect the existing edge from Predictor to Prescriptor
+            const edges = getConnectedEdges([predictorNode], flow)
+            for (const edge of edges) {
+                if (edge.type === "prescriptoredge") {
+                    graphCopy = removeElements([edge], graphCopy)
+                }
+            }
+
+            // Connect the uncertainty model node to the prescriptor
+            graphCopy = this._addEdgeToPrescriptorNode(graphCopy, newNodeID, prescriptorNode.id)
+        }
+
+        // Save the updated Flow
         this.setState({flow: graphCopy})
     }
 
@@ -595,7 +745,17 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes(elementsToRemove)
         const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map(node => node.id)
 
+        const uncertaintyNodesBeingRemoved = FlowQueries.getUncertaintyModelNodes(elementsToRemove)
+
         const prescriptorNodes = FlowQueries.getPrescriptorNodes(graph)
+
+        // // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
+        if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
+            const uncertaintyNodesToRemove = predictorNodesBeingRemoved
+                .flatMap(node => getOutgoers(node, graph)
+                    .filter(node => node.type === "uncertaintymodelnode"))
+            removableElements.push(...uncertaintyNodesToRemove)
+        }
 
         // If this delete will remove all predictors, also delete the prescriptor
         const numPredictorNodesLeft = FlowQueries.getPredictorNodes(graph).length - predictorIdsBeingRemoved.length
@@ -604,11 +764,25 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         } else {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor
-            const predictorsLeft = graph.filter(node => node.type === "predictornode" && !predictorIdsBeingRemoved.includes(node.id))
+            const predictorsLeft = graph.filter(node => node.type === "predictornode" &&
+                !predictorIdsBeingRemoved.includes(node.id))
+
+            // Connect any remaining predictors to the prescriptor
+            if (uncertaintyNodesBeingRemoved && prescriptorNodes && prescriptorNodes.length > 0) {
+                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved
+                    .flatMap(node => getIncomers(node, graph)
+                        .filter(node => node.type === "predictornode"))
+                for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
+                    graph = this._addEdgeToPrescriptorNode(graph, node.id, prescriptorNodes[0].id)
+                }
+            }
+
             // Get outcomes from all current predictors to use for prescriptor fitness
             let outcomes = FlowQueries.extractCheckedFields(predictorsLeft, CAOType.OUTCOME)
+
             // Make this a set
             outcomes = outcomes.filter((value, index, self) => self.indexOf(value) === index)
+
             // Default to maximizing outcomes until user tells us otherwise
             const fitness = outcomes.map(outcome => ({ metric_name: outcome, maximize: true}))
 

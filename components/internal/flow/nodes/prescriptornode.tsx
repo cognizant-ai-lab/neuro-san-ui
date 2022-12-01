@@ -575,29 +575,31 @@ export default function PrescriptorNode(props): ReactElement {
             <Card border="warning" style={{ height: "100%" }}>
                     <Card.Body className="flex justify-center content-center">
                         <Text className="mr-2">{ ParentPrescriptorState.selectedPredictor || "Prescriptor" }</Text>
-                        <Popover
-                        content={
+                        <Popover content={
                             <>
                                 <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-                                        {tabs.map((tab, index) => (
-                                    <Tab
-                                        key={tab}
-                                        id={tab}
-                                        onSelect={() => setSelectedIndex(index)}
-                                        isSelected={index === selectedIndex}
-                                        aria-controls={`panel-${tab}`}
-                                    >
-                                        {tab}
-                                    </Tab>
+                                    {tabs.map((tab, index) => (
+                                        <Tab
+                                            key={tab}
+                                            id={tab}
+                                            onSelect={() => setSelectedIndex(index)}
+                                            isSelected={index === selectedIndex}
+                                            aria-controls={`panel-${tab}`}
+                                        >
+                                            {tab}
+                                        </Tab>
                                     ))}
                                 </Tablist>
-                                { selectedIndex === 0  && PrescriptorRepresentationPanel }
-                                { selectedIndex === 1  && EvolutionConfigurationPanel }
-                                { selectedIndex === 2  && ObjectiveConfigurationPanel }
-                                { selectedIndex === 3  && EvaluatorOverridePanel }
+                                {selectedIndex === 0 && PrescriptorRepresentationPanel}
+                                {selectedIndex === 1 && EvolutionConfigurationPanel}
+                                {selectedIndex === 2 && ObjectiveConfigurationPanel}
+                                {selectedIndex === 3 && EvaluatorOverridePanel}
                             </>
                         }
-                        >   
+                             statelessProps={{
+                                 backgroundColor: "ghostwhite"
+                             }}
+                        >
                             <div className="flex">
                                 
                                 <button type="button" 

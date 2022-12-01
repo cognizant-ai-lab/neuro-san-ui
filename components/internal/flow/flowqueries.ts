@@ -13,13 +13,20 @@ export class FlowQueries {
         return graph.filter(element => element.type === 'predictornode')
     }
 
+    static getPredictorNode(graph, nodeID: string) {
+        /*
+        This function filters the predictor nodes
+        from the graph and returns the one with the supplied ID, or undefined if not found
+        */
+        return graph.find(element => (element.type === 'predictornode' && element.id === nodeID))
+    }
+
     static getPrescriptorNodes(graph) {
         /*
         This function filters the prescriptor nodes
         from the graph and returns them
         */
-        return graph.filter(
-            element => element.type === 'prescriptornode')
+        return graph.filter(element => element.type === 'prescriptornode')
     }
 
     static getDataNodes(graph) {
@@ -27,6 +34,13 @@ export class FlowQueries {
         This function returns all nodes of type "data" from the graph
         */
         return graph.filter(element => element.type === 'datanode')
+    }
+
+    static getUncertaintyModelNodes(graph) {
+        /*
+        This function returns all nodes of type "uncertaintymodelnode" from the graph
+        */
+        return graph.filter(element => element.type === 'uncertaintymodelnode')
     }
 
     static extractCheckedFields(nodes, caoType: CAOType) {

@@ -1,14 +1,23 @@
 // React components
-import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {InfoSignIcon, Popover, Position, Tab, Tablist, Text, Tooltip,} from "evergreen-ui"
-import {useSession} from "next-auth/react"
-
-import Slider from 'rc-slider'
-import 'rc-slider/assets/index.css'
 import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react'
 
 // 3rd party components
 import {Card} from "react-bootstrap"
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {
+    InfoSignIcon,
+    Popover,
+    Position,
+    Tab,
+    Tablist,
+    Text,
+    Tooltip,
+} from "evergreen-ui"
+import {BsPlusSquare} from "react-icons/bs"
+import { GrSettingsOption } from "react-icons/gr"
+import Slider from 'rc-slider'
+import 'rc-slider/assets/index.css'
+import {useSession} from "next-auth/react"
 
 // React Flow
 import {
@@ -17,13 +26,16 @@ import {
 } from 'react-flow-renderer'
 
 import {AiFillDelete} from "react-icons/ai";
-import {GrSettingsOption} from "react-icons/gr"
 import {StringBool} from "../../../../controller/base_types"
-import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
 
 // Controllers
-import {FetchMetrics, FetchParams, FetchPredictors} from '../../../../controller/predictor'
+import {
+    FetchMetrics,
+    FetchParams,
+    FetchPredictors
+} from '../../../../controller/predictor'
+import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {PredictorParams} from "../predictorinfo"
 
 
@@ -62,7 +74,10 @@ export interface PredictorNodeData {
     readonly SetParentPredictorState: Dispatch<SetStateAction<PredictorState>>,
 
     // Mutator method to delete this node from the parent flow
-    readonly DeleteNode: (nodeID: string) => void
+    readonly DeleteNode: (nodeID: string) => void,
+
+    // Mutator method for adding an uncertainty model node to the parent Flow
+    readonly AddUncertaintyModelNode: (nodeID: string) => void
 }
 
 
@@ -80,7 +95,7 @@ export default function PredictorNode(props): ReactElement {
     const currentUser: string = session.user.name
 
     // Unpack the data
-    const { NodeID, ParentPredictorState, SetParentPredictorState, DeleteNode } = data
+    const { NodeID, ParentPredictorState, SetParentPredictorState, DeleteNode, AddUncertaintyModelNode } = data
 
     // Fetch the available metrics and predictors and these are not state dependant
     const metrics = {
@@ -293,7 +308,7 @@ export default function PredictorNode(props): ReactElement {
                                                     <option id={ `${NodeID}-predictor-classifier` } value="classifier">
                                                         Classifier
                                                     </option>
-                                                    <option disabled id={ `${NodeID}-predictor-byo` } 
+                                                    <option disabled id={ `${NodeID}-predictor-byo` }
                                                         value="byop">
                                                             Bring your own (Coming Soon)
                                                     </option>
@@ -326,7 +341,7 @@ export default function PredictorNode(props): ReactElement {
 
                                         <div className="flex justify-between mb-4 content-center">
                                             <label className="m-0">Metric: </label>
-                                            <select id={ `${NodeID}-predictor-metric-select` } 
+                                            <select id={ `${NodeID}-predictor-metric-select` }
                                                 name={ `${NodeID}-metric` } 
                                                 value={ ParentPredictorState.selectedMetric }
                                                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
@@ -411,7 +426,7 @@ export default function PredictorNode(props): ReactElement {
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "password" && (
                                                                 <input id={ `${NodeID}-predictor-password-input` }
-                                
+
                                                                     className="w-full"
                                                                     type="password"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -433,6 +448,8 @@ export default function PredictorNode(props): ReactElement {
                                         </Card.Body>
 
     // Create the data split card
+
+    const isRegressor: boolean = ParentPredictorState.selectedPredictorType === "regressor"
     const DataSplitConfigurationPanel = <Card.Body>
         <div className="flex justify-between mb-4 content-center"
              onMouseDown={ (event) => { event.stopPropagation() } }
@@ -483,121 +500,152 @@ export default function PredictorNode(props): ReactElement {
     return <BlueprintCard
         interactive={ true } 
         elevation={ Elevation.TWO } 
-        style={ { padding: 0, width: "10rem", height: "4rem" } }>
-                
+        style={{ padding: 0, width: "10rem", height: "4rem" }}>
             <Card border="warning" style={{ height: "100%" }}>
-                    <Card.Body className="flex justify-center content-center">
-                        <Text className="mr-2">{ ParentPredictorState.selectedPredictor || "Predictor" }</Text>
-                        <Popover
-                        content={
-                            <>
-                                <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-                                        {tabs.map((tab, index) => (
-                                    <Tab
-                                        key={tab}
-                                        id={tab}
-                                        onSelect={() => setSelectedIndex(index)}
-                                        isSelected={index === selectedIndex}
-                                        aria-controls={`panel-${tab}`}
-                                    >
-                                        {tab}
-                                    </Tab>
-                                    ))}
-                                </Tablist>
-                                { selectedIndex === 0  && PredictorSelectionPanel }
-                                { selectedIndex === 1  && PredictorConfigurationPanel }
-                                { selectedIndex === 2  && DataSplitConfigurationPanel }
-                            </>
-                        }
-                        >   
-                            <div className="flex">
-                                <button type="button" 
+                <Card.Body className="flex justify-center content-center">
+                    <Text className="mr-2">{ ParentPredictorState.selectedPredictor || "Predictor" }</Text>
+                    <Popover content={
+                        <>
+                            <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
+                                    {tabs.map((tab, index) => (
+                                <Tab
+                                    key={tab}
+                                    id={tab}
+                                    onSelect={() => setSelectedIndex(index)}
+                                    isSelected={index === selectedIndex}
+                                    aria-controls={`panel-${tab}`}
+                                >
+                                    {tab}
+                                </Tab>
+                                ))}
+                            </Tablist>
+                            { selectedIndex === 0  && PredictorSelectionPanel }
+                            { selectedIndex === 1  && PredictorConfigurationPanel }
+                            { selectedIndex === 2  && DataSplitConfigurationPanel }
+                        </>
+                    }
+                         statelessProps={{
+                             backgroundColor: "ghostwhite"
+                         }}
+                    >
+                        <div className="flex">
+                            <button type="button"
                                         id={ `${NodeID}-predictor-gr-settings-option-button` }
-                                        className="mt-1"
-                                        style={{height: 0}}> <GrSettingsOption /></button>
-                            </div>
-                        </Popover>
-                        <Popover
-                            position={Position.LEFT}
-                            content={
-                                <Card.Body 
-                                className="overflow-y-auto h-40 text-xs">
-                                    <Text className="mb-2">Context</Text>
-                                    {
-                                        Object.keys(ParentPredictorState.caoState.context).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
+                                    className="mt-1"
+                                    style={{height: 0}}>
+                                <GrSettingsOption />
+                            </button>
+                        </div>
+                    </Popover>
+                    <Popover
+                        position={Position.LEFT}
+                        content={
+                            <Card.Body
+                            className="overflow-y-auto h-40 text-xs">
+                                <Text className="mb-2">Context</Text>
+                                {
+                                    Object.keys(ParentPredictorState.caoState.context).map(element =>
+                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                        <label className="capitalize"> {element} </label>
                                             <input name={element}
                                                 id={ `${NodeID}-predictor-context-input` }
-                                                type="checkbox" 
-                                                defaultChecked={true}
-                                                checked={ParentPredictorState.caoState.context[element]}
-                                                onChange={event => onUpdateCAOState(event, "context")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
-                            >
+                                        type="checkbox"
+                                        defaultChecked={true}
+                                        checked={ParentPredictorState.caoState.context[element]}
+                                        onChange={event => onUpdateCAOState(event, "context")}/>
+                                    </div>)
+                                }
+                            </Card.Body>
+                        }
+                        >
                             <button type="button"
                                 id={ `${NodeID}-predictor-context-button` }
                                 className="absolute top-2 -left-4"
                                 style={{height: 0}}>C</button>
-                        </Popover>
-                        <Popover
-                            position={Position.LEFT}
-                            content={
-                                <Card.Body 
-                                className="overflow-y-auto h-40 text-xs"
-                                style={{zIndex: 1000}}
-                                >
-                                    <Text className="mb-2">Actions</Text>
-                                    {
-                                        Object.keys(ParentPredictorState.caoState.action).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
-                                            <input id={ `${NodeID}-predictor-actions-input` }
-                                                name={element}
-                                                type="checkbox" 
-                                                defaultChecked={true}
-                                                checked={ParentPredictorState.caoState.action[element]}
-                                                onChange={event => onUpdateCAOState(event, "action")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
+                    </Popover>
+                    <Popover
+                        position={Position.LEFT}
+                        content={
+                            <Card.Body
+                            className="overflow-y-auto h-40 text-xs"
+                            style={{zIndex: 1000}}
                             >
-                            <button type="button" 
-                                    id={ `${NodeID}-predictor-actions-button` }
-                                    className="absolute bottom-6 -left-4"
-                                    style={{height: 0}}>A</button>
-                        </Popover>
-                        <Popover
-                            position={Position.RIGHT}
-                            content={
-                                <Card.Body 
-                                className="overflow-y-auto h-40 text-xs">
-                                    <Text className="mb-2">Outcomes</Text>
-                                    {
-                                        Object.keys(ParentPredictorState.caoState.outcome).map(element =>
+                                <Text className="mb-2">Actions</Text>
+                                {
+                                    Object.keys(ParentPredictorState.caoState.action).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
+                                        <label className="capitalize"> {element} </label>
+                                            <input id={ `${NodeID}-predictor-actions-input` }
+                                        name={element}
+                                        type="checkbox"
+                                        defaultChecked={true}
+                                        checked={ParentPredictorState.caoState.action[element]}
+                                        onChange={event => onUpdateCAOState(event, "action")}/>
+                                    </div>)
+                                }
+                            </Card.Body>
+                        }
+                        >
+                        <button type="button"
+                                    id={ `${NodeID}-predictor-actions-button` }
+                                className="absolute bottom-6 -left-4"
+                                style={{height: 0}}>A</button>
+                    </Popover>
+                    <Popover
+                        position={Position.RIGHT}
+                        content={
+                            <Card.Body
+                            className="overflow-y-auto h-40 text-xs">
+                                <Text className="mb-2">Outcomes</Text>
+                                {
+                                    Object.keys(ParentPredictorState.caoState.outcome).map(element =>
+                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                        <label className="capitalize"> {element} </label>
                                             <input name={element}
                                                 id={ `${NodeID}-predictor-outcomes-input` }
-                                                type="checkbox" 
-                                                defaultChecked={false}
-                                                checked={ParentPredictorState.caoState.outcome[element]}
-                                                onChange={event => onUpdateCAOState(event, "outcome")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
-                            >
-                            <button type="button" 
+                                        type="checkbox"
+                                        defaultChecked={false}
+                                        checked={ParentPredictorState.caoState.outcome[element]}
+                                        onChange={event => onUpdateCAOState(event, "outcome")}/>
+                                    </div>)
+                                }
+                            </Card.Body>
+                        }
+                        >
+                        <button type="button"
                                     id={ `${NodeID}-predictor-outcomes-button` }
-                                    className="absolute top-5 -right-4"
-                                    style={{height: 0}}>O</button>
-                        </Popover>
-                    </Card.Body>
+                                className="absolute top-5 -right-4"
+                                style={{height: 0}}>O</button>
+                    </Popover>
+                    <Tooltip
+                        showDelay={1}
+                        content={
+                            isRegressor
+                                ? "Add uncertainty model node"
+                                : "Uncertainty models are not currently supported for this type of predictor"
+                        }
+                    >
+                        <div className="px-1 my-1"
+                             style={{
+                                 position: "absolute",
+                                 right: "1px",
+                             }}
+                        >
+                            <button type="button"
+                                    id="add-uncertainty-node-button"
+                                    disabled={!isRegressor}
+                                    style={{
+                                        height: 15,
+                                        cursor: isRegressor ? "pointer" : "not-allowed",
+                                        opacity: isRegressor ? "100%" : "50%"
+                                    }}
+                                    onClick={() => AddUncertaintyModelNode(NodeID)}
+                            >
+                                <BsPlusSquare size="0.6em" />
+                            </button>
+                        </div>
+                    </Tooltip>
+                </Card.Body>
                     <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
                         <button type="button"
                                 id="delete-me"
@@ -610,7 +658,7 @@ export default function PredictorNode(props): ReactElement {
                             <AiFillDelete size="10"/>
                         </button>
                     </div>
-                </Card>
+            </Card>
 
                 <Handle type="source" position={HandlePosition.Right} />
                 <Handle type="target" position={HandlePosition.Left} />
