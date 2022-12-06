@@ -202,7 +202,8 @@ export default function NewProject(props: NewProps) {
             name: datasetName,
             s3_key: s3Key,
             request_user: currentUser,
-            rejectedColumns: profile.data_source.rejectedColumns
+            rejectedColumns: profile.data_source.rejectedColumns,
+            headers: profile.data_source.headers
         }
 
         const savedDataSource: DataSource = await AccessionDatasource(dataSourceMessage)

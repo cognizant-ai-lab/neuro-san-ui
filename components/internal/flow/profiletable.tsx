@@ -61,9 +61,18 @@ export default function ProfileTable(props: ProfiletableProps) {
     const tableCellClassName = "px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
     const rangeTableCellClassName = "px-2 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
 
-    const fieldRows = profile != null
-    ? Object.keys(profile.data_tag.fields).map((field) =>
-        <tr key={field} style={{backgroundColor: caoColorCoding[profile.data_tag.fields[field].esp_type]}}>
+    // Fields are alphabetically sorted by data profiler
+    const fields = profile ? profile.data_tag.fields : {}
+
+    // Headers should be in CSV column order. For backward compatibility, use data tag fields if headers missing
+    const headers = profile ? profile.data_source.headers || Object.keys(fields) : []
+
+    // Only display fields that weren't dropped by DataProfiler due to errors
+    const fieldsInCsvOrder = headers.filter(header => Object.keys(fields).includes(header))
+
+    // Accumulate rows, one per field
+    const fieldRows = fieldsInCsvOrder.map((field) =>
+        <tr key={field} style={{backgroundColor: caoColorCoding[fields[field].esp_type]}}>
             <td className={tableCellClassName}>
                 <span className={"px-2 inline-flex text-xs leading-5 font-semibold rounded-full"}>
                     {field}
@@ -72,7 +81,7 @@ export default function ProfileTable(props: ProfiletableProps) {
             <td className={tableCellClassName}>
                 <select id="data-field-select"
                     name={`${field}-esp_type`}
-                    value={profile.data_tag.fields[field].esp_type}
+                    value={fields[field].esp_type}
                     className="w-32"
                     onChange={event => {
                         const profileCopy = {...profile}
@@ -88,7 +97,7 @@ export default function ProfileTable(props: ProfiletableProps) {
             <td className={tableCellClassName}>
                 <select id="data-type-select"
                     name={`${field}-data_type`}
-                    value={profile.data_tag.fields[field].data_type}
+                    value={fields[field].data_type}
                     className="w-32"
                     onChange={event => {
                         const profileCopy = {...profile}
@@ -105,7 +114,7 @@ export default function ProfileTable(props: ProfiletableProps) {
             <td className={tableCellClassName}>
                 <select id="data-continuity-select"
                     name={`${field}-valued`}
-                    value={profile.data_tag.fields[field].valued}
+                    value={fields[field].valued}
                     className="w-32"
                     onChange={event => {
                         const profileCopy = {...profile}
@@ -124,7 +133,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                 </select>
             </td>
             <td className={tableCellClassName}>
-                {profile.data_tag.fields[field].valued === "CATEGORICAL" ?
+                {fields[field].valued === "CATEGORICAL" ?
                     <span style={{"display": "flex"}}>
                     <select id="categorical-select"
                         name={`${field}-values`}
@@ -135,7 +144,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                             Click for values:
                         </option>
                         {
-                            profile.data_tag.fields[field].discrete_categorical_values.map(
+                            fields[field].discrete_categorical_values.map(
                                 (item) => (<option id={ `categorical-value-${item}` }
                                                 value={item} key={item} disabled>{item}</option>))
                         }
@@ -146,7 +155,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                             e.preventDefault()
 
                             setFieldBeingEditedName(field)
-                            setCurrentCategoryValues(profile.data_tag.fields[field].discrete_categorical_values)
+                            setCurrentCategoryValues(fields[field].discrete_categorical_values)
                             setFieldEditorVisible(true)
                         }}
                     > <AiFillEdit size='14' style={{cursor: "pointer"}}/> </button>
@@ -154,12 +163,12 @@ export default function ProfileTable(props: ProfiletableProps) {
                 }
             </td>
             <td className={rangeTableCellClassName}>
-                {profile.data_tag.fields[field].valued === "CONTINUOUS" ?
+                {fields[field].valued === "CONTINUOUS" ?
                     <Form.Group className="mb-3">
                         <Form.Control
                             name={`${field}-min-range`}
                             type="number"
-                            value={profile.data_tag.fields[field].range[0]}
+                            value={fields[field].range[0]}
                             onChange={event => {
                                 const profileCopy = {...profile}
                                 profileCopy.data_tag.fields[field].range[0] = parseFloat(event.target.value)
@@ -169,11 +178,11 @@ export default function ProfileTable(props: ProfiletableProps) {
                 }
             </td>
             <td className={rangeTableCellClassName}>
-                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? <Form.Group className="mb-3">
+                {fields[field].valued === "CONTINUOUS" ? <Form.Group className="mb-3">
                     <Form.Control
                         name={`${field}-max-range`}
                         type="number"
-                        value={profile.data_tag.fields[field].range[1]}
+                        value={fields[field].range[1]}
                         onChange={event => {
                             const profileCopy = {...profile};
                             profileCopy.data_tag.fields[field].range[1] = parseFloat(event.target.value)
@@ -183,20 +192,19 @@ export default function ProfileTable(props: ProfiletableProps) {
                 }
             </td>
             <td className={tableCellClassName}>
-                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].mean : "N/A"}
+                {fields[field].valued === "CONTINUOUS" ? fields[field].mean : "N/A"}
             </td>
             <td className={tableCellClassName}>
-                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].sum : "N/A"}
+                {fields[field].valued === "CONTINUOUS" ? fields[field].sum : "N/A"}
             </td>
             <td className={tableCellClassName}>
-                {profile.data_tag.fields[field].valued === "CONTINUOUS" ? profile.data_tag.fields[field].std_dev : "N/A"}
+                {fields[field].valued === "CONTINUOUS" ? fields[field].std_dev : "N/A"}
             </td>
             <td className={tableCellClassName}>
-                {profile.data_tag.fields[field].has_nan.toString()}
+                {fields[field].has_nan.toString()}
             </td>
         </tr>
     )
-    : []
 
     function getRejectedColumnRows() {
         if (!profile || !profile.data_source || !profile.data_source.rejectedColumns) {
