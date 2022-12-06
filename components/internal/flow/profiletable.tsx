@@ -61,7 +61,8 @@ export default function ProfileTable(props: ProfiletableProps) {
     const tableCellClassName = "px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
     const rangeTableCellClassName = "px-2 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
 
-    // Fields are alphabetically sorted by data profiler
+    // Fields are in arbitrary order as returned from DataProfiler (gRPC runtime jumbles the keys since maps are
+    // defined as not having a key order)
     const fields = profile ? profile.data_tag.fields : {}
 
     // Headers should be in CSV column order. For backward compatibility, use data tag fields if headers missing
