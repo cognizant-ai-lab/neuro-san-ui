@@ -47,7 +47,7 @@ If you've made this far, you may try a simple change within the UI.
 Here's an example:
 - Modify `nextfront/pages/projects/[projectID]/index.tsx`
   - add a logging message at the appropriate place in the tsx file
-    - `console.log(`Loaded project: ${projectId}`)`
+    - `console.log(`` `Loaded project: ${projectId}` ``)`
 - You should notice that the code is compiled automatically and your change appears in the console output of the ui when loading a project.
 
 ## Learn More About Next.js
