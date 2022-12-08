@@ -2,10 +2,14 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Set Up Prerequisites
 
-- Install `yarn` on your development host. Example using current version on mac: `brew install yarn@1.22.19`
-- Install `node` on your development host. Example using current version on mac: `brew install node@16`
-- Install app dependencies. Assuming you've cloned the unileaf repo: `cd unileaf/nextfront && yarn install`
-- Set env variable to specify the gateway. Most likely you'll want the dev namespace: `export MD_SERVER_URL=https://gateway-dev.unileaf.evolution.ml:30002`
+- Install `yarn` on your development host.
+  - Example using current version on mac: `brew install yarn@1.22.19`
+- Install `node` on your development host. 
+  - Example using current version on mac: `brew install node@16`
+- Install app dependencies. 
+  - Assuming you've cloned the unileaf repo: `cd unileaf/nextfront && yarn install`
+- Set env variable to specify the gateway. 
+  - Most likely you'll want the dev namespace: `export MD_SERVER_URL=https://gateway-dev.unileaf.evolution.ml:30002`
 - In your nextfront directory, create a file named `.env` which contains the following keys. Ask a current UI developer for the values.
 ```
 NEXTAUTH_URL=http://localhost:3000
