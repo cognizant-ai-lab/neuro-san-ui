@@ -1,7 +1,5 @@
-import Debug from "debug"
 import sortByTime from "../utils/sort"
-import {MDServerObject, MDServerResponse} from "./base_types";
-import {NotificationType, sendNotification} from "./notification";
+import {MDServerObject, MDServerResponse} from "./base_types"
 
 // HackyStream implements streaming a specific resource from the MD Server using a regex hack
 // By virtue of this hack it currently stores the whole stream in memory.
@@ -21,14 +19,17 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     }
 
     // Fetch the URL
-    const response = await fetch(url, requestParams)
-
-    // Instantiate logger
-    const debug = Debug(`Fetch ${resourceName}`)
+    let response
+    try {
+        response = await fetch(url, requestParams)
+    } catch (e) {
+        console.error(`Error fetching url: ${url} for resource: ${resourceName}: `, e)
+        return null
+    }
 
     // Check for error
     if (response.status != 200) {
-        sendNotification(NotificationType.error, `Failed to fetch ${resourceName}`, response.statusText)
+        console.error(`Failed to fetch ${resourceName}`, response.statusText)
         return null
     }
 
@@ -46,7 +47,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
             buffer += chunk
         } catch (e) {
             // invalid json input, log the error
-            debug(`Error Serializing ${resourceName}: `, e)
+            console.error(`Error Serializing ${resourceName}: `, e)
         }
     }
 
