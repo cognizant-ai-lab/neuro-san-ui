@@ -123,14 +123,6 @@ export interface DeployRequest {
     config?: string
 }
 
-interface GetDeploymentRequest {
-    // The unique deployment id
-    deployment_id: string
-
-    // The environment where the model must be queried
-    model_serving_environment: ModelServingEnvironment
-}
-
 export interface GetDeploymentsRequest {
     // If the deployment id is not available filters can
     // be supplied to filter based on labels on the deployment
