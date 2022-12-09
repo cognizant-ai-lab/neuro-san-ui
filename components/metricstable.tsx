@@ -21,6 +21,9 @@ export default function MetricsTable(props: MetricstableProps) {
                     <Table.TextCell>{metricName}</Table.TextCell>
                     <Table.TextCell>{value}</Table.TextCell>
                     <Table.TextCell>{rioMetrics && rioMetrics[metricName]}</Table.TextCell>
+                    <Table.TextCell>
+                        {rioMetrics && (Math.abs(rioMetrics[metricName] - value)/value * 100).toFixed(2)}%
+                    </Table.TextCell>
                 </Table.Row>
             }
         )
@@ -33,6 +36,7 @@ export default function MetricsTable(props: MetricstableProps) {
                         <Table.TextCell><b>Metric</b></Table.TextCell>
                         <Table.TextCell><b>Value</b></Table.TextCell>
                         <Table.TextCell><b>RIO</b></Table.TextCell>
+                        <Table.TextCell><b>RIO diff</b></Table.TextCell>
                     </Table.Head>
                     <Table.Body>
                         {cells}
