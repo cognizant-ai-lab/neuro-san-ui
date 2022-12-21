@@ -8,7 +8,6 @@ import ReactFlow, {
     removeElements
 } from 'react-flow-renderer'
 
-
 // Framework
 import React from 'react'
 
@@ -36,6 +35,7 @@ import {PredictorParams} from "./predictorinfo"
 
 // Debug
 import Debug from "debug"
+
 const debug = Debug("flow")
 
 /*
@@ -58,11 +58,19 @@ interface FlowProps {
     ElementsSelectable: boolean
 }
 
-class FlowState extends React.Component {
+export default class Flow extends React.Component {
     // Declare class Variables
     ProjectID: number
     SetParentState
     protected ElementsSelectable: boolean
+
+    state = {
+        // The flow is the collection of nodes and
+        // edges all identified by a node type and
+        // a uuid
+        flow: [],
+        flowInstance: null
+    }
 
     constructor(props: FlowProps) {
 
@@ -74,19 +82,52 @@ class FlowState extends React.Component {
         this.SetParentState = props.SetParentState
         this.ElementsSelectable = props.ElementsSelectable
 
+        // Initialize the Flow
+        if (props.Flow) {
+
+            // If an existing flow is passed, we just assign the nodes the handlers
+            this.state.flow = props.Flow.map(node => {
+                if (node.type === 'datanode') {
+                    node.data = {
+                        ...node.data,
+                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
+                    }
+                } else if (node.type === 'predictornode') {
+                    node.data = {
+                        ...node.data,
+                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId),
+                        AddUncertaintyModelNode: nodeId => this._addUncertaintyNode(nodeId)
+                    }
+                } else if (node.type === 'prescriptornode') {
+                    node.data = {
+                        ...node.data,
+                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
+                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
+                    }
+                } else if (node.type === 'uncertaintymodelnode') {
+                    node.data = {
+                        ...node.data,
+                        SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, node.id),
+                        DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
+                    }
+                } else if (node.type === "prescriptoredge") {
+                    node.data = {
+                        ...node.data,
+                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(node.id, value)
+                    }
+                }
+
+                return node
+
+            })
+
+            debug("FS: ", this.state.flow)
+
+        } else {
+            this.state.flow = this._initializeFlow()
+        }
     }
-}
-
-class FlowNodeStateUpdateHandler extends FlowState {
-
-    state = {
-        // The flow is the collection of nodes and
-        // edges all identified by a node type and
-        // a uuid
-        flow: [],
-        flowInstance: null
-    }
-
 
     DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
@@ -266,7 +307,7 @@ class FlowNodeStateUpdateHandler extends FlowState {
     PrescriptorSetStateHandler(newState, NodeID) {
         /*
         This Handler is supposed to be triggered by a prescriptor node
-        to update the data it stores withing itself 
+        to update the data it stores withing itself
         The NodeID parameter is used to bind it to the state
         */
         const flow = this.state.flow
@@ -285,63 +326,6 @@ class FlowNodeStateUpdateHandler extends FlowState {
 
     }
 
-}
-
-class FlowUtils extends FlowNodeStateUpdateHandler {
-
-    constructor(props) {
-
-        // Pass Props to parent class
-        super(props)
-
-        // Initialize the Flow
-        if (props.Flow) {
-
-            // If an external flow is passed, we just assign the nodes the handlers
-            this.state.flow = props.Flow.map(node => {
-
-                if (node.type === 'datanode') {
-                    node.data = {
-                        ...node.data,
-                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
-                    }
-                } else if (node.type === 'predictornode') {
-                    node.data = {
-                        ...node.data,
-                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
-                        DeleteNode: nodeId => this._deleteNodeById(nodeId),
-                        AddUncertaintyModelNode: nodeId => this._addUncertaintyNode(nodeId)
-                    }
-                } else if (node.type === 'prescriptornode') {
-                    node.data = {
-                        ...node.data,
-                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
-                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
-                    }
-                } else if (node.type === 'uncertaintymodelnode') {
-                    node.data = {
-                        ...node.data,
-                        SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, node.id),
-                        DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
-                    }
-                } else if (node.type === "prescriptoredge") {
-                    node.data = {
-                        ...node.data,
-                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(node.id, value)
-                    }
-                }
-
-                return node
-
-            })
-
-            debug("FS: ", this.state.flow)
-
-        } else {
-            this.state.flow = this._initializeFlow()
-        }
-    }
-
 
     _initializeFlow() {
         /*
@@ -358,25 +342,25 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         initialGraph.push({
             id: InputDataNodeID,
             type: 'datanode',
-            data: { 
+            data: {
                 ProjectID: this.ProjectID,
                 SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
             },
-            position: { x: 100, y: 100 }
+            position: {x: 100, y: 100}
         })
 
         return initialGraph
     }
 
     _addEdgeToPrescriptorNode(graph,
-        predictorNodeID, prescriptorNodeID) {
+                              predictorNodeID, prescriptorNodeID) {
 
         const graphCopy = [...graph]
         const EdgeId = uuid()
-        graphCopy.push({ 
-            id: EdgeId, 
-            source: predictorNodeID, 
-            target: prescriptorNodeID, 
+        graphCopy.push({
+            id: EdgeId,
+            source: predictorNodeID,
+            target: prescriptorNodeID,
             animated: false,
             type: 'prescriptoredge',
             data: {
@@ -422,10 +406,10 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         node.
         2. If a prescriptor node exists, the predictor is attached to that node.
         */
-    
+
         // Make a copy of the graph
         let graphCopy = this.state.flow.slice()
-    
+
         // Create a unique ID
         const NodeID = uuid()
 
@@ -439,7 +423,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         graphCopy.push({
             id: NodeID,
             type: 'predictornode',
-            data: { 
+            data: {
                 NodeID: NodeID,
                 SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPredictorState: this._getInitialPredictorState(),
@@ -447,26 +431,26 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 DeleteNode: predictorNodeId => this._deleteNodeById(predictorNodeId),
                 AddUncertaintyModelNode: predictorNodeId => this._addUncertaintyNode(predictorNodeId)
             },
-            position: { 
-                x: flowInstanceElem[0].position.x + 250, 
+            position: {
+                x: flowInstanceElem[0].position.x + 250,
                 y: MaxPredictorNodeY + 100
             }
         })
-    
+
         // Add an Edge to the data node
-        graphCopy.push({ 
-            id: uuid(), 
-            source: InputDataNodeID, 
-            target: NodeID, 
+        graphCopy.push({
+            id: uuid(),
+            source: InputDataNodeID,
+            target: NodeID,
             animated: false,
             type: 'predictoredge'
         })
-    
+
         // Check if Prescriptor Node exists
         const prescriptorNodes = FlowQueries.getPrescriptorNodes(this.state.flow)
 
         // If there's already a prescriptor node, add edge to that prescriptor node
-        if (prescriptorNodes.length != 0) { 
+        if (prescriptorNodes.length != 0) {
             const prescriptorNode = prescriptorNodes[0]
             graphCopy = this._addEdgeToPrescriptorNode(
                 graphCopy,
@@ -482,12 +466,12 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         This function returns the initial prescriptor
         state.
         */
-        return {  
+        return {
             network: {
                 inputs: [{
-                        "name": "Context",
-                        "size": 0,
-                        "values": ["float"]
+                    "name": "Context",
+                    "size": 0,
+                    "values": ["float"]
                 }],
                 hidden_layers: [{
                     layer_name: 'hidden_1',
@@ -496,7 +480,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                         units: 16,
                         activation: 'tanh',
                         use_bias: true
-                    }  
+                    }
                 }],
                 outputs: [
                     {
@@ -539,26 +523,26 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         For predictor nodes that already have uncertainty nodes attached, the newly added prescriptor node is
         connected to the uncertainty node(s) instead of directly to the predictor.
         */
-    
+
         // Check if Prescriptor Node exists
         const prescriptorExists = (FlowQueries.getPrescriptorNodes(this.state.flow)).length != 0
-    
+
         // If it already exists, return
         if (prescriptorExists) {
             sendNotification(NotificationType.warning, "Only one prescriptor per experiment is currently supported")
             return this.state.flow
         }
-    
+
         // Make sure predictor nodes exist, if not alert
         const predictorNodes = FlowQueries.getPredictorNodes(this.state.flow)
         if (predictorNodes.length == 0) {
             sendNotification(NotificationType.warning, "Add at least one predictor before adding a prescriptor")
             return this.state.flow
         }
-        
+
         // If above conditions are satisfied edit the graph
         let graphCopy = this.state.flow.slice()
-    
+
         // Create a unique ID
         const NodeID = uuid()
 
@@ -569,7 +553,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         outcomes = outcomes.filter((value, index, self) => self.indexOf(value) === index)
 
         // Default to maximizing outcomes until user tells us otherwise
-        const fitness = outcomes.map(outcome => ({ metric_name: outcome, maximize: true}))
+        const fitness = outcomes.map(outcome => ({metric_name: outcome, maximize: true}))
 
         // Add a Prescriptor Node
 
@@ -584,7 +568,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         graphCopy.push({
             id: NodeID,
             type: "prescriptornode",
-            data:  { 
+            data: {
                 NodeID: NodeID,
                 SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
                 ParentPrescriptorState: this._getInitialPrescriptorState(fitness),
@@ -593,12 +577,12 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value),
                 DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
             },
-            position: { 
+            position: {
                 x: prescriptorNodeXPos,
                 y: prescriptorNodeYPos
             },
         })
-    
+
         // Add edges to all the predictor nodes
         predictorNodes.forEach(predictorNode => {
             const downstreamNodes = getOutgoers(predictorNode, graphCopy)
@@ -621,7 +605,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
                 )
             }
         })
-    
+
         this.setState({flow: graphCopy})
     }
 
@@ -672,7 +656,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         graphCopy.push({
             id: newNodeID,
             type: "uncertaintymodelnode",
-            data:  {
+            data: {
                 NodeID: newNodeID,
                 ParentUncertaintyNodeState: this._getInitialUncertaintyNodeState(),
                 SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, newNodeID),
@@ -724,11 +708,11 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
     _deleteNode(elementsToRemove, graph) {
         /*
         Since we supply constraints on how nodes interact, i.e in an ESP
-        fashion we cannot allow deletion of any nodes. 
+        fashion we cannot allow deletion of any nodes.
         1. Data Nodes cannot be deleted
         2. If only one predictor exists, deleting that will also delete
         the prescriptor node if it exists.
-    
+
         Note: This edits the graph inPlace
         */
 
@@ -784,7 +768,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
             outcomes = outcomes.filter((value, index, self) => self.indexOf(value) === index)
 
             // Default to maximizing outcomes until user tells us otherwise
-            const fitness = outcomes.map(outcome => ({ metric_name: outcome, maximize: true}))
+            const fitness = outcomes.map(outcome => ({metric_name: outcome, maximize: true}))
 
             graph = graph.map(node => {
                 if (node.type === "prescriptornode") {
@@ -809,7 +793,7 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         this.setState({
             flow: removeElements(removableElements, graph)
         })
-        
+
     }
 
     onNodeDragStop(event, node) {
@@ -831,19 +815,12 @@ class FlowUtils extends FlowNodeStateUpdateHandler {
         }
     }
 
-}
-
-export default class Flow extends FlowUtils {
-
-    constructor(props: FlowProps) {
-        super(props);
-    }
-
     _onElementsRemove(elementsToRemove) {
         this._deleteNode(elementsToRemove, this.state.flow)
     }
-    _onConnect(params) { 
-        this.setState({flow: addEdge(params, this.state.flow)}) 
+
+    _onConnect(params) {
+        this.setState({flow: addEdge(params, this.state.flow)})
     }
 
     _onLoad(reactFlowInstance) {
@@ -855,7 +832,7 @@ export default class Flow extends FlowUtils {
     }
 
     // TODO: what do to about these unused params?
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
     componentDidUpdate(prevProps: Readonly<object>, prevState: Readonly<object>, snapshot?) {
         this.SetParentState && this.SetParentState(this.state.flow)
     }
@@ -900,12 +877,9 @@ export default class Flow extends FlowUtils {
                             left: "0px"
                         }}
                     />
-                    <Background color="#000" gap={5} />
+                    <Background color="#000" gap={5}/>
                 </ReactFlow>
             </div>
         </Container>
     }
-
 }
-
-
