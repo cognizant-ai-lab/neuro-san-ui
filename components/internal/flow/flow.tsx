@@ -9,7 +9,7 @@ import ReactFlow, {
 } from 'react-flow-renderer'
 
 // Framework
-import React from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 
 // ID Gen
 import uuid from "react-uuid"
@@ -58,88 +58,72 @@ interface FlowProps {
     ElementsSelectable: boolean
 }
 
-export default class Flow extends React.Component {
-    // Declare class Variables
-    ProjectID: number
-    SetParentState
-    protected ElementsSelectable: boolean
+export default function Flow(props: FlowProps) {
+    const projectId = props.ProjectID
 
-    state = {
-        // The flow is the collection of nodes and
-        // edges all identified by a node type and
-        // a uuid
-        flow: [],
-        flowInstance: null
-    }
+    const setParentState = props.SetParentState
 
-    constructor(props: FlowProps) {
+    const elementsSelectable = props.ElementsSelectable
 
-        // Pass Props to parent class
-        super(props)
+    const [flowInstance, setFlowInstance] = useState(null)
 
-        // Unpack the variables
-        this.ProjectID = props.ProjectID
-        this.SetParentState = props.SetParentState
-        this.ElementsSelectable = props.ElementsSelectable
+    // The flow is the collection of nodes and edges all identified by a node type and a uuid
+    let initialFlowValue
+    if (props.Flow) {
 
-        // Initialize the Flow
-        if (props.Flow) {
-
-            // If an existing flow is passed, we just assign the nodes the handlers
-            this.state.flow = props.Flow.map(node => {
-                if (node.type === 'datanode') {
-                    node.data = {
-                        ...node.data,
-                        SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
-                    }
-                } else if (node.type === 'predictornode') {
-                    node.data = {
-                        ...node.data,
-                        SetParentPredictorState: state => this.PredictorSetStateHandler(state, node.id),
-                        DeleteNode: nodeId => this._deleteNodeById(nodeId),
-                        AddUncertaintyModelNode: nodeId => this._addUncertaintyNode(nodeId)
-                    }
-                } else if (node.type === 'prescriptornode') {
-                    node.data = {
-                        ...node.data,
-                        SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, node.id),
-                        DeleteNode: nodeId => this._deleteNodeById(nodeId)
-                    }
-                } else if (node.type === 'uncertaintymodelnode') {
-                    node.data = {
-                        ...node.data,
-                        SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, node.id),
-                        DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
-                    }
-                } else if (node.type === "prescriptoredge") {
-                    node.data = {
-                        ...node.data,
-                        UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(node.id, value)
-                    }
+        // If an existing flow is passed, we just assign the nodes the handlers
+        initialFlowValue = props.Flow.map(node => {
+            if (node.type === 'datanode') {
+                node.data = {
+                    ...node.data,
+                    SelfStateUpdateHandler: DataNodeStateUpdateHandler.bind(this)
                 }
+            } else if (node.type === 'predictornode') {
+                node.data = {
+                    ...node.data,
+                    SetParentPredictorState: state => PredictorSetStateHandler(state, node.id),
+                    DeleteNode: nodeId => _deleteNodeById(nodeId),
+                    AddUncertaintyModelNode: nodeId => _addUncertaintyNode(nodeId)
+                }
+            } else if (node.type === 'prescriptornode') {
+                node.data = {
+                    ...node.data,
+                    SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, node.id),
+                    DeleteNode: nodeId => _deleteNodeById(nodeId)
+                }
+            } else if (node.type === 'uncertaintymodelnode') {
+                node.data = {
+                    ...node.data,
+                    SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, node.id),
+                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
+                }
+            } else if (node.type === "prescriptoredge") {
+                node.data = {
+                    ...node.data,
+                    UpdateOutputOverrideCode: value => UpdateOutputOverrideCode(node.id, value)
+                }
+            }
 
-                return node
+            return node
+        })
 
-            })
+        debug("FS: ", initialFlowValue)
 
-            debug("FS: ", this.state.flow)
-
-        } else {
-            this.state.flow = this._initializeFlow()
-        }
+    } else {
+        initialFlowValue = _initializeFlow()
     }
 
-    DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
+    const [flow, setFlow] = useState(initialFlowValue)
+
+    function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
         This handler is used to update the predictor
         and prescriptor nodes with the new data tag
         */
 
-        const flow = this.state.flow
-
         // Update the selected data source
-        this.setState({
-            flow: flow.map(node => {
+        setFlow(
+            flow.map(node => {
                 if (node.type === 'datanode') {
                     debug("Recreating Data node: ", node.type)
                     node.data = {
@@ -157,38 +141,35 @@ export default class Flow extends React.Component {
                 }
                 return node
             })
-        })
-
+        )
     }
 
-    UncertaintyNodeSetStateHandler(newState, NodeID) {
+    function UncertaintyNodeSetStateHandler(newState, NodeID) {
         /*
         Called by uncertainty model nodes to update their state in the flow
          */
-        const flow = this.state.flow
-        this.setState({
-            flow: flow.map(node => {
-                // If this is the right uncertainty model node
-                if (node.id === NodeID) {
-                    node.data = {
-                        ...node.data,
-                        ParentUncertaintyNodeState: newState
+        setFlow(
+            flow.map(node => {
+                    // If this is the right uncertainty model node
+                    if (node.id === NodeID) {
+                        node.data = {
+                            ...node.data,
+                            ParentUncertaintyNodeState: newState
+                        }
                     }
+                    return node;
                 }
-                return node;
-            })
-        })
+            )
+        )
     }
 
-    PredictorSetStateHandler(newState, NodeID) {
+    function PredictorSetStateHandler(newState, NodeID) {
         /*
         This Handler is supposed to be triggered by a predictor node
         to update the data it stores withing itself and the related
         prescriptor edges linked to it.
         The NodeID parameter is used to bind it to the state
         */
-
-        const flow = this.state.flow
 
         // Get all the outgoing prescriptor edges from this predictor and get the
         // target node id
@@ -197,8 +178,8 @@ export default class Flow extends React.Component {
             .filter(elem => elem.type === "prescriptoredge" && elem.source === NodeID)
             .map(elem => elem.target)
 
-        this.setState({
-            flow: flow.map(node => {
+        setFlow(
+            flow.map(node => {
                 // If this is the right predictor node
 
                 if (node.id === NodeID) {
@@ -262,18 +243,17 @@ export default class Flow extends React.Component {
                     }
                 }
                 return node
-            }),
-        })
+            })
+        )
     }
 
-    UpdateOutputOverrideCode(prescriptorEdgeID, value) {
+    function UpdateOutputOverrideCode(prescriptorEdgeID, value) {
         /*
         This function is used to update the code block in the predictor Edge
         used to override the output of the predictor.
         */
-        const flow = this.state.flow
-        this.setState({
-            flow: flow.map(node => {
+        setFlow(
+            flow.map(node => {
                 if (node.id === prescriptorEdgeID) {
                     node.data = {
                         ...node.data,
@@ -282,17 +262,16 @@ export default class Flow extends React.Component {
                 }
                 return node
             })
-        })
+        )
     }
 
-    UpdateEvaluateOverrideCode(prescriptorNodeID, value) {
+    function UpdateEvaluateOverrideCode(prescriptorNodeID, value) {
         /*
         This function is used to update the code block in the predictor Edge
         used to override the output of the predictor.
         */
-        const flow = this.state.flow
-        this.setState({
-            flow: flow.map(node => {
+        setFlow(
+            flow.map(node => {
                 if (node.id === prescriptorNodeID) {
                     node.data = {
                         ...node.data,
@@ -301,19 +280,18 @@ export default class Flow extends React.Component {
                 }
                 return node
             })
-        })
+        )
     }
 
-    PrescriptorSetStateHandler(newState, NodeID) {
+    function PrescriptorSetStateHandler(newState, NodeID) {
         /*
         This Handler is supposed to be triggered by a prescriptor node
         to update the data it stores withing itself
         The NodeID parameter is used to bind it to the state
         */
-        const flow = this.state.flow
 
-        this.setState({
-            flow: flow.map(node => {
+        setFlow(
+            flow.map(node => {
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
@@ -322,12 +300,11 @@ export default class Flow extends React.Component {
                 }
                 return node
             })
-        })
-
+        )
     }
 
 
-    _initializeFlow() {
+    function _initializeFlow() {
         /*
         This function resets the graphs and attaches a Data node.
         */
@@ -343,8 +320,8 @@ export default class Flow extends React.Component {
             id: InputDataNodeID,
             type: 'datanode',
             data: {
-                ProjectID: this.ProjectID,
-                SelfStateUpdateHandler: this.DataNodeStateUpdateHandler.bind(this)
+                ProjectID: projectId,
+                SelfStateUpdateHandler: DataNodeStateUpdateHandler
             },
             position: {x: 100, y: 100}
         })
@@ -352,7 +329,7 @@ export default class Flow extends React.Component {
         return initialGraph
     }
 
-    _addEdgeToPrescriptorNode(graph,
+    function _addEdgeToPrescriptorNode(graph,
                               predictorNodeID, prescriptorNodeID) {
 
         const graphCopy = [...graph]
@@ -365,7 +342,7 @@ export default class Flow extends React.Component {
             type: 'prescriptoredge',
             data: {
                 OutputOverrideCode: OutputOverrideCode,
-                UpdateOutputOverrideCode: value => this.UpdateOutputOverrideCode(
+                UpdateOutputOverrideCode: value => UpdateOutputOverrideCode(
                     EdgeId, value)
             }
         })
@@ -374,7 +351,7 @@ export default class Flow extends React.Component {
 
     }
 
-    _getInitialPredictorState() {
+    function _getInitialPredictorState() {
         /*
         This function returns the initial state of the predictor
         */
@@ -398,7 +375,7 @@ export default class Flow extends React.Component {
         return initialState
     }
 
-    _addPredictorNode() {
+    function _addPredictorNode() {
         /*
         This function adds a predictor node to the Graph while supplying
         several constraints.
@@ -408,13 +385,13 @@ export default class Flow extends React.Component {
         */
 
         // Make a copy of the graph
-        let graphCopy = this.state.flow.slice()
+        let graphCopy = flow.slice()
 
         // Create a unique ID
         const NodeID = uuid()
 
         // Add the Predictor Node
-        const flowInstanceElem = this.state.flowInstance.getElements()
+        const flowInstanceElem = flowInstance.getElements()
         const MaxPredictorNodeY = Math.max(
             ...FlowQueries.getPredictorNodes(flowInstanceElem).map(node => node.position.y),
             flowInstanceElem[0].position.y - 100
@@ -425,11 +402,11 @@ export default class Flow extends React.Component {
             type: 'predictornode',
             data: {
                 NodeID: NodeID,
-                SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
-                ParentPredictorState: this._getInitialPredictorState(),
-                SetParentPredictorState: state => this.PredictorSetStateHandler(state, NodeID),
-                DeleteNode: predictorNodeId => this._deleteNodeById(predictorNodeId),
-                AddUncertaintyModelNode: predictorNodeId => this._addUncertaintyNode(predictorNodeId)
+                SelectedDataSourceId: flow[0].data.DataSource.id,
+                ParentPredictorState: _getInitialPredictorState(),
+                SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
+                DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
+                AddUncertaintyModelNode: predictorNodeId => _addUncertaintyNode(predictorNodeId)
             },
             position: {
                 x: flowInstanceElem[0].position.x + 250,
@@ -447,21 +424,21 @@ export default class Flow extends React.Component {
         })
 
         // Check if Prescriptor Node exists
-        const prescriptorNodes = FlowQueries.getPrescriptorNodes(this.state.flow)
+        const prescriptorNodes = FlowQueries.getPrescriptorNodes(flow)
 
         // If there's already a prescriptor node, add edge to that prescriptor node
         if (prescriptorNodes.length != 0) {
             const prescriptorNode = prescriptorNodes[0]
-            graphCopy = this._addEdgeToPrescriptorNode(
+            graphCopy = _addEdgeToPrescriptorNode(
                 graphCopy,
                 NodeID, prescriptorNode.id
             )
         }
 
-        this.setState({flow: graphCopy})
+        setFlow(graphCopy)
     }
 
-    _getInitialPrescriptorState(fitness) {
+    function _getInitialPrescriptorState(fitness) {
         /*
         This function returns the initial prescriptor
         state.
@@ -515,7 +492,7 @@ export default class Flow extends React.Component {
         }
     }
 
-    _addPrescriptorNode() {
+    function _addPrescriptorNode() {
         /*
         This function adds a prescriptor node to the Graph. The only
         requirement for this is that at least one predictor exists.
@@ -525,23 +502,23 @@ export default class Flow extends React.Component {
         */
 
         // Check if Prescriptor Node exists
-        const prescriptorExists = (FlowQueries.getPrescriptorNodes(this.state.flow)).length != 0
+        const prescriptorExists = (FlowQueries.getPrescriptorNodes(flow)).length != 0
 
         // If it already exists, return
         if (prescriptorExists) {
             sendNotification(NotificationType.warning, "Only one prescriptor per experiment is currently supported")
-            return this.state.flow
+            return flow
         }
 
         // Make sure predictor nodes exist, if not alert
-        const predictorNodes = FlowQueries.getPredictorNodes(this.state.flow)
+        const predictorNodes = FlowQueries.getPredictorNodes(flow)
         if (predictorNodes.length == 0) {
             sendNotification(NotificationType.warning, "Add at least one predictor before adding a prescriptor")
-            return this.state.flow
+            return flow
         }
 
         // If above conditions are satisfied edit the graph
-        let graphCopy = this.state.flow.slice()
+        let graphCopy = flow.slice()
 
         // Create a unique ID
         const NodeID = uuid()
@@ -558,7 +535,7 @@ export default class Flow extends React.Component {
         // Add a Prescriptor Node
 
         // Figure out a logical x-y location for the new prescriptor node based on existing nodes
-        const uncertaintyModelNodes = FlowQueries.getUncertaintyModelNodes(this.state.flow)
+        const uncertaintyModelNodes = FlowQueries.getUncertaintyModelNodes(flow)
         const prescriptorNodeXPos = uncertaintyModelNodes.length > 0
             ? uncertaintyModelNodes[uncertaintyModelNodes.length - 1].position.x + 250
             : predictorNodes[predictorNodes.length - 1].position.x + 250
@@ -570,12 +547,12 @@ export default class Flow extends React.Component {
             type: "prescriptornode",
             data: {
                 NodeID: NodeID,
-                SelectedDataSourceId: this.state.flow[0].data.DataSource.id,
-                ParentPrescriptorState: this._getInitialPrescriptorState(fitness),
-                SetParentPrescriptorState: state => this.PrescriptorSetStateHandler(state, NodeID),
+                SelectedDataSourceId: flow[0].data.DataSource.id,
+                ParentPrescriptorState: _getInitialPrescriptorState(fitness),
+                SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
-                UpdateEvaluateOverrideCode: value => this.UpdateEvaluateOverrideCode(NodeID, value),
-                DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
+                UpdateEvaluateOverrideCode: value => UpdateEvaluateOverrideCode(NodeID, value),
+                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
             },
             position: {
                 x: prescriptorNodeXPos,
@@ -591,7 +568,7 @@ export default class Flow extends React.Component {
                 if (uncertaintyModelNodes && uncertaintyModelNodes.length === 1) {
                     // should only be one uncertainty model node per predictor!
                     const uncertaintyModelNode = uncertaintyModelNodes[0]
-                    graphCopy = this._addEdgeToPrescriptorNode(
+                    graphCopy = _addEdgeToPrescriptorNode(
                         graphCopy,
                         uncertaintyModelNode.id, NodeID
                     )
@@ -599,17 +576,17 @@ export default class Flow extends React.Component {
             } else {
                 // This predictor has no uncertainty model, so just connect the new prescriptor directly to the
                 // predictor.
-                graphCopy = this._addEdgeToPrescriptorNode(
+                graphCopy = _addEdgeToPrescriptorNode(
                     graphCopy,
                     predictorNode.id, NodeID
                 )
             }
         })
 
-        this.setState({flow: graphCopy})
+        setFlow(graphCopy)
     }
 
-    private _getInitialUncertaintyNodeState(): UncertaintyModelParams {
+    function  _getInitialUncertaintyNodeState(): UncertaintyModelParams {
         /*
        This function returns the initial uncertainty node state for when a user first adds the node to the flow
        */
@@ -618,9 +595,7 @@ export default class Flow extends React.Component {
     }
 
     // Adds an uncertainty model node to the specified Predictor
-    _addUncertaintyNode(predictorNodeID: string): void {
-        const flow = this.state.flow;
-
+    function _addUncertaintyNode(predictorNodeID: string): void {
         // Find associated predictor for this RIO node
         const predictorNode = FlowQueries.getPredictorNode(flow, predictorNodeID)
         if (!predictorNode) {
@@ -658,9 +633,9 @@ export default class Flow extends React.Component {
             type: "uncertaintymodelnode",
             data: {
                 NodeID: newNodeID,
-                ParentUncertaintyNodeState: this._getInitialUncertaintyNodeState(),
-                SetParentUncertaintyNodeState: state => this.UncertaintyNodeSetStateHandler(state, newNodeID),
-                DeleteNode: prescriptorNodeId => this._deleteNodeById(prescriptorNodeId)
+                ParentUncertaintyNodeState: _getInitialUncertaintyNodeState(),
+                SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, newNodeID),
+                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
             },
             position: {
                 x: uncertaintyNodeXPos,
@@ -689,23 +664,23 @@ export default class Flow extends React.Component {
             }
 
             // Connect the uncertainty model node to the prescriptor
-            graphCopy = this._addEdgeToPrescriptorNode(graphCopy, newNodeID, prescriptorNode.id)
+            graphCopy = _addEdgeToPrescriptorNode(graphCopy, newNodeID, prescriptorNode.id)
         }
 
         // Save the updated Flow
-        this.setState({flow: graphCopy})
+        setFlow(graphCopy)
     }
 
-    _deleteNodeById(nodeID: string) {
+    function _deleteNodeById(nodeID: string) {
         /*
         Simple "shim" method to allow nodes to delete themselves using their own NodeID, which
         each node knows.
          */
-        const graph = this.state.flow
-        this._deleteNode([FlowQueries.getNodeByID(graph, nodeID)], graph)
+        const graph = flow
+        _deleteNode([FlowQueries.getNodeByID(graph, nodeID)], graph)
     }
 
-    _deleteNode(elementsToRemove, graph) {
+    function _deleteNode(elementsToRemove, graph) {
         /*
         Since we supply constraints on how nodes interact, i.e in an ESP
         fashion we cannot allow deletion of any nodes.
@@ -757,7 +732,7 @@ export default class Flow extends React.Component {
                     .flatMap(node => getIncomers(node, graph)
                         .filter(node => node.type === "predictornode"))
                 for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
-                    graph = this._addEdgeToPrescriptorNode(graph, node.id, prescriptorNodes[0].id)
+                    graph = _addEdgeToPrescriptorNode(graph, node.id, prescriptorNodes[0].id)
                 }
             }
 
@@ -788,22 +763,18 @@ export default class Flow extends React.Component {
 
         }
 
-
         // Clean the node state
-        this.setState({
-            flow: removeElements(removableElements, graph)
-        })
-
+        setFlow(removeElements(removableElements, graph))
     }
 
-    onNodeDragStop(event, node) {
+    function onNodeDragStop(event, node) {
         /*
         This event handler is called when a user moves a node in the flow such as data node, predictor node or
         prescriptor node.
         It is only called when the user finishes moving the node. It updates the current state with the new position
         for the dragged node.
          */
-        const graphCopy = this.state.flow.slice()
+        const graphCopy = flow.slice()
 
         // Locate which node was moved
         const movedNode = graphCopy.find(n => n.id === node.id);
@@ -811,75 +782,74 @@ export default class Flow extends React.Component {
             // Only update if we found the node. There should be no circumstances where the node is not found here
             // since we're in the event handler for the node itself, but just to be careful.
             movedNode.position = node.position
-            this.setState({flow: graphCopy})
+            setFlow(graphCopy)
         }
     }
 
-    _onElementsRemove(elementsToRemove) {
-        this._deleteNode(elementsToRemove, this.state.flow)
+    function _onElementsRemove(elementsToRemove) {
+        _deleteNode(elementsToRemove, flow)
     }
 
-    _onConnect(params) {
-        this.setState({flow: addEdge(params, this.state.flow)})
+    function  _onConnect(params) {
+        setFlow(addEdge(params, flow))
     }
 
-    _onLoad(reactFlowInstance) {
+    function _onLoad(reactFlowInstance) {
         /*
         Helper function to adjust the flow when its loaded.
         */
         reactFlowInstance.fitView();
-        this.setState({flowInstance: reactFlowInstance})
+        setFlowInstance(reactFlowInstance)
     }
 
-    // TODO: what do to about these unused params?
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-    componentDidUpdate(prevProps: Readonly<object>, prevState: Readonly<object>, snapshot?) {
-        this.SetParentState && this.SetParentState(this.state.flow)
-    }
+    const mounted = useRef()
+    useEffect(() => {
+        if (!mounted.current) {
+            // do componentDidMount logic
+            setParentState && setParentState(flow)
+        }
+    })
 
-    render() {
-        // Build the Contents of the Flow
-        return <Container>
-
-            {/* Only render if ElementsSelectable is true */}
-            {this.ElementsSelectable && <div className="grid grid-cols-2 gap-4 mb-4">
-                <Button size="sm"
-                        onClick={this._addPredictorNode.bind(this)}
-                        type="button"
-                        style={{background: MaximumBlue, borderColor: MaximumBlue}}
-                >
-                    Add Predictor
-                </Button>
-                <Button size="sm"
-                        onClick={this._addPrescriptorNode.bind(this)}
-                        type="button"
-                        style={{background: MaximumBlue, borderColor: MaximumBlue}}
-                >
-                    Add Prescriptor
-                </Button>
-            </div>}
-            <div style={{width: '100%', height: "50vh"}}>
-                <ReactFlow
-                    elements={this.state.flow}
-                    onElementsRemove={this._onElementsRemove.bind(this)}
-                    onConnect={this._onConnect}
-                    onLoad={this._onLoad.bind(this)}
-                    snapToGrid={true}
-                    snapGrid={[10, 10]}
-                    nodeTypes={NodeTypes}
-                    edgeTypes={EdgeTypes}
-                    onNodeDragStop={this.onNodeDragStop.bind(this)}
-                >
-                    <Controls
-                        style={{
-                            position: "absolute",
-                            top: "0px",
-                            left: "0px"
-                        }}
-                    />
-                    <Background color="#000" gap={5}/>
-                </ReactFlow>
-            </div>
-        </Container>
-    }
+    // Build the Contents of the Flow
+    return <Container>
+        {/* Only render if ElementsSelectable is true */}
+        {elementsSelectable && <div className="grid grid-cols-2 gap-4 mb-4">
+            <Button size="sm"
+                    onClick={_addPredictorNode.bind(this)}
+                    type="button"
+                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
+            >
+                Add Predictor
+            </Button>
+            <Button size="sm"
+                    onClick={_addPrescriptorNode}
+                    type="button"
+                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
+            >
+                Add Prescriptor
+            </Button>
+        </div>}
+        <div style={{width: '100%', height: "50vh"}}>
+            <ReactFlow
+                elements={flow}
+                onElementsRemove={_onElementsRemove.bind(this)}
+                onConnect={_onConnect}
+                onLoad={_onLoad.bind(this)}
+                snapToGrid={true}
+                snapGrid={[10, 10]}
+                nodeTypes={NodeTypes}
+                edgeTypes={EdgeTypes}
+                onNodeDragStop={onNodeDragStop.bind(this)}
+            >
+                <Controls
+                    style={{
+                        position: "absolute",
+                        top: "0px",
+                        left: "0px"
+                    }}
+                />
+                <Background color="#000" gap={5}/>
+            </ReactFlow>
+        </div>
+    </Container>
 }
