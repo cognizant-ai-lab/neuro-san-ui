@@ -28,6 +28,7 @@
     "@popperjs/core": "2.11.6",
     "antd": "4.24.3",
     "bootstrap": "5.2.3",
+    "dagre": "0.8.5",
     "debug": "4.3.4",
     "evergreen-ui": "6.7.1",
     "http-status": "1.5.3",

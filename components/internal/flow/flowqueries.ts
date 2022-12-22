@@ -1,3 +1,4 @@
+import {isEdge, isNode} from "react-flow-renderer";
 import {CAOType} from "../../../controller/datatag/types";
 
 /**
@@ -80,5 +81,13 @@ export class FlowQueries {
            Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
         */
         return  graph.find(element => element.id === nodeID)
+    }
+
+    static getAllNodes(graph) {
+        return graph.filter(e => isNode(e))
+    }
+
+    static getAllEdges(graph) {
+        return graph.filter(e => isEdge(e))
     }
 }

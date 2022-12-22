@@ -14,6 +14,9 @@ import React, {useEffect, useState} from 'react'
 // ID Gen
 import uuid from "react-uuid"
 
+// Dagre (graph layout library)
+import dagre from 'dagre'
+
 // Custom components
 import {FlowQueries} from "./flowqueries"
 
@@ -121,6 +124,10 @@ export default function Flow(props: FlowProps) {
 
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
     const [flow, setFlow] = useState(initialFlowValue)
+
+    const dagreGraph = new dagre.graphlib.Graph()
+    dagreGraph.setDefaultEdgeLabel(() => ({}))
+    dagreGraph.setGraph({ rankdir: "LR"})
 
     function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
@@ -815,6 +822,44 @@ export default function Flow(props: FlowProps) {
         setParentState && setParentState(flow)
     })
 
+    /**
+     * Tidies up the experiment graph using the "dagr" library
+     * See example {@link https://reactflow.dev/docs/examples/layout/dagre/|here}
+     */
+    function tidyView() {
+        const nodeWidth = 172;
+        const nodeHeight = 36;
+
+        const flowCopy = flow.slice()
+        const nodes = FlowQueries.getAllNodes(flowCopy)
+        const edges = FlowQueries.getAllEdges(flowCopy)
+
+        nodes.forEach((node) => {
+            dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+        });
+
+        edges.forEach((edge) => {
+            dagreGraph.setEdge(edge.source, edge.target);
+        });
+
+        dagre.layout(dagreGraph);
+
+        nodes.forEach((node) => {
+            const nodeWithPosition = dagreGraph.node(node.id);
+            node.targetPosition = 'left'
+            node.sourcePosition = 'right'
+
+            // We are shifting the dagre node position (anchor=center center) to the top left
+            // so it matches the React Flow node anchor point (top left).
+            node.position = {
+                x: nodeWithPosition.x - nodeWidth / 2,
+                y: nodeWithPosition.y - nodeHeight / 2,
+            };
+        })
+
+        setFlow(nodes.concat(edges))
+    }
+
     // Build the Contents of the Flow
     return <Container>
         {/* Only render if ElementsSelectable is true */}
@@ -852,6 +897,7 @@ export default function Flow(props: FlowProps) {
                         top: "0px",
                         left: "0px"
                     }}
+                    onFitView={() => tidyView()}
                 />
                 <Background color="#000" gap={5}/>
             </ReactFlow>
