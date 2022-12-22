@@ -74,7 +74,6 @@ export default function Flow(props: FlowProps) {
 
     const [flowInstance, setFlowInstance] = useState(null)
 
-    // The flow is the collection of nodes and edges all identified by a node type and a uuid
     let initialFlowValue
     if (props.Flow) {
 
@@ -83,7 +82,7 @@ export default function Flow(props: FlowProps) {
             if (node.type === 'datanode') {
                 node.data = {
                     ...node.data,
-                    SelfStateUpdateHandler: DataNodeStateUpdateHandler.bind(this)
+                    SelfStateUpdateHandler: DataNodeStateUpdateHandler
                 }
             } else if (node.type === 'predictornode') {
                 node.data = {
@@ -120,6 +119,7 @@ export default function Flow(props: FlowProps) {
         initialFlowValue = _initializeFlow()
     }
 
+    // The flow is the collection of nodes and edges all identified by a node type and a uuid
     const [flow, setFlow] = useState(initialFlowValue)
 
     function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
@@ -443,6 +443,7 @@ export default function Flow(props: FlowProps) {
         }
 
         setFlow(graphCopy)
+        setParentState(graphCopy)
     }
 
     function _getInitialPrescriptorState(fitness) {
@@ -591,6 +592,7 @@ export default function Flow(props: FlowProps) {
         })
 
         setFlow(graphCopy)
+        setParentState(graphCopy)
     }
 
     function  _getInitialUncertaintyNodeState(): UncertaintyModelParams {
@@ -809,12 +811,8 @@ export default function Flow(props: FlowProps) {
         setFlowInstance(reactFlowInstance)
     }
 
-    const mounted = useRef()
     useEffect(() => {
-        if (!mounted.current) {
-            // do componentDidMount logic
-            setParentState && setParentState(flow)
-        }
+        setParentState && setParentState(flow)
     })
 
     // Build the Contents of the Flow
@@ -822,16 +820,16 @@ export default function Flow(props: FlowProps) {
         {/* Only render if ElementsSelectable is true */}
         {elementsSelectable && <div className="grid grid-cols-2 gap-4 mb-4">
             <Button size="sm"
-                    onClick={_addPredictorNode.bind(this)}
-                    type="button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
+                onClick={() => _addPredictorNode()}
+                type="button"
+                style={{background: MaximumBlue, borderColor: MaximumBlue}}
             >
                 Add Predictor
             </Button>
             <Button size="sm"
-                    onClick={_addPrescriptorNode}
-                    type="button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
+                onClick={() => _addPrescriptorNode()}
+                type="button"
+                style={{background: MaximumBlue, borderColor: MaximumBlue}}
             >
                 Add Prescriptor
             </Button>
@@ -839,14 +837,14 @@ export default function Flow(props: FlowProps) {
         <div style={{width: '100%', height: "50vh"}}>
             <ReactFlow
                 elements={flow}
-                onElementsRemove={_onElementsRemove.bind(this)}
+                onElementsRemove={(elements) => _onElementsRemove(elements)}
                 onConnect={_onConnect}
-                onLoad={_onLoad.bind(this)}
+                onLoad={(instance) => _onLoad(instance)}
                 snapToGrid={true}
                 snapGrid={[10, 10]}
                 nodeTypes={NodeTypes}
                 edgeTypes={EdgeTypes}
-                onNodeDragStop={onNodeDragStop.bind(this)}
+                onNodeDragStop={(event, node) => onNodeDragStop(event, node)}
             >
                 <Controls
                     style={{
