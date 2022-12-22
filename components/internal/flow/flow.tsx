@@ -125,10 +125,6 @@ export default function Flow(props: FlowProps) {
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
     const [flow, setFlow] = useState(initialFlowValue)
 
-    const dagreGraph = new dagre.graphlib.Graph()
-    dagreGraph.setDefaultEdgeLabel(() => ({}))
-    dagreGraph.setGraph({ rankdir: "LR"})
-
     function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
         This handler is used to update the predictor
@@ -814,7 +810,7 @@ export default function Flow(props: FlowProps) {
         /*
         Helper function to adjust the flow when its loaded.
         */
-        reactFlowInstance.fitView();
+        reactFlowInstance.fitView()
         setFlowInstance(reactFlowInstance)
     }
 
@@ -827,9 +823,16 @@ export default function Flow(props: FlowProps) {
      * See example {@link https://reactflow.dev/docs/examples/layout/dagre/|here}
      */
     function tidyView() {
+        const dagreGraph = new dagre.graphlib.Graph()
+        dagreGraph.setDefaultEdgeLabel(() => ({}))
+
+        // Configure for left-to-right layout
+        dagreGraph.setGraph({ rankdir: "LR"})
+
         const nodeWidth = 172;
         const nodeHeight = 36;
 
+        // Don't want to update nodes directly in existing flow so make a copy
         const flowCopy = flow.slice()
         const nodes = FlowQueries.getAllNodes(flowCopy)
         const edges = FlowQueries.getAllEdges(flowCopy)
@@ -858,6 +861,7 @@ export default function Flow(props: FlowProps) {
         })
 
         setFlow(nodes.concat(edges))
+        flowInstance.fitView()
     }
 
     // Build the Contents of the Flow
