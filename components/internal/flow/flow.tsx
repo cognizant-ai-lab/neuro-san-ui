@@ -19,6 +19,7 @@ import dagre from 'dagre'
 
 // Custom components
 import {FlowQueries} from "./flowqueries"
+import {useStateWithCallback} from "../../../utils/react_utils"
 
 // 3rd party components
 import {Button, Container} from "react-bootstrap"
@@ -123,7 +124,7 @@ export default function Flow(props: FlowProps) {
     }
 
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
-    const [flow, setFlow] = useState(initialFlowValue)
+    const [flow, setFlow] = useStateWithCallback(initialFlowValue)
 
     function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
@@ -860,8 +861,9 @@ export default function Flow(props: FlowProps) {
             };
         })
 
-        setFlow(nodes.concat(edges))
-        flowInstance.fitView()
+        // Update flow with new tidied nodes and fit to view
+        const newNodes = nodes.concat(edges);
+        setFlow(newNodes, () => {flowInstance && flowInstance.fitView()})
     }
 
     // Build the Contents of the Flow
