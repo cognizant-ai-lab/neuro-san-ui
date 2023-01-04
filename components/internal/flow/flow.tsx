@@ -9,7 +9,7 @@ import ReactFlow, {
 } from 'react-flow-renderer'
 
 // Framework
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 
 // ID Gen
 import uuid from "react-uuid"
