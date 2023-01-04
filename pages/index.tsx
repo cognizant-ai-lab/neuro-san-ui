@@ -1,5 +1,6 @@
 // Import React
-import React from 'react'
+import React from 'react';
+import {useEffect} from 'react';
 import styled from "styled-components";
 
 import Image from 'next/image'
@@ -106,6 +107,13 @@ const D2DText = styled.p`
 `
 
 export default function Index(): React.ReactElement {
+    // Dynamically set the title to the current host
+    useEffect(() => {
+        var subdomain:string  = window.location.host.split('.')[0]
+        var title:string = subdomain.charAt(0).toUpperCase() + subdomain.slice(1)
+        document.title =`${title}`
+    },[]);
+
   return (
     <OuterContainer>
       <Marginer>
