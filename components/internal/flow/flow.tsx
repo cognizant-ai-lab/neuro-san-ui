@@ -210,7 +210,7 @@ export default function Flow(props: FlowProps) {
                     // currently only uncertainty model nodes.
                     const predictorIds = flow
                         .filter(elem => elem.type === "prescriptoredge" && elem.target === node.id && elem.source != NodeID)
-                        .filter(elem => FlowQueries.getPredictorNode(flow, elem.id))
+                        .filter(elem => FlowQueries.getPredictorNode(flow, elem.source))
                         .map(elem => elem.source)
 
 
