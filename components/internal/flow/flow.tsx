@@ -181,40 +181,25 @@ export default function Flow(props: FlowProps) {
         The NodeID parameter is used to bind it to the state
         */
 
-        // Get all the outgoing prescriptor edges from this predictor and get the
-        // target node id
-
-        const outgoingPrescriptorIds = flow
-            .filter(elem => elem.type === "prescriptoredge" && elem.source === NodeID)
-            .map(elem => elem.target)
-
         setFlow(
             flow.map(node => {
-                // If this is the right predictor node
-
+                // If this is the right predictor node, update its state
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
                         ParentPredictorState: newState
                     }
-                }
-
-                // If the node is a prescriptor that is connected to this node
-                if (node.type === "prescriptornode" && outgoingPrescriptorIds.includes(node.id)) {
+                } else if (node.type === "prescriptornode") {
+                    // Update prescriptor with outcomes from all predictors.
+                    // NOTE: this is simplified logic since we only support one prescriptor right now, so all predictors
+                    // are necessarily connected to it. Will need to revisit this if we ever support multiple
+                    // prescriptors.
 
                     // Find all the predictors connected to this node except the one that triggered
                     // this update. We don't fetch the one that just got updated because the data in
                     // that node is stale. Remember, we are inside the set state handler so the state there
                     // is before the update.
-                    // New: we have to filter out non-predictors connected to this node;
-                    // currently only uncertainty model nodes.
-                    const predictorIds = flow
-                        .filter(elem => elem.type === "prescriptoredge" && elem.target === node.id && elem.source != NodeID)
-                        .filter(elem => FlowQueries.getPredictorNode(flow, elem.source))
-                        .map(elem => elem.source)
-
-
-                    const predictors = flow.filter(elem => predictorIds.includes(elem.id))
+                    const predictors = FlowQueries.getPredictorNodes(flow).filter(node => node.id !== NodeID)
 
                     // Take the Union of all the checked outcomes on the predictors
                     let checkedOutcomes = FlowQueries.extractCheckedFields(predictors, CAOType.OUTCOME)
@@ -229,8 +214,8 @@ export default function Flow(props: FlowProps) {
                     // Make this a set
                     checkedOutcomes = checkedOutcomes.filter((value, index, self) => self.indexOf(value) === index)
 
+                    // Convert checkedOutcomes to fitness structure
                     const fitness = checkedOutcomes.map(outcome => {
-
                         // Maintain the state if it exists otherwise set maximize to true
                         const maximize = node.data.ParentPrescriptorState.evolution.fitness.filter(
                             outcomeDict => outcomeDict.metric_name === outcome
