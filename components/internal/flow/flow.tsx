@@ -195,8 +195,7 @@ export default function Flow(props: FlowProps) {
                     // are necessarily connected to it. Will need to revisit this if we ever support multiple
                     // prescriptors.
 
-                    // Find all the predictors connected to this node except the one that triggered
-                    // this update. We don't fetch the one that just got updated because the data in
+                    // Get all predictors in the experiment except the one that just got updated because the data in
                     // that node is stale. Remember, we are inside the set state handler so the state there
                     // is before the update.
                     const predictors = FlowQueries.getPredictorNodes(flow).filter(node => node.id !== NodeID)
@@ -211,7 +210,7 @@ export default function Flow(props: FlowProps) {
                         }
                     })
 
-                    // Make this a set
+                    // Remove dupe outcomes
                     checkedOutcomes = checkedOutcomes.filter((value, index, self) => self.indexOf(value) === index)
 
                     // Convert checkedOutcomes to fitness structure
