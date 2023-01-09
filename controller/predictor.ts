@@ -1,4 +1,5 @@
 // Import constants
+import { cloneDeep } from "lodash"
 import {
     SUPPORTED_REGRESSION_MODELS,
     SUPPORTED_CLASSIFICATION_MODELS,
@@ -47,9 +48,9 @@ export function FetchParams(predictorType: string, predictorName: string): Predi
     let params
  
     if (predictorType == "regressor") {
-        params = SUPPORTED_REGRESSION_MODELS[predictorName]
+        params = cloneDeep(SUPPORTED_REGRESSION_MODELS[predictorName])
     } else if (predictorType == "classifier") {
-        params = SUPPORTED_CLASSIFICATION_MODELS[predictorName]
+        params = cloneDeep(SUPPORTED_CLASSIFICATION_MODELS[predictorName])
     }
     
     return params

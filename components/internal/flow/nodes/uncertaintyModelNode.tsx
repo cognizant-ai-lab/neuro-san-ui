@@ -154,8 +154,8 @@ export default function UncertaintyModelNode(props): ReactElement {
                                     Object.keys(UNCERTAINTY_MODEL_PARAMS)
                                         .filter(key => !UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
                                         .map(key => {
-                                        return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
-                                    })
+                                            return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
+                                        })
                                 }
                             </div>
                             <div className="mt-4 mb-2">
