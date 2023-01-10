@@ -665,6 +665,7 @@ export default function Flow(props: FlowProps) {
 
         // Save the updated Flow
         setFlow(graphCopy)
+        setParentState(graphCopy)
     }
 
     function _deleteNodeById(nodeID: string) {
@@ -759,8 +760,10 @@ export default function Flow(props: FlowProps) {
 
         }
 
-        // Clean the node state
-        setFlow(removeElements(removableElements, graph))
+        // Update the flow, removing the deleted nodes
+        const flowWithElementsDeleted = removeElements(removableElements, graph);
+        setFlow(flowWithElementsDeleted)
+        setParentState(flowWithElementsDeleted)
     }
 
     function onNodeDragStop(event, node) {
