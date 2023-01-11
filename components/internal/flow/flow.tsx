@@ -1,6 +1,5 @@
 // React Flow
 import ReactFlow, {
-    addEdge,
     Background,
     Controls,
     getConnectedEdges, getIncomers,
