@@ -789,10 +789,6 @@ export default function Flow(props: FlowProps) {
         _deleteNode(elementsToRemove, flow)
     }
 
-    function  _onConnect(params) {
-        setFlow(addEdge(params, flow))
-    }
-
     function _onLoad(reactFlowInstance) {
         /*
         Helper function to adjust the flow when its loaded.
@@ -875,7 +871,7 @@ export default function Flow(props: FlowProps) {
             <ReactFlow
                 elements={flow}
                 onElementsRemove={(elements) => _onElementsRemove(elements)}
-                onConnect={_onConnect}
+                onConnect={void(0)}  // Prevent user manually connecting nodes
                 onLoad={(instance) => _onLoad(instance)}
                 snapToGrid={true}
                 snapGrid={[10, 10]}
