@@ -150,6 +150,17 @@ export default function PredictorNode(props): ReactElement {
                         predictorParams[key].value = predictorParams[key].default_value
                     }
                 })
+            } else {
+                const keys = Object.keys(
+                    FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+                )
+
+                // Make sure predictor config items are presented to the user in consistent order
+                // We sort them in the same order as the keys in the definition in SUPPORTED_REGRESSION_MODELS
+                predictorParams = Object.fromEntries(
+                    Object.entries(predictorParams)
+                        .sort((field1, field2) => keys.indexOf(field1[0]) - keys.indexOf(field2[0]))
+                )
             }
 
             // Build the CAO State for the data tag from the given data source id
