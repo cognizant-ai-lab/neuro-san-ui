@@ -76,13 +76,13 @@ export default function UncertaintyModelNode(props): ReactElement {
     function getInputComponent(param, item) {
         return <div className="grid grid-cols-10 gap-4 mb-2" key={param} >
                 <div className="item1 col-span-5">
-                    <label className="capitalize">{param}: </label>
+                    <label className="capitalize" id={`${param}-label`}>{param}: </label>
                 </div>
                 <div className="item2 col-span-4">
                     {
                         item.type === ParamType.INT &&
                         <input
-                            id={`config-item-${param}`}
+                            id={`${param}-value`}
                             type="number"
                             step="1"
                             value={ParentUncertaintyNodeState[param].value.toString()}
@@ -93,7 +93,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                     {
                         item.type === ParamType.BOOLEAN && 
                             <input
-                                id={`config-item-${param}`}
+                                id={`${param}-value`}
                                 type="checkbox"
                                 checked={Boolean(ParentUncertaintyNodeState[param].value)}
                                 onChange={event => onCheckboxChange(event, param)}
@@ -102,7 +102,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                     {
                         item.type === ParamType.ENUM &&
                         <select
-                            id={`config-item-${param}`}
+                            id={`${param}-value`}
                             value={ParentUncertaintyNodeState[param].value.toString()}
                             onChange={event => onParamChange(event, param)}
                             style={{width: "100%"}}
@@ -111,8 +111,9 @@ export default function UncertaintyModelNode(props): ReactElement {
                                 (item.allValues as Array<string>).map(
                                     value =>
                                         <option
-                                            id={`select-item-${value}`}
-                                            key={value} value={ value }>{ value }
+                                            id={`${param}-${value}`}
+                                            key={value} value={ value }>
+                                            { value }
                                         </option>
                                 )
                             }
