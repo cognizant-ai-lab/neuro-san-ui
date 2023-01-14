@@ -132,6 +132,14 @@ export default function PrescriptorNode(props): ReactElement {
                 initializedState.network.outputs[0].size = CAOState.action.length
             }
 
+            if (ParentPrescriptorState.representation_config.max_exponent === 0) {
+                initializedState.representation_config = {
+                    max_exponent: 3,
+                    number_of_building_block_conditions: 1,
+                    number_of_building_block_rules: 3
+                }
+            }
+
             SetParentPrescriptorState({
                 ...initializedState,
                 caoState: CAOState
@@ -285,6 +293,59 @@ export default function PrescriptorNode(props): ReactElement {
     )
     const NeuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
 
+    const createRulesConfig = (representationConfig) =>
+        <div key={`${NodeID}-rules-config`}>
+            <h6 style={{display: "inline"}}>Rules Config</h6>
+            <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
+            >
+                <div>
+                    <label className="mr-2">Max Exponent: </label>
+                    <input style={{width: "2rem"}}
+                        id={ `${NodeID}-prescriptor-units-input` }
+                        type="number" 
+                        step="1" 
+                        value={ representationConfig.max_exponent }
+                        onChange={event => {
+                            const modifiedRulesState = {...ParentPrescriptorState}
+                            modifiedRulesState.representation_config.max_exponent = parseInt(event.target.value)
+                            SetParentPrescriptorState(modifiedRulesState)
+                        }}
+                    /> 
+                </div>
+                <div>
+                    <label className="mr-2">Num Building Block Conditions: </label>
+                    <input style={{width: "2rem"}}
+                        id={ `${NodeID}-prescriptor-num-building-block-conditions-input` }
+                        type="number" 
+                        step="1" 
+                        value={ representationConfig.number_of_building_block_conditions }
+                        onChange={event => {
+                            const modifiedRulesState = {...ParentPrescriptorState}
+                            modifiedRulesState.representation_config.number_of_building_block_conditions = parseInt(event.target.value)
+                            SetParentPrescriptorState(modifiedRulesState)
+                        }}
+                    /> 
+                </div>
+
+                <div>
+                    <label className="mr-2">Num Building Block Rules: </label>
+                    <input style={{width: "2rem"}}
+                        id={ `${NodeID}-prescriptor-num-building-block-rules-input` }
+                        type="number" 
+                        step="1" 
+                        value={ representationConfig.number_of_building_block_rules }
+                        onChange={event => {
+                            const modifiedRulesState = {...ParentPrescriptorState}
+                            modifiedRulesState.representation_config.number_of_building_block_rules = parseInt(event.target.value)
+                            SetParentPrescriptorState(modifiedRulesState)
+                        }}
+                    /> 
+                </div>
+            </div>
+        </div>
+    )
+    const RulesConfiguration = createRulesConfig(ParentPrescriptorState.representation_config)
+
     const PrescriptorRepresentationPanel = <Card.Body>
 
                                                 <div className="flex justify-between mb-4 content-center">
@@ -336,6 +397,10 @@ export default function PrescriptorNode(props): ReactElement {
                                                             >
                                                                 <BiPlusMedical />
                                                             </button>
+                                                        </div>
+
+                                                        ParentPrescriptorState.LEAF.representation === "RuleBased" && <div>
+                                                            {RulesConfiguration}
                                                         </div>
                                                     }
                                                 </div>
