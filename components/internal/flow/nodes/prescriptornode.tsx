@@ -293,7 +293,7 @@ export default function PrescriptorNode(props): ReactElement {
     )
     const NeuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
 
-    const createRulesConfig = (representationConfig) =>
+    const createRulesConfig = (representationConfig) => (
         <div key={`${NodeID}-rules-config`}>
             <h6 style={{display: "inline"}}>Rules Config</h6>
             <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
