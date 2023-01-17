@@ -16,11 +16,11 @@ This README is intended to help a new UI developer get up to speed toward making
 - In your nextfront directory, create a file named `.env` which contains the following keys. Ask a current UI developer for the values.
 ```
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=redacted
-GITHUB_ID=redacted
-GITHUB_SECRET=redacted
-AUTH0_CLIENT_ID=redacted
-AUTH0_CLIENT_SECRET=redacted
+NEXTAUTH_SECRET=<redacted>
+GITHUB_ID=<redacted>
+GITHUB_SECRET=<redacted>
+AUTH0_CLIENT_ID=<redacted>
+AUTH0_CLIENT_SECRET=<redacted>
 AUTH0_ISSUER=https://cognizant-ai.auth0.com/authorize
 AUTH0_DOMAIN=cognizant-ai.auth0.com
 ```
