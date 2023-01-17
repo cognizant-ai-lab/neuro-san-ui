@@ -132,7 +132,7 @@ export default function PrescriptorNode(props): ReactElement {
                 initializedState.network.outputs[0].size = CAOState.action.length
             }
 
-            if (ParentPrescriptorState.representation_config) {
+            if (! ParentPrescriptorState.representation_config) {
                 initializedState.representation_config = {
                     max_exponent: 3,
                     number_of_building_block_conditions: 1,
