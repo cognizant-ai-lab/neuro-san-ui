@@ -60,6 +60,12 @@ interface PrescriptorNodeData {
     readonly DeleteNode: (nodeID: string) => void
 }
 
+// For RuleBased
+const defaultRepresentationConfig = {
+    max_exponent: 3,
+    number_of_building_block_conditions: 1,
+    number_of_building_block_rules: 3
+}
 
 export default function PrescriptorNode(props): ReactElement {
     /*
@@ -133,11 +139,7 @@ export default function PrescriptorNode(props): ReactElement {
             }
 
             if (!("representation_config" in ParentPrescriptorState)) {
-                initializedState.representation_config = {
-                    max_exponent: 3,
-                    number_of_building_block_conditions: 1,
-                    number_of_building_block_rules: 3
-                }
+                initializedState.representation_config = defaultRepresentationConfig
             }
 
             SetParentPrescriptorState({
@@ -350,7 +352,12 @@ export default function PrescriptorNode(props): ReactElement {
             </div>
         </div>
     )
-    const RulesConfiguration = createRulesConfig(ParentPrescriptorState.representation_config)
+
+    let useRepresentationConfig = defaultRepresentationConfig
+    if ("representation_config" in ParentPrescriptorState) {
+        useRepresentationConfig = ParentPrescriptorState.representation_config
+    }
+    const RulesConfiguration = createRulesConfig(useRepresentationConfig)
 
     const PrescriptorRepresentationPanel = <Card.Body>
 
