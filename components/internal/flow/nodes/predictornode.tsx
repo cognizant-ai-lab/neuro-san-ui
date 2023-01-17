@@ -375,11 +375,15 @@ export default function PredictorNode(props): ReactElement {
                                         {   ParentPredictorState.predictorParams &&
                                             Object.keys(ParentPredictorState.predictorParams).map(param =>
                                                 <div className="grid grid-cols-12 gap-4 mb-2" key={param} >
-                                                    <div className="item1 col-span-3"><label className="capitalize">{param}: </label></div>
+                                                    <div className="item1 col-span-3">
+                                                        <label className="capitalize" id={`${param}-label`}>
+                                                            {param}:
+                                                        </label>
+                                                    </div>
                                                     <div className="item2 col-span-8">
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "int" &&
-                                                                <input id={ `${NodeID}-predictor-int-input` }
+                                                                <input id={`${param}-value`}
                                                                     type="number"
                                                                     step="1"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -389,7 +393,7 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "float" &&
-                                                                <input id={ `${NodeID}-predictor-float-input` }
+                                                                <input id={`${param}-value`}
                                                                     type="number"
                                                                     step="0.1"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -399,7 +403,7 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "bool" && (
-                                                                <input id={ `${NodeID}-predictor-bool-input` }
+                                                                <input id={`${param}-value`}
                                                                     type="checkbox"
                                                                     defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
                                                                     checked={Boolean(ParentPredictorState.predictorParams[param].value)}
@@ -409,14 +413,14 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
-                                                            <select id={ `${NodeID}-predictor-params-select` }
+                                                            <select id={`${param}-value`}
                                                                 value={ ParentPredictorState.predictorParams[param].value.toString() }
                                                                 onChange={event => onParamChange(event, param)}
                                                                 className="w-32"
                                                                 >
                                                                 {
                                                                     (ParentPredictorState.predictorParams[param].type as Array<string>).map(
-                                                                        value => <option id={ `${NodeID}-predictor-object-${value}` }
+                                                                        value => <option id={`${param}-${value}`}
                                                                                     key={value} value={ value }>
                                                                                         { value }
                                                                                   </option>)
@@ -425,7 +429,7 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "string" && (
-                                                                <input id={ `${NodeID}-predictor-string-input` }
+                                                                <input id={`${param}-value`}
                                                                     className="w-full"
                                                                     type="text"
                                                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -436,7 +440,7 @@ export default function PredictorNode(props): ReactElement {
                                                         }
                                                         {
                                                             ParentPredictorState.predictorParams[param].type === "password" && (
-                                                                <input id={ `${NodeID}-predictor-password-input` }
+                                                                <input id={`${param}-value`}
 
                                                                     className="w-full"
                                                                     type="password"
@@ -465,7 +469,7 @@ export default function PredictorNode(props): ReactElement {
         <div className="flex justify-between mb-4 content-center"
              onMouseDown={ (event) => { event.stopPropagation() } }
         >
-            <label className="m-0 mr-2">Train: </label>
+            <label className="m-0 mr-2" id="train_label">Train: </label>
             <label>0%</label>
 
             <SliderComponent
@@ -481,7 +485,7 @@ export default function PredictorNode(props): ReactElement {
         <div className="flex justify-between mb-4 content-center"
              onMouseDown={ (event) => { event.stopPropagation() } }
         >
-            <label className="m-0 mr-2">Test: </label>
+            <label className="m-0 mr-2" id="test_label">Test: </label>
             <label>0%</label>
 
             <SliderComponent
@@ -495,9 +499,9 @@ export default function PredictorNode(props): ReactElement {
             <label>100%</label>
         </div>
         <div>
-            <label>
+            <label id="split_rng_label">
                 Data split RNG seed:
-                <input id="split_rng"
+                <input id="split_rng_value"
                        type={"number"}
                        value={ParentPredictorState.rngSeedValue}
                        onChange={ event => { SetParentPredictorState({...ParentPredictorState, rngSeedValue: parseInt(event.target.value)}) } }
