@@ -398,7 +398,8 @@ export default function PrescriptorNode(props): ReactElement {
                                                                 <BiPlusMedical />
                                                             </button>
                                                         </div>
-
+                                                    }
+                                                    {
                                                         ParentPrescriptorState.LEAF.representation === "RuleBased" && <div>
                                                             {RulesConfiguration}
                                                         </div>
