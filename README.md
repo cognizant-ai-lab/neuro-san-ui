@@ -5,23 +5,30 @@ This README is intended to help a new UI developer get up to speed toward making
 
 - Install `yarn` on your development host.
   - Example using current version on mac: `brew install yarn@1.22.19`
+  - For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
 - Install `node` on your development host. 
   - Example using current version on mac: `brew install node@16`
+  - For Ubuntu, see this link: https://joshtronic.com/2021/05/09/how-to-install-nodejs-16-on-ubuntu-2004-lts/
 - Install app dependencies. 
   - Assuming you've cloned the unileaf repo: `cd unileaf/nextfront && yarn install`
 - Set env variable to specify the gateway. 
   - Most likely you'll want the dev namespace: `export MD_SERVER_URL=https://gateway-dev.unileaf.evolution.ml:30002`
-- In your nextfront directory, create a file named `.env` which contains the following keys. Ask a current UI developer for the values.
+- In your nextfront directory, create a file named `.env` which contains the following keys. Ask a current UI developer for the redacted values or get them self-serve from the leaf-team-vault server (see below).
 ```
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=redacted
-GITHUB_ID=redacted
-GITHUB_SECRET=redacted
-AUTH0_CLIENT_ID=redacted
-AUTH0_CLIENT_SECRET=redacted
+NEXTAUTH_SECRET=<redacted>
+GITHUB_ID=<redacted>
+GITHUB_SECRET=<redacted>
+AUTH0_CLIENT_ID=<redacted>
+AUTH0_CLIENT_SECRET=<redacted>
 AUTH0_ISSUER=https://cognizant-ai.auth0.com/authorize
 AUTH0_DOMAIN=cognizant-ai.auth0.com
 ```
+- Values for the redacted can be obtained from the leaf-team vault server with these commands:
+-- vault kv get /secret/auth0/unileaf-dev
+-- vault kv get /secret/github-app/authorize-unileaf-dev
+-- vault kv get /secret/nextauth/unileaf-dev
+- Be sure to chmod 600 this .env file to keep secret values secret
 
 ## Run the development server:
 
