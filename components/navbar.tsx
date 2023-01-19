@@ -80,17 +80,41 @@ function Navbar(props: NavbarProps): React.ReactElement {
                                 </Dropdown.Item>
                               </Dropdown.Menu>
                             </Dropdown>
-                            <Nav.Item className="px-3">
-                                {signedIn && ENABLE_AUTHENTICATION && session && session.user && session.user.image &&
-                                    <Image
-                                        src={session.user.image}
-                                        width="30"
-                                        height="30"
-                                        title={session.user.name}
-                                        alt="..."
-                                    />
-                                }
-                            </Nav.Item>
+                            { signedIn && ENABLE_AUTHENTICATION && session && session.user &&
+                                <Dropdown as={NavItem} >
+                                    <Dropdown.Toggle as={NavLink} className="px-3 py-0"
+                                                     style={{color: NAV_ITEMS_COLOR, background: MaximumBlue}}>
+                                        { session.user.image &&
+                                            <Image
+                                                src={session.user.image}
+                                                width="30"
+                                                height="30"
+                                                title={session.user.name}
+                                                alt="..."
+                                            />
+                                        }
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item target="_blank" style={{ pointerEvents: 'none' }}>
+                                            Signed in as:
+                                        </Dropdown.Item>
+                                        <Dropdown.Item target="_blank" style={{
+                                                    pointerEvents: 'none',
+                                                    fontWeight: 'bold'
+                                                }}>
+                                            {session.user.name}
+                                        </Dropdown.Item>
+                                        <Dropdown.Item divider style={{ pointerEvents: 'none' }}/>
+                                        <Dropdown.Item href="/userguide" target="_blank">
+                                            Your profile
+                                        </Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            }
+                            { (!signedIn || !ENABLE_AUTHENTICATION || !session || !session.user) &&
+                                <Nav.Item className="px-3">
+                                </Nav.Item>
+                            }
                         </Nav>
                     </BootstrapNavbar.Collapse>
                 </Container>
