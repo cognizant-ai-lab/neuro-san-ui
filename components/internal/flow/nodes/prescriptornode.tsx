@@ -313,7 +313,7 @@ export default function PrescriptorNode(props): ReactElement {
                         value={Number(representationConfig.max_exponent)}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.max_exponent = parseInt(event)
+                            modifiedRulesState.representation_config.max_exponent = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     /> 
@@ -328,7 +328,7 @@ export default function PrescriptorNode(props): ReactElement {
                         value={Number(representationConfig.number_of_building_block_conditions)}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.number_of_building_block_conditions = parseInt(event)
+                            modifiedRulesState.representation_config.number_of_building_block_conditions = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     /> 
@@ -343,7 +343,7 @@ export default function PrescriptorNode(props): ReactElement {
                         value={Number(representationConfig.number_of_building_block_rules)}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.number_of_building_block_rules = parseInt(event)
+                            modifiedRulesState.representation_config.number_of_building_block_rules = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     /> 
