@@ -303,7 +303,8 @@ export default function PrescriptorNode(props): ReactElement {
             <h6 style={{display: "inline"}}>Rules Config</h6>
             <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
             >
-                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start">
+                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
+                    onMouseDown={ (event) => { event.stopPropagation() } }>
                     <label className="mr-2" id={ `${NodeID}-prescriptor-max-exponent-label` }>
                         Max Exponent:
                     </label>
@@ -319,7 +320,8 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                     /> 
                 </div>
-                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start">
+                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
+                    onMouseDown={ (event) => { event.stopPropagation() } }>
                     <label className="mr-2" id={ `${NodeID}-prescriptor-num-building-block-conditions-label` }>
                         # Building Block Conditions:
                     </label>
@@ -335,7 +337,8 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                     /> 
                 </div>
-                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start">
+                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
+                    onMouseDown={ (event) => { event.stopPropagation() } }>
                     <label className="mr-2" id={ `${NodeID}-prescriptor-num-building-block-rules-label` }>
                         # Building Block Rules:
                     </label>
