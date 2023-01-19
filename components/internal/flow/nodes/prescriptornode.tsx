@@ -15,6 +15,7 @@ import {
     Tablist, 
     Tab
 } from "evergreen-ui"
+import Slider from 'rc-slider'
 import {AiFillDelete} from "react-icons/ai";
 import { GrSettingsOption } from "react-icons/gr"
 import { MdDelete } from "react-icons/md"
@@ -66,6 +67,8 @@ const defaultRepresentationConfig = {
     number_of_building_block_conditions: 1,
     number_of_building_block_rules: 3
 }
+
+const SliderComponent = Slider.createSliderWithTooltip(Slider);
 
 export default function PrescriptorNode(props): ReactElement {
     /*
@@ -300,51 +303,53 @@ export default function PrescriptorNode(props): ReactElement {
             <h6 style={{display: "inline"}}>Rules Config</h6>
             <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
             >
-                <div>
-                    <label className="mr-2">Max Exponent: </label>
-                    <input style={{width: "2rem"}}
-                        id={ `${NodeID}-prescriptor-units-input` }
-                        type="range" 
-                        step="1" 
-                        min="0"
-                        max="9"
-                        value={ representationConfig.max_exponent }
+                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
+                    onMouseDown={ (event) => { event.stopPropagation() } }>
+                    <label className="mr-2" id={ `${NodeID}-prescriptor-max-exponent-label` }>
+                        Max Exponent:
+                    </label>
+                    <SliderComponent style={{width: "100%"}}
+                        step={1} 
+                        min={0}
+                        max={9}
+                        value={Number(representationConfig.max_exponent)}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.max_exponent = parseInt(event.target.value)
+                            modifiedRulesState.representation_config.max_exponent = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     /> 
                 </div>
-                <div>
-                    <label className="mr-2">Num Building Block Conditions: </label>
-                    <input style={{width: "2rem"}}
-                        id={ `${NodeID}-prescriptor-num-building-block-conditions-input` }
-                        type="range" 
-                        step="1" 
-                        min="1"
-                        max="9"
-                        value={ representationConfig.number_of_building_block_conditions }
+                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
+                    onMouseDown={ (event) => { event.stopPropagation() } }>
+                    <label className="mr-2" id={ `${NodeID}-prescriptor-num-building-block-conditions-label` }>
+                        # Building Block Conditions:
+                    </label>
+                    <SliderComponent style={{width: "100%"}}
+                        step={1} 
+                        min={1}
+                        max={9}
+                        value={Number(representationConfig.number_of_building_block_conditions)}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.number_of_building_block_conditions = parseInt(event.target.value)
+                            modifiedRulesState.representation_config.number_of_building_block_conditions = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     /> 
                 </div>
-
-                <div>
-                    <label className="mr-2">Num Building Block Rules: </label>
-                    <input style={{width: "2rem"}}
-                        id={ `${NodeID}-prescriptor-num-building-block-rules-input` }
-                        type="range" 
-                        step="1" 
-                        min="1"
-                        max="99"
-                        value={ representationConfig.number_of_building_block_rules }
+                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
+                    onMouseDown={ (event) => { event.stopPropagation() } }>
+                    <label className="mr-2" id={ `${NodeID}-prescriptor-num-building-block-rules-label` }>
+                        # Building Block Rules:
+                    </label>
+                    <SliderComponent style={{width: "100%"}}
+                        step={1} 
+                        min={1}
+                        max={99}
+                        value={Number(representationConfig.number_of_building_block_rules)}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.number_of_building_block_rules = parseInt(event.target.value)
+                            modifiedRulesState.representation_config.number_of_building_block_rules = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     /> 
@@ -357,7 +362,6 @@ export default function PrescriptorNode(props): ReactElement {
     if ("representation_config" in ParentPrescriptorState) {
         useRepresentationConfig = ParentPrescriptorState.representation_config
     }
-    const RulesConfiguration = createRulesConfig(useRepresentationConfig)
 
     const PrescriptorRepresentationPanel = <Card.Body>
 
@@ -414,7 +418,7 @@ export default function PrescriptorNode(props): ReactElement {
                                                     }
                                                     {
                                                         ParentPrescriptorState.LEAF.representation === "RuleBased" && <div>
-                                                            {RulesConfiguration}
+                                                            {createRulesConfig(useRepresentationConfig)}
                                                         </div>
                                                     }
                                                 </div>
