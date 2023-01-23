@@ -18,7 +18,7 @@ export default function MetricsTable(props: MetricstableProps) {
         const cells = Object.keys(metrics).map((metricName) => {
                 const value = metrics[metricName]
                 return <Table.Row key={`${nodeID}-${metricName}`}>
-                    <Table.TextCell>{metricName}</Table.TextCell>
+                    <Table.TextCell id={metricName}>{metricName}</Table.TextCell>
                     <Table.TextCell>{value}</Table.TextCell>
                     {rioMetrics && <Table.TextCell>{rioMetrics[metricName]}</Table.TextCell>}
                     {rioMetrics && <Table.TextCell>
@@ -27,9 +27,13 @@ export default function MetricsTable(props: MetricstableProps) {
                 </Table.Row>
             }
         )
+
+        const predictorMetricsId = `predictor-with-objectives-${PredictorRunData[nodeID].objectives}`
         predictorRenders.push(
             <div>
-                <h4 className="mt-4 mb-4">Predictor with Objectives: {PredictorRunData[nodeID].objectives}</h4>
+                <h4 className="mt-4 mb-4" id={predictorMetricsId}>
+                    Predictor with Objectives: {PredictorRunData[nodeID].objectives}
+                </h4>
                 <p>Node ID: {nodeID}</p>
                 <Table.Body>
                     <Table.Head>
