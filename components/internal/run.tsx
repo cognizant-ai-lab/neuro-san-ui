@@ -316,7 +316,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/
 ${prescriptorID}/?data_source_id=${dataSourceId}`
         return <>
-            <Link
+            <Link id="dms-link"
                 href={dmsLink}
             >
                 <a style={{
@@ -379,7 +379,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
 
     if (run && flow) {
         flowDiv.push(
-            <div>
+            <div id="run-flow">
             <ReactFlowProvider>
                 <Flow
                     ProjectID={props.ProjectId}
@@ -393,12 +393,10 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     
     return <div className="mr-8 ml-8">
         {/* Create the title bar */}
-        <h1 className="mt-4 mb-4">{props.RunName}</h1>
+        <h1 className="mt-4 mb-4" id="run-name">{props.RunName}</h1>
 
         {flowDiv}       
 
         {PlotDiv}
     </div>
-
-
 }
