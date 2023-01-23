@@ -44,7 +44,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                 const objectiveMetricGraphLabelId = `${objective}-metric-graph-label`
                 cells.push(
                     <Table.Row style={{height: "100%"}} key={`${nodeID}-${objective}`}>
-                        <Table.TextCell id={objectiveMetricGraphLabel}>{objective}</Table.TextCell>
+                        <Table.TextCell id={objectiveMetricGraphLabelId}>{objective}</Table.TextCell>
                         <Table.TextCell >
                             <div className="pl-4" style={{height: "25rem", width: "100%"}}>
                                 <ResponsiveLine
@@ -121,10 +121,11 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
 
 
     return <>
-        <NewBar id="prescriptor-metrics" Title="Prescriptor Metrics" DisplayNewLink={ false } />
-        {nodePlots && nodePlots.length > 0
-            ? nodePlots
-            :   <>
+        <div id="prescriptor-metrics">
+            <NewBar Title="Prescriptor Metrics" DisplayNewLink={ false } />
+            {nodePlots && nodePlots.length > 0
+                ? nodePlots
+                :   <>
                     <span style={{display: "flex"}}>
                         <FiAlertCircle color="red" size={50}/>
                         <span className="ml-4 fs-4 my-auto">No prescriptors found.</span>
@@ -133,7 +134,8 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                     <br />
                     Navigate to the Runs table and view the error logs for your Run to see what went wrong.
                 </>
-        }
+            }
+        </div>
     </>
 
 }
@@ -463,8 +465,10 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
     })
 
     return <>
-        <NewBar id="pareto-prescriptors" Title="Pareto Prescriptors" DisplayNewLink={ false } />
-        {nodePlots}
+        <div id="pareto-prescriptors">
+            <NewBar Title="Pareto Prescriptors" DisplayNewLink={ false } />
+            {nodePlots}
+        </div>
     </>
 }
 
