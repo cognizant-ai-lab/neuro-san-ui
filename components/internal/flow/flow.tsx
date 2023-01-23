@@ -376,7 +376,7 @@ export default function Flow(props: FlowProps) {
      */
     function _addUncertaintyModelNodes() {
         const predictorNodes = FlowQueries.getPredictorNodes(flow)
-        if (predictorNodes.length == 0) {
+        if (predictorNodes.length === 0) {
             sendNotification(NotificationType.warning,
                 "Please add at least one predictor before adding uncertainty model nodes.")
             return
@@ -387,7 +387,7 @@ export default function Flow(props: FlowProps) {
             predictorNodes
                 .filter(node => getOutgoers(node, flow).every(node => node.type !== "uncertaintymodelnode"))
                 .map(node => node.id)
-        if (predictorsWithoutUncertaintyNodes.length == 0) {
+        if (predictorsWithoutUncertaintyNodes.length === 0) {
             sendNotification(NotificationType.warning,
                 "All predictors already have uncertainty model nodes attached and only one such node per predictor " +
                 "is supported.")
