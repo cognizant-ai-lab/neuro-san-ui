@@ -93,7 +93,7 @@ function Navbar(props: NavbarProps): React.ReactElement {
                                                 }}>
                                             {session.user.name}
                                         </Dropdown.Item>
-                                        <Dropdown.Divider target="_blank" style={{
+                                        <Dropdown.Divider style={{
                                             pointerEvents: 'none'
                                         }} />
                                         <Dropdown.Item button
