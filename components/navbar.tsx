@@ -57,18 +57,6 @@ function Navbar(props: NavbarProps): React.ReactElement {
                                     <a style={{color: NAV_ITEMS_COLOR}}>Projects</a>
                                 </Link>
                             </Nav.Item>
-                            <Nav.Item className="px-3">
-                                <button id="responsive-navbar-sign-out-button">
-                                    {(signedIn && ENABLE_AUTHENTICATION) &&
-                                        <Link href="">
-                                            <a style={{color: NAV_ITEMS_COLOR}}
-                                               onClick={() => signOut({redirect: false})}>
-                                                Sign out
-                                            </a>
-                                        </Link>
-                                    }
-                                </button>
-                            </Nav.Item>
                             <Dropdown as={NavItem} >
                               <Dropdown.Toggle as={NavLink} className="px-3 py-0"
                                                style={{color: NAV_ITEMS_COLOR, background: MaximumBlue}}>
@@ -98,15 +86,20 @@ function Navbar(props: NavbarProps): React.ReactElement {
                                         <Dropdown.Item target="_blank" style={{ pointerEvents: 'none' }}>
                                             Signed in as:
                                         </Dropdown.Item>
-                                        <Dropdown.Item target="_blank" style={{
+                                        <Dropdown.Item id="user-name" target="_blank" style={{
                                                     pointerEvents: 'none',
                                                     fontWeight: 'bold'
                                                 }}>
                                             {session.user.name}
                                         </Dropdown.Item>
-                                        <Dropdown.Item divider style={{ pointerEvents: 'none' }}/>
-                                        <Dropdown.Item href="/userguide" target="_blank">
-                                            Your profile
+                                        <Dropdown.Item divider target="_blank" style={{
+                                            pointerEvents: 'none'
+                                        }} />
+                                        <Dropdown.Item button
+                                            id="user-sign-out"
+                                            target="_blank"
+                                            onClick={() => signOut({redirect: false})}>
+                                                Sign out
                                         </Dropdown.Item>
                                     </Dropdown.Menu>
                                 </Dropdown>
