@@ -105,10 +105,6 @@ function Navbar(props: NavbarProps): React.ReactElement {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             }
-                            { (!signedIn || !ENABLE_AUTHENTICATION || !session || !session.user) &&
-                                <Nav.Item className="px-3">
-                                </Nav.Item>
-                            }
                         </Nav>
                     </BootstrapNavbar.Collapse>
                 </Container>
