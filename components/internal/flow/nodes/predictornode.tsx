@@ -21,6 +21,7 @@ import {useSession} from "next-auth/react"
 
 // React Flow
 import {
+    getOutgoers,
     Handle,
     Position as HandlePosition
 } from 'react-flow-renderer'
@@ -36,6 +37,7 @@ import {
     FetchPredictors
 } from '../../../../controller/predictor'
 import {loadDataTag} from "../../../../controller/fetchdatataglist"
+import {FlowQueries} from "../flowqueries";
 import {PredictorParams} from "../predictorinfo"
 
 
@@ -78,6 +80,15 @@ interface PredictorNodeData {
 
     // Mutator method for adding an uncertainty model node to the parent Flow
     readonly AddUncertaintyModelNode: (nodeID: string) => void
+
+    // Entire flow (of which this node is a part). We will use it when we need to know if we have an associated
+    // uncertainty model node.
+
+    // Note: our flow is very weakly typed. Nodes are just bags of properties. This will change when we upgrade
+    // react-flow to v10 and v11, where nodes are strongly typed.
+    // For now, disabled eslint and use any[] so at least we have _some_ kind of type hint.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly GetFlow: () => any[]
 }
 
 
@@ -95,7 +106,7 @@ export default function PredictorNode(props): ReactElement {
     const currentUser: string = session.user.name
 
     // Unpack the data
-    const { NodeID, ParentPredictorState, SetParentPredictorState, DeleteNode, AddUncertaintyModelNode } = data
+    const { NodeID, ParentPredictorState, SetParentPredictorState, DeleteNode, AddUncertaintyModelNode, GetFlow } = data
 
     // Fetch the available metrics and predictors and these are not state dependant
     const metrics = {
@@ -203,6 +214,24 @@ export default function PredictorNode(props): ReactElement {
         This controller invocation is used for the fetching of the predictors and the
         metrics of a certain kind of predictor.
         */
+
+        // Don't allow changing to Classifier type if there's an uncertainty node attached, since we do not support
+        // that
+        if (predictorType === "classifier") {
+            const flow = GetFlow()
+            const thisPredictorNode = FlowQueries.getNodeByID(flow, NodeID);
+            const hasUncertaintyNode = getOutgoers(thisPredictorNode, flow)
+                .some(node => node.type === "uncertaintymodelnode")
+
+            if (hasUncertaintyNode) {
+                sendNotification(NotificationType.warning,
+                    "This predictor node has an attached uncertainty model node, so the type cannot " +
+                    "be changed to \"classifier\".",
+                    "Remove the associated uncertainty model node if you wish to change this predictor type.")
+                return
+            }
+        }
+
         const newPred = predictors[predictorType][0]
         onPredictorChange(predictorType, newPred)
     }

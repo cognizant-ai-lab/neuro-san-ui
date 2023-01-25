@@ -92,7 +92,8 @@ export default function Flow(props: FlowProps) {
                     ...node.data,
                     SetParentPredictorState: state => PredictorSetStateHandler(state, node.id),
                     DeleteNode: nodeId => _deleteNodeById(nodeId),
-                    AddUncertaintyModelNode: nodeId => _addUncertaintyNodes([nodeId])
+                    AddUncertaintyModelNode: nodeId => _addUncertaintyNodes([nodeId]),
+                    GetFlow: () => GetFlow()
                 }
             } else if (node.type === 'prescriptornode') {
                 node.data = {
@@ -382,19 +383,25 @@ export default function Flow(props: FlowProps) {
             return
         }
 
-        // Only add uncertainty nodes to those predictor nodes that currently don't have one
+        // Only add uncertainty nodes to those predictor nodes that currently don't have one and are not classifiers,
+        // which do not support the current type of uncertainty nodes. (Once we implement RED, they will.)
         const predictorsWithoutUncertaintyNodes =
             predictorNodes
-                .filter(node => getOutgoers(node, flow).every(node => node.type !== "uncertaintymodelnode"))
+                .filter(node => node.data.ParentPredictorState.selectedPredictorType !== "classifier" &&
+                    getOutgoers(node, flow).every(node => node.type !== "uncertaintymodelnode"))
                 .map(node => node.id)
         if (predictorsWithoutUncertaintyNodes.length === 0) {
             sendNotification(NotificationType.warning,
-                "All predictors already have uncertainty model nodes attached and only one such node per predictor " +
-                "is supported.")
+                "All predictors that support uncertainty model nodes already have such nodes attached " +
+                "and only one such node per predictor is supported.")
             return
         }
 
         _addUncertaintyNodes(predictorsWithoutUncertaintyNodes)
+    }
+
+    function GetFlow() {
+        return flow
     }
 
     function _addPredictorNode() {
@@ -428,7 +435,8 @@ export default function Flow(props: FlowProps) {
                 ParentPredictorState: _getInitialPredictorState(),
                 SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
                 DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
-                AddUncertaintyModelNode: predictorNodeId => _addUncertaintyNodes([predictorNodeId])
+                AddUncertaintyModelNode: predictorNodeId => _addUncertaintyNodes([predictorNodeId]),
+                GetFlow: () => GetFlow()
             },
             position: {
                 x: flowInstanceElem[0].position.x + 250,
@@ -640,7 +648,6 @@ export default function Flow(props: FlowProps) {
                 return
             }
 
-
             // Check if Prescriptor Node exists
             const prescriptorNodes = FlowQueries.getPrescriptorNodes(flow)
             const prescriptorNode = prescriptorNodes && prescriptorNodes.length > 0 ? prescriptorNodes[0] : null
@@ -836,7 +843,6 @@ export default function Flow(props: FlowProps) {
      * See example {@link https://reactflow.dev/docs/examples/layout/dagre/|here}
      */
     function tidyView() {
-        console.debug("tidy view")
         const dagreGraph = new dagre.graphlib.Graph()
         dagreGraph.setDefaultEdgeLabel(() => ({}))
 
