@@ -204,8 +204,8 @@ function getModelInferenceUrl(baseUrl: string, name: string) {
  * @param baseUrl The kserve base URL
  * @param runId Run ID for the run whose models are requested
  * @param cid Prescriptor (candidate) ID to look for among the models
- * @return An object with an array of predictors and prescriptors. Each item in the arrays is a ready-to-use kserve
- * endpoint that can be accessed for inferencing that model.
+ * @return An object with an array of predictors, prescriptors and RIO models.
+ * Each item in the arrays is a ready-to-use kserve endpoint (URL) that can be accessed for inferencing that model.
  */
 async function getModels(
     baseUrl: string,
@@ -231,19 +231,23 @@ async function getModels(
         }
 
         const modelsObject = await response.json()
-        const modelsArray = modelsObject.models;
+        const modelsArray = modelsObject.models
 
-        // Pull out predictor and prescriptor models
+        // Pull out predictor, prescriptor and RIO models
         const predictors = modelsArray
             .filter(model => model.startsWith("predictor"))
-            .map(pred => getModelInferenceUrl(baseUrl, pred))
+            .map(model => [model, getModelInferenceUrl(baseUrl, model)])
         const prescriptors = modelsArray
             .filter(model => model.startsWith("prescriptor") && !model.startsWith("prescriptor-text") && model.endsWith(`-${cid}`))
-            .map(pres => getModelInferenceUrl(baseUrl, pres))
+            .map(model => [model, getModelInferenceUrl(baseUrl, model)])
+        const rioModels = modelsArray
+            .filter(model => model.startsWith("rio"))
+            .map(model => [model, getModelInferenceUrl(baseUrl, model)])
 
         return {
             predictors: predictors,
-            prescriptors: prescriptors
+            prescriptors: prescriptors,
+            rioModels: rioModels
         }
     } catch (e) {
         sendNotification(NotificationType.error, `Error retrieving model names for run: ${runId}`,
