@@ -80,7 +80,7 @@ export class FlowQueries {
         /*
            Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
         */
-        return  graph.find(element => element.id === nodeID)
+        return graph.find(element => element.id === nodeID)
     }
 
     static getAllNodes(graph) {
@@ -89,5 +89,63 @@ export class FlowQueries {
 
     static getAllEdges(graph) {
         return graph.filter(e => isEdge(e))
+    }
+
+    static getElementTypeToUuidList(graph) {
+        /*
+        Return a dictionary whose keys are graph element types
+        and whose values are a sorted list of id (assumed uuid) strings.
+
+        This dictionary is useful for creating (somewhat) predictable indexes
+        on a per-element-type basis used for ids in testing.
+
+        Note that more persistence-oriented work would need to be done for these ids
+        to be consistent across different pages with operations performed on the graph.
+        */
+
+        // Start with an empty dictionary
+        let elementTypeToUuidList = {};
+
+        // Loop through each flow element.
+        // Find out its type and start building a list of ids
+        for (const element of graph) {
+
+            // See if the list for the element type already exists.
+            // Use that value if it exists already.
+            let uuidList = string[] = [];
+            if (element.type in elementTypeToUuidList) {
+                uuidList = elementTypeToUuidList[element.type];
+            }
+
+            // Add to the uuidList and be sure the new list is in the dictionary
+            uuidList.push(element.id);
+            elementTypeToUuidList[element.type] = uuidList;
+        }
+
+        // Now that we have the uuid list for each element type populated,
+        // sort each list so that we have an initial index for each element
+        // of each type.
+        for (const key of elementTypeToUuidList) {
+
+            // Get the list we have for the given key/type
+            uuidList = elementTypeToUuidList[key];
+
+            // Sort it by uuid string
+            uuidList = uuidList.sort((n1,n2) => {
+
+                if (n1 > n2) {
+                    return 1;
+                }
+                if (n1 < n2) {
+                    return -1;
+                }
+                return 0;
+            });
+
+            // Put the sorted list back in the dictionary
+            elementTypeToUuidList[key] = uuidList;
+        }
+
+        return elementTypeToUuidList;
     }
 }
