@@ -303,7 +303,7 @@ export default function PrescriptorNode(props): ReactElement {
                 <Col id={ `${NodeID}-prescriptor-max-exponent-label` } md={5}>
                     Max Exponent:
                 </Col>
-                <Col>
+                <Col md={4}>
                     <Slider
                         step={1}
                         min={0}
@@ -330,7 +330,7 @@ export default function PrescriptorNode(props): ReactElement {
                 <Col id={`${NodeID}-prescriptor-num-building-block-conditions-label`}  md={5}>
                     # Building Block Conditions:
                 </Col>
-                <Col>
+                <Col md={4}>
                     <Slider
                         step={1}
                         min={1}
@@ -357,7 +357,7 @@ export default function PrescriptorNode(props): ReactElement {
                 <Col id={`${NodeID}-prescriptor-num-building-block-rules-label`} md={5}>
                     # Building Block Rules:
                 </Col>
-                <Col>
+                <Col md={4}>
                     <Slider
                         step={1}
                         min={1}
