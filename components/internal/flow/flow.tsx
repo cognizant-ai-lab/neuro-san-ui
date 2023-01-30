@@ -352,7 +352,6 @@ export default function Flow(props: FlowProps) {
         })
 
         return graphCopy
-
     }
 
     function _getInitialPredictorState() {
@@ -412,7 +411,10 @@ export default function Flow(props: FlowProps) {
     }
 
     function _getElementIndex(nodeID: string) {
-        let index = 0
+        const map = elementTypeToUuidList;
+
+        let element = FlowQueries.getNodeById(map, nodeID);
+        let index = FlowQueries.getIndexForElement(map, element);
         return index
     }
 
