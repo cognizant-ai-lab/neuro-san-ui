@@ -885,7 +885,7 @@ export default function Flow(props: FlowProps) {
         // predictors to align together etc. For now, aligning predictors is enough since uncertainty nodes will
         // naturally already be aligned, and there can only be one prescriptor node currently.
         const predictorNodes = FlowQueries.getPredictorNodes(nodes)
-        if (predictorNodes.length > 2) {
+        if (predictorNodes.length > 1) {
             predictorNodes.forEach(node => {node.position.x = predictorNodes[0].position.x})
         }
 
