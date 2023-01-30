@@ -412,7 +412,7 @@ export default function Flow(props: FlowProps) {
     function _getElementIndex(nodeID: string) {
         const map = elementTypeToUuidList;
 
-        const element = FlowQueries.getNodeById(map, nodeID);
+        const element = FlowQueries.getNodeByID(map, nodeID);
         const index = FlowQueries.getIndexForElement(map, element);
         return index
     }
@@ -716,12 +716,13 @@ export default function Flow(props: FlowProps) {
                 // Connect the uncertainty model node to the prescriptor
                 graphCopy = _addEdgeToPrescriptorNode(graphCopy, newNodeID, prescriptorNode.id)
             }
+
+            _addElementUuid("uncertaintymodelnode", newNodeID)
         })
 
         // Save the updated Flow
         setFlow(graphCopy)
         setParentState(graphCopy)
-        _addElementUuid("uncertaintymodelnode", newNodeID)
     }
 
     function _addElementUuid(elementType: string, elementId: string) {
@@ -735,7 +736,7 @@ export default function Flow(props: FlowProps) {
         // Allow for the list of elementType not to exist just yet
         let uuidList: string[] = [];
         if (elementType in map) {
-            uuidList = uuidList.push(elementId)
+            uuidList.push(elementId)
         }
         map[elementType] = uuidList
 

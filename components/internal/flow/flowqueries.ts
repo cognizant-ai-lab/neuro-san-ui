@@ -104,7 +104,7 @@ export class FlowQueries {
         */
 
         // Start with an empty dictionary
-        const elementTypeToUuidList = {};
+        let elementTypeToUuidList = {};
 
         // Loop through each flow element.
         // Find out its type and start building a list of ids
@@ -125,10 +125,10 @@ export class FlowQueries {
         // Now that we have the uuid list for each element type populated,
         // sort each list so that we have an initial index for each element
         // of each type.
-        for (const key of elementTypeToUuidList) {
+        for (const key of elementTypeToUuidList.keys()) {
 
             // Get the list we have for the given key/type
-            uuidList = elementTypeToUuidList[key];
+            let uuidList = elementTypeToUuidList[key];
 
             // Sort it by uuid string
             uuidList = uuidList.sort((n1,n2) => {
