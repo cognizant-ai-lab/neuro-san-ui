@@ -54,8 +54,7 @@ export default function UncertaintyModelNode(props): ReactElement {
         NodeID,
         ParentUncertaintyNodeState,
         SetParentUncertaintyNodeState,
-        DeleteNode,
-        GetElementIndex
+        DeleteNode
     } = data
 
     // For showing advanced configuration settings

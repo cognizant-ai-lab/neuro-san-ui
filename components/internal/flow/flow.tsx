@@ -107,8 +107,7 @@ export default function Flow(props: FlowProps) {
                 node.data = {
                     ...node.data,
                     SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, node.id),
-                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
-                    GetElementIndex: nodeId => _getElementIndex(nodeId)
+                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
                 }
             } else if (node.type === "prescriptoredge") {
                 node.data = {
