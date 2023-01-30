@@ -131,6 +131,10 @@ export default function Flow(props: FlowProps) {
     // Tidy flow when nodes are added or removed
     useEffect(() => tidyView(), [flow.length])
 
+    // Initial population of the element type -> uuid list mapping used for simplified testing ids
+    let initialMap = FlowQueries.getElementTypeToUuidList(flow)
+    const [elementTypeToUuidList, setElementTypeToUuidList] = useStateWithCallback(initialMap)
+
     function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
         This handler is used to update the predictor
@@ -444,7 +448,8 @@ export default function Flow(props: FlowProps) {
                 SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
                 DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
                 AddUncertaintyModelNode: predictorNodeId => _addUncertaintyNodes([predictorNodeId]),
-                GetFlow: () => GetFlow()
+                GetFlow: () => GetFlow(),
+                GetElementIndex: NodeID => _getElementIndex(NodeID)
             },
             position: {
                 x: flowInstanceElem[0].position.x + 250,
@@ -475,6 +480,7 @@ export default function Flow(props: FlowProps) {
 
         setFlow(graphCopy)
         setParentState(graphCopy)
+        _addElementUuid("predictornode", NodeID)
     }
 
     function _getInitialPrescriptorState(fitness) {
@@ -591,7 +597,8 @@ export default function Flow(props: FlowProps) {
                 SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
                 UpdateEvaluateOverrideCode: value => UpdateEvaluateOverrideCode(NodeID, value),
-                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
+                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
+                GetElementIndex: NodeID => _getElementIndex(NodeID)
             },
             position: {
                 x: prescriptorNodeXPos,
@@ -624,6 +631,7 @@ export default function Flow(props: FlowProps) {
 
         setFlow(graphCopy)
         setParentState(graphCopy)
+        _addElementUuid("prescriptornode", NodeID)
     }
 
     function  _getInitialUncertaintyNodeState(): UncertaintyModelParams {
@@ -675,7 +683,8 @@ export default function Flow(props: FlowProps) {
                     NodeID: newNodeID,
                     ParentUncertaintyNodeState: _getInitialUncertaintyNodeState(),
                     SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, newNodeID),
-                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
+                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
+                    GetElementIndex: newNodeID => _getElementIndex(newNodeID)
                 },
                 position: {
                     x: uncertaintyNodeXPos,
@@ -711,6 +720,25 @@ export default function Flow(props: FlowProps) {
         // Save the updated Flow
         setFlow(graphCopy)
         setParentState(graphCopy)
+        _addElementUuid("uncertaintymodelnode", newNodeID)
+    }
+
+    function _addElementUuid(elementType: string, elementId: string) {
+        /*
+        Adds a uuid for a particular element type to our indexing map used
+        for testing ids.
+        */
+
+        const map = elementTypeToUuidList
+
+        // Allow for the list of elementType not to exist just yet
+        let uuidList = string[] = [];
+        if (elementType in map) {
+            uuidList = uuidList.push(elementId)
+        }
+        map[elementType] = uuidList
+
+        setElementTypeToUuidList(map)
     }
 
     function _deleteNodeById(nodeID: string) {
@@ -805,10 +833,26 @@ export default function Flow(props: FlowProps) {
 
         }
 
+        // Update the uuid index map for testing ids
+        let map = elementTypeToUuidList;
+        removableElements.forEach( (element) => {
+            let uuidIndex = FlowQueries.getIndexForElement(map, element);
+            if (uuidIndex >= 0) {
+
+                let uuidList = map[element.type].
+
+                // Update the list with a marker that says the node has been deleted
+                // This lets the other indexes in the list not to have to change.
+                uuidList[uuidIndex] = "deleted";
+                map[element.type] = uuidList;
+            }
+        });
+
         // Update the flow, removing the deleted nodes
         const flowWithElementsDeleted = removeElements(removableElements, graph);
         setFlow(flowWithElementsDeleted)
         setParentState(flowWithElementsDeleted)
+        setElementTypeToUuidList(map)
     }
 
     function onNodeDragStop(event, node) {
