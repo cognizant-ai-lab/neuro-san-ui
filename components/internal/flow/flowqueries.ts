@@ -148,4 +148,28 @@ export class FlowQueries {
 
         return elementTypeToUuidList;
     }
+
+    static getIndexForElement(elementTypeToUuidList, element) {
+        /*
+        Given an elementTypeToUuidList dictionary (see method above)
+        return the index of a given element.  This index is used for ids in testing.
+        */
+
+        // Default value if no element type in list
+        let index = -1
+
+        // First be sure the element type is even in the dictionary
+        if (element.type in elementTypeToUuidList) {
+
+            // Find the list for the appropriate element type
+            uuidList = elementTypeToUuidList[element.type]
+
+            // Find the uuid of the element in the list
+            // Will return -1 if the id itself is not in the list.
+            index = uuidList.indexOf(element.id)
+        }
+
+        // Not in the dictionary
+        return index
+    }
 }
