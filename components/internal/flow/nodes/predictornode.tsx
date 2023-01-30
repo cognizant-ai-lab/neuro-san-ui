@@ -2,7 +2,7 @@
 import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react'
 
 // 3rd party components
-import {Card} from "react-bootstrap"
+import {Row, Col, Card, Container} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {
     InfoSignIcon,
@@ -15,9 +15,10 @@ import {
 } from "evergreen-ui"
 import {BsPlusSquare} from "react-icons/bs"
 import { GrSettingsOption } from "react-icons/gr"
-import Slider from 'rc-slider'
+import Slider from "rc-slider"
 import 'rc-slider/assets/index.css'
 import {useSession} from "next-auth/react"
+import {Tooltip as AntdTooltip} from "antd"
 
 // React Flow
 import {
@@ -90,9 +91,6 @@ interface PredictorNodeData {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly GetFlow: () => any[]
 }
-
-
-const SliderComponent = Slider.createSliderWithTooltip(Slider);
 
 export default function PredictorNode(props): ReactElement {
     /*
@@ -494,50 +492,68 @@ export default function PredictorNode(props): ReactElement {
     // Create the data split card
 
     const isRegressor: boolean = ParentPredictorState.selectedPredictorType === "regressor"
-    const DataSplitConfigurationPanel = <Card.Body>
-        <div className="flex justify-between mb-4 content-center"
-             onMouseDown={ (event) => { event.stopPropagation() } }
-        >
-            <label className="m-0 mr-2" id="train_label">Train: </label>
-            <label>0%</label>
+    const marks = {
+        0: {label: "0%"},
+        100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+    }
 
-            <SliderComponent
-                onChange={ event => onTrainSliderChange(event) }
-                min={0}
-                max={100}
-                value={ParentPredictorState.trainSliderValue}
-                defaultValue={80}
-            >
-            </SliderComponent>
-            <label>100%</label>
-        </div>
-        <div className="flex justify-between mb-4 content-center"
-             onMouseDown={ (event) => { event.stopPropagation() } }
-        >
-            <label className="m-0 mr-2" id="test_label">Test: </label>
-            <label>0%</label>
-
-            <SliderComponent
-                onChange={ event => onTestSliderChange(event) }
-                min={0}
-                max={100}
-                value={ParentPredictorState.testSliderValue}
-                defaultValue={20}
-            >
-            </SliderComponent>
-            <label>100%</label>
-        </div>
-        <div>
-            <label id="split_rng_label">
-                Data split RNG seed:
-                <input id="split_rng_value"
-                       type={"number"}
-                       value={ParentPredictorState.rngSeedValue}
-                       onChange={ event => { SetParentPredictorState({...ParentPredictorState, rngSeedValue: parseInt(event.target.value)}) } }
-                       className="input-field"
-                        />
-            </label>
-        </div>
+    const DataSplitConfigurationPanel = <Card.Body onMouseDown={(event) => { event.stopPropagation() }}>
+        <Container>
+            <Row className="mx-2 my-8">
+                <Col md={2} className="mr-4" id="train_label">
+                    Train:
+                </Col>
+                <Col md={9}>
+                    <Slider
+                        onChange={event => onTrainSliderChange(event)}
+                        min={0}
+                        max={100}
+                        value={ParentPredictorState.trainSliderValue}
+                        marks={marks}
+                        handleRender={(node) => {
+                            return (
+                                   <AntdTooltip title={`${ParentPredictorState.trainSliderValue}%`}>{node}</AntdTooltip>
+                            )
+                        }}
+                    />
+                </Col>
+            </Row>
+            <Row className="mx-2 my-8">
+                <Col md={2} className="mr-4" id="test_label">
+                   Test:
+                </Col>
+                <Col md={9}>
+                    <Slider
+                        onChange={ event => onTestSliderChange(event) }
+                        min={0}
+                        max={100}
+                        value={ParentPredictorState.testSliderValue}
+                        marks={marks}
+                        handleRender={(node) => {
+                            return (
+                                <AntdTooltip title={`${ParentPredictorState.testSliderValue}%`}>{node}</AntdTooltip>
+                            )
+                        }}
+                    />
+                </Col>
+            </Row>
+            <Row className="mx-2 my-8">
+                <Col md="auto" id="split_rng_label">
+                    RNG seed:
+                </Col>
+                <Col>
+                    <input id="split_rng_value"
+                           type={"number"}
+                           min={0}
+                           value={ParentPredictorState.rngSeedValue}
+                           onChange={event => {
+                               SetParentPredictorState({...ParentPredictorState, rngSeedValue: parseInt(event.target.value)})
+                           }}
+                           className="input-field w-50"
+                    />
+                </Col>
+            </Row>
+        </Container>
     </Card.Body>
 
     // Create the Component structure

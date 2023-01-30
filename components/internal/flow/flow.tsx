@@ -867,7 +867,8 @@ export default function Flow(props: FlowProps) {
 
         dagre.layout(dagreGraph);
 
-        nodes.forEach((node) => {
+        // Convert dagre's layout to what our flow graph needs
+        nodes.forEach(node => {
             const nodeWithPosition = dagreGraph.node(node.id);
             node.targetPosition = 'left'
             node.sourcePosition = 'right'
@@ -879,6 +880,15 @@ export default function Flow(props: FlowProps) {
                 y: nodeWithPosition.y - nodeHeight / 2,
             };
         })
+
+        // Align nodes by type -- dagre cannot do this for us as it has no concept of node types. But we want
+        // predictors to align together etc. For now, aligning predictors is enough since uncertainty nodes will
+        // naturally already be aligned, and there can only be one prescriptor node currently.
+        const predictorNodes = FlowQueries.getPredictorNodes(nodes)
+        if (predictorNodes.length > 1) {
+            const minX = Math.min(...predictorNodes.map(node => node.position.x))
+            predictorNodes.forEach(node => {node.position.x = minX})
+        }
 
         // Update flow with new tidied nodes and fit to view
         const newNodes = nodes.concat(edges);

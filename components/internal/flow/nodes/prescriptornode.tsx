@@ -6,7 +6,7 @@ import {
 
 // Import 3rd party components
 import { 
-    Card
+    Card, Col, Container, Row
 } from "react-bootstrap"
 import { 
     Popover, 
@@ -15,7 +15,7 @@ import {
     Tablist, 
     Tab
 } from "evergreen-ui"
-import Slider from 'rc-slider'
+import Slider from "rc-slider"
 import {AiFillDelete} from "react-icons/ai";
 import { GrSettingsOption } from "react-icons/gr"
 import { MdDelete } from "react-icons/md"
@@ -24,7 +24,7 @@ import {
     Card as BlueprintCard,
     Elevation 
 } from "@blueprintjs/core";
-
+import {Tooltip as AntdTooltip} from "antd"
 
 // Import React Flow
 import {
@@ -67,8 +67,6 @@ const defaultRepresentationConfig = {
     number_of_building_block_conditions: 1,
     number_of_building_block_rules: 3
 }
-
-const SliderComponent = Slider.createSliderWithTooltip(Slider);
 
 export default function PrescriptorNode(props): ReactElement {
     /*
@@ -298,65 +296,91 @@ export default function PrescriptorNode(props): ReactElement {
     )
     const NeuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
 
-    const createRulesConfig = (representationConfig) => (
-        <div key={`${NodeID}-rules-config`}>
-            <h6 style={{display: "inline"}}>Rules Config</h6>
-            <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
-            >
-                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
-                    onMouseDown={ (event) => { event.stopPropagation() } }>
-                    <label className="mr-2" id={ `${NodeID}-prescriptor-max-exponent-label` }>
-                        Max Exponent:
-                    </label>
-                    <SliderComponent style={{width: "100%"}}
-                        step={1} 
+    const createRulesConfig = (representationConfig) =>
+        <Container key={`${NodeID}-rules-config`} id={`${NodeID}-rules-config`}
+                   onMouseDown={(event) => { event.stopPropagation() }}>
+            <Row className="mx-2 my-8">
+                <Col id={ `${NodeID}-prescriptor-max-exponent-label` } md={5}>
+                    Max Exponent:
+                </Col>
+                <Col md={4}>
+                    <Slider
+                        step={1}
                         min={0}
                         max={9}
                         value={Number(representationConfig.max_exponent)}
+                        marks={{
+                            0: {label: "0"},
+                            9: {label: "9", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+                        }}
+                        handleRender={(node) => {
+                            return (
+                                <AntdTooltip title={`${representationConfig.max_exponent}`}>{node}</AntdTooltip>
+                            )
+                        }}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
                             modifiedRulesState.representation_config.max_exponent = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
-                    /> 
-                </div>
-                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
-                    onMouseDown={ (event) => { event.stopPropagation() } }>
-                    <label className="mr-2" id={ `${NodeID}-prescriptor-num-building-block-conditions-label` }>
-                        # Building Block Conditions:
-                    </label>
-                    <SliderComponent style={{width: "100%"}}
-                        step={1} 
+                    />
+                </Col>
+            </Row>
+            <Row className="mx-2 my-8">
+                <Col id={`${NodeID}-prescriptor-num-building-block-conditions-label`}  md={5}>
+                    # Building Block Conditions:
+                </Col>
+                <Col md={4}>
+                    <Slider
+                        step={1}
                         min={1}
                         max={9}
                         value={Number(representationConfig.number_of_building_block_conditions)}
+                        marks={{
+                            1: {label: "1"},
+                            9: {label: "9", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+                        }}
+                        handleRender={(node) => {
+                            return (
+                                <AntdTooltip title={`${representationConfig.number_of_building_block_conditions}`}>{node}</AntdTooltip>
+                            )
+                        }}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
                             modifiedRulesState.representation_config.number_of_building_block_conditions = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
-                    /> 
-                </div>
-                <div className="grid grid-cols-1 gap-1 mb-2 justify-items-start"
-                    onMouseDown={ (event) => { event.stopPropagation() } }>
-                    <label className="mr-2" id={ `${NodeID}-prescriptor-num-building-block-rules-label` }>
-                        # Building Block Rules:
-                    </label>
-                    <SliderComponent style={{width: "100%"}}
-                        step={1} 
+                    />
+                </Col>
+            </Row>
+            <Row className="mx-2 my-8">
+                <Col id={`${NodeID}-prescriptor-num-building-block-rules-label`} md={5}>
+                    # Building Block Rules:
+                </Col>
+                <Col md={4}>
+                    <Slider
+                        step={1}
                         min={1}
                         max={99}
                         value={Number(representationConfig.number_of_building_block_rules)}
+                        marks={{
+                            1: {label: "1"},
+                            99: {label: "99", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+                        }}
+                        handleRender={(node) => {
+                            return (
+                                <AntdTooltip title={`${representationConfig.number_of_building_block_rules}`}>{node}</AntdTooltip>
+                            )
+                        }}
                         onChange={event => {
                             const modifiedRulesState = {...ParentPrescriptorState}
                             modifiedRulesState.representation_config.number_of_building_block_rules = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
-                    /> 
-                </div>
-            </div>
-        </div>
-    )
+                    />
+                </Col>
+            </Row>
+    </Container>
 
     let useRepresentationConfig = defaultRepresentationConfig
     if ("representation_config" in ParentPrescriptorState) {
@@ -364,7 +388,6 @@ export default function PrescriptorNode(props): ReactElement {
     }
 
     const PrescriptorRepresentationPanel = <Card.Body>
-
                                                 <div className="flex justify-between mb-4 content-center">
                                                     <label>Representation: </label>
                                                     <select 
