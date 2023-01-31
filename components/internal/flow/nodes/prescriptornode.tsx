@@ -304,8 +304,7 @@ export default function PrescriptorNode(props): ReactElement {
     const NeuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
 
     const createRulesConfig = (representationConfig) =>
-        <Container key={`${NodeID}-rules-config`} id={`prescriptor-${flowIndex}-rules-config`}
-                   onMouseDown={(event) => { event.stopPropagation() }}>
+        <Container key={`${NodeID}-rules-config`} id={`prescriptor-${flowIndex}-rules-config`}>
             <Row className="mx-2 my-8">
                 <Col id={ `prescriptor-${flowIndex}-max-exponent-label` } md={5}>
                     Max Exponent:
@@ -457,7 +456,6 @@ export default function PrescriptorNode(props): ReactElement {
 
     // Create the configuration Panel
     const EvolutionConfigurationPanel = <Card.Body className="overflow-y-auto h-40 text-xs">
-
                                             <div className="flex flex-col mb-2">
                                                 <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
                                                     <label>Num Generations</label>
@@ -683,11 +681,13 @@ export default function PrescriptorNode(props): ReactElement {
     return <BlueprintCard
         interactive={ true } 
         elevation={ Elevation.TWO } 
-        style={ { padding: 0, width: "10rem", height: "4rem" } }>
-                
+        style={ { padding: 0, width: "10rem", height: "4rem" } }
+
+    >
             <Card border="warning" style={{ height: "100%" }}>
-                    <Card.Body className="flex justify-center content-center">
-                        <Text className="mr-2">{ ParentPrescriptorState.selectedPredictor || "Prescriptor" }</Text>
+                <Card.Body className="flex justify-center content-center">
+                    <Text className="mr-2">{ ParentPrescriptorState.selectedPredictor || "Prescriptor" }</Text>
+                    <div onMouseDown={(event) => {event.stopPropagation()}}>
                         <Popover content={
                             <>
                                 <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
@@ -714,8 +714,7 @@ export default function PrescriptorNode(props): ReactElement {
                              }}
                         >
                             <div className="flex">
-                                
-                                <button type="button" 
+                                <button type="button"
                                     id={ `prescriptor-${flowIndex}-gr-settings-button` }
                                     className="mt-1"  style={{height: 0}}>
                                         <GrSettingsOption />
@@ -774,23 +773,23 @@ export default function PrescriptorNode(props): ReactElement {
                                 className="absolute top-5 -right-4"
                                 style={{height: 0}}>A</button>
                         </Popover>
-
-                    </Card.Body>
-                    <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
-                        <button type="button"
-                                id="delete-me"
-                                className="hover:text-red-700 text-xs"
-                                onClick={() => {
-                                    DeleteNode(NodeID)
-                                    sendNotification(NotificationType.success, "Prescriptor node deleted")
-                                }}
-                        >
-                            <AiFillDelete size="10"/>
-                        </button>
                     </div>
-                </Card>
+                </Card.Body>
+                <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                    <button type="button"
+                            id="delete-me"
+                            className="hover:text-red-700 text-xs"
+                            onClick={() => {
+                                DeleteNode(NodeID)
+                                sendNotification(NotificationType.success, "Prescriptor node deleted")
+                            }}
+                    >
+                        <AiFillDelete size="10"/>
+                    </button>
+                </div>
+            </Card>
 
-                <Handle type="source" position={HandlePosition.Right} />
-                <Handle type="target" position={HandlePosition.Left} />
+            <Handle type="source" position={HandlePosition.Right} />
+            <Handle type="target" position={HandlePosition.Left} />
         </BlueprintCard>
 }
