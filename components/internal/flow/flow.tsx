@@ -734,16 +734,18 @@ export default function Flow(props: FlowProps) {
         for testing ids.
         */
 
-        const map = elementTypeToUuidList
+        const map = elementTypeToUuidList;
+        const keys = Array.from(map.keys());
 
         // Allow for the list of elementType not to exist just yet
-        const uuidList: string[] = [];
-        if (elementType in map) {
-            uuidList.push(elementId)
+        let uuidList: string[] = [];
+        if (keys.includes(elementType) === true) {
+            uuidList = map.get(elementType);
         }
-        map.set(elementType, uuidList)
+        uuidList.push(elementId);
+        map.set(elementType, uuidList);
 
-        setElementTypeToUuidList(map)
+        setElementTypeToUuidList(map);
     }
 
     function _deleteNodeById(nodeID: string) {
@@ -844,12 +846,13 @@ export default function Flow(props: FlowProps) {
             const uuidIndex = FlowQueries.getIndexForElement(map, element);
             if (uuidIndex >= 0) {
 
-                const uuidList = map.get(element.type);
+                const elementType = String(element.type);
+                const uuidList = map.get(elementType);
 
                 // Update the list with a marker that says the node has been deleted
                 // This lets the other indexes in the list not to have to change.
                 uuidList[uuidIndex] = "deleted";
-                map.set(element.type, uuidList);
+                map.set(elementType, uuidList);
             }
         });
 
