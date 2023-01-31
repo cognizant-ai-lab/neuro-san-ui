@@ -497,7 +497,7 @@ export default function PredictorNode(props): ReactElement {
         100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
     }
 
-    const DataSplitConfigurationPanel = <Card.Body onMouseDown={(event) => { event.stopPropagation() }}>
+    const DataSplitConfigurationPanel = <Card.Body>
         <Container>
             <Row className="mx-2 my-8">
                 <Col md={2} className="mr-4" id="train_label">
@@ -564,147 +564,150 @@ export default function PredictorNode(props): ReactElement {
             <Card border="warning" style={{ height: "100%" }}>
                 <Card.Body className="flex justify-center content-center">
                     <Text className="mr-2">{ ParentPredictorState.selectedPredictor || "Predictor" }</Text>
-                    <Popover content={
-                        <>
-                            <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-                                    {tabs.map((tab, index) => (
-                                <Tab
-                                    key={tab}
-                                    id={tab}
-                                    onSelect={() => setSelectedIndex(index)}
-                                    isSelected={index === selectedIndex}
-                                    aria-controls={`panel-${tab}`}
-                                >
-                                    {tab}
-                                </Tab>
-                                ))}
-                            </Tablist>
-                            { selectedIndex === 0  && PredictorSelectionPanel }
-                            { selectedIndex === 1  && PredictorConfigurationPanel }
-                            { selectedIndex === 2  && DataSplitConfigurationPanel }
-                        </>
-                    }
-                         statelessProps={{
-                             backgroundColor: "ghostwhite"
-                         }}
-                    >
-                        <div className="flex">
-                            <button type="button"
-                                        id={ `${NodeID}-predictor-gr-settings-option-button` }
-                                    className="mt-1"
-                                    style={{height: 0}}>
-                                <GrSettingsOption />
-                            </button>
-                        </div>
-                    </Popover>
-                    <Popover
-                        position={Position.LEFT}
-                        content={
-                            <Card.Body
-                            className="overflow-y-auto h-40 text-xs">
-                                <Text className="mb-2">Context</Text>
-                                {
-                                    Object.keys(ParentPredictorState.caoState.context).map(element =>
-                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label className="capitalize"> {element} </label>
-                                            <input name={element}
-                                                id={ `${NodeID}-predictor-context-input` }
-                                        type="checkbox"
-                                        defaultChecked={true}
-                                        checked={ParentPredictorState.caoState.context[element]}
-                                        onChange={event => onUpdateCAOState(event, "context")}/>
-                                    </div>)
-                                }
-                            </Card.Body>
+                    <div onMouseDown={(event) => {event.stopPropagation()}}>
+                        <Popover content={
+                            <>
+                                <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
+                                        {tabs.map((tab, index) => (
+                                    <Tab
+                                        key={tab}
+                                        id={tab}
+                                        onSelect={() => setSelectedIndex(index)}
+                                        isSelected={index === selectedIndex}
+                                        aria-controls={`panel-${tab}`}
+                                    >
+                                        {tab}
+                                    </Tab>
+                                    ))}
+                                </Tablist>
+                                { selectedIndex === 0  && PredictorSelectionPanel }
+                                { selectedIndex === 1  && PredictorConfigurationPanel }
+                                { selectedIndex === 2  && DataSplitConfigurationPanel }
+                            </>
                         }
-                        >
-                            <button type="button"
-                                id={ `${NodeID}-predictor-context-button` }
-                                className="absolute top-2 -left-4"
-                                style={{height: 0}}>C</button>
-                    </Popover>
-                    <Popover
-                        position={Position.LEFT}
-                        content={
-                            <Card.Body
-                            className="overflow-y-auto h-40 text-xs"
-                            style={{zIndex: 1000}}
-                            >
-                                <Text className="mb-2">Actions</Text>
-                                {
-                                    Object.keys(ParentPredictorState.caoState.action).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label className="capitalize"> {element} </label>
-                                            <input id={ `${NodeID}-predictor-actions-input` }
-                                        name={element}
-                                        type="checkbox"
-                                        defaultChecked={true}
-                                        checked={ParentPredictorState.caoState.action[element]}
-                                        onChange={event => onUpdateCAOState(event, "action")}/>
-                                    </div>)
-                                }
-                            </Card.Body>
-                        }
-                        >
-                        <button type="button"
-                                    id={ `${NodeID}-predictor-actions-button` }
-                                className="absolute bottom-6 -left-4"
-                                style={{height: 0}}>A</button>
-                    </Popover>
-                    <Popover
-                        position={Position.RIGHT}
-                        content={
-                            <Card.Body
-                            className="overflow-y-auto h-40 text-xs">
-                                <Text className="mb-2">Outcomes</Text>
-                                {
-                                    Object.keys(ParentPredictorState.caoState.outcome).map(element =>
-                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label className="capitalize"> {element} </label>
-                                            <input name={element}
-                                                id={ `${NodeID}-predictor-outcomes-input` }
-                                        type="checkbox"
-                                        defaultChecked={false}
-                                        checked={ParentPredictorState.caoState.outcome[element]}
-                                        onChange={event => onUpdateCAOState(event, "outcome")}/>
-                                    </div>)
-                                }
-                            </Card.Body>
-                        }
-                        >
-                        <button type="button"
-                                    id={ `${NodeID}-predictor-outcomes-button` }
-                                className="absolute top-5 -right-4"
-                                style={{height: 0}}>O</button>
-                    </Popover>
-                    <Tooltip
-                        showDelay={1}
-                        content={
-                            isRegressor
-                                ? "Add uncertainty model node"
-                                : "Uncertainty models are not currently supported for this type of predictor"
-                        }
-                    >
-                        <div className="px-1 my-1"
-                             style={{
-                                 position: "absolute",
-                                 right: "1px",
+                             statelessProps={{
+                                 backgroundColor: "ghostwhite"
                              }}
                         >
-                            <button type="button"
-                                    id="add-uncertainty-node-button"
-                                    disabled={!isRegressor}
-                                    style={{
-                                        height: 15,
-                                        cursor: isRegressor ? "pointer" : "not-allowed",
-                                        opacity: isRegressor ? "100%" : "50%"
-                                    }}
-                                    onClick={() => AddUncertaintyModelNode(NodeID)}
+                            <div className="flex">
+                                <button type="button"
+                                            id={ `${NodeID}-predictor-gr-settings-option-button` }
+                                        className="mt-1"
+                                        style={{height: 0}}>
+                                    <GrSettingsOption />
+                                </button>
+                            </div>
+                        </Popover>
+                        <Popover
+                            position={Position.LEFT}
+                            content={
+                                <Card.Body
+                                className="overflow-y-auto h-40 text-xs">
+                                    <Text className="mb-2">Context</Text>
+                                    {
+                                        Object.keys(ParentPredictorState.caoState.context).map(element =>
+                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label className="capitalize"> {element} </label>
+                                                <input name={element}
+                                                    id={ `${NodeID}-predictor-context-input` }
+                                            type="checkbox"
+                                            defaultChecked={true}
+                                            checked={ParentPredictorState.caoState.context[element]}
+                                            onChange={event => onUpdateCAOState(event, "context")}/>
+                                        </div>)
+                                    }
+                                </Card.Body>
+                            }
                             >
-                                <BsPlusSquare size="0.6em" />
+                                <button type="button"
+                                    id={ `${NodeID}-predictor-context-button` }
+                                    className="absolute top-2 -left-4"
+                                    style={{height: 0}}>C</button>
+                        </Popover>
+                        <Popover
+                            position={Position.LEFT}
+                            content={
+                                <Card.Body
+                                className="overflow-y-auto h-40 text-xs"
+                                style={{zIndex: 1000}}
+                                >
+                                    <Text className="mb-2">Actions</Text>
+                                    {
+                                        Object.keys(ParentPredictorState.caoState.action).map(element =>
+                                            <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label className="capitalize"> {element} </label>
+                                                <input id={ `${NodeID}-predictor-actions-input` }
+                                            name={element}
+                                            type="checkbox"
+                                            defaultChecked={true}
+                                            checked={ParentPredictorState.caoState.action[element]}
+                                            onChange={event => onUpdateCAOState(event, "action")}/>
+                                        </div>)
+                                    }
+                                </Card.Body>
+                            }
+                            >
+                            <button type="button"
+                                        id={ `${NodeID}-predictor-actions-button` }
+                                    className="absolute bottom-6 -left-4"
+                                    style={{height: 0}}>A</button>
+                        </Popover>
+                        <Popover
+                            position={Position.RIGHT}
+                            content={
+                                <Card.Body
+                                className="overflow-y-auto h-40 text-xs">
+                                    <Text className="mb-2">Outcomes</Text>
+                                    {
+                                        Object.keys(ParentPredictorState.caoState.outcome).map(element =>
+                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label className="capitalize"> {element} </label>
+                                                <input name={element}
+                                                    id={ `${NodeID}-predictor-outcomes-input` }
+                                            type="checkbox"
+                                            defaultChecked={false}
+                                            checked={ParentPredictorState.caoState.outcome[element]}
+                                            onChange={event => onUpdateCAOState(event, "outcome")}/>
+                                        </div>)
+                                    }
+                                </Card.Body>
+                            }
+                            >
+                            <button type="button"
+                                        id={ `${NodeID}-predictor-outcomes-button` }
+                                    className="absolute top-5 -right-4"
+                                    style={{height: 0}}>O
                             </button>
-                        </div>
-                    </Tooltip>
+                        </Popover>
+                        <Tooltip
+                            showDelay={1}
+                            content={
+                                isRegressor
+                                    ? "Add uncertainty model node"
+                                    : "Uncertainty models are not currently supported for this type of predictor"
+                            }
+                        >
+                            <div className="px-1 my-1"
+                                 style={{
+                                     position: "absolute",
+                                     right: "1px",
+                                 }}
+                            >
+                                <button type="button"
+                                        id="add-uncertainty-node-button"
+                                        disabled={!isRegressor}
+                                        style={{
+                                            height: 15,
+                                            cursor: isRegressor ? "pointer" : "not-allowed",
+                                            opacity: isRegressor ? "100%" : "50%"
+                                        }}
+                                        onClick={() => AddUncertaintyModelNode(NodeID)}
+                                >
+                                    <BsPlusSquare size="0.6em" />
+                                </button>
+                            </div>
+                        </Tooltip>
+                    </div>
                 </Card.Body>
                     <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
                         <button type="button"
@@ -720,7 +723,7 @@ export default function PredictorNode(props): ReactElement {
                     </div>
             </Card>
 
-                <Handle type="source" position={HandlePosition.Right} />
-                <Handle type="target" position={HandlePosition.Left} />
+            <Handle type="source" position={HandlePosition.Right} />
+            <Handle type="target" position={HandlePosition.Left} />
         </BlueprintCard>
 }

@@ -132,73 +132,75 @@ export default function UncertaintyModelNode(props): ReactElement {
     return <BlueprintCard
         interactive={ true } 
         elevation={ Elevation.TWO } 
-        style={ { padding: 0, width: "10rem", height: "4rem" } }>
-
+        style={ { padding: 0, width: "10rem", height: "4rem" } }
+    >
         <Card border="warning" style={{height: "100%"}}>
             <Card.Body className="flex justify-center content-center">
                 <Text className="mr-2">Uncertainty model</Text>
-                <Popover content={
-                    <>
-                        <Card.Body className="h-40 text-xs" id={ "uncertainty_model_config" }>
-                            <div className="mt-1 mb-2 mx-1">
-                                <a target="_blank" href="https://gpflow.github.io/GPflow/" rel="noreferrer">
-                                    For more information on these settings, view the GPFlow documentation here.
-                                </a>
-                            </div>
-                            <div className="mt-4 mb-2">
-                                <Text>
-                                    <b>Basic settings</b>
-                                </Text>
-                            </div>
-                            <div className="mt-3">
-                                {
-                                    Object.keys(UNCERTAINTY_MODEL_PARAMS)
-                                        .filter(key => !UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
-                                        .map(key => {
-                                            return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
-                                        })
-                                }
-                            </div>
-                            <div className="mt-4 mb-2">
-                                <Text>
-                                    <b>Advanced settings</b> (most users should not change these)
-                                </Text>
-                            </div>
-                            <button
-                                id="show-advanced-settings-uncert-model"
-                                onClick={() => setShowAdvanced(!showAdvanced)}
-                            >
-                                {showAdvanced ? <u>Hide</u> : <u>Show</u>}
-                            </button>
-                            <Collapse in={showAdvanced} timeout={5}>
-                                <div className="mt-3 mb-4">
+                <div onMouseDown={(event) => {event.stopPropagation()}}>
+                    <Popover content={
+                        <>
+                            <Card.Body className="h-40 text-xs" id={ "uncertainty_model_config" }>
+                                <div className="mt-1 mb-2 mx-1">
+                                    <a target="_blank" href="https://gpflow.github.io/GPflow/" rel="noreferrer">
+                                        For more information on these settings, view the GPFlow documentation here.
+                                    </a>
+                                </div>
+                                <div className="mt-4 mb-2">
+                                    <Text>
+                                        <b>Basic settings</b>
+                                    </Text>
+                                </div>
+                                <div className="mt-3">
                                     {
                                         Object.keys(UNCERTAINTY_MODEL_PARAMS)
-                                            .filter(key => UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
+                                            .filter(key => !UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
                                             .map(key => {
                                                 return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
                                             })
                                     }
                                 </div>
-                            </Collapse>
-                        </Card.Body>
-                    </>
-                }
-                     statelessProps={{
-                         height: "325px",
-                         width: "650px",
-                         backgroundColor: "ghostwhite"
-                     }}
-                >
-                <div className="flex">
-                    <button type="button"
-                            id="show-uncertainty-model-config"
-                            className="mt-1"
-                            style={{height: 0}}>
-                        <GrSettingsOption/>
-                    </button>
+                                <div className="mt-4 mb-2">
+                                    <Text>
+                                        <b>Advanced settings</b> (most users should not change these)
+                                    </Text>
+                                </div>
+                                <button
+                                    id="show-advanced-settings-uncert-model"
+                                    onClick={() => setShowAdvanced(!showAdvanced)}
+                                >
+                                    {showAdvanced ? <u>Hide</u> : <u>Show</u>}
+                                </button>
+                                <Collapse in={showAdvanced} timeout={5}>
+                                    <div className="mt-3 mb-4">
+                                        {
+                                            Object.keys(UNCERTAINTY_MODEL_PARAMS)
+                                                .filter(key => UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
+                                                .map(key => {
+                                                    return getInputComponent(key, UNCERTAINTY_MODEL_PARAMS[key])
+                                                })
+                                        }
+                                    </div>
+                                </Collapse>
+                            </Card.Body>
+                        </>
+                    }
+                         statelessProps={{
+                             height: "325px",
+                             width: "650px",
+                             backgroundColor: "ghostwhite"
+                         }}
+                    >
+                    <div className="flex">
+                        <button type="button"
+                                id="show-uncertainty-model-config"
+                                className="mt-1"
+                                style={{height: 0}}>
+                            <GrSettingsOption/>
+                        </button>
+                    </div>
+                    </Popover>
                 </div>
-                </Popover>
             </Card.Body>
             <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
                 <button type="button"
@@ -213,7 +215,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                 </button>
             </div>
         </Card>
-            <Handle type="source" position={HandlePosition.Right} />
-            <Handle type="target" position={HandlePosition.Left} />
-        </BlueprintCard>
+        <Handle type="source" position={HandlePosition.Right} />
+        <Handle type="target" position={HandlePosition.Left} />
+    </BlueprintCard>
 }
