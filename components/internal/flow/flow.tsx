@@ -410,9 +410,10 @@ export default function Flow(props: FlowProps) {
     }
 
     function _getElementIndex(nodeID: string) {
+        const graph = flow
         const map = elementTypeToUuidList;
 
-        const element = FlowQueries.getNodeByID(map, nodeID);
+        const element = FlowQueries.getNodeByID(graph, nodeID);
         const index = FlowQueries.getIndexForElement(map, element);
         return index
     }
