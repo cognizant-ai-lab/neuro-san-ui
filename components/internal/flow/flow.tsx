@@ -688,7 +688,7 @@ export default function Flow(props: FlowProps) {
                     NodeID: newNodeID,
                     ParentUncertaintyNodeState: _getInitialUncertaintyNodeState(),
                     SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, newNodeID),
-                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
+                    DeleteNode: newNodeID => _deleteNodeById(newNodeID),
                     GetElementIndex: newNodeID => _getElementIndex(newNodeID)
                 },
                 position: {
