@@ -281,7 +281,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const PlotDiv = []
     if (predictorPlotData) {
-        PlotDiv.push(<MetricsTable PredictorRunData={predictorPlotData} />)
+        const predictors = FlowQueries.getPredictorNodes(flow)
+        PlotDiv.push(<MetricsTable PredictorRunData={predictorPlotData} Predictors={predictors} />)
     }
 
     if (prescriptorPlotData) {

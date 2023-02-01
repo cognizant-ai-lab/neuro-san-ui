@@ -25,19 +25,12 @@ export function FetchPredictors(predictorType: string): string[] {
 
 }
 
-export function FetchMetrics(predictorType: string): string[] {
+export function FetchMetrics(predictorType: string) {
     /*
     This function returns the list of supported metrics based on the predictor type.
     */
-    let metricsResp: string[]
-    
-    if (predictorType == "regressor") {
-        metricsResp = SUPPORTED_REGRESSOR_METRICS
-    } else if (predictorType == "classifier") {
-        metricsResp = SUPPORTED_CLASSIFIER_METRICS
-    }
 
-    return metricsResp
+    return predictorType === "regressor" ? SUPPORTED_REGRESSOR_METRICS : SUPPORTED_CLASSIFIER_METRICS
 }
 
 export function FetchParams(predictorType: string, predictorName: string): PredictorParams {

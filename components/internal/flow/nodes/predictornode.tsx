@@ -4,39 +4,23 @@ import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react
 // 3rd party components
 import {Row, Col, Card, Container} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {
-    InfoSignIcon,
-    Popover,
-    Position,
-    Tab,
-    Tablist,
-    Text,
-    Tooltip,
-} from "evergreen-ui"
+import {InfoSignIcon, Popover, Position, Tab, Tablist, Text, Tooltip,} from "evergreen-ui"
 import {BsPlusSquare} from "react-icons/bs"
-import { GrSettingsOption } from "react-icons/gr"
+import {GrSettingsOption} from "react-icons/gr"
 import Slider from "rc-slider"
 import 'rc-slider/assets/index.css'
 import {useSession} from "next-auth/react"
 import {Tooltip as AntdTooltip} from "antd"
 
 // React Flow
-import {
-    getOutgoers,
-    Handle,
-    Position as HandlePosition
-} from 'react-flow-renderer'
+import {getOutgoers, Handle, Position as HandlePosition} from 'react-flow-renderer'
 
 import {AiFillDelete} from "react-icons/ai";
 import {StringBool} from "../../../../controller/base_types"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
 
 // Controllers
-import {
-    FetchMetrics,
-    FetchParams,
-    FetchPredictors
-} from '../../../../controller/predictor'
+import {FetchMetrics, FetchParams, FetchPredictors} from '../../../../controller/predictor'
 import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {FlowQueries} from "../flowqueries";
 import {PredictorParams} from "../predictorinfo"
@@ -133,9 +117,9 @@ export default function PredictorNode(props): ReactElement {
     const [taggedData, setTaggedData] = useState(null)
 
     //Set the dropdown defaults here since the dropdown is created here
-    const DEFAULT_CLASSIFIER_METRIC = metrics["classifier"][0]
-    const DEFAULT_REGRESSOR_METRIC = metrics["regressor"][0]
-    
+    const DEFAULT_CLASSIFIER_METRIC = Array.from(metrics["classifier"].keys())[0]
+    const DEFAULT_REGRESSOR_METRIC = Array.from(metrics["regressor"].keys())[0]
+
     // Fetch the Data Tag
     useEffect(() => {
         //TODO: If the data node has the data source and tag available we should not fetch it but use that.
@@ -266,7 +250,7 @@ export default function PredictorNode(props): ReactElement {
         })
 
         // Get default metric for new predictor type
-        const selectedMetric = FetchMetrics(predictorType)[0]
+        const selectedMetric = Array.from(FetchMetrics(predictorType).keys())[0]
 
         // Write the state.
         SetParentPredictorState({
@@ -398,13 +382,14 @@ export default function PredictorNode(props): ReactElement {
                                                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
                                                 className="w-32"
                                                 >
-                                                     { metrics[ParentPredictorState.selectedPredictorType].map(
-                                                                metric =>
+                                                     { Array.from<string>(metrics[ParentPredictorState.selectedPredictorType].
+                                                        keys()).map(
+                                                            metric =>
                                                                     <option id={ `predictor-${flowIndex}-metric-${metric}` }
-                                                                        key={metric} value={ metric }>
-                                                                            { metric }
-                                                                    </option>
-                                                            )
+                                                                    key={metric} value={ metric }>
+                                                                        { metric }
+                                                                </option>
+                                                        )
                                                     }
                                             </select>
                                         </div>

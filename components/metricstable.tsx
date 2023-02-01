@@ -2,27 +2,74 @@ import React from "react";
 import {FiAlertCircle} from "react-icons/fi";
 import NewBar from "./newbar";
 import {InfoSignIcon, Position, Table, Tooltip} from "evergreen-ui"
+import {FlowQueries} from "./internal/flow/flowqueries";
+import {FetchMetrics} from "../controller/predictor";
+import {FaArrowDown, FaArrowUp} from "react-icons/fa";
 
 interface MetricstableProps {
-    readonly PredictorRunData
+    readonly PredictorRunData,
+    readonly Predictors
 }
 
+
 export default function MetricsTable(props: MetricstableProps) {
-
     const PredictorRunData = props.PredictorRunData
+    const Predictors = props.Predictors
     const predictorRenders = []
-    Object.keys(PredictorRunData).forEach(nodeID => {
 
+
+    function getRioImprovement(unCorrectedValue: number, rioMetrics, metrics, metricName: string, nodeID: string) {
+        const predictor = FlowQueries.getNodeByID(Predictors, nodeID)
+        if (!predictor) {
+            return null
+        }
+
+        // Get the predictor type (regressor/classifier) so we can get the appropriate list of metrics info
+        const predictorType = predictor.data.ParentPredictorState.selectedPredictorType
+        const metricsInfo = FetchMetrics(predictorType)
+
+        // After training, metrics IDs are returned to us in the format [test|train]_[metric name]_[outcome name]
+        // We want just the middle part to look up the metric in the Map.
+        // This is a bit of a hack, but there seems to be no other way to get the raw metric name after training.
+        const baseMetricName = metricName.split("_")[1]
+
+        // Figure out which way the metric goes
+        const higherIsBetter: boolean = metricsInfo.get(baseMetricName)
+
+        // Original prediction
+        const nonAdjustedValue = metrics[metricName]
+
+        // RIO-adjusted prediction
+        const rioValue = rioMetrics[metricName]
+
+        // Improvement (or worsening) due to RIO
+        const rioDiff = nonAdjustedValue - rioValue
+
+        // Generate appropriate display element depending on improvement or worsening, and include percentage.
+        // If before & after are exactly equal, no arrow is shown.
+        const isImproved = higherIsBetter ? (rioValue > nonAdjustedValue) : (rioValue < nonAdjustedValue)
+        return <span style={{display: "inline-flex"}} id={`rio-diff-${metricName}`}>
+            {((rioDiff) / nonAdjustedValue * 100).toFixed(2)}%
+            {rioDiff != 0 &&
+                (isImproved
+                    ? <FaArrowUp style={{color: "#4EAD60FF"}} />
+                    : <FaArrowDown style={{color: "#ff5740"}} />
+                )
+            }
+        </span>
+    }
+
+    Object.keys(PredictorRunData).forEach(nodeID => {
         const metrics = PredictorRunData[nodeID].metrics
         const rioMetrics = PredictorRunData[nodeID].rioMetrics
         const cells = Object.keys(metrics).map((metricName) => {
-                const value = metrics[metricName]
+                const unCorrectedValue = metrics[metricName]
                 return <Table.Row key={`${nodeID}-${metricName}`}>
                     <Table.TextCell id={metricName}>{metricName}</Table.TextCell>
-                    <Table.TextCell>{value}</Table.TextCell>
+                    <Table.TextCell>{unCorrectedValue}</Table.TextCell>
                     {rioMetrics && <Table.TextCell>{rioMetrics[metricName]}</Table.TextCell>}
                     {rioMetrics && <Table.TextCell>
-                        {((value - rioMetrics[metricName])/value * 100).toFixed(2)}%
+                        {getRioImprovement(unCorrectedValue, rioMetrics, metrics, metricName, nodeID)}
                     </Table.TextCell>}
                 </Table.Row>
             }
@@ -43,9 +90,9 @@ export default function MetricsTable(props: MetricstableProps) {
                         {rioMetrics &&
                             <Table.TextCell>
                                 <div style={{display: "flex"}}>
-                                    <b>RIO diff</b>
+                                    <b>RIO improvement</b>
                                     <Tooltip
-                                        content="Difference between original predictor metric and RIO-enhanced predictor metric, as a percentage"
+                                        content="Improvement of RIO-enhanced predictor metric over original predictor metric, as a percentage"
                                         statelessProps={{className: "opacity-75"}}
                                         position={Position.TOP_RIGHT}
                                     >

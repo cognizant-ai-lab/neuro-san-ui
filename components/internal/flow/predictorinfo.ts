@@ -481,34 +481,36 @@ export const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
     }
 }
 
-export const SUPPORTED_REGRESSOR_METRICS: string[] = [
+export const SUPPORTED_REGRESSOR_METRICS = new Map([
 /*
 This list should match the list of supported metrics in the backend.
-See SUPPORTED_METRICS in framework/metrics/metrics_manager.py
+See SUPPORTED_METRICS in <unileaf_util library>/framework/metrics/metrics_manager.py
 The string should match exactly the `name` property of the MetricsCalculator.
 For instance, "Mean Absolute Error" must match MeanAbsoluteError.name in framework/metrics/mean_absolute_error.py
 
-This list represents the metrics we want to be available for regressors
+This list represents the metrics we want to be available for regressors, and for each one, a flag indicating if
+"higher is better" ("score"-type metrics) or "lower is better" ("error"-type metrics). This flag is used to interpret
+the RIO improvement and depict it accordingly for the user.
+
 The first item in the list is the default value.
  */
-    "Mean Absolute Error", // Default Value
-    "Mean Squared Error",
-    "Root Mean Square Error",
-    "F1 score",
-    "R2 score",
-    "Accuracy score",
-    "Matthews correlation coefficient"
-]
+    ["Mean Absolute Error",                 false], // Default Value
+    ["Mean Squared Error",                  false],
+    ["Root Mean Square Error",              false],
+    ["F1 score",                            true],
+    ["R2 score",                            true],
+    ["Accuracy score",                      true],
+    ["Matthews correlation coefficient",    true]
+])
 
-export const SUPPORTED_CLASSIFIER_METRICS: string[] = [
+export const SUPPORTED_CLASSIFIER_METRICS = new Map([
     /*
     This list represents the metrics we want to be available for classifiers.
     The first item in the list is the default value.
      */
-        "F1 score", // Default Value
-        "R2 score",
-        "Accuracy score",
-        "Matthews correlation coefficient"
-    ]
-
+    ["F1 score",                            true],  // Default Value
+    ["R2 score",                            true],
+    ["Accuracy score",                      true],
+    ["Matthews correlation coefficient",    true]
+])
 
