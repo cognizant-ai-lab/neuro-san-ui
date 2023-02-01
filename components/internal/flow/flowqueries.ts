@@ -117,12 +117,11 @@ export class FlowQueries {
 
             // Always use strings for keys
             const elementType = String(element.type);
-            const keys = Array.from(elementTypeToUuidList.keys());
 
             // See if the list for the element type already exists.
             // Use that value if it exists already.
             let uuidList: string[] = [];
-            if (keys.includes(elementType) === true) {
+            if (elementTypeToUuidList.has(elementType)) {
                 uuidList = elementTypeToUuidList.get(elementType);
             }
 
@@ -174,8 +173,7 @@ export class FlowQueries {
 
         // First be sure the element type is even in the dictionary
         const elementType = String(element.type);
-        const keys = Array.from(elementTypeToUuidList.keys());
-        if (keys.includes(elementType) === true) {
+        if (elementTypeToUuidList.has(elementType)) {
 
             // Find the list for the appropriate element type
             const uuidList = elementTypeToUuidList.get(elementType);

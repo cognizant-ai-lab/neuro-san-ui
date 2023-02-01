@@ -735,11 +735,9 @@ export default function Flow(props: FlowProps) {
         for testing ids.
         */
 
-        const keys = Array.from(elementTypeToUuidList.keys());
-
         // Allow for the list of elementType not to exist just yet
         let uuidList: string[] = [];
-        if (keys.includes(elementType) === true) {
+        if (elementTypeToUuidList.has(elementType) === true) {
             uuidList = elementTypeToUuidList.get(elementType);
         }
         uuidList.push(elementId);
