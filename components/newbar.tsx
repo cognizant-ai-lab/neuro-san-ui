@@ -78,7 +78,7 @@ export default function NewBar(props: NavbarProps) {
                    />
         </h3>
     } else {
-        title = <h3 className="h3">{ props.Title }</h3>
+        title = <h3 className="h3" id="new-bar-title">{ props.Title }</h3>
     }
 
     return <div className="flex justify-between py-6 items-center border-b-2 border-black">

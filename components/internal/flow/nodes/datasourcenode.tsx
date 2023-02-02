@@ -66,7 +66,7 @@ export default function DataSourceNode(props): React.ReactElement {
         elevation={ Elevation.TWO }
         style={ { padding: 0, width: "8rem", height: "6rem" } }>
             <Card border="warning" style={{height: "100%"}}>
-                <Card.Header>Data Source</Card.Header>
+                <Card.Header id="data-source-header">Data Source</Card.Header>
                 <Card.Body>
                     <div className="flex-col flex content-center">
                         <div className="flex justify-between mb-4 content-center">

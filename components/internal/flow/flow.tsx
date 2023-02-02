@@ -93,13 +93,15 @@ export default function Flow(props: FlowProps) {
                     SetParentPredictorState: state => PredictorSetStateHandler(state, node.id),
                     DeleteNode: nodeId => _deleteNodeById(nodeId),
                     AddUncertaintyModelNode: nodeId => _addUncertaintyNodes([nodeId]),
-                    GetFlow: () => GetFlow()
+                    GetFlow: () => GetFlow(),
+                    GetElementIndex: nodeId => _getElementIndex(nodeId)
                 }
             } else if (node.type === 'prescriptornode') {
                 node.data = {
                     ...node.data,
                     SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, node.id),
-                    DeleteNode: nodeId => _deleteNodeById(nodeId)
+                    DeleteNode: nodeId => _deleteNodeById(nodeId),
+                    GetElementIndex: nodeId => _getElementIndex(nodeId)
                 }
             } else if (node.type === 'uncertaintymodelnode') {
                 node.data = {
@@ -127,6 +129,12 @@ export default function Flow(props: FlowProps) {
 
     // Tidy flow when nodes are added or removed
     useEffect(() => tidyView(), [flow.length])
+
+    // Initial population of the element type -> uuid list mapping used for simplified testing ids
+    const initialMap = FlowQueries.getElementTypeToUuidList(initialFlowValue)
+    debug("initial uuid map: ", initialMap)
+
+    const [elementTypeToUuidList, setElementTypeToUuidList] = useStateWithCallback(initialMap)
 
     function DataNodeStateUpdateHandler(dataSource: DataSource, dataTag: DataTag) {
         /*
@@ -345,7 +353,6 @@ export default function Flow(props: FlowProps) {
         })
 
         return graphCopy
-
     }
 
     function _getInitialPredictorState() {
@@ -404,6 +411,16 @@ export default function Flow(props: FlowProps) {
         return flow
     }
 
+    function _getElementIndex(nodeID: string) {
+        /*
+        Function used as a means for Flow graph elements to query what their
+        per-element index is for creating easier to handle id strings for testing.
+        */
+        const element = FlowQueries.getNodeByID(flow, nodeID);
+        const index = FlowQueries.getIndexForElement(elementTypeToUuidList, element);
+        return index
+    }
+
     function _addPredictorNode() {
         /*
         This function adds a predictor node to the Graph while supplying
@@ -436,7 +453,8 @@ export default function Flow(props: FlowProps) {
                 SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
                 DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
                 AddUncertaintyModelNode: predictorNodeId => _addUncertaintyNodes([predictorNodeId]),
-                GetFlow: () => GetFlow()
+                GetFlow: () => GetFlow(),
+                GetElementIndex: NodeID => _getElementIndex(NodeID)
             },
             position: {
                 x: flowInstanceElem[0].position.x + 250,
@@ -467,6 +485,7 @@ export default function Flow(props: FlowProps) {
 
         setFlow(graphCopy)
         setParentState(graphCopy)
+        _addElementUuid("predictornode", NodeID)
     }
 
     function _getInitialPrescriptorState(fitness) {
@@ -583,7 +602,8 @@ export default function Flow(props: FlowProps) {
                 SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
                 UpdateEvaluateOverrideCode: value => UpdateEvaluateOverrideCode(NodeID, value),
-                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
+                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
+                GetElementIndex: NodeID => _getElementIndex(NodeID)
             },
             position: {
                 x: prescriptorNodeXPos,
@@ -616,6 +636,7 @@ export default function Flow(props: FlowProps) {
 
         setFlow(graphCopy)
         setParentState(graphCopy)
+        _addElementUuid("prescriptornode", NodeID)
     }
 
     function  _getInitialUncertaintyNodeState(): UncertaintyModelParams {
@@ -667,7 +688,8 @@ export default function Flow(props: FlowProps) {
                     NodeID: newNodeID,
                     ParentUncertaintyNodeState: _getInitialUncertaintyNodeState(),
                     SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, newNodeID),
-                    DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId)
+                    DeleteNode: newNodeID => _deleteNodeById(newNodeID),
+                    GetElementIndex: newNodeID => _getElementIndex(newNodeID)
                 },
                 position: {
                     x: uncertaintyNodeXPos,
@@ -698,6 +720,8 @@ export default function Flow(props: FlowProps) {
                 // Connect the uncertainty model node to the prescriptor
                 graphCopy = _addEdgeToPrescriptorNode(graphCopy, newNodeID, prescriptorNode.id)
             }
+
+            _addElementUuid("uncertaintymodelnode", newNodeID)
         })
 
         // Save the updated Flow
@@ -705,13 +729,29 @@ export default function Flow(props: FlowProps) {
         setParentState(graphCopy)
     }
 
+    function _addElementUuid(elementType: string, elementId: string) {
+        /*
+        Adds a uuid for a particular element type to our indexing map used
+        for testing ids.
+        */
+
+        // Allow for the list of elementType not to exist just yet
+        let uuidList: string[] = [];
+        if (elementTypeToUuidList.has(elementType)) {
+            uuidList = elementTypeToUuidList.get(elementType);
+        }
+        uuidList.push(elementId);
+        elementTypeToUuidList.set(elementType, uuidList);
+
+        setElementTypeToUuidList(elementTypeToUuidList);
+    }
+
     function _deleteNodeById(nodeID: string) {
         /*
         Simple "shim" method to allow nodes to delete themselves using their own NodeID, which
         each node knows.
          */
-        const graph = flow
-        _deleteNode([FlowQueries.getNodeByID(graph, nodeID)], graph)
+        _deleteNode([FlowQueries.getNodeByID(flow, nodeID)], flow)
     }
 
     function _deleteNode(elementsToRemove, graph) {
@@ -797,10 +837,26 @@ export default function Flow(props: FlowProps) {
 
         }
 
+        // Update the uuid index map for testing ids
+        removableElements.forEach( (element) => {
+            const uuidIndex = FlowQueries.getIndexForElement(elementTypeToUuidList, element);
+            if (uuidIndex >= 0) {
+
+                const elementType = String(element.type);
+                const uuidList = elementTypeToUuidList.get(elementType);
+
+                // Update the list with a marker that says the node has been deleted
+                // This lets the other indexes in the list not to have to change.
+                uuidList[uuidIndex] = "deleted";
+                elementTypeToUuidList.set(elementType, uuidList);
+            }
+        });
+
         // Update the flow, removing the deleted nodes
         const flowWithElementsDeleted = removeElements(removableElements, graph);
         setFlow(flowWithElementsDeleted)
         setParentState(flowWithElementsDeleted)
+        setElementTypeToUuidList(elementTypeToUuidList)
     }
 
     function onNodeDragStop(event, node) {

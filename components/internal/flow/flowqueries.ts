@@ -1,6 +1,11 @@
 import {isEdge, isNode} from "react-flow-renderer";
 import {CAOType} from "../../../controller/datatag/types";
 
+// Debug
+import Debug from "debug"
+
+const debug = Debug("flowqueries")
+
 /**
  * Contains various methods for query items from the experiment flow
  */
@@ -80,7 +85,7 @@ export class FlowQueries {
         /*
            Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
         */
-        return  graph.find(element => element.id === nodeID)
+        return graph.find(element => element.id === nodeID)
     }
 
     static getAllNodes(graph) {
@@ -89,5 +94,90 @@ export class FlowQueries {
 
     static getAllEdges(graph) {
         return graph.filter(e => isEdge(e))
+    }
+
+    static getElementTypeToUuidList(graph): Map<string, string[]> {
+        /*
+        Return a dictionary whose keys are graph element types
+        and whose values are a sorted list of id (assumed uuid) strings.
+
+        This dictionary is useful for creating (somewhat) predictable indexes
+        on a per-element-type basis used for ids in testing.
+
+        Note that more persistence-oriented work would need to be done for these ids
+        to be consistent across different pages with operations performed on the graph.
+        */
+
+        // Start with an empty dictionary
+        const elementTypeToUuidList: Map<string, string[]> = new Map<string, string[]>();
+
+        // Loop through each flow element.
+        // Find out its type and start building a list of ids
+        for (const element of graph) {
+
+            // Always use strings for keys
+            const elementType = String(element.type);
+
+            // See if the list for the element type already exists.
+            // Use that value if it exists already.
+            let uuidList: string[] = [];
+            if (elementTypeToUuidList.has(elementType)) {
+                uuidList = elementTypeToUuidList.get(elementType);
+            }
+
+            // Add to the uuidList and be sure the new list is in the dictionary
+            uuidList.push(element.id);
+            elementTypeToUuidList.set(elementType, uuidList);
+        }
+
+        // Now that we have the uuid list for each element type populated,
+        // sort each list so that we have an initial index for each element
+        // of each type.
+        for (const key in elementTypeToUuidList) {
+
+            // Get the list we have for the given key/type
+            const uuidList = elementTypeToUuidList.get(key);
+
+            // Sort it by uuid string
+            uuidList.sort();
+        }
+
+        debug({elementTypeToUuidList});
+
+        return elementTypeToUuidList;
+    }
+
+    static getIndexForElement(elementTypeToUuidList: Map<string, string[]>, element): number {
+        /*
+        Given an elementTypeToUuidList dictionary (see method above)
+        return the index of a given element.  This index is used for ids in testing.
+        */
+
+        debug({elementTypeToUuidList});
+
+        // Default value if no element type in list
+        let index = -1;
+
+        // First be sure the element type is even in the dictionary
+        const elementType = String(element.type);
+        if (elementTypeToUuidList.has(elementType)) {
+
+            // Find the list for the appropriate element type
+            const uuidList = elementTypeToUuidList.get(elementType);
+            const elementId = element.id;
+
+            debug({elementId});
+
+            // Find the uuid of the element in the list
+            // Will return -1 if the id itself is not in the list.
+            index = uuidList.indexOf(elementId);
+        } else {
+            debug({elementType});
+        }
+
+        debug({index});
+
+        // Not in the dictionary
+        return index;
     }
 }

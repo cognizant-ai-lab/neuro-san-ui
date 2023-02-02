@@ -36,6 +36,9 @@ interface UncertaintyModelNodeData {
 
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void
+
+    // Gets a simpler index for testing ids (at least)
+    readonly GetElementIndex: (nodeID: string) => number
 }
 
 export default function UncertaintyModelNode(props): ReactElement {
@@ -47,7 +50,12 @@ export default function UncertaintyModelNode(props): ReactElement {
     const data: UncertaintyModelNodeData = props.data
 
     // Unpack the data
-    const {NodeID, ParentUncertaintyNodeState, DeleteNode, SetParentUncertaintyNodeState} = data
+    const {
+        NodeID,
+        ParentUncertaintyNodeState,
+        SetParentUncertaintyNodeState,
+        DeleteNode
+    } = data
 
     // For showing advanced configuration settings
     const [showAdvanced, setShowAdvanced] = useState(false)
