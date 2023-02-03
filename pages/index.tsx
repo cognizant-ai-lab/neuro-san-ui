@@ -121,20 +121,20 @@ export default function Index(): React.ReactElement {
     <OuterContainer>
       <Marginer>
           <Navbar>
-              <NavbarLogo>{LOGO}</NavbarLogo>
+              <NavbarLogo id="logo">{LOGO}</NavbarLogo>
               <NavbarMiddleSection>
-                  <NavbarItem>Publications</NavbarItem>
-                  <NavbarItem>Contact</NavbarItem>
-                  <NavbarItem>About</NavbarItem>
+                  <NavbarItem id="publications">Publications</NavbarItem>
+                  <NavbarItem id="contact">Contact</NavbarItem>
+                  <NavbarItem id="about">About</NavbarItem>
               </NavbarMiddleSection>
-              <NavbarItem>Partner</NavbarItem>
+              <NavbarItem id="partner">Partner</NavbarItem>
           </Navbar>
           <LeftRight>
               <div>
                   <HeaderLineOne>OPTIMIZE YOUR</HeaderLineOne>
                   <HeaderLineTwo>BUSINESS</HeaderLineTwo>
                   <Link href={`/projects`} >
-                      <GetStartedButton>Get Started</GetStartedButton>
+                      <GetStartedButton id="get-started">Get Started</GetStartedButton>
                   </Link>
                   <Description>
                       Research and builds applications with modern AI techniques such as evolutionary computation and deep learning across disciplines using LEAF (Learning and Evolutionary AI Framework)
