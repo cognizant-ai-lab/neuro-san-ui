@@ -15,7 +15,8 @@ interface NavbarProps {
     DisplayNewLink?: boolean,
     LinkCallback?,
     ButtonComponent?,
-    EditableCallback?
+    EditableCallback?,
+    InstanceId?: string
 }
 
 export default function NewBar(props: NavbarProps) {
@@ -23,6 +24,11 @@ export default function NewBar(props: NavbarProps) {
     This component builds a Title bar that can have a new 
     button attached or not.
     */
+
+    let idPrefix = "title-bar";
+    if (props.InstanceId) {
+        idPrefix = props.InstanceId
+    }
 
     // Determine if the new Button needs to be shown or not
     let newButton = null
@@ -34,7 +40,9 @@ export default function NewBar(props: NavbarProps) {
                         </Link>
         } else if (props.LinkCallback) {
             // If a link has been provided
-            newButton = <h3 className="h3" onClick={props.LinkCallback}><BsFillPlusSquareFill /></h3>
+            newButton = <h3 id={ `${idPrefix}-link` } className="h3" onClick={props.LinkCallback}>
+                            <BsFillPlusSquareFill />
+                        </h3>
         } else if (props.ButtonComponent) {
             newButton = props.ButtonComponent
         }
@@ -48,7 +56,7 @@ export default function NewBar(props: NavbarProps) {
             <button onClick={() => {
                         setEditing(true)
                     }}
-                    id="title-bar-button"
+                    id={ `${idPrefix}-button` }
             >
                 <AiFillEdit size='14'/>
             </button>
@@ -56,7 +64,7 @@ export default function NewBar(props: NavbarProps) {
     } else if (props.EditableCallback && editing) {
         title = <h3 className="h3">
             <input type="text"
-                   id="title-bar-input"
+                   id={ `${idPrefix}-input` }
                    autoFocus={true}
                    disabled={false}
                    defaultValue={props.Title}
@@ -78,7 +86,7 @@ export default function NewBar(props: NavbarProps) {
                    />
         </h3>
     } else {
-        title = <h3 className="h3" id="new-bar-title">{ props.Title }</h3>
+        title = <h3 className="h3" id={ `${idPrefix}-title` }>{ props.Title }</h3>
     }
 
     return <div className="flex justify-between py-6 items-center border-b-2 border-black">
