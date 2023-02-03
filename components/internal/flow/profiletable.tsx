@@ -254,8 +254,7 @@ export default function ProfileTable(props: ProfiletableProps) {
     }
 
     const editCategoryValuesModal =
-        <Modal id="edit-category-values"
-               title="Edit categorical values"
+        <Modal title="Edit categorical values"
                visible={showFieldEditor}
                destroyOnClose={true}
                onOk={(e: React.MouseEvent<HTMLElement>) => {
@@ -304,8 +303,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                                     {
                                         profile && fieldBeingEditedName ? currentCategoryValues.map((val, index) => {
                                             return (
-                                                <Draggable id={ `${val}-draggable` }
-                                                           key={val} draggableId={val} index={index}>
+                                                <Draggable key={val} draggableId={val} index={index}>
                                                     {(provided, snapshot) => {
                                                         const opacity =
                                                             snapshot.isDragging ? "opacity-50" : "opacity-100"
