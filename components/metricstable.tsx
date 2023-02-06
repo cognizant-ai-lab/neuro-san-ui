@@ -111,7 +111,7 @@ export default function MetricsTable(props: MetricstableProps) {
     })
 
     return <>
-        <NewBar Title="Predictor Metrics" DisplayNewLink={ false } />
+        <NewBar id="predictor-metrics-bar" Title="Predictor Metrics" DisplayNewLink={ false } />
         {predictorRenders && predictorRenders.length > 0
             ?   predictorRenders
             :   <>
