@@ -43,11 +43,13 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                 const bumpData = PrescriptorRunData[nodeID][objective]
                 const objectiveMetricGraphLabelId = `${objective}-metric-graph-label`
                 cells.push(
-                    <Table.Row style={{height: "100%"}} key={`${nodeID}-${objective}`}>
+                    <Table.Row id={ `objective-row-${objectiveMetricGraphLabelId}` }
+                            style={{height: "100%"}} key={`${nodeID}-${objective}`}>
                         <Table.TextCell id={objectiveMetricGraphLabelId}>{objective}</Table.TextCell>
-                        <Table.TextCell >
-                            <div className="pl-4" style={{height: "25rem", width: "100%"}}>
-                                <ResponsiveLine
+                        <Table.TextCell id={ `graph-${objectiveMetricGraphLabelId}` }>
+                            <div id={ `graph-div-${objectiveMetricGraphLabelId}` }
+                                    className="pl-4" style={{height: "25rem", width: "100%"}}>
+                                <ResponsiveLine id={ `graph-responsive-line-${objectiveMetricGraphLabelId}` }
                                     data={bumpData}
                                     margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
                                     xScale={{ type: 'linear'}}
@@ -102,14 +104,14 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
         })
 
         nodePlots.push(
-            <div>
-                <p>Node ID: {nodeID}</p>
-                <Table.Body>
-                    <Table.Head>
-                        <Table.TextCell>Objective</Table.TextCell>
-                        <Table.TextCell>Plot</Table.TextCell>
+            <div id={ `node-id-div-${nodeID}` }>
+                <p id={ `node-id-name-${nodeID}` }>Node ID: {nodeID}</p>
+                <Table.Body id={ `node-id-body-${nodeID}` }>
+                    <Table.Head id={ `node-id-headers-${nodeID}` }>
+                        <Table.TextCell id={ `node-id-objective-${nodeID}` }>Objective</Table.TextCell>
+                        <Table.TextCell id={ `node-id-plot-${nodeID}` }>Plot</Table.TextCell>
                     </Table.Head>
-                    <Table.Body>
+                    <Table.Body id={ `node-id-${nodeID}-cells`} >
                         {cells}
                     </Table.Body>
                 </Table.Body>
@@ -118,20 +120,24 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
 
     })
 
-
-
     return <>
         <div id="prescriptor-metrics">
-            <NewBar Title="Prescriptor Metrics" DisplayNewLink={ false } />
+            <NewBar id="prescriptor-metrics-bar"
+                InstanceId="prescriptor-metrics"
+                Title="Prescriptor Metrics"
+                DisplayNewLink={ false } />
             {nodePlots && nodePlots.length > 0
                 ? nodePlots
                 :   <>
-                    <span style={{display: "flex"}}>
-                        <FiAlertCircle color="red" size={50}/>
-                        <span className="ml-4 fs-4 my-auto">No prescriptors found.</span>
-                        <div className="break"></div>
+                    <span id="prescriptor-metrics-span" style={{display: "flex"}}>
+                        <FiAlertCircle id="prescriptor-metrics-dot" color="red" size={50}/>
+                        <span id="prescriptor-metrics-none-found"
+                                className="ml-4 fs-4 my-auto">
+                            No prescriptors found.
+                        </span>
+                        <div id="prescriptor-metrics-break" className="break"></div>
                     </span>
-                    <br />
+                    <br id="prescriptor-metrics-instructions"/>
                     Navigate to the Runs table and view the error logs for your Run to see what went wrong.
                 </>
             }
@@ -267,9 +273,14 @@ function ParetoPlot(props) {
 
     // A custom Point symbol for the scatter plot
     const CustomSymbol = ({ size, color, borderWidth, borderColor }) => (
-        <g>
-            <circle fill="#fff" r={size / 2} strokeWidth={borderWidth} stroke={borderColor} />
-            <circle
+        <g id="scatter-plot-custom-symbols">
+            <circle id="scatter-plot-circle-1"
+                fill="#fff"
+                r={size / 2}
+                strokeWidth={borderWidth}
+                stroke={borderColor}
+            />
+            <circle id="scatter-plot-circle-2"
                 r={size / 5}
                 strokeWidth={borderWidth}
                 stroke={borderColor}
@@ -280,7 +291,7 @@ function ParetoPlot(props) {
     )
 
     return <>
-        <div className="flex mt-4 ">
+        <div id="pareto-plot-div" className="flex mt-4 ">
 
             {/* This button enables the animation */}
             <Button id="generation-play-button"
@@ -313,9 +324,10 @@ function ParetoPlot(props) {
                     }
 
                 }}
-            >{playing ? <FiStopCircle /> : <FiPlay />}</Button>
+            >{playing ? <FiStopCircle id="generation-play-stop"/> : <FiPlay id="generation-play-play"/>}</Button>
 
-            <Slider defaultValue={numGen}
+            <Slider id="selected-generation-slider"
+                    defaultValue={numGen}
                     marks={marks}
                     min={1}
                     max={numGen + 1}
@@ -336,7 +348,7 @@ function ParetoPlot(props) {
             />
         </div>
 
-        <ResponsiveLine
+        <ResponsiveLine id="responsive-line"
             pointSymbol={CustomSymbol}
             pointSize={12}
             pointBorderWidth={1}
@@ -346,10 +358,10 @@ function ParetoPlot(props) {
             }}
             curve="monotoneX"
             tooltip={({point}) => {
-                return <Card>
-                    <Container className="flex flex-col justify-space-between">
-                        <p>{xLabel}: {point.data.x}</p>
-                        <p>{yLabel}: {point.data.y}</p>
+                return <Card id="responsive-line-tooltip">
+                    <Container id="responsive-line-tooltip-container" className="flex flex-col justify-space-between">
+                        <p id="responsive-line-tooltip-x-label">{xLabel}: {point.data.x}</p>
+                        <p id="responsive-line-tooltip-y-label">{yLabel}: {point.data.y}</p>
                     </Container>
                 </Card>
             }}
@@ -417,7 +429,7 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
     const nodePlots = []
 
     // For Each node create a table
-    Object.keys(props.Pareto).forEach(nodeID => {
+    Object.keys(props.Pareto).forEach((nodeID, idx) => {
 
         const node = props.Pareto[nodeID]
         const objectives = node.objectives
@@ -425,10 +437,11 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
         const cells = []
 
         cells.push(
-            <Table.Row style={{height: "100%"}} key={`${nodeID}-pareto`} >
-                <Table.TextCell>
-                    <div className="pl-4 pb-28" style={{height: "35rem", width: "100%"}}>
-                        <ParetoPlot
+            <Table.Row id={ `paretor-plot-row=${idx}` } style={{height: "100%"}} key={`${nodeID}-pareto`} >
+                <Table.TextCell id={ `pareto-plot-text-cell-${idx}` }>
+                    <div id={ `pareto-plot-div-${idx}` }
+                            className="pl-4 pb-28" style={{height: "35rem", width: "100%"}}>
+                        <ParetoPlot id={ `pareto-plot-${idx}` }
                             data={node.data}
                             xLabel={objectives[0]}
                             yLabel={objectives[1]}
@@ -448,12 +461,12 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
         )
 
         nodePlots.push(
-            <div>
-                <Table.Body>
-                    <Table.Head>
-                        <Table.TextCell>Plot</Table.TextCell>
+            <div id="plot-table">
+                <Table.Body id="plot-table-body">
+                    <Table.Head id="plot-table-header">
+                        <Table.TextCell id="plot-table-label">Plot</Table.TextCell>
                     </Table.Head>
-                    <Table.Body>
+                    <Table.Body id="plot-table-cells">
                         {cells}
                     </Table.Body>
                 </Table.Body>
@@ -466,7 +479,10 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
 
     return <>
         <div id="pareto-prescriptors">
-            <NewBar Title="Pareto Prescriptors" DisplayNewLink={ false } />
+            <NewBar id="pareto-prescriptors-bar"
+                InstanceId="pareto-prescriptors"
+                Title="Pareto Prescriptors"
+                DisplayNewLink={ false } />
             {nodePlots}
         </div>
     </>
