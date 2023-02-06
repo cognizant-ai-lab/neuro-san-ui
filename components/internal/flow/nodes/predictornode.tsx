@@ -623,7 +623,7 @@ export default function PredictorNode(props): ReactElement {
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
                                                 <input name={element}
-                                                    id={ `predictor-${flowIndex}-context-input` }
+                                                    id={ `predictor-${flowIndex}-context-input-${element}` }
                                             type="checkbox"
                                             defaultChecked={true}
                                             checked={ParentPredictorState.caoState.context[element]}
@@ -650,7 +650,7 @@ export default function PredictorNode(props): ReactElement {
                                         Object.keys(ParentPredictorState.caoState.action).map(element =>
                                             <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                                <input id={ `predictor-${flowIndex}-actions-input` }
+                                                <input id={ `predictor-${flowIndex}-actions-input-${element}` }
                                             name={element}
                                             type="checkbox"
                                             defaultChecked={true}
@@ -677,7 +677,7 @@ export default function PredictorNode(props): ReactElement {
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
                                                 <input name={element}
-                                                    id={ `predictor-${flowIndex}-outcomes-input` }
+                                                    id={ `predictor-${flowIndex}-outcomes-input-${element}` }
                                             type="checkbox"
                                             defaultChecked={false}
                                             checked={ParentPredictorState.caoState.outcome[element]}

@@ -731,7 +731,7 @@ export default function PrescriptorNode(props): ReactElement {
                                         Object.keys(ParentPrescriptorState.caoState.context).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input id={ `prescriptor-${flowIndex}-context-input` }
+                                            <input id={ `prescriptor-${flowIndex}-context-input-${element}` }
                                                 name={element}
                                                 type="checkbox" 
                                                 defaultChecked={true}
@@ -755,15 +755,16 @@ export default function PrescriptorNode(props): ReactElement {
                                     <Text className="mb-2">Actions</Text>
                                     {
                                         Object.keys(ParentPrescriptorState.caoState.action).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
-                                            <input id={ `prescriptor-${flowIndex}-actions-input` }
-                                                name={element}
-                                                type="checkbox" 
-                                                defaultChecked={true}
-                                                checked={ParentPrescriptorState.caoState.action[element]}
-                                                onChange={event => updateCAOState(event, "action")}/>
-                                        </div>)
+                                            <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                                <label className="capitalize"> {element} </label>
+                                                <input id={ `prescriptor-${flowIndex}-actions-input-${element}` }
+                                                    name={element}
+                                                    type="checkbox" 
+                                                    defaultChecked={true}
+                                                    checked={ParentPrescriptorState.caoState.action[element]}
+                                                    onChange={event => updateCAOState(event, "action")}/>
+                                            </div>
+                                        )
                                     }
                                 </Card.Body>
                             }
