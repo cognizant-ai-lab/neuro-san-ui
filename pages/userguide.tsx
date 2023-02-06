@@ -27,7 +27,7 @@ export default function UserGuide() {
 
 
     return <>
-        <ReactMarkdown id="user-guide-contents"
+        <ReactMarkdown
             rehypePlugins={[rehypeRaw]} className='prose'>{userGuide}</ReactMarkdown>
     </>
 }

@@ -49,7 +49,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                         <Table.TextCell id={ `graph-${objectiveMetricGraphLabelId}` }>
                             <div id={ `graph-div-${objectiveMetricGraphLabelId}` }
                                     className="pl-4" style={{height: "25rem", width: "100%"}}>
-                                <ResponsiveLine id={ `graph-responsive-line-${objectiveMetricGraphLabelId}` }
+                                <ResponsiveLine
                                     data={bumpData}
                                     margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
                                     xScale={{ type: 'linear'}}
