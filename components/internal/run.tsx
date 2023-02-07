@@ -383,7 +383,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         flowDiv.push(
             <div id="run-flow">
             <ReactFlowProvider>
-                <Flow
+                <Flow id="flow"
                     ProjectID={props.ProjectId}
                     Flow={flow}
                     ElementsSelectable={false}

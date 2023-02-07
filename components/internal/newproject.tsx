@@ -272,7 +272,10 @@ export default function NewProject(props: NewProps) {
 
     const startIndexOffset = props.ProjectID ? -1 : 0
 
-    const profileTable = <ProfileTable Profile={profile} ProfileUpdateHandler={setProfile} />
+    const idPrefix = {props.id}
+    const profileTable = <ProfileTable id={ `${idPrefix}-profile-table` }
+                                        Profile={profile}
+                                        ProfileUpdateHandler={setProfile} />
 
     const changeHandler = (event) => {
         setSelectedFile(event.target.files[0])
