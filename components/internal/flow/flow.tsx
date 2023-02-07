@@ -46,6 +46,8 @@ const debug = Debug("flow")
  * that the flow expects.
  */
 interface FlowProps {
+    id: string,
+
     // The project id this experiment belongs to
     ProjectID: number,
 
@@ -953,7 +955,7 @@ export default function Flow(props: FlowProps) {
 
     // Build the Contents of the Flow
     const buttonStyle = {background: MaximumBlue, borderColor: MaximumBlue};
-    return <Container>
+    return <Container id={props.id}>
         {/* Only render if ElementsSelectable is true */}
         {elementsSelectable &&
             <div className="grid grid-cols-3 gap-4 mb-4">

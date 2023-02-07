@@ -9,6 +9,7 @@ import {reasonToHumanReadable} from "../../../controller/datasources/types";
 import {Profile} from "../../../controller/dataprofile/types"
 
 interface ProfiletableProps {
+    id: string
     Profile: Profile
     ProfileUpdateHandler: (value: Profile) => void
 }
@@ -387,7 +388,7 @@ export default function ProfileTable(props: ProfiletableProps) {
             setCurrentCategoryValues(items)
         }
     }>
-        <div className="flex flex-col mt-4">
+        <div id={props.id} className="flex flex-col mt-4">
             {editCategoryValuesModal}
             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">

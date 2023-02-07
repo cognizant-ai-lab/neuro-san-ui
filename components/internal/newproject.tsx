@@ -38,6 +38,10 @@ const MAX_ALLOWED_UPLOAD_SIZE_BYTES = 200 * 1000 * 1000  // 200 MB in "decimal"
 
 // Declare the Props for this component
 interface NewProps {
+
+    // For testing
+    id: string,
+
     // A flag to tell if it is to be used in a
     // DataSource mode only
     ProjectID?: number
@@ -268,7 +272,10 @@ export default function NewProject(props: NewProps) {
 
     const startIndexOffset = props.ProjectID ? -1 : 0
 
-    const profileTable = <ProfileTable Profile={profile} ProfileUpdateHandler={setProfile} />
+    const idPrefix = props.id
+    const profileTable = <ProfileTable id={ `${idPrefix}-profile-table` }
+                                        Profile={profile}
+                                        ProfileUpdateHandler={setProfile} />
 
     const changeHandler = (event) => {
         setSelectedFile(event.target.files[0])
@@ -376,7 +383,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         }
     }
 
-    return <Container>
+    return <Container id={props.id}>
         <Form
             onSubmit={event => void createDataProfile(event)}
             target="_blank"

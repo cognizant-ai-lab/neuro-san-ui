@@ -27,7 +27,11 @@ export default function UserGuide() {
 
 
     return <>
-        <ReactMarkdown rehypePlugins={[rehypeRaw]} className='prose'>{userGuide}</ReactMarkdown>
+        { /* 2/6/23 DEF - ReactMarkdown does not have an id property when compiling */ }
+        <ReactMarkdown      // eslint_disable-line enforce-ids-in-jsx/missing-ids
+            rehypePlugins={[rehypeRaw]} className='prose'>
+            {userGuide}
+        </ReactMarkdown>
     </>
 }
 
