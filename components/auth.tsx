@@ -47,7 +47,7 @@ interface AuthProps {
  * @param children Contained components protected by the authentication guard
  * @return children (protected) components if user is authenticated, otherwise "Loading" message.
  */
-export function Auth(props: NavbarProps, { children }) {
+export function Auth(props: AuthProps, { children }) {
     const { data: session, status } = useSession()
 
     const isUser = !!session?.user
