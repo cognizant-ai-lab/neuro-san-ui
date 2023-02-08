@@ -118,31 +118,31 @@ export default function Index(): React.ReactElement {
   },[]);
   
   return (
-    <OuterContainer>
-      <Marginer>
-          <Navbar>
+    <OuterContainer id="outer-container">
+      <Marginer id="marginer">
+          <Navbar id="nav-bar">
               <NavbarLogo id="logo">{LOGO}</NavbarLogo>
-              <NavbarMiddleSection>
+              <NavbarMiddleSection id="nav-bar-middle">
                   <NavbarItem id="publications">Publications</NavbarItem>
                   <NavbarItem id="contact">Contact</NavbarItem>
                   <NavbarItem id="about">About</NavbarItem>
               </NavbarMiddleSection>
               <NavbarItem id="partner">Partner</NavbarItem>
           </Navbar>
-          <LeftRight>
-              <div>
-                  <HeaderLineOne>OPTIMIZE YOUR</HeaderLineOne>
-                  <HeaderLineTwo>BUSINESS</HeaderLineTwo>
-                  <Link href={`/projects`} >
+          <LeftRight id="main">
+              <div id="main-div">
+                  <HeaderLineOne id="optimize-your">OPTIMIZE YOUR</HeaderLineOne>
+                  <HeaderLineTwo id="business">BUSINESS</HeaderLineTwo>
+                  <Link id="get-started-link" href={`/projects`} >
                       <GetStartedButton id="get-started">Get Started</GetStartedButton>
                   </Link>
-                  <Description>
+                  <Description id="description">
                       Research and builds applications with modern AI techniques such as evolutionary computation and deep learning across disciplines using LEAF (Learning and Evolutionary AI Framework)
                   </Description>
               </div>
-              <Right>
-                  <ImageDiv>
-                      <Image
+              <Right id="right">
+                  <ImageDiv id="image-div">
+                      <Image id="image"
                           src="/nnleaf.svg"
                           width="249"
                           height="587"
@@ -150,7 +150,7 @@ export default function Index(): React.ReactElement {
                           alt=""
                       />
                   </ImageDiv>
-                  <D2DText>Data to Decisions</D2DText>
+                  <D2DText id="d2d-text">Data to Decisions</D2DText>
               </Right>
           </LeftRight>
 

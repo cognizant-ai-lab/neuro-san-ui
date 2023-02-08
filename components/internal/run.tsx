@@ -22,6 +22,7 @@ import {useSession} from "next-auth/react";
 
 interface RunProps {
     /* 
+    id: string element handle for testing
     ProjectId: Rendered in run page
     RunID: Used to fetch run using backend
     RunName: Rendered in run page
@@ -30,6 +31,7 @@ interface RunProps {
     runs: Used to query and update runs after runs have been
     fetched.
     */
+    id: string,
     ProjectId: number,
     RunID: number,
     RunName: string,

@@ -25,6 +25,8 @@ const NAV_ITEMS_COLOR: string = "white";
 
 // Declare the Props Interface
 interface NavbarProps {
+    // id is a string handle to the element used for testing
+    id: string
     // Logo is the title of the NavBar
     readonly Logo: string
 }
@@ -42,7 +44,7 @@ function Navbar(props: NavbarProps): React.ReactElement {
     return <BootstrapNavbar collapseOnSelect expand="lg"
                 style={{background: MaximumBlue, borderBottomColor: MaximumBlue}}
                 variant="dark" className="border-b-2">
-                <Container>
+                <Container id={props.id}>
                     <BootstrapNavbar.Brand href="/" style={{color: LOGO_COLOR}} className="font-bold ml-2">
                         { props.Logo }
                     </BootstrapNavbar.Brand>
