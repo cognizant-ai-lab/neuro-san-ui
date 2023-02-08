@@ -76,10 +76,10 @@ export default function MetricsTable(props: MetricstableProps) {
                 <Table.TextCell id={ `${metricPrefix}-uncorrected-value` }>
                     {unCorrectedValue}
                 </Table.TextCell>
-                {rioMetrics && <Table.TextCell id={ `${metricsPrefix}-rio-metric` }>
+                {rioMetrics && <Table.TextCell id={ `${metricPrefix}-rio-metric` }>
                     {rioMetrics[metricName]}
                 </Table.TextCell>}
-                {rioMetrics && <Table.TextCell id={ `${metricsPrefix}-rio-improvement` }>
+                {rioMetrics && <Table.TextCell id={ `${metricPrefix}-rio-improvement` }>
                     {getRioImprovement(unCorrectedValue, rioMetrics, metrics, metricName, nodeID)}
                 </Table.TextCell>}
             </Table.Row>
