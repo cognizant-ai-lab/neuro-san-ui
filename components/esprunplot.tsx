@@ -9,10 +9,13 @@ import {MaximumBlue} from "../const";
 import {NotificationType, sendNotification} from "../controller/notification";
 
 interface EspRunPlotProps {
+    id: string
     readonly PrescriptorRunData
 }
 
 interface ParetoPlotProps {
+
+    id: string
 
     // The pareto front data
     readonly Pareto
@@ -121,8 +124,10 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
 
     })
 
+    const propsId = `${props.id}`
+
     return <>
-        <div id="prescriptor-metrics">
+        <div id={ `${propsId}` }>
             <NewBar id="prescriptor-metrics-bar"
                 InstanceId="prescriptor-metrics"
                 Title="Prescriptor Metrics"
@@ -479,8 +484,10 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
 
     })
 
+    const propsId = `${props.id}`
+
     return <>
-        <div id="pareto-prescriptors">
+        <div id={ `${propsId}` }>
             <NewBar id="pareto-prescriptors-bar"
                 InstanceId="pareto-prescriptors"
                 Title="Pareto Prescriptors"

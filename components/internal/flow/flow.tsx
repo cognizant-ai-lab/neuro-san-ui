@@ -955,10 +955,11 @@ export default function Flow(props: FlowProps) {
 
     // Build the Contents of the Flow
     const buttonStyle = {background: MaximumBlue, borderColor: MaximumBlue};
-    return <Container id={props.id}>
+    const propsId = `${props.id}`
+    return <Container id={ `${propsId}` }>
         {/* Only render if ElementsSelectable is true */}
         {elementsSelectable &&
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div id="flow-buttons" className="grid grid-cols-3 gap-4 mb-4">
                 <Button
                     id="add_predictor_btn"
                     size="sm"
@@ -988,8 +989,8 @@ export default function Flow(props: FlowProps) {
                 </Button>
             </div>
         }
-        <div style={{width: '100%', height: "50vh"}}>
-            <ReactFlow
+        <div id="react-flow-div" style={{width: '100%', height: "50vh"}}>
+            <ReactFlow id="react-flow"
                 elements={flow}
                 onElementsRemove={(elements) => _onElementsRemove(elements)}
                 onConnect={void(0)}  // Prevent user manually connecting nodes
@@ -1000,7 +1001,7 @@ export default function Flow(props: FlowProps) {
                 edgeTypes={EdgeTypes}
                 onNodeDragStop={(event, node) => onNodeDragStop(event, node)}
             >
-                <Controls
+                <Controls id="react-flow-controls"
                     style={{
                         position: "absolute",
                         top: "0px",
@@ -1008,7 +1009,7 @@ export default function Flow(props: FlowProps) {
                     }}
                     onFitView={() => tidyView()}
                 />
-                <Background color="#000" gap={5}/>
+                <Background id="react-flow-background" color="#000" gap={5}/>
             </ReactFlow>
         </div>
     </Container>

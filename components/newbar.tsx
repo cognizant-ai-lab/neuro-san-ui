@@ -36,13 +36,17 @@ export default function NewBar(props: NavbarProps) {
     if (props.DisplayNewLink) {
         if (props.LinkComponentProps) {
             // If a callback has been provided
-            newButton = <Link {...props.LinkComponentProps} >
-                            <a><h3 className="h3"><BsFillPlusSquareFill /></h3></a>
+            newButton = <Link id={ `${idPrefix}-link` } {...props.LinkComponentProps} >
+                            <a id={ `${idPrefix}-link-anchor` } >
+                                <h3 id={ `${idPrefix}-link-heading` } className="h3">
+                                    <BsFillPlusSquareFill id={ `${idPrefix}-link-square-fill` } />
+                                </h3>
+                            </a>
                         </Link>
         } else if (props.LinkCallback) {
             // If a link has been provided
             newButton = <h3 id={ `${idPrefix}-link` } className="h3" onClick={props.LinkCallback}>
-                            <BsFillPlusSquareFill />
+                            <BsFillPlusSquareFill id={ `${idPrefix}-link-square-fill` }  />
                         </h3>
         } else if (props.ButtonComponent) {
             newButton = props.ButtonComponent
@@ -52,18 +56,18 @@ export default function NewBar(props: NavbarProps) {
     const [editing, setEditing] = useState(false)
     let title
     if (props.EditableCallback && !editing) {
-        title = <h3 className="h3">
+        title = <h3 id={ `${idPrefix}-title` } className="h3">
             {props.Title}
-            <button onClick={() => {
+            <button id={ `${idPrefix}-button` }
+                    onClick={() => {
                         setEditing(true)
                     }}
-                    id={ `${idPrefix}-button` }
             >
-                <AiFillEdit size='14'/>
+                <AiFillEdit id={ `${idPrefix}-button-fill-edit` } size='14'/>
             </button>
         </h3>
     } else if (props.EditableCallback && editing) {
-        title = <h3 className="h3">
+        title = <h3 id={ `${idPrefix}-title` } className="h3">
             <input type="text"
                    id={ `${idPrefix}-input` }
                    autoFocus={true}
@@ -90,9 +94,9 @@ export default function NewBar(props: NavbarProps) {
         title = <h3 className="h3" id={ `${idPrefix}-title` }>{ props.Title }</h3>
     }
 
-    return <div id={props.id} className="flex justify-between py-6 items-center border-b-2 border-black">
+    const propsId = `${props.id}`
+    return <div id={ `${propsId}` } className="flex justify-between py-6 items-center border-b-2 border-black">
                 {title}
                 { newButton }
             </div>
-
 }

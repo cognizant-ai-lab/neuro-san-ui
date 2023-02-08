@@ -61,15 +61,16 @@ export default function DataSourceNode(props): React.ReactElement {
 
 
     // Create the Component structure
-    return <BlueprintCard
+    return <BlueprintCard id="data-source-blueprint-card"
         interactive={ true }
         elevation={ Elevation.TWO }
         style={ { padding: 0, width: "8rem", height: "6rem" } }>
-            <Card border="warning" style={{height: "100%"}}>
+            <Card id="data-source-card" border="warning" style={{height: "100%"}}>
                 <Card.Header id="data-source-header">Data Source</Card.Header>
-                <Card.Body>
-                    <div className="flex-col flex content-center">
-                        <div className="flex justify-between mb-4 content-center">
+                <Card.Body id="data-source-body">
+                    <div id="data-source-div-1" className="flex-col flex content-center">
+                        <div id="data-source-div-2"
+                             className="flex justify-between mb-4 content-center">
                             {
                                 taggedDataList.length > 0
                                 ?   <select name='dataset' className="w-24"
@@ -103,7 +104,7 @@ export default function DataSourceNode(props): React.ReactElement {
                     </div>
                 </Card.Body>
             </Card>
-            <Handle type="source" position={Position.Right} />
+            <Handle id="data-source-handle" type="source" position={Position.Right} />
         </BlueprintCard>
         
 }

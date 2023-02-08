@@ -284,18 +284,22 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const PlotDiv = []
     if (predictorPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
-        PlotDiv.push(<MetricsTable PredictorRunData={predictorPlotData} Predictors={predictors} />)
+        PlotDiv.push(<MetricsTable id="metrics-table"
+                        PredictorRunData={predictorPlotData}
+                        Predictors={predictors} />)
     }
 
     if (prescriptorPlotData) {
-        PlotDiv.push(<ESPRunPlot PrescriptorRunData={prescriptorPlotData} />)
+        PlotDiv.push(<ESPRunPlot id="esp-run-plot"
+                        PrescriptorRunData={prescriptorPlotData} />)
     }
 
     if (Object.keys(paretoPlotData).length > 0) {
-        PlotDiv.push(<ParetoPlotTable
-            Pareto={paretoPlotData}
-            NodeToCIDMap={nodeToCIDMap}
-            PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap} />)
+        PlotDiv.push(
+            <ParetoPlotTable id="pareto-plot-table"
+                Pareto={paretoPlotData}
+                NodeToCIDMap={nodeToCIDMap}
+                PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap} />)
     }
 
     // Decide whether DMS button should be enabled
@@ -322,7 +326,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
             <Link id="dms-link"
                 href={dmsLink}
             >
-                <a style={{
+                <a id="dms-link-anchor" style={{
                     color: "white"
                 }}>Go to Decision Making System with Prescriptor: {prescriptorID}</a>
             </Link>
@@ -331,19 +335,21 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
 
     if (!predictorPlotData && !prescriptorPlotData) {
         PlotDiv.push(
-            <div className="container">
-                <ClipLoader color={MaximumBlue} loading={true} size={50} />
+            <div id="clip-loader-div" className="container">
+                { /* 2/6/23 DEF - ClipLoader does not have an id property when compiling */ }
+                <ClipLoader     // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                    color={MaximumBlue} loading={true} size={50} />
             </div>
         )
     } else {
         // Link to decision UI, or disabled and explanatory text if rules-based which decision UI does not support.
         PlotDiv.push(
-            <div
+            <div id="dms-button-div"
                 style={{
                     cursor: shouldEnableDMS() ? "pointer" : "not-allowed"
                 }}
             >
-                <Button size="lg" className="mt-4 mb-4"
+                <Button id="dms-button" size="lg" className="mt-4 mb-4"
                         type="button"
                         style={{
                             background: MaximumBlue,
@@ -365,13 +371,14 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
             <>
                 <NewBar id="rules-bar" InstanceId="rules"
                         Title="Rules" DisplayNewLink={ false } />
-                <div className="my-2 py-2"
+                <div id="rules-div" className="my-2 py-2"
                      style={{
                          whiteSpace: "pre",
                          backgroundColor: "whitesmoke"
                      }}
                 >
-                    <SyntaxHighlighter language="scala" style={docco} showLineNumbers={true}>
+                    <SyntaxHighlighter id="syntax-highlighter"
+                        language="scala" style={docco} showLineNumbers={true}>
                         {rules}
                     </SyntaxHighlighter>
                 </div>
@@ -384,18 +391,21 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     if (run && flow) {
         flowDiv.push(
             <div id="run-flow">
-            <ReactFlowProvider>
-                <Flow id="flow"
-                    ProjectID={props.ProjectId}
-                    Flow={flow}
-                    ElementsSelectable={false}
-                />
-            </ReactFlowProvider>
-        </div>
+                { /* 2/6/23 DEF - ReactFlowProvider does not have an id property when compiling */ }
+                <ReactFlowProvider      // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                    >
+                    <Flow id="flow"
+                        ProjectID={props.ProjectId}
+                        Flow={flow}
+                        ElementsSelectable={false}
+                    />
+                </ReactFlowProvider>
+            </div>
         )
     }
     
-    return <div className="mr-8 ml-8">
+    const propsId = `${props.id}`
+    return <div id={ `${propsId}` } className="mr-8 ml-8">
         {/* Create the title bar */}
         <h1 className="mt-4 mb-4" id="run-name">{props.RunName}</h1>
 

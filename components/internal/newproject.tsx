@@ -139,8 +139,10 @@ export default function NewProject(props: NewProps) {
         const notificationType = anyColumnsRejected ? NotificationType.warning : NotificationType.success
         const description =
             <>
-                Rows: {`${tmpProfile.data_source.num_rows}`}<br />
-                Columns: {`${tmpProfile.data_source.num_cols}`}<br />
+                Rows: {`${tmpProfile.data_source.num_rows}`}
+                <br id="data-source-columns"/>
+                Columns: {`${tmpProfile.data_source.num_cols}`}
+                <br id="data-source-rejection-reasons"/>
                 {anyColumnsRejected &&
                     `WARNING: ${Object.keys(rejectedColumns).length} column(s) were rejected from your data source. Proceed to "Tag your Data" to see which columns and why.`}
             </>
@@ -383,8 +385,10 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         }
     }
 
-    return <Container id={props.id}>
-        <Form
+    const propsId = `${props.id}`
+
+    return <Container id={ `${propsId}` }>
+        <Form id="create-data-profile"
             onSubmit={event => void createDataProfile(event)}
             target="_blank"
 
@@ -397,15 +401,20 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             // multiple "submit"-type steps so that doesn't work for us.
             validated={true}
         >
-            <Collapse accordion expandIconPosition="right"
+            <Collapse       // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                            // 2/6/23 DEF - Collapse does not have an id property when compiling
+                accordion expandIconPosition="right"
                 defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
             >
                 { isNewProject &&
-                    <Panel header="1. Project Details"
+                    <Panel id="project-details-panel"
+                           header="1. Project Details"
                            key={projectDetailsPanelKey}>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-left w-full">Project Name</Form.Label>
-                            <Form.Control 
+                        <Form.Group id="project-name" className="mb-3">
+                            <Form.Label id="project-name-label" className="text-left w-full">
+                                Project Name
+                            </Form.Label>
+                            <Form.Control id="project-name-input" 
                                 name="name"
                                 ref={projectNameRef}
                                 type="text" 
@@ -416,13 +425,19 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                     )}
                                 required
                             />
-                            <Form.Control.Feedback type="valid">Looks good!</Form.Control.Feedback>
-                            <Form.Control.Feedback type="invalid">Please choose a project name.</Form.Control.Feedback>
+                            <Form.Control.Feedback type="valid" id="project-name-valid">
+                                Looks good!
+                            </Form.Control.Feedback>
+                            <Form.Control.Feedback type="invalid" id="project-name-invalid">
+                                Please choose a project name.
+                            </Form.Control.Feedback>
                         </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-left w-full">Description</Form.Label>
-                            <Form.Control
+                        <Form.Group id="project-description" className="mb-3">
+                            <Form.Label id="project-description-label" className="text-left w-full">
+                                Description
+                            </Form.Label>
+                            <Form.Control id="project-description-input"
                                 as="textarea" 
                                 name="description" 
                                 type="text-area" 
@@ -433,23 +448,29 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 )}
                                 required
                             />
-                            <Form.Control.Feedback type="valid">Looks good!</Form.Control.Feedback>
-                            <Form.Control.Feedback type="invalid">Please enter a project description.</Form.Control.Feedback>
+                            <Form.Control.Feedback type="valid" id="project-description-valid">
+                                Looks good!
+                            </Form.Control.Feedback>
+                            <Form.Control.Feedback type="invalid" id="project-description-invalid">
+                                Please enter a project description.
+                            </Form.Control.Feedback>
                         </Form.Group>      
                     </Panel>
                 }
-                <Panel header={
-                    <Tooltip title={!enabledDataSourceSection ? "Please enter project name and description first": ""}
-                             placement="leftTop">
-                        {`${2 + startIndexOffset}. Create your data source`}
-                    </Tooltip>
-                }
-                       key={dataSourcePanelKey}
-                       collapsible={enabledDataSourceSection ? "header": "disabled"}
-                >
-                    <Form.Group>
+                <Panel id="data-source-panel"
+                    header={
+                        <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                            title={!enabledDataSourceSection ? "Please enter project name and description first": ""}
+                            placement="leftTop">
+                            {`${2 + startIndexOffset}. Create your data source`}
+                        </Tooltip>
+                    }
+                    key={dataSourcePanelKey}
+                    collapsible={enabledDataSourceSection ? "header": "disabled"}>
+                    <Form.Group id="data-source-name">
                         Name
-                        <Form.Control
+                        <Form.Control id="data-source-name-input"
                             name="datasetName"
                             ref={datasetNameRef}
                             type="text"
@@ -460,18 +481,25 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 )}
                             required
                         />
-                        <Form.Control.Feedback type="valid">Looks good!</Form.Control.Feedback>
-                        <Form.Control.Feedback type="invalid">Please choose a name for your data source.</Form.Control.Feedback>
+                        <Form.Control.Feedback type="valid" id="data-source-valid">
+                            Looks good!
+                        </Form.Control.Feedback>
+                        <Form.Control.Feedback type="invalid" id="data-source-invalid">
+                            Please choose a name for your data source.
+                        </Form.Control.Feedback>
                     </Form.Group>
-                    <Radio.Group onChange={(e: RadioChangeEvent) => {setChosenDataSource(e.target.value)}}
-                                 value={chosenDataSource}
-                                 className="my-3">
-                        <Space direction="vertical" size="large">
-                            <Radio value={s3Option} >
+                    <Radio.Group id="data-source-radio" 
+                        onChange={(e: RadioChangeEvent) => {setChosenDataSource(e.target.value)}}
+                        value={chosenDataSource}
+                        className="my-3">
+                        <Space id="s3-file-space" direction="vertical" size="large">
+                            <Radio id="s3-file-radio" value={s3Option}>
                                 From S3
-                                <Form.Group className="my-3">
-                                    <Form.Label className="text-left w-full">Key</Form.Label>
-                                    <Form.Control
+                                <Form.Group id="s3-file-group" className="my-3">
+                                    <Form.Label id="s3-file-key" className="text-left w-full">
+                                        Key
+                                    </Form.Label>
+                                    <Form.Control id="s3-file-set-input-fields"
                                         name="s3Key"
                                         type="text"
                                         placeholder="data/somewhere/somefile.csv"
@@ -482,37 +510,61 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                         disabled={isUsingLocalFile}
                                         required={!isUsingLocalFile}
                                     />
-                                    <Form.Control.Feedback type="valid">Looks good!</Form.Control.Feedback>
-                                    <Form.Control.Feedback type="invalid">Please enter a path to your CSV file in S3.</Form.Control.Feedback>
+                                    <Form.Control.Feedback id="s3-file-looks-good" type="valid">
+                                        Looks good!
+                                    </Form.Control.Feedback>
+                                    <Form.Control.Feedback id="s3-file-enter-path-advice" type="invalid">
+                                        Please enter a path to your CSV file in S3.
+                                    </Form.Control.Feedback>
                                 </Form.Group>
                             </Radio>
-                            <Radio value={localFileOption}>
-                                <Space direction="vertical" size="middle">
+                            <Radio id="local-file-radio" value={localFileOption}>
+                                <Space id="local-file-space"
+                                    direction="vertical" size="middle">
                                     From a local file
                                     <input type="file" name="file" onChange={changeHandler}
                                            id="new-project-local-file" 
                                            disabled={!isUsingLocalFile}/>
                                     {selectedFile ? (
-                                        <div style={{
+                                        <div id="file-info-div" style={{
                                             opacity: isUsingLocalFile ? 1.0 : 0.5,
                                             fontSize: "90%"
                                         }}>
-                                            <p><b>Filename: </b> {selectedFile.name}, <b>filetype: </b>
-                                                {selectedFile.type}, <b>size: </b> {prettyBytes(selectedFile.size)}</p>
+                                            <p id="file-info">
+                                                <b id="file-name">
+                                                    Filename:
+                                                </b>
+                                                {selectedFile.name},
+                                                <b id="file-type">
+                                                    filetype:
+                                                </b>
+                                                {selectedFile.type},
+                                                <b id="file-size">
+                                                    size:
+                                                </b>
+                                                {prettyBytes(selectedFile.size)}
+                                            </p>
                                         </div>
                                     ) : (
-                                        <p>Select a file to show details</p>
+                                        <p id="select-a-file">
+                                            Select a file to show details
+                                        </p>
                                     )}
-                                    <div>
+                                    <div id="uploading-div">
                                         {isUploading
-                                            ?   <label>
+                                            ? <label id="uploading-label">
                                                     Uploading {selectedFile.name}
-                                                    <span className="ml-2">
-                                                        <ClipLoader color={MaximumBlue} loading={true} size={14}/>
+                                                    <span id="uploading-clip-loader-span" className="ml-2">
+                                                        <ClipLoader // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                                            // 2/6/23 DEF - ClipLoader doesn't have id property when compiling
+                                                            color={MaximumBlue} loading={true} size={14}/>
                                                     </span>
-                                                </label>
-                                            :   <Tooltip title={getUploadButtonTooltip()}>
-                                                    <Button disabled={getUploadButtonTooltip() !== null}
+                                              </label>
+                                            : <Tooltip // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                                    // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                                                    title={getUploadButtonTooltip()}>
+                                                    <Button id="upload-file-button"
+                                                            disabled={getUploadButtonTooltip() !== null}
                                                             style={{
                                                                 background: MaximumBlue,
                                                                 borderColor: MaximumBlue,
@@ -529,9 +581,11 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                             </Radio>
                         </Space>
                     </Radio.Group>
-                    <Form.Group className="mt-2">
-                        <Tooltip title={getCreatButtonTooltip()}>
-                            <Button
+                    <Form.Group id="create-data-source-group" className="mt-2">
+                        <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                            title={getCreatButtonTooltip()}>
+                            <Button id="create-data-source-button"
                                 style={{
                                     background: MaximumBlue,
                                     borderColor: MaximumBlue,
@@ -546,22 +600,27 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                         </Tooltip>
                     </Form.Group>
                 </Panel>
-                <Panel header={
-                    <Tooltip title={!enabledDataTagSection ? "Please name and create your data source first": ""}
-                             placement="leftTop">
-                        {`${3 + startIndexOffset}. Tag your Data`}
-                    </Tooltip>
-                }
-                       key={tagYourDataPanelKey}
-                       collapsible={enabledDataTagSection ? "header": "disabled"}>
+                <Panel id="profile-table-panel"
+                    header={
+                        <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                                title={!enabledDataTagSection ? "Please name and create your data source first": ""}
+                                placement="leftTop">
+                            {`${3 + startIndexOffset}. Tag your Data`}
+                        </Tooltip>
+                    }
+                    key={tagYourDataPanelKey}
+                    collapsible={enabledDataTagSection ? "header": "disabled"}>
                     {profileTable}
                 </Panel>
             </Collapse>
 
-            <Panel
+            <Panel id="create-project-or-data-profile-button-panel"
                 header={
-                    <Tooltip title={getCreateProjectButtonTooltip()} placement="leftTop">
-                        <Button
+                    <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                    // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        title={getCreateProjectButtonTooltip()} placement="leftTop">
+                        <Button id="create-project-or-data-profile-button"
                             type="primary"
                             htmlType="submit"
                             className="w-full mt-2 mb-2"
