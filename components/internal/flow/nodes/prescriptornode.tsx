@@ -395,403 +395,404 @@ export default function PrescriptorNode(props): ReactElement {
     }
 
     const PrescriptorRepresentationPanel = <Card.Body>
-                                                <div className="flex justify-between mb-4 content-center">
-                                                    <label>Representation: </label>
-                                                    <select 
-                                                        id={ `${flowPrefix}-representation-select` }
-                                                        name={ `${NodeID}-representation` } 
-                                                        onChange={ event => SetParentPrescriptorState({
-                                                            ...ParentPrescriptorState,
-                                                            LEAF: {
-                                                                ...ParentPrescriptorState.LEAF,
-                                                                representation: event.target.value
-                                                            }
-                                                        })} 
-                                                        value={ParentPrescriptorState.LEAF.representation}
-                                                        className="w-32" >
-                                                            <option 
-                                                                id={ `${flowPrefix}-representation-nn-weights` }
-                                                                value="NNWeights">
-                                                                Neural Network
-                                                            </option>
-                                                            <option 
-                                                                id={ `${flowPrefix}-representation-rules` }
-                                                                value="RuleBased">
-                                                                Rules
-                                                            </option>
-                                                    </select>    
-                                                </div>
-                                                <hr />
-                                                <div className="mb-4">
-                                                    {
-                                                        ParentPrescriptorState.LEAF.representation === "NNWeights" && <div>
-                                                            {NeuralNetworkConfiguration}
-                                                            <button type="button" className="float-right"
-                                                                id={ `${flowPrefix}-nn-weights-button` }
-                                                                onClick={() => {
-                                                                    const stateCopy = {...ParentPrescriptorState}
-                                                                    stateCopy.network.hidden_layers.push({
-                                                                        layer_name: `hidden-${ParentPrescriptorState.network.hidden_layers.length}`,
-                                                                        layer_type: 'dense',
-                                                                        layer_params: {
-                                                                            units: 2 * Object.keys(ParentPrescriptorState.caoState.context).length,
-                                                                            activation: 'tanh',
-                                                                            use_bias: true
-                                                                        }
-                                                                    })
-                                                                    SetParentPrescriptorState(stateCopy)
-                                                                }}
-                                                            >
-                                                                <BiPlusMedical />
-                                                            </button>
-                                                        </div>
-                                                    }
-                                                    {
-                                                        ParentPrescriptorState.LEAF.representation === "RuleBased" && <div>
-                                                            {createRulesConfig(useRepresentationConfig)}
-                                                        </div>
-                                                    }
-                                                </div>
+        <div className="flex justify-between mb-4 content-center">
+            <label>Representation: </label>
+            <select 
+                id={ `${flowPrefix}-representation-select` }
+                name={ `${NodeID}-representation` } 
+                onChange={ event => SetParentPrescriptorState({
+                    ...ParentPrescriptorState,
+                    LEAF: {
+                        ...ParentPrescriptorState.LEAF,
+                        representation: event.target.value
+                    }
+                })} 
+                value={ParentPrescriptorState.LEAF.representation}
+                className="w-32" >
+                    <option 
+                        id={ `${flowPrefix}-representation-nn-weights` }
+                        value="NNWeights">
+                        Neural Network
+                    </option>
+                    <option 
+                        id={ `${flowPrefix}-representation-rules` }
+                        value="RuleBased">
+                        Rules
+                    </option>
+            </select>    
+        </div>
+        <hr />
+        <div className="mb-4">
+            {
+                ParentPrescriptorState.LEAF.representation === "NNWeights" && <div>
+                    {NeuralNetworkConfiguration}
+                    <button type="button" className="float-right"
+                        id={ `${flowPrefix}-nn-weights-button` }
+                        onClick={() => {
+                            const stateCopy = {...ParentPrescriptorState}
+                            stateCopy.network.hidden_layers.push({
+                                layer_name: `hidden-${ParentPrescriptorState.network.hidden_layers.length}`,
+                                layer_type: 'dense',
+                                layer_params: {
+                                    units: 2 * Object.keys(ParentPrescriptorState.caoState.context).length,
+                                    activation: 'tanh',
+                                    use_bias: true
+                                }
+                            })
+                            SetParentPrescriptorState(stateCopy)
+                        }}
+                    >
+                        <BiPlusMedical />
+                    </button>
+                </div>
+            }
+            {
+                ParentPrescriptorState.LEAF.representation === "RuleBased" && <div>
+                    {createRulesConfig(useRepresentationConfig)}
+                </div>
+            }
+        </div>
 
-                                           </Card.Body>
+    </Card.Body>
 
     // Create the configuration Panel
-    const EvolutionConfigurationPanel = <Card.Body className="overflow-y-auto h-40 text-xs">
-                                            <div className="flex flex-col mb-2">
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Num Generations</label>
-                                                    <input style={{width: "3rem"}}
-                                                        id={ `${flowPrefix}-num-generations-input` }
-                                                        type="number" 
-                                                        step="1" 
-                                                        defaultValue={ 10 }
-                                                        value={ ParentPrescriptorState.evolution.nb_generations }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        nb_generations: parseInt(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Population Size</label>
-                                                    <input style={{width: "3rem"}}
-                                                        id={ `${flowPrefix}-population-size-input` }
-                                                        type="number" 
-                                                        step="1" 
-                                                        defaultValue={ 10 }
-                                                        value={ ParentPrescriptorState.evolution.population_size }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        population_size: parseInt(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Num Elites</label>
-                                                    <input style={{width: "3rem"}}
-                                                        id={ `${flowPrefix}-num-elites-input` }
-                                                        type="number" 
-                                                        step="1" 
-                                                        defaultValue={ 2 }
-                                                        value={ ParentPrescriptorState.evolution.nb_elites }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        nb_elites: parseInt(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Parent Selection</label>
-                                                    <select defaultValue="tournament"
-                                                        id={ `${flowPrefix}-parent-selection-select` }
-                                                        value={ ParentPrescriptorState.evolution.parent_selection }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        parent_selection: event.target.value
-                                                                    }
-                                                                })
-                                                            }
-                                                    >
-                                                        <option id={ `${flowPrefix}-parent-selection-tournament` }
-                                                            value="tournament">
-                                                            Tournament
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Remove Population %</label>
-                                                    <input style={{width: "3rem"}}
-                                                        id={ `${flowPrefix}-remove-population-percentage` }
-                                                        type="number" 
-                                                        step="0.01" 
-                                                        defaultValue={ 0.8 }
-                                                        value={ ParentPrescriptorState.evolution.remove_population_pct }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        remove_population_pct: parseFloat(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Mutation Type</label>
-                                                    <select defaultValue="gaussian_noise_percentage"
-                                                        id={ `${flowPrefix}-mutation-select` }
-                                                        value={ ParentPrescriptorState.evolution.mutation_type }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        mutation_type: event.target.value
-                                                                    }
-                                                                })
-                                                            }
-                                                    >
-                                                        <option id={ `${flowPrefix}-mutation-gaussian-noise-percentage` }
-                                                            value="gaussian_noise_percentage">
-                                                            Gaussian Noise Percentage
-                                                        </option>
-                                                        <option id={ `${flowPrefix}-mutation-gaussian-noise-fixed` }
-                                                            value="gaussian_noise_fixed">
-                                                            Gaussian Noise Fixed
-                                                        </option>
-                                                        <option id={ `${flowPrefix}-mutation-uniform-reset` }
-                                                            value="uniform_reset">
-                                                            Uniform Reset
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Mutation Probability</label>
-                                                    <input style={{width: "2rem"}}
-                                                        id={ `${flowPrefix}-mutation-probability-input` }
-                                                        type="number" 
-                                                        step="0.01" 
-                                                        defaultValue={ 0.1 }
-                                                        value={ ParentPrescriptorState.evolution.mutation_probability }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        mutation_probability: parseFloat(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Mutation Factor</label>
-                                                    <input style={{width: "2rem"}}
-                                                        id={ `${flowPrefix}-mutation-factor-input` }
-                                                        type="number" 
-                                                        step="0.01" 
-                                                        defaultValue={ 0.1 }
-                                                        value={ ParentPrescriptorState.evolution.mutation_factor }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        mutation_factor: parseFloat(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Initialization Distribution</label>
-                                                    <select defaultValue="orthogonal"
-                                                        id={ `${flowPrefix}-distribution-select` }
-                                                        value={ ParentPrescriptorState.evolution.initialization_distribution }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        initialization_distribution: event.target.value
-                                                                    }
-                                                                })
-                                                            }
-                                                    >
-                                                        <option id={ `${flowPrefix}-distribution-orthogonal` }
-                                                            value="orthogonal">
-                                                            Orthogonal
-                                                        </option>
-                                                        <option id={ `${flowPrefix}-distribution-uniform` }
-                                                            value="uniform">
-                                                            Uniform
-                                                        </option>
-                                                        <option id={ `${flowPrefix}-distribution-normal` }
-                                                            value="normal">
-                                                            Normal
-                                                        </option>
-                                                        <option id={ `${flowPrefix}-distribution-cauchy` }
-                                                            value="cauchy">
-                                                            Cauchy
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
-                                                    <label>Initialization Range</label>
-                                                    <input style={{width: "2rem"}}
-                                                        id={ `${flowPrefix}-initialization-range-input` }
-                                                        type="number" 
-                                                        step="0.01" 
-                                                        defaultValue={ 1 }
-                                                        value={ ParentPrescriptorState.evolution.initialization_range }
-                                                        onChange={
-                                                            event => SetParentPrescriptorState({
-                                                                    ...ParentPrescriptorState,
-                                                                    evolution: {
-                                                                        ...ParentPrescriptorState.evolution,
-                                                                        initialization_range: parseFloat(event.target.value)
-                                                                    }
-                                                                })
-                                                            }
-                                                    /> 
-                                                </div>
-                                            </div>
-                                            
-                                        </Card.Body>
+    const EvolutionConfigurationPanel = <Card.Body
+        className="overflow-y-auto h-40 text-xs">
+        <div className="flex flex-col mb-2">
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Num Generations</label>
+                <input style={{width: "3rem"}}
+                    id={ `${flowPrefix}-num-generations-input` }
+                    type="number" 
+                    step="1" 
+                    defaultValue={ 10 }
+                    value={ ParentPrescriptorState.evolution.nb_generations }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    nb_generations: parseInt(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Population Size</label>
+                <input style={{width: "3rem"}}
+                    id={ `${flowPrefix}-population-size-input` }
+                    type="number" 
+                    step="1" 
+                    defaultValue={ 10 }
+                    value={ ParentPrescriptorState.evolution.population_size }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    population_size: parseInt(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Num Elites</label>
+                <input style={{width: "3rem"}}
+                    id={ `${flowPrefix}-num-elites-input` }
+                    type="number" 
+                    step="1" 
+                    defaultValue={ 2 }
+                    value={ ParentPrescriptorState.evolution.nb_elites }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    nb_elites: parseInt(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Parent Selection</label>
+                <select defaultValue="tournament"
+                    id={ `${flowPrefix}-parent-selection-select` }
+                    value={ ParentPrescriptorState.evolution.parent_selection }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    parent_selection: event.target.value
+                                }
+                            })
+                        }
+                >
+                    <option id={ `${flowPrefix}-parent-selection-tournament` }
+                        value="tournament">
+                        Tournament
+                    </option>
+                </select>
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Remove Population %</label>
+                <input style={{width: "3rem"}}
+                    id={ `${flowPrefix}-remove-population-percentage` }
+                    type="number" 
+                    step="0.01" 
+                    defaultValue={ 0.8 }
+                    value={ ParentPrescriptorState.evolution.remove_population_pct }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    remove_population_pct: parseFloat(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Mutation Type</label>
+                <select defaultValue="gaussian_noise_percentage"
+                    id={ `${flowPrefix}-mutation-select` }
+                    value={ ParentPrescriptorState.evolution.mutation_type }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    mutation_type: event.target.value
+                                }
+                            })
+                        }
+                >
+                    <option id={ `${flowPrefix}-mutation-gaussian-noise-percentage` }
+                        value="gaussian_noise_percentage">
+                        Gaussian Noise Percentage
+                    </option>
+                    <option id={ `${flowPrefix}-mutation-gaussian-noise-fixed` }
+                        value="gaussian_noise_fixed">
+                        Gaussian Noise Fixed
+                    </option>
+                    <option id={ `${flowPrefix}-mutation-uniform-reset` }
+                        value="uniform_reset">
+                        Uniform Reset
+                    </option>
+                </select>
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Mutation Probability</label>
+                <input style={{width: "2rem"}}
+                    id={ `${flowPrefix}-mutation-probability-input` }
+                    type="number" 
+                    step="0.01" 
+                    defaultValue={ 0.1 }
+                    value={ ParentPrescriptorState.evolution.mutation_probability }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    mutation_probability: parseFloat(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Mutation Factor</label>
+                <input style={{width: "2rem"}}
+                    id={ `${flowPrefix}-mutation-factor-input` }
+                    type="number" 
+                    step="0.01" 
+                    defaultValue={ 0.1 }
+                    value={ ParentPrescriptorState.evolution.mutation_factor }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    mutation_factor: parseFloat(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Initialization Distribution</label>
+                <select defaultValue="orthogonal"
+                    id={ `${flowPrefix}-distribution-select` }
+                    value={ ParentPrescriptorState.evolution.initialization_distribution }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    initialization_distribution: event.target.value
+                                }
+                            })
+                        }
+                >
+                    <option id={ `${flowPrefix}-distribution-orthogonal` }
+                        value="orthogonal">
+                        Orthogonal
+                    </option>
+                    <option id={ `${flowPrefix}-distribution-uniform` }
+                        value="uniform">
+                        Uniform
+                    </option>
+                    <option id={ `${flowPrefix}-distribution-normal` }
+                        value="normal">
+                        Normal
+                    </option>
+                    <option id={ `${flowPrefix}-distribution-cauchy` }
+                        value="cauchy">
+                        Cauchy
+                    </option>
+                </select>
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2 justify-items-start">
+                <label>Initialization Range</label>
+                <input style={{width: "2rem"}}
+                    id={ `${flowPrefix}-initialization-range-input` }
+                    type="number" 
+                    step="0.01" 
+                    defaultValue={ 1 }
+                    value={ ParentPrescriptorState.evolution.initialization_range }
+                    onChange={
+                        event => SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                evolution: {
+                                    ...ParentPrescriptorState.evolution,
+                                    initialization_range: parseFloat(event.target.value)
+                                }
+                            })
+                        }
+                /> 
+            </div>
+        </div>
+        
+    </Card.Body>
 
     // Create the Component structure
-    return <BlueprintCard
+    return <BlueprintCard id={ `${flowPrefix}` }
         interactive={ true } 
         elevation={ Elevation.TWO } 
         style={ { padding: 0, width: "10rem", height: "4rem" } }
 
     >
-            <Card border="warning" style={{ height: "100%" }}>
-                <Card.Body className="flex justify-center content-center">
-                    <Text className="mr-2">{ ParentPrescriptorState.selectedPredictor || "Prescriptor" }</Text>
-                    <div onMouseDown={(event) => {event.stopPropagation()}}>
-                        <Popover content={
-                            <>
-                                <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-                                    {tabs.map((tab, index) => (
-                                        <Tab
-                                            key={tab}
-                                            id={tab}
-                                            onSelect={() => setSelectedIndex(index)}
-                                            isSelected={index === selectedIndex}
-                                            aria-controls={`panel-${tab}`}
-                                        >
-                                            {tab}
-                                        </Tab>
-                                    ))}
-                                </Tablist>
-                                {selectedIndex === 0 && PrescriptorRepresentationPanel}
-                                {selectedIndex === 1 && EvolutionConfigurationPanel}
-                                {selectedIndex === 2 && ObjectiveConfigurationPanel}
-                                {selectedIndex === 3 && EvaluatorOverridePanel}
-                            </>
+        <Card border="warning" style={{ height: "100%" }}>
+            <Card.Body className="flex justify-center content-center">
+                <Text className="mr-2">{ ParentPrescriptorState.selectedPredictor || "Prescriptor" }</Text>
+                <div onMouseDown={(event) => {event.stopPropagation()}}>
+                    <Popover content={
+                        <>
+                            <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
+                                {tabs.map((tab, index) => (
+                                    <Tab
+                                        key={tab}
+                                        id={tab}
+                                        onSelect={() => setSelectedIndex(index)}
+                                        isSelected={index === selectedIndex}
+                                        aria-controls={`panel-${tab}`}
+                                    >
+                                        {tab}
+                                    </Tab>
+                                ))}
+                            </Tablist>
+                            {selectedIndex === 0 && PrescriptorRepresentationPanel}
+                            {selectedIndex === 1 && EvolutionConfigurationPanel}
+                            {selectedIndex === 2 && ObjectiveConfigurationPanel}
+                            {selectedIndex === 3 && EvaluatorOverridePanel}
+                        </>
+                    }
+                         statelessProps={{
+                             backgroundColor: "ghostwhite"
+                         }}
+                    >
+                        <div className="flex">
+                            <button type="button"
+                                id={ `${flowPrefix}-gr-settings-button` }
+                                className="mt-1"  style={{height: 0}}>
+                                    <GrSettingsOption />
+                            </button>
+                        </div>
+                    </Popover>
+                    <Popover
+                        position={Position.LEFT}
+                        content={
+                            <Card.Body 
+                            className="overflow-y-auto h-40 text-xs">
+                                <Text className="mb-2">Context</Text>
+                                {
+                                    Object.keys(ParentPrescriptorState.caoState.context).map(element =>
+                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                        <label className="capitalize"> {element} </label>
+                                        <input id={ `${flowPrefix}-context-input-${element}` }
+                                            name={element}
+                                            type="checkbox" 
+                                            defaultChecked={true}
+                                            checked={ParentPrescriptorState.caoState.context[element]}
+                                            onChange={event => updateCAOState(event, "context")}/>
+                                    </div>)
+                                }
+                            </Card.Body>
                         }
-                             statelessProps={{
-                                 backgroundColor: "ghostwhite"
-                             }}
                         >
-                            <div className="flex">
-                                <button type="button"
-                                    id={ `${flowPrefix}-gr-settings-button` }
-                                    className="mt-1"  style={{height: 0}}>
-                                        <GrSettingsOption />
-                                </button>
-                            </div>
-                        </Popover>
-                        <Popover
-                            position={Position.LEFT}
-                            content={
-                                <Card.Body 
-                                className="overflow-y-auto h-40 text-xs">
-                                    <Text className="mb-2">Context</Text>
-                                    {
-                                        Object.keys(ParentPrescriptorState.caoState.context).map(element =>
+                        <button type="button"
+                            id={ `${flowPrefix}-context-button` }
+                            className="absolute top-5 -left-4"
+                            style={{height: 0}}>C</button>
+                    </Popover>
+                    <Popover
+                        position={Position.RIGHT}
+                        content={
+                            <Card.Body 
+                            className="overflow-y-auto h-40 text-xs">
+                                <Text className="mb-2">Actions</Text>
+                                {
+                                    Object.keys(ParentPrescriptorState.caoState.action).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                             <label className="capitalize"> {element} </label>
-                                            <input id={ `${flowPrefix}-context-input-${element}` }
+                                            <input id={ `${flowPrefix}-actions-input-${element}` }
                                                 name={element}
                                                 type="checkbox" 
                                                 defaultChecked={true}
-                                                checked={ParentPrescriptorState.caoState.context[element]}
-                                                onChange={event => updateCAOState(event, "context")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
-                            >
-                            <button type="button"
-                                id={ `${flowPrefix}-context-button` }
-                                className="absolute top-5 -left-4"
-                                style={{height: 0}}>C</button>
-                        </Popover>
-                        <Popover
-                            position={Position.RIGHT}
-                            content={
-                                <Card.Body 
-                                className="overflow-y-auto h-40 text-xs">
-                                    <Text className="mb-2">Actions</Text>
-                                    {
-                                        Object.keys(ParentPrescriptorState.caoState.action).map(element =>
-                                            <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                                <label className="capitalize"> {element} </label>
-                                                <input id={ `${flowPrefix}-actions-input-${element}` }
-                                                    name={element}
-                                                    type="checkbox" 
-                                                    defaultChecked={true}
-                                                    checked={ParentPrescriptorState.caoState.action[element]}
-                                                    onChange={event => updateCAOState(event, "action")}/>
-                                            </div>
-                                        )
-                                    }
-                                </Card.Body>
-                            }
-                            >
-                            <button type="button"
-                                id={ `${flowPrefix}-action-button` }
-                                className="absolute top-5 -right-4"
-                                style={{height: 0}}>A</button>
-                        </Popover>
-                    </div>
-                </Card.Body>
-                <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
-                    <button type="button"
-                            id="delete-me"
-                            className="hover:text-red-700 text-xs"
-                            onClick={() => {
-                                DeleteNode(NodeID)
-                                sendNotification(NotificationType.success, "Prescriptor node deleted")
-                            }}
-                    >
-                        <AiFillDelete size="10"/>
-                    </button>
+                                                checked={ParentPrescriptorState.caoState.action[element]}
+                                                onChange={event => updateCAOState(event, "action")}/>
+                                        </div>
+                                    )
+                                }
+                            </Card.Body>
+                        }
+                        >
+                        <button type="button"
+                            id={ `${flowPrefix}-action-button` }
+                            className="absolute top-5 -right-4"
+                            style={{height: 0}}>A</button>
+                    </Popover>
                 </div>
-            </Card>
+            </Card.Body>
+            <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                <button type="button"
+                        id="delete-me"
+                        className="hover:text-red-700 text-xs"
+                        onClick={() => {
+                            DeleteNode(NodeID)
+                            sendNotification(NotificationType.success, "Prescriptor node deleted")
+                        }}
+                >
+                    <AiFillDelete size="10"/>
+                </button>
+            </div>
+        </Card>
 
-            <Handle type="source" position={HandlePosition.Right} />
-            <Handle type="target" position={HandlePosition.Left} />
-        </BlueprintCard>
+        <Handle type="source" position={HandlePosition.Right} />
+        <Handle type="target" position={HandlePosition.Left} />
+    </BlueprintCard>
 }
