@@ -139,8 +139,10 @@ export default function NewProject(props: NewProps) {
         const notificationType = anyColumnsRejected ? NotificationType.warning : NotificationType.success
         const description =
             <>
-                Rows: {`${tmpProfile.data_source.num_rows}`}<br />
-                Columns: {`${tmpProfile.data_source.num_cols}`}<br />
+                Rows: {`${tmpProfile.data_source.num_rows}`}
+                <br id="data-source-columns"/>
+                Columns: {`${tmpProfile.data_source.num_cols}`}
+                <br id="data-source-rejection-reasons"/>
                 {anyColumnsRejected &&
                     `WARNING: ${Object.keys(rejectedColumns).length} column(s) were rejected from your data source. Proceed to "Tag your Data" to see which columns and why.`}
             </>
@@ -383,8 +385,10 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         }
     }
 
-    return <Container id={props.id}>
-        <Form
+    const propsId = `${props.id}`
+
+    return <Container id={ `${propsId}` }>
+        <Form id="create-data-profile"
             onSubmit={event => void createDataProfile(event)}
             target="_blank"
 
@@ -397,17 +401,18 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             // multiple "submit"-type steps so that doesn't work for us.
             validated={true}
         >
-            <Collapse accordion expandIconPosition="right"
+            <Collapse id="project-collapse" accordion expandIconPosition="right"
                 defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
             >
                 { isNewProject &&
-                    <Panel header="1. Project Details"
+                    <Panel id="project-details-panel"
+                           header="1. Project Details"
                            key={projectDetailsPanelKey}>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-left w-full">
+                        <Form.Group id="project-name" className="mb-3">
+                            <Form.Label id="project-name-label" className="text-left w-full">
                                 Project Name
                             </Form.Label>
-                            <Form.Control 
+                            <Form.Control id="project-name-input" 
                                 name="name"
                                 ref={projectNameRef}
                                 type="text" 
@@ -418,19 +423,19 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                     )}
                                 required
                             />
-                            <Form.Control.Feedback type="valid">
+                            <Form.Control.Feedback type="valid" id="project-name-valid">
                                 Looks good!
                             </Form.Control.Feedback>
-                            <Form.Control.Feedback type="invalid">
+                            <Form.Control.Feedback type="invalid" id="project-name-invalid">
                                 Please choose a project name.
                             </Form.Control.Feedback>
                         </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-left w-full">
+                        <Form.Group id="project-description" className="mb-3">
+                            <Form.Label id="project-description-label" className="text-left w-full">
                                 Description
                             </Form.Label>
-                            <Form.Control
+                            <Form.Control id="project-description-input"
                                 as="textarea" 
                                 name="description" 
                                 type="text-area" 
@@ -441,16 +446,16 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 )}
                                 required
                             />
-                            <Form.Control.Feedback type="valid">
+                            <Form.Control.Feedback type="valid" id="project-description-valid">
                                 Looks good!
                             </Form.Control.Feedback>
-                            <Form.Control.Feedback type="invalid">
+                            <Form.Control.Feedback type="invalid" id="project-description-invalid">
                                 Please enter a project description.
                             </Form.Control.Feedback>
                         </Form.Group>      
                     </Panel>
                 }
-                <Panel 
+                <Panel id="data-source-panel"
                     header={
                         <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
                                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
@@ -461,9 +466,9 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                     }
                     key={dataSourcePanelKey}
                     collapsible={enabledDataSourceSection ? "header": "disabled"}>
-                    <Form.Group>
+                    <Form.Group id="data-source-name">
                         Name
-                        <Form.Control
+                        <Form.Control id="data-source-name-input"
                             name="datasetName"
                             ref={datasetNameRef}
                             type="text"
@@ -474,10 +479,10 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                 )}
                             required
                         />
-                        <Form.Control.Feedback type="valid">
+                        <Form.Control.Feedback type="valid" id="data-source-valid">
                             Looks good!
                         </Form.Control.Feedback>
-                        <Form.Control.Feedback type="invalid">
+                        <Form.Control.Feedback type="invalid" id="data-source-invalid">
                             Please choose a name for your data source.
                         </Form.Control.Feedback>
                     </Form.Group>
