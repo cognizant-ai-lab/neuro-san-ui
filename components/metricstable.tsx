@@ -7,6 +7,7 @@ import {FetchMetrics} from "../controller/predictor";
 import {FaArrowDown, FaArrowUp} from "react-icons/fa";
 
 interface MetricstableProps {
+    id: string,
     readonly PredictorRunData,
     readonly Predictors
 }
@@ -52,8 +53,8 @@ export default function MetricsTable(props: MetricstableProps) {
             {((rioDiff) / nonAdjustedValue * 100).toFixed(2)}%
             {rioDiff != 0 &&
                 (isImproved
-                    ? <FaArrowUp style={{color: "#4EAD60FF"}} />
-                    : <FaArrowDown style={{color: "#ff5740"}} />
+                    ? <FaArrowUp id="arrow-up" style={{color: "#4EAD60FF"}} />
+                    : <FaArrowDown id="arrow-down" style={{color: "#ff5740"}} />
                 )
             }
         </span>
@@ -62,47 +63,67 @@ export default function MetricsTable(props: MetricstableProps) {
     Object.keys(PredictorRunData).forEach(nodeID => {
         const metrics = PredictorRunData[nodeID].metrics
         const rioMetrics = PredictorRunData[nodeID].rioMetrics
-        const cells = Object.keys(metrics).map((metricName) => {
-                const unCorrectedValue = metrics[metricName]
-                return <Table.Row key={`${nodeID}-${metricName}`}>
-                    <Table.TextCell id={metricName}>{metricName}</Table.TextCell>
-                    <Table.TextCell>{unCorrectedValue}</Table.TextCell>
-                    {rioMetrics && <Table.TextCell>{rioMetrics[metricName]}</Table.TextCell>}
-                    {rioMetrics && <Table.TextCell>
-                        {getRioImprovement(unCorrectedValue, rioMetrics, metrics, metricName, nodeID)}
-                    </Table.TextCell>}
-                </Table.Row>
-            }
-        )
-
         const predictorMetricsId = `predictor-with-objectives-${PredictorRunData[nodeID].objectives}`
+
+        const cells = Object.keys(metrics).map((metricName) => {
+            const unCorrectedValue = metrics[metricName]
+            const metricPrefix = `${predictorMetricsId}-${metricName}`
+
+            return <Table.Row id={ `${metricPrefix}-row` } key={`${nodeID}-${metricName}`}>
+                <Table.TextCell id={ `${metricPrefix}-name` }>
+                    {metricName}
+                </Table.TextCell>
+                <Table.TextCell id={ `${metricPrefix}-uncorrected-value` }>
+                    {unCorrectedValue}
+                </Table.TextCell>
+                {rioMetrics && <Table.TextCell id={ `${metricsPrefix}-rio-metric` }>
+                    {rioMetrics[metricName]}
+                </Table.TextCell>}
+                {rioMetrics && <Table.TextCell id={ `${metricsPrefix}-rio-improvement` }>
+                    {getRioImprovement(unCorrectedValue, rioMetrics, metrics, metricName, nodeID)}
+                </Table.TextCell>}
+            </Table.Row>
+        })
+
         predictorRenders.push(
-            <div>
+            <div id={ `${predictorMetricsId}-table` }>
                 <h4 className="mt-4 mb-4" id={predictorMetricsId}>
                     Predictor with Objectives: {PredictorRunData[nodeID].objectives}
                 </h4>
-                <p>Node ID: {nodeID}</p>
-                <Table.Body>
-                    <Table.Head>
-                        <Table.TextCell><b>Metric</b></Table.TextCell>
-                        <Table.TextCell><b>Value</b></Table.TextCell>
-                        {rioMetrics && <Table.TextCell><b>RIO</b></Table.TextCell>}
+                <p id={ `${predictorMetricsId}-node-id` }>Node ID: {nodeID}</p>
+                <Table.Body id={ `${predictorMetricsId}-table-body` }>
+                    <Table.Head id={ `${predictorMetricsId}-table-headers` }>
+                        <Table.TextCell id={ `${predictorMetricsId}-metric` }>
+                            <b id={ `${predictorMetricsId}-metric-header` }>Metric</b>
+                        </Table.TextCell>
+                        <Table.TextCell id={ `${predictorMetricsId}-value` }>
+                            <b id={ `${predictorMetricsId}-value-header` }>Value</b>
+                        </Table.TextCell>
+                        {rioMetrics && 
+                            <Table.TextCell id={ `${predictorMetricsId}-rio` }>
+                                <b id={ `${predictorMetricsId}-rio-header` }>RIO</b>
+                            </Table.TextCell>
+                        }
                         {rioMetrics &&
-                            <Table.TextCell>
-                                <div style={{display: "flex"}}>
-                                    <b>RIO improvement</b>
-                                    <Tooltip
+                            <Table.TextCell id={ `${predictorMetricsId}-rio-improvement` }>
+                                <div id={ `${predictorMetricsId}-rio-improvement-div` } style={{display: "flex"}}>
+                                    <b id={ `${predictorMetricsId}-rio-improvement-header` }>RIO improvement</b>
+                                    { /* 2/6/23 DEF - Tooltip does not have an id property when compiling */ }
+                                    <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
                                         content="Improvement of uncertainty model enhanced predictor metric over original predictor metric, as a percentage"
                                         statelessProps={{className: "opacity-75"}}
                                         position={Position.TOP_RIGHT}
                                     >
-                                        <div className="ps-1"><InfoSignIcon color="blue" size={10}/></div>
+                                        <div id={ `${predictorMetricsId}-tooltip-info-sign-div` } className="ps-1">
+                                            <InfoSignIcon id={ `${predictorMetricsId}-tooltip-info-sign-icon` }
+                                                          color="blue" size={10}/>
+                                        </div>
                                     </Tooltip>
                                 </div>
                             </Table.TextCell>
                         }
                     </Table.Head>
-                    <Table.Body>
+                    <Table.Body id={ `${predictorMetricsId}-metrics-table-cells` }>
                         {cells}
                     </Table.Body>
                 </Table.Body>
@@ -116,11 +137,13 @@ export default function MetricsTable(props: MetricstableProps) {
         {predictorRenders && predictorRenders.length > 0
             ?   predictorRenders
             :   <>
-                    <span style={{display: "flex"}}>
-                        <FiAlertCircle color="red" size={50}/>
-                        <span className="ml-4 fs-4 my-auto">No predictors found</span>
+                    <span id="no-predictors" style={{display: "flex"}}>
+                        <FiAlertCircle id="no-predictors-alert-circle" color="red" size={50}/>
+                        <span id="no-predictors-message" className="ml-4 fs-4 my-auto">
+                            No predictors found
+                        </span>
                     </span>
-                    <br />
+                    <br id="no-predictor-advice"/>
                     Navigate to the Runs table and view the error logs for your Run to see what went wrong.
                 </>
         }
