@@ -167,55 +167,59 @@ export default function PrescriptorNode(props): ReactElement {
     const [tabs] = useState(['Representation', 'Evolution Parameters', 'Objective Configuration', 'Override Evaluator'])
 
     // Create a min/max selector for each desired outcome
-    const ObjectiveConfigurationPanel = ParentPrescriptorState.evolution.fitness
-        .map(metric => {
-            return <div className="p-2 grid grid-cols-2 gap-4 mb-2" key={metric.metric_name} >
-                <label>{metric.metric_name}: </label>
-                <select
-                    id={ `${flowPrefix}-objective-select-${metric.name}` }
-                    key="objective-select"
-                    value={metric.maximize}
-                    onChange={event => {
-                        // Update maximize/minimize status for selected outcome
-                        const fitness = ParentPrescriptorState.evolution.fitness
-                            .map(f => {
-                                if (f.metric_name === metric.metric_name) {
-                                    return {
-                                        metric_name: f.metric_name,
-                                        maximize: event.target.value === "true"
-                                    }
-                                } else {
-                                    return f
+    const ObjectiveConfigurationPanel = ParentPrescriptorState.evolution.fitness.map(metric => {
+        const metricPrefix = `${flowPrefix}-metric-${metric.name}`
+        return <div id={ `${metricPrefix}` }
+            className="p-2 grid grid-cols-2 gap-4 mb-2"
+            key={metric.metric_name} >
+            <label id={ `${metricPrefix}-metric-name` }>
+                {metric.metric_name}: </label>
+            <select
+                id={ `${metricPrefix}-objective-select` }
+                key="objective-select"
+                value={metric.maximize}
+                onChange={event => {
+                    // Update maximize/minimize status for selected outcome
+                    const fitness = ParentPrescriptorState.evolution.fitness
+                        .map(f => {
+                            if (f.metric_name === metric.metric_name) {
+                                return {
+                                    metric_name: f.metric_name,
+                                    maximize: event.target.value === "true"
                                 }
-                            })
-
-                        // Update settings for this objective in the state
-                        SetParentPrescriptorState({
-                            ...ParentPrescriptorState,
-                            evolution: {
-                                ...ParentPrescriptorState.evolution,
-                                fitness: fitness
-                            },
+                            } else {
+                                return f
+                            }
                         })
-                    }}
-                    >
-                    <option
-                        id={ `${flowPrefix}-objective-maximize-${metric.name}` }
-                        value="true">
-                        Maximize
-                    </option>
-                    <option
-                        id={ `${flowPrefix}-objective-minimize-${metric.name}` }
-                        value="false">
-                        Minimize
-                    </option>
-                </select>
-            </div>
+
+                    // Update settings for this objective in the state
+                    SetParentPrescriptorState({
+                        ...ParentPrescriptorState,
+                        evolution: {
+                            ...ParentPrescriptorState.evolution,
+                            fitness: fitness
+                        },
+                    })
+                }}
+                >
+                <option
+                    id={ `${metricPrefix}-objective-maximize` }
+                    value="true">
+                    Maximize
+                </option>
+                <option
+                    id={ `${metricPrefix}-objective-minimize` }
+                    value="false">
+                    Minimize
+                </option>
+            </select>
+        </div>
     })
     
     const EvaluatorOverridePanel =
-        <Card.Body>
-            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
+        <Card.Body id={ `${flowPrefix}-evaluator-override-code` }>
+            <SyntaxHighlighter id={ `${flowPrefix}-evaluator-override-code-syntax-highlighter` }
+                language="python" style={docco} showLineNumbers={true}>
                 {EvaluatorOverrideCode}
             </SyntaxHighlighter>
         </Card.Body>
@@ -236,23 +240,28 @@ export default function PrescriptorNode(props): ReactElement {
         "selu"
     ]
     const createNeuralNetworkLayer = (hiddenLayer, idx) => (
-        <div key={`${NodeID}-hiddenlayer-${idx}`}>
-            <h6 style={{display: "inline"}}>Hidden Layer {idx + 1} </h6>
-            <button
-                id={ `${flowPrefix}-hidden-layer-${idx}` }
+        <div id={ `${flowPrefix}-hidden-layer-${idx}` }
+            key={`${NodeID}-hiddenlayer-${idx}`}>
+            <h6 id={ `${flowPrefix}-hidden-layer-${idx}-headline` }
+                style={{display: "inline"}}>
+                Hidden Layer {idx + 1} </h6>
+            <button id={ `${flowPrefix}-hidden-layer-${idx}-button` }
                 style={{width: "1rem"}}
                 className="mb-2"
                 type="button" onClick={() => {
                     const stateCopy = {...ParentPrescriptorState}
                     stateCopy.network.hidden_layers.splice(idx, 1)
                     SetParentPrescriptorState(stateCopy)
-                }}><MdDelete /></button>
-            <div className="grid grid-cols-3 gap-1 mb-2 justify-items-center"
-            >
-                <div>
-                    <label className="mr-2">Units: </label>
+                }}>
+                <MdDelete id={ `${flowPrefix}-hidden-layer-${idx}-delete` }/>
+            </button>
+            <div id={ `${flowPrefix}-hidden-layer-${idx}-neural-net-config` }
+                className="grid grid-cols-3 gap-1 mb-2 justify-items-center">
+                <div id={ `${flowPrefix}-hidden-layer-${idx}-units` }>
+                    <label id={ `${flowPrefix}-hidden-layer-${idx}-units-label` }className="mr-2">
+                        Units: </label>
                     <input style={{width: "2rem"}}
-                        id={ `${flowPrefix}-units-input` }
+                        id={ `${flowPrefix}-hidden-layer-${idx}-units-input` }
                         type="number" 
                         step="1" 
                         value={ hiddenLayer.layer_params.units }
@@ -263,10 +272,10 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                     /> 
                 </div>
-                <div>
-                    <label className="mr-2">Activation: </label>
-                    <select 
-                        id={ `${flowPrefix}-activation-select` }
+                <div id={ `${flowPrefix}-hidden-layer-${idx}-activation` }>
+                    <label id={ `${flowPrefix}-hidden-layer-${idx}-activation-label` } className="mr-2">
+                        Activation: </label>
+                    <select id={ `${flowPrefix}-hidden-layer-${idx}-activation-select` }
                         defaultValue="tanh"
                         value={ hiddenLayer.layer_params.activation }
                         onChange={event => {
@@ -276,7 +285,7 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                     >
                         {ActivationFunctions.map(activationFn =>
-                            <option id={ `${flowPrefix}-activation-${activationFn}` }
+                            <option id={ `${flowPrefix}-hidden-layer-${idx}-activation-${activationFn}` }
                                 key={`hidden-layer-activation-${activationFn}`}
                                 value={activationFn}>
                                     {activationFn}
@@ -285,10 +294,10 @@ export default function PrescriptorNode(props): ReactElement {
                     </select> 
                 </div>
 
-                <div>
-                    <label className="mr-2">Use Bias: </label>
-                    <input 
-                        id={ `${flowPrefix}-use-bias-input` }
+                <div id={ `${flowPrefix}-hidden-layer-${idx}-use-bias` }>
+                    <label id={ `${flowPrefix}-hidden-layer-${idx}-use-bias-label` }className="mr-2">
+                        Use Bias: </label>
+                    <input id={ `${flowPrefix}-hidden-layer-${idx}-use-bias-input` }
                         type="checkbox" 
                         defaultChecked={ true }
                         checked={ hiddenLayer.layer_params.use_bias }
@@ -305,13 +314,15 @@ export default function PrescriptorNode(props): ReactElement {
     const NeuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => createNeuralNetworkLayer(hiddenLayer, idx))
 
     const createRulesConfig = (representationConfig) =>
-        <Container key={`${NodeID}-rules-config`} id={`${flowPrefix}-rules-config`}>
-            <Row className="mx-2 my-8">
+        <Container id={`${flowPrefix}-rules-config`}
+            key={`${NodeID}-rules-config`}> 
+            <Row id={ `${flowPrefix}-max-exponent` }
+                className="mx-2 my-8">
                 <Col id={ `${flowPrefix}-max-exponent-label` } md={5}>
                     Max Exponent:
                 </Col>
-                <Col md={4}>
-                    <Slider
+                <Col id={ `${flowPrefix}-max-exponent-slider-column` } md={4}>
+                    <Slider id={ `${flowPrefix}-max-exponent-slider` }
                         step={1}
                         min={0}
                         max={9}
@@ -322,7 +333,10 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                         handleRender={(node) => {
                             return (
-                                <AntdTooltip title={`${representationConfig.max_exponent}`}>{node}</AntdTooltip>
+                                <AntdTooltip id={ `${flowPrefix}-max-exponent-tooltip` }
+                                    title={`${representationConfig.max_exponent}`}>
+                                    {node}
+                                </AntdTooltip>
                             )
                         }}
                         onChange={event => {
@@ -333,12 +347,13 @@ export default function PrescriptorNode(props): ReactElement {
                     />
                 </Col>
             </Row>
-            <Row className="mx-2 my-8">
-                <Col id={`${flowPrefix}-num-building-block-conditions-label`}  md={5}>
+            <Row id={ `${flowPrefix}-number-of-building-block-conditions` }
+                className="mx-2 my-8">
+                <Col id={`${flowPrefix}-number-of-building-block-conditions-label`}  md={5}>
                     # Building Block Conditions:
                 </Col>
-                <Col md={4}>
-                    <Slider
+                <Col id={ `${flowPrefix}-number-of-building-block-conditions-slider-column` } md={4}>
+                    <Slider id={ `${flowPrefix}-number-of-building-block-conditions-slider` }
                         step={1}
                         min={1}
                         max={9}
@@ -349,7 +364,10 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                         handleRender={(node) => {
                             return (
-                                <AntdTooltip title={`${representationConfig.number_of_building_block_conditions}`}>{node}</AntdTooltip>
+                                <AntdTooltip id={ `${flowPrefix}-number-of-building-block-conditions-tooltip` }
+                                    title={`${representationConfig.number_of_building_block_conditions}`}>
+                                    {node}
+                                </AntdTooltip>
                             )
                         }}
                         onChange={event => {
@@ -360,12 +378,13 @@ export default function PrescriptorNode(props): ReactElement {
                     />
                 </Col>
             </Row>
-            <Row className="mx-2 my-8">
-                <Col id={`${flowPrefix}-num-building-block-rules-label`} md={5}>
+            <Row id={ `${flowPrefix}-number-of-building-block-rules` }
+                className="mx-2 my-8">
+                <Col id={`${flowPrefix}-number-of-building-block-rules-label`} md={5}>
                     # Building Block Rules:
                 </Col>
-                <Col md={4}>
-                    <Slider
+                <Col id={ `${flowPrefix}-number-of-building-block-rules-slider-column` } md={4}>
+                    <Slider id={ `${flowPrefix}-number-of-building-block-rules-slider` }
                         step={1}
                         min={1}
                         max={99}
@@ -376,7 +395,10 @@ export default function PrescriptorNode(props): ReactElement {
                         }}
                         handleRender={(node) => {
                             return (
-                                <AntdTooltip title={`${representationConfig.number_of_building_block_rules}`}>{node}</AntdTooltip>
+                                <AntdTooltip id={ `${flowPrefix}-number-of-building-block-rules-tooltip` }
+                                    title={`${representationConfig.number_of_building_block_rules}`}>
+                                    {node}
+                                </AntdTooltip>
                             )
                         }}
                         onChange={event => {
