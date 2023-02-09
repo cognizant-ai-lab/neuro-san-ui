@@ -147,7 +147,7 @@ interface DeployedModelReference {
     base_url?: string
 }
 
-interface ModelStatus {
+export interface ModelStatus {
     // The status of the deployment
     status: string
 
@@ -158,6 +158,13 @@ interface ModelStatus {
     // These are the same labels that are specified while deploying the model
     // in the DeployRequest.
     labels: StringString
+}
+
+export interface TearDownRequest {
+    deployment_id: string
+
+    // The environment where the model is deployed
+    model_serving_environment: ModelServingEnvironment
 }
 
 export interface DeployedModel {
