@@ -345,9 +345,9 @@ export default function PredictorNode(props): ReactElement {
     const [tabs] = useState(['Predictor', 'Configuration', 'Data Split'])
 
     // Create the selection Panel
-    const PredictorSelectionPanel = <Card.Body>
-        <div className="flex justify-between mb-4 content-center">
-            <label className="m-0 mr-2">Type: </label>
+    const PredictorSelectionPanel = <Card.Body id={ `${flowPrefix}-predictor-selection-panel` }>
+        <div id={ `${flowPrefix}-type-div` } className="flex justify-between mb-4 content-center">
+            <label id={ `${flowPrefix}-type-label` } className="m-0 mr-2">Type: </label>
             <select id={ `${flowPrefix}-type-select` }
                 name={ `${NodeID}-predictorType` } 
                 onChange={ event => onPredictorTypeChange(event.target.value)}
@@ -371,9 +371,10 @@ export default function PredictorNode(props): ReactElement {
             </select>    
         </div>
         
-        <div className="flex justify-between mb-4 content-center">
-            <label className="m-0">Predictor: </label>
-            <select id={ `${flowPrefix}-select` }
+        <div id={ `${flowPrefix}-predictor-div` }
+            className="flex justify-between mb-4 content-center">
+            <label id={ `${flowPrefix}-predictor-label` } className="m-0">Predictor: </label>
+            <select id={ `${flowPrefix}-predictor-select` }
                 name={ `${NodeID}-predictor` } 
                 value={ ParentPredictorState.selectedPredictor }
                 onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
@@ -391,8 +392,10 @@ export default function PredictorNode(props): ReactElement {
             </select>
         </div>
 
-        <div className="flex justify-between mb-4 content-center">
-            <label className="m-0">Metric: </label>
+        <div id={ `${flowPrefix}-metric-div` }
+            className="flex justify-between mb-4 content-center">
+            <label id={ `${flowPrefix}-metric-label` } className="m-0">
+                Metric: </label>
             <select id={ `${flowPrefix}-metric-select` }
                 name={ `${NodeID}-metric` } 
                 value={ ParentPredictorState.selectedMetric }
@@ -418,16 +421,19 @@ export default function PredictorNode(props): ReactElement {
         {   
             ParentPredictorState.predictorParams &&
             Object.keys(ParentPredictorState.predictorParams).map(param =>
-                <div className="grid grid-cols-12 gap-4 mb-2" key={param} >
-                    <div className="item1 col-span-3">
-                        <label className="capitalize" id={`${param}-label`}>
+
+                <div id={ `${flowPrefix}-${param}-input-component` }
+                    className="grid grid-cols-12 gap-4 mb-2" key={param} >
+                    <div id={ `${flowPrefix}-${param}-input-component-div` }className="item1 col-span-3">
+                        <label id={ `${flowPrefix}-${param}-label` } className="capitalize">
                             {param}:
                         </label>
                     </div>
-                    <div className="item2 col-span-8">
+                    <div id={ `${flowPrefix}-${param}-data-type-div` }
+                        className="item2 col-span-8">
                         {
                             ParentPredictorState.predictorParams[param].type === "int" &&
-                                <input id={`${param}-value`}
+                                <input id={ `${flowPrefix}-${param}-value` }
                                     type="number"
                                     step="1"
                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -437,7 +443,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         {
                             ParentPredictorState.predictorParams[param].type === "float" &&
-                                <input id={`${param}-value`}
+                                <input id={ `${flowPrefix}-${param}-value` }
                                     type="number"
                                     step="0.1"
                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -447,7 +453,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         {
                             ParentPredictorState.predictorParams[param].type === "bool" && (
-                                <input id={`${param}-value`}
+                                <input id={ `${flowPrefix}-${param}-value` }
                                     type="checkbox"
                                     defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
                                     checked={Boolean(ParentPredictorState.predictorParams[param].value)}
@@ -457,14 +463,14 @@ export default function PredictorNode(props): ReactElement {
                         }
                         {
                             typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
-                            <select id={`${param}-value`}
-                                value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                onChange={event => onParamChange(event, param)}
-                                className="w-32"
+                                <select id={ `${flowPrefix}-${param}-value` }
+                                    value={ ParentPredictorState.predictorParams[param].value.toString() }
+                                    onChange={event => onParamChange(event, param)}
+                                    className="w-32"
                                 >
                                 {
                                     (ParentPredictorState.predictorParams[param].type as Array<string>).map(
-                                        value => <option id={`${param}-${value}`}
+                                        value => <option id={ `${flowPrefix}-${param}-${value}` }
                                                     key={value} value={ value }>
                                                         { value }
                                                   </option>)
@@ -473,7 +479,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         {
                             ParentPredictorState.predictorParams[param].type === "string" && (
-                                <input id={`${param}-value`}
+                                <input id={ `${flowPrefix}-${param}-value` }
                                     className="w-full"
                                     type="text"
                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -484,8 +490,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         {
                             ParentPredictorState.predictorParams[param].type === "password" && (
-                                <input id={`${param}-value`}
-
+                                <input id={ `${flowPrefix}-${param}-value` }
                                     className="w-full"
                                     type="password"
                                     defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
@@ -495,11 +500,12 @@ export default function PredictorNode(props): ReactElement {
                             )
                         }
                     </div>
-                    <div className="item3 col-span-1">
+                    <div id={ `${flowPrefix}-${param}-tooltip-div` }
+                        className="item3 col-span-1">
                         <Tooltip    // eslint_disable-line enforce-ids-in-jsx/missing-ids
                                     // 2/6/23 DEF - Tooltip does not have an id property when compiling
                             content={ParentPredictorState.predictorParams[param].description} >
-                            <InfoSignIcon />
+                            <InfoSignIcon id={ `${flowPrefix}-${param}-tooltip-info-sign-icon` }/>
                         </Tooltip>
                     </div>
                 </div>
@@ -516,13 +522,15 @@ export default function PredictorNode(props): ReactElement {
         100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
     }
 
-    const DataSplitConfigurationPanel = <Card.Body>
-        <Container>
-            <Row className="mx-2 my-8">
-                <Col md={2} className="mr-4" id="train_label">
+    const DataSplitConfigurationPanel = <Card.Body id={ `${flowPrefix}-data-split-configuration-panel` }>
+        <Container id={ `${flowPrefix}-data-split-config` }>
+            <Row id={ `${flowPrefix}-train` }
+                className="mx-2 my-8">
+                <Col id={ `${flowPrefix}-train-label` }
+                    md={2} className="mr-4">
                     Train:
                 </Col>
-                <Col md={9}>
+                <Col id={ `${flowPrefix}-train-slider` } md={9}>
                     <Slider     // eslint_disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Slider does not have an id property when compiling
                         onChange={event => onTrainSliderChange(event)}
@@ -532,20 +540,22 @@ export default function PredictorNode(props): ReactElement {
                         marks={marks}
                         handleRender={(node) => {
                             return (
-                                   <AntdTooltip title={`${ParentPredictorState.trainSliderValue}%`}>{node}</AntdTooltip>
+                                   <AntdTooltip id={ `${flowPrefix}-train-slider-tooltip` }
+                                        title={`${ParentPredictorState.trainSliderValue}%`}>{node}</AntdTooltip>
                             )
                         }}
                     />
                 </Col>
             </Row>
-            <Row className="mx-2 my-8">
-                <Col md={2} className="mr-4" id="test_label">
-                   Test:
+            <Row id={ `${flowPrefix}-test` }
+                className="mx-2 my-8">
+                <Col id={ `${flowPrefix}-test-label` }
+                    md={2} className="mr-4">
+                    Test:
                 </Col>
-                <Col md={9}>
+                <Col id={ `${flowPrefix}-test-slider` } md={9}>
                     <Slider     // eslint_disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Slider does not have an id property when compiling
-                        onChange={event => onTrainSliderChange(event)}
                         onChange={ event => onTestSliderChange(event) }
                         min={0}
                         max={100}
@@ -553,18 +563,20 @@ export default function PredictorNode(props): ReactElement {
                         marks={marks}
                         handleRender={(node) => {
                             return (
-                                <AntdTooltip title={`${ParentPredictorState.testSliderValue}%`}>{node}</AntdTooltip>
+                                <AntdTooltip id={ `${flowPrefix}-test-slider-tooltip` }
+                                    title={`${ParentPredictorState.testSliderValue}%`}>{node}</AntdTooltip>
                             )
                         }}
                     />
                 </Col>
             </Row>
-            <Row className="mx-2 my-8">
-                <Col md="auto" id="split_rng_label">
+            <Row id={ `${flowPrefix}-split-rng-seed` }
+                className="mx-2 my-8">
+                <Col id={ `${flowPrefix}-split-rng-seed-label` } md="auto">
                     RNG seed:
                 </Col>
-                <Col>
-                    <input id="split_rng_value"
+                <Col id={ `${flowPrefix}-split-rng-seed-column` }>
+                    <input id={ `${flowPrefix}-split-rng-seed-input` }
                            type={"number"}
                            min={0}
                            value={ParentPredictorState.rngSeedValue}
@@ -580,29 +592,33 @@ export default function PredictorNode(props): ReactElement {
     </Card.Body>
 
     // Create the Component structure
-    return <BlueprintCard
+    return <BlueprintCard id={ `${flowPrefix}` }
         interactive={ true } 
         elevation={ Elevation.TWO } 
-        style={{ padding: 0, width: "10rem", height: "4rem" }}>
-        <Card border="warning" style={{ height: "100%" }}>
-            <Card.Body className="flex justify-center content-center">
-                <Text className="mr-2">{ ParentPredictorState.selectedPredictor || "Predictor" }</Text>
-                <div onMouseDown={(event) => {event.stopPropagation()}}>
+        style={{ padding: 0, width: "10rem", height: "4rem" }} >
+        <Card id={ `${flowPrefix}-card-1` }
+            border="warning" style={{ height: "100%" }}>
+            <Card.Body id={ `${flowPrefix}-card-2` }
+                className="flex justify-center content-center">
+                <Text id={ `${flowPrefix}-text` } className="mr-2">
+                    { ParentPredictorState.selectedPredictor || "Predictor" }
+                </Text>
+                <div id={ `${flowPrefix}-settings-div` }
+                    onMouseDown={(event) => {event.stopPropagation()}}>
                     <Popover    // eslint_disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                        content={
-                        <>
-                            <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-                                    {tabs.map((tab, index) => (
-                                <Tab
-                                    key={tab}
-                                    id={tab}
-                                    onSelect={() => setSelectedIndex(index)}
-                                    isSelected={index === selectedIndex}
-                                    aria-controls={`panel-${tab}`}
-                                >
-                                    {tab}
-                                </Tab>
+                        content={ <>
+                            <Tablist id={ `${flowPrefix}-settings-tablist` }
+                                marginBottom={16} flexBasis={240} marginRight={24}>
+                                {tabs.map((tab, index) => (
+                                    <Tab id={ `${flowPrefix}-settings-${tab}` }
+                                        key={tab}
+                                        onSelect={() => setSelectedIndex(index)}
+                                        isSelected={index === selectedIndex}
+                                        aria-controls={`panel-${tab}`}
+                                    >
+                                        {tab}
+                                    </Tab>
                                 ))}
                             </Tablist>
                             { selectedIndex === 0  && PredictorSelectionPanel }
@@ -614,12 +630,12 @@ export default function PredictorNode(props): ReactElement {
                              backgroundColor: "ghostwhite"
                          }}
                     >
-                        <div className="flex">
+                        <div id={ `${flowPrefix}-gr-settings-div` } className="flex">
                             <button type="button"
-                                        id={ `${flowPrefix}-gr-settings-option-button` }
+                                    id={ `${flowPrefix}-gr-settings-button` }
                                     className="mt-1"
                                     style={{height: 0}}>
-                                <GrSettingsOption />
+                                <GrSettingsOption id={ `${flowPrefix}-gr-settings-option` }/>
                             </button>
                         </div>
                     </Popover>
@@ -627,49 +643,55 @@ export default function PredictorNode(props): ReactElement {
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         position={Position.LEFT}
                         content={
-                            <Card.Body
-                            className="overflow-y-auto h-40 text-xs">
-                                <Text className="mb-2">Context</Text>
+                            <Card.Body id={ `${flowPrefix}-context-card` }
+                                className="overflow-y-auto h-40 text-xs">
+                                <Text id={ `${flowPrefix}-context-text` } className="mb-2">Context</Text>
                                 {
                                     Object.keys(ParentPredictorState.caoState.context).map(element =>
-                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label className="capitalize"> {element} </label>
+                                        <div id={ `${flowPrefix}-context-div` }
+                                             key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label id={ `${flowPrefix}-context-label-${element}` }
+                                                className="capitalize"> {element} </label>
                                             <input name={element}
                                                 id={ `${flowPrefix}-context-input-${element}` }
-                                        type="checkbox"
-                                        defaultChecked={true}
-                                        checked={ParentPredictorState.caoState.context[element]}
-                                        onChange={event => onUpdateCAOState(event, "context")}/>
-                                    </div>)
+                                                type="checkbox"
+                                                defaultChecked={true}
+                                                checked={ParentPredictorState.caoState.context[element]}
+                                                onChange={event => onUpdateCAOState(event, "context")}/>
+                                        </div>
+                                    )
                                 }
                             </Card.Body>
                         }
-                        >
-                            <button type="button"
-                                id={ `${flowPrefix}-context-button` }
-                                className="absolute top-2 -left-4"
-                                style={{height: 0}}>C</button>
+                    >
+                        <button type="button"
+                            id={ `${flowPrefix}-context-button` }
+                            className="absolute top-2 -left-4"
+                            style={{height: 0}}>C</button>
                     </Popover>
                     <Popover    // eslint_disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         position={Position.LEFT}
                         content={
-                            <Card.Body
-                            className="overflow-y-auto h-40 text-xs"
-                            style={{zIndex: 1000}}
+                            <Card.Body id={ `${flowPrefix}-actions-card` }
+                                className="overflow-y-auto h-40 text-xs"
+                                style={{zIndex: 1000}}
                             >
-                                <Text className="mb-2">Actions</Text>
+                                <Text id={ `${flowPrefix}-actions-text` } className="mb-2">Actions</Text>
                                 {
                                     Object.keys(ParentPredictorState.caoState.action).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label className="capitalize"> {element} </label>
+                                        <div id={ `${flowPrefix}-actions-div-${element}` }
+                                            key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label id={ `${flowPrefix}-actions-label-${element}` }
+                                                className="capitalize"> {element} </label>
                                             <input id={ `${flowPrefix}-actions-input-${element}` }
-                                        name={element}
-                                        type="checkbox"
-                                        defaultChecked={true}
-                                        checked={ParentPredictorState.caoState.action[element]}
-                                        onChange={event => onUpdateCAOState(event, "action")}/>
-                                    </div>)
+                                                name={element}
+                                                type="checkbox"
+                                                defaultChecked={true}
+                                                checked={ParentPredictorState.caoState.action[element]}
+                                                onChange={event => onUpdateCAOState(event, "action")}/>
+                                        </div>
+                                    )
                                 }
                             </Card.Body>
                         }
@@ -683,26 +705,29 @@ export default function PredictorNode(props): ReactElement {
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         position={Position.RIGHT}
                         content={
-                            <Card.Body
+                            <Card.Body id={ `${flowPrefix}-outcomes-card` }
                                 className="overflow-y-auto h-40 text-xs">
-                                <Text className="mb-2">Outcomes</Text>
+                                <Text id={ `${flowPrefix}-outcomes-text` } className="mb-2">Outcomes</Text>
                                 {
                                     Object.keys(ParentPredictorState.caoState.outcome).map(element =>
-                                    <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label className="capitalize"> {element} </label>
+                                        <div id={ `${flowPrefix}-outcomes-div-${element}` }
+                                            key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label id={ `${flowPrefix}-outcomes-label-${element}` }
+                                                className="capitalize"> {element} </label>
                                             <input name={element}
                                                 id={ `${flowPrefix}-outcomes-input-${element}` }
-                                        type="checkbox"
-                                        defaultChecked={false}
-                                        checked={ParentPredictorState.caoState.outcome[element]}
-                                        onChange={event => onUpdateCAOState(event, "outcome")}/>
-                                    </div>)
+                                                type="checkbox"
+                                                defaultChecked={false}
+                                                checked={ParentPredictorState.caoState.outcome[element]}
+                                                onChange={event => onUpdateCAOState(event, "outcome")}/>
+                                        </div>
+                                    )
                                 }
                             </Card.Body>
                         }
-                        >
-                        <button type="button"
-                                    id={ `${flowPrefix}-outcomes-button` }
+                    >
+                        <button id={ `${flowPrefix}-outcomes-button` }
+                                type="button"
                                 className="absolute top-5 -right-4"
                                 style={{height: 0}}>O
                         </button>
@@ -716,14 +741,15 @@ export default function PredictorNode(props): ReactElement {
                                 : "Uncertainty models are not currently supported for this type of predictor"
                         }
                     >
-                        <div className="px-1 my-1"
+                        <div id={ `${flowPrefix}-add-uncertainty-model-node-div` }
+                             className="px-1 my-1"
                              style={{
                                  position: "absolute",
                                  right: "1px",
                              }}
                         >
-                            <button type="button"
-                                    id="add-uncertainty-node-button"
+                            <button id={ `${flowPrefix}-add-uncertainty-model-node-button` }
+                                    type="button"
                                     disabled={!isRegressor}
                                     style={{
                                         height: 15,
@@ -732,22 +758,24 @@ export default function PredictorNode(props): ReactElement {
                                     }}
                                     onClick={() => AddUncertaintyModelNode(NodeID)}
                             >
-                                <BsPlusSquare size="0.6em" />
+                                <BsPlusSquare id={ `${flowPrefix}-add-uncertainty-model-node-button-plus` }
+                                    size="0.6em" />
                             </button>
                         </div>
                     </Tooltip>
                 </div>
             </Card.Body>
-                <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
-                    <button type="button"
-                            id="delete-me"
+                <div id={ `${flowPrefix}-delete-div` }
+                    className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                    <button id={ `${flowPrefix}-delete-button` }
+                            type="button"
                             className="hover:text-red-700 text-xs"
                             onClick={() => {
                                 DeleteNode(NodeID)
                                 sendNotification(NotificationType.success, "Predictor node deleted")
                             }}
                     >
-                        <AiFillDelete size="10"/>
+                        <AiFillDelete id={ `${flowPrefix}-delete-button-fill` } size="10"/>
                     </button>
                 </div>
         </Card>
