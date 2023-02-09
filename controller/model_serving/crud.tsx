@@ -172,13 +172,6 @@ export async function undeployRun(project_id: number,
         cid
     )
 
-    // Only deploy the model if it is not deployed
-    const result = await isRunDeployed(modelServingEnv, run.id, deployment_id)
-    if (!result && deployment_id === null) {
-        // short-circuit -- not deployed or can't get deployment ID
-        return deployment_id
-    }
-
     const model_status: ModelStatus = {
         status: DeploymentStatus[DeploymentStatus.DEPLOYMENT_STATUS_UNKNOWN],
         deployment_id: "",
@@ -204,14 +197,12 @@ export async function undeployRun(project_id: number,
         })
 
         if (response.status != 200) {
-            sendNotification(NotificationType.error, `Failed to delete model for run id ${run.id}`, response.statusText)
+            console.error("Error:", response.statusText)
             return null
         }
 
         return response.json()
     } catch (e) {
-        sendNotification(NotificationType.error, "Model teardown error",
-            "Unable to delete deployed model. See console for more details.")
         console.error(e, e.stack)
     }
 }
