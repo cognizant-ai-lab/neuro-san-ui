@@ -118,6 +118,7 @@ export default function PredictorNode(props): ReactElement {
     } = data
 
     const flowIndex = GetElementIndex(NodeID) + 1
+    const flowPrefix = `predictor-${flowIndex}`
 
     // Fetch the available metrics and predictors and these are not state dependant
     const metrics = {
@@ -347,23 +348,23 @@ export default function PredictorNode(props): ReactElement {
     const PredictorSelectionPanel = <Card.Body>
         <div className="flex justify-between mb-4 content-center">
             <label className="m-0 mr-2">Type: </label>
-            <select id={ `predictor-${flowIndex}-type-select` }
+            <select id={ `${flowPrefix}-type-select` }
                 name={ `${NodeID}-predictorType` } 
                 onChange={ event => onPredictorTypeChange(event.target.value)}
                 value={ ParentPredictorState.selectedPredictorType }
                 className="w-32" 
                 >
-                    <option id={ `predictor-${flowIndex}-regressor` } value="regressor">
+                    <option id={ `${flowPrefix}-regressor` } value="regressor">
                         Regressor
                     </option>
-                    <option id={ `predictor-${flowIndex}-classifier` } value="classifier">
+                    <option id={ `${flowPrefix}-classifier` } value="classifier">
                         Classifier
                     </option>
-                    <option disabled id={ `predictor-${flowIndex}-byo` }
+                    <option disabled id={ `${flowPrefix}-byo` }
                         value="byop">
                             Bring your own (Coming Soon)
                     </option>
-                    <option disabled id={ `predictor-${flowIndex}-evolution` }
+                    <option disabled id={ `${flowPrefix}-evolution` }
                         value="evolution">
                             Evolution (Coming Soon)
                     </option>
@@ -372,7 +373,7 @@ export default function PredictorNode(props): ReactElement {
         
         <div className="flex justify-between mb-4 content-center">
             <label className="m-0">Predictor: </label>
-            <select id={ `predictor-${flowIndex}-select` }
+            <select id={ `${flowPrefix}-select` }
                 name={ `${NodeID}-predictor` } 
                 value={ ParentPredictorState.selectedPredictor }
                 onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
@@ -381,7 +382,7 @@ export default function PredictorNode(props): ReactElement {
                     { ParentPredictorState.selectedPredictorType &&
                         predictors[ParentPredictorState.selectedPredictorType].map(
                                 predictor =>
-                                    <option id={ `predictor-${flowIndex}-option-${predictor}` }
+                                    <option id={ `${flowPrefix}-option-${predictor}` }
                                         key={ predictor } value={ predictor }>
                                             { predictor }
                                     </option>
@@ -392,7 +393,7 @@ export default function PredictorNode(props): ReactElement {
 
         <div className="flex justify-between mb-4 content-center">
             <label className="m-0">Metric: </label>
-            <select id={ `predictor-${flowIndex}-metric-select` }
+            <select id={ `${flowPrefix}-metric-select` }
                 name={ `${NodeID}-metric` } 
                 value={ ParentPredictorState.selectedMetric }
                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
@@ -401,7 +402,7 @@ export default function PredictorNode(props): ReactElement {
                      { Array.from<string>(metrics[ParentPredictorState.selectedPredictorType].
                         keys()).map(
                             metric =>
-                                    <option id={ `predictor-${flowIndex}-metric-${metric}` }
+                                    <option id={ `${flowPrefix}-metric-${metric}` }
                                     key={metric} value={ metric }>
                                         { metric }
                                 </option>
@@ -413,7 +414,7 @@ export default function PredictorNode(props): ReactElement {
 
     // Create the configuration Panel
     const PredictorConfigurationPanel = <Card.Body
-        className="overflow-y-auto h-40 text-xs" id={ `predictor-${flowIndex}-config` }>
+        className="overflow-y-auto h-40 text-xs" id={ `${flowPrefix}-config` }>
         {   
             ParentPredictorState.predictorParams &&
             Object.keys(ParentPredictorState.predictorParams).map(param =>
@@ -615,7 +616,7 @@ export default function PredictorNode(props): ReactElement {
                     >
                         <div className="flex">
                             <button type="button"
-                                        id={ `predictor-${flowIndex}-gr-settings-option-button` }
+                                        id={ `${flowPrefix}-gr-settings-option-button` }
                                     className="mt-1"
                                     style={{height: 0}}>
                                 <GrSettingsOption />
@@ -634,7 +635,7 @@ export default function PredictorNode(props): ReactElement {
                                     <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                         <label className="capitalize"> {element} </label>
                                             <input name={element}
-                                                id={ `predictor-${flowIndex}-context-input-${element}` }
+                                                id={ `${flowPrefix}-context-input-${element}` }
                                         type="checkbox"
                                         defaultChecked={true}
                                         checked={ParentPredictorState.caoState.context[element]}
@@ -645,7 +646,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         >
                             <button type="button"
-                                id={ `predictor-${flowIndex}-context-button` }
+                                id={ `${flowPrefix}-context-button` }
                                 className="absolute top-2 -left-4"
                                 style={{height: 0}}>C</button>
                     </Popover>
@@ -662,7 +663,7 @@ export default function PredictorNode(props): ReactElement {
                                     Object.keys(ParentPredictorState.caoState.action).map(element =>
                                         <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                         <label className="capitalize"> {element} </label>
-                                            <input id={ `predictor-${flowIndex}-actions-input-${element}` }
+                                            <input id={ `${flowPrefix}-actions-input-${element}` }
                                         name={element}
                                         type="checkbox"
                                         defaultChecked={true}
@@ -674,7 +675,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         >
                         <button type="button"
-                                    id={ `predictor-${flowIndex}-actions-button` }
+                                    id={ `${flowPrefix}-actions-button` }
                                 className="absolute bottom-6 -left-4"
                                 style={{height: 0}}>A</button>
                     </Popover>
@@ -690,7 +691,7 @@ export default function PredictorNode(props): ReactElement {
                                     <div key={element} className="grid grid-cols-2 gap-4 mb-2">
                                         <label className="capitalize"> {element} </label>
                                             <input name={element}
-                                                id={ `predictor-${flowIndex}-outcomes-input-${element}` }
+                                                id={ `${flowPrefix}-outcomes-input-${element}` }
                                         type="checkbox"
                                         defaultChecked={false}
                                         checked={ParentPredictorState.caoState.outcome[element]}
@@ -701,7 +702,7 @@ export default function PredictorNode(props): ReactElement {
                         }
                         >
                         <button type="button"
-                                    id={ `predictor-${flowIndex}-outcomes-button` }
+                                    id={ `${flowPrefix}-outcomes-button` }
                                 className="absolute top-5 -right-4"
                                 style={{height: 0}}>O
                         </button>
