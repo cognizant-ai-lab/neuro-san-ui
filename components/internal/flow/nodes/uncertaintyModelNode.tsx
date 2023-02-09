@@ -54,7 +54,8 @@ export default function UncertaintyModelNode(props): ReactElement {
         NodeID,
         ParentUncertaintyNodeState,
         SetParentUncertaintyNodeState,
-        DeleteNode
+        DeleteNode,
+        GetElementIndex
     } = data
 
     // For showing advanced configuration settings
@@ -81,85 +82,110 @@ export default function UncertaintyModelNode(props): ReactElement {
         SetParentUncertaintyNodeState(paramsCopy)
     }
 
+    const flowIndex = GetElementIndex(NodeID) + 1
+    const flowPrefix = `uncertaintynode-${flowIndex}`
+
     function getInputComponent(param, item) {
-        return <div className="grid grid-cols-10 gap-4 mb-2" key={param} >
-                <div className="item1 col-span-5">
-                    <label className="capitalize" id={`${param}-label`}>{param}: </label>
-                </div>
-                <div className="item2 col-span-4">
-                    {
-                        item.type === ParamType.INT &&
-                        <input
-                            id={`${param}-value`}
-                            type="number"
-                            step="1"
-                            value={ParentUncertaintyNodeState[param].value.toString()}
-                            onChange={event => onParamChange(event, param)}
-                            style={{width: "100%"}}
-                        />
-                    }
-                    {
-                        item.type === ParamType.BOOLEAN && 
-                            <input
-                                id={`${param}-value`}
-                                type="checkbox"
-                                checked={Boolean(ParentUncertaintyNodeState[param].value)}
-                                onChange={event => onCheckboxChange(event, param)}
-                            />
-                    }
-                    {
-                        item.type === ParamType.ENUM &&
-                        <select
-                            id={`${param}-value`}
-                            value={ParentUncertaintyNodeState[param].value.toString()}
-                            onChange={event => onParamChange(event, param)}
-                            style={{width: "100%"}}
-                        >
-                            {
-                                (item.allValues as Array<string>).map(
-                                    value =>
-                                        <option
-                                            id={`${param}-${value}`}
-                                            key={value} value={ value }>
-                                            { value }
-                                        </option>
-                                )
-                            }
-                        </select>
-                    }
-                </div>
-                <div className="item3 col-span-1">
-                    <Tooltip content={item.description} >
-                        <InfoSignIcon />
-                    </Tooltip>
-                </div>
+        const paramPrefix = `${flowPrefix}-${param}`
+        return <div id={ `${paramPrefix}-input-component` }
+                    className="grid grid-cols-10 gap-4 mb-2" key={param} >
+            <div id={ `${paramPrefix}-input-component-div` } className="item1 col-span-5">
+                <label id={ `${paramPrefix}-label` } className="capitalize">{param}: </label>
             </div>
+            <div id={ `${paramPrefix}-data-type-div` }
+                className="item2 col-span-4">
+                {
+                    item.type === ParamType.INT &&
+                    <input
+                        id={`${paramPrefix}-value`}
+                        type="number"
+                        step="1"
+                        value={ParentUncertaintyNodeState[param].value.toString()}
+                        onChange={event => onParamChange(event, param)}
+                        style={{width: "100%"}}
+                    />
+                }
+                {
+                    item.type === ParamType.BOOLEAN && 
+                        <input
+                            id={`${paramPrefix}-value`}
+                            type="checkbox"
+                            checked={Boolean(ParentUncertaintyNodeState[param].value)}
+                            onChange={event => onCheckboxChange(event, param)}
+                        />
+                }
+                {
+                    item.type === ParamType.ENUM &&
+                    <select
+                        id={`${paramPrefix}-value`}
+                        value={ParentUncertaintyNodeState[param].value.toString()}
+                        onChange={event => onParamChange(event, param)}
+                        style={{width: "100%"}}
+                    >
+                        {
+                            (item.allValues as Array<string>).map(
+                                value =>
+                                    <option
+                                        id={`${paramPrefix}-${value}`}
+                                        key={value} value={ value }>
+                                        { value }
+                                    </option>
+                            )
+                        }
+                    </select>
+                }
+            </div>
+            <div id={ `${paramPrefix}-tooltip-div` }
+                className="item3 col-span-1">
+                <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                    content={item.description} >
+                    <InfoSignIcon id={ `${paramPrefix}-tooltip-info-sign-icon` }/>
+                </Tooltip>
+            </div>
+        </div>
     }
 
     // Create the outer Card
-    return <BlueprintCard
+    return <BlueprintCard id={ `${flowPrefix}` }
         interactive={ true } 
         elevation={ Elevation.TWO } 
         style={ { padding: 0, width: "10rem", height: "4rem" } }
     >
-        <Card border="warning" style={{height: "100%"}}>
-            <Card.Body className="flex justify-center content-center">
-                <Text className="mr-2">Uncertainty model</Text>
-                <div onMouseDown={(event) => {event.stopPropagation()}}>
-                    <Popover content={
+        <Card id={ `${flowPrefix}-uncertainty-model-card-1` } 
+            border="warning" style={{height: "100%"}}>
+            <Card.Body id={ `${flowPrefix}-uncertainty-model-card-2` }
+                className="flex justify-center content-center">
+                <Text id={ `${flowPrefix}-uncertainty-model-text` }
+                    className="mr-2">
+                    Uncertainty model
+                </Text>
+                <div id={ `${flowPrefix}-popover-div` }
+                    onMouseDown={(event) => {event.stopPropagation()}}>
+                    <Popover    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Popover does not have an id property when compiling
+                        content={
                         <>
-                            <Card.Body className="h-40 text-xs" id={ "uncertainty_model_config" }>
-                                <div className="mt-1 mb-2 mx-1">
-                                    <a target="_blank" href="https://gpflow.github.io/GPflow/" rel="noreferrer">
+                            <Card.Body id={ `${flowPrefix}-uncertainty-model-config` }
+                                className="h-40 text-xs">
+                                <div id={ `${flowPrefix}-more-info-div` }
+                                    className="mt-1 mb-2 mx-1">
+                                    <a id={ `${flowPrefix}-more-info-anchor` }
+                                        target="_blank"
+                                        href="https://gpflow.github.io/GPflow/" rel="noreferrer">
                                         For more information on these settings, view the GPFlow documentation here.
                                     </a>
                                 </div>
-                                <div className="mt-4 mb-2">
-                                    <Text>
-                                        <b>Basic settings</b>
+                                <div id={ `${flowPrefix}-basic-settings-label-div` }
+                                    className="mt-4 mb-2">
+                                    <Text id={ `${flowPrefix}-basic-settings-text` }>
+                                        <b id={ `${flowPrefix}-basic-settings-label` }>
+                                            Basic settings
+                                        </b>
                                     </Text>
                                 </div>
-                                <div className="mt-3">
+                                <div id={ `${flowPrefix}-basic-settings-div` }
+                                    className="mt-3">
                                     {
                                         Object.keys(UNCERTAINTY_MODEL_PARAMS)
                                             .filter(key => !UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
@@ -168,19 +194,26 @@ export default function UncertaintyModelNode(props): ReactElement {
                                             })
                                     }
                                 </div>
-                                <div className="mt-4 mb-2">
-                                    <Text>
-                                        <b>Advanced settings</b> (most users should not change these)
+                                <div id={ `${flowPrefix}-advanced-settings-label-div` } className="mt-4 mb-2">
+                                    <Text id={ `${flowPrefix}-advanced-settings-text` }>
+                                        <b id={ `${flowPrefix}-advanced-settings-label` }>
+                                            Advanced settings
+                                        </b> (most users should not change these)
                                     </Text>
                                 </div>
-                                <button
-                                    id="show-advanced-settings-uncert-model"
+                                <button id={ `${flowPrefix}-show-advanced-settings-uncert-model-button` }
                                     onClick={() => setShowAdvanced(!showAdvanced)}
                                 >
-                                    {showAdvanced ? <u>Hide</u> : <u>Show</u>}
+                                    {showAdvanced
+                                        ? <u id={ `${flowPrefix}-show-advanced-settings` }>Hide</u>
+                                        : <u id={ `${flowPrefix}-hide-advanced-settings` }>Show</u>
+                                    }
                                 </button>
-                                <Collapse in={showAdvanced} timeout={5}>
-                                    <div className="mt-3 mb-4">
+                                <Collapse       // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                                                // 2/6/23 DEF - Collapse does not have an id property when compiling
+                                    in={showAdvanced} timeout={5}>
+                                    <div id={ `${flowPrefix}-advanced-settings-div` }
+                                        className="mt-3 mb-4">
                                         {
                                             Object.keys(UNCERTAINTY_MODEL_PARAMS)
                                                 .filter(key => UNCERTAINTY_MODEL_PARAMS[key].isAdvanced)
@@ -199,31 +232,33 @@ export default function UncertaintyModelNode(props): ReactElement {
                              backgroundColor: "ghostwhite"
                          }}
                     >
-                    <div className="flex">
-                        <button type="button"
-                                id="show-uncertainty-model-config"
+                    <div id={ `${flowPrefix}-show-uncertainty-model-config` }className="flex">
+                        <button id={ `${flowPrefix}-show-uncertainty-model-config-button` }
+                                type="button"
                                 className="mt-1"
                                 style={{height: 0}}>
-                            <GrSettingsOption/>
+                            <GrSettingsOption
+                                id={ `${flowPrefix}-show-uncertainty-model-config-button-settings-option` }/>
                         </button>
                     </div>
                     </Popover>
                 </div>
             </Card.Body>
-            <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
-                <button type="button"
-                        id="delete-me"
+            <div id={ `${flowPrefix}-delete-button-div` } 
+                className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                <button id={ `${flowPrefix}-delete-button` }
+                        type="button"
                         className="hover:text-red-700 text-xs"
                         onClick={() => {
                             DeleteNode(NodeID)
                             sendNotification(NotificationType.success, "Uncertainty model node deleted")
                         }}
                 >
-                    <AiFillDelete size="10"/>
+                    <AiFillDelete id={ `${flowPrefix}-delete-button-fill` }size="10"/>
                 </button>
             </div>
         </Card>
-        <Handle type="source" position={HandlePosition.Right} />
-        <Handle type="target" position={HandlePosition.Left} />
+        <Handle id={ `${flowPrefix}-source-handle` } type="source" position={HandlePosition.Right} />
+        <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
