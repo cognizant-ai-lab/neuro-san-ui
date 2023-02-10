@@ -160,6 +160,13 @@ interface ModelStatus {
     labels: StringString
 }
 
+export interface TearDownRequest {
+    deployment_id: string
+
+    // The environment where the model is deployed
+    model_serving_environment: ModelServingEnvironment
+}
+
 export interface DeployedModel {
     // Status of the Model
     model_status: ModelStatus
