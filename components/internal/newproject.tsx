@@ -542,15 +542,15 @@ does not appear to be a CSV file. Proceed anyway?`)) {
                                             fontSize: "90%"
                                         }}>
                                             <p id="file-info">
-                                                <b id="file-name">
+                                                <b id="file-name" className="mr-2">
                                                     Filename:
                                                 </b>
                                                 {selectedFile.name},
-                                                <b id="file-type">
+                                                <b id="file-type" className="mx-2">
                                                     filetype:
                                                 </b>
                                                 {selectedFile.type},
-                                                <b id="file-size">
+                                                <b id="file-size" className="mx-2">
                                                     size:
                                                 </b>
                                                 {prettyBytes(selectedFile.size)}
