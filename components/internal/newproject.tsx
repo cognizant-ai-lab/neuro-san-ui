@@ -16,6 +16,7 @@ import {NotificationType, sendNotification} from "../../controller/notification"
 import Debug from "debug";
 import {Project} from "../../controller/projects/types"
 import {uploadFile} from "../../controller/files/upload"
+import {splitFilename, toSafeFilename} from "../../utils/file"
 
 // Controllers for new project
 import {CreateProfile} from "../../controller/dataprofile/generate"
@@ -286,31 +287,41 @@ export default function NewProject(props: NewProps) {
     const handleFileUpload = async () => {
         // Make sure file is within our size limit
         const fileTooLarge = (selectedFile.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES)
+        const fileName = selectedFile.name;
         if (fileTooLarge) {
             sendNotification(NotificationType.error,
-                `File "${selectedFile.name}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum allowed file 
-size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
+                `File "${fileName}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum 
+allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             return
         }
 
         // Prompt user if not CSV file
         if (selectedFile.type !== "text/csv") {
-            if (!confirm(`Only CSV files are supported, but the file you have selected of type "${selectedFile.type}" does not appear to be a CSV file. Proceed anyway?`)) {
+            if (!confirm(`Only CSV files are supported, but the file you have selected of type "${selectedFile.type}" 
+does not appear to be a CSV file. Proceed anyway?`)) {
                 return
             }
         }
 
-            // Determine where in S3 to store the file. For now, based on user name (from Github) and filename.
-            // Assumption: all Github usernames and all local filenames are valid for S3 paths. This...may be risky.
-            setIsUploading(true)
-            const s3Path = `data/${session.user.name}/${selectedFile.name}`
-            setInputFields(
-                {...inputFields, uploadedFileS3Key: s3Path}
-            )
+        // Determine where in S3 to store the file. For now, based on user name (from Github) and filename.
+        // Assumption: all Github usernames and all local filenames are valid for S3 paths. This...may be risky.
+        setIsUploading(true)
+        
+        // Split into filename + extension
+        const {name, ext} = splitFilename(fileName)
+        
+        // Sanitize both name and extension in preparation for S3 path
+        const safePath = toSafeFilename(name)
+        const safeExt = ext.length > 0 ? toSafeFilename(ext) : "csv"
+        
+        const s3Path = `data/${session.user.name}/${safePath}.${safeExt}`
+        setInputFields(
+            {...inputFields, uploadedFileS3Key: s3Path}
+        )
 
-            uploadFile(selectedFile, s3Path)
-                .then(() => sendNotification(NotificationType.success, `File "${selectedFile.name}" uploaded`))
-                .finally(() => setIsUploading(false))
+        uploadFile(selectedFile, s3Path)
+            .then(() => sendNotification(NotificationType.success, `File "${fileName}" uploaded`))
+            .finally(() => setIsUploading(false))
     }
 
 
