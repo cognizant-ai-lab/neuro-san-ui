@@ -147,7 +147,7 @@ interface DeployedModelReference {
     base_url?: string
 }
 
-export interface ModelStatus {
+interface ModelStatus {
     // The status of the deployment
     status: string
 
