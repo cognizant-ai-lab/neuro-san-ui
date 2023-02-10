@@ -1,20 +1,30 @@
 import {
     DeployedModel,
-    Deployments, DeploymentStatus,
+    Deployments,
+    DeploymentStatus,
     DeployRequest,
     GetDeploymentsRequest,
     ModelFormat,
     ModelMetaData,
-    ModelServingEnvironment
+    ModelServingEnvironment,
+    TearDownRequest
 } from "./types";
 import {StringString} from "../base_types";
 import {NotificationType, sendNotification} from "../notification";
 import {Run} from "../run/types";
 import {MD_BASE_URL} from "../../const";
 
-const DEPLOY_ROUTE = MD_BASE_URL + "/api/v1/serving/deploy"
-const QUERY_DEPLOYMENTS_URL = MD_BASE_URL + "/api/v1/serving/deployments"
-const V2_MODELS_ENDPOINT = "v2/models"
+// For deploying models
+const DEPLOY_MODELS_ROUTE = MD_BASE_URL + "/api/v1/serving/deploy"
+
+// For checking if models are deployed
+const QUERY_DEPLOYMENTS_ROUTE = MD_BASE_URL + "/api/v1/serving/deployments"
+
+// For tearing down deployed models
+const TEARDOWN_MODELS_ROUTE = MD_BASE_URL + "/api/v1/serving/teardown"
+
+// For inferencing deployed models
+const MODEL_INFERENCE_ROUTE = "v2/models"
 
 function generateDeploymentID(run_id: number,
                                      experiment_id: number,
@@ -77,7 +87,7 @@ async function deployModel(
     }
 
     try {
-        const response = await fetch(DEPLOY_ROUTE, {
+        const response = await fetch(DEPLOY_MODELS_ROUTE, {
             method: 'POST',
             headers: {
                 "Accept": "application/json",
@@ -106,7 +116,7 @@ export async function deployRun(
     project_id: number,
     run: Run,
     min_replicas = 0,
-    cid: string,
+    cid: string = null,
     model_serving_env: ModelServingEnvironment = ModelServingEnvironment.KSERVE
     ) {
 
@@ -134,6 +144,81 @@ export async function deployRun(
             `Unable to deploy model for run id ${run.id}. See console for more details.`)
         console.error(e, e.stack)
         return null
+    }
+}
+
+/**
+ * This function cleans up the model deployments using the <code>navigator.sendBeacon</code> browser feature. It is 
+ * intended to be set up as an event handler for when the user closes the tab or navigates away from the app.
+ * 
+ * For documentation on this API see {@link https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon}
+ * 
+ * @param project_id Numeric current Project ID
+ * @param run The Run that we wish to undeploy
+ * @return <code>void<code> -- works by "side effects".
+ */
+export function undeployRunUsingBeacon(project_id: number,
+                                       run: Run) {
+    // Get deployment ID that we want to undeploy
+    const deployment_id: string = generateDeploymentID(
+        run.id,
+        run.experiment_id,
+        project_id,
+        null
+    )
+
+    // Generate the request
+    const tearDownRequest: TearDownRequest = {
+        deployment_id: deployment_id,
+        model_serving_environment: ModelServingEnvironment.KSERVE
+    }
+    navigator.sendBeacon(TEARDOWN_MODELS_ROUTE, JSON.stringify(tearDownRequest))
+}
+
+/**
+ * Undeploy (tear down) all the models associated with a run -- predictors, prescriptor(s), uncertainty models
+ * @param project_id Project ID for these models
+ * @param run Run object for these models
+ * @return A <code>Promise</code> that resolves either to <code>null</code> or the JSON result of the undeploy operation
+ */
+export async function undeployRun(project_id: number,
+                                  run: Run
+// Typescript lib uses "any" so we have to as well
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+
+    // Get deployment ID that we want to undeploy
+    const deployment_id: string = generateDeploymentID(
+        run.id,
+        run.experiment_id,
+        project_id,
+        null
+    )
+
+    // Generate the request
+    const tearDownRequest: TearDownRequest = {
+        deployment_id: deployment_id,
+        model_serving_environment: ModelServingEnvironment.KSERVE
+    }
+
+    try {
+        const response = await fetch(TEARDOWN_MODELS_ROUTE, {
+            method: 'POST',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(tearDownRequest)
+        })
+
+        if (response.status != 200) {
+            console.error("Error:", response.statusText)
+            return new Promise<null>(null)
+        }
+
+        return response.json()
+    } catch (e) {
+        console.error(e, e.stack)
     }
 }
 
@@ -165,7 +250,7 @@ async function getDeployments(
     }
 
     try {
-        const response: Response = await fetch(QUERY_DEPLOYMENTS_URL, {
+        const response: Response = await fetch(QUERY_DEPLOYMENTS_ROUTE, {
             method: 'POST',
             headers: {
                 "Accept": "application/json",
@@ -194,7 +279,7 @@ async function getDeployments(
  * @return A ready-to-use inference URL for the model requested
  */
 function getModelInferenceUrl(baseUrl: string, name: string) {
-    return `http://${baseUrl}/${V2_MODELS_ENDPOINT}/${name}/infer`;
+    return `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}/${name}/infer`;
 }
 
 /**
@@ -212,7 +297,7 @@ async function getModels(
     runId: number,
     cid: string) {
 
-    const url = `http://${baseUrl}/${V2_MODELS_ENDPOINT}`
+    const url = `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}`
     try {
         const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`,  {
             method: 'POST',
