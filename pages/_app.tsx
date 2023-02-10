@@ -46,15 +46,15 @@ export default function LEAF({
     Body =
     <>
       { /* 2/6/23 DEF - SSRProvider does not have an id property when compiling */ }
-      <SSRProvider      // eslint_disable-line enforce-ids-in-jsx/missing-ids
+      <SSRProvider      // eslint-disable-line enforce-ids-in-jsx/missing-ids
             >
         { /* 2/6/23 DEF - SessionProvider does not have an id property when compiling */ }
-        <SessionProvider        // eslint_disable-line enforce-ids-in-jsx/missing-ids
+        <SessionProvider        // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 session={session}>
           <Navbar id="nav-bar" Logo={LOGO} />
           <Container id="body-container">
             {Component.authRequired && ENABLE_AUTHENTICATION
-                ? <Auth         // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                ? <Auth         // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - SessionProvider does not have an id property when compiling
                         >
                     <Component id="body-auth-component" {...pageProps} />
@@ -70,7 +70,7 @@ export default function LEAF({
   return (
   <div id="unileaf">
     { /* 2/6/23 DEF - Head does not have an id property when compiling */ }
-    <Head      // eslint_disable-line enforce-ids-in-jsx/missing-ids
+    <Head      // eslint-disable-line enforce-ids-in-jsx/missing-ids
         >
       <title id="unileaf-title">Unileaf</title>
       <meta id="unileaf-description" name="description" content="Evolutionary AI" />

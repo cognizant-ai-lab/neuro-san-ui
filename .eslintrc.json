@@ -12,7 +12,9 @@
         "@typescript-eslint/no-explicit-any": "warn",
         "react-hooks/exhaustive-deps": "off",
         "@typescript-eslint/no-inferrable-types": "off",
-        "enforce-ids-in-jsx/missing-ids": "warn",
+        "enforce-ids-in-jsx/missing-ids": ["warn", {
+            "target": ["all"]
+        }],
         "enforce-ids-in-jsx/unique-ids": "off"
     }
 }

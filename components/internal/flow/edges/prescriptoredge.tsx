@@ -55,23 +55,26 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [tabs] = useState(['Override Predictor Output'])
 
+    // XXX  This could use some GetElementIndex love similar to what is going on
+    //      in predictornode, prescriptornode, uncertaintyModelNode
+    const flowPrefix = `prescriptoredge-${id}`
+
     const PredictorOverride =
-        <Card.Body>
-            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
+        <Card.Body id={ `${flowPrefix}-output-override-code` }>
+            <SyntaxHighlighter id={ `${flowPrefix}-output-override-code-syntax-highlighter` }
+                language="python" style={docco} showLineNumbers={true}>
                 {data.OutputOverrideCode}
             </SyntaxHighlighter>
         </Card.Body>
-    const buttonId  = `gr-settings-option-${id}`
     return (
         <>
-            <path
-                id={id}
+            <path id={ `${flowPrefix}` }
                 style={style}
                 className="react-flow__edge-path"
                 d={edgePath}
                 markerEnd={markerEnd}
             />
-            <foreignObject
+            <foreignObject id={ `${flowPrefix}-settings-div` }
                 width={foreignObjectSize}
                 height={foreignObjectSize}
                 x={edgeCenterX - foreignObjectSize / 2}
@@ -79,37 +82,37 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
                 className="edgebutton-foreignobject"
                 requiredExtensions="http://www.w3.org/1999/xhtml"
             >
-                <Popover
-                position={Position.LEFT}
-                minWidth='1rem'
-                content={
-                    <>
-                        <Tablist 
-                        marginBottom={16} 
-                        flexBasis={240} 
-                        marginRight={24}>
-                                {tabs.map((tab, index) => (
-                            <Tab
-                                key={tab}
-                                id={tab}
-                                onSelect={() => setSelectedIndex(index)}
-                                isSelected={index === selectedIndex}
-                                aria-controls={`panel-${tab}`}
-                            >
-                                {tab}
-                            </Tab>
+                <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            // 2/6/23 DEF - Popover does not have an id property when compiling
+                    position={Position.LEFT}
+                    minWidth='1rem'
+                    content={ <>
+                        <Tablist id={ `${flowPrefix}-settings-tablist` } 
+                            marginBottom={16} 
+                            flexBasis={240} 
+                            marginRight={24}>
+                            {tabs.map((tab, index) => (
+                                <Tab
+                                    key={tab}
+                                    id={ `${flowPrefix}-settings-${tab}` }
+                                    onSelect={() => setSelectedIndex(index)}
+                                    isSelected={index === selectedIndex}
+                                    aria-controls={`panel-${tab}`}
+                                >
+                                    {tab}
+                                </Tab>
                             ))}
                         </Tablist>
                         { selectedIndex === 0  && PredictorOverride }
                     </>
                 }
                 >   
-                    <div className="flex">
-                        <button type="button" 
+                    <div id={ `${flowPrefix}-gr-settings-div` } className="flex">
+                        <button id={ `${flowPrefix}-gr-settings-button` }
+                                type="button" 
                                 className="mt-1"
-                                id={buttonId}
                                 style={{height: 0}}>
-                            <GrSettingsOption />
+                            <GrSettingsOption id={ `${flowPrefix}-gr-settings-option` } />
                         </button>
                     </div>
                 </Popover>

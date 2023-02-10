@@ -53,7 +53,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                             <div id={ `graph-div-${objectiveMetricGraphLabelId}` }
                                     className="pl-4" style={{height: "25rem", width: "100%"}}>
                                 { /* 2/6/23 DEF - ResponsiveLine does not have an id tag when compiled */ }
-                                <ResponsiveLine     // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                                <ResponsiveLine     // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                     data={bumpData}
                                     margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
                                     xScale={{ type: 'linear'}}
@@ -355,7 +355,7 @@ function ParetoPlot(props) {
         </div>
 
         { /* 2/6/23 DEF - ResponsiveLine does not have an id tag when compiled */ }
-        <ResponsiveLine // eslint_disable-line enforce-ids-in-jsx/missing-ids
+        <ResponsiveLine // eslint-disable-line enforce-ids-in-jsx/missing-ids
             pointSymbol={CustomSymbol}
             pointSize={12}
             pointBorderWidth={1}

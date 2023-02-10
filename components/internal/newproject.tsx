@@ -401,7 +401,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             // multiple "submit"-type steps so that doesn't work for us.
             validated={true}
         >
-            <Collapse       // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+            <Collapse       // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                             // 2/6/23 DEF - Collapse does not have an id property when compiling
                 accordion expandIconPosition="right"
                 defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
@@ -459,7 +459,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                 }
                 <Panel id="data-source-panel"
                     header={
-                        <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                        <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
                             title={!enabledDataSourceSection ? "Please enter project name and description first": ""}
                             placement="leftTop">
@@ -555,12 +555,12 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                                             ? <label id="uploading-label">
                                                     Uploading {selectedFile.name}
                                                     <span id="uploading-clip-loader-span" className="ml-2">
-                                                        <ClipLoader // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                                        <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                                             // 2/6/23 DEF - ClipLoader doesn't have id property when compiling
                                                             color={MaximumBlue} loading={true} size={14}/>
                                                     </span>
                                               </label>
-                                            : <Tooltip // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                            : <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                                     // 2/6/23 DEF - Tooltip does not have an id property when compiling
                                                     title={getUploadButtonTooltip()}>
                                                     <Button id="upload-file-button"
@@ -582,7 +582,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                         </Space>
                     </Radio.Group>
                     <Form.Group id="create-data-source-group" className="mt-2">
-                        <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                        <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
                             title={getCreatButtonTooltip()}>
                             <Button id="create-data-source-button"
@@ -602,7 +602,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
                 </Panel>
                 <Panel id="profile-table-panel"
                     header={
-                        <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                        <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
                                 title={!enabledDataTagSection ? "Please name and create your data source first": ""}
                                 placement="leftTop">
@@ -617,7 +617,7 @@ size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
 
             <Panel id="create-project-or-data-profile-button-panel"
                 header={
-                    <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                    <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                     // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         title={getCreateProjectButtonTooltip()} placement="leftTop">
                         <Button id="create-project-or-data-profile-button"

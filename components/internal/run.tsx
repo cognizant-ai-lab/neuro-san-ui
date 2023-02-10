@@ -337,7 +337,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         PlotDiv.push(
             <div id="clip-loader-div" className="container">
                 { /* 2/6/23 DEF - ClipLoader does not have an id property when compiling */ }
-                <ClipLoader     // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     color={MaximumBlue} loading={true} size={50} />
             </div>
         )
@@ -392,7 +392,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         flowDiv.push(
             <div id="run-flow">
                 { /* 2/6/23 DEF - ReactFlowProvider does not have an id property when compiling */ }
-                <ReactFlowProvider      // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                <ReactFlowProvider      // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     >
                     <Flow id="flow"
                         ProjectID={props.ProjectId}

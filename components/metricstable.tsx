@@ -109,7 +109,7 @@ export default function MetricsTable(props: MetricstableProps) {
                                 <div id={ `${predictorMetricsId}-rio-improvement-div` } style={{display: "flex"}}>
                                     <b id={ `${predictorMetricsId}-rio-improvement-header` }>RIO improvement</b>
                                     { /* 2/6/23 DEF - Tooltip does not have an id property when compiling */ }
-                                    <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids 
+                                    <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                         content="Improvement of uncertainty model enhanced predictor metric over original predictor metric, as a percentage"
                                         statelessProps={{className: "opacity-75"}}
                                         position={Position.TOP_RIGHT}

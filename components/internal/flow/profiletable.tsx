@@ -271,7 +271,7 @@ export default function ProfileTable(props: ProfiletableProps) {
     }
 
     const editCategoryValuesModal =
-        <Modal    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+        <Modal    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                   // 2/6/23 DEF - Modal doesn't have an id property when compiling
                title="Edit categorical values"
                visible={showFieldEditor}
@@ -310,7 +310,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                 <p id="values-separator"/>
                 <Row id="values-droppable-row">
                     {/* Drag-drop list of values */}
-                    {<Droppable    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                    {<Droppable    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                    // 2/6/23 DEF - Droppable doesn't have an id property when compiling
                         droppableId="values">
                         {(provided) => (
@@ -323,7 +323,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                                     {
                                         profile && fieldBeingEditedName ? currentCategoryValues.map((val, index) => {
                                             return (
-                                                <Draggable    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                                                <Draggable    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                                     // 2/6/23 DEF - Draggable doesn't have an id property when compiling
                                                     key={val} draggableId={val} index={index}>
                                                     {(provided, snapshot) => {
@@ -375,7 +375,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                     <label id="add-category-label">Add category value:</label>
                 </Row>
                 <Row id="add-category-value-row" className="pt-1">
-                    <Input.Group    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                    <Input.Group    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                     // 2/6/23 DEF - DragDropContext does not have an id property when compiling
                         compact>
                         <Input id="add-category-value-input" 
@@ -405,7 +405,7 @@ export default function ProfileTable(props: ProfiletableProps) {
     const propsId = `${props.id}`
 
     // Wrap everything in a DragDropContext as recommended by react-beautiful-dnd doc
-    return <DragDropContext    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+    return <DragDropContext    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                // 2/6/23 DEF - DragDropContext does not have an id property when compiling
         onDragEnd={(dragResult) => {
             // Prevent dragging out of bounds

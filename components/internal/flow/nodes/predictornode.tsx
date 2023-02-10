@@ -118,6 +118,7 @@ export default function PredictorNode(props): ReactElement {
     } = data
 
     const flowIndex = GetElementIndex(NodeID) + 1
+    const flowPrefix = `predictor-${flowIndex}`
 
     // Fetch the available metrics and predictors and these are not state dependant
     const metrics = {
@@ -344,164 +345,174 @@ export default function PredictorNode(props): ReactElement {
     const [tabs] = useState(['Predictor', 'Configuration', 'Data Split'])
 
     // Create the selection Panel
-    const PredictorSelectionPanel = <Card.Body>
-                                        <div className="flex justify-between mb-4 content-center">
-                                            <label className="m-0 mr-2">Type: </label>
-                                            <select id={ `predictor-${flowIndex}-type-select` }
-                                                name={ `${NodeID}-predictorType` } 
-                                                onChange={ event => onPredictorTypeChange(event.target.value)}
-                                                value={ ParentPredictorState.selectedPredictorType }
-                                                className="w-32" 
-                                                >
-                                                    <option id={ `predictor-${flowIndex}-regressor` } value="regressor">
-                                                        Regressor
-                                                    </option>
-                                                    <option id={ `predictor-${flowIndex}-classifier` } value="classifier">
-                                                        Classifier
-                                                    </option>
-                                                    <option disabled id={ `predictor-${flowIndex}-byo` }
-                                                        value="byop">
-                                                            Bring your own (Coming Soon)
-                                                    </option>
-                                                    <option disabled id={ `predictor-${flowIndex}-evolution` }
-                                                        value="evolution">
-                                                            Evolution (Coming Soon)
-                                                    </option>
-                                            </select>    
-                                        </div>
-                                        
-                                        <div className="flex justify-between mb-4 content-center">
-                                            <label className="m-0">Predictor: </label>
-                                            <select id={ `predictor-${flowIndex}-select` }
-                                                name={ `${NodeID}-predictor` } 
-                                                value={ ParentPredictorState.selectedPredictor }
-                                                onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
-                                                className="w-32"
-                                                >
-                                                    { ParentPredictorState.selectedPredictorType &&
-                                                        predictors[ParentPredictorState.selectedPredictorType].map(
-                                                                predictor =>
-                                                                    <option id={ `predictor-${flowIndex}-option-${predictor}` }
-                                                                        key={ predictor } value={ predictor }>
-                                                                            { predictor }
-                                                                    </option>
-                                                            )
-                                                    }
-                                            </select>
-                                        </div>
+    const PredictorSelectionPanel = <Card.Body id={ `${flowPrefix}-predictor-selection-panel` }>
+        <div id={ `${flowPrefix}-type-div` } className="flex justify-between mb-4 content-center">
+            <label id={ `${flowPrefix}-type-label` } className="m-0 mr-2">Type: </label>
+            <select id={ `${flowPrefix}-type-select` }
+                name={ `${NodeID}-predictorType` } 
+                onChange={ event => onPredictorTypeChange(event.target.value)}
+                value={ ParentPredictorState.selectedPredictorType }
+                className="w-32" 
+                >
+                    <option id={ `${flowPrefix}-regressor` } value="regressor">
+                        Regressor
+                    </option>
+                    <option id={ `${flowPrefix}-classifier` } value="classifier">
+                        Classifier
+                    </option>
+                    <option disabled id={ `${flowPrefix}-byo` }
+                        value="byop">
+                            Bring your own (Coming Soon)
+                    </option>
+                    <option disabled id={ `${flowPrefix}-evolution` }
+                        value="evolution">
+                            Evolution (Coming Soon)
+                    </option>
+            </select>    
+        </div>
+        
+        <div id={ `${flowPrefix}-predictor-div` }
+            className="flex justify-between mb-4 content-center">
+            <label id={ `${flowPrefix}-predictor-label` } className="m-0">Predictor: </label>
+            <select id={ `${flowPrefix}-predictor-select` }
+                name={ `${NodeID}-predictor` } 
+                value={ ParentPredictorState.selectedPredictor }
+                onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
+                className="w-32"
+                >
+                    { ParentPredictorState.selectedPredictorType &&
+                        predictors[ParentPredictorState.selectedPredictorType].map(
+                                predictor =>
+                                    <option id={ `${flowPrefix}-option-${predictor}` }
+                                        key={ predictor } value={ predictor }>
+                                            { predictor }
+                                    </option>
+                            )
+                    }
+            </select>
+        </div>
 
-                                        <div className="flex justify-between mb-4 content-center">
-                                            <label className="m-0">Metric: </label>
-                                            <select id={ `predictor-${flowIndex}-metric-select` }
-                                                name={ `${NodeID}-metric` } 
-                                                value={ ParentPredictorState.selectedMetric }
-                                                onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
-                                                className="w-32"
-                                                >
-                                                     { Array.from<string>(metrics[ParentPredictorState.selectedPredictorType].
-                                                        keys()).map(
-                                                            metric =>
-                                                                    <option id={ `predictor-${flowIndex}-metric-${metric}` }
-                                                                    key={metric} value={ metric }>
-                                                                        { metric }
-                                                                </option>
-                                                        )
-                                                    }
-                                            </select>
-                                        </div>
-                                    </Card.Body>
+        <div id={ `${flowPrefix}-metric-div` }
+            className="flex justify-between mb-4 content-center">
+            <label id={ `${flowPrefix}-metric-label` } className="m-0">
+                Metric: </label>
+            <select id={ `${flowPrefix}-metric-select` }
+                name={ `${NodeID}-metric` } 
+                value={ ParentPredictorState.selectedMetric }
+                onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
+                className="w-32"
+                >
+                     { Array.from<string>(metrics[ParentPredictorState.selectedPredictorType].
+                        keys()).map(
+                            metric =>
+                                    <option id={ `${flowPrefix}-metric-${metric}` }
+                                    key={metric} value={ metric }>
+                                        { metric }
+                                </option>
+                        )
+                    }
+            </select>
+        </div>
+    </Card.Body>
 
     // Create the configuration Panel
-    const PredictorConfigurationPanel = <Card.Body className="overflow-y-auto h-40 text-xs" id={ `predictor-${flowIndex}-config` }>
-                                        {   ParentPredictorState.predictorParams &&
-                                            Object.keys(ParentPredictorState.predictorParams).map(param =>
-                                                <div className="grid grid-cols-12 gap-4 mb-2" key={param} >
-                                                    <div className="item1 col-span-3">
-                                                        <label className="capitalize" id={`${param}-label`}>
-                                                            {param}:
-                                                        </label>
-                                                    </div>
-                                                    <div className="item2 col-span-8">
-                                                        {
-                                                            ParentPredictorState.predictorParams[param].type === "int" &&
-                                                                <input id={`${param}-value`}
-                                                                    type="number"
-                                                                    step="1"
-                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
-                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
-                                                                    onChange={event => onParamChange(event, param)}
-                                                                />
-                                                        }
-                                                        {
-                                                            ParentPredictorState.predictorParams[param].type === "float" &&
-                                                                <input id={`${param}-value`}
-                                                                    type="number"
-                                                                    step="0.1"
-                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
-                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
-                                                                    onChange={event => onParamChange(event, param)}
-                                                                />
-                                                        }
-                                                        {
-                                                            ParentPredictorState.predictorParams[param].type === "bool" && (
-                                                                <input id={`${param}-value`}
-                                                                    type="checkbox"
-                                                                    defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
-                                                                    checked={Boolean(ParentPredictorState.predictorParams[param].value)}
-                                                                    onChange={event => onPredictorParamCheckBoxChange(event, param)}
-                                                                />
-                                                            )
-                                                        }
-                                                        {
-                                                            typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
-                                                            <select id={`${param}-value`}
-                                                                value={ ParentPredictorState.predictorParams[param].value.toString() }
-                                                                onChange={event => onParamChange(event, param)}
-                                                                className="w-32"
-                                                                >
-                                                                {
-                                                                    (ParentPredictorState.predictorParams[param].type as Array<string>).map(
-                                                                        value => <option id={`${param}-${value}`}
-                                                                                    key={value} value={ value }>
-                                                                                        { value }
-                                                                                  </option>)
-                                                                }
-                                                            </select>
-                                                        }
-                                                        {
-                                                            ParentPredictorState.predictorParams[param].type === "string" && (
-                                                                <input id={`${param}-value`}
-                                                                    className="w-full"
-                                                                    type="text"
-                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
-                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
-                                                                    onChange={event => onParamChange(event, param)}
-                                                                />
-                                                            )
-                                                        }
-                                                        {
-                                                            ParentPredictorState.predictorParams[param].type === "password" && (
-                                                                <input id={`${param}-value`}
+    const PredictorConfigurationPanel = <Card.Body
+        className="overflow-y-auto h-40 text-xs" id={ `${flowPrefix}-config` }>
+        {   
+            ParentPredictorState.predictorParams &&
+            Object.keys(ParentPredictorState.predictorParams).map(param =>
 
-                                                                    className="w-full"
-                                                                    type="password"
-                                                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
-                                                                    value={ParentPredictorState.predictorParams[param].value.toString()}
-                                                                    onChange={event => onParamChange(event, param)}
-                                                                />
-                                                            )
-                                                        }
-                                                    </div>
-                                                    <div className="item3 col-span-1">
-                                                        <Tooltip content={ParentPredictorState.predictorParams[param].description} >
-                                                            <InfoSignIcon />
-                                                        </Tooltip>
-                                                    </div>
-                                                </div>
-                                            )
-                                        }
+                <div id={ `${flowPrefix}-${param}-input-component` }
+                    className="grid grid-cols-12 gap-4 mb-2" key={param} >
+                    <div id={ `${flowPrefix}-${param}-input-component-div` }className="item1 col-span-3">
+                        <label id={ `${flowPrefix}-${param}-label` } className="capitalize">
+                            {param}:
+                        </label>
+                    </div>
+                    <div id={ `${flowPrefix}-${param}-data-type-div` }
+                        className="item2 col-span-8">
+                        {
+                            ParentPredictorState.predictorParams[param].type === "int" &&
+                                <input id={ `${flowPrefix}-${param}-value` }
+                                    type="number"
+                                    step="1"
+                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                    onChange={event => onParamChange(event, param)}
+                                />
+                        }
+                        {
+                            ParentPredictorState.predictorParams[param].type === "float" &&
+                                <input id={ `${flowPrefix}-${param}-value` }
+                                    type="number"
+                                    step="0.1"
+                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                    onChange={event => onParamChange(event, param)}
+                                />
+                        }
+                        {
+                            ParentPredictorState.predictorParams[param].type === "bool" && (
+                                <input id={ `${flowPrefix}-${param}-value` }
+                                    type="checkbox"
+                                    defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
+                                    checked={Boolean(ParentPredictorState.predictorParams[param].value)}
+                                    onChange={event => onPredictorParamCheckBoxChange(event, param)}
+                                />
+                            )
+                        }
+                        {
+                            typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
+                                <select id={ `${flowPrefix}-${param}-value` }
+                                    value={ ParentPredictorState.predictorParams[param].value.toString() }
+                                    onChange={event => onParamChange(event, param)}
+                                    className="w-32"
+                                >
+                                {
+                                    (ParentPredictorState.predictorParams[param].type as Array<string>).map(
+                                        value => <option id={ `${flowPrefix}-${param}-${value}` }
+                                                    key={value} value={ value }>
+                                                        { value }
+                                                  </option>)
+                                }
+                            </select>
+                        }
+                        {
+                            ParentPredictorState.predictorParams[param].type === "string" && (
+                                <input id={ `${flowPrefix}-${param}-value` }
+                                    className="w-full"
+                                    type="text"
+                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                    onChange={event => onParamChange(event, param)}
+                                />
+                            )
+                        }
+                        {
+                            ParentPredictorState.predictorParams[param].type === "password" && (
+                                <input id={ `${flowPrefix}-${param}-value` }
+                                    className="w-full"
+                                    type="password"
+                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                    value={ParentPredictorState.predictorParams[param].value.toString()}
+                                    onChange={event => onParamChange(event, param)}
+                                />
+                            )
+                        }
+                    </div>
+                    <div id={ `${flowPrefix}-${param}-tooltip-div` }
+                        className="item3 col-span-1">
+                        <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                    // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                            content={ParentPredictorState.predictorParams[param].description} >
+                            <InfoSignIcon id={ `${flowPrefix}-${param}-tooltip-info-sign-icon` }/>
+                        </Tooltip>
+                    </div>
+                </div>
+            )
+        }
                                             
-                                        </Card.Body>
+        </Card.Body>
 
     // Create the data split card
 
@@ -511,14 +522,17 @@ export default function PredictorNode(props): ReactElement {
         100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
     }
 
-    const DataSplitConfigurationPanel = <Card.Body>
-        <Container>
-            <Row className="mx-2 my-8">
-                <Col md={2} className="mr-4" id="train_label">
+    const DataSplitConfigurationPanel = <Card.Body id={ `${flowPrefix}-data-split-configuration-panel` }>
+        <Container id={ `${flowPrefix}-data-split-config` }>
+            <Row id={ `${flowPrefix}-train` }
+                className="mx-2 my-8">
+                <Col id={ `${flowPrefix}-train-label` }
+                    md={2} className="mr-4">
                     Train:
                 </Col>
-                <Col md={9}>
-                    <Slider
+                <Col id={ `${flowPrefix}-train-slider` } md={9}>
+                    <Slider     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Slider does not have an id property when compiling
                         onChange={event => onTrainSliderChange(event)}
                         min={0}
                         max={100}
@@ -526,18 +540,22 @@ export default function PredictorNode(props): ReactElement {
                         marks={marks}
                         handleRender={(node) => {
                             return (
-                                   <AntdTooltip title={`${ParentPredictorState.trainSliderValue}%`}>{node}</AntdTooltip>
+                                   <AntdTooltip id={ `${flowPrefix}-train-slider-tooltip` }
+                                        title={`${ParentPredictorState.trainSliderValue}%`}>{node}</AntdTooltip>
                             )
                         }}
                     />
                 </Col>
             </Row>
-            <Row className="mx-2 my-8">
-                <Col md={2} className="mr-4" id="test_label">
-                   Test:
+            <Row id={ `${flowPrefix}-test` }
+                className="mx-2 my-8">
+                <Col id={ `${flowPrefix}-test-label` }
+                    md={2} className="mr-4">
+                    Test:
                 </Col>
-                <Col md={9}>
-                    <Slider
+                <Col id={ `${flowPrefix}-test-slider` } md={9}>
+                    <Slider     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Slider does not have an id property when compiling
                         onChange={ event => onTestSliderChange(event) }
                         min={0}
                         max={100}
@@ -545,23 +563,26 @@ export default function PredictorNode(props): ReactElement {
                         marks={marks}
                         handleRender={(node) => {
                             return (
-                                <AntdTooltip title={`${ParentPredictorState.testSliderValue}%`}>{node}</AntdTooltip>
+                                <AntdTooltip id={ `${flowPrefix}-test-slider-tooltip` }
+                                    title={`${ParentPredictorState.testSliderValue}%`}>{node}</AntdTooltip>
                             )
                         }}
                     />
                 </Col>
             </Row>
-            <Row className="mx-2 my-8">
-                <Col md="auto" id="split_rng_label">
+            <Row id={ `${flowPrefix}-split-rng-seed` }
+                className="mx-2 my-8">
+                <Col id={ `${flowPrefix}-split-rng-seed-label` } md="auto">
                     RNG seed:
                 </Col>
-                <Col>
-                    <input id="split_rng_value"
+                <Col id={ `${flowPrefix}-split-rng-seed-column` }>
+                    <input id={ `${flowPrefix}-split-rng-seed-input` }
                            type={"number"}
                            min={0}
                            value={ParentPredictorState.rngSeedValue}
                            onChange={event => {
-                               SetParentPredictorState({...ParentPredictorState, rngSeedValue: parseInt(event.target.value)})
+                               SetParentPredictorState({...ParentPredictorState,
+                                                        rngSeedValue: parseInt(event.target.value)})
                            }}
                            className="input-field w-50"
                     />
@@ -571,173 +592,195 @@ export default function PredictorNode(props): ReactElement {
     </Card.Body>
 
     // Create the Component structure
-    return <BlueprintCard
+    return <BlueprintCard id={ `${flowPrefix}` }
         interactive={ true } 
         elevation={ Elevation.TWO } 
-        style={{ padding: 0, width: "10rem", height: "4rem" }}>
-            <Card border="warning" style={{ height: "100%" }}>
-                <Card.Body className="flex justify-center content-center">
-                    <Text className="mr-2">{ ParentPredictorState.selectedPredictor || "Predictor" }</Text>
-                    <div onMouseDown={(event) => {event.stopPropagation()}}>
-                        <Popover content={
-                            <>
-                                <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-                                        {tabs.map((tab, index) => (
-                                    <Tab
+        style={{ padding: 0, width: "10rem", height: "4rem" }} >
+        <Card id={ `${flowPrefix}-card-1` }
+            border="warning" style={{ height: "100%" }}>
+            <Card.Body id={ `${flowPrefix}-card-2` }
+                className="flex justify-center content-center">
+                <Text id={ `${flowPrefix}-text` } className="mr-2">
+                    { ParentPredictorState.selectedPredictor || "Predictor" }
+                </Text>
+                <div id={ `${flowPrefix}-settings-div` }
+                    onMouseDown={(event) => {event.stopPropagation()}}>
+                    <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        content={ <>
+                            <Tablist id={ `${flowPrefix}-settings-tablist` }
+                                marginBottom={16} flexBasis={240} marginRight={24}>
+                                {tabs.map((tab, index) => (
+                                    <Tab id={ `${flowPrefix}-settings-${tab}` }
                                         key={tab}
-                                        id={tab}
                                         onSelect={() => setSelectedIndex(index)}
                                         isSelected={index === selectedIndex}
                                         aria-controls={`panel-${tab}`}
                                     >
                                         {tab}
                                     </Tab>
-                                    ))}
-                                </Tablist>
-                                { selectedIndex === 0  && PredictorSelectionPanel }
-                                { selectedIndex === 1  && PredictorConfigurationPanel }
-                                { selectedIndex === 2  && DataSplitConfigurationPanel }
-                            </>
-                        }
-                             statelessProps={{
-                                 backgroundColor: "ghostwhite"
-                             }}
-                        >
-                            <div className="flex">
-                                <button type="button"
-                                            id={ `predictor-${flowIndex}-gr-settings-option-button` }
-                                        className="mt-1"
-                                        style={{height: 0}}>
-                                    <GrSettingsOption />
-                                </button>
-                            </div>
-                        </Popover>
-                        <Popover
-                            position={Position.LEFT}
-                            content={
-                                <Card.Body
+                                ))}
+                            </Tablist>
+                            { selectedIndex === 0  && PredictorSelectionPanel }
+                            { selectedIndex === 1  && PredictorConfigurationPanel }
+                            { selectedIndex === 2  && DataSplitConfigurationPanel }
+                        </>
+                    }
+                         statelessProps={{
+                             backgroundColor: "ghostwhite"
+                         }}
+                    >
+                        <div id={ `${flowPrefix}-gr-settings-div` } className="flex">
+                            <button type="button"
+                                    id={ `${flowPrefix}-gr-settings-button` }
+                                    className="mt-1"
+                                    style={{height: 0}}>
+                                <GrSettingsOption id={ `${flowPrefix}-gr-settings-option` }/>
+                            </button>
+                        </div>
+                    </Popover>
+                    <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        position={Position.LEFT}
+                        content={
+                            <Card.Body id={ `${flowPrefix}-context-card` }
                                 className="overflow-y-auto h-40 text-xs">
-                                    <Text className="mb-2">Context</Text>
-                                    {
-                                        Object.keys(ParentPredictorState.caoState.context).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
-                                                <input name={element}
-                                                    id={ `predictor-${flowIndex}-context-input-${element}` }
-                                            type="checkbox"
-                                            defaultChecked={true}
-                                            checked={ParentPredictorState.caoState.context[element]}
-                                            onChange={event => onUpdateCAOState(event, "context")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
-                            >
-                                <button type="button"
-                                    id={ `predictor-${flowIndex}-context-button` }
-                                    className="absolute top-2 -left-4"
-                                    style={{height: 0}}>C</button>
-                        </Popover>
-                        <Popover
-                            position={Position.LEFT}
-                            content={
-                                <Card.Body
+                                <Text id={ `${flowPrefix}-context-text` } className="mb-2">Context</Text>
+                                {
+                                    Object.keys(ParentPredictorState.caoState.context).map(element =>
+                                        <div id={ `${flowPrefix}-context-div` }
+                                             key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label id={ `${flowPrefix}-context-label-${element}` }
+                                                className="capitalize"> {element} </label>
+                                            <input name={element}
+                                                id={ `${flowPrefix}-context-input-${element}` }
+                                                type="checkbox"
+                                                defaultChecked={true}
+                                                checked={ParentPredictorState.caoState.context[element]}
+                                                onChange={event => onUpdateCAOState(event, "context")}/>
+                                        </div>
+                                    )
+                                }
+                            </Card.Body>
+                        }
+                    >
+                        <button type="button"
+                            id={ `${flowPrefix}-context-button` }
+                            className="absolute top-2 -left-4"
+                            style={{height: 0}}>C</button>
+                    </Popover>
+                    <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        position={Position.LEFT}
+                        content={
+                            <Card.Body id={ `${flowPrefix}-actions-card` }
                                 className="overflow-y-auto h-40 text-xs"
                                 style={{zIndex: 1000}}
-                                >
-                                    <Text className="mb-2">Actions</Text>
-                                    {
-                                        Object.keys(ParentPredictorState.caoState.action).map(element =>
-                                            <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
-                                                <input id={ `predictor-${flowIndex}-actions-input-${element}` }
-                                            name={element}
-                                            type="checkbox"
-                                            defaultChecked={true}
-                                            checked={ParentPredictorState.caoState.action[element]}
-                                            onChange={event => onUpdateCAOState(event, "action")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
                             >
-                            <button type="button"
-                                        id={ `predictor-${flowIndex}-actions-button` }
-                                    className="absolute bottom-6 -left-4"
-                                    style={{height: 0}}>A</button>
-                        </Popover>
-                        <Popover
-                            position={Position.RIGHT}
-                            content={
-                                <Card.Body
-                                className="overflow-y-auto h-40 text-xs">
-                                    <Text className="mb-2">Outcomes</Text>
-                                    {
-                                        Object.keys(ParentPredictorState.caoState.outcome).map(element =>
-                                        <div key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label className="capitalize"> {element} </label>
-                                                <input name={element}
-                                                    id={ `predictor-${flowIndex}-outcomes-input-${element}` }
-                                            type="checkbox"
-                                            defaultChecked={false}
-                                            checked={ParentPredictorState.caoState.outcome[element]}
-                                            onChange={event => onUpdateCAOState(event, "outcome")}/>
-                                        </div>)
-                                    }
-                                </Card.Body>
-                            }
-                            >
-                            <button type="button"
-                                        id={ `predictor-${flowIndex}-outcomes-button` }
-                                    className="absolute top-5 -right-4"
-                                    style={{height: 0}}>O
-                            </button>
-                        </Popover>
-                        <Tooltip
-                            showDelay={1}
-                            content={
-                                isRegressor
-                                    ? "Add uncertainty model node"
-                                    : "Uncertainty models are not currently supported for this type of predictor"
-                            }
+                                <Text id={ `${flowPrefix}-actions-text` } className="mb-2">Actions</Text>
+                                {
+                                    Object.keys(ParentPredictorState.caoState.action).map(element =>
+                                        <div id={ `${flowPrefix}-actions-div-${element}` }
+                                            key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label id={ `${flowPrefix}-actions-label-${element}` }
+                                                className="capitalize"> {element} </label>
+                                            <input id={ `${flowPrefix}-actions-input-${element}` }
+                                                name={element}
+                                                type="checkbox"
+                                                defaultChecked={true}
+                                                checked={ParentPredictorState.caoState.action[element]}
+                                                onChange={event => onUpdateCAOState(event, "action")}/>
+                                        </div>
+                                    )
+                                }
+                            </Card.Body>
+                        }
                         >
-                            <div className="px-1 my-1"
-                                 style={{
-                                     position: "absolute",
-                                     right: "1px",
-                                 }}
-                            >
-                                <button type="button"
-                                        id="add-uncertainty-node-button"
-                                        disabled={!isRegressor}
-                                        style={{
-                                            height: 15,
-                                            cursor: isRegressor ? "pointer" : "not-allowed",
-                                            opacity: isRegressor ? "100%" : "50%"
-                                        }}
-                                        onClick={() => AddUncertaintyModelNode(NodeID)}
-                                >
-                                    <BsPlusSquare size="0.6em" />
-                                </button>
-                            </div>
-                        </Tooltip>
-                    </div>
-                </Card.Body>
-                    <div className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
                         <button type="button"
-                                id="delete-me"
-                                className="hover:text-red-700 text-xs"
-                                onClick={() => {
-                                    DeleteNode(NodeID)
-                                    sendNotification(NotificationType.success, "Predictor node deleted")
-                                }}
-                        >
-                            <AiFillDelete size="10"/>
+                                    id={ `${flowPrefix}-actions-button` }
+                                className="absolute bottom-6 -left-4"
+                                style={{height: 0}}>A</button>
+                    </Popover>
+                    <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        position={Position.RIGHT}
+                        content={
+                            <Card.Body id={ `${flowPrefix}-outcomes-card` }
+                                className="overflow-y-auto h-40 text-xs">
+                                <Text id={ `${flowPrefix}-outcomes-text` } className="mb-2">Outcomes</Text>
+                                {
+                                    Object.keys(ParentPredictorState.caoState.outcome).map(element =>
+                                        <div id={ `${flowPrefix}-outcomes-div-${element}` }
+                                            key={element} className="grid grid-cols-2 gap-4 mb-2">
+                                            <label id={ `${flowPrefix}-outcomes-label-${element}` }
+                                                className="capitalize"> {element} </label>
+                                            <input name={element}
+                                                id={ `${flowPrefix}-outcomes-input-${element}` }
+                                                type="checkbox"
+                                                defaultChecked={false}
+                                                checked={ParentPredictorState.caoState.outcome[element]}
+                                                onChange={event => onUpdateCAOState(event, "outcome")}/>
+                                        </div>
+                                    )
+                                }
+                            </Card.Body>
+                        }
+                    >
+                        <button id={ `${flowPrefix}-outcomes-button` }
+                                type="button"
+                                className="absolute top-5 -right-4"
+                                style={{height: 0}}>O
                         </button>
-                    </div>
-            </Card>
+                    </Popover>
+                    <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        showDelay={1}
+                        content={
+                            isRegressor
+                                ? "Add uncertainty model node"
+                                : "Uncertainty models are not currently supported for this type of predictor"
+                        }
+                    >
+                        <div id={ `${flowPrefix}-add-uncertainty-model-node-div` }
+                             className="px-1 my-1"
+                             style={{
+                                 position: "absolute",
+                                 right: "1px",
+                             }}
+                        >
+                            <button id={ `${flowPrefix}-add-uncertainty-model-node-button` }
+                                    type="button"
+                                    disabled={!isRegressor}
+                                    style={{
+                                        height: 15,
+                                        cursor: isRegressor ? "pointer" : "not-allowed",
+                                        opacity: isRegressor ? "100%" : "50%"
+                                    }}
+                                    onClick={() => AddUncertaintyModelNode(NodeID)}
+                            >
+                                <BsPlusSquare id={ `${flowPrefix}-add-uncertainty-model-node-button-plus` }
+                                    size="0.6em" />
+                            </button>
+                        </div>
+                    </Tooltip>
+                </div>
+            </Card.Body>
+                <div id={ `${flowPrefix}-delete-div` }
+                    className="px-1 my-1" style={{position: "absolute", bottom: "0px", right: "1px"}}>
+                    <button id={ `${flowPrefix}-delete-button` }
+                            type="button"
+                            className="hover:text-red-700 text-xs"
+                            onClick={() => {
+                                DeleteNode(NodeID)
+                                sendNotification(NotificationType.success, "Predictor node deleted")
+                            }}
+                    >
+                        <AiFillDelete id={ `${flowPrefix}-delete-button-fill` } size="10"/>
+                    </button>
+                </div>
+        </Card>
 
-            <Handle type="source" position={HandlePosition.Right} />
-            <Handle type="target" position={HandlePosition.Left} />
-        </BlueprintCard>
+        <Handle id={ `${flowPrefix}-source-handle` }type="source" position={HandlePosition.Right} />
+        <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
+    </BlueprintCard>
 }

@@ -137,7 +137,7 @@ export default function UncertaintyModelNode(props): ReactElement {
             </div>
             <div id={ `${paramPrefix}-tooltip-div` }
                 className="item3 col-span-1">
-                <Tooltip        // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
                     content={item.description} >
                     <InfoSignIcon id={ `${paramPrefix}-tooltip-info-sign-icon` }/>
@@ -162,7 +162,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                 </Text>
                 <div id={ `${flowPrefix}-popover-div` }
                     onMouseDown={(event) => {event.stopPropagation()}}>
-                    <Popover    // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                    <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Popover does not have an id property when compiling
                         content={
                         <>
@@ -209,7 +209,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                                         : <u id={ `${flowPrefix}-hide-advanced-settings` }>Show</u>
                                     }
                                 </button>
-                                <Collapse       // eslint_disable-line enforce-ids-in-jsx/missing-ids
+                                <Collapse       // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                                 // 2/6/23 DEF - Collapse does not have an id property when compiling
                                     in={showAdvanced} timeout={5}>
                                     <div id={ `${flowPrefix}-advanced-settings-div` }
