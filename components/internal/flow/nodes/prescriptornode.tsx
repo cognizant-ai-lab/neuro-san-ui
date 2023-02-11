@@ -420,7 +420,7 @@ export default function PrescriptorNode(props): ReactElement {
         useRepresentationConfig = ParentPrescriptorState.representation_config
     }
 
-    const PrescriptorRepresentationPanel = <Card.Body id={ `${flowPrefix}-representation-panel` } >
+    const PrescriptorRepresentationPanel = <Card.Body id={ `${flowPrefix}-representation-panel` }>
         <div id={ `${flowPrefix}-representation-div` }
             className="flex justify-between mb-4 content-center">
             <label id={ `${flowPrefix}-representation-label` } >
@@ -453,7 +453,7 @@ export default function PrescriptorNode(props): ReactElement {
         <div id={ `${flowPrefix}-nn-weights-config-div` } className="mb-4">
             {
                 ParentPrescriptorState.LEAF.representation === "NNWeights" &&
-                    <div id={ `${flowPrefix}-nn-weights-div` } >
+                    <div id={ `${flowPrefix}-nn-weights-div` } className="overflow-y-auto h-40">
                         {NeuralNetworkConfiguration}
                         <button type="button" className="float-right"
                             id={ `${flowPrefix}-nn-weights-button` }
@@ -748,14 +748,19 @@ export default function PrescriptorNode(props): ReactElement {
     >
         <Card id={ `${flowPrefix}-card-1` }
             border="warning"
-            style={{ height: "100%" }}>
+            style={{ height: "100%" }}
+            onScroll={(event) => {event.stopPropagation()}}
+            onWheel={(event) => {event.stopPropagation()}}
+        >
             <Card.Body id={ `${flowPrefix}-card-2` }  
-                className="flex justify-center content-center">
+                className="flex justify-center content-center"
+            >
                 <Text id={ `${flowPrefix}-text` } className="mr-2">
                     { ParentPrescriptorState.selectedPredictor || "Prescriptor" }
                 </Text>
-                <div id={ `${flowPrefix}-settings-div` } 
-                    onMouseDown={(event) => {event.stopPropagation()}}>
+                <div id={ `${flowPrefix}-settings-div` }
+                     onMouseDown={(event) => {event.stopPropagation()}}
+                >
                     <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Popover does not have an id property when compiling
                         content={ <>
