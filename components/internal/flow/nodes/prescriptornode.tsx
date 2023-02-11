@@ -248,7 +248,8 @@ export default function PrescriptorNode(props): ReactElement {
             <button id={ `${flowPrefix}-hidden-layer-${idx}-button` }
                 style={{width: "1rem"}}
                 className="mb-2"
-                type="button" onClick={() => {
+                type="button" onClick={(event) => {
+                    event.stopPropagation()
                     const stateCopy = {...ParentPrescriptorState}
                     stateCopy.network.hidden_layers.splice(idx, 1)
                     SetParentPrescriptorState(stateCopy)
