@@ -33,7 +33,7 @@
     "evergreen-ui": "6.7.1",
     "http-status": "1.5.3",
     "next": "12.2.5",
-    "next-auth": "4.17.0",
+    "next-auth": "4.19.2",
     "pretty-bytes": "6.0.0",
     "prop-types": "15.8.1",
     "rc-slider": "10.1.0",
