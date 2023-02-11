@@ -1,5 +1,6 @@
 import sortByTime from "../utils/sort"
 import {MDServerObject, MDServerResponse} from "./base_types"
+import {toFriendlyDateTime} from "../utils/date_time"
 
 // HackyStream implements streaming a specific resource from the MD Server using a regex hack
 // By virtue of this hack it currently stores the whole stream in memory.
@@ -69,8 +70,8 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
         try {
             const itemResult: ObjectType = item.result
             if (itemResult) {
-                itemResult.updated_at = new Date(itemResult.updated_at).toLocaleString()
-                itemResult.created_at = new Date(itemResult.created_at).toLocaleString()
+                itemResult.updated_at = toFriendlyDateTime(itemResult.updated_at)
+                itemResult.created_at = toFriendlyDateTime(itemResult.created_at)
                 items.push(itemResult)
             }
         } catch (e) {
