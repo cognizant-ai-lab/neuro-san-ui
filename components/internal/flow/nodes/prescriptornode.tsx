@@ -1,19 +1,36 @@
 // Import React components
-import {useState, useEffect, ReactElement} from 'react'
+import {
+    useState,
+    useEffect, ReactElement
+} from 'react'
 
 // Import 3rd party components
-import {Card, Col, Container, Row} from "react-bootstrap"
-import {Popover, Text, Position, Tablist, Tab} from "evergreen-ui"
+import { 
+    Card, Col, Container, Row
+} from "react-bootstrap"
+import { 
+    Popover, 
+    Text, 
+    Position, 
+    Tablist, 
+    Tab
+} from "evergreen-ui"
 import Slider from "rc-slider"
 import {AiFillDelete} from "react-icons/ai";
-import {GrSettingsOption} from "react-icons/gr"
-import {MdDelete} from "react-icons/md"
-import {BiPlusMedical} from "react-icons/bi"
-import {Card as BlueprintCard, Elevation} from "@blueprintjs/core";
+import { GrSettingsOption } from "react-icons/gr"
+import { MdDelete } from "react-icons/md"
+import { BiPlusMedical } from "react-icons/bi"
+import { 
+    Card as BlueprintCard,
+    Elevation 
+} from "@blueprintjs/core";
 import {Tooltip as AntdTooltip} from "antd"
 
 // Import React Flow
-import {Handle, Position as HandlePosition} from 'react-flow-renderer'
+import {
+    Handle,
+    Position as HandlePosition
+} from 'react-flow-renderer'
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
