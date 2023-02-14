@@ -180,4 +180,15 @@ export class FlowQueries {
         // Not in the dictionary
         return index;
     }
+
+    /**
+     * Simple utility method to tell if a given predictor node has more than one outcome.
+     * Useful for scenarios where we need to do things different for example for predictors with multi outcomes, like
+     * not supporting uncertainty nodes for such predictors.
+     * @param predictorNode The node to be tested
+     * @return <code>boolean</code> value indicating whether the node has more than one outcome.
+     */
+    static hasMultipleOutcomes(predictorNode): boolean {
+        return FlowQueries.extractCheckedFieldsForNode(predictorNode, CAOType.OUTCOME).length > 1
+    }
 }

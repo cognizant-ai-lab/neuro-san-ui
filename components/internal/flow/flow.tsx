@@ -2,7 +2,8 @@
 import ReactFlow, {
     Background,
     Controls,
-    getConnectedEdges, getIncomers,
+    getConnectedEdges,
+    getIncomers,
     getOutgoers,
     removeElements
 } from 'react-flow-renderer'
@@ -384,6 +385,7 @@ export default function Flow(props: FlowProps) {
 
     /**
      * Adds uncertainty model nodes to all predictors in the graph that currently do not have such nodes attached.
+     * Predictors that aren't allowed to have uncertainty nodes -- classifiers, multiple outcomes -- are skipped.
      */
     function _addUncertaintyModelNodes() {
         const predictorNodes = FlowQueries.getPredictorNodes(flow)
@@ -395,15 +397,19 @@ export default function Flow(props: FlowProps) {
 
         // Only add uncertainty nodes to those predictor nodes that currently don't have one and are not classifiers,
         // which do not support the current type of uncertainty nodes. (Once we implement RED, they will.)
+        // We also do not support uncertainty nodes for predictors with multiple outcomes
         const predictorsWithoutUncertaintyNodes =
             predictorNodes
                 .filter(node => node.data.ParentPredictorState.selectedPredictorType !== "classifier" &&
-                    getOutgoers(node, flow).every(node => node.type !== "uncertaintymodelnode"))
+                    getOutgoers(node, flow).every(node => node.type !== "uncertaintymodelnode") &&
+                    !FlowQueries.hasMultipleOutcomes(node))
                 .map(node => node.id)
         if (predictorsWithoutUncertaintyNodes.length === 0) {
             sendNotification(NotificationType.warning,
                 "All predictors that support uncertainty model nodes already have such nodes attached " +
-                "and only one such node per predictor is supported.")
+                "and only one such node per predictor is supported.",
+                "Note that uncertainty model nodes are not supported for classifier predictors, nor for predictors " +
+                "that predict more than one outcome.")
             return
         }
 
@@ -420,8 +426,7 @@ export default function Flow(props: FlowProps) {
         per-element index is for creating easier to handle id strings for testing.
         */
         const element = FlowQueries.getNodeByID(flow, nodeID);
-        const index = FlowQueries.getIndexForElement(elementTypeToUuidList, element);
-        return index
+        return FlowQueries.getIndexForElement(elementTypeToUuidList, element)
     }
 
     function _addPredictorNode() {

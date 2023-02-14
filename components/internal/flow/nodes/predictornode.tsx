@@ -231,7 +231,7 @@ export default function PredictorNode(props): ReactElement {
         // that
         if (predictorType === "classifier") {
             const flow = GetFlow()
-            const thisPredictorNode = FlowQueries.getNodeByID(flow, NodeID);
+            const thisPredictorNode = FlowQueries.getNodeByID(flow, NodeID)
             const hasUncertaintyNode = getOutgoers(thisPredictorNode, flow)
                 .some(node => node.type === "uncertaintymodelnode")
 
@@ -514,14 +514,13 @@ export default function PredictorNode(props): ReactElement {
                                             
         </Card.Body>
 
-    // Create the data split card
-
-    const isRegressor: boolean = ParentPredictorState.selectedPredictorType === "regressor"
+    
     const marks = {
         0: {label: "0%"},
         100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
     }
 
+    // Create the data split card
     const DataSplitConfigurationPanel = <Card.Body id={ `${flowPrefix}-data-split-configuration-panel` }>
         <Container id={ `${flowPrefix}-data-split-config` }>
             <Row id={ `${flowPrefix}-train` }
@@ -591,11 +590,17 @@ export default function PredictorNode(props): ReactElement {
         </Container>
     </Card.Body>
 
+    // Types of predictor that could cause issues with uncertainty nodes
+    const isRegressor: boolean = ParentPredictorState.selectedPredictorType === "regressor"
+    const thisPredictorNode = FlowQueries.getNodeByID(GetFlow(), NodeID)
+    const hasMultipleOutcomes = FlowQueries.hasMultipleOutcomes(thisPredictorNode)
+    const shouldDisableAddUncertaintyButton = !isRegressor || hasMultipleOutcomes
+    
     // Create the Component structure
     return <BlueprintCard id={ `${flowPrefix}` }
-        interactive={ true } 
-        elevation={ Elevation.TWO } 
-        style={{ padding: 0, width: "10rem", height: "4rem" }} >
+                          interactive={ true }
+                          elevation={ Elevation.TWO }
+                          style={{ padding: 0, width: "10rem", height: "4rem" }} >
         <Card id={ `${flowPrefix}-card-1` }
             border="warning" style={{ height: "100%" }}>
             <Card.Body id={ `${flowPrefix}-card-2` }
@@ -736,9 +741,11 @@ export default function PredictorNode(props): ReactElement {
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         showDelay={1}
                         content={
-                            isRegressor
-                                ? "Add uncertainty model node"
-                                : "Uncertainty models are not currently supported for this type of predictor"
+                            hasMultipleOutcomes 
+                                ? "Uncertainty models are not supported for predictors with multiple outcomes"
+                                : isRegressor
+                                    ? "Add uncertainty model node"
+                                    : "Uncertainty models are not currently supported for classifier predictors"
                         }
                     >
                         <div id={ `${flowPrefix}-add-uncertainty-model-node-div` }
@@ -750,11 +757,11 @@ export default function PredictorNode(props): ReactElement {
                         >
                             <button id={ `${flowPrefix}-add-uncertainty-model-node-button` }
                                     type="button"
-                                    disabled={!isRegressor}
+                                    disabled={shouldDisableAddUncertaintyButton}
                                     style={{
                                         height: 15,
-                                        cursor: isRegressor ? "pointer" : "not-allowed",
-                                        opacity: isRegressor ? "100%" : "50%"
+                                        cursor: shouldDisableAddUncertaintyButton ? "not-allowed" : "pointer",
+                                        opacity: shouldDisableAddUncertaintyButton ? "50%" : "100%"
                                     }}
                                     onClick={() => AddUncertaintyModelNode(NodeID)}
                             >
