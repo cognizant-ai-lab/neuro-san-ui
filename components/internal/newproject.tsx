@@ -64,7 +64,6 @@ export default function NewProject(props: NewProps) {
     const [inputFields, setInputFields] = useState({
         projectName: "",
         description: "",
-        datasetName: "",
         s3Key: "",
         uploadedFileS3Key: ""
     })
@@ -115,9 +114,9 @@ export default function NewProject(props: NewProps) {
 
         // Trigger the Data Source Controller
         const response: Response = await CreateProfile(dataSource)
-        if (response.status != status.OK) {
+        if (response.status !== status.OK) {
             // Maybe "invalid request"?
-            if (response.status == status.BAD_REQUEST) {
+            if (response.status === status.BAD_REQUEST) {
                 const status: GrpcError = await response.json()
                 sendNotification(NotificationType.error, "Failed to create profile", `"${status.message}"`)
             } else {
@@ -201,8 +200,16 @@ export default function NewProject(props: NewProps) {
         }
 
         // Unpack Data Source Variables
-        const {datasetName} = inputFields
-        const s3Key = getS3Key();
+        const s3Key = getS3Key()
+        
+        let datasetName
+        if (isUsingLocalFile) {
+            // If it's a file upload, use the name of the file the user selected for the dataset name.
+            datasetName = selectedFile.name    
+        } else {
+            // User selected an existing S3 object, so use its "file name" for the dataset name
+            datasetName = inputFields.s3Key.split('\\').pop().split('/').pop()
+        }
 
         const dataSourceMessage: DataSource = {
             project_id: tmpProjectId,
@@ -315,10 +322,11 @@ does not appear to be a CSV file. Proceed anyway?`)) {
         const safeExt = ext.length > 0 ? toSafeFilename(ext) : "csv"
         
         const s3Path = `data/${session.user.name}/${safePath}.${safeExt}`
-        setInputFields(
-            {...inputFields, uploadedFileS3Key: s3Path}
-        )
-
+        setInputFields({
+                ...inputFields, 
+                uploadedFileS3Key: s3Path
+        })
+        
         uploadFile(selectedFile, s3Path)
             .then(() => sendNotification(NotificationType.success, `File "${fileName}" uploaded`))
             .finally(() => setIsUploading(false))
@@ -335,13 +343,13 @@ does not appear to be a CSV file. Proceed anyway?`)) {
 
     const isNewProject = startIndexOffset === 0;
 
-    const datasetNameRef = useRef<HTMLInputElement>()
-    const projectNameRef = useRef<HTMLInputElement>()
+    const projectNameRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // Set focus on relevant field depending on if we're creating a new project or modifying existing
     useEffect(() => {setTimeout(() => isNewProject
             ? projectNameRef.current && projectNameRef.current.focus()
-            : datasetNameRef.current && datasetNameRef.current.focus(),
+            : fileInputRef.current && fileInputRef.current.focus(),
         500)
     }, [])
 
@@ -359,9 +367,7 @@ does not appear to be a CSV file. Proceed anyway?`)) {
 
     // Tell user why button is disabled
     function getCreatButtonTooltip() {
-        if (!inputFields.datasetName) {
-            return "Please select a name for your data source"
-        } else if (isUploading) {
+       if (isUploading) {
             return "Please wait until upload is complete"
         } else if (isUsingS3Source && !inputFields.s3Key) {
             return "Please enter an S3 key for your data source or choose a local file"
@@ -380,7 +386,6 @@ does not appear to be a CSV file. Proceed anyway?`)) {
 
     const enabledDataTagSection = enabledDataSourceSection &&
         !isUploading &&
-        inputFields.datasetName &&
         profile &&
         ((chosenDataSource === s3Option && !!inputFields.s3Key) ||
             (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key))
@@ -472,33 +477,13 @@ does not appear to be a CSV file. Proceed anyway?`)) {
                     header={
                         <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                            title={!enabledDataSourceSection ? "Please enter project name and description first": ""}
+                            title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
                             placement="leftTop">
                             {`${2 + startIndexOffset}. Create your data source`}
                         </Tooltip>
                     }
                     key={dataSourcePanelKey}
                     collapsible={enabledDataSourceSection ? "header": "disabled"}>
-                    <Form.Group id="data-source-name">
-                        Name
-                        <Form.Control id="data-source-name-input"
-                            name="datasetName"
-                            ref={datasetNameRef}
-                            type="text"
-                            placeholder="Choose a name for your data source"
-                            onChange={
-                                event => setInputFields(
-                                    {...inputFields, datasetName: event.target.value}
-                                )}
-                            required
-                        />
-                        <Form.Control.Feedback type="valid" id="data-source-valid">
-                            Looks good!
-                        </Form.Control.Feedback>
-                        <Form.Control.Feedback type="invalid" id="data-source-invalid">
-                            Please choose a name for your data source.
-                        </Form.Control.Feedback>
-                    </Form.Group>
                     <Radio.Group id="data-source-radio" 
                         onChange={(e: RadioChangeEvent) => {setChosenDataSource(e.target.value)}}
                         value={chosenDataSource}
@@ -533,9 +518,12 @@ does not appear to be a CSV file. Proceed anyway?`)) {
                                 <Space id="local-file-space"
                                     direction="vertical" size="middle">
                                     From a local file
-                                    <input type="file" name="file" onChange={changeHandler}
+                                    <input disabled={!isUsingLocalFile}
                                            id="new-project-local-file" 
-                                           disabled={!isUsingLocalFile}/>
+                                           name="file" onChange={changeHandler}
+                                           ref={fileInputRef}
+                                           type="file" 
+                                    />
                                     {selectedFile ? (
                                         <div id="file-info-div" style={{
                                             opacity: isUsingLocalFile ? 1.0 : 0.5,
@@ -615,7 +603,7 @@ does not appear to be a CSV file. Proceed anyway?`)) {
                     header={
                         <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
                                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                                title={!enabledDataTagSection ? "Please name and create your data source first": ""}
+                                title={enabledDataTagSection ? "" : "Please create your data source first"}
                                 placement="leftTop">
                             {`${3 + startIndexOffset}. Tag your Data`}
                         </Tooltip>
