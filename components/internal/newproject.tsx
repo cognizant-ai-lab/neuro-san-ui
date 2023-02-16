@@ -16,7 +16,7 @@ import {NotificationType, sendNotification} from "../../controller/notification"
 import Debug from "debug";
 import {Project} from "../../controller/projects/types"
 import {uploadFile} from "../../controller/files/upload"
-import {splitFilename, toSafeFilename} from "../../utils/file"
+import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 
 // Controllers for new project
 import {CreateProfile} from "../../controller/dataprofile/generate"
@@ -208,7 +208,7 @@ export default function NewProject(props: NewProps) {
             datasetName = selectedFile.name    
         } else {
             // User selected an existing S3 object, so use its "file name" for the dataset name
-            datasetName = inputFields.s3Key.split('\\').pop().split('/').pop()
+            datasetName = getFileName(inputFields.s3Key)
         }
 
         const dataSourceMessage: DataSource = {
