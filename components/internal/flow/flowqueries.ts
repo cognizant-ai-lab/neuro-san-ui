@@ -191,4 +191,22 @@ export class FlowQueries {
     static hasMultipleOutcomes(predictorNode): boolean {
         return FlowQueries.extractCheckedFieldsForNode(predictorNode, CAOType.OUTCOME).length > 1
     }
+
+    /**
+     * Get the nodes in the graph.
+     * @param graph The graph to be searched.
+     */
+    static getNodes(graph) {
+        return graph.filter(e => isNode(e))
+    }
+
+    /**
+     * Get the edges in the graph.
+     * @param graph The graph to be searched.
+     */
+    static getEdges(graph) {
+        return graph.filter(e => isEdge(e))
+    }
+
+
 }
