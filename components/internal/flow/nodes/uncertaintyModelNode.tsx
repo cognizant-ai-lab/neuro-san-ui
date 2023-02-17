@@ -5,7 +5,7 @@ import {Dispatch, ReactElement, SetStateAction, useState} from 'react'
 import {Card, Collapse} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
-import {Handle, Position as HandlePosition} from 'react-flow-renderer'
+import {Handle, Position as HandlePosition, NodeProps} from 'react-flow-renderer'
 import {AiFillDelete} from "react-icons/ai";
 import {GrSettingsOption} from "react-icons/gr"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
@@ -42,13 +42,13 @@ interface UncertaintyModelNodeData {
     readonly GetElementIndex: (nodeID: string) => number
 }
 
-export default function UncertaintyModelNode(props): ReactElement {
+const UncertaintyModelNode: React.FC<NodeProps<UncertaintyModelNodeData>> = (props) => {
     /*
     This function renders the uncertainty model node
     */
 
     // Unpack props
-    const data: UncertaintyModelNodeData = props.data
+    const data = props.data
 
     // Unpack the data
     const {
@@ -283,3 +283,5 @@ export default function UncertaintyModelNode(props): ReactElement {
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
+
+export default UncertaintyModelNode;

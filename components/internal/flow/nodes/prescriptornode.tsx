@@ -29,7 +29,8 @@ import {Tooltip as AntdTooltip} from "antd"
 // Import React Flow
 import {
     Handle,
-    Position as HandlePosition
+    Position as HandlePosition,
+    NodeProps
 } from 'react-flow-renderer'
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
@@ -71,12 +72,12 @@ const defaultRepresentationConfig = {
     number_of_building_block_rules: 3
 }
 
-export default function PrescriptorNode(props): ReactElement {
+const PrescriptorNode: React.FC<NodeProps<PrescriptorNodeData>> = (props) => {
     /*
     This function is responsible for rendering the prescriptor node.
     */
 
-    const data: PrescriptorNodeData = props.data
+    const data = props.data
 
     // Get the current user
     const { data: session } = useSession()
@@ -895,3 +896,5 @@ export default function PrescriptorNode(props): ReactElement {
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
+
+export default PrescriptorNode;
