@@ -18,14 +18,14 @@ import {Project} from "../../controller/projects/types"
 import {uploadFile} from "../../controller/files/upload"
 import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 
-// Controllers for new project
+// Controllers
 import {CreateProfile} from "../../controller/dataprofile/generate"
 import {DataTag, DataTagFields} from "../../controller/datatag/types"
-import {AccessionDatasource} from "../../controller/datasources/accession"
 import AccessionDataTag from "../../controller/datatag/accession"
 import AccessionProject from "../../controller/projects/accession"
 import {Profile} from "../../controller/dataprofile/types"
 import {DataSource} from "../../controller/datasources/types"
+import {updateDataSource} from '../../controller/datasources/update'
 
 // Constants
 import {MaximumBlue} from "../../const"
@@ -220,7 +220,7 @@ export default function NewProject(props: NewProps) {
             headers: profile.data_source.headers
         }
 
-        const savedDataSource: DataSource = await AccessionDatasource(dataSourceMessage)
+        const savedDataSource: DataSource = await updateDataSource(dataSourceMessage)
         if (!savedDataSource) {
             // Failed to save data source -- can't continue. For now, controller shows error popup.
             return
