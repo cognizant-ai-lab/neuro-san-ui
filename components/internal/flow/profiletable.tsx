@@ -276,9 +276,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                 title="Edit categorical values"
                 visible={showFieldEditor}
                 destroyOnClose={true}
-                okButtonProps={{
-                    id: "edit-categoical-values-ok-button"
-                }}
+                closable={false}
                 onOk={(e: React.MouseEvent<HTMLElement>) => {
                     // Don't want to submit form here!
                     e.preventDefault()
@@ -293,12 +291,16 @@ export default function ProfileTable(props: ProfiletableProps) {
                     setFieldBeingEditedName(undefined)
                     setFieldEditorVisible(false)
                 }}
-                cancelButtonProps={{
-                    id: "edit-categoical-values-cancel-button"
+                okButtonProps={{
+                    id: "edit-categoical-values-ok-button"
                 }}
+                okType="default"
                 onCancel={() => {
                     setFieldEditorVisible(false)
                     setFieldBeingEditedName(undefined)
+                }}
+                cancelButtonProps={{
+                    id: "edit-categoical-values-cancel-button"
                 }}
         >
             <Container id="field-container">
