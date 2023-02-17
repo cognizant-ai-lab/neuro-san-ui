@@ -24,7 +24,8 @@ import ConfigNumeric from "../confignumeric"
 import {
     getOutgoers,
     Handle,
-    Position as HandlePosition
+    Position as HandlePosition,
+    NodeProps
 } from 'react-flow-renderer'
 
 import {AiFillDelete} from "react-icons/ai";
@@ -94,12 +95,12 @@ interface PredictorNodeData {
     readonly GetElementIndex: (nodeID: string) => number
 }
 
-export default function PredictorNode(props): ReactElement {
+const PredictorNode: React.FC<NodeProps<PredictorNodeData>> = (props) => {
     /*
     This function is responsible to render the Predictor Node
     */
 
-    const data: PredictorNodeData = props.data
+    const data = props.data
 
     // Get the current user
     const { data: session } = useSession()
@@ -778,3 +779,5 @@ export default function PredictorNode(props): ReactElement {
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
+
+export default PredictorNode;
