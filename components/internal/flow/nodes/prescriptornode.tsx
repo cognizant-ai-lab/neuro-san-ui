@@ -529,8 +529,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-population-size-input` }
                     type="number" 
                     step="1" 
-                    min={2}
-                    max={100}
+                    min={5}
+                    max={1000}
                     defaultValue={ 10 }
                     value={ ParentPrescriptorState.evolution.population_size }
                     onChange={
@@ -553,8 +553,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-num-elites-input` }
                     type="number" 
                     step="1" 
-                    min={2}
-                    max={20}
+                    min={0}
+                    max={100}
                     defaultValue={ 2 }
                     value={ ParentPrescriptorState.evolution.nb_elites }
                     onChange={
@@ -601,8 +601,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-remove-population-percentage-input` }
                     type="number" 
                     step="0.01" 
-                    min={0.1}
-                    max={1.0}
+                    min={0.0}
+                    max={0.99}
                     defaultValue={ 0.8 }
                     value={ ParentPrescriptorState.evolution.remove_population_pct }
                     onChange={
@@ -656,7 +656,7 @@ export default function PrescriptorNode(props): ReactElement {
                 <input style={{width: "2rem"}}
                     id={ `${flowPrefix}-mutation-probability-input` }
                     type="number" 
-                    step="0.01" 
+                    step="0.1" 
                     min={0.0}
                     max={1.0}
                     defaultValue={ 0.1 }
@@ -739,8 +739,6 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-initialization-range-input` }
                     type="number" 
                     step="0.01" 
-                    min={0.0}
-                    max={2.0}
                     defaultValue={ 1 }
                     value={ ParentPrescriptorState.evolution.initialization_range }
                     onChange={
