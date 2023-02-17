@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 // Import Flow Renderer
 import {
+    EdgeProps,
   getBezierPath,
   getEdgeCenter,
   getMarkerEnd,
@@ -24,15 +25,13 @@ import {
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
-import { EdgeProps } from './proptype';
 
 const foreignObjectSize = 20;
 
 const PrescriptorEdge: React.FC<EdgeProps>  = ({ id, sourceX, sourceY,
                                         targetX, targetY,
                                         sourcePosition, targetPosition,
-                                        style = {}, data, arrowHeadType,
-                                        markerEndId
+                                        style = {}, data, markerEnd
                                         }) => {
     const edgePath = getBezierPath({
         sourceX,
@@ -42,7 +41,7 @@ const PrescriptorEdge: React.FC<EdgeProps>  = ({ id, sourceX, sourceY,
         targetY,
         targetPosition,
     })
-    const markerEnd = getMarkerEnd(arrowHeadType, markerEndId)
+    
     const [edgeCenterX, edgeCenterY] = getEdgeCenter({
         sourceX,
         sourceY,
