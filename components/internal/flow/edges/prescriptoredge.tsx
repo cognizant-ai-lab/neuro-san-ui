@@ -24,15 +24,16 @@ import {
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import { EdgeProps } from './proptype';
 
 const foreignObjectSize = 20;
 
-export default function PrescriptorEdge({ id, sourceX, sourceY,
+const PrescriptorEdge: React.FC<EdgeProps>  = ({ id, sourceX, sourceY,
                                         targetX, targetY,
                                         sourcePosition, targetPosition,
                                         style = {}, data, arrowHeadType,
                                         markerEndId
-                                        }) {
+                                        }) => {
     const edgePath = getBezierPath({
         sourceX,
         sourceY,
@@ -120,3 +121,5 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
         </>
     )
 }
+
+export default PrescriptorEdge;
