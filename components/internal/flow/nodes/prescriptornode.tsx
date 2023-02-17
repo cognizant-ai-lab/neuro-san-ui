@@ -269,6 +269,8 @@ export default function PrescriptorNode(props): ReactElement {
                         id={ `${flowPrefix}-hidden-layer-${idx}-units-input` }
                         type="number" 
                         step="1" 
+                        min={8}
+                        max={256}
                         value={ hiddenLayer.layer_params.units }
                         onChange={event => {
                             const modifiedHiddenLayerState = {...ParentPrescriptorState}
@@ -503,6 +505,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-num-generations-input` }
                     type="number" 
                     step="1" 
+                    min={ 1 }
+                    max={ 1000 }
                     defaultValue={ 10 }
                     value={ ParentPrescriptorState.evolution.nb_generations }
                     onChange={
@@ -525,6 +529,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-population-size-input` }
                     type="number" 
                     step="1" 
+                    min={2}
+                    max={100}
                     defaultValue={ 10 }
                     value={ ParentPrescriptorState.evolution.population_size }
                     onChange={
@@ -547,6 +553,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-num-elites-input` }
                     type="number" 
                     step="1" 
+                    min={2}
+                    max={20}
                     defaultValue={ 2 }
                     value={ ParentPrescriptorState.evolution.nb_elites }
                     onChange={
@@ -593,6 +601,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-remove-population-percentage-input` }
                     type="number" 
                     step="0.01" 
+                    min={0.1}
+                    max={1.0}
                     defaultValue={ 0.8 }
                     value={ ParentPrescriptorState.evolution.remove_population_pct }
                     onChange={
@@ -647,6 +657,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-mutation-probability-input` }
                     type="number" 
                     step="0.01" 
+                    min={0.0}
+                    max={1.0}
                     defaultValue={ 0.1 }
                     value={ ParentPrescriptorState.evolution.mutation_probability }
                     onChange={
@@ -727,6 +739,8 @@ export default function PrescriptorNode(props): ReactElement {
                     id={ `${flowPrefix}-initialization-range-input` }
                     type="number" 
                     step="0.01" 
+                    min={0.0}
+                    min={2.0}
                     defaultValue={ 1 }
                     value={ ParentPrescriptorState.evolution.initialization_range }
                     onChange={
