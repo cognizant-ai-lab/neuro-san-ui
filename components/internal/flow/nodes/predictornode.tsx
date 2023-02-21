@@ -416,9 +416,9 @@ export default function PredictorNode(props): ReactElement {
         </div>
     </Card.Body>
 
-    let SelectedPredictor =
+    const SelectedPredictor =
         ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
-    let defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+    const defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
 
     // Create the configuration Panel
     const PredictorConfigurationPanel = <Card.Body
