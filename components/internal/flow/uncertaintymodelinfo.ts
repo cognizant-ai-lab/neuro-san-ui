@@ -8,6 +8,7 @@ export enum ParamType {
     BOOLEAN,
     STRING,
     INT,
+    FLOAT,
     ENUM
 }
 
@@ -46,6 +47,10 @@ interface UncertaintyModelParamField {
     // Value is an optional field that can be used within a form
     // etc to denote user input
     value?: UncertaintyModelParameterType
+
+    min?: number,
+    max?: number,
+    step?: number,
 
     isAdvanced: boolean
 }

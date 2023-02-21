@@ -13,6 +13,10 @@ interface PredictorParamFields {
     // Value is an optional field that can be used within a form
     // etc to denote user input
     value?: boolean | number | string,
+
+    min?: number,
+    max?: number,
+    step?: number,
 }
 
 export interface PredictorParams {
