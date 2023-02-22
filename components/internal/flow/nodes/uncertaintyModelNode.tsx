@@ -62,7 +62,7 @@ export default function UncertaintyModelNode(props): ReactElement {
     // For showing advanced configuration settings
     const [showAdvanced, setShowAdvanced] = useState(false)
 
-    const onParamChange = (event: React.FormEvent<HTMLInputElement>, paramName: string) => void {
+    const onParamChange = (event: React.FormEvent<HTMLInputElement>, paramName: string) => {
         /*
         This function is used to update the state of the predictor
         parameters.

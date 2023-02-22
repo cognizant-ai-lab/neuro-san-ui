@@ -281,7 +281,7 @@ export default function PredictorNode(props): ReactElement {
 
     }
 
-    const onParamChange = (event: React.FormEvent<HtmlInputElement>, paramName: string) => void {
+    const onParamChange = (event: React.FormEvent<HtmlInputElement>, paramName: string) => {
         /*
         This function is used to update the state of the predictor
         parameters.

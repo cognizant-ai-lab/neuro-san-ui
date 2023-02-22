@@ -59,7 +59,7 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             "description": `The minimum number of samples required to split an internal node
                             as specified by a percentage of actual samples.`,
             "max": 0.99,
-            "min": 0.01
+            "min": 0.01,
             "type": "float"
         },
         "min_samples_leaf": {
