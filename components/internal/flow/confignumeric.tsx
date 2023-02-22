@@ -1,6 +1,6 @@
 
 /**
- * This interface is used to define the props that the slider expects
+ * This interface is used to define the props that the numeric input expects
  */
 interface ConfigNumericProps {
 
@@ -24,6 +24,10 @@ interface ConfigNumericProps {
 }
 
 
+/**
+ * Interface for numeric input of configured parameters whose
+ * min/max/step are data-driven.
+ */
 export default function ConfigNumeric(props: ConfigNumericProps) {
 
     function getStepFromDefaultParam(defaultParam): string {
