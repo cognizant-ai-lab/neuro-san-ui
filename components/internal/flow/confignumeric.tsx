@@ -60,11 +60,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     function getMinFromDefaultParam(defaultParam): string {
 
         // Default min if one is not defined in defaults for param
-        let min = undefined
-        if (defaultParam.hasOwnProperty('min')) {
-            min = defaultParam.min.toString()
-        }
-
+        const min = defaultParam.min != null && defaultParam.min.toString()
         return min
     }
 
@@ -77,11 +73,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     function getMaxFromDefaultParam(defaultParam): string {
 
         // Default max if one is not defined in defaults for param
-        let max = undefined
-        if (defaultParam.hasOwnProperty('max')) {
-            max = defaultParam.max.toString()
-        }
-
+        const max = defaultParam.max != null && defaultParam.max.toString()
         return max
     }
 
@@ -93,11 +85,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      */
     function getDefaultValueFromDefaultParam(defaultParam): string {
 
-        let default_value = undefined
-        if (defaultParam.hasOwnProperty('default_value')) {
-            default_value = defaultParam.default_value.toString()
-        }
-
+        const default_value = defaultParam.default_value != null && defaultParam.default_value.toString()
         return default_value
     }
 
