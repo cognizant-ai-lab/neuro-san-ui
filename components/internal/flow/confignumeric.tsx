@@ -1,5 +1,5 @@
-import {PredictorParamFields} from "predictorinfo"
-import {UncertaintyModelParamField} from "uncertaintymodelinfo"
+import {PredictorParamFields} from "./predictorinfo"
+import {UncertaintyModelParamField} from "./uncertaintymodelinfo"
 
 /**
  * This interface is used to define the props that the numeric input expects
