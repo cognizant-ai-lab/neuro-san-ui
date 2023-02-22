@@ -442,7 +442,7 @@ export default function PredictorNode(props): ReactElement {
                                 <ConfigNumeric id={ `${flowPrefix}-${param}-value` }
                                     ParamName={ `${param}` }
                                     DefaultParam={defaultParams[param]}
-                                    Value={ParentPredictorState.predictorParams[param].value}
+                                    Value={ParentPredictorState.predictorParams[param].value.toString()}
                                     OnParamChange={event => onParamChange(event, param)}
                                 />
                         }

@@ -7,11 +7,14 @@ interface ConfigNumericProps {
     // Testing id for the component
     id: string,
 
+    // Component style
+    style?
+
     // Name of the parameter represented by the component
     ParamName: string,
 
     // Initial value of the component
-    Value: number,
+    Value: string,
 
     // Default config for param represented by input
     DefaultParam: object,
@@ -111,5 +114,6 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
                 defaultValue={ `${useDefaultValue}` }
                 value={ `${value}` }
                 onChange={event => props.OnParamChange(event, param)}
+                style={props.style}
             />
 }
