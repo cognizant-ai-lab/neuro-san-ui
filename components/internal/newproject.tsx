@@ -167,6 +167,7 @@ export default function NewProject(props: NewProps) {
                             <Button id="toggle_advanced_btn"
                                     type="link"
                                     onClick={() => setShowAdvanced(!showAdvanced)}
+                                    size="small"
                             >
                                 <div id="advanced-btn-text" 
                                      style={{color: "black", textDecoration: "underline #000 dotted"}}
@@ -246,7 +247,7 @@ export default function NewProject(props: NewProps) {
     function getS3DataForm() {
         return <>
             <div id="s3-file-upload-div" style={{display: "inline-flex"}}>
-                From S3 (advanced users)
+                From S3
                 <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     // Tooltip does not have an id property when compiling
                     title={"Use this option to use an existing CSV file, which must already be present in the " +
@@ -260,10 +261,11 @@ export default function NewProject(props: NewProps) {
             </div>
             <Form.Group id="s3-file-group" className="mt-2" >
                 <div id="s3-key-div" style={{display: "inline-flex"}}>
-                <Form.Label id="s3-file-key" style={{opacity: isUsingLocalFile ? SEMI_OPAQUE : OPAQUE }}>
+                <Form.Label id="s3-file-key" style={{opacity: isUsingLocalFile ? SEMI_OPAQUE : OPAQUE, paddingTop: 6 }}>
                     Key:
                 </Form.Label>
                 <Form.Control id="s3-file-set-input-fields"
+                              className="ml-4"
                               name="s3Key"
                               type="text"
                               placeholder="data/somewhere/somefile.csv"
@@ -311,7 +313,7 @@ export default function NewProject(props: NewProps) {
                        size="middle"
                 >
                     <div id="local-file-upload-div" style={{display: "inline-flex"}}>
-                        From a local file (most users)
+                        From a local file
                         <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // Tooltip does not have an id property when compiling
                             title={`Use this option to upload a CSV file containing your training data. \ 
