@@ -416,16 +416,16 @@ export default function PredictorNode(props): ReactElement {
         </div>
     </Card.Body>
 
+    // Determine the SelectedPredictor and defaultParams each time the configuration panel is
+    // made so that we can be in sync with which kind of predictor type we are looking at.
+    const SelectedPredictor =
+        ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
+    const defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+
     // Create the configuration Panel
     const PredictorConfigurationPanel = <Card.Body
         className="overflow-y-auto h-40 text-xs" id={ `${flowPrefix}-config` }>
         {
-            // Determine the SelectedPredictor and defaultParams each time the configuration panel is
-            // made so that we can be in sync with which kind of predictor type we are looking at.
-            const SelectedPredictor =
-                ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
-            const defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
-
             ParentPredictorState.predictorParams &&
             Object.keys(defaultParams).map(param =>
 
