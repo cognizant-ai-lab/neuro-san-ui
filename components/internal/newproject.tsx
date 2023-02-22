@@ -7,8 +7,9 @@ import ClipLoader from "react-spinners/ClipLoader";
 import prettyBytes from 'pretty-bytes'
 import status from "http-status"
 import {Button, Collapse, Radio, RadioChangeEvent, Space, Tooltip} from 'antd'
-import {Container, Form} from "react-bootstrap"
+import {Collapse as BootstrapCollapse, Container, Form} from "react-bootstrap"
 import {checkValidity} from "./dataprofile/dataprofileutils";
+import {InfoSignIcon} from "evergreen-ui"
 
 // Custom Components developed by us
 import ProfileTable from "./flow/profiletable";
@@ -36,6 +37,13 @@ const debug = Debug("new_project")
 
 // Only allow files up to this size to be uploaded as data sources
 const MAX_ALLOWED_UPLOAD_SIZE_BYTES = 200 * 1000 * 1000  // 200 MB in "decimal"
+
+// We only support this file type for training data files
+const EXPECTED_FILE_TYPE = "text/csv"
+
+// For making things opaque or translucent
+const SEMI_OPAQUE = 0.5
+const OPAQUE = 1.0
 
 // Declare the Props for this component
 interface NewProps {
@@ -78,7 +86,7 @@ export default function NewProject(props: NewProps) {
     const [profile, setProfile] = useState<Profile | undefined>(null)
 
     // Data source currently chosen by the user using the radio buttons
-    const [chosenDataSource, setChosenDataSource] = useState(s3Option)
+    const [chosenDataSource, setChosenDataSource] = useState(localFileOption)
 
     // For access to logged in session and current user name
     const { data: session } = useSession()
@@ -87,6 +95,302 @@ export default function NewProject(props: NewProps) {
     // For file upload
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+
+    // For showing advanced data source settings
+    const [showAdvanced, setShowAdvanced] = useState<boolean>(false)
+    
+    function getCreateDataProfilePanel() {
+        return <Panel id="create-project-or-data-profile-button-panel"
+                      header={
+                          <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
+                              // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                              title={getCreateProjectButtonTooltip()} placement="leftTop">
+                              <Button id="create-project-or-data-profile-button"
+                                      type="primary"
+                                      htmlType="submit"
+                                      className="w-full mt-2 mb-2"
+                                      disabled={!enabledDataTagSection}
+                                      style={{
+                                          background: MaximumBlue,
+                                          borderColor: MaximumBlue,
+                                          color: "white",
+                                          opacity: enabledDataTagSection ? OPAQUE : SEMI_OPAQUE
+                                      }}
+                              >
+                                  {`${4 + startIndexOffset}. ` + (isNewProject ? "Create project" : "Create data profile")}
+                              </Button>
+                          </Tooltip>
+                      }
+                      key="4">
+        </Panel>
+    }
+
+    function getProfileTablePanel() {
+        return <Panel id="profile-table-panel"
+                      header={
+                          <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
+                              // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                              title={enabledDataTagSection ? "" : "Please create your data source first"}
+                              placement="leftTop">
+                              {`${3 + startIndexOffset}. Tag your Data`}
+                          </Tooltip>
+                      }
+                      key={tagYourDataPanelKey}
+                      collapsible={enabledDataTagSection ? "header" : "disabled"}>
+            {profileTable}
+        </Panel>
+    }
+
+    function getDataSourcePanel() {
+        return <Panel id="data-source-panel"
+                      header={
+                          <Tooltip  // eslint-disable-line enforce-ids-in-jsx/missing-ids 
+                                    // 2/6/23 DEF - Tooltip does not have an id property
+                              title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
+                              placement="leftTop">
+                              {`${2 + startIndexOffset}. Create your data source`}
+                          </Tooltip>
+                      }
+                      key={dataSourcePanelKey}
+                      collapsible={enabledDataSourceSection ? "header" : "disabled"}
+                >
+                    <Radio.Group id="data-source-radio"
+                                 onChange={(e: RadioChangeEvent) => {
+                                     setChosenDataSource(e.target.value)
+                                 }}
+                                 value={chosenDataSource}
+                        >
+                        <Space id="s3-file-space" direction="vertical" size="large">
+                            <Radio id="local-file-radio" value={localFileOption}>
+                                {getFileUploadForm()}
+                            </Radio>
+                            <Button id="toggle_advanced_btn"
+                                    type="link"
+                                    onClick={() => setShowAdvanced(!showAdvanced)}
+                                    size="small"
+                            >
+                                <div id="advanced-btn-text" 
+                                     style={{color: "black", textDecoration: "underline #000 dotted"}}
+                                >
+                                    {showAdvanced
+                                        ? "Hide Advanced"
+                                        : "Advanced"
+                                    }
+                                </div>
+                            </Button>
+                            <BootstrapCollapse  // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                                // BootstrapCollapse does not have an id property
+                                in={showAdvanced}
+                                timeout={5}
+                            >
+                                <Radio id="s3-file-radio" value={s3Option}>
+                                    {getS3DataForm()}
+                                </Radio>
+                            </BootstrapCollapse>
+                        </Space>
+                    </Radio.Group>
+                </Panel>
+    }
+
+    function getProjectDetailsPanel() {
+        return <Panel id="project-details-panel"
+                      header="1. Project Details"
+                      key={projectDetailsPanelKey}>
+            <Form.Group id="project-name" className="mb-3">
+                <Form.Label id="project-name-label" className="text-left w-full">
+                    Project Name
+                </Form.Label>
+                <Form.Control id="project-name-input"
+                              name="name"
+                              ref={projectNameRef}
+                              type="text"
+                              placeholder="Enter project name"
+                              onChange={
+                                  event => setInputFields(
+                                      {...inputFields, projectName: event.target.value}
+                                  )}
+                              required
+                />
+                <Form.Control.Feedback type="valid" id="project-name-valid">
+                    Looks good!
+                </Form.Control.Feedback>
+                <Form.Control.Feedback type="invalid" id="project-name-invalid">
+                    Please choose a project name.
+                </Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group id="project-description" className="mb-3">
+                <Form.Label id="project-description-label" className="text-left w-full">
+                    Description
+                </Form.Label>
+                <Form.Control id="project-description-input"
+                              as="textarea"
+                              name="description"
+                              type="text-area"
+                              placeholder="What are you building?"
+                              onChange={
+                                  event => setInputFields(
+                                      {...inputFields, description: event.target.value}
+                                  )}
+                              required
+                />
+                <Form.Control.Feedback type="valid" id="project-description-valid">
+                    Looks good!
+                </Form.Control.Feedback>
+                <Form.Control.Feedback type="invalid" id="project-description-invalid">
+                    Please enter a project description.
+                </Form.Control.Feedback>
+            </Form.Group>
+        </Panel>
+    }
+
+    function getS3DataForm() {
+        return <>
+            <div id="s3-file-upload-div" style={{display: "inline-flex"}}>
+                From S3
+                <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    // Tooltip does not have an id property when compiling
+                    title={"Use this option to use an existing CSV file, which must already be present in the " +
+                        "appropriate S3 bucket, for your training data. Contact the LEAF team for assistance."}>
+                    <div id="file-upload-bubble" className="ps-1">
+                        <sup id="file-upload-bubble-sup">
+                            <InfoSignIcon id="yo-info-bubble-sup-icon" color="blue" size={10}/>
+                        </sup>
+                    </div>
+                </Tooltip>
+            </div>
+            <Form.Group id="s3-file-group" className="mt-2" >
+                <div id="s3-key-div" style={{display: "inline-flex"}}>
+                <Form.Label id="s3-file-key" style={{opacity: isUsingLocalFile ? SEMI_OPAQUE : OPAQUE, paddingTop: 6 }}>
+                    Key:
+                </Form.Label>
+                <Form.Control id="s3-file-set-input-fields"
+                              className="ml-4"
+                              name="s3Key"
+                              type="text"
+                              placeholder="data/somewhere/somefile.csv"
+                              onChange={
+                                  event => setInputFields(
+                                      {...inputFields, s3Key: event.target.value}
+                                  )}
+                              disabled={isUsingLocalFile}
+                              required={!isUsingLocalFile}
+                              style={{width: "80ch"}}
+                />
+                </div>
+                <Form.Control.Feedback id="s3-file-looks-good" type="valid">
+                    Looks good!
+                </Form.Control.Feedback>
+                <Form.Control.Feedback id="s3-file-enter-path-advice" type="invalid">
+                    Please enter a path to your CSV file in S3.
+                </Form.Control.Feedback>
+                <Form.Group id="create-data-source-group" className="mt-2">
+                    <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids 
+                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        title={getCreatButtonTooltip()}>
+                        <Button id="create-data-source-button"
+                                className="my-4"
+                                style={{
+                                    background: MaximumBlue,
+                                    borderColor: MaximumBlue,
+                                    color: "white",
+                                    opacity: getCreatButtonTooltip() === null ? OPAQUE : SEMI_OPAQUE
+                                }}
+                                onClick={() => createDataSource(getS3Key())}
+                                disabled={getCreatButtonTooltip() !== null}
+                        >
+                            Create
+                        </Button>
+                    </Tooltip>
+                </Form.Group>
+            </Form.Group>
+        </>
+    }
+
+    function getFileUploadForm() {
+        return  <Space id="local-file-space" 
+                       direction="vertical" 
+                       size="middle"
+                >
+                    <div id="local-file-upload-div" style={{display: "inline-flex"}}>
+                        From a local file
+                        <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            // Tooltip does not have an id property when compiling
+                            title={`Use this option to upload a CSV file containing your training data. \ 
+                                        Note: file size limited to ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}.`}
+                        >
+                            <div id="file-upload-bubble" className="ps-1">
+                                <sup id="file-upload-bubble-sup">
+                                    <InfoSignIcon id="yo-info-bubble-sup-icon" color="blue" size={10}/>
+                                </sup>
+                            </div>
+                        </Tooltip>
+                    </div>
+                    <div id="upload-file-info-div">
+                        <input disabled={!isUsingLocalFile}
+                               id="new-project-local-file"
+                               name="file" onChange={changeHandler}
+                               ref={fileInputRef}
+                               type="file"
+                        />
+                        {selectedFile ? (
+                            <div id="file-info-div" style={{
+                                opacity: isUsingLocalFile ? OPAQUE : SEMI_OPAQUE,
+                                fontSize: "90%"
+                            }}>
+                                <p id="file-info">
+                                    <b id="file-name" className="mr-2">
+                                        Filename:
+                                    </b>
+                                    {selectedFile.name},
+                                    <b id="file-type" className="mx-2">
+                                        filetype:
+                                    </b>
+                                    <span id="file_type_span" 
+                                          style={{color: selectedFile.type === EXPECTED_FILE_TYPE ? "black" : "red"}}
+                                    >
+                                    {selectedFile.type}</span>,
+                                    <b id="file-size" className="mx-2">
+                                        size:
+                                    </b>
+                                    {prettyBytes(selectedFile.size)}
+                                </p>
+                            </div>
+                        ) : (
+                            <p id="select-a-file" className="mt-1">
+                                Select a file to show details.
+                            </p>
+                        )}
+                    </div>
+                    <div id="uploading-div">
+                        {isUploading
+                            ? <label id="uploading-label">
+                                Uploading {selectedFile.name}
+                                <span id="uploading-clip-loader-span" className="ml-2">
+                                                                <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids 
+                                                                    // 2/6/23 DEF - ClipLoader doesn't have id property when compiling
+                                                                    color={MaximumBlue} loading={true} size={14}/>
+                                                            </span>
+                            </label>
+                            : <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids 
+                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                                title={getUploadButtonTooltip()}>
+                                <Button id="upload-file-button"
+                                        disabled={getUploadButtonTooltip() !== null}
+                                        style={{
+                                            background: MaximumBlue,
+                                            borderColor: MaximumBlue,
+                                            color: "white",
+                                            opacity: isUsingLocalFile && selectedFile ? OPAQUE : SEMI_OPAQUE
+                                        }}
+                                        onClick={handleFileUpload}>
+                                    Upload
+                                </Button>
+                            </Tooltip>
+                        }
+                    </div>
+                </Space>
+    }
 
     // Decide which S3Key to use based on radio buttons
     function getS3Key() {
@@ -102,9 +406,7 @@ export default function NewProject(props: NewProps) {
     */
 
     // Create data source based on user selections
-    const CreateDataSource = async () => {
-        const s3Key = getS3Key();
-
+    const createDataSource = async (s3Key: string) => {
         // Create the Data source Message
         const dataSource: DataSource = {
             s3_key: s3Key
@@ -151,10 +453,11 @@ export default function NewProject(props: NewProps) {
 
         // Save profile
         setProfile(tmpProfile)
+        return null
     }
 
     // Persists the profile with associated tags and data source
-    const createDataProfile = async (event: FormEvent<HTMLFormElement>) => {
+    const createDataProfile = async (event: FormEvent<HTMLFormElement>, s3Key: string) => {
         event.preventDefault()
 
         let tmpProjectId = projectId
@@ -199,9 +502,6 @@ export default function NewProject(props: NewProps) {
             tmpProjectId = accessionProjectResp.id
         }
 
-        // Unpack Data Source Variables
-        const s3Key = getS3Key()
-        
         let datasetName
         if (isUsingLocalFile) {
             // If it's a file upload, use the name of the file the user selected for the dataset name.
@@ -264,7 +564,6 @@ export default function NewProject(props: NewProps) {
 
         debug("DataTag: ", dataTagMessage)
         // Trigger the Data tag Controller
-
         const savedDataTag = await AccessionDataTag(dataTagMessage)
         if (savedDataTag) {
             sendNotification(NotificationType.success, `Data profile "${datasetName}" created`)
@@ -303,9 +602,10 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         }
 
         // Prompt user if not CSV file
-        if (selectedFile.type !== "text/csv") {
-            if (!confirm(`Only CSV files are supported, but the file you have selected of type "${selectedFile.type}" 
-does not appear to be a CSV file. Proceed anyway?`)) {
+        if (selectedFile.type !== EXPECTED_FILE_TYPE) {
+            if (!confirm(`Only CSV files are supported, but the file you have selected of type \
+"${selectedFile.type}" does not appear to be a CSV file. 
+Proceed anyway?`)) {
                 return
             }
         }
@@ -326,10 +626,13 @@ does not appear to be a CSV file. Proceed anyway?`)) {
                 ...inputFields, 
                 uploadedFileS3Key: s3Path
         })
-        
-        uploadFile(selectedFile, s3Path)
-            .then(() => sendNotification(NotificationType.success, `File "${fileName}" uploaded`))
-            .finally(() => setIsUploading(false))
+
+        try { // Upload the user's file and create the data source
+            await uploadFile(selectedFile, s3Path)
+            await createDataSource(s3Path)
+        } finally {
+            setIsUploading(false)
+        }
     }
 
 
@@ -403,10 +706,10 @@ does not appear to be a CSV file. Proceed anyway?`)) {
 
     const propsId = `${props.id}`
 
-    return <Container id={ `${propsId}` }>
+    return <Container id={`${propsId}`}>
         <Form id="create-data-profile"
-            onSubmit={event => void createDataProfile(event)}
-            target="_blank"
+              onSubmit={event => void createDataProfile(event, getS3Key())}
+              target="_blank"
 
             // We set noValidate to turn off the intrinsic HTML 5 validation since we'll be using Bootstrap's
             // validation instead.
@@ -422,221 +725,14 @@ does not appear to be a CSV file. Proceed anyway?`)) {
                 accordion expandIconPosition="right"
                 defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
             >
-                { isNewProject &&
-                    <Panel id="project-details-panel"
-                           header="1. Project Details"
-                           key={projectDetailsPanelKey}>
-                        <Form.Group id="project-name" className="mb-3">
-                            <Form.Label id="project-name-label" className="text-left w-full">
-                                Project Name
-                            </Form.Label>
-                            <Form.Control id="project-name-input" 
-                                name="name"
-                                ref={projectNameRef}
-                                type="text" 
-                                placeholder="Enter project name" 
-                                onChange={
-                                    event => setInputFields(
-                                        {...inputFields, projectName: event.target.value}
-                                    )}
-                                required
-                            />
-                            <Form.Control.Feedback type="valid" id="project-name-valid">
-                                Looks good!
-                            </Form.Control.Feedback>
-                            <Form.Control.Feedback type="invalid" id="project-name-invalid">
-                                Please choose a project name.
-                            </Form.Control.Feedback>
-                        </Form.Group>
-
-                        <Form.Group id="project-description" className="mb-3">
-                            <Form.Label id="project-description-label" className="text-left w-full">
-                                Description
-                            </Form.Label>
-                            <Form.Control id="project-description-input"
-                                as="textarea" 
-                                name="description" 
-                                type="text-area" 
-                                placeholder="What are you building?" 
-                                onChange={
-                                    event => setInputFields(
-                                        {...inputFields, description: event.target.value}
-                                )}
-                                required
-                            />
-                            <Form.Control.Feedback type="valid" id="project-description-valid">
-                                Looks good!
-                            </Form.Control.Feedback>
-                            <Form.Control.Feedback type="invalid" id="project-description-invalid">
-                                Please enter a project description.
-                            </Form.Control.Feedback>
-                        </Form.Group>      
-                    </Panel>
+                {isNewProject &&
+                    getProjectDetailsPanel()
                 }
-                <Panel id="data-source-panel"
-                    header={
-                        <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
-                                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                            title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
-                            placement="leftTop">
-                            {`${2 + startIndexOffset}. Create your data source`}
-                        </Tooltip>
-                    }
-                    key={dataSourcePanelKey}
-                    collapsible={enabledDataSourceSection ? "header": "disabled"}>
-                    <Radio.Group id="data-source-radio" 
-                        onChange={(e: RadioChangeEvent) => {setChosenDataSource(e.target.value)}}
-                        value={chosenDataSource}
-                        className="my-3">
-                        <Space id="s3-file-space" direction="vertical" size="large">
-                            <Radio id="s3-file-radio" value={s3Option}>
-                                From S3
-                                <Form.Group id="s3-file-group" className="my-3">
-                                    <Form.Label id="s3-file-key" className="text-left w-full">
-                                        Key
-                                    </Form.Label>
-                                    <Form.Control id="s3-file-set-input-fields"
-                                        name="s3Key"
-                                        type="text"
-                                        placeholder="data/somewhere/somefile.csv"
-                                        onChange={
-                                            event => setInputFields(
-                                                {...inputFields, s3Key: event.target.value}
-                                        )}
-                                        disabled={isUsingLocalFile}
-                                        required={!isUsingLocalFile}
-                                    />
-                                    <Form.Control.Feedback id="s3-file-looks-good" type="valid">
-                                        Looks good!
-                                    </Form.Control.Feedback>
-                                    <Form.Control.Feedback id="s3-file-enter-path-advice" type="invalid">
-                                        Please enter a path to your CSV file in S3.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-                            </Radio>
-                            <Radio id="local-file-radio" value={localFileOption}>
-                                <Space id="local-file-space"
-                                    direction="vertical" size="middle">
-                                    From a local file
-                                    <input disabled={!isUsingLocalFile}
-                                           id="new-project-local-file" 
-                                           name="file" onChange={changeHandler}
-                                           ref={fileInputRef}
-                                           type="file" 
-                                    />
-                                    {selectedFile ? (
-                                        <div id="file-info-div" style={{
-                                            opacity: isUsingLocalFile ? 1.0 : 0.5,
-                                            fontSize: "90%"
-                                        }}>
-                                            <p id="file-info">
-                                                <b id="file-name" className="mr-2">
-                                                    Filename:
-                                                </b>
-                                                {selectedFile.name},
-                                                <b id="file-type" className="mx-2">
-                                                    filetype:
-                                                </b>
-                                                {selectedFile.type},
-                                                <b id="file-size" className="mx-2">
-                                                    size:
-                                                </b>
-                                                {prettyBytes(selectedFile.size)}
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <p id="select-a-file">
-                                            Select a file to show details
-                                        </p>
-                                    )}
-                                    <div id="uploading-div">
-                                        {isUploading
-                                            ? <label id="uploading-label">
-                                                    Uploading {selectedFile.name}
-                                                    <span id="uploading-clip-loader-span" className="ml-2">
-                                                        <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids 
-                                                            // 2/6/23 DEF - ClipLoader doesn't have id property when compiling
-                                                            color={MaximumBlue} loading={true} size={14}/>
-                                                    </span>
-                                              </label>
-                                            : <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids 
-                                                    // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                                                    title={getUploadButtonTooltip()}>
-                                                    <Button id="upload-file-button"
-                                                            disabled={getUploadButtonTooltip() !== null}
-                                                            style={{
-                                                                background: MaximumBlue,
-                                                                borderColor: MaximumBlue,
-                                                                color: "white",
-                                                                opacity: isUsingLocalFile && selectedFile ? 1.0 : 0.5
-                                                            }}
-                                                            onClick={handleFileUpload}>
-                                                        Upload
-                                                    </Button>
-                                                </Tooltip>
-                                        }
-                                    </div>
-                                </Space>
-                            </Radio>
-                        </Space>
-                    </Radio.Group>
-                    <Form.Group id="create-data-source-group" className="mt-2">
-                        <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
-                                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                            title={getCreatButtonTooltip()}>
-                            <Button id="create-data-source-button"
-                                style={{
-                                    background: MaximumBlue,
-                                    borderColor: MaximumBlue,
-                                    color: "white",
-                                    opacity: getCreatButtonTooltip() === null ? 1.0 : 0.5
-                                }}
-                                onClick={CreateDataSource}
-                                disabled={getCreatButtonTooltip() !== null}
-                            >
-                                Create
-                            </Button>
-                        </Tooltip>
-                    </Form.Group>
-                </Panel>
-                <Panel id="profile-table-panel"
-                    header={
-                        <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
-                                        // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                                title={enabledDataTagSection ? "" : "Please create your data source first"}
-                                placement="leftTop">
-                            {`${3 + startIndexOffset}. Tag your Data`}
-                        </Tooltip>
-                    }
-                    key={tagYourDataPanelKey}
-                    collapsible={enabledDataTagSection ? "header": "disabled"}>
-                    {profileTable}
-                </Panel>
+                {getDataSourcePanel()}
+                {getProfileTablePanel()}
             </Collapse>
 
-            <Panel id="create-project-or-data-profile-button-panel"
-                header={
-                    <Tooltip        // eslint-disable-line enforce-ids-in-jsx/missing-ids 
-                                    // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                        title={getCreateProjectButtonTooltip()} placement="leftTop">
-                        <Button id="create-project-or-data-profile-button"
-                            type="primary"
-                            htmlType="submit"
-                            className="w-full mt-2 mb-2"
-                            disabled={!enabledDataTagSection}
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                color: "white",
-                                opacity: enabledDataTagSection ? 1.0 : 0.5
-                            }}
-                        >
-                            {`${4 + startIndexOffset}. ` + (isNewProject ? "Create project" : "Create data profile")}
-                        </Button>
-                    </Tooltip>
-                }
-                key="4">
-            </Panel>
+            {getCreateDataProfilePanel()}
         </Form>
     </Container>
 }
