@@ -32,29 +32,20 @@ export function sendNotification(nt: NotificationType, message: string, descript
 
     // Show error and warnings for longer
     let duration: number
-    let messageType: string
     switch (nt) {
         case NotificationType.info:
-            messageType="info"
-            duration = SUCCESS_NOTIFICATION_DURATION_SECS
-            break
         case NotificationType.success:
-            messageType="success"
             duration = SUCCESS_NOTIFICATION_DURATION_SECS
             break
         case NotificationType.warning:
-            messageType="warning"
-            duration = ERROR_WARNING_NOTIFICATION_DURATION_SECS
-            break
         case NotificationType.error:
         default:
-            messageType="error"
             duration = ERROR_WARNING_NOTIFICATION_DURATION_SECS
             break
     }
 
     // Use some minor customization to be able to inject ids for testing
-    const spanId = `notification-message-${messageType}`
+    const spanId = `notification-message-${NotificationType[nt]}`
     const messageSpan = <span id={spanId}>{message}</span>
     const closeIcon = <span id="notification-close-icon" className="text-monospace fs-5">x</span>
 
