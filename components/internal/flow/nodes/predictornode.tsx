@@ -19,6 +19,7 @@ import Slider from "rc-slider"
 import 'rc-slider/assets/index.css'
 import {useSession} from "next-auth/react"
 import {Tooltip as AntdTooltip} from "antd"
+import ConfigNumeric from "../confignumeric"
 
 // React Flow
 import {
@@ -151,9 +152,9 @@ export default function PredictorNode(props): ReactElement {
 
             const SelectedPredictor =
                 ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
- 
+
             const SelectedMetric = ParentPredictorState.selectedPredictorType == "classifier" ?
-                                   ParentPredictorState.selectedMetric || DEFAULT_CLASSIFIER_METRIC : 
+                                   ParentPredictorState.selectedMetric || DEFAULT_CLASSIFIER_METRIC :
                                    ParentPredictorState.selectedMetric || DEFAULT_REGRESSOR_METRIC
 
             // Initialize the parameters to be from the state
@@ -280,7 +281,7 @@ export default function PredictorNode(props): ReactElement {
 
     }
 
-    const onParamChange = (event, paramName) => {
+    const onParamChange = (event, paramName: string) => {
         /*
         This function is used to update the state of the predictor
         parameters.
@@ -295,7 +296,7 @@ export default function PredictorNode(props): ReactElement {
     }
 
     const onPredictorParamCheckBoxChange = (event, paramName) => {
-        /* 
+        /*
         This function is used to update the state of the predictor
         parameter checkboxes.
         */
@@ -331,7 +332,7 @@ export default function PredictorNode(props): ReactElement {
         const caoStateCopy = { ...ParentPredictorState.caoState }
 
         caoStateCopy[espType][name] = checked
-        
+
         SetParentPredictorState({
             ...ParentPredictorState,
             caoState: caoStateCopy
@@ -349,10 +350,10 @@ export default function PredictorNode(props): ReactElement {
         <div id={ `${flowPrefix}-type-div` } className="flex justify-between mb-4 content-center">
             <label id={ `${flowPrefix}-type-label` } className="m-0 mr-2">Type: </label>
             <select id={ `${flowPrefix}-type-select` }
-                name={ `${NodeID}-predictorType` } 
+                name={ `${NodeID}-predictorType` }
                 onChange={ event => onPredictorTypeChange(event.target.value)}
                 value={ ParentPredictorState.selectedPredictorType }
-                className="w-32" 
+                className="w-32"
                 >
                     <option id={ `${flowPrefix}-regressor` } value="regressor">
                         Regressor
@@ -368,14 +369,14 @@ export default function PredictorNode(props): ReactElement {
                         value="evolution">
                             Evolution (Coming Soon)
                     </option>
-            </select>    
+            </select>
         </div>
-        
+
         <div id={ `${flowPrefix}-predictor-div` }
             className="flex justify-between mb-4 content-center">
             <label id={ `${flowPrefix}-predictor-label` } className="m-0">Predictor: </label>
             <select id={ `${flowPrefix}-predictor-select` }
-                name={ `${NodeID}-predictor` } 
+                name={ `${NodeID}-predictor` }
                 value={ ParentPredictorState.selectedPredictor }
                 onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
                 className="w-32"
@@ -397,7 +398,7 @@ export default function PredictorNode(props): ReactElement {
             <label id={ `${flowPrefix}-metric-label` } className="m-0">
                 Metric: </label>
             <select id={ `${flowPrefix}-metric-select` }
-                name={ `${NodeID}-metric` } 
+                name={ `${NodeID}-metric` }
                 value={ ParentPredictorState.selectedMetric }
                 onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
                 className="w-32"
@@ -415,12 +416,18 @@ export default function PredictorNode(props): ReactElement {
         </div>
     </Card.Body>
 
+    // Determine the SelectedPredictor and defaultParams each time the configuration panel is
+    // made so that we can be in sync with which kind of predictor type we are looking at.
+    const SelectedPredictor =
+        ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
+    const defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+
     // Create the configuration Panel
     const PredictorConfigurationPanel = <Card.Body
         className="overflow-y-auto h-40 text-xs" id={ `${flowPrefix}-config` }>
-        {   
+        {
             ParentPredictorState.predictorParams &&
-            Object.keys(ParentPredictorState.predictorParams).map(param =>
+            Object.keys(defaultParams).map(param =>
 
                 <div id={ `${flowPrefix}-${param}-input-component` }
                     className="grid grid-cols-12 gap-4 mb-2" key={param} >
@@ -432,44 +439,34 @@ export default function PredictorNode(props): ReactElement {
                     <div id={ `${flowPrefix}-${param}-data-type-div` }
                         className="item2 col-span-8">
                         {
-                            ParentPredictorState.predictorParams[param].type === "int" &&
-                                <input id={ `${flowPrefix}-${param}-value` }
-                                    type="number"
-                                    step="1"
-                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                            (defaultParams[param].type === "int" ||
+                             defaultParams[param].type === "float") &&
+                                <ConfigNumeric id={ `${flowPrefix}-${param}-value` }
+                                    paramName={param}
+                                    defaultParam={defaultParams[param]}
                                     value={ParentPredictorState.predictorParams[param].value.toString()}
-                                    onChange={event => onParamChange(event, param)}
+                                    onParamChange={event => onParamChange(event, param)}
                                 />
                         }
                         {
-                            ParentPredictorState.predictorParams[param].type === "float" &&
-                                <input id={ `${flowPrefix}-${param}-value` }
-                                    type="number"
-                                    step="0.1"
-                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
-                                    value={ParentPredictorState.predictorParams[param].value.toString()}
-                                    onChange={event => onParamChange(event, param)}
-                                />
-                        }
-                        {
-                            ParentPredictorState.predictorParams[param].type === "bool" && (
+                            defaultParams[param].type === "bool" && (
                                 <input id={ `${flowPrefix}-${param}-value` }
                                     type="checkbox"
-                                    defaultChecked={Boolean(ParentPredictorState.predictorParams[param].default_value)}
+                                    defaultChecked={Boolean(defaultParams[param].default_value)}
                                     checked={Boolean(ParentPredictorState.predictorParams[param].value)}
                                     onChange={event => onPredictorParamCheckBoxChange(event, param)}
                                 />
                             )
                         }
                         {
-                            typeof(ParentPredictorState.predictorParams[param].type) === "object" &&
+                            typeof(defaultParams[param].type) === "object" &&
                                 <select id={ `${flowPrefix}-${param}-value` }
                                     value={ ParentPredictorState.predictorParams[param].value.toString() }
                                     onChange={event => onParamChange(event, param)}
                                     className="w-32"
                                 >
                                 {
-                                    (ParentPredictorState.predictorParams[param].type as Array<string>).map(
+                                    (defaultParams[param].type as Array<string>).map(
                                         value => <option id={ `${flowPrefix}-${param}-${value}` }
                                                     key={value} value={ value }>
                                                         { value }
@@ -478,22 +475,22 @@ export default function PredictorNode(props): ReactElement {
                             </select>
                         }
                         {
-                            ParentPredictorState.predictorParams[param].type === "string" && (
+                            defaultParams[param].type === "string" && (
                                 <input id={ `${flowPrefix}-${param}-value` }
                                     className="w-full"
                                     type="text"
-                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                    defaultValue={defaultParams[param].default_value.toString()}
                                     value={ParentPredictorState.predictorParams[param].value.toString()}
                                     onChange={event => onParamChange(event, param)}
                                 />
                             )
                         }
                         {
-                            ParentPredictorState.predictorParams[param].type === "password" && (
+                            defaultParams[param].type === "password" && (
                                 <input id={ `${flowPrefix}-${param}-value` }
                                     className="w-full"
                                     type="password"
-                                    defaultValue={ParentPredictorState.predictorParams[param].default_value.toString()}
+                                    defaultValue={defaultParams[param].default_value.toString()}
                                     value={ParentPredictorState.predictorParams[param].value.toString()}
                                     onChange={event => onParamChange(event, param)}
                                 />
@@ -504,17 +501,17 @@ export default function PredictorNode(props): ReactElement {
                         className="item3 col-span-1">
                         <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                     // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                            content={ParentPredictorState.predictorParams[param].description} >
+                            content={defaultParams[param].description} >
                             <InfoSignIcon id={ `${flowPrefix}-${param}-tooltip-info-sign-icon` }/>
                         </Tooltip>
                     </div>
                 </div>
             )
         }
-                                            
+
         </Card.Body>
 
-    
+
     const marks = {
         0: {label: "0%"},
         100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
@@ -595,7 +592,7 @@ export default function PredictorNode(props): ReactElement {
     const thisPredictorNode = FlowQueries.getNodeByID(GetFlow(), NodeID)
     const hasMultipleOutcomes = FlowQueries.hasMultipleOutcomes(thisPredictorNode)
     const shouldDisableAddUncertaintyButton = !isRegressor || hasMultipleOutcomes
-    
+
     // Create the Component structure
     return <BlueprintCard id={ `${flowPrefix}` }
                           interactive={ true }
@@ -741,7 +738,7 @@ export default function PredictorNode(props): ReactElement {
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         showDelay={1}
                         content={
-                            hasMultipleOutcomes 
+                            hasMultipleOutcomes
                                 ? "Uncertainty models are not supported for predictors with multiple outcomes"
                                 : isRegressor
                                     ? "Add uncertainty model node"

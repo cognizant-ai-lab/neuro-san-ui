@@ -9,6 +9,7 @@ import {Handle, Position as HandlePosition} from 'react-flow-renderer'
 import {AiFillDelete} from "react-icons/ai";
 import {GrSettingsOption} from "react-icons/gr"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
+import ConfigNumeric from "../confignumeric"
 
 // Custom components
 import {ParamType, UNCERTAINTY_MODEL_PARAMS} from "../uncertaintymodelinfo"
@@ -61,7 +62,7 @@ export default function UncertaintyModelNode(props): ReactElement {
     // For showing advanced configuration settings
     const [showAdvanced, setShowAdvanced] = useState(false)
 
-    const onParamChange = (event, paramName) => {
+    const onParamChange = (event, paramName: string) => {
         /*
         This function is used to update the state of the predictor
         parameters.
@@ -84,6 +85,7 @@ export default function UncertaintyModelNode(props): ReactElement {
 
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `uncertaintynode-${flowIndex}`
+    const defaultParams = UNCERTAINTY_MODEL_PARAMS
 
     function getInputComponent(param, item) {
         const paramPrefix = `${flowPrefix}-${param}`
@@ -95,13 +97,14 @@ export default function UncertaintyModelNode(props): ReactElement {
             <div id={ `${paramPrefix}-data-type-div` }
                 className="item2 col-span-4">
                 {
-                    item.type === ParamType.INT &&
-                    <input
+                    (item.type === ParamType.INT ||
+                     item.type === ParamType.FLOAT) &&
+                    <ConfigNumeric
                         id={`${paramPrefix}-value`}
-                        type="number"
-                        step="1"
+                        paramName={param}
+                        defaultParam={defaultParams[param]}
                         value={ParentUncertaintyNodeState[param].value.toString()}
-                        onChange={event => onParamChange(event, param)}
+                        onParamChange={event => onParamChange(event, param)}
                         style={{width: "100%"}}
                     />
                 }

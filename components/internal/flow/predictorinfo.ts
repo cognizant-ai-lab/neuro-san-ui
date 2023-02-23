@@ -2,7 +2,7 @@
 Configuration settings and constants for predictor configuration popup
  */
 
-interface PredictorParamFields {
+export interface PredictorParamFields {
     default_value: boolean | number | string,
     description: string,
 
@@ -13,6 +13,10 @@ interface PredictorParamFields {
     // Value is an optional field that can be used within a form
     // etc to denote user input
     value?: boolean | number | string,
+
+    min?: number,
+    max?: number,
+    step?: number,
 }
 
 export interface PredictorParams {
