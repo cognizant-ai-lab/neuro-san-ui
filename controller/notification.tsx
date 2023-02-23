@@ -1,3 +1,4 @@
+import {AiOutlineClose} from "react-icons/ai"
 import {notification} from 'antd';
 import {NotificationPlacement} from "antd/lib/notification";
 import {renderToString} from "react-dom/server";
@@ -44,11 +45,17 @@ export function sendNotification(nt: NotificationType, message: string, descript
             break
     }
 
+    // Use some minor customization to be able to inject ids for testing
+    const spanId = `notification-message-${NotificationType[nt]}`
+    const messageSpan = <span id={spanId}>{message}</span>
+    const closeIcon = <AiOutlineClose id="notification-close-icon"/>
+
     // Send the notification with antd
     notification[NotificationType[nt]]({
-        message: message,
+        message: messageSpan,
         description: description,
         duration: duration,
+        closeIcon: closeIcon,
         placement: placement
     })
 }
