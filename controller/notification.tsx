@@ -1,3 +1,4 @@
+
 import {notification} from 'antd';
 import {NotificationPlacement} from "antd/lib/notification";
 import {renderToString} from "react-dom/server";
@@ -45,12 +46,14 @@ export function sendNotification(nt: NotificationType, message: string, descript
     }
 
     const messageSpan = <span id="notification-message">{message}</span>
+    const closeIcon = <span id="notification-close-icon" class="text-monospace fs-5">x</span>
 
     // Send the notification with antd
     notification[NotificationType[nt]]({
         message: messageSpan,
         description: description,
         duration: duration,
+        closeIcon: closeIcon,
         placement: placement
     })
 }
