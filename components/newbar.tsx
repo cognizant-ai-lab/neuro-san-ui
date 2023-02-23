@@ -85,6 +85,8 @@ export default function NewBar(props: NavbarProps) {
                                const target = event.target as HTMLInputElement
                                props.EditableCallback(target.value)
                                setEditing(false)
+                           } else if (event.key === "Escape") {
+                               setEditing(false)
                            }
                        }
                    }
