@@ -44,9 +44,11 @@ export function sendNotification(nt: NotificationType, message: string, descript
             break
     }
 
+    const messageSpan = <span id="notification-message">{message}</span>
+
     // Send the notification with antd
     notification[NotificationType[nt]]({
-        message: message,
+        message: messageSpan,
         description: description,
         duration: duration,
         placement: placement
