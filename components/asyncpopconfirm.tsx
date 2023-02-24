@@ -1,8 +1,8 @@
 import {Popconfirm} from "antd"
 import {ReactNode} from "react"
 
-export const NOT_VISIBLE: number = -1
-export const VISIBLE: number = 1
+const NOT_VISIBLE: number = -1
+const VISIBLE: number = 1
 
 export interface ConfirmProps {
     visible: number,
