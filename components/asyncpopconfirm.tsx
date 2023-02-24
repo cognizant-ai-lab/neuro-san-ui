@@ -1,6 +1,5 @@
-import {Popconfirm} from "antd"
+import {Popconfirm, TooltipPlacement} from "antd"
 import {ReactNode} from "react"
-import {TooltipPlacement} from "antd/tooltip"
 
 const NOT_VISIBLE: number = -1
 const VISIBLE: number = 1
