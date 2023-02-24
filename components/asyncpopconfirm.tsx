@@ -5,7 +5,7 @@ import {TooltipPlacement} from "antd/tooltip"
 const NOT_VISIBLE: number = -1
 const VISIBLE: number = 1
 
-export interface ConfirmProps {
+interface ConfirmProps {
     visible: number,
     confirmData: object
 }
