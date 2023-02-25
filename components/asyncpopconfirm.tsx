@@ -75,10 +75,7 @@ export function AsyncPopconfirm(props: AsyncPopconfirmProps) {
         return (confirmProps.visible === index)
     }
 
-    return <Modal id={id}
-                open={isVisible(confirmProps, index)}
-                //title={title}
-                placement="left"
+    return <Modal open={isVisible(confirmProps, index)}
                 okType="default"
                 okText="Confirm"
                 closable={false}
