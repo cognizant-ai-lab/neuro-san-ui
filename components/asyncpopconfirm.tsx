@@ -75,7 +75,9 @@ export function AsyncPopconfirm(props: AsyncPopconfirmProps) {
         return (confirmProps.visible === index)
     }
 
-    return <Modal open={isVisible(confirmProps, index)}
+    return <Modal   // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    // 2/6/23 DEF - Modal doesn't have an id property when compiling
+                open={isVisible(confirmProps, index)}
                 okType="default"
                 okText="Confirm"
                 closable={false}
