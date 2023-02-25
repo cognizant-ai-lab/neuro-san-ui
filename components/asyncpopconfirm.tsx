@@ -102,6 +102,6 @@ export function AsyncPopconfirm(props: AsyncPopconfirmProps) {
                     })
                 }} 
             >
-            {message}
+            {title}
             </Modal>
 }
