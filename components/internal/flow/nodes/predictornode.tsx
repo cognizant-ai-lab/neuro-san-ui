@@ -67,7 +67,7 @@ export interface PredictorState {
 }
 
 // Define an interface for the structure of the Predictor node
-interface PredictorNodeData {
+export interface PredictorNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus

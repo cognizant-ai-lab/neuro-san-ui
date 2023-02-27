@@ -1,8 +1,13 @@
+import { DataSourceNode } from './nodes/datasourcenode';
+import { PredictorNode } from './nodes/predictornode';
 import {isEdge, isNode} from "react-flow-renderer";
 import {CAOType} from "../../../controller/datatag/types";
 
 // Debug
 import Debug from "debug"
+import { NodeType } from "./nodes/types";
+import { PrescriptorNode } from './nodes/prescriptornode';
+import { UncertaintyModelNode } from './nodes/uncertaintyModelNode';
 
 const debug = Debug("flowqueries")
 
@@ -11,42 +16,42 @@ const debug = Debug("flowqueries")
  */
 export class FlowQueries {
 
-    static getPredictorNodes(graph) {
+    static getPredictorNodes(nodes: NodeType[]): PredictorNode[] {
         /*
         This function filters the predictor nodes
         from the graph and returns them
         */
-        return graph.filter(element => element.type === 'predictornode')
+        return nodes.filter(node => node.type === 'predictornode') as PredictorNode[]
     }
 
-    static getPredictorNode(graph, nodeID: string) {
+    static getPredictorNode(nodes: NodeType[], nodeID: string): PredictorNode {
         /*
         This function filters the predictor nodes
         from the graph and returns the one with the supplied ID, or undefined if not found
         */
-        return graph.find(element => (element.type === 'predictornode' && element.id === nodeID))
+        return nodes.find(node => (node.type === 'predictornode' && node.id === nodeID)) as PredictorNode
     }
 
-    static getPrescriptorNodes(graph) {
+    static getPrescriptorNodes(nodes: NodeType[]): PrescriptorNode[] {
         /*
         This function filters the prescriptor nodes
         from the graph and returns them
         */
-        return graph.filter(element => element.type === 'prescriptornode')
+        return nodes.filter(node => node.type === 'prescriptornode') as PrescriptorNode[]
     }
 
-    static getDataNodes(graph) {
+    static getDataNodes(nodes: NodeType[]): DataSourceNode[] {
         /*
         This function returns all nodes of type "data" from the graph
         */
-        return graph.filter(element => element.type === 'datanode')
+        return nodes.filter(node => node.type === 'datanode') as DataSourceNode[]
     }
 
-    static getUncertaintyModelNodes(graph) {
+    static getUncertaintyModelNodes(nodes: NodeType[]): UncertaintyModelNode[] {
         /*
         This function returns all nodes of type "uncertaintymodelnode" from the graph
         */
-        return graph.filter(element => element.type === 'uncertaintymodelnode')
+        return nodes.filter(node => node.type === 'uncertaintymodelnode') as UncertaintyModelNode[]
     }
 
     static extractCheckedFields(nodes, caoType: CAOType) {
@@ -81,11 +86,11 @@ export class FlowQueries {
             .map(e => e[0])
     }
 
-    static getNodeByID(graph, nodeID: string) {
+    static getNodeByID(nodes: NodeType[], nodeID: string): NodeType | undefined {
         /*
            Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
         */
-        return graph.find(element => element.id === nodeID)
+        return nodes.find(node => node.id === nodeID)
     }
 
     static getAllNodes(graph) {
@@ -191,22 +196,5 @@ export class FlowQueries {
     static hasMultipleOutcomes(predictorNode): boolean {
         return FlowQueries.extractCheckedFieldsForNode(predictorNode, CAOType.OUTCOME).length > 1
     }
-
-    /**
-     * Get the nodes in the graph.
-     * @param graph The graph to be searched.
-     */
-    static getNodes(graph) {
-        return graph.filter(e => isNode(e))
-    }
-
-    /**
-     * Get the edges in the graph.
-     * @param graph The graph to be searched.
-     */
-    static getEdges(graph) {
-        return graph.filter(e => isEdge(e))
-    }
-
 
 }

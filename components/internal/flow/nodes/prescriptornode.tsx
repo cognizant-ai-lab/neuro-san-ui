@@ -43,7 +43,7 @@ import {NotificationType, sendNotification} from "../../../../controller/notific
 
 // Define an interface for the structure
 // of the nodes
-interface PrescriptorNodeData {
+export interface PrescriptorNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus

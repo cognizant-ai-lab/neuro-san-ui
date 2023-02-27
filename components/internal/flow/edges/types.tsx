@@ -11,6 +11,6 @@ const EdgeTypes: RFEdgeTypes = {
     predictoredge: PredictorEdgeComponent
 }
 
-export type Edges = PrescriptorEdge | PredictorEdge;
+export type EdgeType = PrescriptorEdge | PredictorEdge;
 
 export default EdgeTypes;

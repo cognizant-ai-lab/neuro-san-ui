@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 // Import Flow Renderer
 import {
     EdgeProps,
-  Node,
+    Edge,
   getBezierPath,
   getEdgeCenter
 } from 'react-flow-renderer';
@@ -29,10 +29,11 @@ import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 const foreignObjectSize = 20;
 
 type PrescriptorEdgeData = {
-    OutputOverrideCode: string
+    OutputOverrideCode: string,
+    UpdateOutputOverrideCode: (code: string) => void
 }
 
-export type PrescriptorEdge = Node<PrescriptorEdgeData>;
+export type PrescriptorEdge = Edge<PrescriptorEdgeData>;
 
 const PrescriptorEdgeComponent: React.FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sourceX, sourceY,
                                         targetX, targetY,

@@ -1,9 +1,9 @@
 // Import Custom Components
 import { NodeTypes as RFNodeTypes } from 'react-flow-renderer'
-import DataSourceNodeComponent, { DataSourceNode } from './datasourcenode'
-import PredictorNodeComponent, { PredictorNode } from './predictornode'
-import PrescriptorNodeComponent, { PrescriptorNode } from './prescriptornode'
-import UncertaintyModelNodeComponent, { UncertaintyModelNode } from './uncertaintyModelNode'
+import DataSourceNodeComponent, { DataSourceNode, DataSourceNodeData } from './datasourcenode'
+import PredictorNodeComponent, { PredictorNode, PredictorNodeData } from './predictornode'
+import PrescriptorNodeComponent, { PrescriptorNode, PrescriptorNodeData } from './prescriptornode'
+import UncertaintyModelNodeComponent, { UncertaintyModelNode, UncertaintyModelNodeData } from './uncertaintyModelNode'
 
 // Based on the declared nodes above we declare a constant holder
 // to reference the Node objects. These references are later passed
@@ -15,6 +15,8 @@ const NodeTypes: RFNodeTypes = {
     uncertaintymodelnode: UncertaintyModelNodeComponent
 }
 
-export type Nodes = DataSourceNode | PredictorNode | PrescriptorNode | UncertaintyModelNode;
+export type NodeData = DataSourceNodeData | PredictorNodeData | PrescriptorNodeData | UncertaintyModelNodeData;
+
+export type NodeType = DataSourceNode | PredictorNode | PrescriptorNode | UncertaintyModelNode;
 
 export default NodeTypes;

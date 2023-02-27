@@ -12,7 +12,7 @@ import {NotificationType, sendNotification} from "../../../../controller/notific
 import ConfigNumeric from "../confignumeric"
 
 // Custom components
-import {ParamType, UNCERTAINTY_MODEL_PARAMS} from "../uncertaintymodelinfo"
+import {ParamType, UNCERTAINTY_MODEL_PARAMS, UncertaintyModelParams} from "../uncertaintymodelinfo"
 
 // State of the uncertainty node
 interface UncertaintyNodeState {
@@ -26,13 +26,13 @@ interface UncertaintyNodeState {
 
 // Define an interface for the structure
 // of the node
-interface UncertaintyModelNodeData {
+export interface UncertaintyModelNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus
     // will be named nodeID-formElementType
     readonly NodeID: string,
-    readonly ParentUncertaintyNodeState: UncertaintyNodeState,
+    readonly ParentUncertaintyNodeState: UncertaintyModelParams,
     readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyNodeState>>,
 
     // Mutator method to delete this node from the parent flow

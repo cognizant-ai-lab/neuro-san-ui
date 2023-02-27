@@ -21,13 +21,13 @@ import {useSession} from "next-auth/react";
 import Debug from "debug"
 const debug = Debug("data_source_node")
 
-interface DataSourceNodeData {
+export interface DataSourceNodeData {
     // Project ID that this new experiment belongs to.
     readonly ProjectID: number,
 
     // Reference to the selected
-    DataSource: DataSource,
-    DataTag: DataTag,
+    DataSource?: DataSource,
+    DataTag?: DataTag,
 
     // We get passed the Node Definitions and a hook to update the definition
     readonly SelfStateUpdateHandler

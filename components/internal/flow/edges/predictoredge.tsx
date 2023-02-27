@@ -1,13 +1,13 @@
 // Import Flow Renderer
 import {
   EdgeProps,
-  Node,
+  Edge,
   getBezierPath
 } from 'react-flow-renderer';
 
 type PredictorEdgeData = null;
 
-export type PredictorEdge = Node<PredictorEdgeData>;
+export type PredictorEdge = Edge<PredictorEdgeData>;
 
 const PredictorEdgeComponent: React.FC<EdgeProps<PredictorEdgeData>> = ({ id, sourceX, sourceY,
                                         targetX, targetY,
