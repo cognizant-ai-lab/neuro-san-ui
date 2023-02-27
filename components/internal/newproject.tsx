@@ -132,7 +132,9 @@ export default function NewProject(props: NewProps) {
                               // 2/6/23 DEF - Tooltip does not have an id property when compiling
                               title={enabledDataTagSection ? "" : "Please create your data source first"}
                               placement="leftTop">
-                              {`${3 + startIndexOffset}. Tag your Data`}
+                            <span id="tag-your-data-header">
+                                {`${3 + startIndexOffset}. Tag your Data`}
+                            </span>
                           </Tooltip>
                       }
                       key={tagYourDataPanelKey}
@@ -148,7 +150,9 @@ export default function NewProject(props: NewProps) {
                                     // 2/6/23 DEF - Tooltip does not have an id property
                               title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
                               placement="leftTop">
-                              {`${2 + startIndexOffset}. Create your data source`}
+                            <span id="create-your-data-source-header">
+                                {`${2 + startIndexOffset}. Create your data source`}
+                            </span>
                           </Tooltip>
                       }
                       key={dataSourcePanelKey}
@@ -194,7 +198,7 @@ export default function NewProject(props: NewProps) {
 
     function getProjectDetailsPanel() {
         return <Panel id="project-details-panel"
-                      header="1. Project Details"
+                      header={ <span id="project-details-header">1. Project Details</span> }
                       key={projectDetailsPanelKey}>
             <Form.Group id="project-name" className="mb-3">
                 <Form.Label id="project-name-label" className="text-left w-full">
