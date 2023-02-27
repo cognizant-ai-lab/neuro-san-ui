@@ -593,7 +593,7 @@ export default function NewProject(props: NewProps) {
     const handleFileUpload = async () => {
         // Make sure file is within our size limit
         const fileTooLarge = (selectedFile.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES)
-        const fileName: string = selectedFile.name;
+        const fileName = selectedFile.name;
         if (fileTooLarge) {
             sendNotification(NotificationType.error,
                 `File "${fileName}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum
