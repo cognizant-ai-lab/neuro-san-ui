@@ -6,7 +6,7 @@ import {useSession} from 'next-auth/react'
 import ClipLoader from "react-spinners/ClipLoader";
 import prettyBytes from 'pretty-bytes'
 import status from "http-status"
-import {Button, Collapse, Radio, RadioChangeEvent, Space, Tooltip} from 'antd'
+import {Button, Collapse, Modal, Radio, RadioChangeEvent, Space, Tooltip} from 'antd'
 import {Collapse as BootstrapCollapse, Container, Form} from "react-bootstrap"
 import {checkValidity} from "./dataprofile/dataprofileutils";
 import {InfoSignIcon} from "evergreen-ui"
@@ -593,7 +593,7 @@ export default function NewProject(props: NewProps) {
     const handleFileUpload = async () => {
         // Make sure file is within our size limit
         const fileTooLarge = (selectedFile.size > MAX_ALLOWED_UPLOAD_SIZE_BYTES)
-        const fileName = selectedFile.name;
+        const fileName: string = selectedFile.name;
         if (fileTooLarge) {
             sendNotification(NotificationType.error,
                 `File "${fileName}" is ${prettyBytes(selectedFile.size)} in size, which exceeds the maximum 
@@ -603,13 +603,27 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
 
         // Prompt user if not CSV file
         if (selectedFile.type !== EXPECTED_FILE_TYPE) {
-            if (!confirm(`Only CSV files are supported, but the file you have selected of type \
-"${selectedFile.type}" does not appear to be a CSV file. 
-Proceed anyway?`)) {
-                return
-            }
+            Modal.confirm({
+                // 2/6/23 DEF - Modal does not have an id property when compiling
+                title: `${fileName} not a CSV file?`,
+                content: "Only CSV files are supported, but the file you have selected of type "${selectedFile.type}" does not appear to be a CSV file.",
+                okButtonProps: {
+                    id: `not-a-csv-confirm-ok-button`
+                },
+                okText: "Confirm",
+                onOk: async () => {
+                    await proceedWithFileUpload(fileName)
+                },
+                cancelButtonProps: {
+                    id: `not-a-csv-confirm-cancel-button`
+                },
+            })
         }
+    }
 
+    const proceedWithFileUpload = async (fileName: string) => {
+
+        // Make sure file is within our size limit
         // Determine where in S3 to store the file. For now, based on user name (from Github) and filename.
         // Assumption: all Github usernames and all local filenames are valid for S3 paths. This...may be risky.
         setIsUploading(true)
