@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "0.5.8",
+    "@types/antd": "1.0.0",
     "@types/babel__core": "7.1.20",
     "@types/bootstrap": "5.2.3",
     "@types/debug": "4.1.7",

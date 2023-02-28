@@ -16,7 +16,7 @@ interface ConfigNumericProps {
     paramName: string,
 
     // Initial value of the component
-    value: string,
+    value: string | number | boolean,
 
     // Default config for param represented by input
     defaultParam: PredictorParamFields | UncertaintyModelParamField,
@@ -62,7 +62,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     function getMin(defaultParam: PredictorParamFields | UncertaintyModelParamField): string {
 
         // Default min if one is not defined in defaults for param
-        return defaultParam.min != null && defaultParam.min.toString()
+        return defaultParam.min != null ? defaultParam.min.toString() : null
     }
 
     /**
@@ -74,7 +74,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     function getMax(defaultParam: PredictorParamFields | UncertaintyModelParamField): string {
 
         // Default max if one is not defined in defaults for param
-        return defaultParam.max != null && defaultParam.max.toString()
+        return defaultParam.max != null ? defaultParam.max.toString() : null
     }
 
     /**
@@ -85,7 +85,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      */
     function getDefaultValue(defaultParam: PredictorParamFields | UncertaintyModelParamField): string {
 
-        return defaultParam.default_value != null && defaultParam.default_value.toString()
+        return defaultParam.default_value != null ? defaultParam.default_value.toString() : null
     }
 
     const id = props.id
@@ -94,14 +94,15 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     const useMin = getMin(props.defaultParam)
     const useMax = getMax(props.defaultParam)
     const useDefaultValue = getDefaultValue(props.defaultParam)
-    const value = props.value.toString()
+    const value = (props.value != null)
+                        ? props.value.toString()
+                        : useDefaultValue
 
     return  <input id={id}
                 type="number"
                 step={useStep}
                 min={useMin}
                 max={useMax}
-                defaultValue={useDefaultValue}
                 value={value}
                 onChange={event => props.onParamChange(event, param)}
                 style={props.style}
