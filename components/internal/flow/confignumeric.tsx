@@ -62,7 +62,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     function getMin(defaultParam: PredictorParamFields | UncertaintyModelParamField): string {
 
         // Default min if one is not defined in defaults for param
-        return defaultParam.min != null && defaultParam.min.toString()
+        return defaultParam.min != null ? defaultParam.min.toString() : undefined
     }
 
     /**
@@ -74,7 +74,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     function getMax(defaultParam: PredictorParamFields | UncertaintyModelParamField): string {
 
         // Default max if one is not defined in defaults for param
-        return defaultParam.max != null && defaultParam.max.toString()
+        return defaultParam.max != null ? defaultParam.max.toString() : undefined
     }
 
     /**
@@ -85,7 +85,7 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      */
     function getDefaultValue(defaultParam: PredictorParamFields | UncertaintyModelParamField): string {
 
-        return defaultParam.default_value != null && defaultParam.default_value.toString()
+        return defaultParam.default_value != null ? defaultParam.default_value.toString() : undefined
     }
 
     const id = props.id
@@ -93,8 +93,12 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     const useStep = getStep(props.defaultParam)
     const useMin = getMin(props.defaultParam)
     const useMax = getMax(props.defaultParam)
-    const useDefaultValue = getDefaultValue(props.defaultParam)
-    const value = props.value.toString()
+    const value = (props.value != null && props.value != "undefined")
+                        ? props.value.toString()
+                        : undefined
+    const useDefaultValue = value === undefined
+                                ? getDefaultValue(props.defaultParam)
+                                : undefined
 
     return  <input id={id}
                 type="number"

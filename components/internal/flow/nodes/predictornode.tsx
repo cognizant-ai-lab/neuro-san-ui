@@ -456,11 +456,11 @@ export default function PredictorNode(props): ReactElement {
                             defaultParams[param].type === "bool" && (
                                 <input id={ `${flowPrefix}-${param}-value` }
                                     type="checkbox"
-                                    defaultChecked={Boolean(defaultParams[param].default_value)}
                                     checked={
-                                        ParentPredictorState.predictorParams[param] != null &&
-                                        ParentPredictorState.predictorParams[param].value != null &&
-                                        Boolean(ParentPredictorState.predictorParams[param].value)
+                                        (ParentPredictorState.predictorParams[param] != null &&
+                                        ParentPredictorState.predictorParams[param].value != null)
+                                            ? Boolean(ParentPredictorState.predictorParams[param].value)
+                                            : defaultParams[param]
                                     }
                                     onChange={event => onPredictorParamCheckBoxChange(event, param)}
                                 />
