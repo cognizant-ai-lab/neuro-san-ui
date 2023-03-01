@@ -460,7 +460,6 @@ export default function Flow(props: FlowProps) {
                 ParentPredictorState: _getInitialPredictorState(),
                 SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
                 DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
-                AddUncertaintyModelNode: predictorNodeId => _addUncertaintyNodes([predictorNodeId]),
                 GetFlow: () => GetFlow(),
                 GetElementIndex: NodeID => _getElementIndex(NodeID)
             },

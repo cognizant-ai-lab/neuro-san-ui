@@ -13,7 +13,6 @@ import {
     Text,
     Tooltip,
 } from "evergreen-ui"
-import {BsPlusSquare} from "react-icons/bs"
 import { GrSettingsOption } from "react-icons/gr"
 import Slider from "rc-slider"
 import 'rc-slider/assets/index.css'
@@ -80,9 +79,6 @@ interface PredictorNodeData {
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void,
 
-    // Mutator method for adding an uncertainty model node to the parent Flow
-    readonly AddUncertaintyModelNode: (nodeID: string) => void
-
     // Entire flow (of which this node is a part). We will use it when we need to know if we have an associated
     // uncertainty model node.
 
@@ -113,7 +109,6 @@ export default function PredictorNode(props): ReactElement {
         ParentPredictorState,
         SetParentPredictorState,
         DeleteNode,
-        AddUncertaintyModelNode,
         GetFlow,
         GetElementIndex
     } = data
@@ -150,10 +145,10 @@ export default function PredictorNode(props): ReactElement {
     // once the data tags are loaded
     useEffect(() => {
 
-            const SelectedPredictor =
+            const selectedPredictor =
                 ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
 
-            const SelectedMetric = ParentPredictorState.selectedPredictorType == "classifier" ?
+            const selectedMetric = ParentPredictorState.selectedPredictorType == "classifier" ?
                                    ParentPredictorState.selectedMetric || DEFAULT_CLASSIFIER_METRIC :
                                    ParentPredictorState.selectedMetric || DEFAULT_REGRESSOR_METRIC
 
@@ -162,7 +157,7 @@ export default function PredictorNode(props): ReactElement {
 
             // If the parameters do not exist in the state update them
             if (!predictorParams || Object.keys(predictorParams).length === 0) {
-                predictorParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+                predictorParams = FetchParams(ParentPredictorState.selectedPredictorType, selectedPredictor)
                 // We add a key called value to adjust for user input
                 predictorParams && Object.keys(predictorParams).forEach(key => {
                     if (typeof(predictorParams[key].default_value) === "object") {
@@ -176,7 +171,7 @@ export default function PredictorNode(props): ReactElement {
                 })
             } else {
                 const keys = Object.keys(
-                    FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+                    FetchParams(ParentPredictorState.selectedPredictorType, selectedPredictor)
                 )
 
                 // Make sure predictor config items are presented to the user in consistent order
@@ -210,8 +205,8 @@ export default function PredictorNode(props): ReactElement {
 
             SetParentPredictorState({
                 ...ParentPredictorState,
-                selectedPredictor: SelectedPredictor,
-                selectedMetric: SelectedMetric,
+                selectedPredictor: selectedPredictor,
+                selectedMetric: selectedMetric,
                 predictorParams: predictorParams,
                 caoState: CAOState,
                 trainSliderValue: ParentPredictorState.trainSliderValue || 80,
@@ -346,7 +341,7 @@ export default function PredictorNode(props): ReactElement {
     const [tabs] = useState(['Predictor', 'Configuration', 'Data Split'])
 
     // Create the selection Panel
-    const PredictorSelectionPanel = <Card.Body id={ `${flowPrefix}-predictor-selection-panel` }>
+    const predictorSelectionPanel = <Card.Body id={ `${flowPrefix}-predictor-selection-panel` }>
         <div id={ `${flowPrefix}-type-div` } className="flex justify-between mb-4 content-center">
             <label id={ `${flowPrefix}-type-label` } className="m-0 mr-2">Type: </label>
             <select id={ `${flowPrefix}-type-select` }
@@ -418,12 +413,12 @@ export default function PredictorNode(props): ReactElement {
 
     // Determine the SelectedPredictor and defaultParams each time the configuration panel is
     // made so that we can be in sync with which kind of predictor type we are looking at.
-    const SelectedPredictor =
+    const selectedPredictor =
         ParentPredictorState.selectedPredictor || predictors[ParentPredictorState.selectedPredictorType][0]
-    const defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, SelectedPredictor)
+    const defaultParams = FetchParams(ParentPredictorState.selectedPredictorType, selectedPredictor)
 
     // Create the configuration Panel
-    const PredictorConfigurationPanel = <Card.Body
+    const predictorConfigurationPanel = <Card.Body
         className="overflow-y-auto h-40 text-xs" id={ `${flowPrefix}-config` }>
         {
             ParentPredictorState.predictorParams &&
@@ -431,7 +426,7 @@ export default function PredictorNode(props): ReactElement {
 
                 <div id={ `${flowPrefix}-${param}-input-component` }
                     className="grid grid-cols-12 gap-4 mb-2" key={param} >
-                    <div id={ `${flowPrefix}-${param}-input-component-div` }className="item1 col-span-3">
+                    <div id={ `${flowPrefix}-${param}-input-component-div` } className="item1 col-span-3">
                         <label id={ `${flowPrefix}-${param}-label` } className="capitalize">
                             {param}:
                         </label>
@@ -460,9 +455,9 @@ export default function PredictorNode(props): ReactElement {
                                         (ParentPredictorState.predictorParams[param] != null &&
                                         ParentPredictorState.predictorParams[param].value != null)
                                             ? Boolean(ParentPredictorState.predictorParams[param].value)
-                                            : defaultParams[param].default_value != null
-                                                ? Boolean(defaultParams[param].default_value)
-                                                : undefined
+                                            : defaultParams[param].default_value == null 
+                                                ? undefined 
+                                                : Boolean(defaultParams[param].default_value)
                                     }
                                     onChange={event => onPredictorParamCheckBoxChange(event, param)}
                                 />
@@ -475,9 +470,9 @@ export default function PredictorNode(props): ReactElement {
                                         (ParentPredictorState.predictorParams[param] != null &&
                                         ParentPredictorState.predictorParams[param].value != null)
                                             ? ParentPredictorState.predictorParams[param].value.toString()
-                                            : defaultParams[param].default_value != null
-                                                ? defaultParams[param].default_value.toString()
-                                                : undefined
+                                            : defaultParams[param].default_value == null 
+                                                ? undefined 
+                                                : defaultParams[param].default_value.toString()
                                     }
                                     onChange={event => onParamChange(event, param)}
                                     className="w-32"
@@ -543,7 +538,7 @@ export default function PredictorNode(props): ReactElement {
     }
 
     // Create the data split card
-    const DataSplitConfigurationPanel = <Card.Body id={ `${flowPrefix}-data-split-configuration-panel` }>
+    const dataSplitConfigurationPanel = <Card.Body id={ `${flowPrefix}-data-split-configuration-panel` }>
         <Container id={ `${flowPrefix}-data-split-config` }>
             <Row id={ `${flowPrefix}-train` }
                 className="mx-2 my-8">
@@ -613,10 +608,8 @@ export default function PredictorNode(props): ReactElement {
     </Card.Body>
 
     // Types of predictor that could cause issues with uncertainty nodes
-    const isRegressor: boolean = ParentPredictorState.selectedPredictorType === "regressor"
     const thisPredictorNode = FlowQueries.getNodeByID(GetFlow(), NodeID)
-    const hasMultipleOutcomes = FlowQueries.hasMultipleOutcomes(thisPredictorNode)
-    const shouldDisableAddUncertaintyButton = !isRegressor || hasMultipleOutcomes
+    FlowQueries.hasMultipleOutcomes(thisPredictorNode)
 
     // Create the Component structure
     return <BlueprintCard id={ `${flowPrefix}` }
@@ -648,9 +641,9 @@ export default function PredictorNode(props): ReactElement {
                                     </Tab>
                                 ))}
                             </Tablist>
-                            { selectedIndex === 0  && PredictorSelectionPanel }
-                            { selectedIndex === 1  && PredictorConfigurationPanel }
-                            { selectedIndex === 2  && DataSplitConfigurationPanel }
+                            { selectedIndex === 0  && predictorSelectionPanel }
+                            { selectedIndex === 1  && predictorConfigurationPanel }
+                            { selectedIndex === 2  && dataSplitConfigurationPanel }
                         </>
                     }
                          statelessProps={{
@@ -759,39 +752,6 @@ export default function PredictorNode(props): ReactElement {
                                 style={{height: 0}}>O
                         </button>
                     </Popover>
-                    <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                        showDelay={1}
-                        content={
-                            hasMultipleOutcomes
-                                ? "Uncertainty models are not supported for predictors with multiple outcomes"
-                                : isRegressor
-                                    ? "Add uncertainty model node"
-                                    : "Uncertainty models are not currently supported for classifier predictors"
-                        }
-                    >
-                        <div id={ `${flowPrefix}-add-uncertainty-model-node-div` }
-                             className="px-1 my-1"
-                             style={{
-                                 position: "absolute",
-                                 right: "1px",
-                             }}
-                        >
-                            <button id={ `${flowPrefix}-add-uncertainty-model-node-button` }
-                                    type="button"
-                                    disabled={shouldDisableAddUncertaintyButton}
-                                    style={{
-                                        height: 15,
-                                        cursor: shouldDisableAddUncertaintyButton ? "not-allowed" : "pointer",
-                                        opacity: shouldDisableAddUncertaintyButton ? "50%" : "100%"
-                                    }}
-                                    onClick={() => AddUncertaintyModelNode(NodeID)}
-                            >
-                                <BsPlusSquare id={ `${flowPrefix}-add-uncertainty-model-node-button-plus` }
-                                    size="0.6em" />
-                            </button>
-                        </div>
-                    </Tooltip>
                 </div>
             </Card.Body>
                 <div id={ `${flowPrefix}-delete-div` }
@@ -809,7 +769,7 @@ export default function PredictorNode(props): ReactElement {
                 </div>
         </Card>
 
-        <Handle id={ `${flowPrefix}-source-handle` }type="source" position={HandlePosition.Right} />
+        <Handle id={ `${flowPrefix}-source-handle` } type="source" position={HandlePosition.Right} />
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
