@@ -141,8 +141,8 @@ export default function Flow(props: FlowProps) {
 
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
     // const [flow, setFlow] = useStateWithCallback(initialFlowValue)
-    const [nodes, setNodes] = useStateWithCallback<NodeType[]>(FlowQueries.getAllNodes(initialNodes))
-    const [edges, setEdges] = useStateWithCallback<EdgeType[]>(initialEdges)
+    const [nodes, setNodes] = useState<NodeType[]>(FlowQueries.getAllNodes(initialNodes))
+    const [edges, setEdges] = useState<EdgeType[]>(initialEdges)
 
     // Tidy flow when nodes are added or removed
     useEffect(() => tidyView(), [nodes.length, edges.length])
@@ -893,7 +893,7 @@ export default function Flow(props: FlowProps) {
         // Update the flow, removing the deleted nodes
         setNodes(leftNodes)
         setEdges(leftEdges)
-        setParentState([...leftNodes, ...edges])
+        setParentState([...nodes, ...leftEdges])
         setElementTypeToUuidList(elementTypeToUuidList)
     }
 
@@ -989,8 +989,10 @@ export default function Flow(props: FlowProps) {
 
         // Update flow with new tidied nodes and fit to view
         // const newNodes = nodes.concat(edges);
-        setNodes(_nodes, () => {flowInstance && flowInstance.fitView()})
+        setNodes(_nodes)
     }
+
+    useEffect(() => {flowInstance && flowInstance.fitView()}, [nodes])
 
     // Build the Contents of the Flow
     const buttonStyle = {background: MaximumBlue, borderColor: MaximumBlue};
@@ -1055,12 +1057,13 @@ export default function Flow(props: FlowProps) {
                     onEdgesChange={onEdgesChange}
                     onNodesDelete={nodes => _onElementsRemove(nodes)}
                     onConnect={void(0)}  // Prevent user manually connecting nodes
-                    onLoad={(instance) => _onLoad(instance)}
+                    onInit={(instance) => _onLoad(instance)}
                     snapToGrid={true} 
                     snapGrid={[10, 10]}
                     nodeTypes={NodeTypes}
                     edgeTypes={EdgeTypes}
                     onNodeDragStop={(event, node) => onNodeDragStop(event, node)}
+                    fitView
                 >
                     <Controls id="react-flow-controls"
                         style={{
