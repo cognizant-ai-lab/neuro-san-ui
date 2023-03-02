@@ -13,6 +13,7 @@ import {StringString} from "../base_types";
 import {NotificationType, sendNotification} from "../notification";
 import {Run} from "../run/types";
 import {MD_BASE_URL} from "../../const";
+import {toSafeFilename} from "../../utils/file"
 
 // For deploying models
 const DEPLOY_MODELS_ROUTE = MD_BASE_URL + "/api/v1/serving/deploy"
@@ -60,7 +61,10 @@ async function deployModel(
         run_id: run_id.toString(),
         experiment_id: experiment_id.toString(),
         project_id: project_id.toString(),
-        run_name: run_name
+        
+        // We have to sanitize the run name as it's used by kserve to generate the model inference URL, which has to be 
+        // a valid "domain" (no special chars, spaces etc.)
+        run_name: toSafeFilename(run_name)
     }
     if (cid) {
         labels.cid = cid
@@ -353,7 +357,7 @@ export async function checkIfModelsDeployed(runID: number, prescriptorIDToDeploy
     let models = null
     if (deploymentStatus && deploymentStatus.deployed_models) {
         const deployedModels = deploymentStatus.deployed_models
-        if (deployedModels.length == 1) {
+        if (deployedModels.length === 1) {
             const model = deploymentStatus.deployed_models[0]
             // Check if model is ready for use
             if (model.model_status.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_READY]) {
