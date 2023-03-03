@@ -35,7 +35,8 @@ export function ParallelCoordsPlot(props) {
                 line: {color: genData.data.map((o, idx) => idx)}
             },
         ]}
-        layout={{width: 1200, height: 320}}
+        layout={{autosize: true}}
+        style={{width: "100T%"}}
     />
 
     return <>
