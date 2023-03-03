@@ -19,6 +19,7 @@ import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 import {useLocalStorage} from "../../utils/use_local_storage";
 import decode from "../../utils/conversion";
 import {useSession} from "next-auth/react";
+import {ParallelCoordsPlot} from "../parallel_coords_plot"
 
 interface RunProps {
     /* 
@@ -78,7 +79,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const tempRuns = props.runs
         let selectedIndex = null
         tempRuns.forEach(((iterated_run, idx) => {
-            if (runID == iterated_run.id) {
+            if (runID === iterated_run.id) {
                 selectedIndex = idx
             }
         }))
@@ -157,7 +158,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         if (runID) {
             const propertiesToRetrieve = ['output_artifacts', 'metrics', 'flow', 'id', 'experiment_id'];
             const runs: Runs = await BrowserFetchRuns(currentUser, null, runID, propertiesToRetrieve)
-            if (runs.length == 1) {
+            if (runs.length === 1) {
                 const run = runs[0]
                 const flow = JSON.parse(run.flow)
                 setFlow(flow)
@@ -238,7 +239,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 // Extract x-y coords and CID (candidate ID) of each prescriptor
                 // Sort by first objective as DMS requires
                 const prescriptorInfo = firstItem.data[firstItem.data.length - 1].data
-                    .sort((item1, item2) => {return item1.x - item2.x})
+                    .sort((item1, item2) => {return item1.objective0 - item2.objective1})
 
                 setPrescriptors({
                     "objectives": firstItem.objectives,
@@ -281,25 +282,46 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }, [paretoPlotData])
 
-    const PlotDiv = []
+    const plotDiv = []
     if (predictorPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
-        PlotDiv.push(<MetricsTable id="metrics-table"
+        plotDiv.push(<MetricsTable id="metrics-table"
                         PredictorRunData={predictorPlotData}
                         Predictors={predictors} />)
     }
 
     if (prescriptorPlotData) {
-        PlotDiv.push(<ESPRunPlot id="esp-run-plot"
+        plotDiv.push(<ESPRunPlot id="esp-run-plot"
                         PrescriptorRunData={prescriptorPlotData} />)
     }
 
-    if (Object.keys(paretoPlotData).length > 0) {
-        PlotDiv.push(
-            <ParetoPlotTable id="pareto-plot-table"
-                Pareto={paretoPlotData}
-                NodeToCIDMap={nodeToCIDMap}
-                PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap} />)
+    // Figure out how many objectives we have. Sum over all prescriptors.
+    const prescriptorNodes = flow && FlowQueries.getPrescriptorNodes(flow)
+    const objectivesCount = prescriptorNodes ?.reduce(
+        (accumulator, node) => accumulator +  Object.keys(node.data.ParentPrescriptorState.evolution.fitness).length,
+        0
+    );
+    
+    if (objectivesCount && Object.keys(paretoPlotData).length > 0) {
+        if (objectivesCount === 2) {
+            plotDiv.push(
+                <ParetoPlotTable 
+                    id="pareto-plot-table"
+                    Pareto={paretoPlotData}
+                    NodeToCIDMap={nodeToCIDMap}
+                    PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
+                />
+            )
+        } else {
+            plotDiv.push(
+                <ParallelCoordsPlot 
+                    id="parallel-coords-table"
+                    Pareto={paretoPlotData}
+                    NodeToCIDMap={nodeToCIDMap}
+                    PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
+                />
+            )
+        }
     }
 
     // Decide whether DMS button should be enabled
@@ -339,7 +361,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     }
 
     if (!predictorPlotData && !prescriptorPlotData) {
-        PlotDiv.push(
+        plotDiv.push(
             <div id="clip-loader-div" className="container">
                 { /* 2/6/23 DEF - ClipLoader does not have an id property when compiling */ }
                 <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -348,7 +370,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         )
     } else {
         // Link to decision UI, or disabled and explanatory text if rules-based which decision UI does not support.
-        PlotDiv.push(
+        plotDiv.push(
             <div id="dms-button-div"
                 style={{
                     cursor: shouldEnableDMS() ? "pointer" : "not-allowed"
@@ -372,7 +394,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     if (rules) {
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
-        PlotDiv.push(
+        plotDiv.push(
             <>
                 <NewBar id="rules-bar" InstanceId="rules"
                         Title="Rules" DisplayNewLink={ false } />
@@ -416,6 +438,6 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
 
         {flowDiv}       
 
-        {PlotDiv}
+        {plotDiv}
     </div>
 }

@@ -174,11 +174,11 @@ function ParetoPlot(props) {
     }, [])
 
     const x = useMemo(function() {
-        return flatData.map(row => row.x)
+        return flatData.map(row => row.objective0)
     }, [])
 
     const y = useMemo(function() {
-        return flatData.map(row => row.y)
+        return flatData.map(row => row.objective1)
     }, [])
 
     const minX = useMemo(function() {
@@ -210,6 +210,11 @@ function ParetoPlot(props) {
         const gendata = {}
         let row
         for (row of data) {
+            // Line plot requires coordinates to be named (x, y) so add them to the data
+            row.data.forEach((val, idx) => {
+                    row.data[idx].x = row.data[idx].objective0
+                    row.data[idx].y = row.data[idx].objective1
+            })
             gendata[row.id] = [row]
         }
 
@@ -227,8 +232,6 @@ function ParetoPlot(props) {
         return gendata
 
     }, [selectedCID])
-
-
 
     // We manage the selected state to display only data of selected generation.
     const [selectedGen, setSelectedGen] = useState(numGen)
@@ -363,6 +366,7 @@ function ParetoPlot(props) {
                 from: 'color',
                 modifiers: [['darker', 0.3]]
             }}
+            colors={() => 'rgba(255,0,0,0.51)'}
             curve="monotoneX"
             tooltip={({point}) => {
                 return <Card id="responsive-line-tooltip">
@@ -479,9 +483,6 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
                 </Table.Body>
             </div>
         )
-
-
-
     })
 
     const propsId = `${props.id}`

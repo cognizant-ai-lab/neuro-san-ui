@@ -5,16 +5,12 @@
   "scripts": {
     "about:dev": "echo 'Starts the UI in dev mode on port 3000 on the local system'",
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
-
     "about:lint": "echo 'Checks for issues in the Typescript and Javascript code using eslint'",
     "lint": "next lint",
-
     "about:build": "echo 'Creates a production build of the UI project using `next build`'",
     "build": "next build",
-
     "about:start": "echo 'Starts the UI in production mode. Requires `build` to have been run beforehand.'",
     "start": "next start",
-
     "about:test": "echo 'Runs the front-end unit tests using `jest`'",
     "test": "jest --maxWorkers=1"
   },
@@ -36,6 +32,7 @@
     "next": "12.2.5",
     "nextjs-breadcrumbs": "1.1.9",
     "next-auth": "4.19.2",
+    "plotly.js": "2.18.2",
     "pretty-bytes": "6.0.0",
     "prop-types": "15.8.1",
     "rc-slider": "10.1.0",
@@ -47,6 +44,7 @@
     "react-icons": "4.6.0",
     "react-is": "17.0.2",
     "react-markdown": "8.0.3",
+    "react-plotly.js": "2.6.0",
     "react-pro-sidebar": "0.7.1",
     "react-select": "5.6.1",
     "react-spinners": "0.11.0",
@@ -65,6 +63,7 @@
     "@types/jest": "27.5.2",
     "@types/lodash": "4.14.191",
     "@types/node": "17.0.21",
+    "@types/plotly.js": "2.12.18",
     "@types/prop-types": "15.7.5",
     "@types/react": "17.0.2",
     "@types/react-beautiful-dnd": "13.1.1",
