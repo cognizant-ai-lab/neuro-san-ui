@@ -43,22 +43,60 @@ export function ParallelCoordsPlot(props) {
         return (
             {
                 label: objective,
-                range: [Math.min(...values) * 0.95, Math.max(...values) * 1.05],
+                // range: [Math.min(...values) * 0.95, Math.max(...values) * 1.05],
+                // range: [0, 200],
                 values: values
             }
         )
     })
     
+    const zData = genData.data.map(item => [item.objective0, item.objective1, item.objective2])
+    console.log(zData)
     const plot = <Plot // eslint-disable-line enforce-ids-in-jsx/missing-ids
                        // "Plot" lacks an "id" attribute
         data={[
             {
-                type: 'parcoords',
-                dimensions: dimensions,
-                line: {color: genData.data.map((o, idx) => idx)}
+                type: 'surface',
+                z: zData,
+                // line: {color: genData.data.map((o, idx) => idx)},
+                xaxis: "A",
+                yaxis: "B",
+                zaxis: "C",
             },
         ]}
-        layout={{autosize: true}}
+        layout={{
+            width: 1200, height: 600,
+            scene: {xaxis: {
+                title: {
+                    text: objectives[0],
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
+            },
+            yaxis: {
+                title: {
+                    text: objectives[1],
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
+            },
+            zaxis: {
+                title: {
+                    text: objectives[2],
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
+            },
+        }}}
         style={{width: "100T%"}}
     />
 
