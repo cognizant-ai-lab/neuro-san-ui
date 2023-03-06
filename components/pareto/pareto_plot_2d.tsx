@@ -14,23 +14,7 @@ import {FiStopCircle} from "react-icons/fi"
 import {FiPlay} from "react-icons/fi"
 import {Slider} from "antd"
 import {ResponsiveLine} from "@nivo/line"
-
-interface ParetoPlotProps {
-
-    id: string
-
-    // The pareto front data
-    readonly Pareto
-
-    // The Node mapping to the CID Map of selected prescriptor
-    NodeToCIDMap
-
-    // A state handler for the parent object whoever needs to use it
-    // that maps the node id of the prescriptor(ESP Experiment) to the
-    // selected CID within that experiment so it can be used for inference
-    readonly PrescriptorNodeToCIDMapUpdater
-
-}
+import {ParetoPlotProps} from "./types"
 
 /**
  * This function encloses the ParetoPlot component to

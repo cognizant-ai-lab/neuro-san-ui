@@ -19,8 +19,7 @@ import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 import {useLocalStorage} from "../../utils/use_local_storage";
 import decode from "../../utils/conversion";
 import {useSession} from "next-auth/react";
-import {ParallelCoordsPlot} from "../pareto/parallel_coords_plot"
-import {ParetoPlotTable} from "../pareto/pareto_plot_2d"
+import { MultiPareto } from "../pareto/multi_pareto";
 
 interface RunProps {
     /* 
@@ -305,21 +304,30 @@ export default function RunPage(props: RunProps): React.ReactElement {
     
     if (objectivesCount && Object.keys(paretoPlotData).length > 0) {
         plotDiv.push(
-            <ParetoPlotTable 
+            <MultiPareto 
                 id="pareto-plot-table"
                 Pareto={paretoPlotData}
                 NodeToCIDMap={nodeToCIDMap}
                 PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
+                ObjectivesCount={objectivesCount}
             />
         )
-        plotDiv.push(
-            <ParallelCoordsPlot 
-                id="parallel-coords-table"
-                Pareto={paretoPlotData}
-                NodeToCIDMap={nodeToCIDMap}
-                PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
-            />
-        )
+        // plotDiv.push(
+        //     <ParetoPlotTable 
+        //         id="pareto-plot-table"
+        //         Pareto={paretoPlotData}
+        //         NodeToCIDMap={nodeToCIDMap}
+        //         PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
+        //     />
+        // )
+        // plotDiv.push(
+        //     <ParallelCoordsPlot 
+        //         id="parallel-coords-table"
+        //         Pareto={paretoPlotData}
+        //         NodeToCIDMap={nodeToCIDMap}
+        //         PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
+        //     />
+        // )
     }
 
     // Decide whether DMS button should be enabled
