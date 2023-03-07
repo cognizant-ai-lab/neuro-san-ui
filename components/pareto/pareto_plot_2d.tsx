@@ -32,30 +32,26 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
         const node = props.Pareto[nodeID]
         const objectives = node.objectives
 
-        const cells = []
+        const plots = []
 
-        cells.push(
-            <Table.Row id={`paretor-plot-row=${idx}`} style={{height: "100%"}} key={`${nodeID}-pareto`}>
-                <Table.TextCell id={`pareto-plot-text-cell-${idx}`}>
-                    <div id={`pareto-plot-div-${idx}`}
-                         className="pl-4 pb-28" style={{height: "35rem", width: "100%"}}>
-                        <ParetoPlot id={`pareto-plot-${idx}`}
-                                    data={node.data}
-                                    xLabel={objectives[0]}
-                                    yLabel={objectives[1]}
-                                    SelectedCID={props.NodeToCIDMap[nodeID]}
-                                    SelectedCIDStateUpdator={(cid: string) => {
-                                        props.PrescriptorNodeToCIDMapUpdater(value => {
-                                            return {
-                                                ...value,
-                                                [nodeID]: cid
-                                            }
-                                        })
-                                    }}
-                        />
-                    </div>
-                </Table.TextCell>
-            </Table.Row>
+        plots.push(
+            <div id={`two-d-pareto-plot-div-${idx}`}
+                 className="pb-28" style={{height: "35rem", width: "100%"}}>
+                <ParetoPlot id={`pareto-plot-${idx}`}
+                            data={node.data}
+                            xLabel={objectives[0]}
+                            yLabel={objectives[1]}
+                            SelectedCID={props.NodeToCIDMap[nodeID]}
+                            SelectedCIDStateUpdator={(cid: string) => {
+                                props.PrescriptorNodeToCIDMapUpdater(value => {
+                                    return {
+                                        ...value,
+                                        [nodeID]: cid
+                                    }
+                                })
+                            }}
+                />
+            </div>
         )
 
         nodePlots.push(
@@ -65,7 +61,7 @@ export function ParetoPlotTable(props: ParetoPlotProps) {
                         <Table.TextCell id="plot-table-label">Plot</Table.TextCell>
                     </Table.Head>
                     <Table.Body id="plot-table-cells">
-                        {cells}
+                        {plots}
                     </Table.Body>
                 </Table.Body>
             </div>
@@ -232,8 +228,80 @@ function ParetoPlot(props) {
         </g>
     )
 
+    const plot = <ResponsiveLine // eslint-disable-line enforce-ids-in-jsx/missing-ids
+        pointSymbol={CustomSymbol}
+        pointSize={12}
+        pointBorderWidth={1}
+        pointBorderColor={{
+            from: 'color',
+            modifiers: [['darker', 0.3]]
+        }}
+        colors={() => 'rgba(255,0,0,0.51)'}
+        curve="monotoneX"
+        tooltip={({point}) => {
+            return <Card id="responsive-line-tooltip">
+                <Container id="responsive-line-tooltip-container" className="flex flex-col justify-space-between">
+                    <p id="responsive-line-tooltip-x-label">{xLabel}: {point.data.x}</p>
+                    <p id="responsive-line-tooltip-y-label">{yLabel}: {point.data.y}</p>
+                </Container>
+            </Card>
+        }}
+        data={cachedDataByGen[`Gen ${selectedGen}`] ?? data}
+        margin={{top: 60, right: 140, bottom: 70, left: 90}}
+        xScale={{type: 'linear', min: minX, max: maxX}}
+        xFormat=">-.2f"
+        yScale={{type: 'linear', min: minY, max: maxY}}
+        yFormat=">-.2f"
+        axisTop={null}
+        axisRight={null}
+        axisBottom={{
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 0,
+            legend: xLabel,
+            legendPosition: 'middle',
+            legendOffset: 46
+        }}
+        axisLeft={{
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 0,
+            legend: yLabel,
+            legendPosition: 'middle',
+            legendOffset: -60
+        }}
+        enableGridX={true}
+        enableGridY={true}
+        isInteractive={true}
+        useMesh={true}
+        legends={[
+            {
+                anchor: 'bottom-right',
+                direction: 'column',
+                justify: false,
+                translateX: 122,
+                translateY: 0,
+                itemWidth: 103,
+                itemHeight: 12,
+                itemsSpacing: 5,
+                itemDirection: 'left-to-right',
+                symbolSize: 12,
+                symbolShape: 'circle',
+                effects: [
+                    {
+                        on: 'hover',
+                        style: {
+                            itemOpacity: 1
+                        }
+                    }
+                ]
+            }
+        ]}
+        onClick={onClickHandler}
+    />
+    
     return <>
-        <div id="pareto-plot-div" className="flex mt-4 ">
+        <div id="two-d-pareto-plot-div" className="flex mt-4 ">
 
             {/* This button enables the animation */}
             <Button id="generation-play-button"
@@ -293,76 +361,6 @@ function ParetoPlot(props) {
         </div>
 
         { /* 2/6/23 DEF - ResponsiveLine does not have an id tag when compiled */}
-        <ResponsiveLine // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            pointSymbol={CustomSymbol}
-            pointSize={12}
-            pointBorderWidth={1}
-            pointBorderColor={{
-                from: 'color',
-                modifiers: [['darker', 0.3]]
-            }}
-            colors={() => 'rgba(255,0,0,0.51)'}
-            curve="monotoneX"
-            tooltip={({point}) => {
-                return <Card id="responsive-line-tooltip">
-                    <Container id="responsive-line-tooltip-container" className="flex flex-col justify-space-between">
-                        <p id="responsive-line-tooltip-x-label">{xLabel}: {point.data.x}</p>
-                        <p id="responsive-line-tooltip-y-label">{yLabel}: {point.data.y}</p>
-                    </Container>
-                </Card>
-            }}
-            data={cachedDataByGen[`Gen ${selectedGen}`] ?? data}
-            margin={{top: 60, right: 140, bottom: 70, left: 90}}
-            xScale={{type: 'linear', min: minX, max: maxX}}
-            xFormat=">-.2f"
-            yScale={{type: 'linear', min: minY, max: maxY}}
-            yFormat=">-.2f"
-            axisTop={null}
-            axisRight={null}
-            axisBottom={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: xLabel,
-                legendPosition: 'middle',
-                legendOffset: 46
-            }}
-            axisLeft={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: yLabel,
-                legendPosition: 'middle',
-                legendOffset: -60
-            }}
-            enableGridX={true}
-            enableGridY={true}
-            isInteractive={true}
-            useMesh={true}
-            legends={[
-                {
-                    anchor: 'bottom-right',
-                    direction: 'column',
-                    justify: false,
-                    translateX: 122,
-                    translateY: 0,
-                    itemWidth: 103,
-                    itemHeight: 12,
-                    itemsSpacing: 5,
-                    itemDirection: 'left-to-right',
-                    symbolSize: 12,
-                    symbolShape: 'circle',
-                    effects: [
-                        {
-                            on: 'hover',
-                            style: {
-                                itemOpacity: 1
-                            }
-                        }
-                    ]
-                }
-            ]}
-            onClick={onClickHandler}
-        />
+        {plot}
     </>
 }

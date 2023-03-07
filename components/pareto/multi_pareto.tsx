@@ -2,22 +2,22 @@ import NewBar from "../newbar"
 import React from "react"
 import {useState} from "react"
 
-
-import dynamic from "next/dynamic";
 import {Container} from "react-bootstrap"
 import {Row} from "react-bootstrap"
 import {Col} from "react-bootstrap"
 import Select from 'react-select'
 import {Table} from "evergreen-ui"
-import { ParallelCoordsPlot } from "./parallel_coords_plot";
-import { ParetoPlotTable } from "./pareto_plot_2d";
+import {InfoSignIcon} from "evergreen-ui"
+import {Tooltip} from "evergreen-ui"
+import {ParallelCoordsPlot} from "./parallel_coords_plot";
+import {ParetoPlotTable} from "./pareto_plot_2d";
 import {ParetoPlotProps} from "./types"
 import {SurfacePlot3D} from "./surface_plot_3d"
 
-// Have to import Plotly this weird way to get around NextJS SSR
-// See: https://github.com/plotly/react-plotly.js/issues/272
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false, })
-
+/**
+ * Coordinates the display of various kinds of Pareto charts in 2D, 3D and more.
+ * @param props Data for displayin in the chart. See {@link ParetoPlotProps}.
+ */
 export function MultiPareto(props: ParetoPlotProps) {
 
     const objectivesCount = props.ObjectivesCount
@@ -43,31 +43,14 @@ export function MultiPareto(props: ParetoPlotProps) {
         
     // Create selection list for Pareto plot types
     const paretoChartSelect = <Select id="pareto-chart-type-select"
-            inputId="dms-actions-select-input"
-            instanceId="dms-actions-select"
-            options={options}
-            value={selectedChartType}
-            isOptionDisabled={(option) => option.isDisabled}    
-            onChange={option => setSelectedChartType(
-                {label: option.label, value: option.value, isDisabled: option.isDisabled})
-            }
-            //
-            // onChange={async selectedOption => {
-            //     try {
-            //         setPrescribing(true)
-            //         setPrescriptorID(selectedOption.value)
-            //         const models = await checkIfModelsDeployed(runID, selectedOption.value)
-            //         if (models) {
-            //             // Save predictor(s) for later
-            //             setPredictors(models.predictors)
-            //
-            //             // Only one prescriptor supported for now so grab the first one
-            //             setPrescriptorUrl(models.prescriptors[0][1])
-            //         }
-            //     } finally {
-            //         setPrescribing(false)
-            //     }
-            // }}
+                                      inputId="dms-actions-select-input"
+                                      instanceId="dms-actions-select"
+                                      options={options}
+                                      value={selectedChartType}
+                                      isOptionDisabled={(option) => option.isDisabled}
+                                      onChange={option => setSelectedChartType(
+                                          {label: option.label, value: option.value, isDisabled: option.isDisabled})
+                                      }
     />
     
     const nodePlots = []
@@ -81,9 +64,12 @@ export function MultiPareto(props: ParetoPlotProps) {
 
         cells.push(
             <Table.Row id={`paretor-plot-row=${idx}`} style={{height: "100%"}} key={`${nodeID}-pareto`}>
-                <Table.TextCell id={`pareto-plot-text-cell-${idx}`}>
-                    <div id={`pareto-plot-div-${idx}`}
-                         className="pl-4 pb-28" style={{height: "35rem", width: "100%"}}>
+                <Table.TextCell id={`pareto-plot-text-cell-${idx}`} style={{paddingLeft: 0}}>
+                    <div id={`pareto-plot-div-${idx}`} className="pb-28" style={{height: "35rem", width: "100%"}}>
+                        
+                        {/* Choose type of plot component based on user selection */}
+                        
+                        {/* Parallel coordinates */}
                         {
                             selectedChartType.value === "parcords" &&
                             <ParallelCoordsPlot
@@ -95,6 +81,7 @@ export function MultiPareto(props: ParetoPlotProps) {
                             />
                         }
 
+                        {/* 2D pareto */}
                         {
                             selectedChartType.value === "2d_pareto" &&
                             <ParetoPlotTable
@@ -106,6 +93,7 @@ export function MultiPareto(props: ParetoPlotProps) {
                             />
                         }
 
+                        {/* 3D surface */}
                         {
                             selectedChartType.value === "3d_surface" &&
                             <SurfacePlot3D
@@ -140,15 +128,32 @@ export function MultiPareto(props: ParetoPlotProps) {
                     InstanceId="pareto-prescriptors"
                     Title="Pareto Prescriptors"
                     DisplayNewLink={false}/>
-            <br />
-            <Container fluid>
-                <Row className="my-3">
-                    <label>Plot type:
-                    <Col style={{alignContent: "flex-end", marginTop: "8px"}}>{paretoChartSelect}</Col>
-                    </label>
+            <br id="pareto-plot-br" />
+            <Container fluid id="pareto-plot-container">
+                <Row id="plot-type-row">
+                    <h4 id="plot-type-h4">Plot type:</h4>
                 </Row>
-                <Row>
-                    <Col>{nodePlots}</Col>
+                <Row id="select-chart-row">
+                    <Col id="select-chart-col" style={{marginTop: "16px"}} md={11}>
+                        {paretoChartSelect}
+                    </Col>
+                    <Col id="tooltip-column">
+                        <Tooltip    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                    // Tooltip does not have an id property
+                            content={"Some plot types may not be available, depending on the number of outcomes " +
+                                "in your experiment"}>
+                            <div id="plot-info-bubble" className="ps-1">
+                                <sup id="plot-info-bubble-sup">
+                                    <InfoSignIcon  id="plot-info-bubble-icon" color="blue" size={10}/>
+                                </sup>
+                            </div>
+                        </Tooltip>
+                    </Col>
+                </Row>
+                <Row id="pareto-plot-row" style={{marginTop: "16px"}}>
+                    <Col id="pareto-plots-col">
+                        {nodePlots}
+                    </Col>
                 </Row>
             </Container>
         </div>

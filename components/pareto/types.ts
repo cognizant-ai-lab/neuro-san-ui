@@ -2,9 +2,11 @@
  * Types for pareto chart plots
  */
 
-
+/**
+ * Data for Pareto chart
+ */
 export interface ParetoPlotProps {
-
+    // HTML id attribute for component
     id: string
 
     // The pareto front data
@@ -20,5 +22,4 @@ export interface ParetoPlotProps {
     
     // Count of objectives across all prescriptors
     readonly ObjectivesCount: number
-
 }
