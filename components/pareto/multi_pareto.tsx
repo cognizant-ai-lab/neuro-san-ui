@@ -61,7 +61,7 @@ export function MultiPareto(props: ParetoPlotProps) {
         cells.push(
             <Table.Row id={`paretor-plot-row=${idx}`} style={{height: "100%"}} key={`${nodeID}-pareto`}>
                 <Table.TextCell id={`pareto-plot-text-cell-${idx}`} style={{paddingLeft: 0}}>
-                    <div id={`pareto-plot-div-${idx}`} className="pb-28" style={{height: "35rem", width: "100%"}}>
+                    <div id={`pareto-plot-div-${idx}`} className="pb-28" style={{height: "600px", width: "100%"}}>
                         
                         {/* Choose type of plot component based on user selection */}
                         

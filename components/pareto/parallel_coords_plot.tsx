@@ -81,7 +81,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
             right: "5%",
             bottom: "50%",
             top: "15%",
-            height: "350px",
+            height: "400px",
             parallelAxisDefault: {          // A pattern for axis definition, which can avoid repeating in `parallelAxis`.
                 type: 'value',
                 nameLocation: 'end',
