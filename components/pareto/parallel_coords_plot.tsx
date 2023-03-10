@@ -21,7 +21,6 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
     const objectives = pareto[Object.keys(pareto)[0]].objectives
     
     const prescriptorNodeId = Object.keys(pareto)[0]
-    const selectedCID = props.NodeToCIDMap[prescriptorNodeId]
     
     // For now, only one prescriptor per experiment supported, so grab [0]
     const data = pareto[Object.keys(pareto)[0]].data
@@ -74,7 +73,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
             sendNotification(NotificationType.error, "Model Selection Error",
                 "Only models from the last generation can be used with the decision interface")
         }
-
+        
     const option: EChartsOption = {
         animation: false,
         // Use first data item to get list of objectives. Skip "cid" as it isn't a real data item.
