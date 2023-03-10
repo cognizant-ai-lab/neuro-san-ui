@@ -610,7 +610,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
             Modal.confirm({
                 title:
                     <span id="csv-confirm-title">
-                        Is "{fileName}" a CSV file?
+                        Is &quot;{fileName}&quot; a CSV file?
                     </span>,
                 content:
                     <span id="csv-confirm-message">
