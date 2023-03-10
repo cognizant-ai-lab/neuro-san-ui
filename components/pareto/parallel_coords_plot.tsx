@@ -48,8 +48,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
     }))
     
     interface Props {
-        data: Array<Record<string, number>>;
-        onLineClick: (data: Record<string, number>) => void;
+        data: Array<Record<string, number>>
     }
 
     // How much to extend axes above and below min/max values
@@ -69,21 +68,19 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
     // cannot yet perform inference on those as those don't exist.
     const onChartClick: (params) => void = selectedGen === numberOfGenerations ?
         params => {
-            selectedCIDStateUpdator(params.data[2])
+            // Bit hacky -- assume that CID (prescriptor ID) is the last item in params. Which is should be unless
+            // the API changes, but there's no doubt a better way to do this.
+            selectedCIDStateUpdator(params.data[params.data.length - 1])
         }
         : () => {
             sendNotification(NotificationType.error, "Model Selection Error",
                 "Only models from the last generation can be used with the decision interface")
         }
-        
-    const onEvents = {
-        click: onChartClick,
-    };
-    
-    
-    const ParallelCoordinatesChart: React.FC<Props> = ({ data, onLineClick }) => {
+
+    const ParallelCoordinatesChart: React.FC<Props> = ({ data }) => {
         const option: EChartsOption = {
             animation: false,
+            // Use first data item to get list of objectives. Skip "cid" as it isn't a real data item.
             parallelAxis: Object.keys(data[0]).filter(k => k !== "cid").map((key, idx) => {
                 return {
                     dim: key,
@@ -110,25 +107,25 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
                             width: 4,
                         },
                     },
-                    selectedMode: "single", // enable selection mode
                 }
             ],
             tooltip: {
                 trigger: "item",
                 formatter: (params) => {
-                    const paraVals = params.value.filter(k => k !== "cid").map((value, idx) => `${objectives[idx] || "prescriptor"}: ${value.toString()}`).join("<br />")
-                    paraVals
-                    return paraVals
+                    return params.value.filter(k => k !== "cid").map((value, idx) => `${objectives[idx] || "prescriptor"}: ${value.toString()}`).join("<br />")
                 },
             },
             
         };
 
-
-        return <ReactEcharts option={option} onEvents={onEvents} style={{height: "600px"}}/>;
+        return <ReactEcharts 
+            option={option} 
+            onEvents={{click: onChartClick}} 
+            style={{height: "600px"}}
+        />
     };
 
-    const plot = <ParallelCoordinatesChart data={genData.data} onLineClick={(lineData) => console.debug("fired", lineData)} />
+    const plot = <ParallelCoordinatesChart data={genData.data}/>
     
     return <>
         <GenerationsAnimation 
