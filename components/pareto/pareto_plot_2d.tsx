@@ -8,6 +8,7 @@ import {Container} from "react-bootstrap"
 import {ResponsiveLine} from "@nivo/line"
 import {ParetoPlotProps} from "./types"
 import {GenerationsAnimation} from "./generations_animation"
+import { cloneDeep } from "lodash"
 
 /**
  * This function generates a 2-dimensional pareto plot.
@@ -15,7 +16,8 @@ import {GenerationsAnimation} from "./generations_animation"
  * @param props Data for rendering table. See {@link ParetoPlotProps}.
  */
 export function ParetoPlot2D(props: ParetoPlotProps) {
-    const pareto = props.Pareto
+    // Make a deep copy as we will be modifying it (adding x and y values for plot)
+    const pareto = cloneDeep(props.Pareto)
 
     const prescriptorNodeId = Object.keys(pareto)[0]
     const objectives = pareto[prescriptorNodeId].objectives
