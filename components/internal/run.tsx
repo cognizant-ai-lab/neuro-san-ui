@@ -315,8 +315,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
         )
     }
 
-    plotDiv.push(<BlankLines numLines={6} />)
-    
     // Decide whether DMS button should be enabled
     function shouldEnableDMS() {
         return !empty(nodeToCIDMap)

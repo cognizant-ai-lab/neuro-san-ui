@@ -16,7 +16,7 @@ import {SurfacePlot3D} from "./surface_plot_3d"
 
 /**
  * Coordinates the display of various kinds of Pareto charts in 2D, 3D and more.
- * @param props Data for displayin in the chart. See {@link ParetoPlotProps}.
+ * @param props Data for display in in the chart. See {@link ParetoPlotProps}.
  */
 export function MultiPareto(props: ParetoPlotProps) {
 
@@ -34,7 +34,7 @@ export function MultiPareto(props: ParetoPlotProps) {
         {label: "3D Surface Plot", value: "3d_surface", isDisabled: objectivesCount > 3}
     ]
     
-    const [selectedChartType, setSelectedChartType] = useState(options[0])
+    const [selectedChartType, setSelectedChartType] = useState(objectivesCount === 2 ? options[1] : options[0])
     
     if (props.ObjectivesCount < 2) {
         return <>Pareto display is only valid for ≥ 2 objectives</>

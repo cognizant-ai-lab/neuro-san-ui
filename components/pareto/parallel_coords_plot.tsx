@@ -76,7 +76,20 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         
     const option: EChartsOption = {
         animation: false,
+        parallel: {
+            left: "5%",                     // Location of parallel coordinate system.
+            right: "5%",
+            bottom: "50%",
+            top: "15%",
+            height: "350px",
+            parallelAxisDefault: {          // A pattern for axis definition, which can avoid repeating in `parallelAxis`.
+                type: 'value',
+                nameLocation: 'end',
+                nameGap: 20
+            }    
+        },
         // Use first data item to get list of objectives. Skip "cid" as it isn't a real data item.
+        // Generate a parallel axis for each objective with a suitable range.
         parallelAxis: Object.keys(genData.data[0]).filter(k => k !== "cid").map((key, idx) => {
             return {
                 dim: key,
@@ -114,11 +127,13 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
     }
 
     const plot =
-        <ReactEcharts
-            option={option}
-            onEvents={{click: onChartClick}}
-            style={{height: "600px"}}
-        />
+        <div style={{height: "100%"}}>
+            <ReactEcharts
+                style={{height: "100%"}}
+                option={option}
+                onEvents={{click: onChartClick}}
+            />
+        </div>
 
     return <>
         <GenerationsAnimation 
