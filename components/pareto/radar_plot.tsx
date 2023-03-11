@@ -95,8 +95,8 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
                             .filter(k => k !== "cid")
                             .map((key, idx) => ({ 
                                 name: objectives[idx],
-                                min: (minMaxPerObjective[key].min  * (1 - scalePadding)).toFixed(2),
-                                max: (minMaxPerObjective[key].max  * (1 + scalePadding)).toFixed(2)
+                                min: minMaxPerObjective[key].min  * (1 - scalePadding),
+                                max: minMaxPerObjective[key].max  * (1 + scalePadding)
                             })),
             radius: "80%"
         },
@@ -119,7 +119,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
                     .join("<br />")
             },
         },
-    };
+    }
 
     const plot =
         <div id="radar-plot-div" style={{height: "100%"}}>
