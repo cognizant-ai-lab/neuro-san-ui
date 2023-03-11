@@ -232,7 +232,7 @@ export function ParetoPlot2D(props: ParetoPlotProps) {
     
     return <>
         <GenerationsAnimation
-            id="generations-animation"
+            id="generations-animation-2d"
             NumberOfGenerations={numberOfGenerations}
             Plot={plot}
             SetSelectedGen={(gen: number) => setSelectedGen(gen)}

@@ -28,6 +28,10 @@ interface GenerationsAnimationParams {
     
     // Whether the type of plot allows user to show all generations simultaneously
     ShowAllGenerations?: boolean
+    
+    // Delay between frames in ms
+    FrameDelayMs?: number
+    
 }
 
 /**
@@ -37,7 +41,7 @@ interface GenerationsAnimationParams {
  * @param props See {@link GenerationsAnimationParams}.
  */
 export function GenerationsAnimation(props: GenerationsAnimationParams) {
-    const id = props.id || "generations-animation"
+    const id = props.id || "generations-animation-main"
 
     const plot: JSX.Element = props.Plot
     const numberOfGenerations: number = props.NumberOfGenerations
@@ -47,6 +51,8 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
     
     const showAllGenerations = props?.ShowAllGenerations ?? true
     
+    const frameDelayMs = props?.FrameDelayMs ?? 100
+        
     // Maintain the state of the animation if its playing or not
     const [playing, setPlaying] = useState(false)
 
@@ -106,10 +112,9 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                                     }
                                     return selectedGen + 1
                                 })
-                            }, 100)
+                            }, frameDelayMs)
                             setPlayingInterval(interval)
                         }
-
                     }}
             >
                 {playing ? <FiStopCircle id="generation-play-stop"/> : <FiPlay id="generation-play-play"/>}

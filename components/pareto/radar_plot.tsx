@@ -93,8 +93,12 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
             shape: 'circle',
             indicator: Object.keys(genData.data[0])
                             .filter(k => k !== "cid")
-                            .map((key, idx) => ({ name: objectives[idx] })),
-            radius: "85%"
+                            .map((key, idx) => ({ 
+                                name: objectives[idx],
+                                min: (minMaxPerObjective[key].min  * (1 - scalePadding)).toFixed(2),
+                                max: (minMaxPerObjective[key].max  * (1 + scalePadding)).toFixed(2)
+                            })),
+            radius: "80%"
         },
         series: [
             {
@@ -128,12 +132,13 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
 
     return <>
         <GenerationsAnimation
-            id="generations-animation"
+            id="generations-animation-radar"
             NumberOfGenerations={numberOfGenerations}
             Plot={plot}
             SetSelectedGen={(gen: number) => setSelectedGen(gen)}
             SelectedGen={selectedGen}
             ShowAllGenerations={false}
+            FrameDelayMs={500}
         />
     </>
 }

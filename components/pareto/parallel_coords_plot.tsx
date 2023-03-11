@@ -140,7 +140,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
 
     return <>
         <GenerationsAnimation
-            id="generations-animation"
+            id="generations-animation-parcords"
             NumberOfGenerations={numberOfGenerations}
             Plot={plot}  
             SetSelectedGen={(gen: number) => setSelectedGen(gen)} 

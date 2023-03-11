@@ -29,13 +29,16 @@ export function MultiPareto(props: ParetoPlotProps) {
         {label: "Parallel Coordinates Plot", value: "parcords", isDisabled: false},
 
         // 2D pareto plot can only handle 2 dimensions
-        {label: "2D Pareto Plot", value: "2d_pareto", isDisabled: objectivesCount > 2},
+        {label: "2D Pareto Plot" + (objectivesCount > 2 ? " (not available due to > 2 objectives)": ""), 
+            value: "2d_pareto", isDisabled: objectivesCount > 2},
 
         // 3D surface plot can handle 3 dimensions
-        {label: "3D Surface Plot (experimental)", value: "3d_surface", isDisabled: objectivesCount !== 3},
+        {label: "3D Surface Plot (experimental)" + (objectivesCount !== 3 ? " (only available for 3 objectives)": ""), 
+            value: "3d_surface", isDisabled: objectivesCount !== 3},
 
         // Radar plot can handle 3+ dimensions
-        {label: "Radar Plot", value: "radar_plot", isDisabled: objectivesCount < 3}
+        {label: "Radar Plot" + (objectivesCount < 3 ? " (only available for 3 or more objectives)": ""),  
+            value: "radar_plot", isDisabled: objectivesCount < 3}
     ]
     
     const [selectedChartType, setSelectedChartType] = useState(objectivesCount === 2 ? options[1] : options[0])
