@@ -31,7 +31,7 @@ export function MultiPareto(props: ParetoPlotProps) {
         {label: "2D Pareto Plot", value: "2d_pareto", isDisabled: objectivesCount > 2},
 
         // 3D surface plot can handle 2 or 3 dimensions
-        {label: "3D Surface Plot", value: "3d_surface", isDisabled: objectivesCount > 3}
+        {label: "3D Surface Plot (experimental)", value: "3d_surface", isDisabled: objectivesCount > 3}
     ]
     
     const [selectedChartType, setSelectedChartType] = useState(objectivesCount === 2 ? options[1] : options[0])
@@ -134,9 +134,7 @@ export function MultiPareto(props: ParetoPlotProps) {
                             content={"Some plot types may not be available, depending on the number of outcomes " +
                                 "in your experiment"}>
                             <div id="plot-info-bubble" className="ps-1">
-                                <sup id="plot-info-bubble-sup">
-                                    <InfoSignIcon  id="plot-info-bubble-icon" color="blue" size={10}/>
-                                </sup>
+                                <InfoSignIcon  id="plot-info-bubble-icon" color="blue" size={10}/>
                             </div>
                         </Tooltip>
                     </Col>

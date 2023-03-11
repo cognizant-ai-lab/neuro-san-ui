@@ -29,6 +29,7 @@
     "echarts": "5.4.1",
     "echarts-for-react": "3.0.2",
     "evergreen-ui": "6.7.1",
+    "echarts-gl": "2.0.9",
     "http-status": "1.5.3",
     "lodash": "4.17.21",
     "next": "12.2.5",

@@ -74,7 +74,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
                 "Only models from the last generation can be used with the decision interface")
         }
         
-    const option: EChartsOption = {
+    const options: EChartsOption = {
         animation: false,
         parallel: {
             left: "5%",                     // Location of parallel coordinate system.
@@ -121,7 +121,10 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         tooltip: {
             trigger: "item",
             formatter: (params) => {
-                return params.value.filter(k => k !== "cid").map((value, idx) => `${objectives[idx] || "prescriptor"}: ${value.toString()}`).join("<br />")
+                return params.value
+                    .filter(k => k !== "cid")
+                    .map((value, idx) => `${objectives[idx] || "prescriptor"}: ${value.toString()}`)
+                    .join("<br />")
             },
         },
     }
@@ -130,15 +133,15 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         <div style={{height: "100%"}}>
             <ReactEcharts
                 style={{height: "100%"}}
-                option={option}
+                option={options}
                 onEvents={{click: onChartClick}}
             />
         </div>
 
     return <>
-        <GenerationsAnimation 
-            id="generations-animation" 
-            NumberOfGenerations={numberOfGenerations} 
+        <GenerationsAnimation
+            id="generations-animation"
+            NumberOfGenerations={numberOfGenerations}
             Plot={plot}  
             SetSelectedGen={(gen: number) => setSelectedGen(gen)} 
             SelectedGen={selectedGen}

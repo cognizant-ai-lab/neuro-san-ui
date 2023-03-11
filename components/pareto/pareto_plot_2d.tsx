@@ -112,6 +112,10 @@ export function ParetoPlot2D(props: ParetoPlotProps) {
     // We manage the selected state to display only data of selected generation.
     const [selectedGen, setSelectedGen] = useState(1)
 
+    if (props.ObjectivesCount !== 2) {
+        return <>ParetoPlot2D display is only valid for 2 objectives</>
+    }
+    
     // Generate mars for the slider
     const marks = {}
     marks[numberOfGenerations + 1] = `All Gen`
