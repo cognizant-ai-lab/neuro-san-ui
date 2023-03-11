@@ -12,17 +12,17 @@ import {cloneDeep} from "lodash"
 
 // This is a load-bearing import. Even though it doesn't appear to be used, it _has_ to be here or else the 3D
 // surface plot just plain will not show up.
-import 'echarts-gl'
 
 /**
- * This component generates a 3D surface plot.
+ * This component generates a radar plot. See {@link https://en.wikipedia.org/wiki/Radar_chart}
+ * for details.
  * 
  * It only works for the case of 3 outcomes. For experiments with anything other than 3 outcomes, other kinds of plots
  * needs to be used.
  *
  * @param props See {@link ParetoPlotProps} for details.
  */
-export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
+export function RadarPlot(props: ParetoPlotProps): JSX.Element {
     // Make a deep copy as we will be modifying it (adding x and y values for plot)
     const pareto = cloneDeep(props.Pareto)
 
@@ -80,56 +80,30 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
         params => {
             // Bit hacky -- assume that CID (prescriptor ID) is the last item in params. Which is should be unless
             // the API changes, but there's no doubt a better way to do this.
-            selectedCIDStateUpdator(params.data[params.data.length - 1])
+            const selectedCID = params.data.value[params.data.value.length - 1]
+            selectedCIDStateUpdator(selectedCID)
         }
         : () => {
             sendNotification(NotificationType.error, "Model Selection Error",
                 "Only models from the last generation can be used with the decision interface")
         }
-        
-    // Need to have objectives as (x, y, z) coordinates for plotting
-    genData.data.forEach(row => {
-        row.x = row.objective0
-        row.y = row.objective1
-        row.z = row.objective2
-    })
-    
-    const plotData = genData.data.map(row => [row.objective0, row.objective1, row.objective2, row.cid])
-    
+
     const options: EChartsOption = {
-        xAxis3D: {
-            type: 'value',
-            name: objectives[0],
-            min: (minMaxPerObjective.objective0.min  * (1 - scalePadding)).toFixed(2),
-            max: (minMaxPerObjective.objective0.max  * (1 + scalePadding)).toFixed(2),
-        },
-        yAxis3D: {
-            type: 'value',
-            name: objectives[1],
-            min: (minMaxPerObjective.objective1.min  * (1 - scalePadding)).toFixed(2),
-            max: (minMaxPerObjective.objective1.max  * (1 + scalePadding)).toFixed(2),
-        },
-        zAxis3D: {
-            type: 'value',
-            name: objectives[2],
-            min: (minMaxPerObjective.objective2.min  * (1 - scalePadding)).toFixed(2),
-            max: (minMaxPerObjective.objective2.max  * (1 + scalePadding)).toFixed(2),
-        },
-        grid3D: {
-            viewControl: {
-                projection: 'orthographic'
-            }
+        radar: {
+            shape: 'circle',
+            indicator: Object.keys(genData.data[0])
+                            .filter(k => k !== "cid")
+                            .map((key, idx) => ({ name: objectives[idx] })),
+            radius: "85%"
         },
         series: [
             {
                 name: `Generation ${selectedGen}`,
-                type: 'surface',
-                data: plotData,
-                itemStyle: {
-                    borderWidth: 2,
-                    borderColor: "black",
-                    opacity: 1,
-                }
+                type: 'radar',
+                data: genData.data.map(row => ({
+                    value: Object.values(row),
+                    name: row.cid
+                }))
             }
         ],
         tooltip: {

@@ -13,6 +13,7 @@ import {ParallelCoordsPlot} from "./parallel_coords_plot";
 import {ParetoPlot2D} from "./pareto_plot_2d";
 import {ParetoPlotProps} from "./types"
 import {SurfacePlot3D} from "./surface_plot_3d"
+import {RadarPlot} from "./radar_plot"
 
 /**
  * Coordinates the display of various kinds of Pareto charts in 2D, 3D and more.
@@ -30,8 +31,11 @@ export function MultiPareto(props: ParetoPlotProps) {
         // 2D pareto plot can only handle 2 dimensions
         {label: "2D Pareto Plot", value: "2d_pareto", isDisabled: objectivesCount > 2},
 
-        // 3D surface plot can handle 2 or 3 dimensions
-        {label: "3D Surface Plot (experimental)", value: "3d_surface", isDisabled: objectivesCount > 3}
+        // 3D surface plot can handle 3 dimensions
+        {label: "3D Surface Plot (experimental)", value: "3d_surface", isDisabled: objectivesCount !== 3},
+
+        // Radar plot can handle 3+ dimensions
+        {label: "Radar Plot", value: "radar_plot", isDisabled: objectivesCount < 3}
     ]
     
     const [selectedChartType, setSelectedChartType] = useState(objectivesCount === 2 ? options[1] : options[0])
@@ -94,6 +98,18 @@ export function MultiPareto(props: ParetoPlotProps) {
                             selectedChartType.value === "3d_surface" &&
                             <SurfacePlot3D
                                 id="surface-plot-3d-table"
+                                Pareto={props.Pareto}
+                                NodeToCIDMap={props.NodeToCIDMap}
+                                PrescriptorNodeToCIDMapUpdater={props.PrescriptorNodeToCIDMapUpdater}
+                                ObjectivesCount={props.ObjectivesCount}
+                            />
+                        }
+
+                        {/* Radar plot */}
+                        {
+                            selectedChartType.value === "radar_plot" &&
+                            <RadarPlot
+                                id="radar-plot-3d-table"
                                 Pareto={props.Pareto}
                                 NodeToCIDMap={props.NodeToCIDMap}
                                 PrescriptorNodeToCIDMapUpdater={props.PrescriptorNodeToCIDMapUpdater}
