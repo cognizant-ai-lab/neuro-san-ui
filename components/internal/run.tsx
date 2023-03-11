@@ -20,7 +20,6 @@ import {useLocalStorage} from "../../utils/use_local_storage";
 import decode from "../../utils/conversion";
 import {useSession} from "next-auth/react";
 import { MultiPareto } from "../pareto/multi_pareto";
-import BlankLines from "../blanklines"
 
 interface RunProps {
     /* 

@@ -144,8 +144,9 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
     };
 
     const plot =
-        <div style={{height: "100%"}}>
-            <ReactEcharts
+        <div id="surface-plot-div" style={{height: "100%"}}>
+            <ReactEcharts   // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            // ReactEcharts lacks an id attribute
                 style={{height: "100%"}}
                 option={options}
                 onEvents={{click: onChartClick}}
