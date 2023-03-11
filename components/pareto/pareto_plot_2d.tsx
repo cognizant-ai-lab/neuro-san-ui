@@ -88,8 +88,6 @@ export function ParetoPlot2D(props: ParetoPlotProps) {
             row.data.forEach((val, idx) => {
                 row.data[idx].x = row.data[idx].objective0
                 row.data[idx].y = row.data[idx].objective1
-                // delete row.data[idx].objective0
-                // delete row.data[idx].objective1
             })
             gendata[row.id] = [row]
         }

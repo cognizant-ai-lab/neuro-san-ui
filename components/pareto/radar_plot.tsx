@@ -37,29 +37,41 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
         return data.length
     }, [])
 
+    const cachedDataByGen = useMemo(function () {
+        const gendata = {}
+        for (const row of data) {
+            gendata[row.id] = row.data
+        }
+
+        return gendata
+
+    }, [data])
+
+    // Calculate min and max values for each objective across all generations. This allows us to scale the chart
+    // appropriately for the animation.
+    const minMaxPerObjective = useMemo(function () {
+        return Object.fromEntries(objectives.map((objective, idx) => {
+            const minObjectiveValue = Math.min(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
+            const maxObjectiveValue = Math.max(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
+            return [
+                `objective${idx}`,
+                {
+                    min: minObjectiveValue,
+                    max: maxObjectiveValue
+                }
+            ]
+        }))
+    }, [data, objectives])
+    
     // Generation for which we are displaying data. Default to last generation.
     const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
 
     if (props.ObjectivesCount !== 3) {
         return <>SurfacePlot3D display is only valid for 3 objectives</>
     }
+
+    const plotData = cachedDataByGen[`Gen ${selectedGen}`]
     
-    const genData = data.find( item => item.id === `Gen ${selectedGen || 1}`)
-
-    // Calculate min and max values for each objective across all generations. This allows us to scale the chart
-    // appropriately for the animation.
-    const minMaxPerObjective = Object.fromEntries(objectives.map((objective, idx) => {
-        const minObjectiveValue = Math.min(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
-        const maxObjectiveValue = Math.max(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
-        return [
-            `objective${idx}`,
-            {
-                min: minObjectiveValue,
-                max: maxObjectiveValue
-            }
-        ]
-    }))
-
     // How much to extend axes above and below min/max values
     const scalePadding = 0.05
 
@@ -91,7 +103,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
     const options: EChartsOption = {
         radar: {
             shape: 'circle',
-            indicator: Object.keys(genData.data[0])
+            indicator: Object.keys(plotData[0])
                             .filter(k => k !== "cid")
                             .map((key, idx) => ({ 
                                 name: objectives[idx],
@@ -104,7 +116,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
             {
                 name: `Generation ${selectedGen}`,
                 type: 'radar',
-                data: genData.data.map(row => ({
+                data: plotData.map(row => ({
                     value: Object.values(row),
                     name: row.cid
                 }))
