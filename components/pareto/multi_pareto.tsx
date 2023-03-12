@@ -33,7 +33,7 @@ export function MultiPareto(props: ParetoPlotProps) {
             value: "2d_pareto", isDisabled: objectivesCount > 2},
 
         // 3D surface plot can handle 3 dimensions
-        {label: "3D Surface Plot (experimental)" + (objectivesCount !== 3 ? " (only available for 3 objectives)": ""), 
+        {label: "3D Surface Plot (experimental)" + (objectivesCount === 3 ? "" : " (only available for 3 objectives)"), 
             value: "3d_surface", isDisabled: objectivesCount !== 3},
 
         // Radar plot can handle 3+ dimensions
@@ -41,7 +41,17 @@ export function MultiPareto(props: ParetoPlotProps) {
             value: "radar_plot", isDisabled: objectivesCount < 3}
     ]
     
-    const [selectedChartType, setSelectedChartType] = useState(objectivesCount === 2 ? options[1] : options[0])
+    // Figure out default plot to use based on number of objectives
+    let defaultPlot
+    if (objectivesCount === 2) {
+        defaultPlot = 1
+    } else if (objectivesCount === 3) {
+        defaultPlot = 2
+    } else {
+        defaultPlot = 0
+    }
+    
+    const [selectedChartType, setSelectedChartType] = useState(defaultPlot)
     
     if (props.ObjectivesCount < 2) {
         return <>Pareto display is only valid for ≥ 2 objectives</>
