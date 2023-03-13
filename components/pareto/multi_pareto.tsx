@@ -51,7 +51,7 @@ export function MultiPareto(props: ParetoPlotProps) {
         defaultPlot = 0
     }
     
-    const [selectedChartType, setSelectedChartType] = useState(defaultPlot)
+    const [selectedChartType, setSelectedChartType] = useState(options[defaultPlot])
     
     if (props.ObjectivesCount < 2) {
         return <>Pareto display is only valid for ≥ 2 objectives</>

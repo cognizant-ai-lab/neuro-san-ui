@@ -91,7 +91,7 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                     className="mr-4"
                     onClick={() => {
                         // If the animation is not playing start the animation by using
-                        // a setInterval that updates the states ever half second
+                        // a setInterval that updates the states every frameDelayMs milliseconds
                         if (playing) {
                             // If the timer was already started - meaning the stop button is
                             // pressed - clear the timer
