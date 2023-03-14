@@ -10,9 +10,6 @@ import {sendNotification} from "../../controller/notification"
 import {NotificationType} from "../../controller/notification"
 import {cloneDeep} from "lodash"
 
-// This is a load-bearing import. Even though it doesn't appear to be used, it _has_ to be here or else the 3D
-// surface plot just plain will not show up.
-
 /**
  * This component generates a radar plot. See {@link https://en.wikipedia.org/wiki/Radar_chart}
  * for details.
@@ -66,11 +63,11 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
     // Generation for which we are displaying data. Default to last generation.
     const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
 
-    if (props.ObjectivesCount !== 3) {
-        return <>SurfacePlot3D display is only valid for 3 objectives</>
+    if (props.ObjectivesCount < 3) {
+        return <>RadarPlot display is only valid for ≥ 3 objectives</>
     }
 
-    const plotData = cachedDataByGen[`Gen ${selectedGen}`]
+    const genData = cachedDataByGen[`Gen ${selectedGen}`]
     
     // How much to extend axes above and below min/max values
     const scalePadding = 0.05
@@ -103,7 +100,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
     const options: EChartsOption = {
         radar: {
             shape: 'circle',
-            indicator: Object.keys(plotData[0])
+            indicator: Object.keys(genData[0])
                             .filter(k => k !== "cid")
                             .map((key, idx) => ({ 
                                 name: objectives[idx],
@@ -116,7 +113,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
             {
                 name: `Generation ${selectedGen}`,
                 type: 'radar',
-                data: plotData.map(row => ({
+                data: genData.map(row => ({
                     value: Object.values(row),
                     name: row.cid
                 }))

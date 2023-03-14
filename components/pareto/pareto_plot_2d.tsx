@@ -235,6 +235,8 @@ export function ParetoPlot2D(props: ParetoPlotProps) {
             Plot={plot}
             SetSelectedGen={(gen: number) => setSelectedGen(gen)}
             SelectedGen={selectedGen}
+            ShowAllGenerations={true}
+            FrameDelayMs={100}
         />
     </>
 }

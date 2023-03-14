@@ -15,7 +15,9 @@ import {cloneDeep} from "lodash"
 import 'echarts-gl'
 
 /**
- * This component generates a 3D surface plot.
+ * This component generates a 3D surface plot. 
+ * See {@link https://en.wikipedia.org/w/index.php?title=Graph_of_a_function&useskin=vector#Functions_of_two_variables}
+ * for details.
  * 
  * It only works for the case of 3 outcomes. For experiments with anything other than 3 outcomes, other kinds of plots
  * needs to be used.
@@ -37,18 +39,20 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
         return data.length
     }, [])
 
-    // Generation for which we are displaying data. Default to last generation.
-    const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
+    const cachedDataByGen = useMemo(function () {
+        const gendata = {}
+        for (const row of data) {
+            gendata[row.id] = row.data
+        }
 
-    if (props.ObjectivesCount !== 3) {
-        return <>SurfacePlot3D display is only valid for 3 objectives</>
-    }
+        return gendata
+
+    }, [data])
     
-    const genData = data.find( item => item.id === `Gen ${selectedGen || 1}`)
-
     // Calculate min and max values for each objective across all generations. This allows us to scale the chart
     // appropriately for the animation.
-    const minMaxPerObjective = Object.fromEntries(objectives.map((objective, idx) => {
+    const minMaxPerObjective = useMemo(function () {
+        return Object.fromEntries(objectives.map((objective, idx) => {
         const minObjectiveValue = Math.min(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
         const maxObjectiveValue = Math.max(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
         return [
@@ -59,6 +63,16 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
             }
         ]
     }))
+    }, [data, objectives])
+
+    // Generation for which we are displaying data. Default to last generation.
+    const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
+
+    if (props.ObjectivesCount !== 3) {
+        return <>SurfacePlot3D display is only valid for exactly 3 objectives</>
+    }
+
+    const genData = cachedDataByGen[`Gen ${selectedGen}`]
 
     // How much to extend axes above and below min/max values
     const scalePadding = 0.05
@@ -80,7 +94,8 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
         params => {
             // Bit hacky -- assume that CID (prescriptor ID) is the last item in params. Which is should be unless
             // the API changes, but there's no doubt a better way to do this.
-            selectedCIDStateUpdator(params.data[params.data.length - 1])
+            const selectedCID = params.data.value[params.data.value.length - 1]
+            selectedCIDStateUpdator(selectedCID)
         }
         : () => {
             sendNotification(NotificationType.error, "Model Selection Error",
@@ -88,13 +103,13 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
         }
         
     // Need to have objectives as (x, y, z) coordinates for plotting
-    genData.data.forEach(row => {
+    genData.forEach(row => {
         row.x = row.objective0
         row.y = row.objective1
         row.z = row.objective2
     })
     
-    const plotData = genData.data.map(row => [row.objective0, row.objective1, row.objective2, row.cid])
+    const plotData = genData.map(row => [row.objective0, row.objective1, row.objective2, row.cid])
     
     const options: EChartsOption = {
         xAxis3D: {
