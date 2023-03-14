@@ -7,6 +7,7 @@
  * @type {import('next').NextConfig}
  **/
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
 /* What is all this "withTM" stuff about? Without it, if you try to visit an experiment page via a deep link, the page
@@ -22,6 +23,8 @@ https://www.npmjs.com/package/next-transpile-modules
 "All features of next-transpile-modules are now natively built-in Next.js 13.1. Please use Next's 
 transpilePackages option :)"
 */
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const withTM = require("next-transpile-modules")(["echarts", "zrender"]);
 
 const nextConfig = withTM({
