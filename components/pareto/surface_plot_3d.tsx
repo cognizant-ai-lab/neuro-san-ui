@@ -114,6 +114,7 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
     const plotData = genData.map(row => [row.objective0, row.objective1, row.objective2, row.cid])
     
     const options: EChartsOption = {
+        animation: false,
         xAxis3D: {
             type: 'value',
             name: objectives[0],
@@ -178,7 +179,7 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
             SetSelectedGen={(gen: number) => setSelectedGen(gen)}
             SelectedGen={selectedGen}
             ShowAllGenerations={false}
-            FrameDelayMs={1000}
+            FrameDelayMs={50}
         />
     </>
 }

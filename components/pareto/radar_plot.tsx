@@ -98,6 +98,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
         }
 
     const options: EChartsOption = {
+        animation: false,
         radar: {
             shape: 'circle',
             indicator: Object.keys(genData[0])
@@ -148,7 +149,7 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
             SetSelectedGen={(gen: number) => setSelectedGen(gen)}
             SelectedGen={selectedGen}
             ShowAllGenerations={false}
-            FrameDelayMs={500}
+            FrameDelayMs={50}
         />
     </>
 }
