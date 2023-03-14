@@ -29,14 +29,20 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         return data.length
     }, [])
 
-    // Generation for which we are displaying data. Default to last generation.
-    const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
+    const cachedDataByGen = useMemo(function () {
+        const gendata = {}
+        for (const row of data) {
+            gendata[row.id] = row.data
+        }
 
-    const genData = data.find( item => item.id === `Gen ${selectedGen || 1}`)
+        return gendata
+
+    }, [data])
     
     // Calculate min and max values for each objective across all generations. This allows us to scale the chart
     // appropriately for the animation.
-    const minMaxPerObjective = Object.fromEntries(objectives.map((objective, idx) => {
+    const minMaxPerObjective = useMemo(function () {
+        return Object.fromEntries(objectives.map((objective, idx) => {
         const minObjectiveValue = Math.min(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
         const maxObjectiveValue = Math.max(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
         return [
@@ -47,17 +53,25 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
             }
         ]
     }))
+    }, [data, objectives])
+    
+    // Generation for which we are displaying data. Default to last generation.
+    const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
+
+
+    const genData = cachedDataByGen[`Gen ${selectedGen}`]
     
     // How much to extend axes above and below min/max values
     const scalePadding = 0.05
 
-    const selectedCIDStateUpdator = (cid: string) =>
-        props.PrescriptorNodeToCIDMapUpdater(value => {
+    function selectedCIDStateUpdator(cid: string) {
+        return props.PrescriptorNodeToCIDMapUpdater(value => {
             return {
                 ...value,
                 [prescriptorNodeId]: cid
             }
         })
+    }
     
     // On Click handler - only rendered at the last generation as those are the
     // candidates we persist.
@@ -67,7 +81,8 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         params => {
             // Bit hacky -- assume that CID (prescriptor ID) is the last item in params. Which is should be unless
             // the API changes, but there's no doubt a better way to do this.
-            selectedCIDStateUpdator(params.data[params.data.length - 1])
+            const selectedCID = params.data.value[params.data.value.length - 1]
+            selectedCIDStateUpdator(selectedCID)
         }
         : () => {
             sendNotification(NotificationType.error, "Model Selection Error",
