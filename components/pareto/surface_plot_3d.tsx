@@ -2,17 +2,19 @@ import React from "react"
 import {useMemo} from "react"
 import {useState} from "react"
 
-import {ParetoPlotProps} from "./types"
-import {GenerationsAnimation} from "./generations_animation"
+// ECharts
 import ReactEcharts from "echarts-for-react";
 import {EChartsOption} from "echarts-for-react/src/types"
-import {sendNotification} from "../../controller/notification"
-import {NotificationType} from "../../controller/notification"
-import {cloneDeep} from "lodash"
 
 // This is a load-bearing import. Even though it doesn't appear to be used, it _has_ to be here or else the 3D
 // surface plot just plain will not show up.
 import 'echarts-gl'
+
+import {ParetoPlotProps} from "./types"
+import {GenerationsAnimation} from "./generations_animation"
+import {sendNotification} from "../../controller/notification"
+import {NotificationType} from "../../controller/notification"
+import {cloneDeep} from "lodash"
 
 /**
  * This component generates a 3D surface plot. 

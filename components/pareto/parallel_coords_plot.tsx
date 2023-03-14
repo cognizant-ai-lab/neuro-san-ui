@@ -58,7 +58,6 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
     // Generation for which we are displaying data. Default to last generation.
     const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
 
-
     const genData = cachedDataByGen[`Gen ${selectedGen}`]
     
     // How much to extend axes above and below min/max values
@@ -105,7 +104,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         },
         // Use first data item to get list of objectives. Skip "cid" as it isn't a real data item.
         // Generate a parallel axis for each objective with a suitable range.
-        parallelAxis: Object.keys(genData.data[0]).filter(k => k !== "cid").map((key, idx) => {
+        parallelAxis: Object.keys(genData[0]).filter(k => k !== "cid").map((key, idx) => {
             return {
                 dim: key,
                 name: objectives[idx],
@@ -117,7 +116,7 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
         series: [
             {
                 type: "parallel",
-                data: genData.data.map((d) => Object.values(d)),
+                data: genData.map((d) => Object.values(d)),
                 lineStyle: {
                     normal: {
                         type: "gradient",

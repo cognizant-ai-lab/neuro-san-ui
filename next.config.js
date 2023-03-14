@@ -6,7 +6,25 @@
 /**
  * @type {import('next').NextConfig}
  **/
-const nextConfig = {
+
+const path = require('path');
+
+/* What is all this "withTM" stuff about? Without it, if you try to visit an experiment page via a deep link, the page
+crashes with errors like "ReferenceError: self is not defined". Something to do with the arcane mysteries of SSR
+(server-side rendering) in NextJS and how it doesn't play nicely with ECharts and its associated libs.
+
+See discussion: https://github.com/hustcc/echarts-for-react/issues/425#issuecomment-1441106802
+
+Note: in future versions of NextJS (13+) the next-transpile-modules component is deprecated:
+
+https://www.npmjs.com/package/next-transpile-modules
+
+"All features of next-transpile-modules are now natively built-in Next.js 13.1. Please use Next's 
+transpilePackages option :)"
+*/
+const withTM = require("next-transpile-modules")(["echarts", "zrender"]);
+
+const nextConfig = withTM({
     typescript: {
         // Cause build to fail on Typescript transpilation errors
         ignoreBuildErrors: false,
@@ -33,7 +51,12 @@ const nextConfig = {
         domains: ['avatars.githubusercontent.com'],
     },
 
-    poweredByHeader: false
-};
+    poweredByHeader: false,
+
+    // See comment above about "withTM"
+    sassOptions: {
+        includePaths: [path.join(__dirname, 'styles')],
+    },
+});
 
 module.exports = nextConfig;
