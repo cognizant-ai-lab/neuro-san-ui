@@ -140,7 +140,7 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     
     // Build EChart plot
     const plot =
-        <div id="radar-plot-div" style={{height: "100%"}}>
+        <div id="echart-pareto-plot-div" style={{height: "100%"}}>
             <ReactEcharts   // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // ReactEcharts lacks an id attribute
                 style={{height: "100%"}}
