@@ -53,7 +53,7 @@ function Navbar(props: NavbarProps): React.ReactElement {
     const propsId = `${props.id}`
 
     return <Container id="nav-bar-container">
-        <Row>
+        <Row id="nav-bar-menu-row">
             <BootstrapNavbar id={`${propsId}`}
                              collapseOnSelect expand="lg"
                              style={{background: MaximumBlue, borderBottomColor: MaximumBlue}}
@@ -128,8 +128,13 @@ function Navbar(props: NavbarProps): React.ReactElement {
                 </BootstrapNavbar.Collapse>
             </BootstrapNavbar>
         </Row>
-        <Row>
-            <Breadcrumbs useDefaultStyle rootLabel="Home" transformLabel={label => startCase(label)}/>
+        <Row id="nav-bar-breadcrumbs-row">
+            <Breadcrumbs    // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            // Breadcrumbs lacks an id attribute    
+                useDefaultStyle 
+                rootLabel="Home" 
+                transformLabel={label => startCase(label)}
+            />
         </Row>
     </Container>
 }
