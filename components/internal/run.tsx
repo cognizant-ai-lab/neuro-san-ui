@@ -326,9 +326,14 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
             <Link id="dms-link"
                 href={dmsLink}
             >
-                <a id="dms-link-anchor" style={{
-                    color: "white"
-                }}>Go to Decision Making System with Prescriptor: {prescriptorID}</a>
+                <a id="dms-link-anchor" 
+                    style={{
+                        color: "white"
+                    }}
+                   target="_blank"
+                >
+                    Go to Decision Making System with Prescriptor: {prescriptorID}
+                </a>
             </Link>
         </>
     }
