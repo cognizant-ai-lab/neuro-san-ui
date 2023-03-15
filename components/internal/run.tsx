@@ -239,7 +239,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 // Extract x-y coords and CID (candidate ID) of each prescriptor
                 // Sort by first objective as DMS requires
                 const prescriptorInfo = firstItem.data[firstItem.data.length - 1].data
-                    .sort((item1, item2) => {return item1.objective0 - item2.objective1})
+                    .sort((item1, item2) => {return item1.objective0 - item2.objective0})
 
                 setPrescriptors({
                     "objectives": firstItem.objectives,
