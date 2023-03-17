@@ -34,7 +34,7 @@
     "lodash": "4.17.21",
     "next": "12.2.5",
     "nextjs-breadcrumbs": "1.1.9",
-    "next-auth": "4.19.2",
+    "next-auth": "4.20.1",
     "next-transpile-modules": "10.0.0",
     "pretty-bytes": "6.0.0",
     "prop-types": "15.8.1",
