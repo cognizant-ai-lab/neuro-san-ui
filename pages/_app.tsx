@@ -6,6 +6,7 @@ import 'tailwindcss/tailwind.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import '@blueprintjs/icons/lib/css/blueprint-icons.css'
 import '@blueprintjs/core/lib/css/blueprint.css'
+import "nextjs-breadcrumbs/dist/index.css"
 
 // External Libraries
 
@@ -37,13 +38,13 @@ export default function LEAF({
 }): React.ReactElement {
 
   const router = useRouter()
-  let Body
+  let body
   if (router.pathname === "/") {
-    Body = <div id="body-div">
+    body = <div id="body-div">
       <Component id="body-component" {...pageProps} />
     </div>
   } else {
-    Body =
+    body =
     <>
       { /* 2/6/23 DEF - SSRProvider does not have an id property when compiling */ }
       <SSRProvider      // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -51,7 +52,7 @@ export default function LEAF({
         { /* 2/6/23 DEF - SessionProvider does not have an id property when compiling */ }
         <SessionProvider        // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 session={session}>
-          <Navbar id="nav-bar" Logo={LOGO} />
+          <Navbar id="nav-bar" Logo={LOGO} WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
           <Container id="body-container">
             {Component.authRequired && ENABLE_AUTHENTICATION
                 ? <Auth         // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -77,7 +78,7 @@ export default function LEAF({
       <link id="unileaf-link" rel="icon" href="/leaffavicon.png" />
     </Head>
     {
-      Body
+      body
     }
   </div>
   )
