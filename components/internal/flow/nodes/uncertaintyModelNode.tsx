@@ -33,7 +33,7 @@ export interface UncertaintyModelNodeData {
     // will be named nodeID-formElementType
     readonly NodeID: string,
     readonly ParentUncertaintyNodeState: UncertaintyModelParams,
-    readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyNodeState>>,
+    readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyModelParams>>,
 
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void
@@ -108,7 +108,7 @@ const UncertaintyModelNodeComponent: React.FC<NodeProps<UncertaintyModelNodeData
                         value={
                             ParentUncertaintyNodeState[param] != null &&
                             ParentUncertaintyNodeState[param].value != null &&
-                            ParentUncertaintyNodeState[param].value
+                            ParentUncertaintyNodeState[param].value as number
                         }
                         onParamChange={event => onParamChange(event, param)}
                         style={{width: "100%"}}

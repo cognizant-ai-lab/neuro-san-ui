@@ -11,7 +11,7 @@ import {MaximumBlue} from "../../const";
 import ClipLoader from "react-spinners/ClipLoader";
 import Link from "next/link";
 import Flow from "./flow/flow";
-import {ReactFlowProvider} from "react-flow-renderer";
+import {ReactFlowProvider} from "reactflow";
 import {NotificationType, sendNotification} from "../../controller/notification";
 import {FlowQueries} from "./flow/flowqueries";
 import SyntaxHighlighter from 'react-syntax-highlighter';
@@ -20,6 +20,7 @@ import {useLocalStorage} from "../../utils/use_local_storage";
 import decode from "../../utils/conversion";
 import {useSession} from "next-auth/react";
 import { MultiPareto } from "../pareto/multi_pareto";
+import { NodeType } from "./flow/nodes/types";
 
 interface RunProps {
     /* 
@@ -111,13 +112,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     function isRuleBased(flow: JSON) {
-        const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+        const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flow) as NodeType[])[0]
         const representation = prescriptorNode.data.ParentPrescriptorState.LEAF.representation
         return representation === "RuleBased"
     }
 
     function generateArtifactURL(flow: JSON) {
-        const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+        const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flow) as NodeType[])[0]
         let rulesURL = null
         if (prescriptorNode) {
             const nodeCID = nodeToCIDMap[prescriptorNode.id]
