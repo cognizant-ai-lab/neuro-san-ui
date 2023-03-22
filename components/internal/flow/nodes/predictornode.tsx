@@ -87,15 +87,6 @@ export interface PredictorNodeData {
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void,
 
-    // Entire flow (of which this node is a part). We will use it when we need to know if we have an associated
-    // uncertainty model node.
-
-    // Note: our flow is very weakly typed. Nodes are just bags of properties. This will change when we upgrade
-    // react-flow to v10 and v11, where nodes are strongly typed.
-    // For now, disabled eslint and use any[] so at least we have _some_ kind of type hint.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // readonly GetFlow: () => any[]
-
     // Gets a simpler index for testing ids (at least)
     readonly GetElementIndex: (nodeID: string) => number
 }
@@ -107,7 +98,7 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
     This function is responsible to render the Predictor Node
     */
 
-    const data = props.data
+    const data: PredictorNodeData = props.data
 
     // Get the current user
     const { data: session } = useSession()
@@ -241,7 +232,6 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
         // Don't allow changing to Classifier type if there's an uncertainty node attached, since we do not support
         // that
         if (predictorType === "classifier") {
-            // const flow = GetFlow()
             const thisPredictorNode = FlowQueries.getNodeByID(nodes, NodeID) as PredictorNode
             const hasUncertaintyNode = getOutgoers<NodeData, PredictorNodeData>(thisPredictorNode, nodes, edges)
                 .some(node => node.type === "uncertaintymodelnode")
