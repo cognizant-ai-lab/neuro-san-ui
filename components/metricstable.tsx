@@ -5,6 +5,7 @@ import {InfoSignIcon, Position, Table, Tooltip} from "evergreen-ui"
 import {FlowQueries} from "./internal/flow/flowqueries";
 import {FetchMetrics} from "../controller/predictor";
 import {FaArrowDown, FaArrowUp} from "react-icons/fa";
+import { PredictorNode } from "./internal/flow/nodes/predictornode";
 
 interface MetricstableProps {
     id: string,
@@ -20,7 +21,7 @@ export default function MetricsTable(props: MetricstableProps) {
 
 
     function getRioImprovement(unCorrectedValue: number, rioMetrics, metrics, metricName: string, nodeID: string) {
-        const predictor = FlowQueries.getNodeByID(Predictors, nodeID)
+        const predictor = FlowQueries.getNodeByID(Predictors, nodeID) as PredictorNode
         if (!predictor) {
             return null
         }
