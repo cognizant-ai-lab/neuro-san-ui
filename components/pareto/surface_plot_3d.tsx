@@ -82,20 +82,12 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
                         borderWidth: 2,
                         borderColor: "black",
                         opacity: 1,
-                        symbol: 'circle',
-                        symbolSize: 10
                     },
-                    symbol: "circle",  // not working
-                    symbolSize: 60
-                   
                 }
             ],
-            legend: {
-                right: "25%",
-                top: '10%',
-                selectedMode: false,
-                animation: false,
-            },
+            // Would like to have a legend: {} item here, but adding it causes a crash when user clicks on the plot.
+            // "this.__layers is null" in the bowels of zrender (a lib used by Echart). Something to do with handling
+            // of layers within the chart -- needs investigation (TODO).
             tooltip: {
                 trigger: "item",
                 formatter: (params) => {
