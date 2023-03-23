@@ -158,6 +158,12 @@ export default function Flow(props: FlowProps) {
             })
             setFitInterval(interval)
         }
+
+        return () => {
+            if (fitInterval) {
+                clearInterval(fitInterval)
+            }
+        }
     }, [nodes.length, edges.length])
 
     // Initial population of the element type -> uuid list mapping used for simplified testing ids
