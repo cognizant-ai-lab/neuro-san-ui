@@ -1061,7 +1061,7 @@ export default function Flow(props: FlowProps) {
                     snapGrid={[10, 10]}
                     nodeTypes={NodeTypes}
                     edgeTypes={EdgeTypes}
-                    onNodeDragStop={(event, node) => onNodeDragStop(event, node)}
+                    onNodeDragStop={onNodeDragStop}
                     fitView
                 >
                     <Controls id="react-flow-controls"
