@@ -19,7 +19,7 @@ import {EchartParetoPlot} from "./echart_pareto_plot"
  *
  * @param props See {@link ParetoPlotProps} for details.
  */
-export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
+export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
 
     // How much to extend axes above and below min/max values
     const scalePadding = 0.05
@@ -76,7 +76,7 @@ export function SurfacePlot3D(props: ParetoPlotProps): JSX.Element {
             series: [
                 {
                     name: `Generation ${selectedGen}`,
-                    type: 'surface',
+                    type: props.PlotSubtype ?? "surface",
                     data: plotData,
                     itemStyle: {
                         borderWidth: 2,

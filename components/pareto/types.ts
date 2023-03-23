@@ -22,4 +22,7 @@ export interface ParetoPlotProps {
     
     // Count of objectives across all prescriptors
     readonly ObjectivesCount: number
+    
+    // Some plots have a sub-type, e.g. there are several 3D plots.
+    readonly PlotSubtype?: string
 }

@@ -12,7 +12,7 @@ import {Tooltip} from "evergreen-ui"
 import {ParallelCoordsPlot} from "./parallel_coords_plot";
 import {ParetoPlot2D} from "./pareto_plot_2d";
 import {ParetoPlotProps} from "./types"
-import {SurfacePlot3D} from "./surface_plot_3d"
+import {ParetoPlot3D} from "./surface_plot_3d"
 import {RadarPlot} from "./radar_plot"
 
 /**
@@ -26,19 +26,27 @@ export function MultiPareto(props: ParetoPlotProps) {
     // Options for select dialog
     const options = [
         // Parallel coordinates plot can handle any number of dimensions
-        {label: "Parallel Coordinates Plot", value: "parcords", isDisabled: false},
+        {label: "Parallel Coordinates Plot", value: "parallel", isDisabled: false},
 
         // 2D pareto plot can only handle 2 dimensions
         {label: "2D Pareto Plot" + (objectivesCount > 2 ? " (not available due to > 2 objectives)": ""), 
             value: "2d_pareto", isDisabled: objectivesCount > 2},
 
-        // 3D surface plot can handle 3 dimensions
+        // 3D plots can handle exactly 3 dimensions
         {label: "3D Surface Plot (experimental)" + (objectivesCount === 3 ? "" : " (only available for 3 objectives)"), 
-            value: "3d_surface", isDisabled: objectivesCount !== 3},
+            value: "surface", isDisabled: objectivesCount !== 3},
+
+        // 3D plots can handle exactly 3 dimensions
+        {label: "3D Scatter Plot" + (objectivesCount === 3 ? "" : " (only available for 3 objectives)"),
+            value: "scatter3D", isDisabled: objectivesCount !== 3},
+
+        // 3D plots can handle exactly 3 dimensions
+        {label: "3D Line Plot" + (objectivesCount === 3 ? "" : " (only available for 3 objectives)"),
+            value: "line3D", isDisabled: objectivesCount !== 3},
 
         // Radar plot can handle 3+ dimensions
         {label: "Radar Plot" + (objectivesCount < 3 ? " (only available for 3 or more objectives)": ""),  
-            value: "radar_plot", isDisabled: objectivesCount < 3}
+            value: "radar", isDisabled: objectivesCount < 3}
     ]
     
     // Figure out default plot to use based on number of objectives
@@ -84,7 +92,7 @@ export function MultiPareto(props: ParetoPlotProps) {
                         
                         {/* Parallel coordinates */}
                         {
-                            selectedChartType.value === "parcords" &&
+                            selectedChartType.value === "parallel" &&
                             <ParallelCoordsPlot
                                 id="parallel-coords-table"
                                 Pareto={props.Pareto}
@@ -106,21 +114,27 @@ export function MultiPareto(props: ParetoPlotProps) {
                             />
                         }
 
-                        {/* 3D surface */}
+                        {/* 3D types */}
                         {
-                            selectedChartType.value === "3d_surface" &&
-                            <SurfacePlot3D
+                            (
+                                selectedChartType.value === "surface" ||  
+                                selectedChartType.value === "line3D" ||
+                                selectedChartType.value === "scatter3D"
+                            )
+                            &&
+                            <ParetoPlot3D
                                 id="surface-plot-3d-table"
                                 Pareto={props.Pareto}
                                 NodeToCIDMap={props.NodeToCIDMap}
                                 PrescriptorNodeToCIDMapUpdater={props.PrescriptorNodeToCIDMapUpdater}
                                 ObjectivesCount={props.ObjectivesCount}
+                                PlotSubtype={selectedChartType.value}
                             />
                         }
 
                         {/* Radar plot */}
                         {
-                            selectedChartType.value === "radar_plot" &&
+                            selectedChartType.value === "radar" &&
                             <RadarPlot
                                 id="radar-plot-3d-table"
                                 Pareto={props.Pareto}
