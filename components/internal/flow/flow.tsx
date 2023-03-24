@@ -137,34 +137,13 @@ export default function Flow(props: FlowProps) {
         }
         return [FlowQueries.getAllNodes(initialFlowValue), FlowQueries.getAllEdges(initialFlowValue)]
     }, [props.Flow])
-    
-
-    // debug("FS: ", initialFlowValue)
 
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
     // const [flow, setFlow] = useStateWithCallback(initialFlowValue)
     const [nodes, setNodes] = useState<NodeType[]>(FlowQueries.getAllNodes(initialNodes))
     const [edges, setEdges] = useState<EdgeType[]>(initialEdges)
 
-    const [fitInterval, setFitInterval] = useState<NodeJS.Timeout>(null)
-    // Tidy flow when nodes are added or removed
-    useEffect(() => {
-        if (flowInstance) {
-            const interval = setInterval(() => {
-                const fitted = flowInstance.fitView()
-                if (fitted && fitInterval) {
-                    clearInterval(fitInterval)
-                }
-            })
-            setFitInterval(interval)
-        }
-
-        return () => {
-            if (fitInterval) {
-                clearInterval(fitInterval)
-            }
-        }
-    }, [nodes.length, edges.length])
+    useEffect(() => tidyView(), [nodes.length, edges.length])
 
     // Initial population of the element type -> uuid list mapping used for simplified testing ids
     const initialMap = FlowQueries.getElementTypeToUuidList(initialNodes, initialEdges)
@@ -1008,8 +987,6 @@ export default function Flow(props: FlowProps) {
         // const newNodes = nodes.concat(edges);
         setNodes(_nodes)
     }
-
-    // useEffect(() => {flowInstance && flowInstance.fitView()}, [nodes])
 
     // Build the Contents of the Flow
     const buttonStyle = {background: MaximumBlue, borderColor: MaximumBlue};
