@@ -976,7 +976,6 @@ export default function Flow(props: FlowProps) {
         }
 
         // Update flow with new tidied nodes and fit to view
-        // const newNodes = nodes.concat(edges);
         setNodes(_nodes)
     }
 
