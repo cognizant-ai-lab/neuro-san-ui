@@ -139,7 +139,6 @@ export default function Flow(props: FlowProps) {
     }, [props.Flow])
 
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
-    // const [flow, setFlow] = useStateWithCallback(initialFlowValue)
     const [nodes, setNodes] = useState<NodeType[]>(FlowQueries.getAllNodes(initialNodes))
     const [edges, setEdges] = useState<EdgeType[]>(initialEdges)
 
