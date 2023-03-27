@@ -1,39 +1,29 @@
 // React components
-import {Dispatch, ReactElement, SetStateAction, useState} from 'react'
+import {Dispatch, SetStateAction, useState} from 'react'
 
 // 3rd party components
 import {Card, Collapse} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
-import {Handle, Position as HandlePosition} from 'react-flow-renderer'
+import {Handle, Position as HandlePosition, NodeProps, Node} from 'reactflow'
 import {AiFillDelete} from "react-icons/ai";
 import {GrSettingsOption} from "react-icons/gr"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
 import ConfigNumeric from "../confignumeric"
 
 // Custom components
-import {ParamType, UNCERTAINTY_MODEL_PARAMS} from "../uncertaintymodelinfo"
-
-// State of the uncertainty node
-interface UncertaintyNodeState {
-    confidenceInterval: number,
-    useArd: boolean,
-    maxIterationsOptimizer: number,
-    numSvgInducingPoints: number,
-    frameworkVariant: string,
-    kernelType: string
-}
+import {ParamType, UNCERTAINTY_MODEL_PARAMS, UncertaintyModelParams} from "../uncertaintymodelinfo"
 
 // Define an interface for the structure
 // of the node
-interface UncertaintyModelNodeData {
+export interface UncertaintyModelNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus
     // will be named nodeID-formElementType
     readonly NodeID: string,
-    readonly ParentUncertaintyNodeState: UncertaintyNodeState,
-    readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyNodeState>>,
+    readonly ParentUncertaintyNodeState: UncertaintyModelParams,
+    readonly SetParentUncertaintyNodeState: Dispatch<SetStateAction<UncertaintyModelParams>>,
 
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void
@@ -42,13 +32,15 @@ interface UncertaintyModelNodeData {
     readonly GetElementIndex: (nodeID: string) => number
 }
 
-export default function UncertaintyModelNode(props): ReactElement {
+export type UncertaintyModelNode = Node<UncertaintyModelNodeData>;
+
+const UncertaintyModelNodeComponent: React.FC<NodeProps<UncertaintyModelNodeData>> = (props) => {
     /*
     This function renders the uncertainty model node
     */
 
     // Unpack props
-    const data: UncertaintyModelNodeData = props.data
+    const data = props.data
 
     // Unpack the data
     const {
@@ -106,7 +98,7 @@ export default function UncertaintyModelNode(props): ReactElement {
                         value={
                             ParentUncertaintyNodeState[param] != null &&
                             ParentUncertaintyNodeState[param].value != null &&
-                            ParentUncertaintyNodeState[param].value
+                            ParentUncertaintyNodeState[param].value as number
                         }
                         onParamChange={event => onParamChange(event, param)}
                         style={{width: "100%"}}
@@ -283,3 +275,5 @@ export default function UncertaintyModelNode(props): ReactElement {
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
+
+export default UncertaintyModelNodeComponent;

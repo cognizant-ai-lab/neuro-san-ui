@@ -1,5 +1,5 @@
 // React components
-import {Dispatch, ReactElement, SetStateAction, useEffect, useState} from 'react'
+import {Dispatch, SetStateAction, useEffect, useState} from 'react'
 
 // 3rd party components
 import {Row, Col, Card, Container} from "react-bootstrap"
@@ -24,8 +24,12 @@ import ConfigNumeric from "../confignumeric"
 import {
     getOutgoers,
     Handle,
-    Position as HandlePosition
-} from 'react-flow-renderer'
+    Position as HandlePosition,
+    Node,
+    NodeProps,
+    useEdges,
+    useNodes
+} from 'reactflow'
 
 import {AiFillDelete} from "react-icons/ai";
 import {StringBool} from "../../../../controller/base_types"
@@ -40,6 +44,8 @@ import {
 import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {FlowQueries} from "../flowqueries";
 import {PredictorParams} from "../predictorinfo"
+import { NodeData, NodeType } from './types'
+import { EdgeType } from '../edges/types'
 
 import {DataTag} from "../../../../controller/datatag/types"
 
@@ -65,7 +71,7 @@ export interface PredictorState {
 }
 
 // Define an interface for the structure of the Predictor node
-interface PredictorNodeData {
+export interface PredictorNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus
@@ -81,20 +87,13 @@ interface PredictorNodeData {
     // Mutator method to delete this node from the parent flow
     readonly DeleteNode: (nodeID: string) => void,
 
-    // Entire flow (of which this node is a part). We will use it when we need to know if we have an associated
-    // uncertainty model node.
-
-    // Note: our flow is very weakly typed. Nodes are just bags of properties. This will change when we upgrade
-    // react-flow to v10 and v11, where nodes are strongly typed.
-    // For now, disabled eslint and use any[] so at least we have _some_ kind of type hint.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readonly GetFlow: () => any[]
-
     // Gets a simpler index for testing ids (at least)
     readonly GetElementIndex: (nodeID: string) => number
 }
 
-export default function PredictorNode(props): ReactElement {
+export type PredictorNode = Node<PredictorNodeData>
+
+const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) => {
     /*
     This function is responsible to render the Predictor Node
     */
@@ -111,9 +110,11 @@ export default function PredictorNode(props): ReactElement {
         ParentPredictorState,
         SetParentPredictorState,
         DeleteNode,
-        GetFlow,
         GetElementIndex
     } = data
+
+    const nodes = useNodes<NodeData>() as NodeType[];
+    const edges = useEdges() as EdgeType[];
 
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `predictor-${flowIndex}`
@@ -231,9 +232,8 @@ export default function PredictorNode(props): ReactElement {
         // Don't allow changing to Classifier type if there's an uncertainty node attached, since we do not support
         // that
         if (predictorType === "classifier") {
-            const flow = GetFlow()
-            const thisPredictorNode = FlowQueries.getNodeByID(flow, NodeID)
-            const hasUncertaintyNode = getOutgoers(thisPredictorNode, flow)
+            const thisPredictorNode = FlowQueries.getNodeByID(nodes, NodeID) as PredictorNode
+            const hasUncertaintyNode = getOutgoers<NodeData, PredictorNodeData>(thisPredictorNode, nodes, edges)
                 .some(node => node.type === "uncertaintymodelnode")
 
             if (hasUncertaintyNode) {
@@ -612,10 +612,6 @@ export default function PredictorNode(props): ReactElement {
         </Container>
     </Card.Body>
 
-    // Types of predictor that could cause issues with uncertainty nodes
-    const thisPredictorNode = FlowQueries.getNodeByID(GetFlow(), NodeID)
-    FlowQueries.hasMultipleOutcomes(thisPredictorNode)
-
     // Create the Component structure
     return <BlueprintCard id={ `${flowPrefix}` }
                           interactive={ true }
@@ -778,3 +774,5 @@ export default function PredictorNode(props): ReactElement {
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
+
+export default PredictorNodeComponent;

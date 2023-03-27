@@ -1,8 +1,14 @@
-import {isEdge, isNode} from "react-flow-renderer";
+import { EdgeType } from './edges/types';
+import { DataSourceNode } from './nodes/datasourcenode';
+import { PredictorNode } from './nodes/predictornode';
+import {isEdge, isNode} from "reactflow";
 import {CAOType} from "../../../controller/datatag/types";
 
 // Debug
 import Debug from "debug"
+import { NodeType } from "./nodes/types";
+import { PrescriptorNode } from './nodes/prescriptornode';
+import { UncertaintyModelNode } from './nodes/uncertaintyModelNode';
 
 const debug = Debug("flowqueries")
 
@@ -11,42 +17,42 @@ const debug = Debug("flowqueries")
  */
 export class FlowQueries {
 
-    static getPredictorNodes(graph) {
+    static getPredictorNodes(nodes: NodeType[]): PredictorNode[] {
         /*
         This function filters the predictor nodes
         from the graph and returns them
         */
-        return graph.filter(element => element.type === 'predictornode')
+        return nodes.filter(node => node.type === 'predictornode') as PredictorNode[]
     }
 
-    static getPredictorNode(graph, nodeID: string) {
+    static getPredictorNode(nodes: NodeType[], nodeID: string): PredictorNode {
         /*
         This function filters the predictor nodes
         from the graph and returns the one with the supplied ID, or undefined if not found
         */
-        return graph.find(element => (element.type === 'predictornode' && element.id === nodeID))
+        return nodes.find(node => (node.type === 'predictornode' && node.id === nodeID)) as PredictorNode
     }
 
-    static getPrescriptorNodes(graph) {
+    static getPrescriptorNodes(nodes: NodeType[]): PrescriptorNode[] {
         /*
         This function filters the prescriptor nodes
         from the graph and returns them
         */
-        return graph.filter(element => element.type === 'prescriptornode')
+        return nodes.filter(node => node.type === 'prescriptornode') as PrescriptorNode[]
     }
 
-    static getDataNodes(graph) {
+    static getDataNodes(nodes: NodeType[]): DataSourceNode[] {
         /*
         This function returns all nodes of type "data" from the graph
         */
-        return graph.filter(element => element.type === 'datanode')
+        return nodes.filter(node => node.type === 'datanode') as DataSourceNode[]
     }
 
-    static getUncertaintyModelNodes(graph) {
+    static getUncertaintyModelNodes(nodes: NodeType[]): UncertaintyModelNode[] {
         /*
         This function returns all nodes of type "uncertaintymodelnode" from the graph
         */
-        return graph.filter(element => element.type === 'uncertaintymodelnode')
+        return nodes.filter(node => node.type === 'uncertaintymodelnode') as UncertaintyModelNode[]
     }
 
     static extractCheckedFields(nodes, caoType: CAOType) {
@@ -81,11 +87,11 @@ export class FlowQueries {
             .map(e => e[0])
     }
 
-    static getNodeByID(graph, nodeID: string) {
+    static getNodeByID(nodes: NodeType[], nodeID: string): NodeType | undefined {
         /*
            Finds a node with the given NodeID in the supplied graph, and returns it, or empty array if not found
         */
-        return graph.find(element => element.id === nodeID)
+        return nodes.find(node => node.id === nodeID)
     }
 
     static getAllNodes(graph) {
@@ -96,7 +102,7 @@ export class FlowQueries {
         return graph.filter(e => isEdge(e))
     }
 
-    static getElementTypeToUuidList(graph): Map<string, string[]> {
+    static getElementTypeToUuidList(nodes: NodeType[], edges: EdgeType[]): Map<string, string[]> {
         /*
         Return a dictionary whose keys are graph element types
         and whose values are a sorted list of id (assumed uuid) strings.
@@ -107,6 +113,8 @@ export class FlowQueries {
         Note that more persistence-oriented work would need to be done for these ids
         to be consistent across different pages with operations performed on the graph.
         */
+
+        const graph = [...nodes, ...edges]
 
         // Start with an empty dictionary
         const elementTypeToUuidList: Map<string, string[]> = new Map<string, string[]>();
@@ -147,7 +155,7 @@ export class FlowQueries {
         return elementTypeToUuidList;
     }
 
-    static getIndexForElement(elementTypeToUuidList: Map<string, string[]>, element): number {
+    static getIndexForElement(elementTypeToUuidList: Map<string, string[]>, element: NodeType): number {
         /*
         Given an elementTypeToUuidList dictionary (see method above)
         return the index of a given element.  This index is used for ids in testing.
@@ -191,4 +199,5 @@ export class FlowQueries {
     static hasMultipleOutcomes(predictorNode): boolean {
         return FlowQueries.extractCheckedFieldsForNode(predictorNode, CAOType.OUTCOME).length > 1
     }
+
 }

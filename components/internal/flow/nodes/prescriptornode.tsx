@@ -1,7 +1,7 @@
 // Import React components
 import {
     useState,
-    useEffect, ReactElement
+    useEffect
 } from 'react'
 
 // Import 3rd party components
@@ -29,8 +29,10 @@ import {Tooltip as AntdTooltip} from "antd"
 // Import React Flow
 import {
     Handle,
-    Position as HandlePosition
-} from 'react-flow-renderer'
+    Position as HandlePosition,
+    NodeProps,
+    Node
+} from 'reactflow'
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
@@ -41,7 +43,7 @@ import {NotificationType, sendNotification} from "../../../../controller/notific
 
 // Define an interface for the structure
 // of the nodes
-interface PrescriptorNodeData {
+export interface PrescriptorNodeData {
     // The ID of the nodes. This will
     // be important to issues name to
     // form elements. The form elements thus
@@ -71,12 +73,14 @@ const defaultRepresentationConfig = {
     number_of_building_block_rules: 3
 }
 
-export default function PrescriptorNode(props): ReactElement {
+export type PrescriptorNode = Node<PrescriptorNodeData>;
+
+const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (props) => {
     /*
     This function is responsible for rendering the prescriptor node.
     */
 
-    const data: PrescriptorNodeData = props.data
+    const data = props.data
 
     // Get the current user
     const { data: session } = useSession()
@@ -895,3 +899,5 @@ export default function PrescriptorNode(props): ReactElement {
         <Handle id={ `${flowPrefix}-target-handle` } type="target" position={HandlePosition.Left} />
     </BlueprintCard>
 }
+
+export default PrescriptorNodeComponent;

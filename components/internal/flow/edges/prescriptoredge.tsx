@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 
 // Import Flow Renderer
 import {
-  getBezierPath,
-  getEdgeCenter,
-  getMarkerEnd,
-} from 'react-flow-renderer';
+    EdgeProps,
+    Edge,
+  getBezierPath
+} from 'reactflow';
 
 // Import third party components
 import { 
@@ -27,26 +27,25 @@ import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 
 const foreignObjectSize = 20;
 
-export default function PrescriptorEdge({ id, sourceX, sourceY,
+type PrescriptorEdgeData = {
+    OutputOverrideCode: string,
+    UpdateOutputOverrideCode: (code: string) => void
+}
+
+export type PrescriptorEdge = Edge<PrescriptorEdgeData>;
+
+const PrescriptorEdgeComponent: React.FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sourceX, sourceY,
                                         targetX, targetY,
                                         sourcePosition, targetPosition,
-                                        style = {}, data, arrowHeadType,
-                                        markerEndId
-                                        }) {
-    const edgePath = getBezierPath({
+                                        style = {}, data, markerEnd
+                                        }) => {
+    const [edgePath, edgeCenterX, edgeCenterY] = getBezierPath({
         sourceX,
         sourceY,
         sourcePosition,
         targetX,
         targetY,
         targetPosition,
-    })
-    const markerEnd = getMarkerEnd(arrowHeadType, markerEndId)
-    const [edgeCenterX, edgeCenterY] = getEdgeCenter({
-        sourceX,
-        sourceY,
-        targetX,
-        targetY,
     })
 
     // We want to have a tabbed predictor configuration
@@ -120,3 +119,5 @@ export default function PrescriptorEdge({ id, sourceX, sourceY,
         </>
     )
 }
+
+export default PrescriptorEdgeComponent;

@@ -7,6 +7,8 @@ import 'bootstrap/dist/css/bootstrap.css'
 import '@blueprintjs/icons/lib/css/blueprint-icons.css'
 import '@blueprintjs/core/lib/css/blueprint.css'
 import "nextjs-breadcrumbs/dist/index.css"
+import 'reactflow/dist/style.css';
+
 
 // External Libraries
 
