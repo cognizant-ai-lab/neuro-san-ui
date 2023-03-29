@@ -27,6 +27,7 @@ import Tabs from 'react-bootstrap/Tabs'
 import {Radio} from "antd"
 import {Space} from "antd"
 import {RadioChangeEvent} from "antd"
+import ReactMarkdown from "react-markdown";
 
 interface RunProps {
     /* 
@@ -64,7 +65,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const [, setPrescriptors] = useLocalStorage("prescriptors", null);
 
-    const [selectedRulesFormat, setSelectedRulesFormat] = useState("interpreted")
+    const [selectedRulesFormat, setSelectedRulesFormat] = useState("raw")
+    const [interpretedRules, setInterpretedRules] = useState(null)
+    const [gptLoading, setGptLoading] = useState(false)
+    
     
     function cacheRun(run: Run) {
         /*
@@ -291,6 +295,51 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }, [paretoPlotData])
 
+    useEffect(() => 
+    {
+        async function fetchData() {
+            const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+            const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
+            const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
+            const actionFields  = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
+            
+            const outcomeFields = Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map(item => ({[item.metric_name]: item.maximize ? "maximize" : "minimize"})))
+            
+            try {
+                setGptLoading(true)
+                const response = await fetch('/api/gpt/rules', {
+                    method: "POST",
+                    headers: {
+                    'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    projectTitle: "my main project",
+                    projectDescription: "my project description",
+                    rawRules: rules,
+                    contextFields: contextFields,
+                    actionFields: actionFields,
+                    outcomeFields: outcomeFields
+                })})
+                if (!response.ok) {
+                    console.debug("error json", await response.json())
+                    throw new Error(response.statusText)
+                }
+                const data = await response.json()
+                setInterpretedRules(data.interpretedRules)
+            } catch (error) {
+                console.debug("error", error)
+            } finally {
+                setGptLoading(false)
+            }
+        }
+
+        if (rules && flow) {
+            console.log("flow", flow)
+            void fetchData()
+        }
+    }, [rules])
+    
     const plotDiv = []
     if (predictorPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
@@ -394,7 +443,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
         plotDiv.push(
-            <>
+            <div style={{marginBottom: "600px"}}>
             <NewBar id="rules-bar" InstanceId="rules"
                     Title="Rules" DisplayNewLink={ false } />
             <Tabs
@@ -403,37 +452,40 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                 className="my-10"
                 justify
             >
-                <Tab eventKey="decoded" title="Details" style={{height: "400px"}}>
+                <Tab eventKey="decoded" title="Details" >
                     <Container>
                         <Row style={{marginTop: 10}}>
-                            <Col md={10}>
+                            <Col md={10} >
                                 {selectedRulesFormat === "raw" 
-                                    ?   <div id="rules-div" className="my-2 py-2" 
-                                             style={{
-                                             whiteSpace: "pre",
-                                             backgroundColor: "whitesmoke"
-                                         }}
-                                        >
+                                    ? <div id="rules-div" className="my-2 py-2"
+                                           style={{
+                                               whiteSpace: "pre",
+                                               backgroundColor: "whitesmoke",
+                                               overflowY: "scroll",
+                                               display: "block",
+                                               borderColor: "red"
+                                           }}
+                                    >
                                             <SyntaxHighlighter id="syntax-highlighter"
                                                                language="scala" style={docco} showLineNumbers={true}>
                                                 {rules}
                                             </SyntaxHighlighter>
                                     </div>
                                     :
-                                    <div>
+                                    gptLoading 
+                                        ?   <>
+                                            <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                            color={MaximumBlue} loading={true} size={50} />
+                                                Accessing GPT...
+                                            </>
+                                    :<div>
+                                        <ReactMarkdown>
+                                            {interpretedRules}
+                                        </ReactMarkdown>
                                         <br />
                                         <br />
-                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
                                         <br />
-                                        <br />
-                                        <br />
-                                        <br />
-                                        Powered by OpenAI™ GPT-4™ technology
-                                        <br />
-                                        <br />
-                                        <br />
-                                        <br />
-                                        <br />
+                                        <h5>Powered by OpenAI™ GPT-4™ technology</h5>
                                     </div>
                                 }
                             </Col>
@@ -452,19 +504,18 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                         </Row>
                     </Container>
                 </Tab>
-                <Tab eventKey="insights" title="Insights" style={{height: 400}}>
+                <Tab eventKey="insights" title="Insights" >
                     <div id="rules-div" className="my-2 py-2"
                          style={{
                              whiteSpace: "pre",
                              backgroundColor: "whitesmoke",
-                             height: "400px"
                          }}
                     >
                        Some insights about the rules from GPT-4 here
                     </div>
                 </Tab>
             </Tabs>
-            </> 
+            </div> 
         )
     }
     
