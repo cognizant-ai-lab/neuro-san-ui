@@ -8,7 +8,7 @@ import '@blueprintjs/icons/lib/css/blueprint-icons.css'
 import '@blueprintjs/core/lib/css/blueprint.css'
 import "nextjs-breadcrumbs/dist/index.css"
 import 'reactflow/dist/style.css';
-
+import 'react-chat-widget/lib/styles.css';
 
 // External Libraries
 

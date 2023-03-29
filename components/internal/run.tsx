@@ -28,6 +28,9 @@ import {Radio} from "antd"
 import {Space} from "antd"
 import {RadioChangeEvent} from "antd"
 import ReactMarkdown from "react-markdown";
+import {addResponseMessage, Widget } from 'react-chat-widget';
+import {dropMessages} from "react-chat-widget"
+import {toggleMsgLoader} from "react-chat-widget"
 
 interface RunProps {
     /* 
@@ -357,7 +360,11 @@ Readmitted\tNominal\tDays to inpatient readmission. Values: “<30” if the pat
         }
     }
 
-
+    useEffect(() => {
+        dropMessages()
+        addResponseMessage("Hi! I'm your UniLEAF assistant. Please type your question below.")
+    }, [])
+    
     // Fetch the experiment and the runs
     useEffect(() => {
         // Attempt to get the run from the cache
@@ -507,7 +514,7 @@ Readmitted\tNominal\tDays to inpatient readmission. Values: “<30” if the pat
             console.log("flow", flow)
             void fetchData()
         }
-    }, [rules])
+    }, [])
     
     const plotDiv = []
     if (predictorPlotData) {
@@ -608,6 +615,39 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         )
     }
 
+    const handleNewUserMessage = async (newMessage) => {
+        console.log("new message", newMessage)
+        
+        toggleMsgLoader()
+
+        try {
+            const response = await fetch('/api/gpt/userguide', {
+                method: "POST",
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: newMessage
+                })
+            })
+            if (!response.ok) {
+                console.debug("error json", await response.json())
+                throw new Error(response.statusText)
+            }
+            const data = await response.json()
+            const min = 1000;
+            const max = 3000;
+            const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+            setTimeout(function () {
+                toggleMsgLoader()
+                addResponseMessage(data.answer)
+            }, delay);
+        } catch (error) {
+            console.debug("error", error)
+        }
+    }
+    
     if (rules) {
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
@@ -714,5 +754,15 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         {flowDiv}       
 
         {plotDiv}
+
+        <Widget
+            handleNewUserMessage={handleNewUserMessage}
+            title="UniLEAF help"
+            subtitle="Get help on anything related to UniLEAF!"
+            senderPlaceHolder='What is UniLEAF?'
+            profileAvatar="/leaffavicon.png"
+            profileClientAvatar={session.user.image ?? null}
+            showCloseButton={true}
+        />
     </div>
 }

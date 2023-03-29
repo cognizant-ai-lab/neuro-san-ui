@@ -28,3 +28,15 @@
 .input-field {
     background-color: #e3e3e5;
 }
+
+.rcw-conversation-container .rcw-header {
+    background-color: #0033a0 !important;
+}
+
+.rcw-launcher {
+    background-color: #0033a0 !important;
+}
+
+.rcw-title {
+    color: white !important;
+}
