@@ -517,7 +517,7 @@ Readmitted\tNominal\tDays to inpatient readmission. Values: “<30” if the pat
             console.log("flow", flow)
             void fetchData()
         }
-    }, [])
+    }, [rules])
     
     const plotDiv = []
     if (predictorPlotData) {
