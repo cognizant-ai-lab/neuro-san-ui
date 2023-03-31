@@ -39,7 +39,6 @@ export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
                 value: Object.values(row),
                 itemStyle: {
                     color: plotColor,
-                    symbol: "circle", // not working. TODO: figure out how to show data points
                 },
             }) 
         )
@@ -51,31 +50,25 @@ export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
                 name: objectives[0],
                 min: (minMaxPerObjective.objective0.min * (1 - scalePadding)).toFixed(2),
                 max: (minMaxPerObjective.objective0.max * (1 + scalePadding)).toFixed(2),
-                axisPointer: {
-                    show: false
-                }
             },
             yAxis3D: {
                 type: 'value',
                 name: objectives[1],
                 min: (minMaxPerObjective.objective1.min * (1 - scalePadding)).toFixed(2),
                 max: (minMaxPerObjective.objective1.max * (1 + scalePadding)).toFixed(2),
-                axisPointer: {
-                    show: false
-                }
             },
             zAxis3D: {
                 type: 'value',
                 name: objectives[2],
                 min: (minMaxPerObjective.objective2.min * (1 - scalePadding)).toFixed(2),
                 max: (minMaxPerObjective.objective2.max * (1 + scalePadding)).toFixed(2),
-                axisPointer: {
-                    show: false
-                }
             },
             grid3D: {
                 viewControl: {
                     projection: 'orthographic'
+                },
+                axisPointer: {
+                    show: false
                 }
             },
             series: [
