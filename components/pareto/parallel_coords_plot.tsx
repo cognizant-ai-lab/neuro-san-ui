@@ -33,7 +33,6 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
                         // optionToContent allows us to create a nicely formatted data table when the user clicks 
                         // that tool.
                         optionToContent: function (opt) {
-                            console.debug("optionToContent for parallel", opt)
                             return getDataTable(opt.series[0].data, objectives)
                         }
                     },
