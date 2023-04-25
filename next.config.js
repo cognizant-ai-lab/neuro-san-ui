@@ -10,6 +10,32 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
+// Extra headers to be returned
+// Gleaned from here: https://nextjs.org/docs/advanced-features/security-headers
+const securityHeaders = [
+    {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload'
+    },
+    {
+        key: 'X-Content-Type-Options',
+        value: 'nosniff'
+    },
+    {
+        key: 'X-Frame-Options',
+        value: 'SAMEORIGIN'
+    },
+    {
+        key: 'X-XSS-Protection',
+        value: '1; mode=block'
+    },
+    {
+        key: 'Content-Security-Policy',
+        // value: ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim()
+        value: ""
+    }
+]
+
 const nextConfig = {
     typescript: {
         // Cause build to fail on Typescript transpilation errors
@@ -38,6 +64,16 @@ const nextConfig = {
     },
 
     poweredByHeader: false,
+
+    async headers() {
+        return [
+            {
+                // Apply these headers to all routes in the application.
+                source: '/:path*',
+                headers: securityHeaders,
+            },
+        ]
+    },
 
     sassOptions: {
         includePaths: [path.join(__dirname, 'styles')],
