@@ -32,6 +32,7 @@ import Navbar from "../components/navbar"
 // Constants
 import {ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../components/auth";
+import ErrorBoundary from "../components/errorboundary";
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -40,7 +41,6 @@ export default function LEAF({
   Component,
   pageProps: { session, ...pageProps }
 }): React.ReactElement {
-
   const router = useRouter()
   let body
   if (router.pathname === "/") {
@@ -56,17 +56,19 @@ export default function LEAF({
         { /* 2/6/23 DEF - SessionProvider does not have an id property when compiling */ }
         <SessionProvider        // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 session={session}>
-          <Navbar id="nav-bar" Logo={LOGO} WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
-          <Container id="body-container">
-            {Component.authRequired && ENABLE_AUTHENTICATION
-                ? <Auth         // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // 2/6/23 DEF - SessionProvider does not have an id property when compiling
-                        >
-                    <Component id="body-auth-component" {...pageProps} />
-                  </Auth>
-                : <Component id="body-non-auth-component" {...pageProps} />
-            }
-          </Container>
+          <ErrorBoundary id="error_boundary">
+            <Navbar id="nav-bar" Logo={LOGO} WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
+            <Container id="body-container">
+              {Component.authRequired && ENABLE_AUTHENTICATION
+                  ? <Auth         // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                  // 2/6/23 DEF - SessionProvider does not have an id property when compiling
+                          >
+                      <Component id="body-auth-component" {...pageProps} />
+                    </Auth>
+                  : <Component id="body-non-auth-component" {...pageProps} />
+              }
+            </Container>
+          </ErrorBoundary>
         </SessionProvider>
       </SSRProvider>
     </>
