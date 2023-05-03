@@ -28,3 +28,24 @@
 .input-field {
     background-color: #e3e3e5;
 }
+
+/*
+Work-around for antd styling weirdness around Modal confirm buttons. Suddenly with new antd version the "OK" button
+in Modals was showing up as white on white, making it impossible to see.
+
+Possibly related to this: https://github.com/ant-design/ant-design/issues/40576
+
+Rather than using the complex wrapping-with-App and configurationProvider solutions suggested there, we override
+the style here to get what we want and expect.
+
+See UN-1180
+ */
+.ant-btn-primary {
+    color: white !important;
+    background-color: #1677ff !important;
+}
+
+.ant-btn-primary:hover {
+    color: white !important;
+    background-color: #4096ff !important;
+}
