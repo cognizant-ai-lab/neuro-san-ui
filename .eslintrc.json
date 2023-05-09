@@ -4,6 +4,7 @@
         "enforce-ids-in-jsx"
     ],
     "extends": [
+        "eslint:recommended",
         "next/core-web-vitals",
         "plugin:@typescript-eslint/recommended"
     ],

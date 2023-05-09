@@ -428,7 +428,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                             onClick ={() => {
                                 setCurrentCategoryValues([...currentCategoryValues, newItem])
                             }}
-                                disabled={!Boolean(newItem) || currentCategoryValues.includes(newItem)}
+                                disabled={!newItem || currentCategoryValues.includes(newItem)}
                         >
                             Add
                         </Button>

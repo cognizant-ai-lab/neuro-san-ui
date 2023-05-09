@@ -39,13 +39,15 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     const utf8decoder = new TextDecoder('utf8')
     let buffer = ""
 
-    while (true) {
-        const {value, done} = await reader.read()
-        if (done) break;
+    let done = false
+    while (!done) {
+        const { value, done: isDone } = await reader.read();
+        done = isDone
         try {
-
-            const chunk = utf8decoder.decode(value)
-            buffer += chunk
+            if (!done) {
+                const chunk = utf8decoder.decode(value)
+                buffer += chunk
+            }
         } catch (e) {
             // invalid json input, log the error
             console.error(`Error Serializing ${resourceName}: `, e)

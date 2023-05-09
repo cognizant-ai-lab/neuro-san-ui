@@ -1,6 +1,7 @@
-// preauth_social_whitelist.js
-// Adapted by dfink ~ 6/28/2022.
-// 
+// This file depends on too many declarations from the Auth0 environment it runs in for meaningful linting.
+// If someone wants to try to re-enable linting for this file and fix all the false positives, have at it.
+/* eslint-disable */
+
 // Auth0 Rule that enables whitelisting and/or pre-authorization of Social users
 // (i.e. GitHub, Facebook, etc.) for any Auth0 Application:
 // 
@@ -58,8 +59,6 @@
 //   8. Continue to take users off the filtered list and repeat 6-8 with those users giving each a chance.
 //   9. If the filtered list of users is exhausted with nothing going through, then bounce the
 //      incoming user.
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function userWhitelistForRequiredGroupsWithPreAuthorizedEmailChecks(user, context, callback) {
   
   // Spits out debugging to the console when true.
@@ -114,7 +113,6 @@ function userWhitelistForRequiredGroupsWithPreAuthorizedEmailChecks(user, contex
   // lodash is a Javascript library to allow functional constructs like filtering.
   // This is used in multiple functions below.
   // Load it now, once, cuz now we know we will need it.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   var lodash = require('lodash');
   
   function isUserInRequiredGroups(user, context) {
@@ -159,7 +157,6 @@ function userWhitelistForRequiredGroupsWithPreAuthorizedEmailChecks(user, contex
     
     // Call the Auth0 Management Client to get information about
     // users with similar emails.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     var ManagementClient = require('auth0@2.9.1').ManagementClient;
     var management = new ManagementClient({
       token: auth0.accessToken,
@@ -286,7 +283,6 @@ function userWhitelistForRequiredGroupsWithPreAuthorizedEmailChecks(user, contex
   // Get the policy for the user.
   async function getPolicy(user_to_update, context) {
     
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const util = require("util");
     const post = util.promisify(request.post);
     
