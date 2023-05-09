@@ -1,5 +1,3 @@
-import React from "react"
-
 /**
  * Simple component to inject some amount of blank lines into a page or component. Users like to have blank space
  * at the bottom of pages so the relevant info isn't displayed all the way at the bottom of the browser viewport.

@@ -1,5 +1,5 @@
 // Import React
-import React, {useState} from "react";
+import {useState} from "react";
 
 // Import Next Components
 import Link, { LinkProps } from "next/link";

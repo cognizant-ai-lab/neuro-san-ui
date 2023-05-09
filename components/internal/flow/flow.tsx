@@ -561,14 +561,12 @@ export default function Flow(props: FlowProps) {
         // If it already exists, return
         if (prescriptorExists) {
             sendNotification(NotificationType.warning, "Only one prescriptor per experiment is currently supported")
-            return nodes
         }
 
         // Make sure predictor nodes exist, if not alert
         const predictorNodes = FlowQueries.getPredictorNodes(nodes)
         if (predictorNodes.length == 0) {
             sendNotification(NotificationType.warning, "Add at least one predictor before adding a prescriptor")
-            return nodes
         }
 
         // If above conditions are satisfied edit the graph

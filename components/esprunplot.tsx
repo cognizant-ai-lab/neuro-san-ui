@@ -1,7 +1,6 @@
 import NewBar from "./newbar";
 import {Table} from "evergreen-ui";
 import {ResponsiveLine} from "@nivo/line";
-import React from "react";
 import {FiAlertCircle} from "react-icons/fi";
 
 interface EspRunPlotProps {

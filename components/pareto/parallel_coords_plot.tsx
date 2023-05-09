@@ -1,5 +1,3 @@
-import React from "react"
-
 import {EChartsOption} from "echarts-for-react/src/types"
 
 import {ParetoPlotProps} from "./types"

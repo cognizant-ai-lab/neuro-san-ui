@@ -1,4 +1,3 @@
-import React from "react"
 import {useEffect} from "react"
 import {useState} from "react"
 
@@ -93,6 +92,8 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                 clearInterval(playingInterval)
             }
         }
+
+        return undefined
     }, [])
 
     // Allow user to show all generations at once, if permitted by plot type

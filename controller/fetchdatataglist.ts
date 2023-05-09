@@ -31,7 +31,9 @@ export default async function loadTaggedDataList(requestUser, projectId): Promis
 
 export async function loadDataTag(requestUser: string, dataSourceId: number): Promise<DataTag> {
     const dataTags: DataTags = await BrowserFetchDataTags(requestUser, dataSourceId)
-    if (dataTags.length > 0) {
+    if (dataTags && dataTags.length > 0) {
         return dataTags[0]
     }
+
+    return null
 }
