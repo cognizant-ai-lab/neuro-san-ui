@@ -36,7 +36,10 @@ interface EchartPlotProps {
     style: CSSProperties,
     
     // Options to pass to ECharts
-    optionsGenerator: (genData, objectives, minMaxPerObjective, selectedGen) => EChartsOption
+    optionsGenerator: (genData, objectives, minMaxPerObjective, selectedGen) => EChartsOption,
+
+    // Whether chart can display all generations' candidates at the same time
+    showAllGenerations?: boolean
 }
 
 const ANT_DRAWER_CLASS_NAME = ".ant-drawer-body"
@@ -81,22 +84,24 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
 
     }, [data])
 
-    // Maintain the state of the animation if its playing or not
+    // Maintain the state of the animation if it's playing or not
     const [playing, setPlaying] = useState(false)
 
     // Generation for which we are displaying data. Default to last generation.
     const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
-    
+
+    const allGensSelected = selectedGen === numberOfGenerations + 1
+
     // Calculate min and max values for each objective across all generations (if playing animation) or for current
     // generation (if user is viewing a single generation). 
     // This allows us to scale the chart appropriately for the animation or for viewing a single generation
     const minMaxPerObjective = useMemo(function () {
         const genData = cachedDataByGen[`Gen ${selectedGen}`]
         return Object.fromEntries(objectives.map((objective, idx) => {
-            const minObjectiveValue = playing 
+            const minObjectiveValue = playing || allGensSelected
                 ? Math.min(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`]))) 
                 : Math.min(...genData.map(row => row[`objective${idx}`]))
-            const maxObjectiveValue = playing 
+            const maxObjectiveValue = playing  || allGensSelected
                 ? Math.max(...data.flatMap(gen => gen.data.map(cid => cid[`objective${idx}`])))
                 : Math.max(...genData.map(row => row[`objective${idx}`]))
             
@@ -114,32 +119,32 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     const chartRef = useRef(null);
 
     useEffect(() => {
-        const chart = chartRef.current.getEchartsInstance();
-        const container = chart.getDom();
+        const chart = chartRef.current?.getEchartsInstance();
+        const container = chart?.getDom();
 
         // This allows us to scroll the outer container when the mouse is over the chart. Also works for trackpad
         // scrolling.
         // It's a bit hacky since it depends on the antd classname -- but it's the only way I could find to do this.
         const handleWheel = (e) => {
-            const parents =  container.closest(ANT_DRAWER_CLASS_NAME)
+            const parents =  container?.closest(ANT_DRAWER_CLASS_NAME)
             
             // Bubble up the mousewheel event.
             parents && (parents.scrollTop += e.deltaY)
         };
 
-        container.addEventListener("wheel", handleWheel);
+        container?.addEventListener("wheel", handleWheel);
 
         return () => {
-            container.removeEventListener("wheel", handleWheel);
+            container?.removeEventListener("wheel", handleWheel);
         };
     }, []);
 
 
-    // Get data for selected gen from cache
-    const genData = cachedDataByGen[`Gen ${selectedGen}`]
+    // Get data for selected gen from cache, or fall all generations if "All Gens" option selected
+    const plotData = allGensSelected ? data : cachedDataByGen[`Gen ${selectedGen}`]
     
     // Retrieve "options" (all data for EChart and associated options) for selected generation
-    const options = props.optionsGenerator(genData, objectives, minMaxPerObjective, selectedGen)
+    const options = props.optionsGenerator(plotData, objectives, minMaxPerObjective, selectedGen)
 
     // On Click handler - only rendered at the last generation as those are the
     // candidates we persist.
@@ -200,6 +205,8 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
 
     // Wrap plot in animation component and return it
     const id = props.id
+    const showAllGenerations = props.showAllGenerations ?? false
+
     return <>
         <GenerationsAnimation
             id={id}
@@ -207,7 +214,7 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
             Plot={plot}
             SetSelectedGen={(gen: number) => setSelectedGen(gen)}
             SelectedGen={selectedGen}
-            ShowAllGenerations={false}
+            ShowAllGenerations={showAllGenerations}
             FrameDelayMs={frameDelayMs}
             SetPlaying={setPlaying}
             Playing={playing}

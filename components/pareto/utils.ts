@@ -10,7 +10,7 @@
  */
 export function getDataTable(data, objectives) {
     const seriesData = data.map(row => {
-        const rowData = {cid: row.value[3]};
+        const rowData = {cid: row.value[row.value.length - 1]};
         objectives.forEach((objective, index) => {
             rowData[objective] = row.value[index];
         });

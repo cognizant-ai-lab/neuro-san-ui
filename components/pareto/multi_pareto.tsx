@@ -83,7 +83,7 @@ export function MultiPareto(props: ParetoPlotProps) {
         const cells = []
 
         cells.push(
-            <Table.Row id={`paretor-plot-row=${idx}`} style={{height: "100%"}} key={`${nodeID}-pareto`}>
+            <Table.Row id={`pareto-plot-row=${idx}`} style={{height: "100%"}} key={`${nodeID}-pareto`}>
                 <Table.TextCell id={`pareto-plot-text-cell-${idx}`} style={{paddingLeft: 0}}>
                     <div id={`pareto-plot-div-${idx}`} className="pb-28" style={{height: "600px", width: "100%"}}>
                         

@@ -2,7 +2,7 @@ import {EChartsOption} from "echarts-for-react/src/types"
 
 import {ParetoPlotProps} from "./types"
 import {EchartParetoPlot} from "./echart_pareto_plot"
-import {getDataTable} from "./utils.js"
+import {getDataTable} from "./utils"
 
 /**
  * This component generates a parallel coordinates plot. See {@link https://en.wikipedia.org/wiki/Parallel_coordinates}

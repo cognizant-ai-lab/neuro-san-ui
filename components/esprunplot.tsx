@@ -1,14 +1,12 @@
-import NewBar from "./newbar";
-import {Table} from "evergreen-ui";
-import {ResponsiveLine} from "@nivo/line";
-import {FiAlertCircle} from "react-icons/fi";
+import NewBar from "./newbar"
+import {Table} from "evergreen-ui"
+import ReactEcharts from "echarts-for-react"
+import {FiAlertCircle} from "react-icons/fi"
 
 interface EspRunPlotProps {
     id: string
     readonly PrescriptorRunData
 }
-
-
 
 export default function ESPRunPlot(props: EspRunPlotProps) {
 
@@ -23,68 +21,71 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
 
         const cells = []
         Objectives.forEach(objective => {
-                const bumpData = PrescriptorRunData[nodeID][objective]
-                const objectiveMetricGraphLabelId = `${objective}-metric-graph-label`
-                cells.push(
-                    <Table.Row id={ `objective-row-${objectiveMetricGraphLabelId}` }
-                            style={{height: "100%"}} key={`${nodeID}-${objective}`}>
-                        <Table.TextCell id={objectiveMetricGraphLabelId}>{objective}</Table.TextCell>
-                        <Table.TextCell id={ `graph-${objectiveMetricGraphLabelId}` }>
-                            <div id={ `graph-div-${objectiveMetricGraphLabelId}` }
-                                    className="pl-4" style={{height: "25rem", width: "100%"}}>
-                                { /* 2/6/23 DEF - ResponsiveLine does not have an id tag when compiled */ }
-                                <ResponsiveLine     // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    data={bumpData}
-                                    margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
-                                    xScale={{ type: 'linear'}}
-                                    yScale={{ type: 'linear', min: 'auto', max: 'auto', stacked: false, reverse: false }}
-                                    axisTop={null}
-                                    axisRight={null}
-                                    axisBottom={{
-                                        tickSize: 5,
-                                        tickPadding: 5,
-                                        tickRotation: 0,
-                                        legend: 'Generations',
-                                        legendOffset: 36,
-                                        legendPosition: 'middle'
-                                    }}
-                                    pointSize={10}
-                                    pointColor={{ theme: 'background' }}
-                                    pointBorderWidth={2}
-                                    pointBorderColor={{ from: 'serieColor' }}
-                                    pointLabelYOffset={-12}
-                                    useMesh={true}
-                                    legends={[
-                                        {
-                                            anchor: 'bottom-right',
-                                            direction: 'column',
-                                            justify: false,
-                                            translateX: 100,
-                                            translateY: 0,
-                                            itemsSpacing: 0,
-                                            itemDirection: 'left-to-right',
-                                            itemWidth: 80,
-                                            itemHeight: 20,
-                                            itemOpacity: 0.75,
-                                            symbolSize: 12,
-                                            symbolShape: 'circle',
-                                            symbolBorderColor: 'rgba(0, 0, 0, .5)',
-                                            effects: [
-                                                    {
-                                                        on: 'hover',
-                                                        style: {
-                                                            itemBackground: 'rgba(0, 0, 0, .03)',
-                                                            itemOpacity: 1
-                                                        }
-                                                    }
-                                                ]
-                                        }
-                                    ]}
-                                />
-                            </div>
-                        </Table.TextCell>
-                    </Table.Row>
-                )
+            // Create a plot for each objective. Each objective will have min, max, mean across generations.
+            const objectiveData = PrescriptorRunData[nodeID][objective]
+            const objectiveMetricGraphLabelId = `${objective}-metric-graph-label`
+            const options = {
+                xAxis: {
+                    type: "value",
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series:
+                    objectiveData.map(objective => ({
+                        data: objective.data.map(
+                            row => ({
+                                name: row.id,
+                                value: [row.x, row.y],
+                                symbolSize: 8
+                            }),
+                        ),
+                        name: objective.id,
+                        type: 'line',
+                        smooth: true
+                    })),
+                legend: {
+                    right: "0%",
+                    top: "0%",
+                    selectedMode: false,
+                    animation: false,
+                    orient: "vertical",
+                    type: "plain"
+                },
+                tooltip: {
+                    trigger: "item",
+                    formatter: (params) => {
+                        return [params.seriesName, `Generation: ${params.data.value[0]}`, `Value: ${params.data.value[1]}`].join("<br />")
+                            // .map((value, idx) => [params.seriesName, `Generation: ${params.data.value[0]}`, `Value: ${params.data.value[1]}`].join(","))
+
+                    },
+                    axisPointer: {
+                        type: "cross",
+                        crossStyle: {
+                            color: "#999",
+                            type: "dashed"
+                        }
+                    }
+                }
+            }
+
+            cells.push(
+                <Table.Row id={`objective-row-${objectiveMetricGraphLabelId}`}
+                           style={{height: "100%"}} key={`${nodeID}-${objective}`}>
+                    <Table.TextCell id={objectiveMetricGraphLabelId}>{objective}</Table.TextCell>
+                    <Table.TextCell id={`graph-${objectiveMetricGraphLabelId}`}>
+                        <div id={`graph-div-${objectiveMetricGraphLabelId}`}
+                             style={{height: "35rem", width: "100%"}}>
+
+                            <ReactEcharts   // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                            // ReactEcharts lacks an id attribute
+                                style={{height: "100%"}}
+                                option={options}
+                            />
+                        </div>
+                    </Table.TextCell>
+                </Table.Row>
+            )
         })
 
         nodePlots.push(

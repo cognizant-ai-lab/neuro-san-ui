@@ -8,7 +8,7 @@ import 'echarts-gl'
 
 import {ParetoPlotProps} from "./types"
 import {EchartParetoPlot} from "./echart_pareto_plot"
-import {getDataTable} from "./utils.js"
+import {getDataTable} from "./utils"
 
 /**
  * This component generates a 3D surface plot. 
