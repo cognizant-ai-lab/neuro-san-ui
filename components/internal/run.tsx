@@ -623,7 +623,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     };
 
     
-    const CustomComponent: React.FC<CustomComponentProps> = ({ message }) => {
+    const CustomComponent: React.FC<CustomComponentProps> = ({ message }) => {  // // eslint-disable-line react/no-multi-comp
         return (
             <div id="custom-panel" style={{fontSize: "smaller"}}>
                 <InfoSignIcon  id="plot-info-bubble-icon" color="blue" size={10}/>
