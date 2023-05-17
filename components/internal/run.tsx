@@ -624,10 +624,11 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     
     const CustomComponent: React.FC<CustomComponentProps> = ({ message }) => {
         return (
-            <div style={{fontSize: "smaller"}}>
+            <div id="custom-panel" style={{fontSize: "smaller"}}>
                 <InfoSignIcon  id="plot-info-bubble-icon" color="blue" size={10}/>
-                <Collapse>
-                    <Collapse.Panel header="Show sources" key={1} >{message}</Collapse.Panel>
+                <Collapse id="custom-panel-collapse">
+                    <Collapse.Panel id="custom-panel-collapse-panel"
+                                    header="Show sources" key={1} >{message}</Collapse.Panel>
                 </Collapse>
             </div>
         );
@@ -678,7 +679,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
         plotDiv.push(
-            <div style={{marginBottom: "600px"}}>
+            <div id="rules-div" style={{marginBottom: "600px"}}>
             <NewBar id="rules-bar" InstanceId="rules"
                     Title="Rules" DisplayNewLink={ false } />
             <Tabs
@@ -687,10 +688,10 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                 className="my-10"
                 justify
             >
-                <Tab eventKey="decoded" title="Details" >
-                    <Container>
-                        <Row style={{marginTop: 10}}>
-                            <Col md={10} >
+                <Tab id="rules-decoded-tab" eventKey="decoded" title="Details" >
+                    <Container id="rules-decoded-container">
+                        <Row id="rules-decoded-row" style={{marginTop: 10}}>
+                            <Col id="rules-decoded-column" md={10} >
                                 {selectedRulesFormat === "raw" 
                                     ? <div id="rules-div" className="my-2 py-2"
                                            style={{
@@ -713,33 +714,33 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                                             color={MaximumBlue} loading={true} size={50} />
                                                 Accessing GPT...
                                             </>
-                                    :<div>
-                                        <ReactMarkdown>
+                                    :<div id="markdown-div">
+                                        <ReactMarkdown id="react-markdown">
                                             {interpretedRules}
                                         </ReactMarkdown>
-                                        <br />
-                                        <br />
-                                        <br />
-                                        <h5>Powered by OpenAI™ GPT-4™ technology</h5>
+                                        <br id="markdown-br-1"/>
+                                        <br id="markdown-br-2/>
+                                        <br id="markdown-br-3"/>
+                                        <h5 id="powered-by">Powered by OpenAI™ GPT-4™ technology</h5>
                                     </div>
                                 }
                             </Col>
-                            <Col md={2}>
-                                <Radio.Group value={selectedRulesFormat}
+                            <Col id="radio-column" md={2}>
+                                <Radio.Group id="radio-group" value={selectedRulesFormat}
                                              onChange={(e: RadioChangeEvent) => {
                                                  setSelectedRulesFormat(e.target.value)
                                              }}
                                 >
-                                    <Space direction="vertical" size="middle">
-                                        <Radio value="raw">Raw</Radio>
-                                        <Radio value="interpreted">Interpreted (Beta)</Radio>
+                                    <Space id="radio-space" direction="vertical" size="middle">
+                                        <Radio id="radio-raw" value="raw">Raw</Radio>
+                                        <Radio id="radio-interpreted" value="interpreted">Interpreted (Beta)</Radio>
                                     </Space>
                                 </Radio.Group>
                             </Col>
                         </Row>
                     </Container>
                 </Tab>
-                <Tab eventKey="insights" title="Insights" >
+                <Tab id="insights-tab" eventKey="insights" title="Insights" >
                     <div id="rules-div" className="my-2 py-2"
                          style={{
                              whiteSpace: "pre",
@@ -781,7 +782,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
 
         {plotDiv}
 
-        <Widget
+        <Widget id="help-widget"
             handleNewUserMessage={handleNewUserMessage}
             title="UniLEAF help"
             subtitle="Get help on anything related to UniLEAF!"
