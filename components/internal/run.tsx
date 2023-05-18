@@ -627,7 +627,9 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         return (
             <div id="custom-panel" style={{fontSize: "smaller"}}>
                 <InfoSignIcon id="plot-info-bubble-icon" color="blue" size={10}/>
-                <Collapse>
+                <Collapse>      // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // Collapse doesn't have (or need) an id property. The items it generates
+                                // each have their own referenceable id.
                     <Collapse.Panel id="custom-panel-collapse-panel"
                                     header="Show sources" key={1} >{message}</Collapse.Panel>
                 </Collapse>
@@ -716,7 +718,9 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                                                 Accessing GPT...
                                             </>
                                     :<div id="markdown-div">
-                                        <ReactMarkdown>
+                                        <ReactMarkdown>     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                    // ReactMarkdown doesn't have (or need) an id property. The items it generates
+                                    // each have their own referenceable id.
                                             {interpretedRules}
                                         </ReactMarkdown>
                                         <br id="markdown-br-1"/>
