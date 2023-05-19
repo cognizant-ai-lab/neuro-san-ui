@@ -79,6 +79,13 @@ const nextConfig = {
     },
 
     transpilePackages: ['echarts', 'echarts-gl', 'zrender'],
+
+    // This didn't fix "self is not defined" despite what forums say
+    // webpack: (config) => {
+    //     config.output.globalObject = "this"
+    //
+    //     return config;
+    // }
 };
 
 module.exports = nextConfig;

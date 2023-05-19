@@ -28,12 +28,14 @@ import {Radio} from "antd"
 import {Space} from "antd"
 import {RadioChangeEvent} from "antd"
 import ReactMarkdown from "react-markdown";
-import {addResponseMessage, Widget } from 'react-chat-widget';
-import {dropMessages} from "react-chat-widget"
-import {toggleMsgLoader} from "react-chat-widget"
-import {Collapse} from "antd"
-import {renderCustomComponent} from "react-chat-widget"
+
+// import {addResponseMessage, Widget } from 'react-chat-widget';
+// import {dropMessages} from "react-chat-widget"
+// import {toggleMsgLoader} from "react-chat-widget"
+// import {renderCustomComponent} from "react-chat-widget"
+
 import {InfoSignIcon} from "evergreen-ui"
+import {Collapse} from "antd"
 
 interface RunProps {
     /* 
@@ -363,10 +365,10 @@ Readmitted\tNominal\tDays to inpatient readmission. Values: “<30” if the pat
         }
     }
 
-    useEffect(() => {
-        dropMessages()
-        addResponseMessage("Hi! I'm your UniLEAF assistant. Please type your question below.")
-    }, [])
+    // useEffect(() => {
+    //     dropMessages()
+    //     addResponseMessage("Hi! I'm your UniLEAF assistant. Please type your question below.")
+    // }, [])
     
     // Fetch the experiment and the runs
     useEffect(() => {
@@ -639,7 +641,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
     };
     
     const handleNewUserMessage = async (newMessage) => {
-        toggleMsgLoader()
+        // toggleMsgLoader()
 
         try {
             const response = await fetch('/api/gpt/userguide', {
@@ -663,14 +665,14 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
             if (data.answer) {
                 setTimeout(function () {
                     try {
-                        addResponseMessage(data.answer)
+                        // addResponseMessage(data.answer)
                         const sources = data.sources
                         if (sources) {
                             const message = sources.map(source => `Source: ${source.source.replace(/\n/g, "")} from this snippet: "${source.snippet.replace(/\n/g, "")}" page: ${source.page ?? "n/a"}`).join("\n")
-                            renderCustomComponent(CustomComponent, {message: message}, false)
+                            // renderCustomComponent(CustomComponent, {message: message}, false)
                         }
                     } finally {
-                        toggleMsgLoader()
+                        // toggleMsgLoader()
                     }
                 }, delay);
             }
@@ -789,14 +791,14 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
 
         {plotDiv}
 
-        <Widget id="help-widget"
-            handleNewUserMessage={handleNewUserMessage}
-            title="UniLEAF help"
-            subtitle="Get help on anything related to UniLEAF!"
-            senderPlaceHolder='What is UniLEAF?'
-            profileAvatar="/leaffavicon.png"
-            profileClientAvatar={session.user.image ?? null}
-            showCloseButton={true}
-        />
+        {/*<Widget id="help-widget"*/}
+        {/*    handleNewUserMessage={handleNewUserMessage}*/}
+        {/*    title="UniLEAF help"*/}
+        {/*    subtitle="Get help on anything related to UniLEAF!"*/}
+        {/*    senderPlaceHolder='What is UniLEAF?'*/}
+        {/*    profileAvatar="/leaffavicon.png"*/}
+        {/*    profileClientAvatar={session.user.image ?? null}*/}
+        {/*    showCloseButton={true}*/}
+        {/*/>*/}
     </div>
 }
