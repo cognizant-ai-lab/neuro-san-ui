@@ -52,7 +52,7 @@ import {DataSourceNode} from './nodes/datasourcenode'
 import {PrescriptorEdge} from './edges/prescriptoredge'
 import {UncertaintyModelNode, UncertaintyModelNodeData} from './nodes/uncertaintyModelNode'
 import {LLmNode} from "./nodes/llmNode";
-import {LLM_MODEL_PARAMS, LlmModelParams} from "./llmInfo";
+import {LLM_MODEL_PARAMS, LLM_MODEL_PARAMS2, LLM_MODEL_PARAMS3} from "./llmInfo";
 
 const debug = Debug("flow")
 
@@ -660,14 +660,6 @@ export default function Flow(props: FlowProps) {
         return structuredClone(UNCERTAINTY_MODEL_PARAMS)
     }
 
-    function  _getInitialLlmNodeState(): LlmModelParams {
-        /*
-       This function returns the initial uncertainty node state for when a user first adds the node to the flow
-       */
-
-        return structuredClone(LLM_MODEL_PARAMS)
-    }
-
     // Adds uncertainty model nodes to the specified Predictor(s)
     function _addUncertaintyNodes(predictorNodeIDs: string[]): void {
         // Make a copy of the graph
@@ -777,10 +769,11 @@ export default function Flow(props: FlowProps) {
             type: "llmnode",
             data: {
                 NodeID: "root",
-                ParentUncertaintyNodeState: _getInitialLlmNodeState(),
+                ParentUncertaintyNodeState: structuredClone(LLM_MODEL_PARAMS),
                 SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, "root"),
                 DeleteNode: nodeID => _deleteNodeById(nodeID),
-                GetElementIndex: nodeID => _getElementIndex(nodeID)
+                GetElementIndex: nodeID => _getElementIndex(nodeID),
+                ParameterSet: LLM_MODEL_PARAMS
             },
             position: {
                 x: dataNode.position.x + 200,
@@ -820,10 +813,11 @@ export default function Flow(props: FlowProps) {
             type: "llmnode",
             data: {
                 NodeID: postDataNodeLlmId,
-                ParentUncertaintyNodeState: _getInitialLlmNodeState(),
+                ParentUncertaintyNodeState: structuredClone(LLM_MODEL_PARAMS2),
                 SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, postDataNodeLlmId),
                 DeleteNode: newNodeID => _deleteNodeById(newNodeID),
-                GetElementIndex: newNodeID => _getElementIndex(newNodeID)
+                GetElementIndex: newNodeID => _getElementIndex(newNodeID),
+                ParameterSet: LLM_MODEL_PARAMS2
             },
             position: {
                 x: dataNode.position.x + 200,
@@ -874,16 +868,17 @@ export default function Flow(props: FlowProps) {
             // Create a unique ID
             const presscriptorLlmId = uuid()
 
-            // Add the uncertainty model node
+            // LLM after prescriptor
             const prescriptorLlmNode: LLmNode = {
                 id: presscriptorLlmId,
                 type: "llmnode",
                 data: {
                     NodeID: presscriptorLlmId,
-                    ParentUncertaintyNodeState: _getInitialLlmNodeState(),
+                    ParentUncertaintyNodeState: structuredClone(LLM_MODEL_PARAMS3),
                     SetParentUncertaintyNodeState: state => UncertaintyNodeSetStateHandler(state, presscriptorLlmId),
                     DeleteNode: nodeID => _deleteNodeById(nodeID),
-                    GetElementIndex: nodeID => _getElementIndex(nodeID)
+                    GetElementIndex: nodeID => _getElementIndex(nodeID),
+                    ParameterSet: LLM_MODEL_PARAMS3
                 },
                 position: {
                     x: dataNode.position.x + 200,

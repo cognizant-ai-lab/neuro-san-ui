@@ -12,7 +12,7 @@ import {NotificationType, sendNotification} from "../../../../controller/notific
 import ConfigNumeric from "../confignumeric"
 
 // Custom components
-import {LLM_MODEL_PARAMS, LlmModelParams, ParamType,} from "../llmInfo"
+import {LlmModelParams, ParamType,} from "../llmInfo"
 
 // Define an interface for the structure
 // of the node
@@ -30,6 +30,8 @@ interface LlmNodeData {
 
     // Gets a simpler index for testing ids (at least)
     readonly GetElementIndex: (nodeID: string) => number
+
+    readonly ParameterSet: LlmModelParams
 }
 
 export type LLmNode = Node<LlmNodeData>;
@@ -48,7 +50,8 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
         ParentUncertaintyNodeState,
         SetParentUncertaintyNodeState,
         DeleteNode,
-        GetElementIndex
+        GetElementIndex,
+        ParameterSet
     } = data
 
     // For showing advanced configuration settings
@@ -77,12 +80,12 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
 
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `llmnode-${flowIndex}`
-    const defaultParams = LLM_MODEL_PARAMS
+    const defaultParams = ParameterSet
 
     function getInputComponent(param, item) {
         const paramPrefix = `${flowPrefix}-${param}`
         return <Container id={`${paramPrefix}-container`}>
-            <Row id={`${paramPrefix}-row`} className="mx-2 my-8">
+            <Row id={`${paramPrefix}-row`} className="mx-2 my-4">
                 <Col id={`${paramPrefix}-param-col`} md={2}>
                     <label id={`${paramPrefix}-label`} className="capitalize">{param}: </label>
                 </Col>
@@ -150,7 +153,7 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                         item.type === ParamType.STRING &&
                         <textarea
                             style={{width: "100%", fontFamily: "monospace"}}
-                            rows={10}
+                            rows={item.rows || 10}
                             id={`${paramPrefix}-value`}
                             onChange={event => onParamChange(event, param)}
                         >
@@ -198,10 +201,10 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                                 <div id={ `${flowPrefix}-basic-settings-div` }
                                     className="mt-3">
                                     {
-                                        Object.keys(LLM_MODEL_PARAMS)
-                                            .filter(key => !LLM_MODEL_PARAMS[key].isAdvanced)
+                                        Object.keys(ParameterSet)
+                                            .filter(key => !ParameterSet[key].isAdvanced)
                                             .map(key => {
-                                                return getInputComponent(key, LLM_MODEL_PARAMS[key])
+                                                return getInputComponent(key, ParameterSet[key])
                                             })
                                     }
                                 </div>
@@ -211,10 +214,10 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                                     <div id={ `${flowPrefix}-advanced-settings-div` }
                                         className="mt-3 mb-4">
                                         {
-                                            Object.keys(LLM_MODEL_PARAMS)
-                                                .filter(key => LLM_MODEL_PARAMS[key].isAdvanced)
+                                            Object.keys(ParameterSet)
+                                                .filter(key => ParameterSet[key].isAdvanced)
                                                 .map(key => {
-                                                    return getInputComponent(key, LLM_MODEL_PARAMS[key])
+                                                    return getInputComponent(key, ParameterSet[key])
                                                 })
                                         }
                                     </div>
@@ -223,7 +226,7 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                         </>
                     }
                          statelessProps={{
-                             height: "500px",
+                             height: "600px",
                              width: "1200px",
                              backgroundColor: "ghostwhite"
                          }}
