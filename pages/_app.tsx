@@ -33,7 +33,7 @@ import {SessionProvider} from "next-auth/react"
 import Navbar from "../components/navbar"
 
 // Constants
-import {ENABLE_AUTHENTICATION, LOGO} from "../const"
+import {ENABLE_AUTHENTICATION} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
 
