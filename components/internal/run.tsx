@@ -67,6 +67,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const [selectedRulesFormat, setSelectedRulesFormat] = useState("raw")
     const [interpretedRules, setInterpretedRules] = useState(null)
+    const [insights, setInsights] = useState(null)
     const [gptLoading, setGptLoading] = useState(false)
 
     const projectID = props.ProjectId
@@ -470,7 +471,7 @@ Readmitted\tNominal\tDays to inpatient readmission. Values: “<30” if the pat
 
     useEffect(() => 
     {
-        async function fetchData() {
+        async function fetchRulesInterpretations() {
             const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
             const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
             const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
@@ -509,10 +510,55 @@ Readmitted\tNominal\tDays to inpatient readmission. Values: “<30” if the pat
         }
 
         if (rules && flow) {
-            void fetchData()
+            void fetchRulesInterpretations()
         }
     }, [rules])
-    
+
+    useEffect(() =>
+    {
+        async function fetchInsights() {
+            const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+            const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
+            const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
+            const actionFields  = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
+
+            const outcomeFields = Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map(item => ({[item.metric_name]: item.maximize ? "maximize" : "minimize"})))
+
+            try {
+                setGptLoading(true)
+                const response = await fetch('/api/gpt/insights', {
+                    method: "POST",
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        projectTitle: getProjectTitle(),
+                        projectDescription: getProjectDescription(),
+                        rawRules: rules,
+                        contextFields: contextFields,
+                        actionFields: actionFields,
+                        outcomeFields: outcomeFields
+                    })
+                })
+                if (!response.ok) {
+                    console.debug("error json", await response.json())
+                    throw new Error(response.statusText)
+                }
+                const data = await response.json()
+                setInsights(data.insights)
+            } catch (error) {
+                console.debug("error", error)
+            } finally {
+                setGptLoading(false)
+            }
+        }
+
+        if (rules && flow) {
+            void fetchInsights()
+        }
+    }, [rules])
+
     const plotDiv = []
     if (predictorPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
@@ -682,11 +728,29 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                 <Tab id="insights-tab" eventKey="insights" title="Insights" >
                     <div id="rules-div" className="my-2 py-2"
                          style={{
-                             whiteSpace: "pre",
+                             // whiteSpace: "pre",
                              backgroundColor: "whitesmoke",
                          }}
                     >
-                       Some insights about the rules from GPT-4 here
+                        {gptLoading
+                        ?   <>
+                        <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            color={MaximumBlue} loading={true} size={50} />
+                        Accessing GPT...
+                        </>
+                        :<div id="markdown-div">
+                        <ReactMarkdown     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            // ReactMarkdown doesn't have (or need) an id property. The items it generates
+                            // each have their own referenceable id.
+                        >
+                            {insights}
+                        </ReactMarkdown>
+                        <br id="markdown-br-1"/>
+                        <br id="markdown-br-2"/>
+                        <br id="markdown-br-3"/>
+                        <h5 id="powered-by">Powered by OpenAI™ GPT-4™ technology</h5>
+                    </div>
+                        }
                     </div>
                 </Tab>
             </Tabs>
