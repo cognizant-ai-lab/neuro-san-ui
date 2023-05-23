@@ -457,7 +457,7 @@ button[id*="context-button"], button[id*="actions-button"], button[id*="action-b
 	color: var(--bs-secondary);
 }
 
-button[id*="settings-button"] > svg > path {
+button[id*="settings-button"] > svg > path, button[id*="config-button"] > svg > path {
 	stroke: var(--bs-secondary);
 }
 
