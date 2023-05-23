@@ -60,7 +60,7 @@ export default function LEAF({
         <SessionProvider        // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 session={session}>
           <ErrorBoundary id="error_boundary">
-            <Navbar id="nav-bar" Logo={LOGO} WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
+            <Navbar id="nav-bar" WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
             <Container id="body-container">
               {Component.authRequired && ENABLE_AUTHENTICATION
                   ? <Auth         // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -82,9 +82,9 @@ export default function LEAF({
     { /* 2/6/23 DEF - Head does not have an id property when compiling */ }
     <Head      // eslint-disable-line enforce-ids-in-jsx/missing-ids
         >
-      <title id="unileaf-title">Unileaf</title>
-      <meta id="unileaf-description" name="description" content="Evolutionary AI" />
-      <link id="unileaf-link" rel="icon" href="/leaffavicon.png" />
+      <title id="unileaf-title">Cognizant Neuro® AI</title>
+      <meta id="unileaf-description" name="description" content="Cognizant Neuro® AI" />
+      <link id="unileaf-link" rel="icon" href="/cognizantfavicon.ico" />
     </Head>
     {
       body

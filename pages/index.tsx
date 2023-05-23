@@ -56,15 +56,6 @@ const HeaderLineOne = styled.h1`
     //   font-size: 5rem;
     color: white;
 `
-const HeaderLineTwo = styled.h1`
-    //   width: auto;
-    //   height: auto;
-    margin: 0;
-    //   padding: 0;
-    //   margin-top: -2.225%;
-    //   font-size: 5rem;
-    color: white;
-`
 
 const GetStartedButton = styled.div`
     display: inline-block;
