@@ -353,6 +353,10 @@ body {
     background-color: var(--bs-gray-lighter);
 }
 
+#logo-img {
+  width: 250px !important;
+}
+
 /*
 Work-around for antd styling weirdness around Modal confirm buttons. Suddenly with new antd version the "OK" button
 in Modals was showing up as white on white, making it impossible to see.
