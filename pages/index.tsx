@@ -28,7 +28,7 @@ const Navbar = styled.div`
     align-items: center;
 `
 
-const NavbarLogo = styled.div`
+const NavbarLogo = styled.h1`
     color: white;
     font-size: 1.25rem;
     width: 250px;

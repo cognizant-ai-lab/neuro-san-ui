@@ -33,7 +33,7 @@ import {SessionProvider} from "next-auth/react"
 import Navbar from "../components/navbar"
 
 // Constants
-import {ENABLE_AUTHENTICATION, LOGO} from "../const"
+import {ENABLE_AUTHENTICATION} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
 
@@ -60,7 +60,7 @@ export default function LEAF({
         <SessionProvider        // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 session={session}>
           <ErrorBoundary id="error_boundary">
-            <Navbar id="nav-bar" Logo={LOGO} WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
+            <Navbar id="nav-bar" WithBreadcrumbs={Component.withBreadcrumbs ?? true}/>
             <Container id="body-container">
               {Component.authRequired && ENABLE_AUTHENTICATION
                   ? <Auth         // eslint-disable-line enforce-ids-in-jsx/missing-ids
