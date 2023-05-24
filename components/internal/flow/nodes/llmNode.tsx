@@ -101,9 +101,12 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                             paramName={param}
                             defaultParam={defaultParams[param]}
                             value={
-                                ParentUncertaintyNodeState[param] != null &&
-                                ParentUncertaintyNodeState[param].value != null &&
-                                ParentUncertaintyNodeState[param].value as number
+                                (ParentUncertaintyNodeState[param] != null &&
+                                    ParentUncertaintyNodeState[param].value != null)
+                                    ? (ParentUncertaintyNodeState[param].value as number)
+                                    : defaultParams[param].default_value != null
+                                        ? (defaultParams[param].default_value as number)
+                                        : undefined
                             }
                             onParamChange={event => onParamChange(event, param)}
                             style={{width: "100%"}}

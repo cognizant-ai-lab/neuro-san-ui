@@ -62,7 +62,14 @@ export const LLM_MODEL_PARAMS: LlmModelParams = {
         allValues: Object.values(LlmModel).filter((v) => isNaN(Number(v))).map(v => String(v)),
         isAdvanced: false
     },
-
+    "temperature": {
+        default_value: 0.2,
+        description:
+            `The temperature controls how much randomness is in the output. In general, the lower the temperature, the more ` +
+            `likely GPT-3 will choose words with a higher probability of occurrence`,
+        type: ParamType.FLOAT,
+        isAdvanced: false
+    },
     "prompt_template": {
         default_value: PromptTemplate["Repair data"].valueOf(),
         description: "Choose a pre-created template or write your own prompt",
@@ -115,7 +122,15 @@ export const LLM_MODEL_PARAMS2: LlmModelParams = {
         allValues: Object.values(LlmModel).filter((v) => isNaN(Number(v))).map(v => String(v)),
         isAdvanced: false
     },
-
+    "temperature": {
+        default_value: 0.2,
+        description:
+            `The temperature controls how much randomness is in the output. In general, the lower the temperature, the more ` +
+            `likely GPT-3 will choose words with a higher probability of occurrence`,
+        type: ParamType.FLOAT,
+        allValues: Object.values(LlmModel).filter((v) => isNaN(Number(v))).map(v => String(v)),
+        isAdvanced: false
+    },
     "prompt_template": {
         default_value: PromptTemplate["Repair data"].valueOf(),
         description: "Choose a pre-created template or write your own prompt",
@@ -145,6 +160,16 @@ export const LLM_MODEL_PARAMS3: LlmModelParams = {
         default_value: LlmModel["GPT 3.5"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: ParamType.ENUM,
+        allValues: Object.values(LlmModel).filter((v) => isNaN(Number(v))).map(v => String(v)),
+        isAdvanced: false
+    },
+
+    "temperature": {
+        default_value: 0.2,
+        description:
+`The temperature controls how much randomness is in the output. In general, the lower the temperature, the more ` +
+`likely the LLM model will choose words with a higher probability of occurrence`,
+        type: ParamType.FLOAT,
         allValues: Object.values(LlmModel).filter((v) => isNaN(Number(v))).map(v => String(v)),
         isAdvanced: false
     },
