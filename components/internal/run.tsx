@@ -642,15 +642,5 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         {flowDiv}       
 
         {plotDiv}
-
-        {/*<Widget id="help-widget"*/}
-        {/*    handleNewUserMessage={handleNewUserMessage}*/}
-        {/*    title="UniLEAF help"*/}
-        {/*    subtitle="Get help on anything related to UniLEAF!"*/}
-        {/*    senderPlaceHolder="What is UniLEAF?"*/}
-        {/*    profileAvatar="/leaffavicon.png"*/}
-        {/*    profileClientAvatar={session.user.image ?? null}*/}
-        {/*    showCloseButton={true}*/}
-        {/*/>*/}
     </div>
 }

@@ -10,6 +10,8 @@ import "antd/dist/reset.css"
 import "bootstrap/dist/css/bootstrap.css"
 import "reactflow/dist/style.css"
 import "tailwindcss/tailwind.css"
+import ChatBot from 'react-simple-chatbot'
+import { ThemeProvider } from 'styled-components';
 
 // Custom
 import "../styles/updatenode.css"
@@ -36,6 +38,19 @@ import Navbar from "../components/navbar"
 import {ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
+
+
+const chatbotTheme =  {
+  background: '#f5f8fb',
+  fontFamily: 'Helvetica Neue',
+  headerBgColor: "var(--bs-primary)",
+  headerFontColor: '#fff',
+  headerFontSize: '15px',
+  botBubbleColor: "var(--bs-secondary)",
+  botFontColor: '#fff',
+  userBubbleColor: '#fff',
+  userFontColor: '#4a4a4a',
+}
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -70,6 +85,24 @@ export default function LEAF({
                     </Auth>
                   : <Component id="body-non-auth-component" {...pageProps} />
               }
+              <div id="fixed-pos-div" style={{position: "fixed", right: "20px", bottom: "0"}}>
+                <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    theme={chatbotTheme}>
+                  <ChatBot id="chatbot"
+                           floating={true}
+                           placeholder="What is Cognizant Neuro™ AI?"
+                           userAvatar={session?.user?.image}
+                           botAvatar="/cognizantfavicon.ico"
+                           steps={[
+                             {
+                               id: 'welcome',
+                               message: 'Please type your question about Cognizant Neuro™ AI below.',
+                               end: true,
+                             },
+                           ]}
+                  />
+                </ThemeProvider>
+              </div>
             </Container>
           </ErrorBoundary>
         </SessionProvider>
