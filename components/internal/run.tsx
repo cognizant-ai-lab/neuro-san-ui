@@ -408,7 +408,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     throw new Error(response.statusText)
                 }
                 const data = await response.json()
-                setInsights(data.insights)
+                const insightsWithBreaks = data.insights.replace("\\n", "\n")
+                setInsights(insightsWithBreaks)
             } catch (error) {
                 console.debug("error", error)
             } finally {
@@ -588,27 +589,20 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                     </Container>
                 </Tab>
                 <Tab id="insights-tab" eventKey="insights" title="Insights" >
-                    <div id="rules-div" className="my-2 py-2"
-                         style={{
-                             // whiteSpace: "pre",
-                             backgroundColor: "whitesmoke",
-                         }}
-                    >
+                    <div id="insights-div" className="my-2 py-2" style={{whiteSpace: "pre-wrap"}}>
                         {insightsLoading
                         ?   <>
                         <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             color={MaximumBlue} loading={true} size={50} />
                         Accessing GPT...
                         </>
-                        :<div id="markdown-div">
+                        :<div id="insights-inner-div">
                             <h1 id="insights-h1">Insights</h1>
                             <h2 id="project-name">{project.name}</h2>
                             {project.description}
                             <BlankLines id="blank-lines-1" numLines={3} />
                             {insights}
-                            <br id="markdown-br-1"/>
-                            <br id="markdown-br-2"/>
-                            <br id="markdown-br-3"/>
+                            <BlankLines id="blank-lines-1" numLines={3} />
                             <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
                         </div>
                         }
