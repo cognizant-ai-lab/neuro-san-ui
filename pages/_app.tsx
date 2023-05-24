@@ -1,7 +1,5 @@
 // Stylesheets
 import "nextjs-breadcrumbs2/dist/index.cjs"
-import 'react-chat-widget/lib/styles.css';
-
 
 // Third party
 import "@blueprintjs/core/lib/css/blueprint.css"
