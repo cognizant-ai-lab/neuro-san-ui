@@ -33,6 +33,7 @@ import {BrowserFetchProjects} from "../../controller/projects/fetch";
 import BlankLines from "../blanklines";
 import {ThemeProvider} from "styled-components";
 import ChatBot from 'react-simple-chatbot'
+import {chatbotSteps} from "./chatbot/steps";
 
 interface RunProps {
     /* 
@@ -647,13 +648,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                      placeholder="What is Cognizant Neuro™ AI?"
                      userAvatar={session?.user?.image}
                      botAvatar="/cognizantfavicon.ico"
-                     steps={[
-                         {
-                             id: 'welcome',
-                             message: 'Please type your question about Cognizant Neuro™ AI below.',
-                             end: true,
-                         },
-                     ]}
+                     steps={chatbotSteps}
             />
         </ThemeProvider>
     </div>

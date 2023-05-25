@@ -35,7 +35,7 @@ import Navbar from "../components/navbar"
 import {chatbotTheme, ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
-
+import {chatbotSteps} from "../components/internal/chatbot/steps";
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -76,15 +76,9 @@ export default function LEAF({
                   <ChatBot id="chatbot"
                            floating={true}
                            placeholder="What is Cognizant Neuro™ AI?"
-                           userAvatar={session?.user?.image}
+                           userAvatar={session?.user?.image} // Doesn't work -- wrong type of session?
                            botAvatar="/cognizantfavicon.ico"
-                           steps={[
-                             {
-                               id: 'welcome',
-                               message: 'Please type your question about Cognizant Neuro™ AI below.',
-                               end: true,
-                             },
-                           ]}
+                           steps={chatbotSteps}
                   />
                 </ThemeProvider>
               </div>
