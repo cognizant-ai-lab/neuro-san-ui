@@ -35,7 +35,9 @@
     color: white !important;
 }
 
-.ant-table-column-sorter { color: black !important; }
+.antd-row-hover:hover {
+    cursor: pointer;
+}
 
 /*
 Work-around for antd styling weirdness around Modal confirm buttons. Suddenly with new antd version the "OK" button
