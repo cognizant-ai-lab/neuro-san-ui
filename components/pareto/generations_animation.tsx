@@ -139,7 +139,7 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                             // frames. For example, if we would normally pause 100ms, and playback speed is 2x, 
                             // divide: 100ms / 2.0 = 50ms and that's how long we wait, resulting in 2x speed playback.
                             const adjustedFrameDelay = frameDelayMs / parseFloat(playbackSpeed.value)
-                            const interval = setInterval(function () {
+                            const interval = setInterval(() => {
                                 setSelectedGen(selectedGen => {
                                     if (selectedGen === numberOfGenerations) {
                                         clearInterval(interval)

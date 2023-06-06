@@ -65,12 +65,12 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     const data = firstPrescriptorNode.data
 
     // Number of generations for this Run
-    const numberOfGenerations = useMemo(function () {
+    const numberOfGenerations = useMemo(() => {
         return data.length
     }, [])
 
     // Build a cache of the results for each generation
-    const cachedDataByGen = useMemo(function () {
+    const cachedDataByGen = useMemo(() => {
         const gendata = {}
         for (const row of data) {
             gendata[row.id] = row.data
@@ -91,7 +91,7 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     // Calculate min and max values for each objective across all generations (if playing animation) or for current
     // generation (if user is viewing a single generation). 
     // This allows us to scale the chart appropriately for the animation or for viewing a single generation
-    const minMaxPerObjective = useMemo(function () {
+    const minMaxPerObjective = useMemo(() => {
         const genData = cachedDataByGen[`Gen ${selectedGen}`]
         return Object.fromEntries(objectives.map((objective, idx) => {
             const minObjectiveValue = playing || allGensSelected
@@ -111,7 +111,7 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
         }))
     }, [data, objectives, playing, selectedGen])
 
-    // Keep a ref to the chart so we can handle events manually
+    // Keep a ref to the chart, so we can handle events manually
     const chartRef = useRef(null);
 
     useEffect(() => {

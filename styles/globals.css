@@ -357,6 +357,16 @@ body {
   width: 250px !important;
 }
 
+/* For antd table header */
+.ant-table-thead .ant-table-cell {
+    background-color: #2f78c4 !important;
+    color: white !important;
+}
+
+.antd-row-hover:hover {
+    cursor: pointer;
+}
+
 /*
 Work-around for antd styling weirdness around Modal confirm buttons. Suddenly with new antd version the "OK" button
 in Modals was showing up as white on white, making it impossible to see.

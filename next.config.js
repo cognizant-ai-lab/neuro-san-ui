@@ -80,12 +80,12 @@ const nextConfig = {
 
     transpilePackages: ['echarts', 'echarts-gl', 'zrender'],
 
-    // This didn't fix "self is not defined" despite what forums say
-    // webpack: (config) => {
-    //     config.output.globalObject = "this"
-    //
-    //     return config;
-    // }
+    compiler: {
+        // Prevent errors like "webpack Warning: Prop `className` did not match. Server: ..."
+        // See: https://nextjs.org/docs/architecture/nextjs-compiler#styled-components
+        // ssr and displayName are configured by default
+        styledComponents: true,
+    },
 };
 
 module.exports = nextConfig;

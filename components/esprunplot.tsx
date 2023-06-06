@@ -31,7 +31,9 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                     nameLocation: "middle"
                 },
                 yAxis: {
-                    type: 'value'
+                    type: 'value',
+                    min: 'dataMin',
+                    max: 'dataMax'
                 },
                 series:
                     objectiveData.map(objective => ({

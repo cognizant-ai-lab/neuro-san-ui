@@ -76,7 +76,7 @@ const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props)
                              className="flex justify-between mb-4 content-center">
                             {
                                 taggedDataList.length > 0
-                                ?   <select name='dataset' className="w-24"
+                                ?   <select name="dataset" className="w-24"
                                         id="data-source-node-select-dataset"
                                         onChange={
                                              event => {

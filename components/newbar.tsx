@@ -61,7 +61,7 @@ export default function NewBar(props: NavbarProps) {
                         setEditing(true)
                     }}
             >
-                <AiFillEdit id={ `${idPrefix}-button-fill-edit` } size='14'/>
+                <AiFillEdit id={ `${idPrefix}-button-fill-edit` } size="14"/>
             </button>
         </h3>
     } else if (props.EditableCallback && editing) {

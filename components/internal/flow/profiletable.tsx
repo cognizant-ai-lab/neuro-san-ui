@@ -1,7 +1,7 @@
 import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
 import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai";
 import React, {useState} from "react";
-import {Button, Checkbox, Input, Modal} from 'antd';
+import {Button, Checkbox, Input, Modal, Space} from 'antd';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {DataType} from "../../../controller/datatag/types";
 import {empty} from "../../../utils/objects";
@@ -162,13 +162,14 @@ export default function ProfileTable(props: ProfiletableProps) {
                             <select id={ `${field}-categorical-select` }
                                 name={`${field}-values`}
                                 className="w-32"
+                                defaultValue=""
                             >
                                 <option id={ `${field}-categorical-click-for-values` }
-                                    value="" disabled selected>
+                                    value="" disabled hidden>
                                     Click for values:
                                 </option>
                                 {
-                                    fields[field].discrete_categorical_values.map( (item) => (
+                                    fields[field].discrete_categorical_values.map((item) => (
                                         <option id={ `${field}-categorical-value-${item}` }
                                                 value={item} key={item} disabled>
                                             {item}
@@ -187,7 +188,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                                 }}
                             >
                                 <AiFillEdit id={ `${field}-set-current-category-values-fill` }
-                                    size='14' style={{cursor: "pointer"}}/>
+                                    size="14" style={{cursor: "pointer"}}/>
                             </button>
                         </span>
                     :   "N/A"
@@ -338,8 +339,8 @@ export default function ProfileTable(props: ProfiletableProps) {
                 </Row>
                 <Row id="field-editor-checkbox-row" className="pt-3">
                     <Checkbox id="field-editor-checkbox"
-                        value={currentCategoryOrdered}
-                        onChange={e => setCurrentCategoryOrdered(e.target.value)}
+                        checked={currentCategoryOrdered}
+                        onChange={e => setCurrentCategoryOrdered(e.target.checked)}
                     >
                         Ordered (drag to re-order)
                     </Checkbox>
@@ -412,9 +413,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                     <label id="add-category-label">Add category value:</label>
                 </Row>
                 <Row id="add-category-value-row" className="pt-1">
-                    <Input.Group    // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    // 2/6/23 DEF - DragDropContext does not have an id property when compiling
-                        compact>
+                    <Space.Compact id="category-values-group">
                         <Input id="add-category-value-input" 
                             style={{width: 'calc(100% - 200px)'}}
                             placeholder="Enter value"
@@ -434,7 +433,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                         >
                             Add
                         </Button>
-                    </Input.Group>
+                    </Space.Compact>
                 </Row>
             </Container>
         </Modal>

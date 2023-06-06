@@ -82,7 +82,7 @@ const PrescriptorEdgeComponent: React.FC<EdgeProps<PrescriptorEdgeData>>  = ({ i
                 <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - Popover does not have an id property when compiling
                     position={Position.LEFT}
-                    minWidth='1rem'
+                    minWidth="1rem"
                     content={ <>
                         <Tablist id={ `${flowPrefix}-settings-tablist` } 
                             marginBottom={16} 

@@ -46,9 +46,9 @@ async function deployModel(
     experiment_id: number,
     project_id: number,
     run_name: string,
+    cid?: string,
     min_replicas = 0,
-    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE,
-    cid?: string): Promise<DeployedModel> {
+    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE): Promise<DeployedModel> {
 
     const model_meta_data: ModelMetaData = {
         // In our case our model urls are in the output artifacts
@@ -133,16 +133,15 @@ export async function deployRun(
     )
 
     // Only deploy the model if it is not deployed
-    const result = await isRunDeployed(model_serving_env, run.id, deployment_id)
+    const result = await isRunDeployed(run.id, deployment_id, model_serving_env)
     if (result) {
         // short-circuit -- already deployed
         return deployment_id
     }
 
     try {
-        return await deployModel(
-            deployment_id, run.id, run.experiment_id, project_id, run.name, min_replicas, model_serving_env, cid
-        )
+        return await deployModel(deployment_id, run.id, run.experiment_id, project_id, run.name, cid, min_replicas,
+            model_serving_env)
     } catch (e) {
         sendNotification(NotificationType.error, "Internal error",
             `Unable to deploy model for run id ${run.id}. See console for more details.`)
@@ -226,9 +225,9 @@ export async function undeployRun(project_id: number,
     }
 }
 
-async function isRunDeployed(model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE,
-                                    run_id: number,
-                                    deployment_id: string,
+async function isRunDeployed(run_id: number,
+                             deployment_id: string,
+                             model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE,
 ): Promise<boolean> {
 
     // Fetch the already deployed models

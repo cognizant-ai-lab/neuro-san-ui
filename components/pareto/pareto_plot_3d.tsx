@@ -34,7 +34,7 @@ export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
     const firstPrescriptorNode = pareto[firstPrescriptorNodeID]
 
     // Number of generations for this Run
-    const numberOfGenerations = useMemo(function () {
+    const numberOfGenerations = useMemo(() => {
         return firstPrescriptorNode.data.length
     }, [])
     

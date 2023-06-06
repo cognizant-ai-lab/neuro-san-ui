@@ -9,7 +9,7 @@ export default async function loadTaggedDataList(requestUser, projectId): Promis
         const dataSources: DataSources = await BrowserFetchDataSources(requestUser, projectId)
         if (dataSources.length > 0) {
             const taggedDataList: TaggedDataInfoList = []
-            for (let iter = 0; iter < dataSources.length; iter++) {
+            for (let iter = 0; iter < dataSources.length; iter += 1) {
                 const dataSource = dataSources[iter]
                 const dataTags: DataTags = await BrowserFetchDataTags(requestUser, dataSource.id)
                 if (dataTags.length > 0) {

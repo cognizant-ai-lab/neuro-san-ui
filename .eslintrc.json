@@ -30,13 +30,60 @@
         "sourceType": "module"
     },
     "rules": {
-        // Set these to warning only
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-unused-vars": "warn",
+        // Want to enforce this on all compoments, which the default setting does not do.
         "enforce-ids-in-jsx/missing-ids": ["warn", {
             "target": ["all"]
         }],
-        "no-alert": "warn",
+
+        // Turn on some optional, stricter settings for this rule
+        "react/jsx-key": ["error", {
+                "checkFragmentShorthand": true,
+                "checkKeyMustBeforeSpread": true,
+                "warnOnDuplicates": true
+        }],
+
+        // Want to allow short circuit like foo && useFoo(foo)
+        "no-unused-expressions": ["warn", {
+                "allowShortCircuit": true,
+                "allowTernary": true
+        }],
+
+        // Disallow this syntax -- confusing
+        "logical-assignment-operators": ["error", "never"],
+
+        // Would like to leave this at the default setting (max = 1) but that excludes functional incantations that we
+        // would like to allow such as nodes.forEach(node => {node.doSomething})
+        // See: https://github.com/eslint/eslint/issues/9210
+        "max-statements-per-line": ["error", { "max": 2 }],
+
+        // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict with
+        // other plugins we're using?
+        "constructor-super": "off",
+        "getter-return": "off",
+        "no-alert": "error",
+        "no-array-constructor": "off",
+        "no-const-assign": "off",
+        "no-dupe-args": "off",
+        "no-dupe-class-members": "off",
+        "no-dupe-keys": "off",
+        "no-empty-function": "off",
+        "no-extra-semi": "off",
+        "no-func-assign": "off",
+        "no-import-assign": "off",
+        "no-loss-of-precision": "off",
+        "no-new-symbol": "off",
+        "no-obj-calls": "off",
+        "no-redeclare": "off",
+        "no-setter-return": "off",
+        "no-this-before-super": "off",
+        "no-undef": "off",
+        "no-unreachable": "off",
+        "no-unsafe-negation": "off",
+        "no-var": "off",
+        "prefer-const": "off",
+        "prefer-rest-params": "off",
+        "prefer-spread": "off",
+        "valid-typeof": "off",
 
         // Permanently off
 
@@ -56,7 +103,6 @@
         "complexity": "off",
         "consistent-return": "off",
         "default-case": "off",
-        "default-param-last": "off",
         "dot-location": "off",
         "dot-notation": "off",
         "enforce-ids-in-jsx/unique-ids": "off",
@@ -70,18 +116,14 @@
         "implicit-arrow-linebreak": "off",
         "indent": "off",
         "init-declarations": "off",
-        "jsx-quotes": "off",
-        "keyword-spacing": "off",
         "line-comment-position": "off",
         "lines-around-comment": "off",
-        "logical-assignment-operators": "off",
         "max-depth": "off",
         "max-len": "off",
         "max-lines": "off",
         "max-lines-per-function": "off",
         "max-params": "off",
         "max-statements": "off",
-        "max-statements-per-line": "off",
         "multiline-comment-style": "off",
         "multiline-ternary": "off",
         "new-cap": "off",
@@ -100,14 +142,12 @@
         "no-negated-condition": "off",
         "no-nested-ternary": "off",
         "no-param-reassign": "off",
-        "no-plusplus": "off",
         "no-return-await": "off",
         "no-shadow": "off",
         "no-ternary": "off",
         "no-trailing-spaces": "off",
         "no-undefined": "off",
         "no-underscore-dangle": "off",
-        "no-unused-expressions": "off",
         "no-use-before-define": "off",
         "no-void": "off",
         "no-warning-comments": "off",
@@ -117,7 +157,6 @@
         "one-var": "off",
         "operator-linebreak": "off",
         "padded-blocks": "off",
-        "prefer-arrow-callback": "off",
         "prefer-destructuring": "off",
         "prefer-template": "off",
         "quote-props": "off",
@@ -164,9 +203,7 @@
         "semi": "off",
         "sort-imports": "off",
         "sort-keys": "off",
-        "space-before-blocks": "off",
         "space-before-function-paren": "off",
-        "space-in-parens": "off",
         "space-infix-ops": "off",
         "space-unary-ops": "off",
         "spaced-comment": "off"

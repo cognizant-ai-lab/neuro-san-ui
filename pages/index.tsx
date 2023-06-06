@@ -1,5 +1,4 @@
 // Import React
-import React from "react"
 import {useEffect} from "react"
 import styled from "styled-components"
 
@@ -129,11 +128,12 @@ export default function Index(): React.ReactElement {
               <Right id="right">
                   {/* <ImageDiv id="image-div">
                       <Image id="image"
-                          src="/nnleaf.svg"
-                          width="249"
-                          height="587"
-                          layout="responsive"
-                          alt=""
+                             src="/nnleaf.svg"
+                             width="249"
+                             height="587"
+                             layout="responsive"
+                             alt=""
+                             priority
                       />
                   </ImageDiv>
                   <D2DText id="d2d-text">Data to Decisions</D2DText> */}

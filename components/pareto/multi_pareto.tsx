@@ -1,5 +1,5 @@
 import NewBar from "../newbar"
-import {useState} from "react"
+import {ReactElement, useState} from "react"
 
 import {Container} from "react-bootstrap"
 import {Row} from "react-bootstrap"
@@ -18,7 +18,7 @@ import {RadarPlot} from "./radar_plot"
  * Coordinates the display of various kinds of Pareto charts in 2D, 3D and more.
  * @param props Data for display in in the chart. See {@link ParetoPlotProps}.
  */
-export function MultiPareto(props: ParetoPlotProps) {
+export function MultiPareto(props: ParetoPlotProps): ReactElement {
 
     const objectivesCount = props.ObjectivesCount
     
@@ -84,8 +84,10 @@ export function MultiPareto(props: ParetoPlotProps) {
 
         cells.push(
             <Table.Row id={`pareto-plot-row=${idx}`} style={{height: "100%"}} key={`${nodeID}-pareto`}>
-                <Table.TextCell id={`pareto-plot-text-cell-${idx}`} style={{paddingLeft: 0}}>
-                    <div id={`pareto-plot-div-${idx}`} className="pb-28" style={{height: "600px", width: "100%"}}>
+                <Table.TextCell id={`pareto-plot-text-cell-${idx}`} key={`pareto-plot-text-cell-${idx}`}
+                                style={{paddingLeft: 0}}>
+                    <div id={`pareto-plot-div-${idx}`} key={`pareto-plot-div-${idx}`} className="pb-28"
+                         style={{height: "600px", width: "100%"}}>
                         
                         {/* Choose type of plot component based on user selection */}
                         
@@ -148,7 +150,7 @@ export function MultiPareto(props: ParetoPlotProps) {
         )
 
         nodePlots.push(
-            <div id="plot-table">
+            <div id="plot-table" key="plot-table">
                 <Table.Body id="plot-table-body">
                     <Table.Body id="plot-table-cells">
                         {cells}
@@ -161,7 +163,7 @@ export function MultiPareto(props: ParetoPlotProps) {
     const propsId = `${props.id}`
 
     return <>
-        <div id={`${propsId}`}>
+        <div id={`${propsId}`} key={`${propsId}`}>
             <NewBar id="pareto-prescriptors-bar"
                     InstanceId="pareto-prescriptors"
                     Title="Pareto Prescriptors"

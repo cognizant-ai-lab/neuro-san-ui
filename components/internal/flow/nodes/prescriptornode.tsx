@@ -99,7 +99,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `prescriptor-${flowIndex}`
 
-    const updateCAOState = ( event, espType: string ) => {
+    const updateCAOState = (event, espType: string) => {
         const { name, checked } = event.target
         const caoStateCopy = { ...ParentPrescriptorState.caoState }
 
