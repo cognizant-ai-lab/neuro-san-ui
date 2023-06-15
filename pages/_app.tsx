@@ -45,6 +45,9 @@ export default function LEAF({
   pageProps: { session, ...pageProps }
 }): React.ReactElement {
   const router = useRouter()
+  // Check if demo user as requested by URL param
+  const isDemoUser = "demo" in router.query
+
   let body
   if (router.pathname === "/") {
     body = <div id="body-div">
@@ -70,6 +73,7 @@ export default function LEAF({
                     </Auth>
                   : <Component id="body-non-auth-component" {...pageProps} />
               }
+              { isDemoUser &&
               <div id="fixed-pos-div" style={{position: "fixed", right: "20px", bottom: "0"}}>
                 <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     theme={chatbotTheme}>
@@ -82,6 +86,7 @@ export default function LEAF({
                   />
                 </ThemeProvider>
               </div>
+              }
             </Container>
           </ErrorBoundary>
         </SessionProvider>

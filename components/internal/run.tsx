@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {Artifact, Run, Runs} from "../../controller/run/types";
 import {BrowserFetchRuns, FetchSingleRunArtifact} from "../../controller/run/fetch";
 import {constructRunMetricsForRunPlot} from "../../controller/run/results";
@@ -34,6 +34,7 @@ import BlankLines from "../blanklines";
 import {ThemeProvider} from "styled-components";
 import ChatBot from 'react-simple-chatbot'
 import {chatbotSteps} from "./chatbot/steps";
+import {NextRouter, useRouter} from "next/router";
 
 interface RunProps {
     /* 
@@ -57,6 +58,9 @@ interface RunProps {
 
 export default function RunPage(props: RunProps): React.ReactElement {
 
+    // Get the router hook
+    const router: NextRouter = useRouter()
+
     const { data: session } = useSession()
     const currentUser: string = session.user.name
 
@@ -77,6 +81,9 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [rulesInterpretationLoading, setRulesInterpretationLoading] = useState(false)
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [project, setProject] = useState<Project>(null)
+
+    // Check if demo user as requested by URL param
+    const isDemoUser = "demo" in router.query
 
     function getProjectTitle() {
         return project != null ? project.name : ""
@@ -625,6 +632,7 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
                         ProjectID={props.ProjectId}
                         Flow={flow}
                         ElementsSelectable={false}
+                        IsDemoUser={isDemoUser}
                     />
                 </ReactFlowProvider>
             </div>
@@ -640,15 +648,17 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
 
         {plotDiv}
 
-        <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            theme={chatbotTheme}>
-            <ChatBot id="chatbot"
-                     floating={true}
-                     placeholder="What is Cognizant Neuro™ AI?"
-                     userAvatar={session?.user?.image}
-                     botAvatar="/cognizantfavicon.ico"
-                     steps={chatbotSteps}
-            />
-        </ThemeProvider>
+        {isDemoUser &&
+            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                theme={chatbotTheme}>
+                <ChatBot id="chatbot"
+                         floating={true}
+                         placeholder="What is Cognizant Neuro™ AI?"
+                         userAvatar={session?.user?.image}
+                         botAvatar="/cognizantfavicon.ico"
+                         steps={chatbotSteps}
+                />
+            </ThemeProvider>
+        }
     </div>
 }

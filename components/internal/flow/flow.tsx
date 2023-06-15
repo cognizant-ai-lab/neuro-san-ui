@@ -75,7 +75,9 @@ interface FlowProps {
 
     // If this is set to true, it disables the buttons
     // and the flow from update
-    ElementsSelectable: boolean
+    ElementsSelectable: boolean,
+
+    IsDemoUser: boolean
 }
 
 /**
@@ -1174,11 +1176,11 @@ export default function Flow(props: FlowProps) {
         []
       );
 
-
+    const cols = props.IsDemoUser ? 4 : 3
     return <Container id={ `${propsId}` }>
         {/* Only render if ElementsSelectable is true */}
         {elementsSelectable &&
-            <div id="flow-buttons" className="grid grid-cols-4 gap-4 mb-4">
+            <div id="flow-buttons" className={`grid grid-cols-${cols} gap-4 mb-4`}>
                 <Button
                     id="add_predictor_btn"
                     size="sm"
@@ -1206,6 +1208,7 @@ export default function Flow(props: FlowProps) {
                 >
                     Add Prescriptor
                 </Button>
+                {props.IsDemoUser &&
                 <Button
                     id="add_llm_btn"
                     size="sm"
@@ -1215,6 +1218,7 @@ export default function Flow(props: FlowProps) {
                 >
                     Add LLMs
                 </Button>
+                }
             </div>
         }
 
