@@ -95,7 +95,10 @@ const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props)
                                 >
                                     {taggedDataList.map(data => {
                                         // Hack to get valid id into the option tag
-                                        const id = `data-source-node-option-${data.DataSource.id}`;
+                                        // DEF: Right now there is only ever one data source, but someday
+                                        //      there will be more and Vince would like the id to correspond
+                                        //      to what is visible so he can verify more easily.
+                                        const id = `data-source-node-selected`;
                                         return <option key={data.DataSource.id}
                                                        id={id}
                                                        value={data.DataSource.id}>{data.DataSource.name}</option>;
@@ -110,7 +113,7 @@ const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props)
             <Handle id="data-source-handle" type="source" position={Position.Right} />
             <Handle id={ `data-source-target-handle` } type="target" position={Position.Left} />
         </BlueprintCard>
-        
+
 }
 
 export default DataSourceNodeComponent;
