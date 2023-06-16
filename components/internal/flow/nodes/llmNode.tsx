@@ -254,6 +254,7 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                 <button id={ `${flowPrefix}-delete-button` }
                         type="button"
                         className="hover:text-red-700 text-xs"
+                        disabled={true}
                         onClick={() => {
                             DeleteNode(NodeID)
                             sendNotification(NotificationType.success, "LLM node deleted")

@@ -375,7 +375,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }
         }
 
-        if (rules && flow) {
+        if (rules && flow && isDemoUser) {
             void fetchRulesInterpretations()
         }
     }, [rules])
@@ -421,7 +421,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }
         }
 
-        if (rules && flow) {
+        if (rules && flow && isDemoUser) {
             void fetchInsights()
         }
     }, [rules])
@@ -527,95 +527,101 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         )
     }
 
+    function getRawRulesDiv() {
+        return <div id="rules-div" className="my-2 py-2" key="rules-div"
+                    style={{
+                        whiteSpace: "pre",
+                        backgroundColor: "whitesmoke",
+                        overflowY: "scroll",
+                        display: "block",
+                        borderColor: "red"
+                    }}
+        >
+            <SyntaxHighlighter id="syntax-highlighter"
+                               language="scala" style={docco} showLineNumbers={true}>
+                {rules}
+            </SyntaxHighlighter>
+        </div>;
+    }
+
     if (rules) {
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
         plotDiv.push(
             <div id="rules-div" style={{marginBottom: "600px"}}>
-            <NewBar id="rules-bar" InstanceId="rules"
-                    Title="Rules" DisplayNewLink={ false } />
-            <Tabs
-                defaultActiveKey="decoded"
-                id="rules-tabs"
-                className="my-10"
-                justify
-            >
-                <Tab id="rules-decoded-tab" eventKey="decoded" title="Details" >
-                    <Container id="rules-decoded-container">
-                        <Row id="rules-decoded-row" style={{marginTop: 10}}>
-                            <Col id="rules-decoded-column" md={10} >
-                                {selectedRulesFormat === "raw"
-                                    ? <div id="rules-div" className="my-2 py-2" key="rules-div"
-                                           style={{
-                                               whiteSpace: "pre",
-                                               backgroundColor: "whitesmoke",
-                                               overflowY: "scroll",
-                                               display: "block",
-                                               borderColor: "red"
-                                           }}
-                                    >
-                                            <SyntaxHighlighter id="syntax-highlighter"
-                                                               language="scala" style={docco} showLineNumbers={true}>
-                                                {rules}
-                                            </SyntaxHighlighter>
-                                    </div>
-                                    :
-                                    rulesInterpretationLoading
-                                        ?   <>
-                                            <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                            color={MaximumBlue} loading={true} size={50} />
-                                                Accessing GPT...
-                                            </>
-                                    :<div id="markdown-div">
-                                        <ReactMarkdown     // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    // ReactMarkdown doesn"t have (or need) an id property. The items it generates
-                                    // each have their own referenceable id.
+                <NewBar id="rules-bar" InstanceId="rules"
+                        Title="Rules" DisplayNewLink={ false } />
+                {isDemoUser ? 
+                    <Tabs
+                        defaultActiveKey="decoded"
+                        id="rules-tabs"
+                        className="my-10"
+                        justify
+                    >
+                        <Tab id="rules-decoded-tab" eventKey="decoded" title="Details">
+                            <Container id="rules-decoded-container">
+                                <Row id="rules-decoded-row" style={{marginTop: 10}}>
+                                    <Col id="rules-decoded-column" md={10}>
+                                        {selectedRulesFormat === "raw"
+                                            ? getRawRulesDiv()
+                                            : rulesInterpretationLoading
+                                                ? <>
+                                                    <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                                        color={MaximumBlue} loading={true} size={50}/>
+                                                    Accessing GPT...
+                                                </>
+                                                : <div id="markdown-div">
+                                                    <ReactMarkdown     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                                        // ReactMarkdown doesn"t have (or need) an id property. The items it generates
+                                                        // each have their own referenceable id.
+                                                    >
+                                                        {interpretedRules}
+                                                    </ReactMarkdown>
+                                                    <br id="markdown-br-1"/>
+                                                    <br id="markdown-br-2"/>
+                                                    <br id="markdown-br-3"/>
+                                                    <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
+                                                </div>
+                                        }
+                                    </Col>
+                                    <Col id="radio-column" md={2}>
+                                        <Radio.Group id="radio-group" value={selectedRulesFormat}
+                                                     onChange={(e: RadioChangeEvent) => {
+                                                         setSelectedRulesFormat(e.target.value)
+                                                     }}
                                         >
-                                            {interpretedRules}
-                                        </ReactMarkdown>
-                                        <br id="markdown-br-1"/>
-                                        <br id="markdown-br-2"/>
-                                        <br id="markdown-br-3"/>
+                                            <Space id="radio-space" direction="vertical" size="middle">
+                                                <Radio id="radio-raw" value="raw">Raw</Radio>
+                                                <Radio id="radio-interpreted" value="interpreted">Interpreted (Beta)</Radio>
+                                            </Space>
+                                        </Radio.Group>
+                                    </Col>
+                                </Row>
+                            </Container>
+                        </Tab>
+                        <Tab id="insights-tab" eventKey="insights" title="Insights">
+                            <div id="insights-div" className="my-2 py-2" style={{whiteSpace: "pre-wrap"}}>
+                                {insightsLoading
+                                    ? <>
+                                        <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                            color={MaximumBlue} loading={true} size={50}/>
+                                        Accessing GPT...
+                                    </>
+                                    : <div id="insights-inner-div">
+                                        <h1 id="insights-h1">Insights</h1>
+                                        <h2 id="project-name">{project.name}</h2>
+                                        {project.description}
+                                        <BlankLines id="blank-lines-1" numLines={3}/>
+                                        {insights}
+                                        <BlankLines id="blank-lines-1" numLines={3}/>
                                         <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
                                     </div>
                                 }
-                            </Col>
-                            <Col id="radio-column" md={2}>
-                                <Radio.Group id="radio-group" value={selectedRulesFormat}
-                                             onChange={(e: RadioChangeEvent) => {
-                                                 setSelectedRulesFormat(e.target.value)
-                                             }}
-                                >
-                                    <Space id="radio-space" direction="vertical" size="middle">
-                                        <Radio id="radio-raw" value="raw">Raw</Radio>
-                                        <Radio id="radio-interpreted" value="interpreted">Interpreted (Beta)</Radio>
-                                    </Space>
-                                </Radio.Group>
-                            </Col>
-                        </Row>
-                    </Container>
-                </Tab>
-                <Tab id="insights-tab" eventKey="insights" title="Insights" >
-                    <div id="insights-div" className="my-2 py-2" style={{whiteSpace: "pre-wrap"}}>
-                        {insightsLoading
-                        ?   <>
-                        <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            color={MaximumBlue} loading={true} size={50} />
-                        Accessing GPT...
-                        </>
-                        :<div id="insights-inner-div">
-                            <h1 id="insights-h1">Insights</h1>
-                            <h2 id="project-name">{project.name}</h2>
-                            {project.description}
-                            <BlankLines id="blank-lines-1" numLines={3} />
-                            {insights}
-                            <BlankLines id="blank-lines-1" numLines={3} />
-                            <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
-                        </div>
-                        }
-                    </div>
-                </Tab>
-            </Tabs>
+                            </div>
+                        </Tab>
+                    </Tabs>
+                    : getRawRulesDiv()
+                }
             </div>
         )
     }
