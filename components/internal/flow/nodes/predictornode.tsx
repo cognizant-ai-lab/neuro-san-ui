@@ -131,10 +131,16 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
         regressor: FetchMetrics("regressor"),
         classifier: FetchMetrics("classifier")
     }
+
+    // These predictors will ownly be shown in demo mode
+    const demoOnlyPredictors = ["Transformer", "LLM"]
+
     const predictors = {
         regressor: isDemoUser
             ? FetchPredictors("regressor")
-            : FetchPredictors("regressor").filter(predictor => !["Transformer", "LLM"].includes(predictor)),
+            : FetchPredictors("regressor").filter(predictor => {
+                return !demoOnlyPredictors.includes(predictor);
+            }),
         classifier: FetchPredictors("classifier")
     }
 

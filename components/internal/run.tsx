@@ -337,8 +337,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     useEffect(() =>
     {
+        // TODO: de-dupe this code with the "rules insights" code below
         async function fetchRulesInterpretations() {
             const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+            if (!prescriptorNode) {
+                return
+            }
+
             const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
             const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
             const actionFields  = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
@@ -384,6 +389,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
     {
         async function fetchInsights() {
             const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+            if (!prescriptorNode) {
+                return
+            }
+
             const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
             const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
             const actionFields  = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
@@ -430,7 +439,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     if (predictorPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
         plotDiv.push(<MetricsTable  // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    // MetricsTable doesn"t have (or need) an id property. The items it generates
+                                    // MetricsTable doesn't have (or need) an id property. The items it generates
                                     // each have their own referenceable id.
                         key="metrics-table"
                         PredictorRunData={predictorPlotData}

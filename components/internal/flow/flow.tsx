@@ -1174,7 +1174,12 @@ export default function Flow(props: FlowProps) {
         []
       );
 
-    const cols = props.IsDemoUser ? 4 : 3
+    // Figure out how many columns we need -- one for each button (add predictor, add prescriptor, add uncertainty),
+    // plus an extra one if demo mode is enabled, for the "add LLMs" button.
+    const numButtonsWithAddLLMs = 4;
+    const numButtonsWithoutAddLLMs = 3;
+    const cols = props.IsDemoUser ? numButtonsWithAddLLMs : numButtonsWithoutAddLLMs
+
     return <Container id={ `${propsId}` }>
         {/* Only render if ElementsSelectable is true */}
         {elementsSelectable &&
@@ -1207,15 +1212,16 @@ export default function Flow(props: FlowProps) {
                     Add Prescriptor
                 </Button>
                 {props.IsDemoUser &&
-                <Button
-                    id="add_llm_btn"
-                    size="sm"
-                    onClick={() => _addLlms()}
-                    type="button"
-                    style={buttonStyle}
-                >
-                    Add LLMs
-                </Button>
+                    // Only show "add LLMs" button if demo functionality requested
+                    <Button
+                        id="add_llm_btn"
+                        size="sm"
+                        onClick={() => _addLlms()}
+                        type="button"
+                        style={buttonStyle}
+                    >
+                        Add LLMs
+                    </Button>
                 }
             </div>
         }

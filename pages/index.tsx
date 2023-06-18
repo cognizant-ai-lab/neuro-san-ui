@@ -102,11 +102,7 @@ export default function Index(): React.ReactElement {
               <NavbarLogo id="logo"><Image id="logo-img" width="250" height="45"
                                                   src="/cognizant-logo-white.svg" alt="" /></NavbarLogo>
               <NavbarMiddleSection id="nav-bar-middle">
-                  {/* <NavbarItem id="publications">Publications</NavbarItem>
-                  <NavbarItem id="contact">Contact</NavbarItem>
-                  <NavbarItem id="about">About</NavbarItem> */}
               </NavbarMiddleSection>
-              {/* <NavbarItem id="partner">Partner</NavbarItem> */}
           </Navbar>
           <LeftRight id="main">
               <div id="main-div">
@@ -126,17 +122,6 @@ export default function Index(): React.ReactElement {
                   </Description>
               </div>
               <Right id="right">
-                  {/* <ImageDiv id="image-div">
-                      <Image id="image"
-                             src="/nnleaf.svg"
-                             width="249"
-                             height="587"
-                             layout="responsive"
-                             alt=""
-                             priority
-                      />
-                  </ImageDiv>
-                  <D2DText id="d2d-text">Data to Decisions</D2DText> */}
               </Right>
           </LeftRight>
 

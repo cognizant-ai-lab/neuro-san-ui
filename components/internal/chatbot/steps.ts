@@ -27,7 +27,7 @@ const RESPONSES = {
         "contextualized representations of textual data. By leveraging attention mechanisms, " +
         "Transformers have demonstrated remarkable performance in various language-related tasks, making them a " +
         "fundamental component of modern language models.",
-    "predictor": "In the context of Cognizant Neuro™ AI, a predictor is a modelused to train a " +
+    "predictor": "In the context of Cognizant Neuro™ AI, a predictor is a model used to train a " +
         "population of prescriptors. The predictor predicts, for a given Context and set of Actions, what the outcome " +
         "would be in the system being modeled. As such, a predictor is a type of surrogate model.",
     "Cognizant": "Cognizant, Inc. is a multinational technology company that provides a range of IT services and " +
