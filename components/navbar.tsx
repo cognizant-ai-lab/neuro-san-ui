@@ -24,6 +24,7 @@ import {signOut, useSession} from "next-auth/react"
 
 // Custom components
 import {isSignedIn} from "./auth"
+import {useRouter} from "next/router";
 
 // Define Constants
 const LOGO_COLOR: string = "white";
@@ -46,6 +47,7 @@ function Navbar(props: NavbarProps): React.ReactElement {
     navbar component. The logo and the sidebar callback are configurable,
     but not the list items.
     */
+    const router = useRouter()
 
     const { data: session, status } = useSession()
     const signedIn: boolean = isSignedIn(session, status)
@@ -72,7 +74,12 @@ function Navbar(props: NavbarProps): React.ReactElement {
                             Build: {UNILEAF_VERSION ?? "Unknown"}
                         </Nav.Item>
                         <Nav.Item id="projects" className="px-3">
-                            <Link id="project-links" href={`/projects`} style={{color: NAV_ITEMS_COLOR}}>
+                            <Link id="project-links" style={{color: NAV_ITEMS_COLOR}}
+                                href={{
+                                    pathname: "/projects",
+                                    query: router.query
+                                }}
+                            >
                                 Projects
                             </Link>
                         </Nav.Item>

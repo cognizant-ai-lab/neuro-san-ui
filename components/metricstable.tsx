@@ -52,8 +52,8 @@ export default function MetricsTable(props: MetricstableProps) {
             {((rioDiff) / nonAdjustedValue * 100).toFixed(2)}%
             {rioDiff != 0 &&
                 (isImproved
-                    ? <FaArrowUp id="arrow-up" style={{color: "#4EAD60FF"}} />
-                    : <FaArrowDown id="arrow-down" style={{color: "#ff5740"}} />
+                    ? <FaArrowUp id="arrow-up" style={{color: "#2DB81F"}} />
+                    : <FaArrowDown id="arrow-down" style={{color: "#B81F2D"}} />
                 )
             }
         </span>

@@ -1,6 +1,6 @@
 /* Downloaded from https://github.com/SimonHausdorf/nextjs-breadcrumbs2/ because apparently the author forgot to
 include this in the npm package. */
- 
+
 .breadcrumb {
   list-style: none;
   overflow: hidden;
@@ -13,7 +13,7 @@ include this in the npm package. */
   color: rgb(0, 0, 0);
   text-decoration: none;
   padding: 10px 0 10px 50px;
-  background: rgb(230, 224, 224);
+  background: #D0D0CE;
   position: relative;
   display: block;
   float: left;
@@ -26,7 +26,7 @@ include this in the npm package. */
   height: 0;
   border-top: 50px solid transparent; /* Go big on the size, and let overflow hide */
   border-bottom: 50px solid transparent;
-  border-left: 30px solid rgb(230, 224, 224);
+  border-left: 30px solid #D0D0CE;
   position: absolute;
   top: 50%;
   margin-top: -50px;
@@ -56,31 +56,31 @@ include this in the npm package. */
   cursor: pointer !important;
 }
 .breadcrumb li:nth-child(2) a {
-  background: rgb(224, 233, 233);
+  background: #E8E8E6;
 }
 .breadcrumb li:nth-child(2) a:after {
-  border-left-color: rgb(224, 233, 233);
+  border-left-color: #E8E8E6;
 }
 .breadcrumb li:nth-child(3) a {
-  background: rgb(224, 233, 233);
+  background: #E8E8E6;
 }
 .breadcrumb li:nth-child(3) a:after {
-  border-left-color: rgb(224, 233, 233);
+  border-left-color: #E8E8E6;
 }
 .breadcrumb li:nth-child(4) a {
-  background: rgb(224, 233, 233);
+  background: #E8E8E6;
 }
 .breadcrumb li:nth-child(4) a:after {
-  border-left-color: rgb(224, 233, 233);
+  border-left-color: #E8E8E6;
 }
 .breadcrumb li:nth-child(5) a {
-  background: rgb(224, 233, 233);
+  background: #E8E8E6;
 }
 .breadcrumb li:nth-child(5) a:after {
-  border-left-color: rgb(224, 233, 233);
+  border-left-color: #E8E8E6;
 }
 .breadcrumb li:last-child a {
-  background: rgb(238, 235, 232) !important;
+  background: #E8E8E6 !important;
   color: black;
   pointer-events: none;
   cursor: default;
@@ -91,8 +91,8 @@ include this in the npm package. */
 }
 
 .breadcrumb li a:hover {
-  background: rgb(194, 226, 221);
+  background: #D0D0CE;
 }
 .breadcrumb li a:hover:after {
-  border-left-color: rgb(194, 226, 221) !important;
+  border-left-color: #D0D0CE !important;
 }

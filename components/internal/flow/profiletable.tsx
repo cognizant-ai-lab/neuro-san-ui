@@ -51,8 +51,8 @@ export default function ProfileTable(props: ProfiletableProps) {
             <th id={header}
                 key={header}
                 scope="col"
-                className="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-               
+                className="py-3 text-center text-xs font-medium text-gray-500"
+
             >
                 { header }
             </th>
@@ -62,14 +62,14 @@ export default function ProfileTable(props: ProfiletableProps) {
     // Color codes for the various types of rows in the fields table
     const caoColorCoding = {
         /* eslint-disable key-spacing */
-        "CONTEXT":  "#8BBEE8FF",
-        "ACTION":   "#D7A9E3FF",
-        "OUTCOME":  "#A8D5BAFF",
-        "REJECTED": "#D4B4B4FF"
+        "CONTEXT":  "#87b4e3",
+        "ACTION":   "#79f5f1",
+        "OUTCOME":  "#b4e5af",
+        "REJECTED": "#ebbfc3"
         /* eslint-enable key-spacing */
     }
 
-    const tableCellClassName = "py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
+    const tableCellClassName = "py-3 text-center text-xs font-medium text-gray-900"
 
     // Fields are in arbitrary order as returned from DataProfiler (gRPC runtime jumbles the keys since maps are
     // defined as not having a key order)

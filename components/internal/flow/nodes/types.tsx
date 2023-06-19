@@ -4,6 +4,7 @@ import DataSourceNodeComponent, { DataSourceNode, DataSourceNodeData } from './d
 import PredictorNodeComponent, { PredictorNode, PredictorNodeData } from './predictornode'
 import PrescriptorNodeComponent, { PrescriptorNode, PrescriptorNodeData } from './prescriptornode'
 import UncertaintyModelNodeComponent, { UncertaintyModelNode, UncertaintyModelNodeData } from './uncertaintyModelNode'
+import LlmNodeComponent from "./llmNode"
 
 // Based on the declared nodes above we declare a constant holder
 // to reference the Node objects. These references are later passed
@@ -12,7 +13,8 @@ const NodeTypes: RFNodeTypes = {
     datanode: DataSourceNodeComponent,
     predictornode: PredictorNodeComponent,
     prescriptornode: PrescriptorNodeComponent,
-    uncertaintymodelnode: UncertaintyModelNodeComponent
+    uncertaintymodelnode: UncertaintyModelNodeComponent,
+    llmnode: LlmNodeComponent
 }
 
 export type NodeData = DataSourceNodeData | PredictorNodeData | PrescriptorNodeData | UncertaintyModelNodeData;

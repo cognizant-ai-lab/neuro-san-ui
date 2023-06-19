@@ -341,7 +341,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                         value={Number(representationConfig.max_exponent)}
                         marks={{
                             0: {label: "0"},
-                            9: {label: "9", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+                            9: {label: "9", style: {color: "#53565A"}}  // To prevent end mark from being "grayed out"
                         }}
                         handleRender={(node) => {
                             return (
@@ -373,7 +373,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                         value={Number(representationConfig.number_of_building_block_conditions)}
                         marks={{
                             1: {label: "1"},
-                            9: {label: "9", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+                            9: {label: "9", style: {color: "#53565A"}}  // To prevent end mark from being "grayed out"
                         }}
                         handleRender={(node) => {
                             return (
@@ -405,7 +405,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                         value={Number(representationConfig.number_of_building_block_rules)}
                         marks={{
                             1: {label: "1"},
-                            99: {label: "99", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+                            99: {label: "99", style: {color: "#53565A"}}  // To prevent end mark from being "grayed out"
                         }}
                         handleRender={(node) => {
                             return (
@@ -830,7 +830,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                                     Object.keys(ParentPrescriptorState.caoState.context).map(element =>
                                     <div id={ `${flowPrefix}-context-div` } 
                                         key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                        <label id={ `${flowPrefix}-context-label-${element}` }  
+                                        <label id={ `${flowPrefix}-context-label-${element}` }
                                             className="capitalize"> {element} </label>
                                         <input id={ `${flowPrefix}-context-input-${element}` }
                                             name={element}
@@ -859,7 +859,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                                     Object.keys(ParentPrescriptorState.caoState.action).map(element =>
                                         <div id={ `${flowPrefix}-actions-div-${element}` }  
                                             key={element} className="grid grid-cols-2 gap-4 mb-2">
-                                            <label id={ `${flowPrefix}-actions-label-${element}` } 
+                                            <label id={ `${flowPrefix}-actions-label-${element}` }
                                                 className="capitalize"> {element} </label>
                                             <input id={ `${flowPrefix}-actions-input-${element}` }
                                                 name={element}

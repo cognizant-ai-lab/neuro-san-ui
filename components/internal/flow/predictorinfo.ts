@@ -338,7 +338,9 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             "description": `A generated token to access the Databricks™ instance`,
             "type": "password",
         }
-    }
+    },
+    "Transformer": {},
+    "LLM": {}
 }
 export const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
     "Random Forest": {

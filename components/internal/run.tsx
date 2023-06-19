@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {Artifact, Run, Runs} from "../../controller/run/types";
 import {BrowserFetchRuns, FetchSingleRunArtifact} from "../../controller/run/fetch";
 import {constructRunMetricsForRunPlot} from "../../controller/run/results";
@@ -6,7 +6,7 @@ import {empty} from "../../utils/objects";
 import MetricsTable from "../metricstable";
 import ESPRunPlot from "../esprunplot";
 import NewBar from "../newbar";
-import {Button} from "react-bootstrap";
+import {Button, Col, Container, Row} from "react-bootstrap"
 import {MaximumBlue} from "../../const";
 import ClipLoader from "react-spinners/ClipLoader";
 import Link from "next/link";
@@ -21,6 +21,21 @@ import decode from "../../utils/conversion";
 import {useSession} from "next-auth/react";
 import { MultiPareto } from "../pareto/multi_pareto";
 import { NodeType } from "./flow/nodes/types";
+import Tab from 'react-bootstrap/Tab'
+import Tabs from 'react-bootstrap/Tabs'
+import {Radio, RadioChangeEvent, Space} from "antd"
+import ReactMarkdown from "react-markdown";
+import {Project, Projects} from "../../controller/projects/types";
+import {BrowserFetchProjects} from "../../controller/projects/fetch";
+import BlankLines from "../blanklines";
+
+import {NextRouter, useRouter} from "next/router";
+
+// Chatbot
+import {ThemeProvider} from "styled-components";
+import ChatBot from 'react-simple-chatbot'
+import {chatbotSteps} from "./chatbot/steps";
+import {chatbotTheme} from "../../const";
 
 interface RunProps {
     /* 
@@ -44,6 +59,9 @@ interface RunProps {
 
 export default function RunPage(props: RunProps): React.ReactElement {
 
+    // Get the router hook
+    const router: NextRouter = useRouter()
+
     const { data: session } = useSession()
     const currentUser: string = session.user.name
 
@@ -57,6 +75,24 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [flow, setFlow] = useState(null)
 
     const [, setPrescriptors] = useLocalStorage("prescriptors", null);
+
+    const [selectedRulesFormat, setSelectedRulesFormat] = useState("raw")
+    const [interpretedRules, setInterpretedRules] = useState(null)
+    const [insights, setInsights] = useState(null)
+    const [rulesInterpretationLoading, setRulesInterpretationLoading] = useState(false)
+    const [insightsLoading, setInsightsLoading] = useState(false)
+    const [project, setProject] = useState<Project>(null)
+
+    // Check if demo user as requested by URL param
+    const isDemoUser = "demo" in router.query
+
+    function getProjectTitle() {
+        return project != null ? project.name : ""
+    }
+
+    function getProjectDescription() {
+        return project != null ? project.description : ""
+    }
 
     function cacheRun(run: Run) {
         /*
@@ -157,7 +193,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     
     async function loadRun(runID: number) {
         if (runID) {
-            const propertiesToRetrieve = ['output_artifacts', 'metrics', 'flow', 'id', 'experiment_id'];
+            const propertiesToRetrieve = ["output_artifacts", "metrics", "flow", "id", "experiment_id"];
             const runs: Runs = await BrowserFetchRuns(currentUser, null, runID, propertiesToRetrieve)
             if (runs.length === 1) {
                 const run = runs[0]
@@ -176,6 +212,16 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }
 
+    async function loadProject(projectID: number) {
+        if (!projectID) {
+            return
+        }
+
+        const projects: Projects = await BrowserFetchProjects(currentUser, projectID, ["name", "description"])
+        if (projects && projects.length == 1) {
+            setProject(projects[0])
+        }
+    }
 
     // Fetch the experiment and the runs
     useEffect(() => {
@@ -201,6 +247,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }
         }
     }, [nodeToCIDMap])
+
+    // Fetch the project
+    useEffect(() => {
+        if (props.ProjectId) {
+            void loadProject(props.ProjectId)
+        }
+    }, [props.ProjectId])
 
     // Decode the rules from the artifact obj
     useEffect(() => {
@@ -283,6 +336,106 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }, [paretoPlotData])
 
+    useEffect(() =>
+    {
+        // TODO: de-dupe this code with the "rules insights" code below
+        async function fetchRulesInterpretations() {
+            const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+            if (!prescriptorNode) {
+                return
+            }
+
+            const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
+            const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
+            const actionFields  = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
+
+            const outcomeFields = Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map(item => ({[item.metric_name]: item.maximize ? "maximize" : "minimize"})))
+
+            try {
+                setRulesInterpretationLoading(true)
+                const response = await fetch("/api/gpt/rules", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        projectTitle: getProjectTitle(),
+                        projectDescription: getProjectDescription(),
+                        rawRules: rules,
+                        contextFields: contextFields,
+                        actionFields: actionFields,
+                        outcomeFields: outcomeFields
+                })
+                })
+                if (!response.ok) {
+                    console.debug("error json", await response.json())
+                    throw new Error(response.statusText)
+                }
+                const data = await response.json()
+                setInterpretedRules(data.interpretedRules)
+            } catch (error) {
+                console.debug("error", error)
+            } finally {
+                setRulesInterpretationLoading(false)
+            }
+        }
+
+        if (rules && flow && isDemoUser) {
+            void fetchRulesInterpretations()
+        }
+    }, [rules])
+
+    useEffect(() =>
+    {
+        async function fetchInsights() {
+            const prescriptorNode = FlowQueries.getPrescriptorNodes(flow)[0]
+            if (!prescriptorNode) {
+                return
+            }
+
+            const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
+            const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
+            const actionFields  = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
+
+            const outcomeFields = Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map(item => ({[item.metric_name]: item.maximize ? "maximize" : "minimize"})))
+
+            try {
+                setInsightsLoading(true)
+                const response = await fetch("/api/gpt/insights", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        projectTitle: getProjectTitle(),
+                        projectDescription: getProjectDescription(),
+                        rawRules: rules,
+                        contextFields: contextFields,
+                        actionFields: actionFields,
+                        outcomeFields: outcomeFields
+                    })
+                })
+                if (!response.ok) {
+                    console.debug("error json", await response.json())
+                    throw new Error(response.statusText)
+                }
+                const data = await response.json()
+                const insightsWithBreaks = data.insights.replace("\\n", "\n")
+                setInsights(insightsWithBreaks)
+            } catch (error) {
+                console.debug("error", error)
+            } finally {
+                setInsightsLoading(false)
+            }
+        }
+
+        if (rules && flow && isDemoUser) {
+            void fetchInsights()
+        }
+    }, [rules])
+
     const plotDiv = []
     if (predictorPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
@@ -326,7 +479,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     // Get verbiage for DMS button
     function getDMSButton() {
-        // Can't use DMS if no prescriptors
+        // Can"t use DMS if no prescriptors
         if (empty(nodeToCIDMap)) {
             return "(Decision Making System not available: no prescriptors found.)"
         }
@@ -337,11 +490,15 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const projectId = props.ProjectId;
         const experimentId = run.experiment_id;
         const runId = run.id;
-        const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/
-${prescriptorID}/?data_source_id=${dataSourceId}`
+        const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/${prescriptorID}`
         return <>
             <Link id="dms-link"
-                href={dmsLink}
+                href={{
+                    pathname: dmsLink,
+
+                    // Pass along query params, including "demo" option if present
+                    query: {...router.query, data_source_id: dataSourceId}
+                }}
                 style={{
                     color: "white"
                 }}
@@ -384,25 +541,102 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         )
     }
 
+    function getRawRulesDiv() {
+        return <div id="rules-div" className="my-2 py-2" key="rules-div"
+                    style={{
+                        whiteSpace: "pre",
+                        backgroundColor: "whitesmoke",
+                        overflowY: "scroll",
+                        display: "block",
+                        borderColor: "red"
+                    }}
+        >
+            <SyntaxHighlighter id="syntax-highlighter"
+                               language="scala" style={docco} showLineNumbers={true}>
+                {rules}
+            </SyntaxHighlighter>
+        </div>;
+    }
+
     if (rules) {
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
         plotDiv.push(
-            <>
+            <div id="rules-div" style={{marginBottom: "600px"}}>
                 <NewBar id="rules-bar" InstanceId="rules"
                         Title="Rules" DisplayNewLink={ false } />
-                <div id="rules-div" className="my-2 py-2" key="rules-div"
-                     style={{
-                         whiteSpace: "pre",
-                         backgroundColor: "whitesmoke"
-                     }}
-                >
-                    <SyntaxHighlighter id="syntax-highlighter"
-                        language="scala" style={docco} showLineNumbers={true}>
-                        {rules}
-                    </SyntaxHighlighter>
-                </div>
-            </>
+                {isDemoUser ? 
+                    <Tabs
+                        defaultActiveKey="decoded"
+                        id="rules-tabs"
+                        className="my-10"
+                        justify
+                    >
+                        <Tab id="rules-decoded-tab" eventKey="decoded" title="Details">
+                            <Container id="rules-decoded-container">
+                                <Row id="rules-decoded-row" style={{marginTop: 10}}>
+                                    <Col id="rules-decoded-column" md={10}>
+                                        {selectedRulesFormat === "raw"
+                                            ? getRawRulesDiv()
+                                            : rulesInterpretationLoading
+                                                ? <>
+                                                    <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                                        color={MaximumBlue} loading={true} size={50}/>
+                                                    Accessing GPT...
+                                                </>
+                                                : <div id="markdown-div">
+                                                    <ReactMarkdown     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                                        // ReactMarkdown doesn"t have (or need) an id property. The items it generates
+                                                        // each have their own referenceable id.
+                                                    >
+                                                        {interpretedRules}
+                                                    </ReactMarkdown>
+                                                    <br id="markdown-br-1"/>
+                                                    <br id="markdown-br-2"/>
+                                                    <br id="markdown-br-3"/>
+                                                    <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
+                                                </div>
+                                        }
+                                    </Col>
+                                    <Col id="radio-column" md={2}>
+                                        <Radio.Group id="radio-group" value={selectedRulesFormat}
+                                                     onChange={(e: RadioChangeEvent) => {
+                                                         setSelectedRulesFormat(e.target.value)
+                                                     }}
+                                        >
+                                            <Space id="radio-space" direction="vertical" size="middle">
+                                                <Radio id="radio-raw" value="raw">Raw</Radio>
+                                                <Radio id="radio-interpreted" value="interpreted">Interpreted (Beta)</Radio>
+                                            </Space>
+                                        </Radio.Group>
+                                    </Col>
+                                </Row>
+                            </Container>
+                        </Tab>
+                        <Tab id="insights-tab" eventKey="insights" title="Insights">
+                            <div id="insights-div" className="my-2 py-2" style={{whiteSpace: "pre-wrap"}}>
+                                {insightsLoading
+                                    ? <>
+                                        <ClipLoader     // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                            color={MaximumBlue} loading={true} size={50}/>
+                                        Accessing GPT...
+                                    </>
+                                    : <div id="insights-inner-div">
+                                        <h1 id="insights-h1">Insights</h1>
+                                        <h2 id="project-name">{project.name}</h2>
+                                        {project.description}
+                                        <BlankLines id="blank-lines-1" numLines={3}/>
+                                        {insights}
+                                        <BlankLines id="blank-lines-1" numLines={3}/>
+                                        <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
+                                    </div>
+                                }
+                            </div>
+                        </Tab>
+                    </Tabs>
+                    : getRawRulesDiv()
+                }
+            </div>
         )
     }
     
@@ -432,5 +666,18 @@ ${prescriptorID}/?data_source_id=${dataSourceId}`
         {flowDiv}       
 
         {plotDiv}
+
+        {isDemoUser &&
+            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                theme={chatbotTheme}>
+                <ChatBot id="chatbot"
+                         floating={true}
+                         placeholder="What is Cognizant Neuro™ AI?"
+                         userAvatar={session?.user?.image}
+                         botAvatar="/cognizantfavicon.ico"
+                         steps={chatbotSteps}
+                />
+            </ThemeProvider>
+        }
     </div>
 }

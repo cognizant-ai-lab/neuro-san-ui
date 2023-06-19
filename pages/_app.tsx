@@ -1,5 +1,3 @@
-// Stylesheets
-
 // Third party
 import "@blueprintjs/core/lib/css/blueprint.css"
 import "@blueprintjs/icons/lib/css/blueprint-icons.css"
@@ -7,6 +5,8 @@ import "antd/dist/reset.css"
 import "bootstrap/dist/css/bootstrap.css"
 import "reactflow/dist/style.css"
 import "tailwindcss/tailwind.css"
+import ChatBot from "react-simple-chatbot"
+import {ThemeProvider} from "styled-components"
 
 // Custom
 import "../styles/updatenode.css"
@@ -30,9 +30,10 @@ import {SessionProvider} from "next-auth/react"
 import Navbar from "../components/navbar"
 
 // Constants
-import {ENABLE_AUTHENTICATION, LOGO} from "../const"
+import {chatbotTheme, ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
+import {chatbotSteps} from "../components/internal/chatbot/steps";
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -42,6 +43,9 @@ export default function LEAF({
   pageProps: { session, ...pageProps }
 }): React.ReactElement {
   const router = useRouter()
+  // Check if demo user as requested by URL param
+  const isDemoUser = "demo" in router.query
+
   let body
   if (router.pathname === "/") {
     body = <div id="body-div">
@@ -67,6 +71,20 @@ export default function LEAF({
                     </Auth>
                   : <Component id="body-non-auth-component" {...pageProps} />
               }
+              { isDemoUser &&
+              <div id="fixed-pos-div" style={{position: "fixed", right: "20px", bottom: "0"}}>
+                <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    theme={chatbotTheme}>
+                  <ChatBot id="chatbot"
+                           floating={true}
+                           placeholder="What is Cognizant Neuro™ AI?"
+                           userAvatar={session?.user?.image} // Doesn't work -- wrong type of session?
+                           botAvatar="/cognizantfavicon.ico"
+                           steps={chatbotSteps}
+                  />
+                </ThemeProvider>
+              </div>
+              }
             </Container>
           </ErrorBoundary>
         </SessionProvider>
@@ -79,9 +97,9 @@ export default function LEAF({
     { /* 2/6/23 DEF - Head does not have an id property when compiling */ }
     <Head      // eslint-disable-line enforce-ids-in-jsx/missing-ids
         >
-      <title id="unileaf-title">Unileaf</title>
-      <meta id="unileaf-description" name="description" content="Evolutionary AI" />
-      <link id="unileaf-link" rel="icon" href="/leaffavicon.png" />
+      <title id="unileaf-title">Cognizant Neuro® AI</title>
+      <meta id="unileaf-description" name="description" content="Cognizant Neuro® AI" />
+      <link id="unileaf-link" rel="icon" href="/cognizantfavicon.ico" />
     </Head>
     {
       body

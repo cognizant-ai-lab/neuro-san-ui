@@ -9,6 +9,7 @@ import Debug from "debug"
 import { NodeType } from "./nodes/types";
 import { PrescriptorNode } from './nodes/prescriptornode';
 import { UncertaintyModelNode } from './nodes/uncertaintyModelNode';
+import {LLmNode} from "./nodes/llmNode";
 
 const debug = Debug("flowqueries")
 
@@ -162,6 +163,11 @@ export class FlowQueries {
         return the index of a given element.  This index is used for ids in testing.
         */
 
+        // Defensive check
+        if (!element) {
+            return -1
+        }
+
         debug({elementTypeToUuidList});
 
         // Default value if no element type in list
@@ -201,4 +207,10 @@ export class FlowQueries {
         return FlowQueries.extractCheckedFieldsForNode(predictorNode, CAOType.OUTCOME).length > 1
     }
 
+    static getLLMNodes(nodes: NodeType[]): LLmNode[] {
+        /*
+        This function returns any LLM nodes found in the graph
+        */
+        return nodes?.filter(node => node.type === 'llmnode') as LLmNode[]
+    }
 }

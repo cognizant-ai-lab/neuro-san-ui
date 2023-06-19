@@ -111,6 +111,7 @@ const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props)
                 </Card.Body>
             </Card>
             <Handle id="data-source-handle" type="source" position={Position.Right} />
+            <Handle id={ `data-source-target-handle` } type="target" position={Position.Left} />
         </BlueprintCard>
 
 }

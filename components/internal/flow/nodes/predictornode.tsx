@@ -48,6 +48,7 @@ import { NodeData, NodeType } from './types'
 import { EdgeType } from '../edges/types'
 
 import {DataTag} from "../../../../controller/datatag/types"
+import {NextRouter, useRouter} from "next/router"
 
 
 // Interface for Predictor CAO
@@ -98,6 +99,12 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
     This function is responsible to render the Predictor Node
     */
 
+    // Get the router hook
+    const router: NextRouter = useRouter()
+
+    // Check if demo user as requested by URL param
+    const isDemoUser = "demo" in router.query
+
     const data: PredictorNodeData = props.data
 
     // Get the current user
@@ -124,8 +131,17 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
         regressor: FetchMetrics("regressor"),
         classifier: FetchMetrics("classifier")
     }
+
+    // These predictors will ownly be shown in demo mode. As of writing (June 2023) they aren't implement and are
+    // only in the list for demo purposes.
+    const demoOnlyPredictors = ["Transformer", "LLM"]
+
     const predictors = {
-        regressor: FetchPredictors("regressor"),
+        regressor: isDemoUser
+            ? FetchPredictors("regressor")
+            : FetchPredictors("regressor").filter(predictor => {
+                return !demoOnlyPredictors.includes(predictor);
+            }),
         classifier: FetchPredictors("classifier")
     }
 
@@ -544,7 +560,7 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
 
     const marks = {
         0: {label: "0%"},
-        100: {label: "100%", style: {color: "#666"}}  // To prevent end mark from being "grayed out"
+        100: {label: "100%", style: {color: "#53565A"}}  // To prevent end mark from being "grayed out"
     }
 
     // Create the data split card

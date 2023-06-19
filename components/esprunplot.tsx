@@ -64,7 +64,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                     axisPointer: {
                         type: "cross",
                         crossStyle: {
-                            color: "#999",
+                            color: "#97999B",
                             type: "dashed"
                         }
                     }

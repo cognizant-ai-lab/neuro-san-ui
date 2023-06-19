@@ -101,7 +101,7 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
                 axisPointer: {
                     type: "cross",
                     crossStyle: {
-                        color: "#999",
+                        color: "#97999B",
                         type: "dashed"
                     }
                 }
