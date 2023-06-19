@@ -490,11 +490,15 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const projectId = props.ProjectId;
         const experimentId = run.experiment_id;
         const runId = run.id;
-        const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/
-${prescriptorID}/?data_source_id=${dataSourceId}`
+        const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/${prescriptorID}`
         return <>
             <Link id="dms-link"
-                href={dmsLink}
+                href={{
+                    pathname: dmsLink,
+
+                    // Pass along query params, including "demo" option if present
+                    query: {...router.query, data_source_id: dataSourceId}
+                }}
                 style={{
                     color: "white"
                 }}
