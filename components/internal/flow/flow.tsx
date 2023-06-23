@@ -1113,7 +1113,7 @@ export default function Flow(props: FlowProps) {
         // Configure for left-to-right layout
         dagreGraph.setGraph({ rankdir: "LR"})
 
-        const nodeWidth = 172;
+        const nodeWidth = 250;
         const nodeHeight = 36;
 
         // Don't want to update nodes directly in existing flow so make a copy
