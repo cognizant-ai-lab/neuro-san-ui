@@ -367,74 +367,86 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
     const [tabs] = useState(['Predictor', 'Configuration', 'Data Split'])
 
     // Create the selection Panel
-    const predictorSelectionPanel = <Card.Body id={ `${flowPrefix}-predictor-selection-panel` }>
-        <div id={ `${flowPrefix}-type-div` } className="flex justify-between mb-4 content-center">
-            <label id={ `${flowPrefix}-type-label` } className="m-0 mr-2">Type: </label>
-            <select id={ `${flowPrefix}-type-select` }
-                name={ `${NodeID}-predictorType` }
-                onChange={ event => onPredictorTypeChange(event.target.value)}
-                value={ ParentPredictorState.selectedPredictorType }
-                className="w-32"
-                >
-                    <option id={ `${flowPrefix}-regressor` } value="regressor">
-                        Regressor
-                    </option>
-                    <option id={ `${flowPrefix}-classifier` } value="classifier">
-                        Classifier
-                    </option>
-                    <option disabled id={ `${flowPrefix}-byo` }
-                        value="byop">
+    const predictorSelectionPanel = <Card.Body id={`${flowPrefix}-predictor-selection-panel`}  >
+        <Container id={`${flowPrefix}-config-container`} style={{fontSize: "smaller"}}>
+            <Row id={`${flowPrefix}-predictor-type-row`}>
+                <Col id={`${flowPrefix}-predictor-type-label`} md={4}>
+                    <label id={`${flowPrefix}-type-label`}>Type: </label>
+                </Col>
+                <Col id={`${flowPrefix}-predictor-type-value`} md={8}>
+                    <select id={`${flowPrefix}-type-select`}
+                            name={`${NodeID}-predictorType`}
+                            onChange={event => onPredictorTypeChange(event.target.value)}
+                            value={ParentPredictorState.selectedPredictorType}
+                            style={{fontSize: "smaller", width: "100%"}}
+                    >
+                        <option id={`${flowPrefix}-regressor`} value="regressor">
+                            Regressor
+                        </option>
+                        <option id={`${flowPrefix}-classifier`} value="classifier">
+                            Classifier
+                        </option>
+                        <option disabled id={`${flowPrefix}-byo`}
+                                value="byop">
                             Bring your own (Coming Soon)
-                    </option>
-                    <option disabled id={ `${flowPrefix}-evolution` }
-                        value="evolution">
+                        </option>
+                        <option disabled id={`${flowPrefix}-evolution`}
+                                value="evolution">
                             Evolution (Coming Soon)
-                    </option>
-            </select>
-        </div>
-
-        <div id={ `${flowPrefix}-predictor-div` }
-            className="flex justify-between mb-4 content-center">
-            <label id={ `${flowPrefix}-predictor-label` } className="m-0">Predictor: </label>
-            <select id={ `${flowPrefix}-predictor-select` }
-                name={ `${NodeID}-predictor` }
-                value={ ParentPredictorState.selectedPredictor }
-                onChange={ event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value) }
-                className="w-32"
-                >
-                    { ParentPredictorState.selectedPredictorType &&
-                        predictors[ParentPredictorState.selectedPredictorType].map(
+                        </option>
+                    </select>
+                </Col>
+            </Row>
+            <Row id={`${flowPrefix}-predictor-sel-row`} style={{marginTop: "12px"}}>
+                <Col id={`${flowPrefix}-predictor-name-label`} md={4}>
+                    <label id={`${flowPrefix}-predictor-label`}>Predictor: </label>
+                </Col>
+                <Col id={`${flowPrefix}-predictor-name-value`} md={8}>
+                    <select id={`${flowPrefix}-predictor-select`}
+                            name={`${NodeID}-predictor`}
+                            value={ParentPredictorState.selectedPredictor}
+                            onChange={event => onPredictorChange(ParentPredictorState.selectedPredictorType, event.target.value)}
+                            style={{fontSize: "smaller", width: "100%"}}
+                    >
+                        {ParentPredictorState.selectedPredictorType &&
+                            predictors[ParentPredictorState.selectedPredictorType].map(
                                 predictor =>
-                                    <option id={ `${flowPrefix}-option-${predictor}` }
-                                        key={ predictor } value={ predictor }>
-                                            { predictor }
+                                    <option id={`${flowPrefix}-option-${predictor}`}
+                                            key={predictor} value={predictor}>
+                                        {predictor}
                                     </option>
                             )
-                    }
-            </select>
-        </div>
-
-        <div id={ `${flowPrefix}-metric-div` }
-            className="flex justify-between mb-4 content-center">
-            <label id={ `${flowPrefix}-metric-label` } className="m-0">
-                Metric: </label>
-            <select id={ `${flowPrefix}-metric-select` }
-                name={ `${NodeID}-metric` }
-                value={ ParentPredictorState.selectedMetric }
-                onChange={ event => { SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value}) } }
-                className="w-32"
-                >
-                     { Array.from<string>(metrics[ParentPredictorState.selectedPredictorType].
-                        keys()).map(
+                        }
+                    </select>
+                </Col>
+            </Row>
+            <Row id={`${flowPrefix}-metric-row`} style={{marginTop: "12px"}}>
+                <Col id={`${flowPrefix}-metric-col`} md={4}>
+                    <label id={`${flowPrefix}-metric-label`}>
+                        Metric: </label>
+                </Col>
+                <Col id={`${flowPrefix}-metric-col`} md={8}>
+                    <select id={`${flowPrefix}-metric-select`}
+                            name={`${NodeID}-metric`}
+                            value={ParentPredictorState.selectedMetric}
+                            onChange={event => {
+                                SetParentPredictorState({...ParentPredictorState, selectedMetric: event.target.value})
+                            }}
+                            style={{fontSize: "smaller", width: "100%"}}
+                    >
+                        {Array.from<string>(metrics[ParentPredictorState.selectedPredictorType].keys()).map(
                             metric =>
-                                    <option id={ `${flowPrefix}-metric-${metric}` }
-                                    key={metric} value={ metric }>
-                                        { metric }
+                                <option id={`${flowPrefix}-metric-${metric}`}
+                                        key={metric} value={metric}
+                                >
+                                    {metric}
                                 </option>
                         )
-                    }
-            </select>
-        </div>
+                        }
+                    </select>
+                </Col>
+            </Row>
+        </Container>
     </Card.Body>
 
     // Determine the SelectedPredictor and defaultParams each time the configuration panel is
@@ -634,23 +646,23 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
     </Card.Body>
 
     // Create the Component structure
-    return <BlueprintCard id={ `${flowPrefix}` }
-                          interactive={ true }
-                          elevation={ Elevation.TWO }
-                          style={{ padding: 0, width: "10rem", height: "4rem" }} >
-        <Card id={ `${flowPrefix}-card-1` }
-            border="warning" style={{ height: "100%" }}>
-            <Card.Body id={ `${flowPrefix}-card-2` }
+    return <BlueprintCard id={`${flowPrefix}`}
+                          interactive={true}
+                          elevation={Elevation.TWO}
+                          style={{padding: 0, width: "10rem", height: "4rem"}}>
+        <Card id={`${flowPrefix}-card-1`} border="warning" >
+            <Card.Body id={`${flowPrefix}-card-2`}
                 className="flex justify-center content-center">
-                <Text id={ `${flowPrefix}-text` } className="mr-2">
-                    { ParentPredictorState.selectedPredictor || "Predictor" }
+                <Text id={`${flowPrefix}-text`} className="mr-2">
+                    {ParentPredictorState.selectedPredictor || "Predictor"}
                 </Text>
-                <div id={ `${flowPrefix}-settings-div` }
+                <div id={`${flowPrefix}-settings-div`}
                     onMouseDown={(event) => {event.stopPropagation()}}>
                     <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
+                        minHeight="200px"
                         content={ <>
-                            <Tablist id={ `${flowPrefix}-settings-tablist` }
+                            <Tablist id={`${flowPrefix}-settings-tablist`}
                                 marginBottom={16} flexBasis={240} marginRight={24}>
                                 {tabs.map((tab, index) => (
                                     <Tab id={ `${flowPrefix}-settings-${tab}` }
