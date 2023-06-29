@@ -658,6 +658,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
         {plotDiv}
 
-        {isDemoUser && <NeuroAIChatbot  id="chatbot" userAvatar={null}/>}
+        {isDemoUser && <NeuroAIChatbot  id="chatbot" userAvatar={undefined}/>}
     </div>
 }
