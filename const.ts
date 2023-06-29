@@ -71,14 +71,13 @@ export const ESPResultverbs = [
     'max',
     'min',
     'mean',
-    // 'elites_mean'
 ]
 
 /* TODO: feels like it should be a stylesheet somewhere. But the current chatbot library we're using seems to
 require it in this format. */
 export const chatbotTheme = {
     background: '#f5f8fb',
-    fontFamily: 'Helvetica Neue',
+    fontFamily: 'var(--bs-body-font-family)',
     headerBgColor: "var(--bs-primary)",
     headerFontColor: '#fff',
     headerFontSize: '15px',

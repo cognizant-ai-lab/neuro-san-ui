@@ -5,8 +5,6 @@ import "antd/dist/reset.css"
 import "bootstrap/dist/css/bootstrap.css"
 import "reactflow/dist/style.css"
 import "tailwindcss/tailwind.css"
-import ChatBot from "react-simple-chatbot"
-import {ThemeProvider} from "styled-components"
 
 // Custom
 import "../styles/updatenode.css"
@@ -30,10 +28,10 @@ import {SessionProvider} from "next-auth/react"
 import Navbar from "../components/navbar"
 
 // Constants
-import {chatbotTheme, ENABLE_AUTHENTICATION, LOGO} from "../const"
+import {ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
-import {chatbotSteps} from "../components/internal/chatbot/steps";
+import {NeuroAIChatbot} from "../components/internal/chatbot/neuro_ai_chatbot";
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -73,16 +71,7 @@ export default function LEAF({
               }
               { isDemoUser &&
               <div id="fixed-pos-div" style={{position: "fixed", right: "20px", bottom: "0"}}>
-                <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    theme={chatbotTheme}>
-                  <ChatBot id="chatbot"
-                           floating={true}
-                           placeholder="What is Cognizant Neuro™ AI?"
-                           userAvatar={session?.user?.image} // Doesn't work -- wrong type of session?
-                           botAvatar="/cognizantfavicon.ico"
-                           steps={chatbotSteps}
-                  />
-                </ThemeProvider>
+                <NeuroAIChatbot id="chatbot" userAvatar={undefined}/>
               </div>
               }
             </Container>

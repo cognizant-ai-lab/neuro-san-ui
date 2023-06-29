@@ -1,41 +1,38 @@
-import {useEffect, useState} from "react";
-import {Artifact, Run, Runs} from "../../controller/run/types";
-import {BrowserFetchRuns, FetchSingleRunArtifact} from "../../controller/run/fetch";
-import {constructRunMetricsForRunPlot} from "../../controller/run/results";
-import {empty} from "../../utils/objects";
-import MetricsTable from "../metricstable";
-import ESPRunPlot from "../esprunplot";
-import NewBar from "../newbar";
+import {useEffect, useState} from "react"
+import {Artifact, Run, Runs} from "../../controller/run/types"
+import {BrowserFetchRuns, FetchSingleRunArtifact} from "../../controller/run/fetch"
+import {constructRunMetricsForRunPlot} from "../../controller/run/results"
+import {empty} from "../../utils/objects"
+import MetricsTable from "../metricstable"
+import ESPRunPlot from "../esprunplot"
+import NewBar from "../newbar"
 import {Button, Col, Container, Row} from "react-bootstrap"
-import {MaximumBlue} from "../../const";
-import ClipLoader from "react-spinners/ClipLoader";
-import Link from "next/link";
-import Flow from "./flow/flow";
-import {ReactFlowProvider} from "reactflow";
-import {NotificationType, sendNotification} from "../../controller/notification";
-import {FlowQueries} from "./flow/flowqueries";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
-import {useLocalStorage} from "../../utils/use_local_storage";
-import decode from "../../utils/conversion";
-import {useSession} from "next-auth/react";
-import { MultiPareto } from "../pareto/multi_pareto";
-import { NodeType } from "./flow/nodes/types";
+import {MaximumBlue} from "../../const"
+import ClipLoader from "react-spinners/ClipLoader"
+import Link from "next/link"
+import Flow from "./flow/flow"
+import {ReactFlowProvider} from "reactflow"
+import {NotificationType, sendNotification} from "../../controller/notification"
+import {FlowQueries} from "./flow/flowqueries"
+import SyntaxHighlighter from 'react-syntax-highlighter'
+import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs'
+import {useLocalStorage} from "../../utils/use_local_storage"
+import decode from "../../utils/conversion"
+import {useSession} from "next-auth/react"
+import {MultiPareto} from "../pareto/multi_pareto"
+import {NodeType} from "./flow/nodes/types"
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
 import {Radio, RadioChangeEvent, Space} from "antd"
-import ReactMarkdown from "react-markdown";
-import {Project, Projects} from "../../controller/projects/types";
-import {BrowserFetchProjects} from "../../controller/projects/fetch";
-import BlankLines from "../blanklines";
+import ReactMarkdown from "react-markdown"
+import {Project, Projects} from "../../controller/projects/types"
+import {BrowserFetchProjects} from "../../controller/projects/fetch"
+import BlankLines from "../blanklines"
 
-import {NextRouter, useRouter} from "next/router";
+import {NextRouter, useRouter} from "next/router"
 
 // Chatbot
-import {ThemeProvider} from "styled-components";
-import ChatBot from 'react-simple-chatbot'
-import {chatbotSteps} from "./chatbot/steps";
-import {chatbotTheme} from "../../const";
+import {NeuroAIChatbot} from "./chatbot/neuro_ai_chatbot"
 
 interface RunProps {
     /* 
@@ -661,17 +658,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
         {plotDiv}
 
-        {isDemoUser &&
-            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                theme={chatbotTheme}>
-                <ChatBot id="chatbot"
-                         floating={true}
-                         placeholder="What is Cognizant Neuro™ AI?"
-                         userAvatar={session?.user?.image}
-                         botAvatar="/cognizantfavicon.ico"
-                         steps={chatbotSteps}
-                />
-            </ThemeProvider>
-        }
+        {isDemoUser && <NeuroAIChatbot  id="chatbot" userAvatar={null}/>}
     </div>
 }
