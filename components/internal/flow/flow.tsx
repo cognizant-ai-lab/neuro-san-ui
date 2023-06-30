@@ -940,7 +940,7 @@ export default function Flow(props: FlowProps) {
 
     function _deleteNode(nodesToDelete: NodeType[], nodes: NodeType[], edges: EdgeType[]) {
         /*
-        Since we supply constraints on how nodes interact, i.e in an ESP
+        Since we supply constraints on how nodes interact, i.e. in an ESP
         fashion we cannot allow deletion of any nodes.
         1. Data Nodes cannot be deleted
         2. If only one predictor exists, deleting that will also delete
@@ -968,7 +968,7 @@ export default function Flow(props: FlowProps) {
 
         const prescriptorNodes = FlowQueries.getPrescriptorNodes(nodes)
 
-        // // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
+        // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
         if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
             const uncertaintyNodesToRemove = predictorNodesBeingRemoved
                 .flatMap<UncertaintyModelNode>(
@@ -985,8 +985,6 @@ export default function Flow(props: FlowProps) {
         const numPredictorNodesLeft = FlowQueries.getPredictorNodes(nodes).length - predictorIdsBeingRemoved.length
         if (numPredictorNodesLeft == 0) {
             removableNodes.push(...prescriptorNodes)
-             // Also get the edges associated with this prescriptor node
-            //  removableEdges.push(...getConnectedEdges(prescriptorNodes, edges))
         } else {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor
@@ -1050,7 +1048,7 @@ export default function Flow(props: FlowProps) {
             type: "remove",
             id: element.id
         }))
-        const leftNodes = applyNodeChanges<NodeData>(nodeChanges, nodes) as NodeType[]
+        const remainingNodes = applyNodeChanges<NodeData>(nodeChanges, nodes) as NodeType[]
 
 
         const edgeChanges = removableEdges.map<EdgeRemoveChange>(element => ({
@@ -1058,12 +1056,12 @@ export default function Flow(props: FlowProps) {
             id: element.id
         }))
         
-        const leftEdges = applyEdgeChanges(edgeChanges, edges) as EdgeType[]
+        const remainingEdges = applyEdgeChanges(edgeChanges, edges) as EdgeType[]
         
         // Update the flow, removing the deleted nodes
-        setNodes(leftNodes)
-        setEdges(leftEdges)
-        setParentState([...leftNodes, ...leftEdges])
+        setNodes(remainingNodes)
+        setEdges(remainingEdges)
+        setParentState([...remainingNodes, ...remainingEdges])
         setElementTypeToUuidList(elementTypeToUuidList)
     }
 

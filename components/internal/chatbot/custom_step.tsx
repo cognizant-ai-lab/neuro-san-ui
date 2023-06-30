@@ -112,8 +112,8 @@ export class CustomStep extends Component<PropTypes, StepState> {
         // Format sources for display
         const message = sources
             ?.map(source =>
-                `Source: ${source.source.replace(/\n/g, "")} 
-from this snippet: "${source.snippet.replace(/\n/g, "")}" page: ${source.page ?? "n/a"}`)
+                `Source: ${source.source.replace(/\n/gu, "")} 
+from this snippet: "${source.snippet.replace(/\n/gu, "")}" page: ${source.page ?? "n/a"}`)
             .join("\n")
 
         return (

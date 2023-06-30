@@ -101,6 +101,9 @@
         // We like being explicit about types even when "obvious"
         "@typescript-eslint/no-inferrable-types": "off",
 
+        // Controversial, but it's hard to do JSX without these. Probably should be policed in code reviews.
+        "no-nested-ternary": "off",
+
         // Rules from the various plugins and base ESLint that we are not yet ready to enable
         "array-bracket-newline": "off",
         "array-element-newline": "off",
@@ -150,7 +153,6 @@
         "no-mixed-operators": "off",
         "no-multi-spaces": "off",
         "no-negated-condition": "off",
-        "no-nested-ternary": "off",
         "no-param-reassign": "off",
         "no-return-await": "off",
         "no-shadow": "off",
@@ -208,7 +210,6 @@
         "react/require-optimization": "off",
         "react/self-closing-comp": "off",
         "require-await": "off",
-        "require-unicode-regexp": "off",
         "semi": "off",
         "sort-imports": "off",
         "sort-keys": "off",

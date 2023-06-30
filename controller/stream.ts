@@ -57,7 +57,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     // gRPC streams items to us delimited by newline. But JSON requires commas between items.
     // Therefore, this regex replaces all newlines except the last (which is a legit newline) with comma + newline
     // We also need to sandwich it in square brackets to conform to JSON array syntax
-    buffer = '[' + buffer.replace(/\n(?=.*\n)/g, ",\n") + ']'
+    buffer = '[' + buffer.replace(/\n(?=.*\n)/gu, ",\n") + ']'
 
     let results: MDServerResponse[]
     try {
