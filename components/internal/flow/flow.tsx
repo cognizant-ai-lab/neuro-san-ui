@@ -16,7 +16,7 @@ import ReactFlow, {
 } from 'reactflow'
 
 // Framework
-import React, {useCallback, useEffect, useMemo, useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {useRouter} from "next/router"
 
 // ID Gen
@@ -1236,7 +1236,7 @@ export default function Flow(props: FlowProps) {
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onNodesDelete={nodes => _onElementsRemove(nodes)}
-                    onConnect={void(0)}  // Prevent user manually connecting nodes
+                    onConnect={void (0)}  // Prevent user manually connecting nodes
                     onInit={(instance) => _onLoad(instance)}
                     snapToGrid={true} 
                     snapGrid={[10, 10]}

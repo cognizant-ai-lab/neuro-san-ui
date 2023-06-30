@@ -50,7 +50,8 @@ const PrescriptorEdgeComponent: React.FC<EdgeProps<PrescriptorEdgeData>>  = ({ i
     // We want to have a tabbed predictor configuration, and thus we build the following component
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const [tabs] = useState(['Override Predictor Output'])
+
+    const tabs = ["Override Predictor Output"]
 
     // XXX  This could use some GetElementIndex love similar to what is going on
     //      in predictornode, prescriptornode, uncertaintyModelNode

@@ -20,7 +20,7 @@ export default function ProfileTable(props: ProfiletableProps) {
     const profile = props.Profile
     const setProfile = props.ProfileUpdateHandler
     const [fieldBeingEditedName, setFieldBeingEditedName] = useState(null)
-    const [showFieldEditor, setFieldEditorVisible] = useState(false)
+    const [showFieldEditor, setShowFieldEditor] = useState(false)
     const [currentCategoryValues, setCurrentCategoryValues] = useState([])
     const [currentCategoryOrdered, setCurrentCategoryOrdered] = useState(false)
     const [newItem, setNewItem] = useState(null)
@@ -181,7 +181,7 @@ export default function ProfileTable(props: ProfiletableProps) {
 
                                     setFieldBeingEditedName(field)
                                     setCurrentCategoryValues(fields[field].discrete_categorical_values)
-                                    setFieldEditorVisible(true)
+                                    setShowFieldEditor(true)
                                 }}
                             >
                                 <AiFillEdit id={ `${field}-set-current-category-values-fill` }
@@ -316,14 +316,14 @@ export default function ProfileTable(props: ProfiletableProps) {
 
                     setCurrentCategoryValues([])
                     setFieldBeingEditedName(undefined)
-                    setFieldEditorVisible(false)
+                    setShowFieldEditor(false)
                 }}
                 okButtonProps={{
                     id: "edit-categorical-values-ok-button"
                 }}
                 okType="default"
                 onCancel={() => {
-                    setFieldEditorVisible(false)
+                    setShowFieldEditor(false)
                     setFieldBeingEditedName(undefined)
                 }}
                 cancelButtonProps={{

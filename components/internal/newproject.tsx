@@ -707,8 +707,8 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
     const enabledDataTagSection = enabledDataSourceSection &&
         !isUploading &&
         profile &&
-        ((chosenDataSource === s3Option && !!inputFields.s3Key) ||
-            (chosenDataSource === localFileOption && !!inputFields.uploadedFileS3Key))
+        ((chosenDataSource === s3Option && Boolean(inputFields.s3Key)) ||
+            (chosenDataSource === localFileOption && Boolean(inputFields.uploadedFileS3Key)))
 
     // Tell user why button is disabled
     function getCreateProjectButtonTooltip() {

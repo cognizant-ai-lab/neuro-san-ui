@@ -62,7 +62,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [predictorPlotData, setPredictorPlotData] = useState(null)
     const [prescriptorPlotData, setPrescriptorPlotData] = useState(null)
     const [paretoPlotData, setParetoPlotData] = useState({})
-    const [nodeToCIDMap, updateNodeToCIDMap] = useState<Record<string, string>>({})
+    const [nodeToCIDMap, setNodeToCIDMap] = useState<Record<string, string>>({})
     const [run, setRun] = useState(null)
     const [rules, setRules] = useState(null)
     const [artifactObj, setArtifactObj] = useState(null)
@@ -326,7 +326,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 })
 
             }
-            updateNodeToCIDMap(nodeToCIDMap)
+            setNodeToCIDMap(nodeToCIDMap)
         }
     }, [paretoPlotData])
 
@@ -460,7 +460,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 key="pareto-plot-table"
                 Pareto={paretoPlotData}
                 NodeToCIDMap={nodeToCIDMap}
-                PrescriptorNodeToCIDMapUpdater={updateNodeToCIDMap}
+                PrescriptorNodeToCIDMapUpdater={setNodeToCIDMap}
                 ObjectivesCount={objectivesCount}
             />
         )

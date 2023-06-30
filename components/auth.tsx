@@ -46,7 +46,7 @@ const AUTHENTICATION_PROVIDER = "auth0";
 export function Auth({ children }) {
     const { data: session, status } = useSession()
 
-    const isUser = !!session?.user
+    const isUser = Boolean(session?.user)
     const loading = status === "loading"
 
     React.useEffect(() => {

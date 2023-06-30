@@ -2,6 +2,15 @@
 // Yes, even though this is a JSON file, comments are allowed since the only thing parsing it is ESLint.
 // See here: https://eslint.org/docs/latest/use/configure/configuration-files#comments-in-configuration-files
 {
+    // Define these globals to avoid false positives from the no-undef rule, which we want to enable as it's useful
+    "globals": {
+        "React": "readonly",
+        "JSX": "readonly"
+    },
+    // Tell ESLint we're using jest to avoid false positives on jest test files
+    "env": {
+        "jest": true
+    },
     "plugins": [
         "@typescript-eslint",
         "enforce-ids-in-jsx"
@@ -58,32 +67,34 @@
 
         // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict with
         // other plugins we're using?
-        "constructor-super": "off",
-        "getter-return": "off",
+        // How to see which rules are enabled: ./node_modules/.bin/eslint --print-config jest.config.ts
+        // In any case, more rules keep us safe, so explicitly enable them here.
+        "constructor-super": "error",
+        "getter-return": "error",
         "no-alert": "error",
-        "no-array-constructor": "off",
-        "no-const-assign": "off",
-        "no-dupe-args": "off",
-        "no-dupe-class-members": "off",
-        "no-dupe-keys": "off",
-        "no-empty-function": "off",
-        "no-extra-semi": "off",
-        "no-func-assign": "off",
-        "no-import-assign": "off",
-        "no-loss-of-precision": "off",
-        "no-new-symbol": "off",
-        "no-obj-calls": "off",
-        "no-redeclare": "off",
-        "no-setter-return": "off",
-        "no-this-before-super": "off",
-        "no-undef": "off",
-        "no-unreachable": "off",
-        "no-unsafe-negation": "off",
-        "no-var": "off",
-        "prefer-const": "off",
-        "prefer-rest-params": "off",
-        "prefer-spread": "off",
-        "valid-typeof": "off",
+        "no-array-constructor": "error",
+        "no-const-assign": "error",
+        "no-dupe-args": "error",
+        "no-dupe-class-members": "error",
+        "no-dupe-keys": "error",
+        "no-empty-function": "error",
+        "no-extra-semi": "error",
+        "no-func-assign": "error",
+        "no-import-assign": "error",
+        "no-loss-of-precision": "error",
+        "no-new-symbol": "error",
+        "no-obj-calls": "error",
+        "no-redeclare": "error",
+        "no-setter-return": "error",
+        "no-this-before-super": "error",
+        "no-undef": "error",
+        "no-unreachable": "error",
+        "no-unsafe-negation": "error",
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "valid-typeof": "error",
 
         // Permanently off
 
@@ -134,7 +145,6 @@
         "no-else-return": "off",
         "no-eq-null": "off",
         "no-extra-parens": "off",
-        "no-implicit-coercion": "off",
         "no-inline-comments": "off",
         "no-magic-numbers": "off",
         "no-mixed-operators": "off",
@@ -167,7 +177,6 @@
         "react/destructuring-assignment": "off",
         "react/forbid-component-props": "off",
         "react/function-component-definition": "off",
-        "react/hook-use-state": "off",
         "react/jsx-boolean-value": "off",
         "react/jsx-closing-bracket-location": "off",
         "react/jsx-closing-tag-location": "off",
@@ -205,7 +214,6 @@
         "sort-keys": "off",
         "space-before-function-paren": "off",
         "space-infix-ops": "off",
-        "space-unary-ops": "off",
         "spaced-comment": "off"
     }
 }

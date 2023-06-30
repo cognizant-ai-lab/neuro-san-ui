@@ -1,8 +1,8 @@
 // React components
-import {Dispatch, SetStateAction, useState} from 'react'
+import {Dispatch, SetStateAction} from 'react'
 
 // 3rd party components
-import {Card, Col, Collapse, Container, Row} from "react-bootstrap"
+import {Card, Col, Container, Row} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
 import {Handle, Position as HandlePosition, NodeProps, Node} from 'reactflow'
@@ -56,9 +56,6 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
         ParameterSet,
         NodeTitle
     } = data
-
-    // For showing advanced configuration settings
-    const [showAdvanced] = useState(false)
 
     const onParamChange = (event, paramName: string) => {
         /*
@@ -214,20 +211,6 @@ const LlmNodeComponent: React.FC<NodeProps<LlmNodeData>> = (props) => {
                                             })
                                     }
                                 </div>
-                                <Collapse       // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                                // 2/6/23 DEF - Collapse does not have an id property when compiling
-                                    in={showAdvanced} timeout={5}>
-                                    <div id={ `${flowPrefix}-advanced-settings-div` }
-                                        className="mt-3 mb-4">
-                                        {
-                                            Object.keys(ParameterSet)
-                                                .filter(key => ParameterSet[key].isAdvanced)
-                                                .map(key => {
-                                                    return getInputComponent(key, ParameterSet[key])
-                                                })
-                                        }
-                                    </div>
-                                </Collapse>
                             </Card.Body>
                         </>
                     }

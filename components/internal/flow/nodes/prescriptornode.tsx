@@ -2,7 +2,7 @@
 import {
     useState,
     useEffect
-} from 'react'
+} from "react"
 
 // Import 3rd party components
 import { 
@@ -32,14 +32,14 @@ import {
     Position as HandlePosition,
     NodeProps,
     Node
-} from 'reactflow'
+} from "reactflow"
 
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import SyntaxHighlighter from "react-syntax-highlighter"
+import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
 
 import {loadDataTag} from "../../../../controller/fetchdatataglist";
 import {useSession} from "next-auth/react";
-import {NotificationType, sendNotification} from "../../../../controller/notification";
+import {NotificationType, sendNotification} from "../../../../controller/notification"
 
 // Define an interface for the structure
 // of the nodes
@@ -117,7 +117,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
     // Fetch the Data Tag
     useEffect(() => {
         //TODO: If the data node has the data source and tag available we should not fetch it but use that.
-        //TODO: Reason: Data Tags can change and we don't version them explicitly - this will be an easy way of doing that. If they were to change and we had to re-run a run it might fail
+        //TODO: Reason: Data Tags can change and we don"t version them explicitly - this will be an easy way of doing that. If they were to change and we had to re-run a run it might fail
         (async () => setTaggedData(await loadDataTag(currentUser, data.SelectedDataSourceId)))()
     }, [data.SelectedDataSourceId])
 
@@ -168,7 +168,8 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
     // and thus we build the following component
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const [tabs] = useState(['Representation', 'Evolution Parameters', 'Objective Configuration', 'Override Evaluator'])
+
+    const tabs = ["Representation", "Evolution Parameters", "Objective Configuration", "Override Evaluator"]
 
     // Create a min/max selector for each desired outcome
     const objectiveConfigurationPanel = ParentPrescriptorState.evolution.fitness.map(metric => {
@@ -471,10 +472,10 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                                 const stateCopy = {...ParentPrescriptorState}
                                 stateCopy.network.hidden_layers.push({
                                     layer_name: `hidden-${ParentPrescriptorState.network.hidden_layers.length}`,
-                                    layer_type: 'dense',
+                                    layer_type: "dense",
                                     layer_params: {
                                         units: 2 * Object.keys(ParentPrescriptorState.caoState.context).length,
-                                        activation: 'tanh',
+                                        activation: "tanh",
                                         use_bias: true
                                     }
                                 })

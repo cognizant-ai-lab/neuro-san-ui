@@ -181,7 +181,7 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
                 predictorParams = FetchParams(ParentPredictorState.selectedPredictorType, selectedPredictor)
                 // We add a key called value to adjust for user input
                 predictorParams && Object.keys(predictorParams).forEach(key => {
-                    if (typeof(predictorParams[key].default_value) === "object") {
+                    if (typeof (predictorParams[key].default_value) === "object") {
                         // If the type has to be a choice, select the first choice
                         predictorParams[key].value = predictorParams[key].default_value[0]
                     } else {
@@ -281,7 +281,7 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
 
         // We add a key called value to adjust for user input
         params && Object.keys(params).forEach(key => {
-            if (typeof(params[key].default_value) === "object") {
+            if (typeof (params[key].default_value) === "object") {
                 params[key].value = params[key].default_value[0]
             } else {
                 params[key].value = params[key].default_value
@@ -364,7 +364,8 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
     // and thus we build the following component
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const [tabs] = useState(['Predictor', 'Configuration', 'Data Split'])
+
+    const tabs = ["Predictor", "Configuration", "Data Split"]
 
     // Create the selection Panel
     const predictorSelectionPanel = <Card.Body id={`${flowPrefix}-predictor-selection-panel`}  >
@@ -502,7 +503,7 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
                             )
                         }
                         {
-                            typeof(defaultParams[param].type) === "object" &&
+                            typeof (defaultParams[param].type) === "object" &&
                                 <select id={ `${flowPrefix}-${param}-value` }
                                     value={
                                         (ParentPredictorState.predictorParams[param] != null &&
