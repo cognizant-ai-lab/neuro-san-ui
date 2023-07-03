@@ -8,6 +8,8 @@ import {empty} from "../../../utils/objects";
 import {reasonToHumanReadable} from "../../../controller/datasources/types";
 import {Profile} from "../../../controller/dataprofile/types"
 import BlankLines from "../../blanklines"
+import {NextRouter, useRouter} from "next/router";
+import {NeuroAIChatbot} from "../chatbot/neuro_ai_chatbot";
 
 interface ProfiletableProps {
     id: string
@@ -16,6 +18,11 @@ interface ProfiletableProps {
 }
 
 export default function ProfileTable(props: ProfiletableProps) {
+    // Get the router hook
+    const router: NextRouter = useRouter()
+
+    // Check if demo user as requested by URL param
+    const isDemoUser = "demo" in router.query
 
     const profile = props.Profile
     const setProfile = props.ProfileUpdateHandler
@@ -478,5 +485,14 @@ export default function ProfileTable(props: ProfiletableProps) {
                 </div>
             </div>
         </div>
+        {isDemoUser && <NeuroAIChatbot  id="chatbot" userAvatar={undefined} pageContext={ProfileTable.pageContext} />}
     </DragDropContext>
 }
+
+ProfileTable.pageContext = "This page is for defining the properties of your data source. For each column of your " +
+    "data, you can specify the column type, the role the column plays within your experiment (context, action, " +
+    "outcome) and whether the column is categorical or numeric. For categorical columns, you can edit the set of " +
+    "values, but this should be done with caution since by adding new values you are stepping outside your training " +
+    "data. On this page you can also view statistics about your data source such as the mean, sum and standard " +
+    "deviation for each numeric column."
+

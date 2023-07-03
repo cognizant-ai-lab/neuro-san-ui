@@ -658,6 +658,15 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
         {plotDiv}
 
-        {isDemoUser && <NeuroAIChatbot  id="chatbot" userAvatar={undefined}/>}
+        {isDemoUser && <NeuroAIChatbot  id="chatbot" userAvatar={undefined} pageContext={RunPage.pageContext} />}
     </div>
 }
+
+RunPage.pageContext = "This is the page for a single training run of your experiment. The page shows the original flow" +
+    "used in the training run (even if the flow has been subsequently modified), the metrics for each of the " +
+    "predictors defined for your experiment, and the progress in metrics (fitness) for the prescriptors trained " +
+    "during your run. On this page you can also view various plots of the pareto front of your experiment (for multi-" +
+    "objective experiments) and view the evolution of the Pareto front over subsequent generations. If you chose a " +
+    "rules-based representation for your run, you can also view the evolved ruleset on this page, along with insights " +
+    "and rules intepretations provided by an LLM. Finally, you can select a prescriptor from the final generation" +
+    "and launch the decision making system (DMS) to expore the behavior of that prescriptor."

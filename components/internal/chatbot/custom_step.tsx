@@ -11,6 +11,7 @@ import {Collapse} from "antd";
 type PropTypes = {
     steps?: {search: {value: string}},
     triggerNextStep?: () => object,
+    pageContext?: string
 }
 
 // Specification for component state (to keep Typescript happy)
@@ -68,7 +69,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
         // eslint-disable-next-line @typescript-eslint/no-this-alias,consistent-this
         const self = this
         const { steps } = this.props
-        const search = steps.search.value
+
         const queryUrl = "/api/gpt/userguide"
 
         const xhr = new XMLHttpRequest()
@@ -87,17 +88,21 @@ export class CustomStep extends Component<PropTypes, StepState> {
             }
         }
 
-        // Send the request to the server
+        // Prepare the request
         xhr.open("POST", queryUrl)
         xhr.setRequestHeader('Accept', 'application/json')
         xhr.setRequestHeader('Content-Type', 'application/json')
+
+        const search = steps.search.value
         const safeSearchString = JSON.stringify(search)
-        xhr.send(`{"query":${safeSearchString}}`)
+        const safePageContext = JSON.stringify(this.props.pageContext)
+
+        // Send the request to the server
+        xhr.send(`{"query":${safeSearchString}, "pageContext": ${safePageContext}}`)
     }
 
     // Trigger next state -- meaning, prompt the user for a new query
     triggerNext() {
-        console.log("trigger next")
         this.setState({ nextStepTriggered: true }, () => {
             this.props.triggerNextStep()
         })

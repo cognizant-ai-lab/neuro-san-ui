@@ -16,9 +16,6 @@ import "../styles/styles.css"
 // Bootstrap
 import {Container, SSRProvider} from "react-bootstrap"
 
-// React
-import React from 'react'
-
 // NextJS Components
 import Head from 'next/head'
 import {useRouter} from "next/router";
@@ -71,7 +68,7 @@ export default function LEAF({
               }
               { isDemoUser &&
               <div id="fixed-pos-div" style={{position: "fixed", right: "20px", bottom: "0"}}>
-                <NeuroAIChatbot id="chatbot" userAvatar={undefined}/>
+                <NeuroAIChatbot id="chatbot" userAvatar={undefined} pageContext={Component.pageContext || ""}/>
               </div>
               }
             </Container>
