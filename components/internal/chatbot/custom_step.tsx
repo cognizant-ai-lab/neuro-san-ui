@@ -77,12 +77,16 @@ export class CustomStep extends Component<PropTypes, StepState> {
         xhr.addEventListener('readystatechange', readyStateChange)
 
         function readyStateChange() {
-            if (this.readyState === 4) {
+            // Hint to non-JS gurus like me: this "this" is not the "this" you think it is. It has nothing to do with
+            // the "this" for the current instance of `CustomStep`. Rather, it is the "this" of the event handler
+            // for XMLHttpRequest. For more, see https://xhr.spec.whatwg.org/#xmlhttprequest-response
+            if (this.readyState === this.DONE) {
                 const data = JSON.parse(this.responseText)
                 const answer = data.answer
                 if (answer) {
                     self.setState({ loading: false, answer: answer, sources: data.sources })
                 } else {
+                    // This will also include the case where the server returned an http error like 400 or 500
                     self.setState({ loading: false, answer: "Sorry, I have no information about that." })
                 }
             }
