@@ -12,7 +12,7 @@ import {checkValidity} from "./dataprofile/dataprofileutils";
 import {InfoSignIcon} from "evergreen-ui"
 
 // Custom Components developed by us
-import ProfileTable from "./flow/profiletable";
+import ProfileTable from "./dataprofile/profiletable";
 import {NotificationType, sendNotification} from "../../controller/notification"
 import Debug from "debug";
 import {Project} from "../../controller/projects/types"
