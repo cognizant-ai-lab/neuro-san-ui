@@ -411,7 +411,9 @@ export default function NewProject(props: NewProps) {
 
             // Currently only demo users are allowed to skip the NaN check. The idea is they will use an LLM
             // to fill in the NaNs later.
-            allow_nans: isDemoUser
+            options: {
+                allow_nans: isDemoUser
+            }
         }
 
         debug("Data source: ", dataSource)
@@ -519,7 +521,8 @@ export default function NewProject(props: NewProps) {
             s3_key: s3Key,
             request_user: currentUser,
             rejectedColumns: profile.data_source.rejectedColumns,
-            headers: profile.data_source.headers
+            headers: profile.data_source.headers,
+            options: {}
         }
 
         const savedDataSource: DataSource = await updateDataSource(dataSourceMessage)
