@@ -480,7 +480,14 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
         // Allow DMS access for currently chosen prescriptor
         const prescriptorID = Object.values(nodeToCIDMap)[0]
-        const dataSourceId = flow[0].data.DataTag.data_source_id
+
+        const dataSourceNodes = FlowQueries.getDataNodes(flow)
+        if (!dataSourceNodes || dataSourceNodes.length !== 1) {
+            // Can't find a unique data source node -- unable to continue
+            return "(Decision Making System not available: internal error.)"
+        }
+
+        const dataSourceId = dataSourceNodes[0].data.DataTag.data_source_id
         const projectId = props.ProjectId;
         const experimentId = run.experiment_id;
         const runId = run.id;
