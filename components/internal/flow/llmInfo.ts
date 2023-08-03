@@ -13,12 +13,13 @@ export enum ParamType {
 }
 
 enum LlmModel {
+    "Google PaLM 2" = "google_palm_2",
     "GPT 3.5 turbo" = "gpt-3.5-turbo",
     "GPT 4" = "gpt-4",
     "Azure GPT 3.5 turbo" = "azure-gpt-3.5-turbo",
     "Azure GPT 4" = "azure-gpt-4",
     "Vicuna" = "Vicuna",
-    "BYOM" = "Bring your own model"
+    "Bring your own model" = "byom"
 }
 
 enum PromptTemplate {
