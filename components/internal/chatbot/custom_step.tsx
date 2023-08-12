@@ -1,6 +1,8 @@
-import { Component } from "react"
-import { Loading } from "react-simple-chatbot"
+import {ChatMessage} from "langchain/schema"
 import {Collapse} from "antd";
+import {Component} from "react"
+import {Loading} from "react-simple-chatbot"
+import status from "http-status"
 
 // Need to disable some ESlint rules for this module.
 // This is a legacy component and hopefully can be converted to Functional once the ticket mentioned in the class
@@ -11,7 +13,9 @@ import {Collapse} from "antd";
 type PropTypes = {
     steps?: {search: {value: string}},
     triggerNextStep?: () => object,
-    pageContext?: string
+    pageContext?: string,
+    addChatToHistory: (message: ChatMessage) => void,
+    chatHistory?: () => ChatMessage[]
 }
 
 // Specification for component state (to keep Typescript happy)
@@ -22,13 +26,13 @@ type StepState = {
     nextStepTriggered: boolean
 }
 
-const ExpandableSources: React.FC<{ message: string }> = ({ message }) => {
+const ExpandableSources: React.FC<{ sourcesAsList: string }> = ({ sourcesAsList }) => {
     return (
         <div id="show-sources-div" style={{fontSize: "smaller", overflowWrap: "anywhere"}}>
             <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
             >
                 <Collapse.Panel // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    header="Show sources" key={1} >{message ?? "No sources found"}
+                    header="Show sources" key={1} >{sourcesAsList ?? "No sources found"}
                 </Collapse.Panel>
             </Collapse>
         </div>
@@ -53,6 +57,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
     constructor(props: PropTypes) {
         super(props)
 
+        console.debug("in c'tor, props:", this.props)
         this.state = {
             loading: true,
             answer: "",
@@ -81,13 +86,26 @@ export class CustomStep extends Component<PropTypes, StepState> {
             // the "this" for the current instance of `CustomStep`. Rather, it is the "this" of the event handler
             // for XMLHttpRequest. For more, see https://xhr.spec.whatwg.org/#xmlhttprequest-response
             if (this.readyState === this.DONE) {
-                const data = JSON.parse(this.responseText)
-                const answer = data.answer
-                if (answer) {
-                    self.setState({ loading: false, answer: answer, sources: data.sources })
+                if (this.status === status.OK) {
+                    const data = JSON.parse(this.responseText)
+                    const answer = data.answer
+
+                    // Did the server provide a valid "answer"?
+                    if (answer) {
+                        self.setState({loading: false, answer: answer, sources: data.sources})
+
+                        // Record bot answer in history
+                        self.props.addChatToHistory(new ChatMessage(answer, "ai"))
+                    } else {
+                        // Something went wrong -- no "answer" from the server
+                        self.setState({loading: false, answer: "Sorry, I have no information about that."})
+                    }
                 } else {
-                    // This will also include the case where the server returned an http error like 400 or 500
-                    self.setState({ loading: false, answer: "Sorry, I have no information about that." })
+                    // HTTP error of some kind
+                    self.setState({loading: false, answer: "Sorry, an internal error has occurred. More detailed " +
+                            "information may be available in the browser console."})
+                    console.error(`Error ${this.status} while trying to get answer from ${queryUrl}\n` +
+                        `Response: ${this.responseText}`)
                 }
             }
         }
@@ -100,9 +118,14 @@ export class CustomStep extends Component<PropTypes, StepState> {
         const search = steps.search.value
         const safeSearchString = JSON.stringify(search)
         const safePageContext = JSON.stringify(this.props.pageContext)
+        const safeChatHistory = JSON.stringify(this.props.chatHistory())
+
+        console.debug("custom step, chat history, about to send:", this.props.chatHistory())
+        // Record user query in history
+        this.props.addChatToHistory(new ChatMessage(search, "human"))
 
         // Send the request to the server
-        xhr.send(`{"query":${safeSearchString}, "pageContext": ${safePageContext}}`)
+        xhr.send(`{"query":${safeSearchString}, "pageContext": ${safePageContext}, "chatHistory": ${safeChatHistory}}`)
     }
 
     // Trigger next state -- meaning, prompt the user for a new query
@@ -119,7 +142,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
         }
 
         // Format sources for display
-        const message = sources
+        const sourcesAsList = sources
             ?.map(source =>
                 `Source: ${source.source.replace(/\n/gu, "")} 
 from this snippet: "${source.snippet.replace(/\n/gu, "")}" page: ${source.page ?? "n/a"}`)
@@ -132,7 +155,7 @@ from this snippet: "${source.snippet.replace(/\n/gu, "")}" page: ${source.page ?
                             :   <>
                                     {answer}
                                     <ExpandableSources // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                        message={message}
+                                        sourcesAsList={sourcesAsList}
                                     />
                                 </>
                 }

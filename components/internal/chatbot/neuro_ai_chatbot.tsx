@@ -1,14 +1,27 @@
 import ChatBot from "react-simple-chatbot"
-import {ThemeProvider} from "styled-components"
+import uuid from "react-uuid"
 import {chatbotTheme} from "../../../const"
-import {CustomStep} from "./custom_step";
-import uuid from "react-uuid";
+import {ChatMessage} from "langchain/schema"
+import {CustomStep} from "./custom_step"
+import {ThemeProvider} from "styled-components"
+import {useRef} from "react"
 
 /**
  * "Steps" for controlling the chatbot. This is really a JSON description of an FSM (finite state machine).
  * See documentation {@link https://lucasbassetti.com.br/react-simple-chatbot/#/docs/steps|here}.
+ *
+ * @param pageContext Human-readable description of current page
+ * @param addChatToHistory Function to add a chat message to the chat history
+ * @param chatHistory Array of chat messages (see {@link ChatMessage}) of both human an AI origin
+ *
+ * @return An array of steps for the chatbot
  */
-function getChatbotSteps(pageContext: string) {
+function getChatbotSteps(pageContext: string,
+                         addChatToHistory: (message: ChatMessage) => void,
+                         chatHistory: () => ChatMessage[]) {
+
+    console.debug("in getChatbotSteps, chatHistory:", chatHistory)
+
     return ([
         {
             id: '1',
@@ -22,8 +35,13 @@ function getChatbotSteps(pageContext: string) {
         },
         {
             id: '3',
-            component: <CustomStep pageContext={pageContext} />,    // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                                                    // Doesn't need an ID as it doesn't produce anything visible.
+            component: <CustomStep  // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                    // Doesn't need an ID as it doesn't produce anything visible.
+                            pageContext=""
+                            chatHistory={chatHistory}
+                            addChatToHistory={addChatToHistory}
+                       />,
+
             waitAction: true,
             asMessage: true,
             trigger: '4'
@@ -43,7 +61,19 @@ function getChatbotSteps(pageContext: string) {
 export function NeuroAIChatbot(props: { id: string, userAvatar: string, pageContext: string }): React.ReactElement {
     const id = props.id
     const pageContext = props.pageContext || "No page context available";
-    const chatbotSteps = getChatbotSteps(pageContext);
+
+    // Use useRef here since we don't want changes in the chat history to trigger a re-render
+    const chatHistory = useRef<ChatMessage[]>([])
+
+    // function to add latest response to state array
+    function addChatToHistory(message: ChatMessage) {
+        chatHistory.current = [...chatHistory.current, message]
+
+        console.log("chatHistory: ", chatHistory)
+        console.log("message: ", message)
+    }
+
+    const chatbotSteps = getChatbotSteps(pageContext, addChatToHistory, () => chatHistory.current)
 
     return  <>
         <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
