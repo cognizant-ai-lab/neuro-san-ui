@@ -33,7 +33,7 @@ import {fetchLlmRules} from "../../controller/rules/rules"
 import {NextRouter, useRouter} from "next/router"
 
 // Chatbot
-import {NeuroAIChatbot} from "./chatbot/neuro_ai_chatbot"
+import NeuroAIChatbot from "./chatbot/neuro_ai_chatbot"
 import {PrescriptorNode} from "./flow/nodes/prescriptornode";
 
 interface RunProps {

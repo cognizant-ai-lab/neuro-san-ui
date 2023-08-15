@@ -1,3 +1,4 @@
+import React from 'react';
 import ChatBot from "react-simple-chatbot"
 import uuid from "react-uuid"
 import {chatbotTheme} from "../../../const"
@@ -55,7 +56,7 @@ function getChatbotSteps(pageContext: string,
  * Encapsulates a Chatbot from the <code>react-simple-chatbot</code> library, with some defaults for our use case.
  * @param props Basic settings for the chatbot. See declaration for details.
  */
-export function NeuroAIChatbot(props: { id: string, userAvatar: string, pageContext: string }): React.ReactElement {
+const NeuroAIChatbot = (props: { id: string, userAvatar: string, pageContext: string }): React.ReactElement => {
     const id = props.id
     const pageContext = props.pageContext || "No page context available";
 
@@ -89,4 +90,6 @@ export function NeuroAIChatbot(props: { id: string, userAvatar: string, pageCont
             />
         </ThemeProvider>
     </>
-}
+};
+
+export default React.memo(NeuroAIChatbot);

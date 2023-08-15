@@ -7,7 +7,7 @@ import {DataType} from "../../../controller/datatag/types"
 import {empty} from "../../../utils/objects"
 import {reasonToHumanReadable} from "../../../controller/datasources/types"
 import {Profile} from "../../../controller/dataprofile/types"
-import {NeuroAIChatbot} from "../chatbot/neuro_ai_chatbot"
+import NeuroAIChatbot from "../chatbot/neuro_ai_chatbot"
 
 interface ProfiletableProps {
     id: string

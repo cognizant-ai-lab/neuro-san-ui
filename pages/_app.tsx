@@ -28,7 +28,7 @@ import Navbar from "../components/navbar"
 import {ENABLE_AUTHENTICATION, LOGO} from "../const"
 import {Auth} from "../components/auth";
 import ErrorBoundary from "../components/errorboundary";
-import {NeuroAIChatbot} from "../components/internal/chatbot/neuro_ai_chatbot";
+import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot";
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
