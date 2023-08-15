@@ -7,7 +7,7 @@ import {ThemeProvider} from "styled-components"
 import {useRef} from "react"
 
 /**
- * "Steps" for controlling the chatbot. This is really a JSON description of an FSM (finite state machine).
+ * "Steps" for controlling the chatbot. This is a JSON description of an FSM (finite state machine).
  * See documentation {@link https://lucasbassetti.com.br/react-simple-chatbot/#/docs/steps|here}.
  *
  * @param pageContext Human-readable description of current page
@@ -19,9 +19,6 @@ import {useRef} from "react"
 function getChatbotSteps(pageContext: string,
                          addChatToHistory: (message: ChatMessage) => void,
                          chatHistory: () => ChatMessage[]) {
-
-    console.debug("in getChatbotSteps, chatHistory:", chatHistory())
-
     return ([
         {
             id: '1',

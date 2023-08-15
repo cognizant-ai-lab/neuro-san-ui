@@ -57,7 +57,6 @@ export class CustomStep extends Component<PropTypes, StepState> {
     constructor(props: PropTypes) {
         super(props)
 
-        console.debug("in c'tor, props:", this.props)
         this.state = {
             loading: true,
             answer: "",
@@ -120,7 +119,6 @@ export class CustomStep extends Component<PropTypes, StepState> {
         const safePageContext = JSON.stringify(this.props.pageContext)
         const safeChatHistory = JSON.stringify(this.props.chatHistory())
 
-        console.debug("custom step, chat history, about to send:", this.props.chatHistory())
         // Record user query in history
         this.props.addChatToHistory(new ChatMessage(search, "human"))
 
