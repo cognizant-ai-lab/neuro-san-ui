@@ -65,9 +65,6 @@ export function NeuroAIChatbot(props: { id: string, userAvatar: string, pageCont
     // function to add latest response to state array
     function addChatToHistory(message: ChatMessage) {
         chatHistory.current = [...chatHistory.current, message]
-
-        console.log("chatHistory: ", chatHistory)
-        console.log("message: ", message)
     }
 
     const chatbotSteps = getChatbotSteps(pageContext, addChatToHistory, () => chatHistory.current)
