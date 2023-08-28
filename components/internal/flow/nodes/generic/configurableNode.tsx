@@ -9,9 +9,6 @@ import {GrSettingsOption} from "react-icons/gr"
 import {Handle, Position as HandlePosition, NodeProps, Node} from 'reactflow'
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
 
-import Debug from "debug"
-const debug = Debug("ConfigurableNode")
-
 // Custom components
 import ConfigNumeric from "../../confignumeric"
 import {NotificationType, sendNotification} from "../../../../../controller/notification"
@@ -59,8 +56,6 @@ export type ConfigurableNode = Node<ConfigurableNodeData>
 const ConfigurableNodeComponent: React.FC<NodeProps<ConfigurableNodeData>> = (props) => {
     // Unpack props
     const data = props.data
-
-    debug("ConfigurableNodeComponent props: ", props)
 
     // Unpack the data
     const {
