@@ -7,8 +7,27 @@
  */
 type Enum = Record<string, string | number>
 
+/*
+A note on the redundancy between `ParameterType` and `BaseParameterType`: these are both used to describe the type of
+a parameter. To summarize, `ParameterType` is used for the Typescript compiler, whereas `BaseParameterType` is used for
+application code (see descriptions of the type and enum below for more details).
+
+It's possible these two can be combined at some point.
+
+Even better, it's possible we could handle this whole parameter typing via Typescript generics, so we wouldn't need
+this internal second-class-citizen type system in the first place. This would be a good thing to do at some point.
+The main issue with the Generics approach is type erasure in Typescript: namely, you can't reflect on which particular
+instantiation of the Generic class you have at runtime. So you can't say "For this instance of `Foo<T>`, if T is a
+`string`, do this, else if T is a `number`, do that". This is a problem for us because we need to be able to reflect
+on the type in order to render the node configuration using the correct UI elements.
+ */
+
+// Use for strict typing of the value of parameters, so Typescript can catch issues
 type ParameterType = boolean|number|string|Enum
 
+// Used for nodes to reflect on the type of each parameter and potentially do different things depending on the type.
+// For example, a boolean parameter might be rendered as a checkbox, while a string parameter might be rendered as a
+// text field, and an enum parameter might be rendered as a dropdown.
 export enum BaseParameterType {
     BOOLEAN,
     STRING,
