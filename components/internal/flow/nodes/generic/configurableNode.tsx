@@ -145,7 +145,9 @@ const ConfigurableNodeComponent: React.FC<NodeProps<ConfigurableNodeData>> = (pr
                             style={{width: "100%"}}
                         >
                             {
-                                Object.entries(item.enum).map(
+                                Object.entries(item.enum)
+                                    .sort((first, second) => first[0].localeCompare(second[0]))
+                                    .map(
                                     encoder =>
                                         <option
                                             id={`${paramPrefix}-${encoder[0]}`}
