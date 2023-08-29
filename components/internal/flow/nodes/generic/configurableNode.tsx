@@ -101,7 +101,7 @@ const ConfigurableNodeComponent: React.FC<NodeProps<ConfigurableNodeData>> = (pr
     function getInputComponent(param) {
         const item = ParameterSet[param]
         const paramPrefix = `${flowPrefix}-${param}`
-        const parentNodeStateElement = ParentNodeState[param]
+        const parentNodeStateElement = ParentNodeState?.[param]
 
         return <Container id={`${paramPrefix}-container`}>
             <Row id={`${paramPrefix}-row`} className="mx-2 my-4">
