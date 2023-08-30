@@ -1,12 +1,14 @@
 // React components
-import {Dispatch, SetStateAction, useState} from 'react'
+import {Dispatch, FC, SetStateAction, useState} from 'react'
 
 // 3rd party components
 import {AiFillDelete} from "react-icons/ai";
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Card, Col, Collapse, Container, Row} from "react-bootstrap"
 import {GrSettingsOption} from "react-icons/gr"
+// eslint-disable-next-line no-shadow
 import {Handle, Position as HandlePosition, NodeProps, Node} from 'reactflow'
+// eslint-disable-next-line no-shadow
 import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
 
 // Custom components
@@ -53,7 +55,7 @@ export type ConfigurableNode = Node<ConfigurableNodeData>
  * which component we are dealing with. So we have to do it their way.
  *
  */
-const ConfigurableNodeComponent: React.FC<NodeProps<ConfigurableNodeData>> = (props) => {
+const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
     // Unpack props
     const data = props.data
 

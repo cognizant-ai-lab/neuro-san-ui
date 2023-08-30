@@ -21,6 +21,8 @@ describe('Various utilities', () => {
     
     it('retrieves enum key by the value', async () => {
         // Create an enum to test enum function
+        // no-shadow doesn't do well with enums. Search their github issues if you're curious.
+        // eslint-disable-next-line no-shadow
         enum DIRECTION {
             Up = "UP",
             Down = "DOWN",

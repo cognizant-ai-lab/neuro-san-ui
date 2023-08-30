@@ -140,13 +140,13 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                             // divide: 100ms / 2.0 = 50ms and that's how long we wait, resulting in 2x speed playback.
                             const adjustedFrameDelay = frameDelayMs / parseFloat(playbackSpeed.value)
                             const interval = setInterval(() => {
-                                setSelectedGen(selectedGen => {
-                                    if (selectedGen === numberOfGenerations) {
+                                setSelectedGen(generationNumber => {
+                                    if (generationNumber === numberOfGenerations) {
                                         clearInterval(interval)
                                         setPlaying(false)
-                                        return selectedGen
+                                        return generationNumber
                                     }
-                                    return selectedGen + 1
+                                    return generationNumber + 1
                                 })
                             }, adjustedFrameDelay)
                             setPlayingInterval(interval)

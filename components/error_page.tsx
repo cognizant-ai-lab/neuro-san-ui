@@ -1,4 +1,3 @@
-import React from "react";
 import {GENERIC_LOGO, LOGO} from "../const";
 import Navbar from "./navbar";
 import {useRouter} from "next/router";

@@ -2,8 +2,7 @@
  * Main navigation bar that appears at the top of each page
  */
 
-// React
-import React from 'react'
+import {ReactElement} from "react"
 
 // Third party
 import Breadcrumbs from "nextjs-breadcrumbs2"
@@ -16,6 +15,7 @@ import {ENABLE_AUTHENTICATION, MaximumBlue, UNILEAF_VERSION} from '../const'
 
 // Styling Libraries
 
+// eslint-disable-next-line no-shadow
 import Image from 'next/image'
 import Link from "next/link"
 
@@ -24,11 +24,12 @@ import {signOut, useSession} from "next-auth/react"
 
 // Custom components
 import {isSignedIn} from "./auth"
-import {useRouter} from "next/router";
+import {useRouter} from "next/router"
+
 
 // Define Constants
 const LOGO_COLOR: string = "white";
-const NAV_ITEMS_COLOR: string = "white";
+const NAV_ITEMS_COLOR: string = "white"
 
 // Declare the Props Interface
 interface NavbarProps {
@@ -41,7 +42,7 @@ interface NavbarProps {
     readonly WithBreadcrumbs?: boolean
 }
 
-function Navbar(props: NavbarProps): React.ReactElement {
+function Navbar(props: NavbarProps): ReactElement {
     /*
     This component is responsible for rendering the
     navbar component. The logo and the sidebar callback are configurable,
@@ -49,6 +50,7 @@ function Navbar(props: NavbarProps): React.ReactElement {
     */
     const router = useRouter()
 
+    // eslint-disable-next-line no-shadow
     const { data: session, status } = useSession()
     const signedIn: boolean = isSignedIn(session, status)
 

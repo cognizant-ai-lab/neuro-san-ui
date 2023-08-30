@@ -2,6 +2,7 @@ import {ChatMessage} from "langchain/schema"
 import {Collapse} from "antd";
 import {Component} from "react"
 import {Loading} from "react-simple-chatbot"
+// eslint-disable-next-line no-shadow
 import status from "http-status"
 
 // Need to disable some ESlint rules for this module.
@@ -71,7 +72,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
         // Need to alias "this" (apparently) so we can use it inside the function below. This appears to be some kind
         // of lexical capture, but it's beyond my knowledge, and I'm just copying the example from the doc.
         // eslint-disable-next-line @typescript-eslint/no-this-alias,consistent-this
-        const self = this
+        const thisTmp = this
         const { steps } = this.props
 
         const queryUrl = "/api/gpt/userguide"
@@ -91,17 +92,17 @@ export class CustomStep extends Component<PropTypes, StepState> {
 
                     // Did the server provide a valid "answer"?
                     if (answer) {
-                        self.setState({loading: false, answer: answer, sources: data.sources})
+                        thisTmp.setState({loading: false, answer: answer, sources: data.sources})
 
                         // Record bot answer in history
-                        self.props.addChatToHistory(new ChatMessage(answer, "ai"))
+                        thisTmp.props.addChatToHistory(new ChatMessage(answer, "ai"))
                     } else {
                         // Something went wrong -- no "answer" from the server
-                        self.setState({loading: false, answer: "Sorry, I have no information about that."})
+                        thisTmp.setState({loading: false, answer: "Sorry, I have no information about that."})
                     }
                 } else {
                     // HTTP error of some kind
-                    self.setState({loading: false, answer: "Sorry, an internal error has occurred. More detailed " +
+                    thisTmp.setState({loading: false, answer: "Sorry, an internal error has occurred. More detailed " +
                             "information may be available in the browser console."})
                     console.error(`Error ${this.status} while trying to get answer from ${queryUrl}\n` +
                         `Response: ${this.responseText}`)

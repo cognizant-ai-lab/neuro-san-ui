@@ -1,6 +1,6 @@
 import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
 import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai"
-import React, {useState} from "react"
+import {useState} from "react"
 import {Button, Checkbox, Input, Modal, Space} from 'antd'
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd'
 import {DataType} from "../../../controller/datatag/types"
@@ -266,22 +266,22 @@ export default function ProfileTable(props: ProfiletableProps) {
         const rejectedColumns = profile.data_source.rejectedColumns;
         return rejectedColumns && !empty(rejectedColumns)
             ? Object.keys(rejectedColumns)
-                .map((name) =>
-                    <tr id={ `${name}-rejected-row` }
-                        key={name}
+                .map((columnName) =>
+                    <tr id={ `${columnName}-rejected-row` }
+                        key={columnName}
                         style={{backgroundColor: caoColorCoding.REJECTED, whiteSpace: "nowrap"}}>
-                        <td id={ `${name}-rejected-data` } className={tableCellClassName}>
-                            <span id={ `${name}-rejected` }
+                        <td id={ `${columnName}-rejected-data` } className={tableCellClassName}>
+                            <span id={ `${columnName}-rejected` }
                                   className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}
                                   style={{display: "flex", flexWrap: "nowrap"}}>
-                                <AiFillWarning id={ `${name}-rejected-fill-warning` } size="20" className="mr-2"/>
-                                {name}
+                                <AiFillWarning id={ `${columnName}-rejected-fill-warning` } size="20" className="mr-2"/>
+                                {columnName}
                             </span>
                         </td>
-                        <td id={ `${name}-rejection-reason-data` } className={tableCellClassName}>
-                            <span id={ `${name}-rejection-reason` }
+                        <td id={ `${columnName}-rejection-reason-data` } className={tableCellClassName}>
+                            <span id={ `${columnName}-rejection-reason` }
                                 className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}>
-                                {`${rejectedColumns[name]}: ${reasonToHumanReadable(rejectedColumns[name])}`}
+                                {`${rejectedColumns[columnName]}: ${reasonToHumanReadable(rejectedColumns[columnName])}`}
                             </span>
                         </td>
                     </tr>
@@ -365,14 +365,14 @@ export default function ProfileTable(props: ProfiletableProps) {
                                                 <Draggable    // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                                     // 2/6/23 DEF - Draggable doesn't have an id property when compiling
                                                     key={val} draggableId={val} index={index}>
-                                                    {(provided, snapshot) => {
+                                                    {(providedInner, snapshot) => {
                                                         const opacity =
                                                             snapshot.isDragging ? "opacity-50" : "opacity-100"
                                                         return <Row id={ `${val}-row` }
                                                             className={"my-1 " + opacity}
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
+                                                            ref={providedInner.innerRef}
+                                                            {...providedInner.draggableProps}
+                                                            {...providedInner.dragHandleProps}
                                                         >
                                                             <Col id={ `${val}-value-column` }
                                                                 className="mx-0 px-1">

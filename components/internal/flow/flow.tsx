@@ -248,7 +248,7 @@ export default function Flow(props: FlowProps) {
                     // Get all predictors in the experiment except the one that just got updated because the data in
                     // that node is stale. Remember, we are inside the set state handler so the state there
                     // is before the update.
-                    const predictors = FlowQueries.getPredictorNodes(nodes).filter(node => node.id !== NodeID)
+                    const predictors = FlowQueries.getPredictorNodes(nodes).filter(aNode => aNode.id !== NodeID)
 
                     // Take the Union of all the checked outcomes on the predictors
                     let checkedOutcomes = FlowQueries.extractCheckedFields(predictors, CAOType.OUTCOME)
@@ -261,7 +261,8 @@ export default function Flow(props: FlowProps) {
                     })
 
                     // Remove dupe outcomes
-                    checkedOutcomes = checkedOutcomes.filter((value, index, self) => self.indexOf(value) === index)
+                    checkedOutcomes = checkedOutcomes
+                        .filter((value, index, sourceArray) => sourceArray.indexOf(value) === index)
 
                     // Convert checkedOutcomes to fitness structure
                     const fitness = checkedOutcomes.map(outcome => {
@@ -335,7 +336,7 @@ export default function Flow(props: FlowProps) {
         This function resets the graphs and attaches a Data node.
         */
         // Create an empty node list
-        const nodes = []
+        const nodesTmp = []
 
         // Add Data Node. The Data node has a constant ID
         // described by the constant InputDataNodeID. At the moment
@@ -351,16 +352,16 @@ export default function Flow(props: FlowProps) {
             },
             position: {x: 500, y: 500}
         }
-        nodes.push(dataSourceNode)
+        nodesTmp.push(dataSourceNode)
 
-        return nodes
+        return nodesTmp
     }
 
-    function _addEdgeToPrescriptorNode(edges: EdgeType[],
+    function _addEdgeToPrescriptorNode(inputEdges: EdgeType[],
                               predictorNodeID: string, 
                               prescriptorNodeID: string) {
 
-        const edgesCopy = [...edges]
+        const edgesCopy = [...inputEdges]
         const edgeId = uuid()
         const edge: PrescriptorEdge = {
             id: edgeId,
@@ -421,7 +422,7 @@ export default function Flow(props: FlowProps) {
             predictorNodes
                 .filter(node => node.data.ParentPredictorState.selectedPredictorType !== "classifier" &&
                     getOutgoers<NodeData, PredictorNodeData>(node, nodes, edges)
-                        .every(node => node.type !== "uncertaintymodelnode") &&
+                        .every(aNode => aNode.type !== "uncertaintymodelnode") &&
                     !FlowQueries.hasMultipleOutcomes(node))
                 .map(node => node.id)
         if (predictorsWithoutUncertaintyNodes.length === 0) {
@@ -477,7 +478,7 @@ export default function Flow(props: FlowProps) {
                 ParentPredictorState: _getInitialPredictorState(),
                 SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
                 DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
-                GetElementIndex: NodeID => _getElementIndex(NodeID)
+                GetElementIndex: id => _getElementIndex(id)
             },
             position: {
                 x: nodes[0].position.x + 250,
@@ -602,7 +603,7 @@ export default function Flow(props: FlowProps) {
         let outcomes = FlowQueries.extractCheckedFields(predictorNodes, CAOType.OUTCOME)
 
         // Make this a set
-        outcomes = outcomes.filter((value, index, self) => self.indexOf(value) === index)
+        outcomes = outcomes.filter((value, index, sourceArray) => sourceArray.indexOf(value) === index)
 
         // Default to maximizing outcomes until user tells us otherwise
         const fitness = outcomes.map(outcome => ({metric_name: outcome, maximize: true}))
@@ -628,7 +629,7 @@ export default function Flow(props: FlowProps) {
                 EvaluatorOverrideCode: EvaluateCandidateCode,
                 UpdateEvaluateOverrideCode: value => UpdateOutputOverrideCode(NodeID, value),
                 DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
-                GetElementIndex: NodeID => _getElementIndex(NodeID)
+                GetElementIndex: id => _getElementIndex(id)
             },
             position: {
                 x: prescriptorNodeXPos,
@@ -640,10 +641,11 @@ export default function Flow(props: FlowProps) {
         predictorNodes.forEach(predictorNode => {
             const downstreamNodes = getOutgoers<NodeData, PredictorNodeData>(predictorNode, nodes, edges)
             if (downstreamNodes && downstreamNodes.length > 0) {
-                const uncertaintyModelNodes = downstreamNodes.filter(node => node.type === "uncertaintymodelnode")
-                if (uncertaintyModelNodes && uncertaintyModelNodes.length === 1) {
+                const downStreamUncertaintyModelNodes =
+                    downstreamNodes.filter(node => node.type === "uncertaintymodelnode")
+                if (downStreamUncertaintyModelNodes && downStreamUncertaintyModelNodes.length === 1) {
                     // should only be one uncertainty model node per predictor!
-                    const uncertaintyModelNode = uncertaintyModelNodes[0]
+                    const uncertaintyModelNode = downStreamUncertaintyModelNodes[0]
                     edgesCopy = _addEdgeToPrescriptorNode(
                         edgesCopy,
                         uncertaintyModelNode.id, NodeID
@@ -716,8 +718,8 @@ export default function Flow(props: FlowProps) {
                     NodeID: newNodeID,
                     ParentNodeState: _getInitialUncertaintyNodeState(),
                     SetParentNodeState: state => ParentNodeSetStateHandler(state, newNodeID),
-                    DeleteNode: newNodeID => _deleteNodeById(newNodeID),
-                    GetElementIndex: newNodeID => _getElementIndex(newNodeID),
+                    DeleteNode: id => _deleteNodeById(id),
+                    GetElementIndex: id => _getElementIndex(id),
                     ParameterSet: UNCERTAINTY_MODEL_PARAMS,
                     NodeTitle: "Uncertainty Model"
                 },
@@ -948,7 +950,7 @@ export default function Flow(props: FlowProps) {
         _deleteNode([FlowQueries.getNodeByID(nodes, nodeID)], nodes, edges)
     }
 
-    function _deleteNode(nodesToDelete: NodeType[], nodes: NodeType[], edges: EdgeType[]) {
+    function _deleteNode(nodesToDelete: NodeType[], currentNodes: NodeType[], currentEdges: EdgeType[]) {
         /*
         Since we supply constraints on how nodes interact, i.e. in an ESP
         fashion we cannot allow deletion of any nodes.
@@ -969,45 +971,45 @@ export default function Flow(props: FlowProps) {
 
         const removableNodes = nodesToDelete.filter(element => element.type != "datanode")
         // Also get the edges associated with this uncertainty node
-        const removableEdges = getConnectedEdges(removableNodes, edges)
+        const removableEdges = getConnectedEdges(removableNodes, currentEdges)
 
         const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes(nodesToDelete)
         const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map(node => node.id)
 
         const uncertaintyNodesBeingRemoved = FlowQueries.getUncertaintyModelNodes(nodesToDelete)
 
-        const prescriptorNodes = FlowQueries.getPrescriptorNodes(nodes)
+        const prescriptorNodes = FlowQueries.getPrescriptorNodes(currentNodes)
 
         // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
         if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
             const uncertaintyNodesToRemove = predictorNodesBeingRemoved
                 .flatMap<ConfigurableNode>(
                     node => 
-                    getOutgoers<NodeData, PredictorNodeData>(node, nodes, edges).
-                    filter(node => node.type === "uncertaintymodelnode") as ConfigurableNode[]
+                    getOutgoers<NodeData, PredictorNodeData>(node, currentNodes, currentEdges).
+                    filter(aNode => aNode.type === "uncertaintymodelnode") as ConfigurableNode[]
                 )
             removableNodes.push(...uncertaintyNodesToRemove)
             // Also get the edges associated with this uncertainty node
-            removableEdges.push(...getConnectedEdges(uncertaintyNodesToRemove, edges))
+            removableEdges.push(...getConnectedEdges(uncertaintyNodesToRemove, currentEdges))
         }
 
         // If this delete will remove all predictors, also delete the prescriptor
-        const numPredictorNodesLeft = FlowQueries.getPredictorNodes(nodes).length - predictorIdsBeingRemoved.length
+        const numPredictorNodesLeft = FlowQueries.getPredictorNodes(currentNodes).length - predictorIdsBeingRemoved.length
         if (numPredictorNodesLeft == 0) {
             removableNodes.push(...prescriptorNodes)
         } else {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor
-            const predictorsLeft = nodes.filter(node => node.type === "predictornode" &&
+            const predictorsLeft = currentNodes.filter(node => node.type === "predictornode" &&
                 !predictorIdsBeingRemoved.includes(node.id)) as PredictorNode[]
 
             // Connect any remaining predictors to the prescriptor
             if (uncertaintyNodesBeingRemoved && prescriptorNodes && prescriptorNodes.length > 0) {
                 const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved
-                    .flatMap(node => getIncomers<NodeData, ConfigurableNodeData>(node, nodes, edges)
-                        .filter(node => node.type === "predictornode"))
+                    .flatMap(node => getIncomers<NodeData, ConfigurableNodeData>(node, currentNodes, currentEdges)
+                        .filter(aNode => aNode.type === "predictornode"))
                 for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
-                    edges = _addEdgeToPrescriptorNode(edges, node.id, prescriptorNodes[0].id)
+                    currentEdges = _addEdgeToPrescriptorNode(currentEdges, node.id, prescriptorNodes[0].id)
                 }
             }
 
@@ -1015,12 +1017,12 @@ export default function Flow(props: FlowProps) {
             let outcomes = FlowQueries.extractCheckedFields(predictorsLeft, CAOType.OUTCOME)
 
             // Make this a set
-            outcomes = outcomes.filter((value, index, self) => self.indexOf(value) === index)
+            outcomes = outcomes.filter((value, index, sourceArray) => sourceArray.indexOf(value) === index)
 
             // Default to maximizing outcomes until user tells us otherwise
             const fitness = outcomes.map(outcome => ({metric_name: outcome, maximize: true}))
 
-            nodes = nodes.map(node => {
+            currentNodes = currentNodes.map(node => {
                 if (node.type === "prescriptornode") {
                     node = node as PrescriptorNode
                     node.data = {
@@ -1058,7 +1060,7 @@ export default function Flow(props: FlowProps) {
             type: "remove",
             id: element.id
         }))
-        const remainingNodes = applyNodeChanges<NodeData>(nodeChanges, nodes) as NodeType[]
+        const remainingNodes = applyNodeChanges<NodeData>(nodeChanges, currentNodes) as NodeType[]
 
 
         const edgeChanges = removableEdges.map<EdgeRemoveChange>(element => ({
@@ -1066,7 +1068,7 @@ export default function Flow(props: FlowProps) {
             id: element.id
         }))
         
-        const remainingEdges = applyEdgeChanges(edgeChanges, edges) as EdgeType[]
+        const remainingEdges = applyEdgeChanges(edgeChanges, currentEdges) as EdgeType[]
         
         // Update the flow, removing the deleted nodes
         setNodes(remainingNodes)
@@ -1243,7 +1245,7 @@ export default function Flow(props: FlowProps) {
                     edges={edges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
-                    onNodesDelete={nodes => _onElementsRemove(nodes)}
+                    onNodesDelete={currentNodes => _onElementsRemove(currentNodes)}
                     onConnect={void (0)}  // Prevent user manually connecting nodes
                     onInit={(instance) => _onLoad(instance)}
                     snapToGrid={true} 

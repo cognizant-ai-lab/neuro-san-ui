@@ -1,5 +1,5 @@
 // React components
-import {Dispatch, SetStateAction, useEffect, useState} from 'react'
+import {Dispatch, FC, SetStateAction, useEffect, useState} from 'react'
 
 // 3rd party components
 import {Row, Col, Card, Container} from "react-bootstrap"
@@ -10,6 +10,7 @@ import {
     Position,
     Tab,
     Tablist,
+    // eslint-disable-next-line no-shadow
     Text,
     Tooltip,
 } from "evergreen-ui"
@@ -25,6 +26,7 @@ import {
     getOutgoers,
     Handle,
     Position as HandlePosition,
+    // eslint-disable-next-line no-shadow
     Node,
     NodeProps,
     useEdges,
@@ -94,7 +96,7 @@ export interface PredictorNodeData {
 
 export type PredictorNode = Node<PredictorNodeData>
 
-const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) => {
+const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
     /*
     This function is responsible to render the Predictor Node
     */
@@ -349,6 +351,7 @@ const PredictorNodeComponent: React.FC<NodeProps<PredictorNodeData>> = (props) =
     };
 
     const onUpdateCAOState = (event, espType: string) => {
+        // eslint-disable-next-line no-shadow
         const { name, checked } = event.target
         const caoStateCopy = { ...ParentPredictorState.caoState }
 

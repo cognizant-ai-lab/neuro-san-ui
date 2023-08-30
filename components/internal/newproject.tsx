@@ -5,6 +5,7 @@ import {useSession} from 'next-auth/react'
 // 3rd Party components
 import ClipLoader from "react-spinners/ClipLoader";
 import prettyBytes from 'pretty-bytes'
+// eslint-disable-next-line no-shadow
 import status from "http-status"
 import {Button, Collapse, Modal, Radio, RadioChangeEvent, Space, Tooltip} from 'antd'
 import {Container, Form} from "react-bootstrap"
@@ -423,8 +424,8 @@ export default function NewProject(props: NewProps) {
         if (response.status !== status.OK) {
             // Maybe "invalid request"?
             if (response.status === status.BAD_REQUEST) {
-                const status: GrpcError = await response.json()
-                sendNotification(NotificationType.error, "Failed to create profile", `"${status.message}"`)
+                const responseStatus: GrpcError = await response.json()
+                sendNotification(NotificationType.error, "Failed to create profile", `"${responseStatus.message}"`)
             } else {
                 // Something we're not expecting -- show error
                 console.error(await response.text())
@@ -649,6 +650,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`)
         setIsUploading(true)
 
         // Split into filename + extension
+        // eslint-disable-next-line no-shadow
         const {name, ext} = splitFilename(fileName)
 
         // Sanitize both name and extension in preparation for S3 path

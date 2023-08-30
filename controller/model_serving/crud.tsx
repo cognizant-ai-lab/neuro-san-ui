@@ -278,11 +278,11 @@ async function getDeployments(
 /**
  * Generates an inference URL for kserve for a particular model
  * @param baseUrl Base URL for kserve model (same for all models across a deployment)
- * @param name Kserve model name for this particular model
+ * @param modelName Kserve model name for this particular model
  * @return A ready-to-use inference URL for the model requested
  */
-function getModelInferenceUrl(baseUrl: string, name: string) {
-    return `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}/${name}/infer`;
+function getModelInferenceUrl(baseUrl: string, modelName: string) {
+    return `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}/${modelName}/infer`;
 }
 
 /**

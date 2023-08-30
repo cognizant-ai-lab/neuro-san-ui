@@ -90,17 +90,17 @@ export default function RunPage(props: RunProps): React.ReactElement {
         return project != null ? project.description : ""
     }
 
-    function cacheRun(run: Run) {
+    function cacheRun(runTmp: Run) {
         /*
         Takes the fetched fields from this run page and updates
         the runs prop passed from the experiment page so they 
         won't have to be fetched again.
         */
-        const runIndex = getRunIndexByID(run.id)
+        const runIndex = getRunIndexByID(runTmp.id)
         const tempRuns = [...props.runs]
-        tempRuns[runIndex].output_artifacts = run.output_artifacts
-        tempRuns[runIndex].metrics = run.metrics
-        tempRuns[runIndex].flow = run.flow
+        tempRuns[runIndex].output_artifacts = runTmp.output_artifacts
+        tempRuns[runIndex].metrics = runTmp.metrics
+        tempRuns[runIndex].flow = runTmp.flow
         props.setRuns(tempRuns)
     }
 
@@ -143,14 +143,14 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }
 
-    function isRuleBased(flow: NodeType[]) {
-        const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flow) as NodeType[])[0]
+    function isRuleBased(flowTmp: NodeType[]) {
+        const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flowTmp) as NodeType[])[0]
         const representation = prescriptorNode.data.ParentPrescriptorState.LEAF.representation
         return representation === "RuleBased"
     }
 
-    function generateArtifactURL(flow: NodeType[]) {
-        const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flow) as NodeType[])[0]
+    function generateArtifactURL(flowTmp: NodeType[]) {
+        const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flowTmp) as NodeType[])[0]
         let rulesURL = null
         if (prescriptorNode) {
             const nodeCID = nodeToCIDMap[prescriptorNode.id]
@@ -173,10 +173,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
     async function retrieveRulesPrescriptor() {
         const rulesURL = generateArtifactURL(flow)
         if (rulesURL) {
-            const artifactObj: Artifact[] = await FetchSingleRunArtifact(rulesURL)
+            const artifactTmp: Artifact[] = await FetchSingleRunArtifact(rulesURL)
             
-            if (artifactObj) {
-                setArtifactObj(artifactObj[0])
+            if (artifactTmp) {
+                setArtifactObj(artifactTmp[0])
             }
             else {
                 sendNotification(NotificationType.error, "Internal error", "Fetch for artifacts returned null")
@@ -192,13 +192,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
             const propertiesToRetrieve = ["output_artifacts", "metrics", "flow", "id", "experiment_id"];
             const runs: Runs = await BrowserFetchRuns(currentUser, null, runID, propertiesToRetrieve)
             if (runs.length === 1) {
-                const run = runs[0]
+                const runTmp = runs[0]
 
                 // Use temporary variable to avoid shadowing outer "flow" variable
-                const flowTmp: NodeType[] = JSON.parse(run.flow)
+                const flowTmp: NodeType[] = JSON.parse(runTmp.flow)
                 setFlow(flowTmp)
-                setRun(run)
-                cacheRun(run)
+                setRun(runTmp)
+                cacheRun(runTmp)
             } else {
                 sendNotification(NotificationType.error, "Internal error",
                     `Unexpected number of runs returned: ${runs.length} for run ${runID}`)
@@ -224,13 +224,13 @@ export default function RunPage(props: RunProps): React.ReactElement {
     // Fetch the experiment and the runs
     useEffect(() => {
         // Attempt to get the run from the cache
-        const run = getRunFromCache(props.RunID)
-        if (run) {
+        const runTmp = getRunFromCache(props.RunID)
+        if (runTmp) {
             // Cache hit -- use the cached run
             setRun(props.runs[getRunIndexByID(props.RunID)])
 
             // Use temporary variable to avoid shadowing outer "flow" variable
-            const flowTmp = JSON.parse(run.flow)
+            const flowTmp = JSON.parse(runTmp.flow)
             setFlow(flowTmp)
         }
         else {
@@ -308,20 +308,19 @@ export default function RunPage(props: RunProps): React.ReactElement {
     useEffect(() => {
         if (paretoPlotData && run) {
 
-            const nodeToCIDMap = {}
+            const nodeToCIDMapTmp = {}
 
             // This is the 1D case - if the Pareto does not exist
             if (Object.keys(paretoPlotData).length === 0) {
                 // Get all the artifacts that start with the keyword prescriptor
-                const prescriptorArtifactNames = Object.keys(JSON.parse(run.output_artifacts)).filter(
-                    name => name.startsWith("prescriptor")
-                )
+                const prescriptorArtifactNames = Object.keys(JSON.parse(run.output_artifacts))
+                    .filter(artifactName => artifactName.startsWith("prescriptor"))
 
                 prescriptorArtifactNames.forEach(artifact => {
                     // Split the name of the prescriptor to extract the node id and the cid
                     const splitName = artifact.split("-")
                     const nodeId = splitName.slice(1, splitName.length - 1).join("-")
-                    nodeToCIDMap[nodeId] = splitName[splitName.length - 1]
+                    nodeToCIDMapTmp[nodeId] = splitName[splitName.length - 1]
                 })
 
             } else {
@@ -330,11 +329,11 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 Object.keys(paretoPlotData).forEach(nodeId => {
                     const nodeInfo = paretoPlotData[nodeId].data
                     const numGen = nodeInfo.length
-                    nodeToCIDMap[nodeId] = nodeInfo[numGen - 1].data[0].cid
+                    nodeToCIDMapTmp[nodeId] = nodeInfo[numGen - 1].data[0].cid
                 })
 
             }
-            setNodeToCIDMap(nodeToCIDMap)
+            setNodeToCIDMap(nodeToCIDMapTmp)
         }
     }, [paretoPlotData])
 
@@ -343,7 +342,9 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
         const actionFields = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
 
-        const outcomeFields = Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map(item => ({[item.metric_name]: item.maximize ? "maximize" : "minimize"})))
+        const outcomeFields =
+            Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness
+                .map(item => ({[item.metric_name]: item.maximize ? "maximize" : "minimize"})))
         return {contextFields, actionFields, outcomeFields};
     }
 

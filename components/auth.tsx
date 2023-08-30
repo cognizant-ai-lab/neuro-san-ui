@@ -2,25 +2,26 @@
  * Utility functions relating to authentication
  */
 
-import React from "react";
-import {signIn, useSession} from "next-auth/react";
+import {signIn, useSession} from "next-auth/react"
 import { Session } from "next-auth"
-import {ENABLE_AUTHENTICATION} from "../const";
+import {useEffect} from "react"
+
+import {ENABLE_AUTHENTICATION} from "../const"
 
 /**
  * Helper method to determine if a user is signed in
  * @param session Session info (obtained from next-auth)
- * @param status Status info (obtained from react-auth)
+ * @param statusTmp Status info (obtained from react-auth)
  *
  * @return `true` if user is signed in (authenticated) with some provider, otherwise `false`
  */
-export function isSignedIn(session: Session, status: string): boolean {
+export function isSignedIn(session: Session, statusTmp: string): boolean {
     // If authentication is disabled, pretend user is signed in
     if (!ENABLE_AUTHENTICATION) {
         return true
     }
 
-    const loading = status === "loading"
+    const loading = statusTmp === "loading"
 
     // When rendering client side don't display anything until loading is complete
     if (typeof window !== 'undefined' && loading) {
@@ -44,12 +45,14 @@ const AUTHENTICATION_PROVIDER = "auth0";
  * @return children (protected) components if user is authenticated, otherwise "Loading" message.
  */
 export function Auth({ children }) {
+    // Suppress no-shadow rule -- we have to use what the API gives us
+    // eslint-disable-next-line no-shadow
     const { data: session, status } = useSession()
 
     const isUser = Boolean(session?.user)
     const loading = status === "loading"
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (loading) {
             // Do nothing while loading
             return

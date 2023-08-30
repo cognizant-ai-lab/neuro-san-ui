@@ -36,15 +36,15 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                     max: 'dataMax'
                 },
                 series:
-                    objectiveData.map(objective => ({
-                        data: objective.data.map(
+                    objectiveData.map(anObjective => ({
+                        data: anObjective.data.map(
                             row => ({
                                 name: row.id,
                                 value: [row.x, row.y],
                                 symbolSize: 8
                             }),
                         ),
-                        name: objective.id,
+                        name: anObjective.id,
                         type: 'line',
                         smooth: true
                     })),

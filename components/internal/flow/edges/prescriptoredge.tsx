@@ -1,5 +1,5 @@
 // Import React framework
-import React, { useState } from 'react';
+import {FC, useState} from 'react'
 
 // Import Flow Renderer
 import {
@@ -34,7 +34,7 @@ type PrescriptorEdgeData = {
 
 export type PrescriptorEdge = Edge<PrescriptorEdgeData>;
 
-const PrescriptorEdgeComponent: React.FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sourceX, sourceY,
+const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sourceX, sourceY,
                                         targetX, targetY,
                                         sourcePosition, targetPosition,
                                         style = {}, data, markerEnd}) => {

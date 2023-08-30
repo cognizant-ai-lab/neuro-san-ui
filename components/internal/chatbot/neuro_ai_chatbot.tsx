@@ -1,11 +1,10 @@
-import React from 'react';
 import ChatBot from "react-simple-chatbot"
 import uuid from "react-uuid"
 import {chatbotTheme} from "../../../const"
 import {ChatMessage} from "langchain/schema"
 import {CustomStep} from "./custom_step"
 import {ThemeProvider} from "styled-components"
-import {useRef} from "react"
+import {memo, useRef} from "react"
 import {useRouter} from "next/router"
 
 /**
@@ -104,4 +103,4 @@ const NeuroAIChatbot = (props: { id: string, userAvatar: string, pageContext: st
     </>
 };
 
-export default React.memo(NeuroAIChatbot);
+export default memo(NeuroAIChatbot)

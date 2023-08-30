@@ -8,6 +8,8 @@ Configuration settings and constants for LLM model node configuration popup
 
 import {BaseParameterType, NodeParams} from "./nodes/generic/types"
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 enum LlmModel {
     "Azure GPT 3.5 turbo" = "azure-gpt-3.5-turbo",
     "Azure GPT 4" = "azure-gpt-4",
@@ -29,6 +31,8 @@ enum LlmModel {
     "Vicuna" = "Vicuna"
 }
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 enum TokenEncoding {
     /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 
@@ -73,6 +77,8 @@ enum TokenEncoding {
     /* eslint-enable @typescript-eslint/no-duplicate-enum-values */
 }
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 enum PromptTemplate {
     "Repair data" = "Repair data",
     "Augment data" = "Augment data",

@@ -2,6 +2,7 @@
 import {useEffect} from "react"
 import styled from "styled-components"
 
+// eslint-disable-next-line no-shadow
 import Image from "next/legacy/image"
 import Link from "next/link"
 import {getTitleBase} from "../utils/title"

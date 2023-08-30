@@ -8,12 +8,16 @@ Configuration settings and constants for uncertainty model node configuration po
 
 import {BaseParameterType, NodeParams} from "./nodes/generic/types"
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 enum KernelType {
     "RBF" = "RBF",
     "RBFY" = "RBFY",
     "RBF_PLUS_RBF" = "RBF_PLUS_RBF"
 }
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 enum FrameworkVariant {
     "GP Corrected" = "GP Corrected",
     "GP Corrected Input Only" = "GP Corrected Input Only",
@@ -23,6 +27,8 @@ enum FrameworkVariant {
     "GP Output Only" = "GP Output Only"
 }
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 enum ConfidenceInterval {
     C50 = 50,
     C75 = 75,

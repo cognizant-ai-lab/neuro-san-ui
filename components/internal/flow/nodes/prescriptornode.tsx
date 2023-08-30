@@ -10,7 +10,8 @@ import {
 } from "react-bootstrap"
 import { 
     Popover, 
-    Text, 
+    // eslint-disable-next-line no-shadow
+    Text,
     Position, 
     Tablist, 
     Tab
@@ -31,6 +32,7 @@ import {
     Handle,
     Position as HandlePosition,
     NodeProps,
+    // eslint-disable-next-line no-shadow
     Node
 } from "reactflow"
 
@@ -99,6 +101,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
     const flowPrefix = `prescriptor-${flowIndex}`
 
     const updateCAOState = (event, espType: string) => {
+        // eslint-disable-next-line no-shadow
         const { name, checked } = event.target
         const caoStateCopy = { ...ParentPrescriptorState.caoState }
 

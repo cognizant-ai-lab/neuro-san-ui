@@ -4,6 +4,8 @@
 // with args when the adapter server is spun up.
 import {StringString} from "../base_types";
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 export enum ModelFormat {
     // Ignored
     DEFAULT_MODEL_FORMAT_ENUM = 0,
@@ -23,6 +25,8 @@ export interface ModelMetaData {
     model_format: ModelFormat
 }
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 export enum ModelServingEnvironment {
     // Ignored
     DEFAULT_MODEL_SERVING_ENV_ENUM = 0,
@@ -30,6 +34,8 @@ export enum ModelServingEnvironment {
     KSERVE = 2
 }
 
+// no-shadow doesn't do well with enums. Search their github issues if you're curious.
+// eslint-disable-next-line no-shadow
 export enum DeploymentStatus {
 
     // Ignored

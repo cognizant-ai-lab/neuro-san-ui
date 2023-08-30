@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from "react";
+import {FC, useEffect, useState} from "react"
 
 // Import 3rd party components
 import { Card } from "react-bootstrap"
-// Import React Flow
+
 import {
     Handle,
+    // eslint-disable-next-line no-shadow
     Node,
     NodeProps,
     Position
@@ -32,7 +33,7 @@ export interface DataSourceNodeData {
 
 export type DataSourceNode = Node<DataSourceNodeData>;
 
-const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props) => {
+const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
 
     const data = props.data
     const projectId: number = data.ProjectID
@@ -79,7 +80,7 @@ const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props)
                                 onChange={
                                      event => {
                                          const filteredSelectedData = taggedDataList.filter(
-                                             data => parseInt(event.target.value) === data.DataSource.id
+                                             dataTmp => parseInt(event.target.value) === dataTmp.DataSource.id
                                          )[0]
                                          data.SelfStateUpdateHandler(
                                              filteredSelectedData.DataSource,
@@ -89,17 +90,17 @@ const DataSourceNodeComponent: React.FC<NodeProps<DataSourceNodeData>> = (props)
                                  }
                                  defaultValue={taggedDataList.length > 0 && taggedDataList[0].DataSource.id}
                             >
-                                {taggedDataList.map(data => {
+                                {taggedDataList.map(dataTmp => {
                                     // Hack to get valid id into the option tag
                                     // DEF: Right now there is only ever one data source, but someday
                                     //      there will be more and Vince would like the id to correspond
                                     //      to what is visible so he can verify more easily.
                                     const id = `data-source-node-selected`;
-                                    return  <option key={data.DataSource.id}
+                                    return  <option key={dataTmp.DataSource.id}
                                                 id={id}
-                                                value={data.DataSource.id}
+                                                value={dataTmp.DataSource.id}
                                             >
-                                                {data.DataSource.name}
+                                                {dataTmp.DataSource.name}
                                             </option>
                                     })}
                             </select>

@@ -68,6 +68,10 @@
         // See: https://github.com/eslint/eslint/issues/9210
         "max-statements-per-line": ["error", { "max": 2 }],
 
+        // We want to allow the use of "event" as a variable name in event handlers (e.g. onClick={event => ...})
+        // Other than that, prevent and shadowing of outer scope variables and system globals
+        "no-shadow": ["error", {"builtinGlobals": true , "allow": ["event"]}],
+
         // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict with
         // other plugins we're using?
         // How to see which rules are enabled: ./node_modules/.bin/eslint --print-config jest.config.ts
@@ -89,6 +93,7 @@
         "no-obj-calls": "error",
         "no-redeclare": "error",
         "no-setter-return": "error",
+        "no-shadow-restricted-names": "error",
         "no-this-before-super": "error",
         "no-undef": "error",
         "no-unreachable": "error",
@@ -157,7 +162,6 @@
         "no-negated-condition": "off",
         "no-param-reassign": "off",
         "no-return-await": "off",
-        "no-shadow": "off",
         "no-ternary": "off",
         "no-trailing-spaces": "off",
         "no-undefined": "off",

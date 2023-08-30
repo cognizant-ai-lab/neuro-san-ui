@@ -1,5 +1,6 @@
-import React, {ReactNode} from "react";
-import ErrorPage from "./error_page";
+import {Component, ErrorInfo, ReactNode} from "react"
+
+import ErrorPage from "./error_page"
 
 /**
  * Optional properties that should be present on the Error object if it's a real Javascript error.
@@ -38,7 +39,7 @@ interface ErrorBoundaryProps {
  * those in UniLEAF are) so we take the approach of wrapping all components in our app with this class component that
  * handles the error boundary.
  */
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     // This is the key override called by ReactJS when an unhandled error is thrown. And this is why you cannot
     // create error boundaries in functional components -- no way to override this method.
     static getDerivedStateFromError(error: unknown) {
@@ -55,7 +56,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
     // Bug in rule: https://github.com/airbnb/javascript/issues/1703
     // eslint-disable-next-line class-methods-use-this
-    componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
+    componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
         // TODO: Send this to central logging service once it's available
         console.error({ error, errorInfo })
     }
