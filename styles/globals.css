@@ -478,3 +478,8 @@ button[id*="settings-button"] > svg > path, button[id*="config-button"] > svg > 
 button[id*="prescriptoredge"] {
 	margin: 0 !important;
 }
+
+#project-description {
+  font-family: 'Gellix', sans-serif;
+  white-space: pre-wrap;
+}
