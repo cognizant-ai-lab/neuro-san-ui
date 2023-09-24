@@ -272,7 +272,14 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                 <div id={ `${flowPrefix}-hidden-layer-${idx}-units` }>
                     <label id={ `${flowPrefix}-hidden-layer-${idx}-units-label` } className="mr-2">
                         Units: </label>
-                    <input style={{width: "2rem"}}
+                    <input
+                        style={{
+                            width: "2.25rem",
+                            height: "2.25rem",
+                            border: "1px solid #97999b",
+                            borderRadius: "0.375rem",
+                            textAlign: "center"
+                        }}
                         id={ `${flowPrefix}-hidden-layer-${idx}-units-input` }
                         type="number" 
                         step="1" 
@@ -433,7 +440,10 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
         useRepresentationConfig = ParentPrescriptorState.representation_config
     }
 
-    const prescriptorRepresentationPanel = <Card.Body id={ `${flowPrefix}-representation-panel` }>
+    const prescriptorRepresentationPanel = <Card.Body
+        className="pl-5 pr-5"
+        id={ `${flowPrefix}-representation-panel` }
+    >
         <div id={ `${flowPrefix}-representation-div` }
             className="flex justify-between mb-4 content-center">
             <label id={ `${flowPrefix}-representation-label` } >
@@ -449,7 +459,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                     }
                 })} 
                 value={ParentPrescriptorState.LEAF.representation}
-                className="w-32" >
+            >
                     <option 
                         id={ `${flowPrefix}-representation-nn-weights` }
                         value="NNWeights">
@@ -503,13 +513,13 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
     // Create the configuration Panel
     const evolutionConfigurationPanel = <Card.Body 
         id={ `${flowPrefix}-evolution-configuration-panel` }
-        className="overflow-y-auto h-40"
+        className="overflow-y-auto h-40 pl-5 pr-5"
     >
         <div id={ `${flowPrefix}-evolution-configuration` }
             className="flex flex-col mb-2">
             <div 
                 id={ `${flowPrefix}-num-generations`}
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-num-generations-label`}
@@ -538,7 +548,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-population-size` } 
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-population-size-label`}
@@ -567,7 +577,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-num-elites` }
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-num-elites-label`}
@@ -596,7 +606,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div 
                 id={ `${flowPrefix}-parent-selection` } 
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-parent-selection-label`}
@@ -626,7 +636,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-remove-population-percetange` }
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-remove-population-percentage-label`}
@@ -655,7 +665,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div 
                 id={ `${flowPrefix}-mutation` } 
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-mutation-label`}
@@ -693,7 +703,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-mutation-probability` }
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-mutation-probability-label`}
@@ -722,7 +732,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-mutation-factor` }
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-mutation-factor-label`}
@@ -749,7 +759,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-initialization-distribution` } 
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-initialization-distribution-label` }
@@ -790,7 +800,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             </div>
             <div
                 id={ `${flowPrefix}-initialization-range` }
-                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex pl-5 pr-5"
+                className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
             >
                 <label
                     id={ `${flowPrefix}-initialization-range-label` }
