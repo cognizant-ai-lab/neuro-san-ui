@@ -765,33 +765,14 @@ export default function Flow(props: FlowProps) {
     }
 
     function _addLlms() {
-
         // Make a copy of the graph
-        let nodesCopy = nodes.slice()
+        const nodesCopy = nodes.slice()
         let edgesCopy = edges.slice()
         const dataNodes = FlowQueries.getDataNodes(nodesCopy)
         if (!dataNodes || dataNodes.length !== 1) {
             return
         }
         const dataNode = dataNodes[0]
-
-        // remove existing data source node
-        const connectedEdges = getConnectedEdges([dataNode], edges).map(edge => edge.id)
-        nodesCopy = nodesCopy.filter(node => node.id != dataNode.id)
-        edgesCopy = edgesCopy.filter(edge => !connectedEdges.includes(edge.id))
-
-        // New data source
-        const newDataSourceNodeId = uuid()
-        const newDataSourceNode: DataSourceNode = {
-            id: newDataSourceNodeId,
-            type: 'datanode',
-            data: {
-                ProjectID: projectId,
-                SelfStateUpdateHandler: DataNodeStateUpdateHandler
-            },
-            position: {x: 100, y: 500}
-        }
-        nodesCopy.push(newDataSourceNode)
 
         // Disconnect data source from predictors
         const dataSourceOutgoingEdges = getConnectedEdges([dataNode], edges).map(e => e.id)
@@ -822,7 +803,7 @@ export default function Flow(props: FlowProps) {
         // Connect LLM to data source
         edgesCopy.push({
             id: uuid(),
-            source: newDataSourceNodeId,
+            source: dataNode.id,
             target: dataLlmNodeID,
             animated: false,
             type: 'predictoredge'
