@@ -6,7 +6,7 @@
  * Access the API for DMS chat.
  *
  */
-export async function sendDmsChatQuery(userQuery: string, context: Record<string, string|number>) {
+export async function sendDmsChatQuery(userQuery: string, context: object, prescriptorUrl: string) {
     return await fetch("/api/gpt/dmschat", {
         method: "POST",
         headers: {
@@ -15,7 +15,8 @@ export async function sendDmsChatQuery(userQuery: string, context: Record<string
         },
         body: JSON.stringify({
             userQuery: userQuery,
-            context: context
+            context: context,
+            prescriptorUrl: prescriptorUrl
         })
     })
 }
