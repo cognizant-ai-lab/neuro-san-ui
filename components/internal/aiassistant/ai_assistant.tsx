@@ -15,7 +15,7 @@ import {StringToStringOrNumber} from "../../../controller/base_types";
  * AI asssistant, intitially for DMS page but in theory could be used elsewhere.
  */
 export function AIAssistant(props: {
-    predictorUrl: string
+    predictorUrls: string[]
     prescriptorUrl: string
     contextInputs: StringToStringOrNumber
     onClose: () => void
@@ -60,7 +60,7 @@ export function AIAssistant(props: {
             setUserLlmChatOutput("")
 
             const response = await sendDmsChatQuery(userQuery, props.contextInputs, props.prescriptorUrl,
-                props.predictorUrl)
+                props.predictorUrls)
 
             if (!response.ok) {
                 console.debug("response", response)
@@ -83,9 +83,9 @@ More information may be available in the browser console.`)
 More information may be available in the browser console.`)
             console.error(e.stack)
         } finally {
+            // Reset state, whatever happened during request
             setIsAwaitingLlm(false)
-            // TODO re-enable after done testing!
-            // setUserLlmChatInput("")
+            setUserLlmChatInput("")
         }
 
     }
@@ -107,7 +107,7 @@ More information may be available in the browser console.`)
         closable={true}
         onClose={props.onClose}
         open={props.open}
-        width={"30%"}
+        width={"35%"}
 
 
         // This flag is required so that the component unmounts on close
@@ -144,20 +144,23 @@ More information may be available in the browser console.`)
                         <Form.Control id="user-input"
                                       placeholder="What are the current prescribed actions?"
                                       value={userLlmChatInput}
-                                      style={{marginLeft: "10px"}}
+                                      style={{
+                                          marginLeft: "5px",
+                                          fontSize: "90%"
+                                      }}
                                       onChange={handleUserLlmChatInputChange}
                         />
                         <Button id="clear-input-button"
                                 onClick={() => setUserLlmChatInput("")}
                                 style={{
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    fontWeight: 550,
+                                    left: "calc(100% - 30px)",
+                                    lineHeight: "35px",
                                     position: "absolute",
                                     width: "10px",
-                                    fontWeight: 550,
-                                    border: "none",
-                                    backgroundColor: "transparent",
-                                    lineHeight: "35px",
-                                    left: "calc(100% - 30px)",
-                                    zIndex: 99999,
+                                    zIndex: 99999
                                 }}
                         >
                             X

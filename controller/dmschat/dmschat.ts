@@ -7,7 +7,7 @@
  *
  */
 export async function sendDmsChatQuery(userQuery: string, context: object, prescriptorUrl: string,
-                                       predictorUrl: string) {
+                                       predictorUrls: string[]) {
     return await fetch("/api/gpt/dmschat", {
         method: "POST",
         headers: {
@@ -18,7 +18,7 @@ export async function sendDmsChatQuery(userQuery: string, context: object, presc
             userQuery: userQuery,
             context: context,
             prescriptorUrl: prescriptorUrl,
-            predictorUrl: predictorUrl
+            predictorUrls: predictorUrls
         })
     })
 }
