@@ -12,7 +12,7 @@ This README is intended to help a new UI developer get up to speed toward making
 - Install app dependencies. 
   - Assuming you've cloned the unileaf repo: `cd unileaf/nextfront && yarn install`
 - Set env variable to specify the gateway. 
-  - Most likely you'll want the dev namespace: `export MD_SERVER_URL=https://gateway-dev.unileaf.evolution.ml:30002`
+  - Most likely you'll want the dev namespace: `export MD_SERVER_URL=https://unileaf-dev.evolution.ml`
 - In your nextfront directory, create a file named `.env` which contains the following keys. Ask a current UI developer for the redacted values or get them self-serve from the leaf-team-vault server (see below).
 ```
 NEXTAUTH_URL=http://localhost:3000
