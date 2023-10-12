@@ -3,11 +3,11 @@
  */
 import ClipLoader from "react-spinners/ClipLoader"
 import {Button, Form, InputGroup} from "react-bootstrap"
+import {ChangeEvent, FormEvent, useRef, useState} from "react"
 import {Drawer} from "antd"
 import {MaximumBlue} from "../../../const"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 import {StringToStringOrNumber} from "../../../controller/base_types"
-import {FormEvent, useRef, useState} from "react"
 
 /**
  * AI asssistant, intitially for DMS page but in theory could be used elsewhere.
@@ -35,7 +35,10 @@ export function AIAssistant(props: {
 
     // Ref for output text area, so we can auto scroll it
     const llmOutputTextAreaRef = useRef(null)
-    
+
+    // Ref for user input text area, so we can handle shift-enter
+    const inputAreaRef = useRef(null)
+
     function tokenReceived(token: string) {
         // Auto scroll as response is generated
         if (llmOutputTextAreaRef.current) {
@@ -64,7 +67,7 @@ export function AIAssistant(props: {
         }
     }
 
-// Sends user query to backend.
+    // Sends user query to backend.
     async function sendQuery(userQuery: string) {
         try {
             setPreviousUserQuery(userQuery)
@@ -85,14 +88,23 @@ export function AIAssistant(props: {
             // Kick off highlighting final answer
             setTimeout(highlightFinalAnswer, 100)
         } catch (e) {
-            setUserLlmChatOutput(`Internal error: \n\n${e}\n 
-More information may be available in the browser console.`)
+            setUserLlmChatOutput(`Internal error: \n\n${e}\n More information may be available in the browser console.`)
             console.error(e.stack)
         } finally {
             // Reset state, whatever happened during request
             setIsAwaitingLlm(false)
             setUserLlmChatInput("")
         }
+    }
+
+    /**
+     * Tests if input contains only whitespace (meaning, not a valid query)
+     *
+     * @param input Input to be tested
+     * @returns True if input contains only whitespace, false otherwise
+     */
+    function isEmptyExceptForWhitespace(input: string) {
+        return !(/\S/u).test(input);
     }
 
     /**
@@ -107,13 +119,34 @@ More information may be available in the browser console.`)
         await sendQuery(userLlmChatInput)
     }
 
-    const handleUserLlmChatInputChange = (event) => {
-        const inputText = event.target.value
-        setUserLlmChatInput(inputText)
-    };
+    const handleInputAreaChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        // Check if enter key was pressed. Seems a bit of a cheesy way to do it but couldn't find a better way in
+        // this event handler, given what is passed as the Event.
+        const isEnter = "inputType" in event.nativeEvent && event.nativeEvent.inputType === "insertLineBreak"
+
+        // Enter key is handled by KeyUp handler, so ignore it here
+        if (!isEnter) {
+            const inputText = event.target.value
+            setUserLlmChatInput(inputText)
+        }
+    }
+
+    async function handleInputAreaKeyUp(event) {
+        // If shift enter pressed, just add a newline. Otherwise, if enter pressed, send query.
+        if (event.key === "Enter") {
+            if (!event.shiftKey) {
+                if (!isEmptyExceptForWhitespace(userLlmChatInput)) {
+                    event.preventDefault()
+                    await sendQuery(userLlmChatInput)
+                }
+            } else {
+                setUserLlmChatInput(userLlmChatInput + "\n")
+            }
+        }
+    }
 
     // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = !(/\S/u).test(userLlmChatInput)
+    const userInputEmpty = isEmptyExceptForWhitespace(userLlmChatInput)
 
     // Disable Send when request is in progress
     const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
@@ -173,14 +206,18 @@ More information may be available in the browser console.`)
                 <div id="user-input-div" style={{display: "flex"}}>
                     <InputGroup id="user-input-group">
                         <Form.Control
+                            as="textarea"
                             id="user-input"
-                            onChange={handleUserLlmChatInputChange}
+                            onChange={handleInputAreaChange}
+                            onKeyUp={handleInputAreaKeyUp}
                             placeholder="What are the current prescribed actions?"
-                            value={userLlmChatInput}
+                            ref={inputAreaRef}
                             style={{
-                              marginLeft: "7px",
-                              fontSize: "90%"
+                                fontSize: "90%",
+                                marginLeft: "7px"
                             }}
+                            rows={3}
+                            value={userLlmChatInput}
                         />
                         <Button id="clear-input-button"
                                 onClick={() => setUserLlmChatInput("")}
@@ -188,7 +225,8 @@ More information may be available in the browser console.`)
                                     backgroundColor: "transparent",
                                     border: "none",
                                     fontWeight: 550,
-                                    left: "calc(100% - 30px)",
+                                    left: "calc(100% - 45px)",
+                                    top: 10,
                                     lineHeight: "35px",
                                     position: "absolute",
                                     width: "10px",
