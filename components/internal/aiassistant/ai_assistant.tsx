@@ -8,6 +8,7 @@ import {Drawer} from "antd"
 import {FiRefreshCcw} from "react-icons/fi"
 import {MaximumBlue} from "../../../const"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
+import {BsStopBtn} from "react-icons/bs"
 import {StringToStringOrNumber} from "../../../controller/base_types"
 
 /**
@@ -223,10 +224,11 @@ export function AIAssistant(props: {
                                 fontSize: "95%",
                                 position: "absolute",
                                 right: 150,
+                                width: 126,
                                 zIndex: 99999,
                             }}
                     >
-                        <FiRefreshCcw id="generate-icon" size={15} className="mr-2"
+                        <BsStopBtn id="stop-button-icon" size={15} className="mr-2"
                                       style={{display: "inline"}}/>
                         Stop
                     </Button>
@@ -244,6 +246,7 @@ export function AIAssistant(props: {
                                 borderColor: MaximumBlue,
                                 opacity: shouldDisableRegenerateButton ? "50%" : "70%",
                                 color: "white",
+                                width: 126
                             }}
                     >
                         <FiRefreshCcw id="generate-icon" size={15} className="mr-2"
