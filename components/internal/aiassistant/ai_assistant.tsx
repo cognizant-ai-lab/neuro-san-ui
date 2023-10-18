@@ -210,7 +210,7 @@ export function AIAssistant(props: {
     // Disable Send when request is in progress
     const shouldDisableRegenerateButton = !previousUserQuery || isAwaitingLlm
 
-    // Width for the various buttons -- "rengerate", "stop" etc.
+    // Width for the various buttons -- "regenerate", "stop" etc.
     const buttonWidth = 126
 
     return <Drawer // eslint-disable-line enforce-ids-in-jsx/missing-ids
