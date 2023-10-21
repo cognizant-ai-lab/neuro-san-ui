@@ -330,6 +330,7 @@ export default function ProfileTable(props: ProfiletableProps) {
                     setShowFieldEditor(false)
                     setFieldBeingEditedName(undefined)
                 }}
+                maskClosable={false}
                 cancelButtonProps={{
                     id: "edit-categorical-values-cancel-button"
                 }}
@@ -338,13 +339,8 @@ export default function ProfileTable(props: ProfiletableProps) {
                 <Row id="field-being-edited-row">
                     <label id="field-being-edited">Field: {fieldBeingEditedName}</label>
                 </Row>
-                <Row id="field-editor-checkbox-row" className="pt-3">
-                    <Checkbox id="field-editor-checkbox"
-                        checked={currentCategoryOrdered}
-                        onChange={e => setCurrentCategoryOrdered(e.target.checked)}
-                    >
-                        Ordered (drag to re-order)
-                    </Checkbox>
+                <Row id="field-editor-drag-msg-row" className="pt-3">
+                    (drag to re-order)
                 </Row>
                 <p id="values-separator"/>
                 <Row id="values-droppable-row">
