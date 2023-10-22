@@ -35,10 +35,16 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
+<<<<<<< HEAD
     "strict": true,
     "strictNullChecks": false,
     "target": "es2022",
     "useUnknownInCatchVariables": true,
+=======
+    "strict": false,
+    "target": "es6",
+    "incremental": true
+>>>>>>> c174d38e8 (Run check for category names. Needs BE implementation to return the original category names)
   },
   "include": [
     "next-env.d.ts",
