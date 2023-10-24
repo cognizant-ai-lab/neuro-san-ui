@@ -1,7 +1,7 @@
 import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
 import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai"
 import {useState} from "react"
-import {Button, Checkbox, Input, Modal, Space} from 'antd'
+import {Button, Input, Modal, Space} from 'antd'
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd'
 import {DataType} from "../../../controller/datatag/types"
 import {empty} from "../../../utils/objects"
@@ -21,7 +21,6 @@ export default function ProfileTable(props: ProfiletableProps) {
     const [fieldBeingEditedName, setFieldBeingEditedName] = useState(null)
     const [showFieldEditor, setShowFieldEditor] = useState(false)
     const [currentCategoryValues, setCurrentCategoryValues] = useState([])
-    const [currentCategoryOrdered, setCurrentCategoryOrdered] = useState(false)
     const [newItem, setNewItem] = useState(null)
 
     // Declare table headers
@@ -315,7 +314,6 @@ export default function ProfileTable(props: ProfiletableProps) {
                     const profileCopy = {...profile}
 
                     profileCopy.data_tag.fields[fieldBeingEditedName].discrete_categorical_values = currentCategoryValues
-                    profileCopy.data_tag.fields[fieldBeingEditedName].is_ordered = currentCategoryOrdered
                     setProfile(profileCopy)
 
                     setCurrentCategoryValues([])
