@@ -39,7 +39,7 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             "description": `The function to measure the quality of a split. 
                            Supported criteria are mse for the mean squared error, 
                            which is equal to variance reduction as feature selection 
-                           criterion, and mae for the mean absolute error. Options: {'mse', 'mae'}`,
+                           criterion, and mae for the mean absolute error.`,
             "type": ['mse', 'mae']
         },
         "max_depth": {
@@ -354,7 +354,7 @@ export const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
             "description": `The function to measure the quality of a split. 
                            Supported criteria are mse for the mean squared error, 
                            which is equal to variance reduction as feature selection 
-                           criterion, and mae for the mean absolute error. Options: {'mse', 'mae'}`,
+                           criterion, and mae for the mean absolute error.`,
             "type": ["gini", "entropy", "log_loss"]
         },
         "max_depth": {
