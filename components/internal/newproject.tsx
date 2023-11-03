@@ -314,9 +314,11 @@ export default function NewProject(props: NewProps) {
     };
 
     function getFileUploadForm() {
+        const uploadButtonTooltip = getUploadButtonTooltip()
+
         return  <Space id="local-file-space"
-                       direction="vertical"
-                       size="middle"
+                                                                            direction="vertical"
+                                                                            size="middle"
                 >
                     <div id="local-file-upload-div" style={{display: "inline-flex"}}>
                         From a local file
@@ -391,14 +393,14 @@ export default function NewProject(props: NewProps) {
                                 />
                                 <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                     // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                                    title={getUploadButtonTooltip()}>
+                                    title={uploadButtonTooltip}>
                                     <Button id="upload-file-button"
-                                            disabled={getUploadButtonTooltip() !== null}
+                                            disabled={uploadButtonTooltip !== null}
                                             style={{
                                                 background: MaximumBlue,
                                                 borderColor: MaximumBlue,
                                                 color: "white",
-                                                opacity: isUsingLocalFile && selectedFile ? OPAQUE : SEMI_OPAQUE
+                                                opacity: uploadButtonTooltip ? SEMI_OPAQUE : OPAQUE
                                             }}
                                             onClick={handleFileUpload}>
                                         Upload
