@@ -24,7 +24,7 @@ describe("Runs Table Test", () => {
                 setRuns={() => {void null}}
             />)
 
-        console.debug(`container: ${container.innerHTML}`)
+        // Get all the rows
         const trs = container.getElementsByTagName("tr")
 
         // There should be one header row and one row for each run

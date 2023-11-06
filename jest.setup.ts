@@ -12,6 +12,7 @@ global.TextDecoder = TextDecoder
 
 // End of hack
 
+// We need to mock the next/config module because it's not available in Jest
 jest.mock('next/config', () => () => ({
     publicRuntimeConfig: {
         enableAuthentication: false
