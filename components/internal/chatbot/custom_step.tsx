@@ -8,7 +8,7 @@ import status from "http-status"
 // Need to disable some ESlint rules for this module.
 // This is a legacy component and hopefully can be converted to Functional once the ticket mentioned in the class
 // comment is addressed.
-/* eslint-disable react/no-set-state,no-invalid-this */
+/* eslint-disable react/no-set-state */
 
 // Define constructor params for our component (to keep Typescript happy)
 type PropTypes = {

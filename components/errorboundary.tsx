@@ -54,8 +54,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         this.state = { hasError: false, error: null }
     }
 
-    // Bug in rule: https://github.com/airbnb/javascript/issues/1703
-    // eslint-disable-next-line class-methods-use-this
     componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
         // TODO: Send this to central logging service once it's available
         console.error({ error, errorInfo })

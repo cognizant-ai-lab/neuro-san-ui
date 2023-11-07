@@ -60,12 +60,10 @@ export default function ProfileTable(props: ProfiletableProps) {
 
     // Color codes for the various types of rows in the fields table
     const caoColorCoding = {
-        /* eslint-disable key-spacing */
         "CONTEXT":  "#87b4e3",
         "ACTION":   "#79f5f1",
         "OUTCOME":  "#b4e5af",
         "REJECTED": "#ebbfc3"
-        /* eslint-enable key-spacing */
     }
 
     const tableCellClassName = "py-3 text-center text-xs font-medium text-gray-900"
