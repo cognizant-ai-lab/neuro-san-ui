@@ -1254,6 +1254,7 @@ export default function Flow(props: FlowProps) {
                     edgeTypes={EdgeTypes}
                     onNodeDragStop={onNodeDragStop}
                     fitView
+                    preventScrolling={false}
                 >
                     <Controls id="react-flow-controls"
                         style={{

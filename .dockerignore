@@ -1,4 +1,5 @@
 node_modules
 .next
 .vscode
-tests
+__tests__
+.swc

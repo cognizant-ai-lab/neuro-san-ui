@@ -5,12 +5,15 @@ const config: Config.InitialOptions = {
     transform: {
         "^.+\\.tsx?$": "ts-jest",
     },
+
+    // Because NextJS told us to:
+    // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts']
 };
 
 // Voodoo to speed up Jest, from here: https://stackoverflow.com/a/60905543
 module.exports = {
     preset: 'ts-jest',
-    testEnvironment: 'node',
     transform: {
         '^.+\\.tsx?$': [
             'ts-jest',

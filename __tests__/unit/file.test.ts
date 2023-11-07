@@ -2,7 +2,7 @@
 Unit tests for the "file" utility module
  */
 
-import {getFileName, toSafeFilename } from "../utils/file"
+import {getFileName, toSafeFilename } from "../../utils/file"
 
 describe("toSafeFilename", () => {
     it("should replace non-alphanumeric characters with underscores", () => {

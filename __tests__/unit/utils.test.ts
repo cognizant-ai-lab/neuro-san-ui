@@ -2,11 +2,11 @@
 Unit tests for the various small utility modules
  */
 
-import {arraysEqual} from "../utils/objects";
-import {removeItemOnce} from "../utils/transformation";
-import {getEnumKeyByEnumValue} from "../utils/enum";
-import sortByTime from "../utils/sort";
-import decode from "../utils/conversion";
+import {arraysEqual} from "../../utils/objects";
+import {removeItemOnce} from "../../utils/transformation";
+import {getEnumKeyByEnumValue} from "../../utils/enum";
+import sortByTime from "../../utils/sort";
+import decode from "../../utils/conversion";
 
 describe('Various utilities', () => {
     it('removes first item from an array', async () => {

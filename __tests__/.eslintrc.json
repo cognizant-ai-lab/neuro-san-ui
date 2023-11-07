@@ -1,0 +1,7 @@
+// We want to override/disable some rules from the base config that don't apply to test sources
+
+{
+  "rules": {
+    "enforce-ids-in-jsx/missing-ids": "off"
+  }
+}
