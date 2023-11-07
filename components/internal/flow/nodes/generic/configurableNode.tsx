@@ -1,5 +1,5 @@
 // React components
-import {Dispatch, FC, SetStateAction, useState} from 'react'
+import {Dispatch, FC, SetStateAction, useState, useEffect} from 'react'
 
 // 3rd party components
 import {AiFillDelete} from "react-icons/ai";
@@ -70,6 +70,25 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
         NodeTitle
     } = data
 
+    useEffect(() => {
+        const nodeState = {...ParentNodeState}
+        nodeState && Object.keys(nodeState).forEach(key => {
+            // eslint-disable-next-line no-prototype-builtins
+            if (!nodeState[key].hasOwnProperty('value')) {
+                if (typeof (nodeState[key].default_value) === "object") {
+                    // If the type has to be a choice, select the first choice
+                    nodeState[key].value = nodeState[key].default_value[0]
+                } else {
+                    // If the type is a number, string or a bool
+                    // use the default value as the user selected value
+                    nodeState[key].value = nodeState[key].default_value
+                }
+            }
+        })
+        SetParentNodeState(nodeState);
+
+    }, [])
+
     /**
      * This function is used to update the state of any parameter based on a user event (e.g. onChange)
      *
@@ -79,7 +98,19 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     const onParamChange = (event, paramName: string) => {
         const { value } = event.target
         const paramsCopy = {...ParentNodeState}
-        paramsCopy[paramName].value = value
+        switch (paramsCopy[paramName].type) {
+            case 'int':
+            case 'float':
+                paramsCopy[paramName].value = Number(value);
+                break;
+            case 'bool':
+                paramsCopy[paramName].value = Boolean(value);
+                break;
+            case 'string':
+            case 'enum':
+            default:
+                paramsCopy[paramName].value = value;
+        }
         SetParentNodeState(paramsCopy)
     }
 

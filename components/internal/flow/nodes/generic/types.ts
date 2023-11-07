@@ -31,11 +31,11 @@ type ParameterType = boolean|number|string|Enum
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
 export enum BaseParameterType {
-    BOOLEAN,
-    STRING,
-    INT,
-    FLOAT,
-    ENUM
+    BOOLEAN = 'bool',
+    STRING = 'string',
+    INT = 'int',
+    FLOAT = 'float',
+    ENUM = 'enum',
 }
 
 export interface ConfigurableNodeParameter {
