@@ -336,8 +336,14 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     function getCAOInfo(prescriptorNode: PrescriptorNode) {
         const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
-        const contextFields = Object.entries(caoState.context).filter(item => item[1] === true).map(item => item[0])
-        const actionFields = Object.entries(caoState.action).filter(item => item[1] === true).map(item => item[0])
+
+        const contextFields = Object.entries(caoState.context)
+            .filter(item => item[1] === true)
+            .map(item => item[0])
+
+        const actionFields = Object.entries(caoState.action)
+            .filter(item => item[1] === true)
+            .map(item => item[0])
 
         const outcomeFields =
             Object.assign({}, ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness

@@ -51,15 +51,17 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
             },
             // Use first data item to get list of objectives. Skip "cid" as it isn't a real data item.
             // Generate a parallel axis for each objective with a suitable range.
-            parallelAxis: Object.keys(genData[0]).filter(k => k !== "cid").map((key, idx) => {
-                return {
-                    dim: key,
-                    name: objectives[idx],
-                    type: "value",
-                    min: (minMaxPerObjective[key].min * (1 - scalePadding)).toFixed(2),
-                    max: (minMaxPerObjective[key].max * (1 + scalePadding)).toFixed(2)
-                };
-            }),
+            parallelAxis: Object.keys(genData[0])
+                .filter(k => k !== "cid")
+                .map((key, idx) => {
+                    return {
+                        dim: key,
+                        name: objectives[idx],
+                        type: "value",
+                        min: (minMaxPerObjective[key].min * (1 - scalePadding)).toFixed(2),
+                        max: (minMaxPerObjective[key].max * (1 + scalePadding)).toFixed(2)
+                    }
+                }),
             series: [
                 {
                     type: "parallel",
