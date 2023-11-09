@@ -11,8 +11,7 @@ export default async function loadDataTags(requestUser, projectId): Promise<Tagg
     }
 
     const taggedDataList: TaggedDataInfoList = []
-    for (let iter = 0; iter < dataSources.length; iter += 1) {
-        const dataSource = dataSources[iter]
+    for (const dataSource of dataSources) {
         const dataTags: DataTags = await BrowserFetchDataTags(requestUser, dataSource.id)
         if (dataTags?.length > 0) {
             const taggedData: TaggedDataInfo = {

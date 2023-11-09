@@ -522,7 +522,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                     className="w-32 p-0"
                                 >
                                 {
-                                    (defaultParams[param].type as Array<string>).map(
+                                    (defaultParams[param].type as string[]).map(
                                         value => <option id={ `${flowPrefix}-${param}-${value}` }
                                                     key={value} value={ value }>
                                                         { value }

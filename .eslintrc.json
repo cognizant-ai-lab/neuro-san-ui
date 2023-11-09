@@ -52,7 +52,7 @@
         }],
 
         // Want to allow short circuit like foo && useFoo(foo)
-        "no-unused-expressions": ["warn", {
+        "no-unused-expressions": ["error", {
                 "allowShortCircuit": true,
                 "allowTernary": true
         }],
@@ -74,8 +74,16 @@
 
         // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict with
         // other plugins we're using?
+        // Also the place for rules we want to explicitly enable.
+        //
         // How to see which rules are enabled: ./node_modules/.bin/eslint --print-config jest.config.ts
         // In any case, more rules keep us safe, so explicitly enable them here.
+        "@typescript-eslint/array-type": "error",
+        "@typescript-eslint/no-unused-expressions":  ["error", {
+            "allowShortCircuit": true,
+            "allowTernary": true
+        }],
+        "@typescript-eslint/prefer-for-of": "error",
         "consistent-return": "error",
         "constructor-super": "error",
         "default-case": "error",
@@ -124,7 +132,6 @@
         "no-return-await": "off",
 
         // Rules from the various plugins and base ESLint that we are not yet ready to enable
-        "@typescript-eslint/array-type": "off",
         "@typescript-eslint/await-thenable": "off",
         "@typescript-eslint/block-spacing": "off",
         "@typescript-eslint/brace-style":  "off",
@@ -170,7 +177,6 @@
         "@typescript-eslint/no-unsafe-return": "off",
         "@typescript-eslint/no-unnecessary-type-arguments":  "off",
         "@typescript-eslint/no-unnecessary-type-assertion": "off",
-        "@typescript-eslint/no-unused-expressions":  "off",
         "@typescript-eslint/no-unsafe-enum-comparison": "off",
         "@typescript-eslint/non-nullable-type-assertion-style":  "off",
         "@typescript-eslint/prefer-includes": "off",
@@ -187,7 +193,6 @@
         "@typescript-eslint/object-curly-spacing":  "off",
         "@typescript-eslint/prefer-destructuring": "off",
         "@typescript-eslint/prefer-enum-initializers":  "off",
-        "@typescript-eslint/prefer-for-of": "off",
         "@typescript-eslint/prefer-nullish-coalescing": "off",
         "@typescript-eslint/prefer-optional-chain":  "off",
         "@typescript-eslint/prefer-readonly-parameter-types": "off",
