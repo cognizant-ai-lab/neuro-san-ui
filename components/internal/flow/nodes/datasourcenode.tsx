@@ -1,23 +1,24 @@
 import {FC, useEffect, useState} from "react"
 
 // Import 3rd party components
-import { Card } from "react-bootstrap"
+import {Card} from "react-bootstrap"
 
 import {
     Handle,
-    // eslint-disable-next-line no-shadow
-    Node,
+    Node as RFNode,
     NodeProps,
     Position
 } from 'reactflow'
 
-import { Card as BlueprintCard, Elevation } from "@blueprintjs/core";
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core";
 
 // Import types
-import loadTaggedDataList from "../../../../controller/fetchdatataglist";
+import loadDataTags from "../../../../controller/fetchdatataglist";
 import {DataSource} from "../../../../controller/datasources/types";
 import {DataTag} from "../../../../controller/datatag/types";
 import {useSession} from "next-auth/react";
+import {sendNotification} from "../../../../controller/notification";
+import {NotificationType} from "../../../../controller/notification";
 
 export interface DataSourceNodeData {
     // Project ID that this new experiment belongs to.
@@ -31,7 +32,7 @@ export interface DataSourceNodeData {
     readonly SelfStateUpdateHandler
 }
 
-export type DataSourceNode = Node<DataSourceNodeData>;
+export type DataSourceNode = RFNode<DataSourceNodeData>;
 
 const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
 
@@ -46,7 +47,21 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
 
     // Fetch the Data Sources and the Data Tags
     useEffect(() => {
-        async function loadDataTag() { setTaggedDataList(await loadTaggedDataList(currentUser, projectId)) }
+        async function loadDataTag() {
+            if (projectId != null) {
+                const taggedDataListTmp = await loadDataTags(currentUser, projectId);
+                if (taggedDataListTmp != null && taggedDataListTmp.length > 0) {
+                    setTaggedDataList(taggedDataListTmp)
+                } else {
+                    // This is an internal error. Shouldn't have been able to create a project and an experiment
+                    // without having data tags!
+                    sendNotification(NotificationType.error, "Failed to load Data tags",
+                        `Unable to load data tags for project ${projectId} due to an internal error. Your experiment` +
+                        `may not behave as expected. Please report this to the development team`)
+                }
+            }
+        }
+
         void loadDataTag()
     }, [projectId])
 
