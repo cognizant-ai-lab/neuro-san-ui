@@ -7,6 +7,8 @@
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
     "about:lint": "echo 'Checks for issues in the Typescript and Javascript code using eslint'",
     "lint": "next lint",
+    "about:lint-summary": "echo 'Generates a summary of number of issues per ESLint rule'",
+    "lint-summary": "next lint -f summary",
     "about:build": "echo 'Creates a production build of the UI project using `next build`'",
     "build": "next build",
     "about:start": "echo 'Starts the UI in production mode. Requires `build` to have been run beforehand.'",
