@@ -73,8 +73,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     useEffect(() => {
         const nodeState = {...ParentNodeState}
         nodeState && Object.keys(nodeState).forEach(key => {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!nodeState[key].hasOwnProperty('value')) {
+            if (!nodeState[key].value) {
                 if (typeof (nodeState[key].default_value) === "object") {
                     // If the type has to be a choice, select the first choice
                     nodeState[key].value = nodeState[key].default_value[0]
