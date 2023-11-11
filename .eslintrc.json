@@ -16,6 +16,9 @@
         "enforce-ids-in-jsx"
     ],
     "extends": [
+        "next",
+        "prettier",
+
         // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the "rules"
         // section below.
         "eslint:all",
