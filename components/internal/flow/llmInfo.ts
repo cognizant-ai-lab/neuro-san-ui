@@ -249,7 +249,7 @@ export const LLM_MODEL_PARAMS_CATEGORY_REDUCER: NodeParams = {
     "temperature": {
         default_value: 0.2,
         description:
-            "The temperature controls how much randomness is in the output. In general, the lower the temperature, " +
+            "Controls how much randomness is in the output. In general, the lower the temperature, " +
             "the more likely GPT-3 will choose words with a higher probability of occurrence",
         type: BaseParameterType.FLOAT,
         isAdvanced: false
@@ -257,7 +257,7 @@ export const LLM_MODEL_PARAMS_CATEGORY_REDUCER: NodeParams = {
     "reasoning_prompt": {
         default_value: `Each example is its own categorical value. How would you go about reducing the number of categories so that there are at most {max_categories} categories?`,
         description: "An optional string substitution for the default reasoning prompt",
-        isAdvanced: false,
+        isAdvanced: true,
         type: BaseParameterType.STRING
     },
     "reduction_prompt": {
@@ -268,13 +268,13 @@ export const LLM_MODEL_PARAMS_CATEGORY_REDUCER: NodeParams = {
             * The first column should be labeled '{old_column}'.
             * The last column should be labeled '{new_column}'.`,
         description: "An optional string substitution for the default reduction prompt",
-        isAdvanced: false,
+        isAdvanced: true,
         type: BaseParameterType.STRING,
     },
     "max_categories": {
         default_value: 20,
-        description: "Integer describing the maximum number of categories allowed. Default is 20.",
+        description: "Maximum number of categories allowed.",
         type: BaseParameterType.INT,
-        isAdvanced: false
+        isAdvanced: true
     }
 }

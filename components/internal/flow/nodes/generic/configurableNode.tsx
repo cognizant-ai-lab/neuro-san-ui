@@ -73,8 +73,8 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     useEffect(() => {
         const nodeState = {...ParentNodeState}
         nodeState && Object.keys(nodeState).forEach(key => {
-            if (!nodeState[key].value) {
-                if (typeof (nodeState[key].default_value) === "object") {
+            if (nodeState[key].value == null) {
+                if (Array.isArray(nodeState[key].default_value)) {
                     // If the type has to be a choice, select the first choice
                     nodeState[key].value = nodeState[key].default_value[0]
                 } else {
@@ -98,15 +98,15 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
         const { value } = event.target
         const paramsCopy = {...ParentNodeState}
         switch (paramsCopy[paramName].type) {
-            case 'int':
-            case 'float':
+            case BaseParameterType.INT:
+            case BaseParameterType.FLOAT:
                 paramsCopy[paramName].value = Number(value);
                 break;
-            case 'bool':
+            case BaseParameterType.BOOLEAN:
                 paramsCopy[paramName].value = Boolean(value);
                 break;
-            case 'string':
-            case 'enum':
+            case BaseParameterType.STRING:
+            case BaseParameterType.ENUM:
             default:
                 paramsCopy[paramName].value = value;
         }
