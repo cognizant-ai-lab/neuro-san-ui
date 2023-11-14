@@ -145,6 +145,7 @@
             }
         ],
         "import/no-extraneous-dependencies": "error",
+        "import/no-named-as-default-member": "error",
         "import/no-self-import": "error",
         "import/no-useless-path-segments": "error",
         "sort-imports": [
