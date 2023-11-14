@@ -1,9 +1,10 @@
-// Import Custom Components
+import {NodeTypes as RFNodeTypes} from "reactflow"
+
+import DataSourceNodeComponent, {DataSourceNode, DataSourceNodeData} from "./datasourcenode"
 import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from "./generic/configurableNode"
-import DataSourceNodeComponent, {DataSourceNode, DataSourceNodeData} from './datasourcenode'
-import PredictorNodeComponent, {PredictorNode, PredictorNodeData} from './predictornode'
-import PrescriptorNodeComponent, {PrescriptorNode, PrescriptorNodeData} from './prescriptornode'
-import {NodeTypes as RFNodeTypes} from 'reactflow'
+import PredictorNodeComponent, {PredictorNode, PredictorNodeData} from "./predictornode"
+import PrescriptorNodeComponent, {PrescriptorNode, PrescriptorNodeData} from "./prescriptornode"
+
 
 // Based on the declared nodes above we declare a constant holder to reference the Node objects. These references are
 // later passed to the Flow component to render the graph

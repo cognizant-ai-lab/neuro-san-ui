@@ -1,42 +1,33 @@
-// React components
-import {FormEvent, useEffect, useRef, useState} from 'react'
-import {useSession} from 'next-auth/react'
-
-// 3rd Party components
-import ClipLoader from "react-spinners/ClipLoader";
-import prettyBytes from 'pretty-bytes'
-// eslint-disable-next-line no-shadow
-import status from "http-status"
 import {Button, Checkbox, Collapse, Modal, Radio, RadioChangeEvent, Space, Tooltip} from 'antd'
 import {CheckboxChangeEvent} from "antd/es/checkbox"
-import {Container, Form} from "react-bootstrap"
-import {checkValidity} from "./dataprofile/dataprofileutils";
-import {InfoSignIcon} from "evergreen-ui"
-
-// Custom Components developed by us
-import ProfileTable from "./dataprofile/profiletable";
-import {NotificationType, sendNotification} from "../../controller/notification"
+// eslint-disable-next-line import/no-named-as-default
 import Debug from "debug";
-import {Project} from "../../controller/projects/types"
-import {uploadFile} from "../../controller/files/upload"
-import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
-import BlankLines from "../blanklines"
+import {InfoSignIcon} from "evergreen-ui"
+import httpStatus from "http-status";
+import {NextRouter, useRouter} from "next/router"
+import {useSession} from 'next-auth/react'
+import prettyBytes from 'pretty-bytes'
+import {FormEvent, useEffect, useRef, useState} from 'react'
+import {Container, Form} from "react-bootstrap"
+import ClipLoader from "react-spinners/ClipLoader";
 
-// Controllers
+import {checkValidity} from "./dataprofile/dataprofileutils";
+import ProfileTable from "./dataprofile/profiletable";
+import {MaximumBlue} from "../../const"
+import {GrpcError} from "../../controller/base_types"
 import {CreateProfile} from "../../controller/dataprofile/generate"
-import {DataTag, DataTagFields} from "../../controller/datatag/types"
-import AccessionDataTag from "../../controller/datatag/accession"
-import AccessionProject from "../../controller/projects/accession"
 import {Profile} from "../../controller/dataprofile/types"
 import {DataSource} from "../../controller/datasources/types"
 import {updateDataSource} from '../../controller/datasources/update'
-
-// Constants
-import {MaximumBlue} from "../../const"
+import AccessionDataTag from "../../controller/datatag/accession"
+import {DataTag, DataTagFields} from "../../controller/datatag/types"
+import {uploadFile} from "../../controller/files/upload"
+import {NotificationType, sendNotification} from "../../controller/notification"
+import AccessionProject from "../../controller/projects/accession"
+import {Project} from "../../controller/projects/types"
+import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
-import {GrpcError} from "../../controller/base_types"
-import {NextRouter, useRouter} from "next/router"
-
+import BlankLines from "../blanklines"
 
 const debug = Debug("new_project")
 
@@ -439,9 +430,9 @@ export default function NewProject(props: NewProps) {
 
         // Trigger the Data Source Controller
         const response: Response = await CreateProfile(dataSource)
-        if (response.status !== status.OK) {
+        if (response.status !== httpStatus.OK) {
             // Maybe "invalid request"?
-            if (response.status === status.BAD_REQUEST) {
+            if (response.status === httpStatus.BAD_REQUEST) {
                 const responseStatus: GrpcError = await response.json()
                 sendNotification(NotificationType.error, "Failed to create profile", `"${responseStatus.message}"`)
             } else {

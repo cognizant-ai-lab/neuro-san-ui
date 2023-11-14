@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom"
-import RunsTable from "../../components/internal/runs_table"
 import {render} from "@testing-library/react"
+
+import RunsTable from "../../components/internal/runs_table"
 
 describe("Runs Table Test", () => {
     it("Generates the correct number of rows", () => {

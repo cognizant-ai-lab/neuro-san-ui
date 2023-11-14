@@ -8,21 +8,21 @@ import {
     ModelMetaData,
     ModelServingEnvironment,
     TearDownRequest
-} from "./types";
-import {StringString} from "../base_types";
-import {NotificationType, sendNotification} from "../notification";
-import {Run} from "../run/types";
-import {MD_BASE_URL} from "../../const";
+} from "./types"
+import {MD_BASE_URL} from "../../const"
 import {toSafeFilename} from "../../utils/file"
+import {StringString} from "../base_types"
+import {NotificationType, sendNotification} from "../notification"
+import {Run} from "../run/types"
 
 // For deploying models
-const DEPLOY_MODELS_ROUTE = MD_BASE_URL + "/api/v1/serving/deploy"
+const DEPLOY_MODELS_ROUTE = `${MD_BASE_URL}/api/v1/serving/deploy`
 
 // For checking if models are deployed
-const QUERY_DEPLOYMENTS_ROUTE = MD_BASE_URL + "/api/v1/serving/deployments"
+const QUERY_DEPLOYMENTS_ROUTE = `${MD_BASE_URL}/api/v1/serving/deployments`
 
 // For tearing down deployed models
-const TEARDOWN_MODELS_ROUTE = MD_BASE_URL + "/api/v1/serving/teardown"
+const TEARDOWN_MODELS_ROUTE = `${MD_BASE_URL}/api/v1/serving/teardown`
 
 // For inferencing deployed models
 const MODEL_INFERENCE_ROUTE = "v2/models"

@@ -1,13 +1,13 @@
 // Import Flow Renderer
 import {
-  EdgeProps,
   Edge,
+  EdgeProps,
   getBezierPath
-} from 'reactflow';
+} from "reactflow"
 
-type PredictorEdgeData = null;
+type PredictorEdgeData = null
 
-export type PredictorEdge = Edge<PredictorEdgeData>;
+export type PredictorEdge = Edge<PredictorEdgeData>
 
 const EMPTY_OBJECT = {}
 

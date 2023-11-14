@@ -1,7 +1,8 @@
-import NewBar from "./newbar"
-import {Table} from "evergreen-ui"
 import ReactEcharts from "echarts-for-react"
+import {Table} from "evergreen-ui"
 import {FiAlertCircle} from "react-icons/fi"
+
+import NewBar from "./newbar"
 
 interface EspRunPlotProps {
     id: string

@@ -1,7 +1,7 @@
-import {AiOutlineClose} from "react-icons/ai"
-import {notification} from 'antd';
+import {notification} from 'antd'
 import {NotificationPlacement} from "antd/es/notification/interface"
-import {renderToString} from "react-dom/server";
+import {renderToString} from "react-dom/server"
+import {AiOutlineClose} from "react-icons/ai"
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow

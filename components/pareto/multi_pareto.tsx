@@ -1,18 +1,14 @@
-import NewBar from "../newbar"
+import {InfoSignIcon, Table, Tooltip} from "evergreen-ui"
 import {ReactElement, useState} from "react"
+import {Col, Container, Row} from "react-bootstrap"
+import Select from "react-select"
 
-import {Container} from "react-bootstrap"
-import {Row} from "react-bootstrap"
-import {Col} from "react-bootstrap"
-import Select from 'react-select'
-import {Table} from "evergreen-ui"
-import {InfoSignIcon} from "evergreen-ui"
-import {Tooltip} from "evergreen-ui"
-import {ParallelCoordsPlot} from "./parallel_coords_plot";
-import {ParetoPlot2D} from "./pareto_plot_2d";
-import {ParetoPlotProps} from "./types"
+import {ParallelCoordsPlot} from "./parallel_coords_plot"
+import {ParetoPlot2D} from "./pareto_plot_2d"
 import {ParetoPlot3D} from "./pareto_plot_3d"
 import {RadarPlot} from "./radar_plot"
+import {ParetoPlotProps} from "./types"
+import NewBar from "../newbar"
 
 /**
  * Coordinates the display of various kinds of Pareto charts in 2D, 3D and more.

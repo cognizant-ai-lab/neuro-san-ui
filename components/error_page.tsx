@@ -1,7 +1,8 @@
-import {GENERIC_LOGO, LOGO} from "../const";
-import Navbar from "./navbar";
-import {useRouter} from "next/router";
-import BlankLines from "./blanklines";
+import {useRouter} from "next/router"
+
+import BlankLines from "./blanklines"
+import Navbar from "./navbar"
+import {GENERIC_LOGO, LOGO} from "../const"
 
 /**
  * This is the page that will be shown to users when the outer error boundary is triggered

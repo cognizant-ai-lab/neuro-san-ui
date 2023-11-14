@@ -1,8 +1,9 @@
-import {DataSources} from "./datasources/types";
-import {BrowserFetchDataSources} from "./datasources/fetch";
-import {TaggedDataInfo, TaggedDataInfoList} from "../pages/projects/[projectID]/experiments/new";
-import {DataTag, DataTags} from "./datatag/types";
-import {BrowserFetchDataTags} from "./datatag/fetch";
+import {BrowserFetchDataSources} from "./datasources/fetch"
+import {DataSources} from "./datasources/types"
+import {BrowserFetchDataTags} from "./datatag/fetch"
+import {DataTag, DataTags} from "./datatag/types"
+import {TaggedDataInfo, TaggedDataInfoList} from "../pages/projects/[projectID]/experiments/new"
+
 
 export default async function loadDataTags(requestUser, projectId): Promise<TaggedDataInfoList> {
     const dataSources: DataSources = await BrowserFetchDataSources(requestUser, projectId)

@@ -1,7 +1,7 @@
 import {CSSProperties} from "react"
 
-import {PredictorParamFields} from "./predictorinfo"
 import {ConfigurableNodeParameter} from "./nodes/generic/types"
+import {PredictorParamFields} from "./predictorinfo"
 
 /**
  * This interface is used to define the props that the numeric input expects

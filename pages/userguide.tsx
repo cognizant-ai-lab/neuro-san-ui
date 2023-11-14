@@ -1,7 +1,6 @@
-import ReactMarkdown from "react-markdown"
 import {useEffect, useState} from "react"
+import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
-
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore

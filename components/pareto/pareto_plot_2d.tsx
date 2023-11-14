@@ -1,9 +1,9 @@
 import {EChartsOption} from "echarts-for-react/src/types"
+import {useMemo} from "react"
 
-import {ParetoPlotProps} from "./types"
 import {EchartParetoPlot} from "./echart_pareto_plot"
+import {ParetoPlotProps} from "./types"
 import {getDataTable} from "./utils"
-import {useMemo} from "react";
 
 /**
  * This function generates a 2-dimensional pareto plot.

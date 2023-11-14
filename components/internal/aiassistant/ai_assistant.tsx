@@ -1,16 +1,17 @@
 /**
  * This is the module for the "AI decision assistant".
  */
-import ClipLoader from "react-spinners/ClipLoader"
-import {BsStopBtn} from "react-icons/bs"
-import {Button, Form, InputGroup} from "react-bootstrap"
-import {ChangeEvent, FormEvent, useRef, useState} from "react"
-import {ChatMessage} from "langchain/schema"
 import {Drawer} from "antd"
+import {ChatMessage} from "langchain/schema"
+import {ChangeEvent, FormEvent, useRef, useState} from "react"
+import {Button, Form, InputGroup} from "react-bootstrap"
+import {BsStopBtn} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
+import ClipLoader from "react-spinners/ClipLoader"
+
 import {MaximumBlue} from "../../../const"
-import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 import {StringToStringOrNumber} from "../../../controller/base_types"
+import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 
 /**
  * AI assistant, initially for DMS page but in theory could be used elsewhere.

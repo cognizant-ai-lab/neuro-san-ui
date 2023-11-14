@@ -1,13 +1,10 @@
-import {useEffect} from "react"
-import {useState} from "react"
-
-import Select from "react-select"
+import {Slider} from "antd"
+import {useEffect, useState} from "react"
 import {Button} from "react-bootstrap"
-import {FiPlay} from "react-icons/fi"
-import {FiStopCircle} from "react-icons/fi"
+import {FiPlay, FiStopCircle} from "react-icons/fi"
+import Select from "react-select"
 
 import {MaximumBlue} from "../../const"
-import {Slider} from "antd"
 
 /**
  * Params for the GenerationsAnimation component.

@@ -1,12 +1,7 @@
-// Import React
-import {useState} from "react";
-
-// Import Next Components
-import Link, { LinkProps } from "next/link";
-
-// Import Icons
-import { BsFillPlusSquareFill } from 'react-icons/bs';
-import {AiFillEdit} from "react-icons/ai";
+import Link, {LinkProps} from "next/link"
+import {useState} from "react"
+import {AiFillEdit} from "react-icons/ai"
+import {BsFillPlusSquareFill} from "react-icons/bs"
 
 // Define the Props Interface
 interface NavbarProps {

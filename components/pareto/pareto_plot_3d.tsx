@@ -1,13 +1,13 @@
+import {EChartsOption} from "echarts-for-react/src/types"
 import {useMemo} from "react"
 
 // ECharts
-import {EChartsOption} from "echarts-for-react/src/types"
 // This is a load-bearing import. Even though it doesn't appear to be used, it _has_ to be here or else the 3D
 // surface plot just plain will not show up.
-import 'echarts-gl'
+import "echarts-gl"
 
-import {ParetoPlotProps} from "./types"
 import {EchartParetoPlot} from "./echart_pareto_plot"
+import {ParetoPlotProps} from "./types"
 import {getDataTable} from "./utils"
 
 /**

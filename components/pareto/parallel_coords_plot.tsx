@@ -1,7 +1,7 @@
 import {EChartsOption} from "echarts-for-react/src/types"
 
-import {ParetoPlotProps} from "./types"
 import {EchartParetoPlot} from "./echart_pareto_plot"
+import {ParetoPlotProps} from "./types"
 import {getDataTable} from "./utils"
 
 /**

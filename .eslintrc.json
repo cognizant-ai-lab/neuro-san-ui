@@ -26,6 +26,8 @@
         // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
         "next/core-web-vitals",
         "plugin:@typescript-eslint/all",
+        "plugin:import/recommended",
+        "plugin:import/typescript",
         "plugin:react/all",
 
         // This next one has to be included or else the React rules will complain that "React is not in scope".
@@ -123,6 +125,39 @@
         "react/self-closing-comp": "error",
         "valid-typeof": "error",
 
+        // Plugins for tidying imports. They seem to work harmoniously together with these settings.
+        // Note: sorting is done by "from" path, not by symbol name.
+        // See here for explanation: https://github.com/lydell/eslint-plugin-simple-import-sort?tab=readme-ov-file#why-sort-on-from
+        // Note: there are other rules this plugin can enforce but not included in the default set. We may want to
+        // look into enabling the ones we want later. Doc: https://github.com/import-js/eslint-plugin-import/tree/main
+        "import/order": [
+            "error",
+            {
+                "alphabetize": {
+                    "caseInsensitive": true,
+                    "order": "asc"
+                },
+                "groups": [
+                    ["builtin", "external", "object", "type"],
+                    ["internal", "parent", "sibling", "index"]
+                ],
+                "newlines-between": "always"
+            }
+        ],
+        "import/no-extraneous-dependencies": "error",
+        "import/no-self-import": "error",
+        "import/no-useless-path-segments": "error",
+        "sort-imports": [
+            "error",
+            {
+                "allowSeparatedGroups": true,
+                "ignoreCase": true,
+                "ignoreDeclarationSort": true,
+                "ignoreMemberSort": false,
+                "memberSyntaxSortOrder": ["none", "all", "multiple", "single"]
+            }
+        ],
+
         // Permanently off
 
         // We like being explicit about types even when "obvious"
@@ -133,6 +168,8 @@
 
         // Deprecated rule: see https://eslint.org/docs/latest/rules/no-return-await
         "no-return-await": "off",
+
+        // End permanently off category
 
         // Rules from the various plugins and base ESLint that we are not yet ready to enable
         "@typescript-eslint/await-thenable": "off",
@@ -307,10 +344,15 @@
         "react/require-optimization": "off",
         "require-await": "off",
         "semi": "off",
-        "sort-imports": "off",
         "sort-keys": "off",
         "space-before-function-paren": "off",
         "space-infix-ops": "off",
         "spaced-comment": "off"
+    },
+    "settings": {
+        "import/resolver": {
+            "typescript": true,
+            "node": true
+        }
     }
 }

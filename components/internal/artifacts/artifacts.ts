@@ -2,12 +2,12 @@
  * Various items relating to handling of Run artifacts such as models, notebooks, LLM chat logs etc.
  */
 
-import {Artifact, Run} from "../../../controller/run/types"
-import {downloadFile, toSafeFilename} from "../../../utils/file"
-import {FetchSingleRunArtifact} from "../../../controller/run/fetch"
-import {fromBinary} from "../../../utils/conversion"
+import {Experiment} from "../../../controller/experiments/types"
 import {NotificationType, sendNotification} from "../../../controller/notification"
-import {Experiment} from "../../../controller/experiments/types";
+import {FetchSingleRunArtifact} from "../../../controller/run/fetch"
+import {Artifact, Run} from "../../../controller/run/types"
+import {fromBinary} from "../../../utils/conversion"
+import {downloadFile, toSafeFilename} from "../../../utils/file"
 
 // Default to downloading this unless the user selects something else
 export const DEFAULT_DOWNLOAD_ARTIFACT = "notebook"

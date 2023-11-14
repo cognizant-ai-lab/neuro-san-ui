@@ -1,5 +1,5 @@
+import {Tooltip} from "antd"
 import {InfoSignIcon} from "evergreen-ui"
-import {Tooltip} from "antd";
 
 interface InfoTipParams {
     // Prefix to be used for nested component IDs

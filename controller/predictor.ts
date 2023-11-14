@@ -1,9 +1,10 @@
 // Import constants
 import {
-    SUPPORTED_REGRESSION_MODELS,
+    PredictorParams,
     SUPPORTED_CLASSIFICATION_MODELS,
-    SUPPORTED_REGRESSOR_METRICS, SUPPORTED_CLASSIFIER_METRICS,
-    PredictorParams
+    SUPPORTED_CLASSIFIER_METRICS,
+    SUPPORTED_REGRESSION_MODELS,
+    SUPPORTED_REGRESSOR_METRICS
 
 } from "../components/internal/flow/predictorinfo"
 

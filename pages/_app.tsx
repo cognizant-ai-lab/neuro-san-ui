@@ -1,34 +1,24 @@
-// Third party
 import "@blueprintjs/core/lib/css/blueprint.css"
 import "@blueprintjs/icons/lib/css/blueprint-icons.css"
 import "antd/dist/reset.css"
+import "../styles/globals.css"
 import "bootstrap/dist/css/bootstrap.css"
 import "reactflow/dist/style.css"
 import "tailwindcss/tailwind.css"
-
-// Custom
-import "../styles/updatenode.css"
-import "../styles/globals.css"
 import "../styles/styles.css"
+import "../styles/updatenode.css"
 
-// External Libraries
-
-// Bootstrap
+import Head from "next/head"
+import {useRouter} from "next/router"
+import {SessionProvider} from "next-auth/react"
+import {ReactElement} from "react"
 import {Container, SSRProvider} from "react-bootstrap"
 
-// NextJS Components
-import Head from 'next/head'
-import {useRouter} from "next/router";
-import {SessionProvider} from "next-auth/react"
-
-// Local Components
+import {Auth} from "../components/auth"
+import ErrorBoundary from "../components/errorboundary"
+import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
-
-// Constants
 import {ENABLE_AUTHENTICATION, GENERIC_LOGO, LOGO} from "../const"
-import {Auth} from "../components/auth";
-import ErrorBoundary from "../components/errorboundary";
-import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot";
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -36,7 +26,7 @@ import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot";
 export default function LEAF({
   Component,
   pageProps: { session, ...pageProps }
-}): React.ReactElement {
+}): ReactElement {
   const router = useRouter()
 
   // Get "generic branding" flag

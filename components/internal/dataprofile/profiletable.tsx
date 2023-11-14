@@ -1,14 +1,15 @@
+import {Button, Input, Modal, Space} from "antd"
+import {ReactElement, MouseEvent as ReactMouseEvent, useState} from "react"
+import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd"
 import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
 import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai"
-import {MouseEvent as ReactMouseEvent, useState} from "react"
-import {Button, Input, Modal, Space} from 'antd'
-import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd'
+
+import {Profile} from "../../../controller/dataprofile/types"
+import {reasonToHumanReadable} from "../../../controller/datasources/types"
 import {DataType} from "../../../controller/datatag/types"
 import {empty} from "../../../utils/objects"
-import {reasonToHumanReadable} from "../../../controller/datasources/types"
-import {Profile} from "../../../controller/dataprofile/types"
 import NeuroAIChatbot from "../chatbot/neuro_ai_chatbot"
-import {ReactElement} from "react";
+
 
 interface ProfileTableProps {
     id: string

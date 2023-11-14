@@ -2,32 +2,28 @@
  * Runs table module
  */
 
-import ClipLoader from "react-spinners/ClipLoader"
-import updateRun, {sendAbortRequest} from "../../controller/run/accession"
-import uuid from "react-uuid"
+import {Tooltip as AntdTooltip, Modal} from "antd"
+import {Position, Tooltip} from "evergreen-ui"
+import {ReactElement, KeyboardEvent as ReactKeyboardEvent, useEffect, useState} from "react"
+import {Col, Container, Row} from "react-bootstrap"
 import {AiFillDelete, AiFillEdit} from "react-icons/ai"
 import {BiNoEntry} from "react-icons/bi"
-import {BrowserFetchRuns} from "../../controller/run/fetch"
-import {Col, Container, Row} from "react-bootstrap"
-import {DEFAULT_DOWNLOAD_ARTIFACT} from "./artifacts/artifacts"
-import {downloadArtifact} from "./artifacts/artifacts"
-import {downloadFile} from "../../utils/file"
-import {Experiment} from "../../controller/experiments/types"
 import {FiDownload} from "react-icons/fi"
-import {getArtifactFriendlyName} from "./artifacts/artifacts"
-import {getDownloadableArtifacts} from "./artifacts/artifacts"
-import {InfoTip} from "../infotip"
-import {isArtifactAvailable} from "./artifacts/artifacts"
-// ReactJS KeyboardEvent shadows the native JS KeyboardEvent -- nothing we can do about that.
-// eslint-disable-next-line no-shadow
-import {KeyboardEvent, ReactElement, useEffect, useState} from "react"
+import ClipLoader from "react-spinners/ClipLoader"
+import uuid from "react-uuid"
+
+import {DEFAULT_DOWNLOAD_ARTIFACT, downloadArtifact, getArtifactFriendlyName, getDownloadableArtifacts, isArtifactAvailable} from "./artifacts/artifacts"
 import {MaximumBlue} from "../../const"
-import {Modal, Tooltip as AntdTooltip} from "antd"
+import {Experiment} from "../../controller/experiments/types"
 import {NotificationType, sendNotification} from "../../controller/notification"
-import {Position, Tooltip} from "evergreen-ui"
-import {removeItemOnce} from "../../utils/transformation"
+import updateRun, {sendAbortRequest} from "../../controller/run/accession"
+import {BrowserFetchRuns} from "../../controller/run/fetch"
 import {Run, Runs} from "../../controller/run/types"
 import {toFriendlyDateTime} from "../../utils/date_time"
+import {downloadFile} from "../../utils/file"
+import {removeItemOnce} from "../../utils/transformation"
+import {InfoTip} from "../infotip"
+
 
 interface RunTableProps {
     readonly currentUser: string
@@ -328,7 +324,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                    disabled={false}
                    defaultValue={run.name || run.id}
                    onBlur={event => updateRunName(event.target.value, run, idx)}
-                   onKeyUp={async (event: KeyboardEvent<HTMLInputElement>) => {
+                   onKeyUp={async (event: ReactKeyboardEvent<HTMLInputElement>) => {
                        if (event.key === "Enter") {
                            await updateRunName((event.target as HTMLInputElement).value, run, idx)
                        } else if (event.key === "Escape") {

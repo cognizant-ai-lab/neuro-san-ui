@@ -1,29 +1,23 @@
-// Import React framework
-import {FC, useState} from 'react'
-
-// Import Flow Renderer
-import {
-    EdgeProps,
-    Edge,
-  getBezierPath
-} from 'reactflow';
-
-// Import third party components
+import { 
+    Popover, 
+    Position, 
+    Tab, 
+    Tablist
+} from "evergreen-ui"
+import {FC, useState} from "react"
 import { 
     Card
 } from "react-bootstrap"
 import { 
-    Popover, 
-    Position, 
-    Tablist, 
-    Tab
-} from "evergreen-ui"
-import { 
     GrSettingsOption 
 } from "react-icons/gr"
-
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import {docco} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import SyntaxHighlighter from "react-syntax-highlighter"
+import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
+import {
+    Edge,
+    EdgeProps,
+  getBezierPath
+} from "reactflow"
 
 const foreignObjectSize = 20;
 

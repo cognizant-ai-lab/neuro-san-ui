@@ -1,10 +1,11 @@
-// 3rd party components
-import {useCallback, useEffect, useMemo, useState} from "react"
-import {useRouter} from "next/router"
-import uuid from "react-uuid"
-import {Button, Container} from "react-bootstrap"
 import dagre from "dagre"
+// eslint-disable-next-line import/no-named-as-default
 import Debug from "debug"
+import {useRouter} from "next/router"
+import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
+import {Button, Container} from "react-bootstrap"
+import uuid from "react-uuid"
+// eslint-disable-next-line import/no-named-as-default
 import ReactFlow, {
     applyEdgeChanges,
     applyNodeChanges,
@@ -21,29 +22,24 @@ import ReactFlow, {
     ReactFlowProvider
 } from "reactflow"
 
-// Custom components
-import {ConfigurableNode, ConfigurableNodeData} from "./nodes/generic/configurableNode"
-import {DataSourceNode} from "./nodes/datasourcenode"
-import {FlowElementsType} from "./types"
-import {FlowQueries} from "./flowqueries"
-import {LLM_MODEL_PARAMS2, LLM_MODEL_PARAMS3, LLM_MODEL_PARAMS_DATA_LLM, LLM_MODEL_PARAMS_CATEGORY_REDUCER} from "./llmInfo"
-import {NodeParams} from "./nodes/generic/types"
 import {PrescriptorEdge} from "./edges/prescriptoredge"
-import {PrescriptorNode} from "./nodes/prescriptornode"
-import {useStateWithCallback} from "../../../utils/react_utils"
-
-//  Constants
-import {EvaluateCandidateCode, MaximumBlue, OutputOverrideCode} from "../../../const"
-
-// Types
 import EdgeTypes, {EdgeType} from "./edges/types"
-import NodeTypes, {NodeData, NodeType} from "./nodes/types"
+import {FlowQueries} from "./flowqueries"
+import {LLM_MODEL_PARAMS2, LLM_MODEL_PARAMS3, LLM_MODEL_PARAMS_CATEGORY_REDUCER, LLM_MODEL_PARAMS_DATA_LLM} from "./llmInfo"
+import {DataSourceNode} from "./nodes/datasourcenode"
+import {ConfigurableNode, ConfigurableNodeData} from "./nodes/generic/configurableNode"
+import {NodeParams} from "./nodes/generic/types"
 import {CAOChecked, PredictorNode, PredictorNodeData, PredictorState} from "./nodes/predictornode"
-import {CAOType, DataTag} from "../../../controller/datatag/types"
-import {DataSource} from "../../../controller/datasources/types"
-import {NotificationType, sendNotification} from "../../../controller/notification"
+import {PrescriptorNode} from "./nodes/prescriptornode"
+import NodeTypes, {NodeData, NodeType} from "./nodes/types"
 import {PredictorParams} from "./predictorinfo"
+import {FlowElementsType} from "./types"
 import {UNCERTAINTY_MODEL_PARAMS} from "./uncertaintymodelinfo"
+import {EvaluateCandidateCode, MaximumBlue, OutputOverrideCode} from "../../../const"
+import {DataSource} from "../../../controller/datasources/types"
+import {CAOType, DataTag} from "../../../controller/datatag/types"
+import {NotificationType, sendNotification} from "../../../controller/notification"
+import {useStateWithCallback} from "../../../utils/react_utils"
 
 const debug = Debug("flow")
 
@@ -59,7 +55,7 @@ interface FlowProps {
 
     // A parent state update handle such that it can
     // update the flow in the parent container.
-    SetParentState?: React.Dispatch<React.SetStateAction<FlowElementsType>>,
+    SetParentState?: Dispatch<SetStateAction<FlowElementsType>>,
 
     // Flow passed down if it exists.
     Flow?: FlowElementsType,

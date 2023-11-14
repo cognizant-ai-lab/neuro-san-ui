@@ -1,20 +1,14 @@
-// React components
-import {Dispatch, FC, SetStateAction, useState, useEffect} from 'react'
-
-// 3rd party components
-import {AiFillDelete} from "react-icons/ai";
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {Text as EvergreenText, InfoSignIcon, Popover, Tooltip} from "evergreen-ui"
+import {Dispatch, FC, SetStateAction, useEffect, useState} from "react"
 import {Card, Col, Collapse, Container, Row} from "react-bootstrap"
+import {AiFillDelete} from "react-icons/ai";
 import {GrSettingsOption} from "react-icons/gr"
-// eslint-disable-next-line no-shadow
-import {Handle, Position as HandlePosition, NodeProps, Node} from 'reactflow'
-// eslint-disable-next-line no-shadow
-import {InfoSignIcon, Popover, Text, Tooltip,} from "evergreen-ui"
-
-// Custom components
-import ConfigNumeric from "../../confignumeric"
-import {NotificationType, sendNotification} from "../../../../../controller/notification"
+import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
+ 
 import {BaseParameterType, NodeParams} from "./types"
+import {NotificationType, sendNotification} from "../../../../../controller/notification"
+import ConfigNumeric from "../../confignumeric"
 
 // Define an interface for the structure of the node
 export interface ConfigurableNodeData {
@@ -40,7 +34,7 @@ export interface ConfigurableNodeData {
     readonly NodeTitle: string
 }
 
-export type ConfigurableNode = Node<ConfigurableNodeData>
+export type ConfigurableNode = RFNode<ConfigurableNodeData>
 
 /**
  * This component is used to render a generic flow node that can be configured
@@ -224,10 +218,10 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
             border="warning" style={{height: "100%"}}>
             <Card.Body id={ `${flowPrefix}-card-2` }
                 className="flex justify-center content-center">
-                <Text id={ `${flowPrefix}-text` }
+                <EvergreenText id={ `${flowPrefix}-text` }
                     className="mr-2">
                     {NodeTitle}
-                </Text>
+                </EvergreenText>
                 <div id={ `${flowPrefix}-popover-div` }
                     onMouseDown={(event) => {event.stopPropagation()}}>
                     <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -245,11 +239,11 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                     }
                                 </div>
                                 <div id={ `${flowPrefix}-advanced-settings-label-div` } className="mt-4 mb-2">
-                                    <Text id={ `${flowPrefix}-advanced-settings-text` }>
+                                    <EvergreenText id={ `${flowPrefix}-advanced-settings-text` }>
                                         <b id={ `${flowPrefix}-advanced-settings-label` }>
                                             Advanced settings
                                         </b> (most users should not change these)
-                                    </Text>
+                                    </EvergreenText>
                                 </div>
                                 <button id={ `${flowPrefix}-show-advanced-settings-button` }
                                         onClick={() => setShowAdvanced(!showAdvanced)}

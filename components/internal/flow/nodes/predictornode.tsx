@@ -1,56 +1,46 @@
-// React components
-import {Dispatch, FC, SetStateAction, useEffect, useState} from 'react'
-
-// 3rd party components
-import {Row, Col, Card, Container} from "react-bootstrap"
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {Tooltip as AntdTooltip} from "antd"
 import {
+    Text as EvergreenText,
     InfoSignIcon,
     Popover,
     Position,
     Tab,
     Tablist,
-    // eslint-disable-next-line no-shadow
-    Text,
     Tooltip,
 } from "evergreen-ui"
-import { GrSettingsOption } from "react-icons/gr"
-import Slider from "rc-slider"
-import 'rc-slider/assets/index.css'
+import {NextRouter, useRouter} from "next/router"
 import {useSession} from "next-auth/react"
-import {Tooltip as AntdTooltip} from "antd"
-import ConfigNumeric from "../confignumeric"
-
-// React Flow
+import Slider from "rc-slider"
+import {Dispatch, FC, SetStateAction, useEffect, useState} from "react"
+import {Card, Col, Container, Row} from "react-bootstrap"
+import {AiFillDelete} from "react-icons/ai";
+import { GrSettingsOption } from "react-icons/gr"
+import "rc-slider/assets/index.css"
 import {
     getOutgoers,
     Handle,
     Position as HandlePosition,
-    // eslint-disable-next-line no-shadow
-    Node,
     NodeProps,
+    Node as RFNode,
     useEdges,
     useNodes
-} from 'reactflow'
+} from "reactflow"
 
-import {AiFillDelete} from "react-icons/ai";
+import { NodeData, NodeType } from "./types"
 import {StringBool} from "../../../../controller/base_types"
+import {DataTag} from "../../../../controller/datatag/types"
+import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {NotificationType, sendNotification} from "../../../../controller/notification";
-
-// Controllers
 import {
     FetchMetrics,
     FetchParams,
     FetchPredictors
-} from '../../../../controller/predictor'
-import {loadDataTag} from "../../../../controller/fetchdatataglist"
+} from "../../../../controller/predictor"
+import ConfigNumeric from "../confignumeric"
+import { EdgeType } from "../edges/types"
 import {FlowQueries} from "../flowqueries";
 import {PredictorParams} from "../predictorinfo"
-import { NodeData, NodeType } from './types'
-import { EdgeType } from '../edges/types'
-
-import {DataTag} from "../../../../controller/datatag/types"
-import {NextRouter, useRouter} from "next/router"
 
 
 // Interface for Predictor CAO
@@ -94,7 +84,7 @@ export interface PredictorNodeData {
     readonly GetElementIndex: (nodeID: string) => number
 }
 
-export type PredictorNode = Node<PredictorNodeData>
+export type PredictorNode = RFNode<PredictorNodeData>
 
 const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
     /*
@@ -659,9 +649,9 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
         <Card id={`${flowPrefix}-card-1`} border="warning" >
             <Card.Body id={`${flowPrefix}-card-2`}
                 className="flex justify-center content-center">
-                <Text id={`${flowPrefix}-text`} className="mr-2">
+                <EvergreenText id={`${flowPrefix}-text`} className="mr-2">
                     {ParentPredictorState.selectedPredictor || "Predictor"}
-                </Text>
+                </EvergreenText>
                 <div id={`${flowPrefix}-settings-div`}
                     onMouseDown={(event) => {event.stopPropagation()}}>
                     <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -705,7 +695,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                         content={
                             <Card.Body id={ `${flowPrefix}-context-card` }
                                 className="overflow-y-auto h-40 text-xs">
-                                <Text id={ `${flowPrefix}-context-text` } className="mb-2">Context</Text>
+                                <EvergreenText id={ `${flowPrefix}-context-text` } className="mb-2">Context</EvergreenText>
                                 {
                                     Object.keys(ParentPredictorState.caoState.context).map(element =>
                                         <div id={ `${flowPrefix}-context-div` }
@@ -737,7 +727,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                 className="overflow-y-auto h-40 text-xs"
                                 style={{zIndex: 1000}}
                             >
-                                <Text id={ `${flowPrefix}-actions-text` } className="mb-2">Actions</Text>
+                                <EvergreenText id={ `${flowPrefix}-actions-text` } className="mb-2">Actions</EvergreenText>
                                 {
                                     Object.keys(ParentPredictorState.caoState.action).map(element =>
                                         <div id={ `${flowPrefix}-actions-div-${element}` }
@@ -767,7 +757,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                         content={
                             <Card.Body id={ `${flowPrefix}-outcomes-card` }
                                 className="overflow-y-auto h-40 text-xs">
-                                <Text id={ `${flowPrefix}-outcomes-text` } className="mb-2">Outcomes</Text>
+                                <EvergreenText id={ `${flowPrefix}-outcomes-text` } className="mb-2">Outcomes</EvergreenText>
                                 {
                                     Object.keys(ParentPredictorState.caoState.outcome).map(element =>
                                         <div id={ `${flowPrefix}-outcomes-div-${element}` }

@@ -1,14 +1,10 @@
-import {useEffect, useRef } from "react"
-import {useMemo} from "react"
-import {useState} from "react"
-
-import {ParetoPlotProps} from "./types"
-import {GenerationsAnimation} from "./generations_animation"
-import ReactEcharts from "echarts-for-react";
+import ReactEcharts from "echarts-for-react"
 import {EChartsOption} from "echarts-for-react/src/types"
-import {sendNotification} from "../../controller/notification"
-import {NotificationType} from "../../controller/notification"
-import {useCallback} from "react"
+import {useCallback, useEffect, useMemo, useRef, useState} from "react"
+
+import {GenerationsAnimation} from "./generations_animation"
+import {ParetoPlotProps} from "./types"
+import {NotificationType, sendNotification} from "../../controller/notification"
 
 interface EchartPlotProps {
     // Component ID

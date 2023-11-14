@@ -1,6 +1,7 @@
 import {render} from "@testing-library/react"
+
 import "@testing-library/jest-dom"
-import BlankLines from "../../components/blanklines";
+import BlankLines from "../../components/blanklines"
 
 describe("Blank Lines Test", () => {
     it("inserts the specified number of blank lines", () => {

@@ -6,7 +6,7 @@ See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-i
  */
 
 // eslint-disable-next-line no-shadow
-import { TextEncoder, TextDecoder } from 'util'
+import { TextDecoder, TextEncoder } from "util"
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder
 

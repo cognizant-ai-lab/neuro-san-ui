@@ -1,10 +1,11 @@
-import {FiAlertCircle} from "react-icons/fi";
-import NewBar from "./newbar";
 import {InfoSignIcon, Position, Table, Tooltip} from "evergreen-ui"
-import {FlowQueries} from "./internal/flow/flowqueries";
-import {FetchMetrics} from "../controller/predictor";
-import {FaArrowDown, FaArrowUp} from "react-icons/fa";
-import { PredictorNode } from "./internal/flow/nodes/predictornode";
+import {FaArrowDown, FaArrowUp} from "react-icons/fa"
+import {FiAlertCircle} from "react-icons/fi"
+
+import {FlowQueries} from "./internal/flow/flowqueries"
+import { PredictorNode } from "./internal/flow/nodes/predictornode"
+import NewBar from "./newbar"
+import {FetchMetrics} from "../controller/predictor"
 
 interface MetricstableProps {
     readonly PredictorRunData,

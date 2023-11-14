@@ -1,6 +1,6 @@
-import sortByTime from "../utils/sort"
 import {MDServerObject, MDServerResponse} from "./base_types"
 import {toFriendlyDateTime} from "../utils/date_time"
+import sortByTime from "../utils/sort"
 
 // HackyStream implements streaming a specific resource from the MD Server using a regex hack
 // By virtue of this hack it currently stores the whole stream in memory.

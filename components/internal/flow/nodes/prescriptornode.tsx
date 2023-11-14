@@ -1,46 +1,38 @@
-// Import React components
 import {
-    useState,
-    useEffect
-} from "react"
-
-// Import 3rd party components
-import { 
-    Card, Col, Container, Row
-} from "react-bootstrap"
-import { 
-    Popover, 
-    // eslint-disable-next-line no-shadow
-    Text,
-    Position, 
-    Tablist, 
-    Tab
-} from "evergreen-ui"
-import Slider from "rc-slider"
-import {AiFillDelete} from "react-icons/ai";
-import { GrSettingsOption } from "react-icons/gr"
-import { MdDelete } from "react-icons/md"
-import { BiPlusMedical } from "react-icons/bi"
-import { 
     Card as BlueprintCard,
     Elevation 
 } from "@blueprintjs/core";
 import {Tooltip as AntdTooltip} from "antd"
-
-// Import React Flow
+import { 
+    Text as EvergreenText,
+    Popover,
+    Position,
+    Tab,
+    Tablist
+} from "evergreen-ui"
+import {useSession} from "next-auth/react";
+import Slider from "rc-slider"
+import {
+    useEffect,
+    useState
+} from "react"
+import {
+    Card, Col, Container, Row
+} from "react-bootstrap"
+import {AiFillDelete} from "react-icons/ai";
+import { BiPlusMedical } from "react-icons/bi"
+import { GrSettingsOption } from "react-icons/gr"
+import { MdDelete } from "react-icons/md"
+import SyntaxHighlighter from "react-syntax-highlighter"
+import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import {
     Handle,
     Position as HandlePosition,
     NodeProps,
-    // eslint-disable-next-line no-shadow
-    Node
+    Node as RFNode,
 } from "reactflow"
 
-import SyntaxHighlighter from "react-syntax-highlighter"
-import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
-
 import {loadDataTag} from "../../../../controller/fetchdatataglist";
-import {useSession} from "next-auth/react";
 import {NotificationType, sendNotification} from "../../../../controller/notification"
 
 // Define an interface for the structure
@@ -75,7 +67,7 @@ const defaultRepresentationConfig = {
     number_of_building_block_rules: 3
 }
 
-export type PrescriptorNode = Node<PrescriptorNodeData>;
+export type PrescriptorNode = RFNode<PrescriptorNodeData>;
 
 const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (props) => {
     /*
@@ -847,9 +839,9 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
             <Card.Body id={ `${flowPrefix}-card-2` }  
                 className="flex justify-center content-center"
             >
-                <Text id={ `${flowPrefix}-text` } className="mr-2">
+                <EvergreenText id={ `${flowPrefix}-text` } className="mr-2">
                     { ParentPrescriptorState.selectedPredictor || "Prescriptor" }
-                </Text>
+                </EvergreenText>
                 <div id={ `${flowPrefix}-settings-div` }
                      onMouseDown={(event) => {event.stopPropagation()}}
                 >
@@ -893,7 +885,9 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                         content={
                             <Card.Body id={ `${flowPrefix}-context-card` } 
                                 className="overflow-y-auto h-40 text-xs">
-                                <Text id={ `${flowPrefix}-context-text` } className="mb-2">Context</Text>
+                                <EvergreenText id={ `${flowPrefix}-context-text` } className="mb-2">
+                                    Context
+                                </EvergreenText>
                                 {
                                     Object.keys(ParentPrescriptorState.caoState.context).map(element =>
                                     <div id={ `${flowPrefix}-context-div` } 
@@ -922,7 +916,9 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                         content={
                             <Card.Body id={ `${flowPrefix}-actions-card` } 
                                 className="overflow-y-auto h-40 text-xs">
-                                <Text id={ `${flowPrefix}-actions-text` } className="mb-2">Actions</Text>
+                                <EvergreenText id={ `${flowPrefix}-actions-text` } className="mb-2">
+                                    Actions
+                                </EvergreenText>
                                 {
                                     Object.keys(ParentPrescriptorState.caoState.action).map(element =>
                                         <div id={ `${flowPrefix}-actions-div-${element}` }  

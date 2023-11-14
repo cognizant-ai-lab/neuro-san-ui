@@ -2,30 +2,17 @@
  * Main navigation bar that appears at the top of each page
  */
 
-import {ReactElement} from "react"
-
-// Third party
-import Breadcrumbs from "nextjs-breadcrumbs2"
-import {Container, Dropdown, Nav, Navbar as BootstrapNavbar, NavItem, NavLink} from "react-bootstrap"
-import {Row} from "react-bootstrap"
 import {startCase} from "lodash"
-
-// Import Constants
-import {ENABLE_AUTHENTICATION, MaximumBlue, UNILEAF_VERSION} from '../const'
-
-// Styling Libraries
-
-// eslint-disable-next-line no-shadow
-import Image from 'next/image'
+import NextImage from "next/image"
 import Link from "next/link"
-
-// Authentication
-import {signOut, useSession} from "next-auth/react"
-
-// Custom components
-import {isSignedIn} from "./auth"
 import {useRouter} from "next/router"
+import {signOut, useSession} from "next-auth/react"
+import Breadcrumbs from "nextjs-breadcrumbs2"
+import {ReactElement} from "react"
+import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
+import {isSignedIn} from "./auth"
+import {ENABLE_AUTHENTICATION, MaximumBlue, UNILEAF_VERSION} from "../const"
 
 // Define Constants
 const LOGO_COLOR: string = "white";
@@ -108,7 +95,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                                  id="user-dropdown-toggle"
                                                  style={{color: NAV_ITEMS_COLOR, background: MaximumBlue}}>
                                     {session.user.image &&
-                                        <Image id="user-image"
+                                        <NextImage id="user-image"
                                                src={session.user.image}
                                                width="30"
                                                height="30"

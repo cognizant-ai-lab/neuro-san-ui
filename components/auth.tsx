@@ -2,8 +2,8 @@
  * Utility functions relating to authentication
  */
 
+import {Session} from "next-auth"
 import {signIn, useSession} from "next-auth/react"
-import { Session } from "next-auth"
 import {useEffect} from "react"
 
 import {ENABLE_AUTHENTICATION} from "../const"

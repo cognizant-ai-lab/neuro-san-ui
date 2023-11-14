@@ -1,9 +1,8 @@
+import {Collapse} from "antd"
+import httpStatus from "http-status"
 import {ChatMessage} from "langchain/schema"
-import {Collapse} from "antd";
 import {Component} from "react"
 import {Loading} from "react-simple-chatbot"
-// eslint-disable-next-line no-shadow
-import status from "http-status"
 
 // Need to disable some ESlint rules for this module.
 // This is a legacy component and hopefully can be converted to Functional once the ticket mentioned in the class
@@ -86,7 +85,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
             // the "this" for the current instance of `CustomStep`. Rather, it is the "this" of the event handler
             // for XMLHttpRequest. For more, see https://xhr.spec.whatwg.org/#xmlhttprequest-response
             if (this.readyState === this.DONE) {
-                if (this.status === status.OK) {
+                if (this.status === httpStatus.OK) {
                     const data = JSON.parse(this.responseText)
                     const answer = data.answer
 

@@ -1,14 +1,14 @@
-import {CAOType} from "../../../controller/datatag/types";
-import {ConfigurableNode} from "./nodes/generic/configurableNode"
-import {DataSourceNode} from './nodes/datasourcenode';
-import {EdgeType} from './edges/types';
-import {isEdge, isNode} from "reactflow";
-import {NodeType} from "./nodes/types"
-import {PredictorNode} from './nodes/predictornode';
-import {PrescriptorNode} from './nodes/prescriptornode'
-
-// Debug
+// eslint-disable-next-line import/no-named-as-default
 import Debug from "debug"
+import {isEdge, isNode} from "reactflow"
+
+import {EdgeType} from "./edges/types"
+import {DataSourceNode} from "./nodes/datasourcenode"
+import {ConfigurableNode} from "./nodes/generic/configurableNode"
+import {PredictorNode} from "./nodes/predictornode"
+import {PrescriptorNode} from "./nodes/prescriptornode"
+import {NodeType} from "./nodes/types"
+import {CAOType} from "../../../controller/datatag/types"
 
 const debug = Debug("flowqueries")
 

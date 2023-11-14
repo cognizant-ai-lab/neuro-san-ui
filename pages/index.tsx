@@ -1,14 +1,11 @@
-// Import React
+import NextImage from "next/legacy/image"
+import Link from "next/link"
+import {useRouter} from "next/router"
 import {useEffect} from "react"
 import styled from "styled-components"
 
-// eslint-disable-next-line no-shadow
-import Image from "next/legacy/image"
-import Link from "next/link"
+import {GENERIC_LOGO, LOGO} from "../const"
 import {getTitleBase} from "../utils/title"
-
-import {useRouter} from "next/router";
-import {GENERIC_LOGO, LOGO} from "../const";
 
 const OuterContainer = styled.div`
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/landingpagebackground.png");
@@ -102,7 +99,7 @@ export default function Index(): React.ReactElement {
               {!isGeneric &&
                   <>
                       <NavbarLogo id="logo">
-                        <Image id="logo-img" width="250" height="45" src="/cognizant-logo-white.svg" alt=""/>
+                        <NextImage id="logo-img" width="250" height="45" src="/cognizant-logo-white.svg" alt=""/>
                       </NavbarLogo>
                       <NavbarMiddleSection id="nav-bar-middle"/>
                   </>

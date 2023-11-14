@@ -1,8 +1,8 @@
-import {arraysEqual, commaListFromArray} from "../../utils/objects"
-import {CAOType} from "../../controller/datatag/types"
 import {FlowQueries} from "./flow/flowqueries"
 import {NodeType} from "./flow/nodes/types"
+import {CAOType} from "../../controller/datatag/types"
 import {NotificationType, sendNotification} from "../../controller/notification"
+import {arraysEqual, commaListFromArray} from "../../utils/objects"
 
 /**
  * Called when user clicks the "start training" button. Does some sanity checks before allowing training to

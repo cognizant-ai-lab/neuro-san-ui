@@ -1,24 +1,18 @@
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {useSession} from "next-auth/react"
 import {FC, useEffect, useState} from "react"
-
-// Import 3rd party components
 import {Card} from "react-bootstrap"
-
 import {
     Handle,
-    Node as RFNode,
     NodeProps,
-    Position
-} from 'reactflow'
+    Position,
+    Node as RFNode
+} from "reactflow"
 
-import {Card as BlueprintCard, Elevation} from "@blueprintjs/core";
-
-// Import types
-import loadDataTags from "../../../../controller/fetchdatataglist";
-import {DataSource} from "../../../../controller/datasources/types";
-import {DataTag} from "../../../../controller/datatag/types";
-import {useSession} from "next-auth/react";
-import {sendNotification} from "../../../../controller/notification";
-import {NotificationType} from "../../../../controller/notification";
+import {DataSource} from "../../../../controller/datasources/types"
+import {DataTag} from "../../../../controller/datatag/types"
+import loadDataTags from "../../../../controller/fetchdatataglist"
+import {NotificationType, sendNotification} from "../../../../controller/notification"
 
 export interface DataSourceNodeData {
     // Project ID that this new experiment belongs to.
