@@ -11,6 +11,7 @@ const foreignObjectSize = 20
 type PrescriptorEdgeData = {
     OutputOverrideCode: string
     UpdateOutputOverrideCode: (code: string) => void
+    idOrigin?: string
 }
 
 export type PrescriptorEdge = Edge<PrescriptorEdgeData>
@@ -38,6 +39,8 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
         targetPosition,
     })
 
+    const idOrigin = data?.idOrigin
+
     // We want to have a tabbed predictor configuration, and thus we build the following component
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -63,14 +66,14 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
     return (
         <>
             <path
-                id={`${flowPrefix}`}
+                id={`${flowPrefix}${idOrigin ? `__${idOrigin}` : idOrigin}`}
                 style={style}
                 className="react-flow__edge-path"
                 d={edgePath}
                 markerEnd={markerEnd}
             />
             <foreignObject
-                id={`${flowPrefix}-settings-div`}
+                id={`${flowPrefix}-settings-div${idOrigin ? `__${idOrigin}` : idOrigin}`}
                 width={foreignObjectSize}
                 height={foreignObjectSize}
                 x={edgeCenterX - foreignObjectSize / 2}
@@ -85,7 +88,7 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
                     content={
                         <>
                             <Tablist
-                                id={`${flowPrefix}-settings-tablist`}
+                                id={`${flowPrefix}-settings-tablist${idOrigin ? `__${idOrigin}` : idOrigin}`}
                                 marginBottom={16}
                                 flexBasis={240}
                                 marginRight={24}
@@ -93,7 +96,7 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
                                 {tabs.map((tab, index) => (
                                     <Tab
                                         key={tab}
-                                        id={`${flowPrefix}-settings-${tab}`}
+                                        id={`${flowPrefix}-settings-${tab}${idOrigin ? `__${idOrigin}` : idOrigin}`}
                                         onSelect={() => setSelectedIndex(index)}
                                         isSelected={index === selectedIndex}
                                         aria-controls={`panel-${tab}`}
@@ -106,17 +109,16 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
                         </>
                     }
                 >
-                    <div
-                        id={`${flowPrefix}-gr-settings-div`}
-                        className="flex"
-                    >
+                    <div id={`${flowPrefix}-gr-settings-div${idOrigin ? `__${idOrigin}` : idOrigin}`} className="flex">
                         <button
-                            id={`${flowPrefix}-gr-settings-button`}
+                            id={`${flowPrefix}-gr-settings-button${idOrigin ? `__${idOrigin}` : idOrigin}`}
                             type="button"
                             className="mt-1"
                             style={{height: 0}}
                         >
-                            <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />
+                            <GrSettingsOption
+                                id={`${flowPrefix}-gr-settings-option${idOrigin ? `__${idOrigin}` : idOrigin}`}
+                            />
                         </button>
                     </div>
                 </Popover>
