@@ -11,10 +11,7 @@
     "env": {
         "jest": true
     },
-    "plugins": [
-        "@typescript-eslint",
-        "enforce-ids-in-jsx"
-    ],
+    "plugins": ["@typescript-eslint", "enforce-ids-in-jsx"],
     "extends": [
         "next",
         "prettier",
@@ -45,22 +42,31 @@
     },
     "rules": {
         // Want to enforce this on all compoments, which the default setting does not do.
-        "enforce-ids-in-jsx/missing-ids": ["warn", {
-            "target": ["all"]
-        }],
+        "enforce-ids-in-jsx/missing-ids": [
+            "warn",
+            {
+                "target": ["all"]
+            }
+        ],
 
         // Turn on some optional, stricter settings for this rule
-        "react/jsx-key": ["error", {
+        "react/jsx-key": [
+            "error",
+            {
                 "checkFragmentShorthand": true,
                 "checkKeyMustBeforeSpread": true,
                 "warnOnDuplicates": true
-        }],
+            }
+        ],
 
         // Want to allow short circuit like foo && useFoo(foo)
-        "no-unused-expressions": ["error", {
+        "no-unused-expressions": [
+            "error",
+            {
                 "allowShortCircuit": true,
                 "allowTernary": true
-        }],
+            }
+        ],
 
         // Disallow this syntax -- confusing
         "logical-assignment-operators": ["error", "never"],
@@ -71,11 +77,11 @@
         // Would like to leave this at the default setting (max = 1) but that excludes functional incantations that we
         // would like to allow such as nodes.forEach(node => {node.doSomething})
         // See: https://github.com/eslint/eslint/issues/9210
-        "max-statements-per-line": ["error", { "max": 2 }],
+        "max-statements-per-line": ["error", {"max": 2}],
 
         // We want to allow the use of "event" as a variable name in event handlers (e.g. onClick={event => ...})
         // Other than that, prevent and shadowing of outer scope variables and system globals
-        "no-shadow": ["error", {"builtinGlobals": true , "allow": ["event"]}],
+        "no-shadow": ["error", {"builtinGlobals": true, "allow": ["event"]}],
 
         // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict with
         // other plugins we're using?
@@ -84,10 +90,13 @@
         // How to see which rules are enabled: ./node_modules/.bin/eslint --print-config jest.config.ts
         // In any case, more rules keep us safe, so explicitly enable them here.
         "@typescript-eslint/array-type": "error",
-        "@typescript-eslint/no-unused-expressions":  ["error", {
-            "allowShortCircuit": true,
-            "allowTernary": true
-        }],
+        "@typescript-eslint/no-unused-expressions": [
+            "error",
+            {
+                "allowShortCircuit": true,
+                "allowTernary": true
+            }
+        ],
         "@typescript-eslint/prefer-for-of": "error",
         "consistent-return": "error",
         "constructor-super": "error",
@@ -185,81 +194,81 @@
         // Rules from the various plugins and base ESLint that we are not yet ready to enable
         "@typescript-eslint/await-thenable": "off",
         "@typescript-eslint/block-spacing": "off",
-        "@typescript-eslint/brace-style":  "off",
+        "@typescript-eslint/brace-style": "off",
         "@typescript-eslint/class-methods-use-this": "off",
-        "@typescript-eslint/comma-dangle":  "off",
+        "@typescript-eslint/comma-dangle": "off",
         "@typescript-eslint/consistent-indexed-object-style": "off",
-        "@typescript-eslint/consistent-type-definitions":  "off",
+        "@typescript-eslint/consistent-type-definitions": "off",
         "@typescript-eslint/consistent-type-exports": "off",
         "@typescript-eslint/consistent-type-imports": "off",
         "@typescript-eslint/dot-notation": "off",
-        "@typescript-eslint/explicit-function-return-type":  "off",
+        "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/explicit-member-accessibility": "off",
-        "@typescript-eslint/explicit-module-boundary-types":  "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
         "@typescript-eslint/indent": "off",
-        "@typescript-eslint/init-declarations":  "off",
+        "@typescript-eslint/init-declarations": "off",
         "@typescript-eslint/key-spacing": "off",
-        "@typescript-eslint/lines-around-comment":  "off",
+        "@typescript-eslint/lines-around-comment": "off",
         "@typescript-eslint/max-params": "off",
-        "@typescript-eslint/member-delimiter-style":  "off",
+        "@typescript-eslint/member-delimiter-style": "off",
         "@typescript-eslint/member-ordering": "off",
-        "@typescript-eslint/naming-convention":  "off",
+        "@typescript-eslint/naming-convention": "off",
         "@typescript-eslint/no-base-to-string": "off",
-        "@typescript-eslint/no-confusing-void-expression":  "off",
+        "@typescript-eslint/no-confusing-void-expression": "off",
         "@typescript-eslint/no-duplicate-type-constituents": "off",
         "@typescript-eslint/no-extra-parens": "off",
-        "@typescript-eslint/no-extraneous-class":  "off",
-        "@typescript-eslint/no-floating-promises":  "off",
+        "@typescript-eslint/no-extraneous-class": "off",
+        "@typescript-eslint/no-floating-promises": "off",
         "@typescript-eslint/no-implied-eval": "off",
         "@typescript-eslint/no-invalid-this": "off",
-        "@typescript-eslint/no-magic-numbers":  "off",
+        "@typescript-eslint/no-magic-numbers": "off",
         "@typescript-eslint/no-meaningless-void-operator": "off",
         "@typescript-eslint/no-misused-promises": "off",
         "@typescript-eslint/no-mixed-enums": "off",
         "@typescript-eslint/no-redundant-type-constituents": "off",
         "@typescript-eslint/no-throw-literal": "off",
-        "@typescript-eslint/no-unnecessary-boolean-literal-compare":  "off",
-        "@typescript-eslint/no-unnecessary-condition":  "off",
+        "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
+        "@typescript-eslint/no-unnecessary-condition": "off",
         "@typescript-eslint/no-unnecessary-qualifier": "off",
         "@typescript-eslint/no-unsafe-argument": "off",
-        "@typescript-eslint/no-unsafe-assignment":  "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
         "@typescript-eslint/no-unsafe-call": "off",
-        "@typescript-eslint/no-unsafe-member-access":  "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
         "@typescript-eslint/no-unsafe-return": "off",
-        "@typescript-eslint/no-unnecessary-type-arguments":  "off",
+        "@typescript-eslint/no-unnecessary-type-arguments": "off",
         "@typescript-eslint/no-unnecessary-type-assertion": "off",
         "@typescript-eslint/no-unsafe-enum-comparison": "off",
-        "@typescript-eslint/non-nullable-type-assertion-style":  "off",
+        "@typescript-eslint/non-nullable-type-assertion-style": "off",
         "@typescript-eslint/prefer-includes": "off",
         "@typescript-eslint/no-use-before-define": "off",
-        "@typescript-eslint/no-require-imports":  "off",
-        "@typescript-eslint/prefer-readonly":  "off",
+        "@typescript-eslint/no-require-imports": "off",
+        "@typescript-eslint/prefer-readonly": "off",
         "@typescript-eslint/prefer-reduce-type-parameter": "off",
-        "@typescript-eslint/prefer-return-this-type":  "off",
+        "@typescript-eslint/prefer-return-this-type": "off",
         "@typescript-eslint/prefer-string-starts-ends-with": "off",
-        "@typescript-eslint/require-array-sort-compare":  "off",
+        "@typescript-eslint/require-array-sort-compare": "off",
         "@typescript-eslint/switch-exhaustiveness-check": "off",
         "@typescript-eslint/unbound-method": "off",
         "@typescript-eslint/no-for-in-array": "off",
-        "@typescript-eslint/object-curly-spacing":  "off",
+        "@typescript-eslint/object-curly-spacing": "off",
         "@typescript-eslint/prefer-destructuring": "off",
-        "@typescript-eslint/prefer-enum-initializers":  "off",
+        "@typescript-eslint/prefer-enum-initializers": "off",
         "@typescript-eslint/prefer-nullish-coalescing": "off",
-        "@typescript-eslint/prefer-optional-chain":  "off",
+        "@typescript-eslint/prefer-optional-chain": "off",
         "@typescript-eslint/prefer-readonly-parameter-types": "off",
-        "@typescript-eslint/prefer-regexp-exec":  "off",
+        "@typescript-eslint/prefer-regexp-exec": "off",
         "@typescript-eslint/promise-function-async": "off",
-        "@typescript-eslint/quotes":  "off",
+        "@typescript-eslint/quotes": "off",
         "@typescript-eslint/require-await": "off",
-        "@typescript-eslint/restrict-plus-operands":  "off",
+        "@typescript-eslint/restrict-plus-operands": "off",
         "@typescript-eslint/restrict-template-expressions": "off",
-        "@typescript-eslint/return-await":  "off",
+        "@typescript-eslint/return-await": "off",
         "@typescript-eslint/semi": "off",
-        "@typescript-eslint/sort-type-constituents":  "off",
+        "@typescript-eslint/sort-type-constituents": "off",
         "@typescript-eslint/space-before-blocks": "off",
-        "@typescript-eslint/space-before-function-paren":  "off",
+        "@typescript-eslint/space-before-function-paren": "off",
         "@typescript-eslint/space-infix-ops": "off",
-        "@typescript-eslint/strict-boolean-expressions":  "off",
+        "@typescript-eslint/strict-boolean-expressions": "off",
         "array-bracket-newline": "off",
         "array-element-newline": "off",
         "arrow-body-style": "off",

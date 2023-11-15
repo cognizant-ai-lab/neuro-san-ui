@@ -1,9 +1,9 @@
-import getConfig from 'next/config'
+import getConfig from "next/config"
 
 // Define the Base Colors
-export const MaximumBlue: string  = "#000048"
-export const Apple: string  = "#26EFE9"
-const { publicRuntimeConfig } = getConfig()
+export const MaximumBlue: string = "#000048"
+export const Apple: string = "#26EFE9"
+const {publicRuntimeConfig} = getConfig()
 
 // Set the env var MD_SERVER_URL
 export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url
@@ -68,22 +68,18 @@ in the node.
 return predictions        
 `
 
-export const ESPResultverbs = [
-    'max',
-    'min',
-    'mean',
-]
+export const ESPResultverbs = ["max", "min", "mean"]
 
 /* TODO: feels like it should be a stylesheet somewhere. But the current chatbot library we're using seems to
 require it in this format. */
 export const chatbotTheme = {
-    background: '#f5f8fb',
-    fontFamily: 'var(--bs-body-font-family)',
+    background: "#f5f8fb",
+    fontFamily: "var(--bs-body-font-family)",
     headerBgColor: "var(--bs-primary)",
-    headerFontColor: '#fff',
-    headerFontSize: '15px',
+    headerFontColor: "#fff",
+    headerFontSize: "15px",
     botBubbleColor: "var(--bs-secondary)",
-    botFontColor: '#fff',
-    userBubbleColor: '#fff',
-    userFontColor: '#4a4a4a',
+    botFontColor: "#fff",
+    userBubbleColor: "#fff",
+    userFontColor: "#4a4a4a",
 }

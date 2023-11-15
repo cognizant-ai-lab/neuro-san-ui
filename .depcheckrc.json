@@ -1,25 +1,17 @@
 {
-  "ignore-patterns": [
-    "auth0/*"
-  ],
-  "ignores": [
-    "@babel/core",
-    "@jest/types",
-    "@types/*",
-    "autoprefixer",
-    "eslint-formatter-summary",
-    "jest",
-    "jest-environment-jsdom",
-    "prettier",
-    "sharp",
-    "ts-node",
-    "ts-jest"
-  ],
-  "specials": [
-    "babel",
-    "eslint",
-    "jest",
-    "tslint",
-    "typescript"
-  ]
+    "ignore-patterns": ["auth0/*"],
+    "ignores": [
+        "@babel/core",
+        "@jest/types",
+        "@types/*",
+        "autoprefixer",
+        "eslint-formatter-summary",
+        "jest",
+        "jest-environment-jsdom",
+        "prettier",
+        "sharp",
+        "ts-node",
+        "ts-jest"
+    ],
+    "specials": ["babel", "eslint", "jest", "tslint", "typescript"]
 }

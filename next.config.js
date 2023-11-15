@@ -8,31 +8,31 @@
  **/
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const path = require('path');
+const path = require("path")
 
 // Extra headers to be returned
 // Gleaned from here: https://nextjs.org/docs/advanced-features/security-headers
 const securityHeaders = [
     {
-        key: 'Strict-Transport-Security',
-        value: 'max-age=63072000; includeSubDomains; preload'
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
     },
     {
-        key: 'X-Content-Type-Options',
-        value: 'nosniff'
+        key: "X-Content-Type-Options",
+        value: "nosniff",
     },
     {
-        key: 'X-Frame-Options',
-        value: 'SAMEORIGIN'
+        key: "X-Frame-Options",
+        value: "SAMEORIGIN",
     },
     {
-        key: 'X-XSS-Protection',
-        value: '1; mode=block'
+        key: "X-XSS-Protection",
+        value: "1; mode=block",
     },
     {
-        key: 'Content-Security-Policy',
-        value: ""
-    }
+        key: "Content-Security-Policy",
+        value: "",
+    },
 ]
 
 const nextConfig = {
@@ -45,7 +45,7 @@ const nextConfig = {
         ignoreDuringBuilds: false,
 
         // Only these dirs will be scanned by ESLint
-        dirs: ['components', 'controller', 'pages', 'public', 'styles', 'tests', 'utils', '.']
+        dirs: ["components", "controller", "pages", "public", "styles", "tests", "utils", "."],
     },
 
     publicRuntimeConfig: {
@@ -53,13 +53,13 @@ const nextConfig = {
         // this way we don't accidentally point prod->staging or vice versa
         md_server_url: process.env.MD_SERVER_URL ?? "MD_SERVER_URL_must_be_set",
         enableAuthentication: process.env.ENABLE_AUTHENTICATION ?? true,
-        unileafVersion: process.env.UNILEAF_VERSION
+        unileafVersion: process.env.UNILEAF_VERSION,
     },
 
-    output: 'standalone',
+    output: "standalone",
 
     images: {
-        domains: ['avatars.githubusercontent.com'],
+        domains: ["avatars.githubusercontent.com"],
     },
 
     poweredByHeader: false,
@@ -68,17 +68,17 @@ const nextConfig = {
         return [
             {
                 // Apply these headers to all routes in the application.
-                source: '/:path*',
+                source: "/:path*",
                 headers: securityHeaders,
             },
         ]
     },
 
     sassOptions: {
-        includePaths: [path.join(__dirname, 'styles')],
+        includePaths: [path.join(__dirname, "styles")],
     },
 
-    transpilePackages: ['echarts', 'echarts-gl', 'zrender'],
+    transpilePackages: ["echarts", "echarts-gl", "zrender"],
 
     compiler: {
         // Prevent errors like "webpack Warning: Prop `className` did not match. Server: ..."
@@ -86,6 +86,6 @@ const nextConfig = {
         // ssr and displayName are configured by default
         styledComponents: true,
     },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
