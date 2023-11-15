@@ -7,18 +7,17 @@ import {PredictorParamFields} from "./predictorinfo"
  * This interface is used to define the props that the numeric input expects
  */
 interface ConfigNumericProps {
-
     // Testing id for the component
-    id: string,
+    id: string
 
     // Component style
-    style?: CSSProperties,
+    style?: CSSProperties
 
     // Name of the parameter represented by the component
-    paramName: string,
+    paramName: string
 
     // Initial value of the component
-    value: string | number | boolean,
+    value: string | number | boolean
 
     // Default config for param represented by input
     defaultParam: PredictorParamFields | ConfigurableNodeParameter
@@ -27,13 +26,11 @@ interface ConfigNumericProps {
     onParamChange: (event, paramName: string) => void
 }
 
-
 /**
  * Interface for numeric input of configured parameters whose
  * min/max/step are data-driven.
  */
 export default function ConfigNumeric(props: ConfigNumericProps) {
-
     /**
      *  Get the step from the default parameter description
      *  @param defaultParam the default parameter
@@ -41,9 +38,8 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      *      given the parameter's type.
      */
     function getStep(defaultParam: PredictorParamFields | ConfigurableNodeParameter): string {
-
         // Default step if one is not defined in defaults for param
-        let step = "1"  // For integers
+        let step = "1" // For integers
         if (defaultParam.type === "float") {
             step = "0.01"
         } else if (Object.hasOwn(defaultParam, "step")) {
@@ -60,7 +56,6 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      *          undefined if none exists in the defaultParam.
      */
     function getMin(defaultParam: PredictorParamFields | ConfigurableNodeParameter): string {
-
         // Default min if one is not defined in defaults for param
         return defaultParam.min != null ? defaultParam.min.toString() : null
     }
@@ -72,7 +67,6 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      *          undefined if none exists in the defaultParam.
      */
     function getMax(defaultParam: PredictorParamFields | ConfigurableNodeParameter): string {
-
         // Default max if one is not defined in defaults for param
         return defaultParam.max != null ? defaultParam.max.toString() : null
     }
@@ -84,7 +78,6 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
      *          undefined if none exists in the defaultParam.
      */
     function getDefaultValue(defaultParam: PredictorParamFields | ConfigurableNodeParameter): string {
-
         return defaultParam.default_value != null ? defaultParam.default_value.toString() : null
     }
 
@@ -94,17 +87,18 @@ export default function ConfigNumeric(props: ConfigNumericProps) {
     const useMin = getMin(props.defaultParam)
     const useMax = getMax(props.defaultParam)
     const useDefaultValue = getDefaultValue(props.defaultParam)
-    const value = (props.value != null)
-                        ? props.value.toString()
-                        : useDefaultValue
+    const value = props.value != null ? props.value.toString() : useDefaultValue
 
-    return  <input id={id}
-                type="number"
-                step={useStep}
-                min={useMin}
-                max={useMax}
-                value={value}
-                onChange={event => props.onParamChange(event, param)}
-                style={props.style}
-            />
+    return (
+        <input
+            id={id}
+            type="number"
+            step={useStep}
+            min={useMin}
+            max={useMax}
+            value={value}
+            onChange={(event) => props.onParamChange(event, param)}
+            style={props.style}
+        />
+    )
 }

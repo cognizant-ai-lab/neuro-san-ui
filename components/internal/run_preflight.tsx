@@ -17,8 +17,10 @@ export function checkValidity(flow: NodeType[]): boolean {
     // Must have at least one predictor
     const predictorNodes = FlowQueries.getPredictorNodes(flow)
     if (predictorNodes.length === 0) {
-        sendNotification(NotificationType.warning,
-            "Please add at least one Predictor and Prescriptor to this experiment before training.")
+        sendNotification(
+            NotificationType.warning,
+            "Please add at least one Predictor and Prescriptor to this experiment before training."
+        )
         return false
     }
 
@@ -30,94 +32,107 @@ export function checkValidity(flow: NodeType[]): boolean {
     }
 
     // Must have at least one action checked
-    const hasAnyActionsChecked =
-        prescriptorNodes.some(
-            node => Object.values(node.data.ParentPrescriptorState.caoState.action).some(val => val === true)
-        )
+    const hasAnyActionsChecked = prescriptorNodes.some((node) =>
+        Object.values(node.data.ParentPrescriptorState.caoState.action).some((val) => val === true)
+    )
 
     if (!hasAnyActionsChecked) {
-        sendNotification(NotificationType.warning,
-            "Please check (enable) at least one Action on a prescriptor before training.")
+        sendNotification(
+            NotificationType.warning,
+            "Please check (enable) at least one Action on a prescriptor before training."
+        )
         return false
     }
 
     // Each predictor must have at least one outcome checked
-    const hasAnyOutcomesChecked =
-        predictorNodes.every(
-            node => Object.values(node.data.ParentPredictorState.caoState.outcome).some(val => val === true)
-        )
+    const hasAnyOutcomesChecked = predictorNodes.every((node) =>
+        Object.values(node.data.ParentPredictorState.caoState.outcome).some((val) => val === true)
+    )
 
     if (!hasAnyOutcomesChecked) {
-        sendNotification(NotificationType.warning,
-            "Please check (enable) at least one Outcome on each predictor before training.")
+        sendNotification(
+            NotificationType.warning,
+            "Please check (enable) at least one Outcome on each predictor before training."
+        )
         return false
     }
 
     // Must have at least one context checked
-    const hasAnyContextsChecked =
-        predictorNodes.some(
-            node => Object.values(node.data.ParentPredictorState.caoState.context).some(val => val === true)
-        )
+    const hasAnyContextsChecked = predictorNodes.some((node) =>
+        Object.values(node.data.ParentPredictorState.caoState.context).some((val) => val === true)
+    )
 
     if (!hasAnyContextsChecked) {
-        sendNotification(NotificationType.warning,
-            "Please enable at least one Context on a predictor and a prescriptor before training.")
+        sendNotification(
+            NotificationType.warning,
+            "Please enable at least one Context on a predictor and a prescriptor before training."
+        )
         return false
     }
 
     // Predictor Actions must match prescriptor Actions or training will fail
-    const prescriptorActions =
-        FlowQueries.extractCheckedFieldsForNode(prescriptorNodes[0], CAOType.ACTION)
+    const prescriptorActions = FlowQueries.extractCheckedFieldsForNode(prescriptorNodes[0], CAOType.ACTION)
     for (const predictor of predictorNodes) {
         const predictorActions: string[] = FlowQueries.extractCheckedFieldsForNode(predictor, CAOType.ACTION)
         if (!arraysEqual(prescriptorActions, predictorActions)) {
-            const description =
+            const description = (
                 <>
                     Predictor has: {commaListFromArray(predictorActions)}
-            <br id="predictor-has-br"/>
-                Prescriptor has: {commaListFromArray(prescriptorActions)}
-            </>
-            sendNotification(NotificationType.warning,
+                    <br id="predictor-has-br" />
+                    Prescriptor has: {commaListFromArray(prescriptorActions)}
+                </>
+            )
+            sendNotification(
+                NotificationType.warning,
                 "Please ensure checked Action inputs for all predictors match checked Action outputs " +
-                "for the prescriptor before training.", description)
+                    "for the prescriptor before training.",
+                description
+            )
             return false
         }
     }
 
     // Predictor Context must match prescriptor Context or training will fail
-    const prescriptorContexts =
-        FlowQueries.extractCheckedFieldsForNode(prescriptorNodes[0], CAOType.CONTEXT)
+    const prescriptorContexts = FlowQueries.extractCheckedFieldsForNode(prescriptorNodes[0], CAOType.CONTEXT)
     for (const predictor of predictorNodes) {
         const predictorContexts: string[] = FlowQueries.extractCheckedFieldsForNode(predictor, CAOType.CONTEXT)
         if (!arraysEqual(prescriptorContexts, predictorContexts)) {
-            const description =
+            const description = (
                 <>
                     Predictor has: {commaListFromArray(predictorContexts)}
-            <br id="prescriptor-has-br"/>
-                Prescriptor has: {commaListFromArray(prescriptorContexts)}
-            </>
-            sendNotification(NotificationType.warning,
+                    <br id="prescriptor-has-br" />
+                    Prescriptor has: {commaListFromArray(prescriptorContexts)}
+                </>
+            )
+            sendNotification(
+                NotificationType.warning,
                 "Please ensure checked Context inputs for all predictors match Context inputs " +
-                "for the prescriptor before training.", description)
+                    "for the prescriptor before training.",
+                description
+            )
             return false
         }
     }
 
     // Multiple predictors shouldn't predict the same outcomes
-    const allOutcomes = predictorNodes.reduce(
-        (acc, node) => [...acc, FlowQueries.extractCheckedFieldsForNode(node, CAOType.OUTCOME)], [])
-        .flatMap(outcomes => outcomes)
+    const allOutcomes = predictorNodes
+        .reduce((acc, node) => [...acc, FlowQueries.extractCheckedFieldsForNode(node, CAOType.OUTCOME)], [])
+        .flatMap((outcomes) => outcomes)
     const dupes = allOutcomes.filter((item, index) => allOutcomes.indexOf(item) !== index)
     if (dupes.length > 0) {
-        const description =
+        const description = (
             <>
                 The following outcome(s) is/are predicted by multiple predictors:
-        <br id="dupes-list"/>
-            {commaListFromArray(dupes)}
+                <br id="dupes-list" />
+                {commaListFromArray(dupes)}
             </>
-        sendNotification(NotificationType.warning,
+        )
+        sendNotification(
+            NotificationType.warning,
             "Please ensure that each Outcome is only predicted by a single predictor. It is not valid to have " +
-            "multiple predictors predicting the same outcome.", description)
+                "multiple predictors predicting the same outcome.",
+            description
+        )
         return false
     }
 
@@ -128,16 +143,16 @@ export function checkValidity(flow: NodeType[]): boolean {
         // Currently we only support a single datasource node
         const dataNode = dataNodes[0]
         const dataTag = dataNode.data.DataTag
-        const columnsWithNaNs = Object.keys(dataTag.fields).filter(key => dataTag.fields[key].has_nan)
+        const columnsWithNaNs = Object.keys(dataTag.fields).filter((key) => dataTag.fields[key].has_nan)
         if (columnsWithNaNs.length > 0) {
             // We have columns containing NaNs. Is there an LLM in the flow to rescue us?
             const llms = FlowQueries.getLLMNodes(flow)
-            const hasLlmDataNode = llms.some(node => node.type === "llmnode" && node.data.NodeTitle === "Data LLM")
+            const hasLlmDataNode = llms.some((node) => node.type === "llmnode" && node.data.NodeTitle === "Data LLM")
             if (!hasLlmDataNode) {
                 sendNotification(
                     NotificationType.warning,
                     "Some columns have NaN values which must be filled in prior to training. Please add the " +
-                    "appropriate LLM data node to continue",
+                        "appropriate LLM data node to continue",
                     `Fields with NaNs: ${commaListFromArray(columnsWithNaNs)}`
                 )
                 return false

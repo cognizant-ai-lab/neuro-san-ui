@@ -1,39 +1,34 @@
-import { 
-    Popover, 
-    Position, 
-    Tab, 
-    Tablist
-} from "evergreen-ui"
+import {Popover, Position, Tab, Tablist} from "evergreen-ui"
 import {FC, useState} from "react"
-import { 
-    Card
-} from "react-bootstrap"
-import { 
-    GrSettingsOption 
-} from "react-icons/gr"
+import {Card} from "react-bootstrap"
+import {GrSettingsOption} from "react-icons/gr"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
-import {
-    Edge,
-    EdgeProps,
-  getBezierPath
-} from "reactflow"
+import {Edge, EdgeProps, getBezierPath} from "reactflow"
 
-const foreignObjectSize = 20;
+const foreignObjectSize = 20
 
 type PrescriptorEdgeData = {
-    OutputOverrideCode: string,
+    OutputOverrideCode: string
     UpdateOutputOverrideCode: (code: string) => void
 }
 
-export type PrescriptorEdge = Edge<PrescriptorEdgeData>;
+export type PrescriptorEdge = Edge<PrescriptorEdgeData>
 
 const EMPTY_OBJECT = {}
 
-const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sourceX, sourceY,
-                                        targetX, targetY,
-                                        sourcePosition, targetPosition,
-                                        style = EMPTY_OBJECT, data, markerEnd}) => {
+const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
+    id,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
+    style = EMPTY_OBJECT,
+    data,
+    markerEnd,
+}) => {
     const [edgePath, edgeCenterX, edgeCenterY] = getBezierPath({
         sourceX,
         sourceY,
@@ -53,22 +48,29 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sou
     //      in predictornode, prescriptornode, uncertaintyModelNode
     const flowPrefix = `prescriptoredge-${id}`
 
-    const PredictorOverride =
-        <Card.Body id={ `${flowPrefix}-output-override-code` }>
-            <SyntaxHighlighter id={ `${flowPrefix}-output-override-code-syntax-highlighter` }
-                language="python" style={docco} showLineNumbers={true}>
+    const PredictorOverride = (
+        <Card.Body id={`${flowPrefix}-output-override-code`}>
+            <SyntaxHighlighter
+                id={`${flowPrefix}-output-override-code-syntax-highlighter`}
+                language="python"
+                style={docco}
+                showLineNumbers={true}
+            >
                 {data.OutputOverrideCode}
             </SyntaxHighlighter>
         </Card.Body>
+    )
     return (
         <>
-            <path id={ `${flowPrefix}` }
+            <path
+                id={`${flowPrefix}`}
                 style={style}
                 className="react-flow__edge-path"
                 d={edgePath}
                 markerEnd={markerEnd}
             />
-            <foreignObject id={ `${flowPrefix}-settings-div` }
+            <foreignObject
+                id={`${flowPrefix}-settings-div`}
                 width={foreignObjectSize}
                 height={foreignObjectSize}
                 x={edgeCenterX - foreignObjectSize / 2}
@@ -76,37 +78,45 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sou
                 className="edgebutton-foreignobject"
                 requiredExtensions="http://www.w3.org/1999/xhtml"
             >
-                <Popover    // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Popover does not have an id property when compiling
+                <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    // 2/6/23 DEF - Popover does not have an id property when compiling
                     position={Position.LEFT}
                     minWidth="1rem"
-                    content={ <>
-                        <Tablist id={ `${flowPrefix}-settings-tablist` } 
-                            marginBottom={16} 
-                            flexBasis={240} 
-                            marginRight={24}>
-                            {tabs.map((tab, index) => (
-                                <Tab
-                                    key={tab}
-                                    id={ `${flowPrefix}-settings-${tab}` }
-                                    onSelect={() => setSelectedIndex(index)}
-                                    isSelected={index === selectedIndex}
-                                    aria-controls={`panel-${tab}`}
-                                >
-                                    {tab}
-                                </Tab>
-                            ))}
-                        </Tablist>
-                        { selectedIndex === 0  && PredictorOverride }
-                    </>
-                }
-                >   
-                    <div id={ `${flowPrefix}-gr-settings-div` } className="flex">
-                        <button id={ `${flowPrefix}-gr-settings-button` }
-                                type="button" 
-                                className="mt-1"
-                                style={{height: 0}}>
-                            <GrSettingsOption id={ `${flowPrefix}-gr-settings-option` } />
+                    content={
+                        <>
+                            <Tablist
+                                id={`${flowPrefix}-settings-tablist`}
+                                marginBottom={16}
+                                flexBasis={240}
+                                marginRight={24}
+                            >
+                                {tabs.map((tab, index) => (
+                                    <Tab
+                                        key={tab}
+                                        id={`${flowPrefix}-settings-${tab}`}
+                                        onSelect={() => setSelectedIndex(index)}
+                                        isSelected={index === selectedIndex}
+                                        aria-controls={`panel-${tab}`}
+                                    >
+                                        {tab}
+                                    </Tab>
+                                ))}
+                            </Tablist>
+                            {selectedIndex === 0 && PredictorOverride}
+                        </>
+                    }
+                >
+                    <div
+                        id={`${flowPrefix}-gr-settings-div`}
+                        className="flex"
+                    >
+                        <button
+                            id={`${flowPrefix}-gr-settings-button`}
+                            type="button"
+                            className="mt-1"
+                            style={{height: 0}}
+                        >
+                            <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />
                         </button>
                     </div>
                 </Popover>
@@ -115,4 +125,4 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>>  = ({ id, sou
     )
 }
 
-export default PrescriptorEdgeComponent;
+export default PrescriptorEdgeComponent

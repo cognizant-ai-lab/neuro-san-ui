@@ -2,7 +2,7 @@
 // For custom model formats the request must specify
 // UNKNOWN_MODEL_FORMAT and a custom predictor image
 // with args when the adapter server is spun up.
-import {StringString} from "../base_types";
+import {StringString} from "../base_types"
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
@@ -14,7 +14,6 @@ export enum ModelFormat {
     SKLEARN_JOBLIB = 3,
     CUSTOM_MODEL_FORMAT = 4,
 }
-
 
 export interface ModelMetaData {
     // The location of the model on the S3 bucket.
@@ -31,13 +30,12 @@ export enum ModelServingEnvironment {
     // Ignored
     DEFAULT_MODEL_SERVING_ENV_ENUM = 0,
     UNKNOWN_MODEL_SERVING_ENV = 1,
-    KSERVE = 2
+    KSERVE = 2,
 }
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
 export enum DeploymentStatus {
-
     // Ignored
     DEFAULT_DEPLOYMENT_STATUS_ENUM = 0,
 
@@ -74,11 +72,10 @@ export enum DeploymentStatus {
     INCOMPATIBLE_STORAGE_ADAPTER = 6,
 
     // This happens when the environment is not supported
-    INCOMPATIBLE_ENVIRONMENT = 7
+    INCOMPATIBLE_ENVIRONMENT = 7,
 }
 
 export interface DeployRequest {
-
     // The metadata regarding the model. Part of this metadata is also used
     // to spin up the pre/post processing transformer required.
     model_data: ModelMetaData
@@ -141,7 +138,6 @@ export interface GetDeploymentsRequest {
     // The environment where the model must be queried
     model_serving_environment: ModelServingEnvironment
 }
-
 
 // This message is most likely going to evolve
 // as we add more environments.

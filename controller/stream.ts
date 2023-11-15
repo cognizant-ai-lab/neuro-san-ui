@@ -9,12 +9,11 @@ import sortByTime from "../utils/sort"
 export default async function HackyStream<ObjectType extends MDServerObject>(
     url: string,
     resourceName: string,
-    method: string = 'GET',
+    method: string = "GET",
     data: object = null
 ): Promise<ObjectType[]> {
-
     // Build request params
-    const requestParams = {method: method, body: null};
+    const requestParams = {method: method, body: null}
     if (data) {
         requestParams.body = JSON.stringify(data)
     }
@@ -34,14 +33,14 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
         return null
     }
 
-    const reader = response.body.getReader();
+    const reader = response.body.getReader()
     const items: ObjectType[] = []
-    const utf8decoder = new TextDecoder('utf8')
+    const utf8decoder = new TextDecoder("utf8")
     let buffer = ""
 
     let done = false
     while (!done) {
-        const { value, done: isDone } = await reader.read();
+        const {value, done: isDone} = await reader.read()
         done = isDone
         try {
             if (!done) {
@@ -57,14 +56,15 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     // gRPC streams items to us delimited by newline. But JSON requires commas between items.
     // Therefore, this regex replaces all newlines except the last (which is a legit newline) with comma + newline
     // We also need to sandwich it in square brackets to conform to JSON array syntax
-    buffer = '[' + buffer.replace(/\n(?=.*\n)/gu, ",\n") + ']'
+    buffer = "[" + buffer.replace(/\n(?=.*\n)/gu, ",\n") + "]"
 
     let results: MDServerResponse[]
     try {
-        results = JSON.parse(buffer);
+        results = JSON.parse(buffer)
     } catch (e) {
-        console.error(`Error parsing ${resourceName} data from server. First 100 bytes: ` +
-            String(results).substring(0, 100))
+        console.error(
+            `Error parsing ${resourceName} data from server. First 100 bytes: ` + String(results).substring(0, 100)
+        )
         throw e
     }
 

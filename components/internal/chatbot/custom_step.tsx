@@ -11,28 +11,34 @@ import {Loading} from "react-simple-chatbot"
 
 // Define constructor params for our component (to keep Typescript happy)
 type PropTypes = {
-    steps?: {search: {value: string}},
-    triggerNextStep?: () => object,
-    pageContext?: string,
-    addChatToHistory: (message: ChatMessage) => void,
+    steps?: {search: {value: string}}
+    triggerNextStep?: () => object
+    pageContext?: string
+    addChatToHistory: (message: ChatMessage) => void
     chatHistory?: () => ChatMessage[]
 }
 
 // Specification for component state (to keep Typescript happy)
 type StepState = {
-    loading: boolean,
-    answer: string,
-    sources: {source: string, page: string, snippet: string}[],
+    loading: boolean
+    answer: string
+    sources: {source: string; page: string; snippet: string}[]
     nextStepTriggered: boolean
 }
 
-const ExpandableSources: React.FC<{ sourcesAsList: string }> = ({ sourcesAsList }) => {
+const ExpandableSources: React.FC<{sourcesAsList: string}> = ({sourcesAsList}) => {
     return (
-        <div id="show-sources-div" style={{fontSize: "smaller", overflowWrap: "anywhere"}}>
+        <div
+            id="show-sources-div"
+            style={{fontSize: "smaller", overflowWrap: "anywhere"}}
+        >
             <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
             >
                 <Collapse.Panel // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    header="Show sources" key={1} >{sourcesAsList ?? "No sources found"}
+                    header="Show sources"
+                    key={1}
+                >
+                    {sourcesAsList ?? "No sources found"}
                 </Collapse.Panel>
             </Collapse>
         </div>
@@ -53,7 +59,6 @@ const ExpandableSources: React.FC<{ sourcesAsList: string }> = ({ sourcesAsList 
 // We want the ExpandableSources component in this same module
 // eslint-disable-next-line react/no-multi-comp
 export class CustomStep extends Component<PropTypes, StepState> {
-
     constructor(props: PropTypes) {
         super(props)
 
@@ -61,7 +66,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
             loading: true,
             answer: "",
             nextStepTriggered: false,
-            sources: []
+            sources: [],
         }
 
         this.triggerNext = this.triggerNext.bind(this)
@@ -72,13 +77,13 @@ export class CustomStep extends Component<PropTypes, StepState> {
         // of lexical capture, but it's beyond my knowledge, and I'm just copying the example from the doc.
         // eslint-disable-next-line @typescript-eslint/no-this-alias,consistent-this
         const thisTmp = this
-        const { steps } = this.props
+        const {steps} = this.props
 
         const queryUrl = "/api/gpt/userguide"
 
         const xhr = new XMLHttpRequest()
 
-        xhr.addEventListener('readystatechange', readyStateChange)
+        xhr.addEventListener("readystatechange", readyStateChange)
 
         function readyStateChange() {
             // Hint to non-JS gurus like me: this "this" is not the "this" you think it is. It has nothing to do with
@@ -101,18 +106,24 @@ export class CustomStep extends Component<PropTypes, StepState> {
                     }
                 } else {
                     // HTTP error of some kind
-                    thisTmp.setState({loading: false, answer: "Sorry, an internal error has occurred. More detailed " +
-                            "information may be available in the browser console."})
-                    console.error(`Error ${this.status} while trying to get answer from ${queryUrl}\n` +
-                        `Response: ${this.responseText}`)
+                    thisTmp.setState({
+                        loading: false,
+                        answer:
+                            "Sorry, an internal error has occurred. More detailed " +
+                            "information may be available in the browser console.",
+                    })
+                    console.error(
+                        `Error ${this.status} while trying to get answer from ${queryUrl}\n` +
+                            `Response: ${this.responseText}`
+                    )
                 }
             }
         }
 
         // Prepare the request
         xhr.open("POST", queryUrl)
-        xhr.setRequestHeader('Accept', 'application/json')
-        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.setRequestHeader("Accept", "application/json")
+        xhr.setRequestHeader("Content-Type", "application/json")
 
         const search = steps.search.value
         const safeSearchString = JSON.stringify(search)
@@ -128,35 +139,38 @@ export class CustomStep extends Component<PropTypes, StepState> {
 
     // Trigger next state -- meaning, prompt the user for a new query
     triggerNext() {
-        this.setState({ nextStepTriggered: true }, () => {
+        this.setState({nextStepTriggered: true}, () => {
             this.props.triggerNextStep()
         })
     }
 
     render() {
-        const { nextStepTriggered, loading, answer, sources } = this.state
+        const {nextStepTriggered, loading, answer, sources} = this.state
         if (!nextStepTriggered && !loading) {
             this.triggerNext()
         }
 
         // Format sources for display
         const sourcesAsList = sources
-            ?.map(source =>
-                `Source: ${source.source.replace(/\n/gu, "")} 
-from this snippet: "${source.snippet.replace(/\n/gu, "")}" page: ${source.page ?? "n/a"}`)
+            ?.map(
+                (source) =>
+                    `Source: ${source.source.replace(/\n/gu, "")} 
+from this snippet: "${source.snippet.replace(/\n/gu, "")}" page: ${source.page ?? "n/a"}`
+            )
             .join("\n")
 
         return (
             <>
-                {
-                    loading ? <Loading id="chatbot-result-id" />
-                            :   <>
-                                    {answer}
-                                    <ExpandableSources // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                        sourcesAsList={sourcesAsList}
-                                    />
-                                </>
-                }
+                {loading ? (
+                    <Loading id="chatbot-result-id" />
+                ) : (
+                    <>
+                        {answer}
+                        <ExpandableSources // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            sourcesAsList={sourcesAsList}
+                        />
+                    </>
+                )}
             </>
         )
     }

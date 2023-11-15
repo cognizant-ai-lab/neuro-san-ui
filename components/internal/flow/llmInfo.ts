@@ -28,7 +28,7 @@ enum LlmModel {
     "Google Sec-PaLM" = "google_sec_palm",
     "OpenAI GPT 4" = "gpt-4",
     "OpenAI GPT 3.5 turbo" = "gpt-3.5-turbo",
-    "Vicuna" = "Vicuna"
+    "Vicuna" = "Vicuna",
 }
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
@@ -82,21 +82,21 @@ enum TokenEncoding {
 enum PromptTemplate {
     "Repair data" = "Repair data",
     "Augment data" = "Augment data",
-    "Augment and repair data" = "Augment and repair data"
+    "Augment and repair data" = "Augment and repair data",
 }
 
 /**
  * Configuration params for data confabulation LLM
  */
 export const LLM_MODEL_PARAMS_DATA_LLM: NodeParams = {
-    "model": {
+    model: {
         default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "temperature": {
+    temperature: {
         default_value: 0.7,
         description:
             "The temperature controls how much randomness is in the output. In general, the lower the temperature, " +
@@ -105,37 +105,41 @@ export const LLM_MODEL_PARAMS_DATA_LLM: NodeParams = {
         min: 0.0,
         max: 1.0,
         step: 0.1,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "prompt_token_fraction": {
+    prompt_token_fraction: {
         default_value: 0.5,
-        description: "The fraction of total tokens (not necessarily words or letters) to use for a prompt. " +
+        description:
+            "The fraction of total tokens (not necessarily words or letters) to use for a prompt. " +
             "Each model_name has a documented number of max_tokens it can handle which is a total count " +
             "of message + response tokens which goes into the calculation",
         type: BaseParameterType.FLOAT,
         min: 0.0,
         max: 1.0,
         step: 0.1,
-        isAdvanced: true
+        isAdvanced: true,
     },
-    "max_tokens": {
+    max_tokens: {
         default_value: 4096,
-        description: "The maximum number of input tokens accepted by the LLM as input. Note that this varies by LLM " +
+        description:
+            "The maximum number of input tokens accepted by the LLM as input. Note that this varies by LLM " +
             "and by provider, and it is up to you to know the correct value for your model.",
         type: BaseParameterType.INT,
-        isAdvanced: true
+        isAdvanced: true,
     },
-    "token_encoding": {
+    token_encoding: {
         default_value: TokenEncoding["gpt-3.5-turbo"].valueOf(),
-        description: "tiktoken encoder name. Different for each model and it is up to you to know the correct " +
+        description:
+            "tiktoken encoder name. Different for each model and it is up to you to know the correct " +
             "encoding for the model you have chosen.",
         type: BaseParameterType.ENUM,
         enum: TokenEncoding,
-        isAdvanced: true
+        isAdvanced: true,
     },
-    "table_ratio": {
+    table_ratio: {
         default_value: 1.0,
-        description: "How much of the token space we expect the tables themselves to take up in the prompts " +
+        description:
+            "How much of the token space we expect the tables themselves to take up in the prompts " +
             "expressed as a proportion to the existing prompt token counts.  This helps apportion " +
             "rows into windows for large data sets. Default is 1.0, meaning that dataframe tokens should " +
             "take the same amount of space as prompt tokens.",
@@ -143,54 +147,55 @@ export const LLM_MODEL_PARAMS_DATA_LLM: NodeParams = {
         min: 0.0,
         max: 1.0,
         step: 0.1,
-        isAdvanced: true
+        isAdvanced: true,
     },
-    "confabulation_prompt": {
-        default_value: "Good. Now create a distinct reasonable value for any missing value in the '{column_name}' " +
+    confabulation_prompt: {
+        default_value:
+            "Good. Now create a distinct reasonable value for any missing value in the '{column_name}' " +
             "column that is marked as '{na_rep}' where the new value looks like existing data which is not missing. " +
             "Only print the resulting table with the original column names and with the original delimiter I gave you.",
         description: "Prompt sent to the LLM to instruct it to perform data confabulation",
         type: BaseParameterType.STRING,
         rows: 4,
-        isAdvanced: true
+        isAdvanced: true,
     },
-    "reasoning_prompt": {
-        default_value: "Based on the existing values in the '{column_name}' column, how would you go about creating " +
+    reasoning_prompt: {
+        default_value:
+            "Based on the existing values in the '{column_name}' column, how would you go about creating " +
             "a distinct reasonable value for any missing value in the '{column_name}' column that is marked as " +
             "'{na_rep}' where the new value looks like existing data which is not missing?",
         description: "An optional string substitution for the default reasoning prompt",
         type: BaseParameterType.STRING,
         rows: 4,
-        isAdvanced: true
-    }
+        isAdvanced: true,
+    },
 }
 
 export const LLM_MODEL_PARAMS2: NodeParams = {
-    "model": {
+    model: {
         default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "temperature": {
+    temperature: {
         default_value: 0.2,
         description:
             "The temperature controls how much randomness is in the output. In general, the lower the temperature, " +
             "the more likely GPT-3 will choose words with a higher probability of occurrence",
         type: BaseParameterType.FLOAT,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "prompt_template": {
+    prompt_template: {
         default_value: PromptTemplate["Repair data"].valueOf(),
         description: "Choose a pre-created template or write your own prompt",
         type: BaseParameterType.ENUM,
         enum: PromptTemplate,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "system_prompt": {
-        default_value:
-`In the table below, change the value of the ESP TYPE field to ‘Outcome’ if the attribute is a decision objective 
+    system_prompt: {
+        default_value: `In the table below, change the value of the ESP TYPE field to ‘Outcome’ if the attribute is a decision objective 
 that is affected by the choice of actions, and change it to ‘Action’ an action that can be taken 
 in order to optimize outcomes.
  
@@ -200,67 +205,67 @@ Finally, given the data description is <field1>, devise some analysis on the dat
 or insights you observe, along with charts baking your observations.`,
         description: "System prompt for the LLM",
         type: BaseParameterType.STRING,
-        isAdvanced: false
-    }
+        isAdvanced: false,
+    },
 }
 
 export const LLM_MODEL_PARAMS3: NodeParams = {
-    "model": {
+    model: {
         default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "temperature": {
+    temperature: {
         default_value: 0.2,
         description:
-`The temperature controls how much randomness is in the output. In general, the lower the temperature, the more ` +
-`likely the LLM model will choose words with a higher probability of occurrence`,
+            `The temperature controls how much randomness is in the output. In general, the lower the temperature, the more ` +
+            `likely the LLM model will choose words with a higher probability of occurrence`,
         type: BaseParameterType.FLOAT,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "prompt_template": {
+    prompt_template: {
         default_value: PromptTemplate["Repair data"].valueOf(),
         description: "Choose a pre-created template or write your own prompt",
         type: BaseParameterType.ENUM,
         enum: PromptTemplate,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "system_prompt": {
+    system_prompt: {
         default_value:
-`For data sample <field1>, given the actions <field2> generated by the Prescriptor, use the API call <field3>, ` +
-`with description <field4> to implement the action. Classify the result of the API call above as to adherence to 
+            `For data sample <field1>, given the actions <field2> generated by the Prescriptor, use the API call <field3>, ` +
+            `with description <field4> to implement the action. Classify the result of the API call above as to adherence to 
 Responsible AI policies <field5>.`,
         description: "System prompt for the LLM",
         type: BaseParameterType.STRING,
-        isAdvanced: false
-    }
+        isAdvanced: false,
+    },
 }
 
 export const LLM_MODEL_PARAMS_CATEGORY_REDUCER: NodeParams = {
-    "model": {
+    model: {
         default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "temperature": {
+    temperature: {
         default_value: 0.2,
         description:
             "Controls how much randomness is in the output. In general, the lower the temperature, " +
             "the more likely GPT-3 will choose words with a higher probability of occurrence",
         type: BaseParameterType.FLOAT,
-        isAdvanced: false
+        isAdvanced: false,
     },
-    "reasoning_prompt": {
+    reasoning_prompt: {
         default_value: `Each example is its own categorical value. How would you go about reducing the number of categories so that there are at most {max_categories} categories?`,
         description: "An optional string substitution for the default reasoning prompt",
         isAdvanced: true,
-        type: BaseParameterType.STRING
+        type: BaseParameterType.STRING,
     },
-    "reduction_prompt": {
+    reduction_prompt: {
         default_value: `Good. Now create a table mapping of each example category I gave you to the new category you proposed in the format described below:
             * Put the original example category in a first column
             * Put your new proposed category in a second column
@@ -271,10 +276,10 @@ export const LLM_MODEL_PARAMS_CATEGORY_REDUCER: NodeParams = {
         isAdvanced: true,
         type: BaseParameterType.STRING,
     },
-    "max_categories": {
+    max_categories: {
         default_value: 20,
         description: "Maximum number of categories allowed.",
         type: BaseParameterType.INT,
-        isAdvanced: true
-    }
+        isAdvanced: true,
+    },
 }

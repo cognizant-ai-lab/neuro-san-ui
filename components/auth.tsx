@@ -24,7 +24,7 @@ export function isSignedIn(session: Session, statusTmp: string): boolean {
     const loading = statusTmp === "loading"
 
     // When rendering client side don't display anything until loading is complete
-    if (typeof window !== 'undefined' && loading) {
+    if (typeof window !== "undefined" && loading) {
         return false
     }
 
@@ -34,7 +34,7 @@ export function isSignedIn(session: Session, statusTmp: string): boolean {
 
 // Use this provider for authentication via next-auth. It *must* correspond to one of those listed in
 // ./pages/api/auth/[...nextauth].js
-const AUTHENTICATION_PROVIDER = "auth0";
+const AUTHENTICATION_PROVIDER = "auth0"
 
 /**
  * Higher-level component to wrap pages that require authentication.
@@ -44,10 +44,10 @@ const AUTHENTICATION_PROVIDER = "auth0";
  * @param children Contained components protected by the authentication guard
  * @return children (protected) components if user is authenticated, otherwise "Loading" message.
  */
-export function Auth({ children }) {
+export function Auth({children}) {
     // Suppress no-shadow rule -- we have to use what the API gives us
     // eslint-disable-next-line no-shadow
-    const { data: session, status } = useSession()
+    const {data: session, status} = useSession()
 
     const isUser = Boolean(session?.user)
     const loading = status === "loading"

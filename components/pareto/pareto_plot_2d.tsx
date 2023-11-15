@@ -7,7 +7,7 @@ import {getDataTable} from "./utils"
 
 /**
  * This function generates a 2-dimensional pareto plot.
- * 
+ *
  * It only works for the case of 2outcomes. For experiments with anything other than 3 outcomes, other kinds of plots
  * needs to be used.
  *
@@ -30,7 +30,7 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
         return firstPrescriptorNode.data.length
     }, [])
 
-    const optionsGenerator: EChartsOption = function(genData, objectives, minMaxPerObjective, selectedGen) {
+    const optionsGenerator: EChartsOption = function (genData, objectives, minMaxPerObjective, selectedGen) {
         const allGensSelected = selectedGen === numberOfGenerations + 1
 
         // If single generation selected, wrap that generation in an object, so we can treat it the same as the
@@ -38,19 +38,19 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
         const plotData = allGensSelected ? genData : [{id: `Gen ${selectedGen}`, data: genData}]
 
         // Create 1 "series" per generation, meaning one line on the chart
-        const series = plotData.map(generation => ({
-            data: generation.data.map(row => ({
+        const series = plotData.map((generation) => ({
+            data: generation.data.map((row) => ({
                 name: row.cid,
                 value: Object.values(row),
                 itemStyle: {
                     color: "gray",
-                    opacity: 0.50
+                    opacity: 0.5,
                 },
-                symbolSize: 12
+                symbolSize: 12,
             })),
             type: "line",
             smooth: true,
-            name: generation.id
+            name: generation.id,
         }))
 
         return {
@@ -60,13 +60,13 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
                     saveAsImage: {},
                     dataView: {
                         readOnly: true,
-                        // optionToContent allows us to create a nicely formatted data table when the user clicks 
+                        // optionToContent allows us to create a nicely formatted data table when the user clicks
                         // that tool.
                         optionToContent: function (opt) {
                             return getDataTable(opt.series[0].data, objectives)
-                        }
+                        },
                     },
-                }
+                },
             },
             animation: false,
             xAxis: {
@@ -84,17 +84,17 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
             series: series,
             legend: {
                 right: "0%",
-                top: '10%',
+                top: "10%",
                 selectedMode: false,
                 animation: false,
                 orient: "vertical",
-                type: allGensSelected ? "scroll": "plain"
+                type: allGensSelected ? "scroll" : "plain",
             },
             tooltip: {
                 trigger: "item",
                 formatter: (params) => {
                     return params.value
-                        .filter(k => k !== "cid")
+                        .filter((k) => k !== "cid")
                         .map((value, idx) => `${objectives[idx] || "prescriptor"}: ${value.toString()}`)
                         .join("<br />")
                 },
@@ -102,21 +102,27 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
                     type: "cross",
                     crossStyle: {
                         color: "#97999B",
-                        type: "dashed"
-                    }
-                }
+                        type: "dashed",
+                    },
+                },
             },
-    }}
+        }
+    }
 
-    return  <div id="radar-plot-div" style={{height: "100%"}}>
-                <EchartParetoPlot   
-                    id="radar-plot"
-                    optionsGenerator={optionsGenerator}
-                    paretoProps={props}
-                    objectivesCount={props.ObjectivesCount}
-                    minObjectives={2}
-                    maxObjectives={2}
-                    showAllGenerations={true}
-                />
-            </div>
+    return (
+        <div
+            id="radar-plot-div"
+            style={{height: "100%"}}
+        >
+            <EchartParetoPlot
+                id="radar-plot"
+                optionsGenerator={optionsGenerator}
+                paretoProps={props}
+                objectivesCount={props.ObjectivesCount}
+                minObjectives={2}
+                maxObjectives={2}
+                showAllGenerations={true}
+            />
+        </div>
+    )
 }

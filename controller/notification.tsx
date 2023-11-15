@@ -1,4 +1,4 @@
-import {notification} from 'antd'
+import {notification} from "antd"
 import {NotificationPlacement} from "antd/es/notification/interface"
 import {renderToString} from "react-dom/server"
 import {AiOutlineClose} from "react-icons/ai"
@@ -9,14 +9,14 @@ export enum NotificationType {
     "success",
     "info",
     "warning",
-    "error"
+    "error",
 }
 
 // Display warning and error notification popups for this many seconds
-const ERROR_WARNING_NOTIFICATION_DURATION_SECS = 15;
+const ERROR_WARNING_NOTIFICATION_DURATION_SECS = 15
 
 // Display info notification popups for this many seconds
-const SUCCESS_NOTIFICATION_DURATION_SECS = 5;
+const SUCCESS_NOTIFICATION_DURATION_SECS = 5
 
 /**
  * Convenience method to allow sending notifications to user with a one-liner.
@@ -26,9 +26,12 @@ const SUCCESS_NOTIFICATION_DURATION_SECS = 5;
  * @param description More complete description of the notification
  * @param placement Where to show notification. Defaults to top-right.
  */
-export function sendNotification(nt: NotificationType, message: string, description: string | JSX.Element = "",
-                                 placement: NotificationPlacement = "topRight"): void {
-
+export function sendNotification(
+    nt: NotificationType,
+    message: string,
+    description: string | JSX.Element = "",
+    placement: NotificationPlacement = "topRight"
+): void {
     // Log a copy to the console for troubleshooting
     const descriptionAsString = typeof description === "string" ? description : renderToString(description)
     console.debug(`Notification: Message: "${message}" Description: "${descriptionAsString}"`)
@@ -50,7 +53,7 @@ export function sendNotification(nt: NotificationType, message: string, descript
     // Use some minor customization to be able to inject ids for testing
     const spanId = `notification-message-${NotificationType[nt]}`
     const messageSpan = <span id={spanId}>{message}</span>
-    const closeIcon = <AiOutlineClose id="notification-close-icon"/>
+    const closeIcon = <AiOutlineClose id="notification-close-icon" />
 
     // Send the notification with antd
     notification[NotificationType[nt]]({
@@ -58,6 +61,6 @@ export function sendNotification(nt: NotificationType, message: string, descript
         description: description,
         duration: duration,
         closeIcon: closeIcon,
-        placement: placement
+        placement: placement,
     })
 }

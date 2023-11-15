@@ -28,12 +28,12 @@ interface ArtifactInfo {
 
 // Artifacts that can be downloaded.
 const DOWNLOADABLE_ARTIFACTS: ArtifactInfo[] = [
-    {value: "llm_log_file",     label: "LLM chat log",                  fileType: "txt"},
-    {value: "notebook",         label: "Notebook",                      fileType: "ipynb"},
-    {value: "predictors",       label: "Predictors (future)",           fileType: ""},
-    {value: "prescriptors",     label: "Prescriptors (future)",         fileType: ""},
-    {value: "modified_dataset", label: "Modified Dataset",              fileType: "csv"},
-    {value: "all",              label: "All artifacts (zip, future)",   fileType: "zip"},
+    {value: "llm_log_file", label: "LLM chat log", fileType: "txt"},
+    {value: "notebook", label: "Notebook", fileType: "ipynb"},
+    {value: "predictors", label: "Predictors (future)", fileType: ""},
+    {value: "prescriptors", label: "Prescriptors (future)", fileType: ""},
+    {value: "modified_dataset", label: "Modified Dataset", fileType: "csv"},
+    {value: "all", label: "All artifacts (zip, future)", fileType: "zip"},
 ]
 
 /**
@@ -69,15 +69,21 @@ export function isArtifactAvailable(requestedArtifact: string, availableArtifact
     } else if (requestedArtifact === "llm_log_file") {
         return artifactNames.includes("llm_log_file")
     } else if (requestedArtifact === "modified_dataset") {
-        return artifactUrls.some(artifact => artifact.endsWith(".csv"))
+        return artifactUrls.some((artifact) => artifact.endsWith(".csv"))
     } else {
         return false
     }
 }
 
 // Allows user to download artifacts created by the run: models, Jupyter notebook etc.
-export async function downloadArtifact(run: Run, artifactToDownload: string, artifactFriendlyName: string,
-                                       projectName: string, projectId: number, experiment: Experiment) {
+export async function downloadArtifact(
+    run: Run,
+    artifactToDownload: string,
+    artifactFriendlyName: string,
+    projectName: string,
+    projectId: number,
+    experiment: Experiment
+) {
     // Find out what is available in the Run
     const availableArtifacts: Record<string, string> = JSON.parse(run.output_artifacts)
 
@@ -97,7 +103,7 @@ export async function downloadArtifact(run: Run, artifactToDownload: string, art
             // not yet supported
             return
         case "modified_dataset":
-            downloadUrl = Object.values(availableArtifacts).find(a => a.endsWith(".csv"))
+            downloadUrl = Object.values(availableArtifacts).find((a) => a.endsWith(".csv"))
             break
         case "all":
             // not yet supported
@@ -110,8 +116,11 @@ export async function downloadArtifact(run: Run, artifactToDownload: string, art
     // Retrieve the artifact
     const artifacts: Artifact[] = await FetchSingleRunArtifact(downloadUrl)
     if (!artifacts || artifacts.length != 1) {
-        sendNotification(NotificationType.error, "Internal error",
-            `Unexpected number of artifacts returned for Run id ${run.id}: ${artifacts != null ? artifacts.length : 0}`)
+        sendNotification(
+            NotificationType.error,
+            "Internal error",
+            `Unexpected number of artifacts returned for Run id ${run.id}: ${artifacts != null ? artifacts.length : 0}`
+        )
     }
 
     // Convert to text and save to file
@@ -119,10 +128,11 @@ export async function downloadArtifact(run: Run, artifactToDownload: string, art
     const artifact = artifacts[0]
     const base64EncodedBytes: string = artifact.bytes
     const decodedString: Uint8Array = fromBinary(base64EncodedBytes)
-    const fileName = `project_${projectName || projectId || "unknown project"}_${artifactToDownload}_` +
+    const fileName =
+        `project_${projectName || projectId || "unknown project"}_${artifactToDownload}_` +
         `${experiment.name || experiment.id}_run_${run.name || run.id}`
-    const fileType = DOWNLOADABLE_ARTIFACTS.find(a => a.value === artifactToDownload).fileType;
-    const safeFilename = toSafeFilename(fileName);
+    const fileType = DOWNLOADABLE_ARTIFACTS.find((a) => a.value === artifactToDownload).fileType
+    const safeFilename = toSafeFilename(fileName)
     const downloadFileName = `${safeFilename}.${fileType}`
     downloadFile(decodedString, downloadFileName)
 
@@ -138,7 +148,7 @@ export async function downloadArtifact(run: Run, artifactToDownload: string, art
  * @return Human-readable friendly name
  */
 export function getArtifactFriendlyName(desiredArtifactName: string): string {
-    return Object.values(DOWNLOADABLE_ARTIFACTS)
-        .find(v => v.value === (desiredArtifactName || DEFAULT_DOWNLOAD_ARTIFACT)).label
+    return Object.values(DOWNLOADABLE_ARTIFACTS).find(
+        (v) => v.value === (desiredArtifactName || DEFAULT_DOWNLOAD_ARTIFACT)
+    ).label
 }
-

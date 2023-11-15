@@ -2,7 +2,7 @@
  * Controller module for interacting with the DMS CHAT LLM API.
  */
 
-import {ChatMessage} from "langchain/schema";
+import {ChatMessage} from "langchain/schema"
 
 /**
  * Access the API for DMS chat. Client is responsible for catching and handling exceptions that may be thrown.
@@ -17,14 +17,22 @@ import {ChatMessage} from "langchain/schema";
  * @param projectName The name of the project the user is working on.
  * @param projectDescription The description of the project the user is working on.
  */
-export async function sendDmsChatQuery(userQuery: string, context: object, prescriptorUrl: string,
-                                       predictorUrls: string[], callback: (string) => void, signal: AbortSignal,
-                                       chatHistory?: ChatMessage[], projectName?: string, projectDescription?: string) {
-    const res = await  fetch("/api/gpt/dmschat", {
+export async function sendDmsChatQuery(
+    userQuery: string,
+    context: object,
+    prescriptorUrl: string,
+    predictorUrls: string[],
+    callback: (string) => void,
+    signal: AbortSignal,
+    chatHistory?: ChatMessage[],
+    projectName?: string,
+    projectDescription?: string
+) {
+    const res = await fetch("/api/gpt/dmschat", {
         method: "POST",
         headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
+            Accept: "application/json",
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
             chatHistory: chatHistory,
@@ -33,9 +41,9 @@ export async function sendDmsChatQuery(userQuery: string, context: object, presc
             prescriptorUrl: prescriptorUrl,
             userQuery: userQuery,
             projectName: projectName,
-            projectDescription: projectDescription
+            projectDescription: projectDescription,
         }),
-        signal: signal
+        signal: signal,
     })
 
     const reader = res.body.getReader()
@@ -46,7 +54,7 @@ export async function sendDmsChatQuery(userQuery: string, context: object, presc
         const {done, value} = await reader.read()
 
         if (done) {
-            break; // End of stream
+            break // End of stream
         }
 
         // Decode chunk from server

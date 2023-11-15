@@ -22,11 +22,10 @@ export function AIAssistant(props: {
     contextInputs: StringToStringOrNumber
     onClose: () => void
     open: boolean
-    resetUndeployModelsTimer: () => void,
-    projectName?: string,
+    resetUndeployModelsTimer: () => void
+    projectName?: string
     projectDescription?: string
 }) {
-
     // User LLM chat input
     const [userLlmChatInput, setUserLlmChatInput] = useState<string>("")
 
@@ -108,14 +107,22 @@ export function AIAssistant(props: {
             // Always start output by echoing user query
             setUserLlmChatOutput((currentOutput) => currentOutput + `Query: ${userQuery}\n\nResponse:\n\n`)
 
-            const abortController = new AbortController();
+            const abortController = new AbortController()
             controller.current = abortController
 
             // Send the query to the server. Response will be streamed to our callback which updates the output
             // display as tokens are received.
-            await sendDmsChatQuery(userQuery, props.contextInputs, props.prescriptorUrl, props.predictorUrls,
-                tokenReceivedHandler, abortController.signal, chatHistory.current, props.projectName,
-                props.projectDescription)
+            await sendDmsChatQuery(
+                userQuery,
+                props.contextInputs,
+                props.prescriptorUrl,
+                props.predictorUrls,
+                tokenReceivedHandler,
+                abortController.signal,
+                chatHistory.current,
+                props.projectName,
+                props.projectDescription
+            )
 
             // Kick off highlighting final answer
             setTimeout(highlightFinalAnswer, 100, currentResponse.current)
@@ -130,11 +137,12 @@ export function AIAssistant(props: {
                 chatHistory.current = [...chatHistory.current, new ChatMessage(finalAnswer[0], "ai")]
             }
         } catch (error) {
-            if (error.name === 'AbortError') {
-                setUserLlmChatOutput((currentOutput) => currentOutput + "\n\nRequest cancelled.");
+            if (error.name === "AbortError") {
+                setUserLlmChatOutput((currentOutput) => currentOutput + "\n\nRequest cancelled.")
             } else {
                 setUserLlmChatOutput(
-                    `Internal error: \n\n${error}\n More information may be available in the browser console.`)
+                    `Internal error: \n\n${error}\n More information may be available in the browser console.`
+                )
             }
 
             console.error(error.stack)
@@ -153,7 +161,7 @@ export function AIAssistant(props: {
      * @returns True if input contains only whitespace, false otherwise
      */
     function isEmptyExceptForWhitespace(input: string) {
-        return !(/\S/u).test(input);
+        return !/\S/u.test(input)
     }
 
     /**
@@ -217,37 +225,47 @@ export function AIAssistant(props: {
     // Width for the various buttons -- "regenerate", "stop" etc.
     const buttonWidth = 126
 
-    return <Drawer // eslint-disable-line enforce-ids-in-jsx/missing-ids
-        title="AI Decision Assistant"
-        placement="right"
-        closable={true}
-        onClose={props.onClose}
-        open={props.open}
-        width={"35%"}
-        destroyOnClose={true}
-    >
-        <Form id="user-query-form" onSubmit={handleUserQuery}>
-            <Form.Group id="llm-chat-group">
-                <div id="llm-response-div"
-                     style={{width: "97%", height: "80vh", margin: "10px", display: "flow", position: "relative"}}>
-                    <Form.Control
-                        id="llm-responses"
-                        readOnly={true}
-                        ref={llmOutputTextAreaRef}
-                        as="textarea"
-                        style={{
-                            background: "ghostwhite",
-                            borderColor: MaximumBlue,
-                            fontFamily: "monospace",
-                            fontSize: "smaller",
-                            height: "100%",
-                            resize: "none",
-                            whiteSpace: "pre-wrap"
-                        }}
-                        value={userLlmChatOutput}
-                     />
-                    <Button id="clear-chat-button"
-                            onClick={() => {setUserLlmChatOutput(""); chatHistory.current = []}}
+    return (
+        <Drawer // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            title="AI Decision Assistant"
+            placement="right"
+            closable={true}
+            onClose={props.onClose}
+            open={props.open}
+            width={"35%"}
+            destroyOnClose={true}
+        >
+            <Form
+                id="user-query-form"
+                onSubmit={handleUserQuery}
+            >
+                <Form.Group id="llm-chat-group">
+                    <div
+                        id="llm-response-div"
+                        style={{width: "97%", height: "80vh", margin: "10px", display: "flow", position: "relative"}}
+                    >
+                        <Form.Control
+                            id="llm-responses"
+                            readOnly={true}
+                            ref={llmOutputTextAreaRef}
+                            as="textarea"
+                            style={{
+                                background: "ghostwhite",
+                                borderColor: MaximumBlue,
+                                fontFamily: "monospace",
+                                fontSize: "smaller",
+                                height: "100%",
+                                resize: "none",
+                                whiteSpace: "pre-wrap",
+                            }}
+                            value={userLlmChatOutput}
+                        />
+                        <Button
+                            id="clear-chat-button"
+                            onClick={() => {
+                                setUserLlmChatOutput("")
+                                chatHistory.current = []
+                            }}
                             variant="secondary"
                             style={{
                                 background: MaximumBlue,
@@ -262,12 +280,17 @@ export function AIAssistant(props: {
                                 width: buttonWidth,
                                 zIndex: 99999,
                             }}
-                    >
-                        <BsStopBtn id="stop-button-icon" size={15} className="mr-2"
-                                   style={{display: "inline"}}/>
-                        Clear chat
-                    </Button>
-                    <Button id="stop-output-button"
+                        >
+                            <BsStopBtn
+                                id="stop-button-icon"
+                                size={15}
+                                className="mr-2"
+                                style={{display: "inline"}}
+                            />
+                            Clear chat
+                        </Button>
+                        <Button
+                            id="stop-output-button"
                             onClick={() => handleStop()}
                             variant="secondary"
                             style={{
@@ -283,12 +306,17 @@ export function AIAssistant(props: {
                                 width: buttonWidth,
                                 zIndex: 99999,
                             }}
-                    >
-                        <BsStopBtn id="stop-button-icon" size={15} className="mr-2"
-                                      style={{display: "inline"}}/>
-                        Stop
-                    </Button>
-                    <Button id="regenerate-output-button"
+                        >
+                            <BsStopBtn
+                                id="stop-button-icon"
+                                size={15}
+                                className="mr-2"
+                                style={{display: "inline"}}
+                            />
+                            Stop
+                        </Button>
+                        <Button
+                            id="regenerate-output-button"
                             onClick={() => sendQuery(previousUserQuery)}
                             disabled={shouldDisableRegenerateButton}
                             variant="secondary"
@@ -303,31 +331,39 @@ export function AIAssistant(props: {
                                 position: "absolute",
                                 right: 10,
                                 width: buttonWidth,
-                                zIndex: 99999
+                                zIndex: 99999,
                             }}
+                        >
+                            <FiRefreshCcw
+                                id="generate-icon"
+                                size={15}
+                                className="mr-2"
+                                style={{display: "inline"}}
+                            />
+                            Regenerate
+                        </Button>
+                    </div>
+                    <div
+                        id="user-input-div"
+                        style={{display: "flex"}}
                     >
-                        <FiRefreshCcw id="generate-icon" size={15} className="mr-2"
-                                      style={{display: "inline"}}/>
-                        Regenerate
-                    </Button>
-                </div>
-                <div id="user-input-div" style={{display: "flex"}}>
-                    <InputGroup id="user-input-group">
-                        <Form.Control
-                            as="textarea"
-                            id="user-input"
-                            onChange={handleInputAreaChange}
-                            onKeyUp={handleInputAreaKeyUp}
-                            placeholder="What are the current prescribed actions?"
-                            ref={inputAreaRef}
-                            style={{
-                                fontSize: "90%",
-                                marginLeft: "7px"
-                            }}
-                            rows={3}
-                            value={userLlmChatInput}
-                        />
-                        <Button id="clear-input-button"
+                        <InputGroup id="user-input-group">
+                            <Form.Control
+                                as="textarea"
+                                id="user-input"
+                                onChange={handleInputAreaChange}
+                                onKeyUp={handleInputAreaKeyUp}
+                                placeholder="What are the current prescribed actions?"
+                                ref={inputAreaRef}
+                                style={{
+                                    fontSize: "90%",
+                                    marginLeft: "7px",
+                                }}
+                                rows={3}
+                                value={userLlmChatInput}
+                            />
+                            <Button
+                                id="clear-input-button"
                                 onClick={() => setUserLlmChatInput("")}
                                 style={{
                                     backgroundColor: "transparent",
@@ -338,37 +374,45 @@ export function AIAssistant(props: {
                                     lineHeight: "35px",
                                     position: "absolute",
                                     width: "10px",
-                                    zIndex: 99999
+                                    zIndex: 99999,
                                 }}
-                        >
-                            X
-                        </Button>
-                    </InputGroup>
+                            >
+                                X
+                            </Button>
+                        </InputGroup>
                         <Button
                             id="submit-query-button"
                             variant="primary"
                             type="submit"
                             disabled={shouldDisableSendButton}
                             style={{
-                               background: MaximumBlue,
-                               borderColor: MaximumBlue,
-                               color: "white",
-                               opacity: shouldDisableSendButton ? "50%" : "100%",
-                               marginLeft: "10px",
-                               marginRight: "10px"
+                                background: MaximumBlue,
+                                borderColor: MaximumBlue,
+                                color: "white",
+                                opacity: shouldDisableSendButton ? "50%" : "100%",
+                                marginLeft: "10px",
+                                marginRight: "10px",
                             }}
-                        ><div id="send-button-div" style={{width: "4ch", lineHeight: 1.5}}>
-                            {isAwaitingLlm
-                                ?   <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                                // ClipLoader does not have an id property
-                                        color={MaximumBlue} loading={true} size={20}
+                        >
+                            <div
+                                id="send-button-div"
+                                style={{width: "4ch", lineHeight: 1.5}}
+                            >
+                                {isAwaitingLlm ? (
+                                    <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                        // ClipLoader does not have an id property
+                                        color={MaximumBlue}
+                                        loading={true}
+                                        size={20}
                                     />
-                                : "Send"
-                            }
-                        </div>
+                                ) : (
+                                    "Send"
+                                )}
+                            </div>
                         </Button>
-                </div>
-            </Form.Group>
-        </Form>
-    </Drawer>;
+                    </div>
+                </Form.Group>
+            </Form>
+        </Drawer>
+    )
 }

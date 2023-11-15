@@ -5,7 +5,6 @@ import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from 
 import PredictorNodeComponent, {PredictorNode, PredictorNodeData} from "./predictornode"
 import PrescriptorNodeComponent, {PrescriptorNode, PrescriptorNodeData} from "./prescriptornode"
 
-
 // Based on the declared nodes above we declare a constant holder to reference the Node objects. These references are
 // later passed to the Flow component to render the graph
 const NodeTypes: RFNodeTypes = {
@@ -17,8 +16,7 @@ const NodeTypes: RFNodeTypes = {
     category_reducer_node: ConfigurableNodeComponent,
 }
 
-export type NodeData =
-    DataSourceNodeData | PredictorNodeData | PrescriptorNodeData | ConfigurableNodeData
+export type NodeData = DataSourceNodeData | PredictorNodeData | PrescriptorNodeData | ConfigurableNodeData
 
 export type NodeType = DataSourceNode | PredictorNode | PrescriptorNode | ConfigurableNode
 

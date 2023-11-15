@@ -27,8 +27,8 @@ interface ErrorBoundaryState {
  * Interface to define the incoming props for this component
  */
 interface ErrorBoundaryProps {
-   readonly id: string
-   readonly children: ReactNode[]
+    readonly id: string
+    readonly children: ReactNode[]
 }
 
 /**
@@ -44,19 +44,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     // create error boundaries in functional components -- no way to override this method.
     static getDerivedStateFromError(error: unknown) {
         // Update state so the next render will show the fallback UI
-        return { hasError: true, error: error }
+        return {hasError: true, error: error}
     }
 
     constructor(props) {
         super(props)
 
         // Define a state variable to track whether is an error or not
-        this.state = { hasError: false, error: null }
+        this.state = {hasError: false, error: null}
     }
 
     componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
         // TODO: Send this to central logging service once it's available
-        console.error({ error, errorInfo })
+        console.error({error, errorInfo})
     }
 
     render() {
@@ -71,7 +71,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             let message = ""
             if (error instanceof Error) {
                 // the error object is an instance of the built-in Error type in JavaScript
-                const customError = error as CustomError;
+                const customError = error as CustomError
                 if (customError.fileName) {
                     fileName = customError.fileName
                 }
@@ -84,9 +84,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
                 message = customError.message
             }
-            return  <ErrorPage id={id}
-                        errorText={`${message} in ${fileName} line ${lineNumber} column ${columnNumber}`}
-            />
+            return (
+                <ErrorPage
+                    id={id}
+                    errorText={`${message} in ${fileName} line ${lineNumber} column ${columnNumber}`}
+                />
+            )
         }
 
         // Return children components in case of no error

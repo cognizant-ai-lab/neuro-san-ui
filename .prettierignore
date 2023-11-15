@@ -5,9 +5,7 @@
 .swc
 __tests__
 auth0
-components
 const.ts
-controller
 embed
 jest.config.ts
 jest.setup.ts
@@ -15,7 +13,6 @@ next.config.js
 node_modules
 package.json
 package.json_readme.md
-pages
 postcss.config.js
 public
 README.md

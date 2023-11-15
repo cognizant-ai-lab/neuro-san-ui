@@ -29,13 +29,23 @@ export function InfoTip(props: InfoTipParams): React.ReactElement {
     const size = props.size || 10
     const color = props.color || "blue"
 
-    return <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    // Tooltip has no id property
-        title={props.info}>
-        <div id={divId} className="ps-1">
-            <sup id={supId}>
-                <InfoSignIcon id={iconId} color={color} size={size}/>
-            </sup>
-        </div>
-    </Tooltip>
+    return (
+        <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            // Tooltip has no id property
+            title={props.info}
+        >
+            <div
+                id={divId}
+                className="ps-1"
+            >
+                <sup id={supId}>
+                    <InfoSignIcon
+                        id={iconId}
+                        color={color}
+                        size={size}
+                    />
+                </sup>
+            </div>
+        </Tooltip>
+    )
 }

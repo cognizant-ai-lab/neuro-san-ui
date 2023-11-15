@@ -4,7 +4,6 @@ import {BrowserFetchDataTags} from "./datatag/fetch"
 import {DataTag, DataTags} from "./datatag/types"
 import {TaggedDataInfo, TaggedDataInfoList} from "../pages/projects/[projectID]/experiments/new"
 
-
 export default async function loadDataTags(requestUser, projectId): Promise<TaggedDataInfoList> {
     const dataSources: DataSources = await BrowserFetchDataSources(requestUser, projectId)
     if (!dataSources || dataSources.length === 0) {
@@ -17,7 +16,7 @@ export default async function loadDataTags(requestUser, projectId): Promise<Tagg
         if (dataTags?.length > 0) {
             const taggedData: TaggedDataInfo = {
                 DataSource: dataSource,
-                LatestDataTag: dataTags[0]
+                LatestDataTag: dataTags[0],
             }
             taggedDataList.push(taggedData)
         }

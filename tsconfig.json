@@ -23,14 +23,13 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": false,
-    "target": "es6"
+    "target": "es6",
+    "incremental": true
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

@@ -15,13 +15,20 @@
  *
  * @return Response from backend API
  */
-export async function fetchLlmRules(requestType: string, projectTitle: string, projectDescription: string, rules,
-                                    contextFields: string[], actionFields: string[], outcomeFields) {
+export async function fetchLlmRules(
+    requestType: string,
+    projectTitle: string,
+    projectDescription: string,
+    rules,
+    contextFields: string[],
+    actionFields: string[],
+    outcomeFields
+) {
     return await fetch("/api/gpt/rules", {
         method: "POST",
         headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
+            Accept: "application/json",
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
             requestType: requestType,
@@ -30,7 +37,7 @@ export async function fetchLlmRules(requestType: string, projectTitle: string, p
             rawRules: rules,
             contextFields: contextFields,
             actionFields: actionFields,
-            outcomeFields: outcomeFields
-        })
+            outcomeFields: outcomeFields,
+        }),
     })
 }

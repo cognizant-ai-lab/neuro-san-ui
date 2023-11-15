@@ -12,7 +12,13 @@ import {FiDownload} from "react-icons/fi"
 import ClipLoader from "react-spinners/ClipLoader"
 import uuid from "react-uuid"
 
-import {DEFAULT_DOWNLOAD_ARTIFACT, downloadArtifact, getArtifactFriendlyName, getDownloadableArtifacts, isArtifactAvailable} from "./artifacts/artifacts"
+import {
+    DEFAULT_DOWNLOAD_ARTIFACT,
+    downloadArtifact,
+    getArtifactFriendlyName,
+    getDownloadableArtifacts,
+    isArtifactAvailable,
+} from "./artifacts/artifacts"
 import {MaximumBlue} from "../../const"
 import {Experiment} from "../../controller/experiments/types"
 import {NotificationType, sendNotification} from "../../controller/notification"
@@ -24,17 +30,16 @@ import {downloadFile} from "../../utils/file"
 import {removeItemOnce} from "../../utils/transformation"
 import {InfoTip} from "../infotip"
 
-
 interface RunTableProps {
     readonly currentUser: string
-    readonly editingLoading: {editing: boolean, loading: boolean}[]
+    readonly editingLoading: {editing: boolean; loading: boolean}[]
     readonly experimentId: number
     readonly projectId: number
     readonly projectName: string
     readonly experiment: Experiment
     readonly runDrawer: boolean
     readonly runs: Runs
-    readonly setEditingLoading: (editingLoading: {editing: boolean, loading: boolean}[]) => void
+    readonly setEditingLoading: (editingLoading: {editing: boolean; loading: boolean}[]) => void
     readonly setRunDrawer: (isOpen: boolean) => void
     readonly setSelectedRunID: (runId: string) => void
     readonly setSelectedRunName: (runName: string) => void
@@ -57,7 +62,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         const editingLoadingCopy = [...props.editingLoading]
         editingLoadingCopy[idx] = {
             ...editingLoadingCopy[idx],
-            editing: false
+            editing: false,
         }
         props.setEditingLoading(editingLoadingCopy)
     }
@@ -87,15 +92,20 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         status description and completed flag
         */
         if (experimentIdTmp && props.runs) {
-            const updatedRunStatuses: Runs = await BrowserFetchRuns(props.currentUser,
-                experimentIdTmp, null, ['id', 'status', 'completed', 'eval_error', 'output_artifacts'])
+            const updatedRunStatuses: Runs = await BrowserFetchRuns(props.currentUser, experimentIdTmp, null, [
+                "id",
+                "status",
+                "completed",
+                "eval_error",
+                "output_artifacts",
+            ])
 
             if (updatedRunStatuses) {
                 // For each status returned, match it up to a corresponding Run object (if we have one) and update that Run
                 // object's status and "completed" fields
                 const runsCopy = [...props.runs]
                 for (const run of updatedRunStatuses) {
-                    const runToUpdate = runsCopy.find(r => r.id === run.id)
+                    const runToUpdate = runsCopy.find((r) => r.id === run.id)
                     if (runToUpdate) {
                         runToUpdate.status = run.status
                         runToUpdate.completed = run.completed
@@ -118,7 +128,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 created_at: null,
                 updated_at: null,
                 name: newRunName,
-                request_user: props.currentUser
+                request_user: props.currentUser,
             }
 
             const responseRun = await updateRun(updatedRun)
@@ -159,10 +169,19 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
         // Aborted?
         if (phase === "Run Aborted") {
-            return <div id="run-status-phase" style={{display: "flex"}}>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                Aborted<InfoTip info="Run aborted by user request" id={props.experimentId.toString()} />
-            </div>
+            return (
+                <div
+                    id="run-status-phase"
+                    style={{display: "flex"}}
+                >
+                    Aborted
+                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                    <InfoTip
+                        info="Run aborted by user request"
+                        id={props.experimentId.toString()}
+                    />
+                </div>
+            )
         }
 
         // Eval error? (something went wrong in GoRunner)
@@ -171,39 +190,54 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
             // Run errored out. Add link for downloading error logs.
             // TODO: someday allow user to download logs even if successful?
-            return <div id="run-status" style={{
-                display: "flex",
-                justifyContent: "center"
-            }}>
-                {phase}
-                <button id="download-file"
+            return (
+                <div
+                    id="run-status"
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                    }}
+                >
+                    {phase}
+                    <button
+                        id="download-file"
                         style={{
                             color: MaximumBlue,
                             textDecoration: "underline",
-                            marginLeft: "3px"
+                            marginLeft: "3px",
                         }}
                         onClick={() => {
                             downloadFile(run.eval_error, "logs.txt")
                         }}
-                >
-                    (Logs)
-                </button>
-            </div>
+                    >
+                        (Logs)
+                    </button>
+                </div>
+            )
         }
 
         // Run is in progress and we have valid status. Format it for display.
         let detailedProgress = "No detailed status available"
         if (parsedStatus.subcontexts && parsedStatus.subcontexts.length > 0) {
-            const statusItem = parsedStatus.subcontexts[0];
+            const statusItem = parsedStatus.subcontexts[0]
 
-            phase = `${statusItem.phase} : ${!isNaN(statusItem.progress) ? toPercentage(statusItem.progress): "?"}%`
+            phase = `${statusItem.phase} : ${!isNaN(statusItem.progress) ? toPercentage(statusItem.progress) : "?"}%`
             detailedProgress = run.status
         }
 
-        return <div id="run-status-phase" style={{display: "flex"}}>
-            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-            {phase}<InfoTip info={detailedProgress} id={props.experimentId.toString()} />
-        </div>
+        return (
+            <div
+                id="run-status-phase"
+                style={{display: "flex"}}
+            >
+                {phase}
+                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                <InfoTip
+                    info={detailedProgress}
+                    id={props.experimentId.toString()}
+                />
+            </div>
+        )
     }
 
     async function abortRun(idx: number, run: Run) {
@@ -232,7 +266,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 created_at: null,
                 hidden: true,
                 flow: null,
-                request_user: props.currentUser
+                request_user: props.currentUser,
             }
             const returnedRun = await updateRun(hiddenRun)
             if (returnedRun) {
@@ -249,90 +283,105 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     function getRunButton(run, idx) {
         const runId = run.id
-        const runTitle = run.name || runId;
-        return  <Container id={ `run-buttons-${idx}` }
-                           style={{
-                               cursor: run.completed ? "pointer" : "not-allowed"
-                           }}
-        >
-            <Row
+        const runTitle = run.name || runId
+        return (
+            <Container
                 id={`run-buttons-${idx}`}
                 style={{
-                    alignItems: 'center',
-                    display: 'flex',
-                    flexWrap: 'nowrap'
+                    cursor: run.completed ? "pointer" : "not-allowed",
                 }}
             >
-                <Col
-                    id={`run-button-col-${idx}`}
-                    md={0}
+                <Row
+                    id={`run-buttons-${idx}`}
                     style={{
-                        width: runTitle?.length > 25 ? '25ch' : '100%',
-                        paddingRight: 0
+                        alignItems: "center",
+                        display: "flex",
+                        flexWrap: "nowrap",
                     }}
                 >
-                    <AntdTooltip id={`run-name-tooltip-${idx}`} title={runTitle}>
-                        <button
-                            id={`run-button-${runId}`}
-                            style={{
-                                color: run.completed ? MaximumBlue : "gray",
-                                pointerEvents: run.completed ? "auto": "none",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                width: "100%",
-                                padding: 0
-                            }}
-                            disabled={!run.completed}
-                            onClick={() => {
-                                props.setSelectedRunID(run.id)
-                                props.setSelectedRunName(runTitle)
-                                props.setRunDrawer(true)
-                            }}
+                    <Col
+                        id={`run-button-col-${idx}`}
+                        md={0}
+                        style={{
+                            width: runTitle?.length > 25 ? "25ch" : "100%",
+                            paddingRight: 0,
+                        }}
+                    >
+                        <AntdTooltip
+                            id={`run-name-tooltip-${idx}`}
+                            title={runTitle}
                         >
-                            {runTitle}
-                        </button>
-                    </AntdTooltip>
-                </Col>
+                            <button
+                                id={`run-button-${runId}`}
+                                style={{
+                                    color: run.completed ? MaximumBlue : "gray",
+                                    pointerEvents: run.completed ? "auto" : "none",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    width: "100%",
+                                    padding: 0,
+                                }}
+                                disabled={!run.completed}
+                                onClick={() => {
+                                    props.setSelectedRunID(run.id)
+                                    props.setSelectedRunName(runTitle)
+                                    props.setRunDrawer(true)
+                                }}
+                            >
+                                {runTitle}
+                            </button>
+                        </AntdTooltip>
+                    </Col>
 
-                <Col
-                    id={`editing-loading-col-${runId}`}
-                    md={6}
-                    style={{
-                        width: 0
-                    }}
-                >
-                    <AiFillEdit id={`edit-loading-copy-${runId}-fill-edit`}  onClick={() => {
-                        const editingLoadingCopy = [...props.editingLoading]
-                        editingLoadingCopy[idx] = {
-                            ...editingLoadingCopy[idx],
-                            editing: true
-                        }
-                        props.setEditingLoading(editingLoadingCopy)
-                    }}/>
-                </Col>
-            </Row>
-        </Container>
+                    <Col
+                        id={`editing-loading-col-${runId}`}
+                        md={6}
+                        style={{
+                            width: 0,
+                        }}
+                    >
+                        <AiFillEdit
+                            id={`edit-loading-copy-${runId}-fill-edit`}
+                            onClick={() => {
+                                const editingLoadingCopy = [...props.editingLoading]
+                                editingLoadingCopy[idx] = {
+                                    ...editingLoadingCopy[idx],
+                                    editing: true,
+                                }
+                                props.setEditingLoading(editingLoadingCopy)
+                            }}
+                        />
+                    </Col>
+                </Row>
+            </Container>
+        )
     }
 
     function getRunNameRowEditing(run: Run, idx: number) {
         const runId = run.id
-        return <td id={ `update-run-name-${runId}` } className={tableCellClass}>
-            <input type="text"
-                   id={ `update-run-name-${runId}-input` }
-                   autoFocus={true}
-                   disabled={false}
-                   defaultValue={run.name || run.id}
-                   onBlur={event => updateRunName(event.target.value, run, idx)}
-                   onKeyUp={async (event: ReactKeyboardEvent<HTMLInputElement>) => {
-                       if (event.key === "Enter") {
-                           await updateRunName((event.target as HTMLInputElement).value, run, idx)
-                       } else if (event.key === "Escape") {
-                           resetEditingLoading(idx)
-                       }
-                   }}
-            />
-        </td>
+        return (
+            <td
+                id={`update-run-name-${runId}`}
+                className={tableCellClass}
+            >
+                <input
+                    type="text"
+                    id={`update-run-name-${runId}-input`}
+                    autoFocus={true}
+                    disabled={false}
+                    defaultValue={run.name || run.id}
+                    onBlur={(event) => updateRunName(event.target.value, run, idx)}
+                    onKeyUp={async (event: ReactKeyboardEvent<HTMLInputElement>) => {
+                        if (event.key === "Enter") {
+                            await updateRunName((event.target as HTMLInputElement).value, run, idx)
+                        } else if (event.key === "Escape") {
+                            resetEditingLoading(idx)
+                        }
+                    }}
+                />
+            </td>
+        )
     }
 
     // Common class/styling for table cells
@@ -347,128 +396,169 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         const anyArtifactsAvailable = availableArtifacts && Object.keys(availableArtifacts).length !== 0
 
         // Return a table row for this particular Run in the Runs table
-        return <tr id={ `run-row-${idx}` } key={run.id}>
-            {runNameRow}
+        return (
+            <tr
+                id={`run-row-${idx}`}
+                key={run.id}
+            >
+                {runNameRow}
 
-            <td id={ `run-created-at-${runId}` }
-                className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider">
-                <span id={ `run-created-at-${runId}-text`}
-                      className={"px-2 inline-flex text-xs leading-5 font-semibold rounded-full"}>
-                    {toFriendlyDateTime(run.created_at)}
-                </span>
-            </td>
+                <td
+                    id={`run-created-at-${runId}`}
+                    className="px-10 py-3 text-center text-xs font-medium text-gray-900 tracking-wider"
+                >
+                    <span
+                        id={`run-created-at-${runId}-text`}
+                        className={"px-2 inline-flex text-xs leading-5 font-semibold rounded-full"}
+                    >
+                        {toFriendlyDateTime(run.created_at)}
+                    </span>
+                </td>
 
-            <td id={ `run-updated-at-${runId}` } className={tableCellClass}>
-                {toFriendlyDateTime(run.updated_at)}
-            </td>
+                <td
+                    id={`run-updated-at-${runId}`}
+                    className={tableCellClass}
+                >
+                    {toFriendlyDateTime(run.updated_at)}
+                </td>
 
-            <td id={ `run-launched-by-${runId}` } className={tableCellClass}>
-                {run.launchedBy}
-            </td>
+                <td
+                    id={`run-launched-by-${runId}`}
+                    className={tableCellClass}
+                >
+                    {run.launchedBy}
+                </td>
 
-            <td id={ `run-status-${runId}` } className={tableCellClass}>
-                {getStatus(run)}
-            </td>
+                <td
+                    id={`run-status-${runId}`}
+                    className={tableCellClass}
+                >
+                    {getStatus(run)}
+                </td>
 
-            <td id={ `download-artifacts-${runId}` } className={tableCellClass}>
-                {
-                    runsBeingDeleted.includes(idx)
-                        ?  <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                <td
+                    id={`download-artifacts-${runId}`}
+                    className={tableCellClass}
+                >
+                    {runsBeingDeleted.includes(idx) ? (
+                        <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - ClipLoader does not have an id property when compiling
-                            color={MaximumBlue} loading={true} size={25}/>
-                        :   (run.completed && run.output_artifacts && JSON.parse(run.output_artifacts).experiment) &&
-                        <div id={`download-artifacts-div-${idx}`} style={{display: "flex"}}>
-                            <select id={`download-artifact-select-${idx}`}
+                            color={MaximumBlue}
+                            loading={true}
+                            size={25}
+                        />
+                    ) : (
+                        run.completed &&
+                        run.output_artifacts &&
+                        JSON.parse(run.output_artifacts).experiment && (
+                            <div
+                                id={`download-artifacts-div-${idx}`}
+                                style={{display: "flex"}}
+                            >
+                                <select
+                                    id={`download-artifact-select-${idx}`}
                                     disabled={!anyArtifactsAvailable}
                                     style={{
                                         fontSize: 15,
-                                        opacity: anyArtifactsAvailable ? "100%": "50%",
-                                        width: "180px"
+                                        opacity: anyArtifactsAvailable ? "100%" : "50%",
+                                        width: "180px",
                                     }}
-                                    value={run.id in selectedArtifacts
-                                        ? selectedArtifacts[run.id]
-                                        : DEFAULT_DOWNLOAD_ARTIFACT
-
+                                    value={
+                                        run.id in selectedArtifacts
+                                            ? selectedArtifacts[run.id]
+                                            : DEFAULT_DOWNLOAD_ARTIFACT
                                     }
-                                    onChange={event => {
+                                    onChange={(event) => {
                                         setSelectedArtifacts({
                                             ...selectedArtifacts,
-                                            [run.id]: event.target.value
+                                            [run.id]: event.target.value,
                                         })
                                     }}
-                            >
-                                {
-                                    downloadableArtifacts.map(option => {
+                                >
+                                    {downloadableArtifacts.map((option) => {
                                         const id = `download-option-${option.value}-${runId}`
-                                        const available: boolean =
-                                            isArtifactAvailable(option.value, availableArtifacts)
-                                        return <option id={id}
-                                                       key={option.value}
-                                                       value={option.value}
-                                                       disabled={!available}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    })
-                                }
-                            </select>
+                                        const available: boolean = isArtifactAvailable(option.value, availableArtifacts)
+                                        return (
+                                            <option
+                                                id={id}
+                                                key={option.value}
+                                                value={option.value}
+                                                disabled={!available}
+                                            >
+                                                {option.label}
+                                            </option>
+                                        )
+                                    })}
+                                </select>
 
-                            <FiDownload id={`download-artifacts-${runId}-download`}
-                                        size={25}
-                                        style={{marginLeft: "12px", marginTop: "4px", cursor: "pointer"}}
-                                        onClick={
-                                            () => downloadArtifact(
-                                                run,
-                                                selectedArtifacts[run.id] || DEFAULT_DOWNLOAD_ARTIFACT,
-                                                getArtifactFriendlyName(selectedArtifacts[run.id]),
-                                                props.projectName,
-                                                props.projectId,
-                                                props.experiment
-                                            )
-                                        }
-                            />
-                        </div>
-                }
-            </td>
+                                <FiDownload
+                                    id={`download-artifacts-${runId}-download`}
+                                    size={25}
+                                    style={{marginLeft: "12px", marginTop: "4px", cursor: "pointer"}}
+                                    onClick={() =>
+                                        downloadArtifact(
+                                            run,
+                                            selectedArtifacts[run.id] || DEFAULT_DOWNLOAD_ARTIFACT,
+                                            getArtifactFriendlyName(selectedArtifacts[run.id]),
+                                            props.projectName,
+                                            props.projectId,
+                                            props.experiment
+                                        )
+                                    }
+                                />
+                            </div>
+                        )
+                    )}
+                </td>
 
-            <td id={`delete-training-run-${runId}`} className={tableCellClass}>
-                {
-                    getActionsColumn(idx, runId, run)
-                }
-            </td>
-        </tr>
+                <td
+                    id={`delete-training-run-${runId}`}
+                    className={tableCellClass}
+                >
+                    {getActionsColumn(idx, runId, run)}
+                </td>
+            </tr>
+        )
     }
 
     function getRunNameColumn(run: Run, runButton: JSX.Element) {
-        return <td id="run-name-column" className={tableCellClass}>
-            {run.completed ? runButton
-                :  /* 2/6/23 DEF - Tooltip does not have an id property when compiling */
-                <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    content="Run not complete"
-                    position={Position.BOTTOM_LEFT}
-                    statelessProps={{className: "opacity-50"}}
-                >{runButton}</Tooltip>}
-        </td>
+        return (
+            <td
+                id="run-name-column"
+                className={tableCellClass}
+            >
+                {run.completed ? (
+                    runButton
+                ) : (
+                    /* 2/6/23 DEF - Tooltip does not have an id property when compiling */
+                    <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                        content="Run not complete"
+                        position={Position.BOTTOM_LEFT}
+                        statelessProps={{className: "opacity-50"}}
+                    >
+                        {runButton}
+                    </Tooltip>
+                )}
+            </td>
+        )
     }
 
     function createRunRows() {
         const runRows = []
         if (props.runs && props.runs.length != 0 && props.editingLoading.length != 0) {
-            props.runs.forEach(
-                (run, idx) => {
-                    let runNameColumn: JSX.Element
-                    if (props.editingLoading[idx] && props.editingLoading[idx].editing) {
-                        runNameColumn = getRunNameRowEditing(run, idx)
-                    } else {
-                        const runButton = getRunButton(run, idx)
+            props.runs.forEach((run, idx) => {
+                let runNameColumn: JSX.Element
+                if (props.editingLoading[idx] && props.editingLoading[idx].editing) {
+                    runNameColumn = getRunNameRowEditing(run, idx)
+                } else {
+                    const runButton = getRunButton(run, idx)
 
-                        runNameColumn = getRunNameColumn(run, runButton)
-                    }
-
-                    const row = getRunRow(run, runNameColumn, idx);
-                    runRows.push(row)
+                    runNameColumn = getRunNameColumn(run, runButton)
                 }
-            )
+
+                const row = getRunRow(run, runNameColumn, idx)
+                runRows.push(row)
+            })
         }
 
         return runRows
@@ -482,22 +572,23 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         "Launched By",
         "Status",
         "Download",
-        "Actions"
+        "Actions",
     ]
 
     // Create Table header elements
     const tableHeaderElements: ReactElement[] = []
-    TableHeaders.forEach(header => {
+    TableHeaders.forEach((header) => {
         tableHeaderElements.push(
-            <th id={ `header-${header}` }
+            <th
+                id={`header-${header}`}
                 key={uuid()}
                 scope="col"
-                className="px-10 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                { header }
+                className="px-10 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+                {header}
             </th>
         )
     })
-
 
     /**
      * Returns the button the user can click to delete an existing, completed (or errored) run.
@@ -508,39 +599,43 @@ export default function RunsTable(props: RunTableProps): ReactElement {
      */
     function getDeleteRunButton(runId: string, run: Run, idx: number) {
         const runName = run.name ?? run.id
-        return <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            content="Delete Run">
-            <button id={`delete-training-run-${runId}-button`}
+        return (
+            <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                content="Delete Run"
+            >
+                <button
+                    id={`delete-training-run-${runId}-button`}
                     className="align-center"
                     onClick={(event) => {
                         event.preventDefault()
                         Modal.confirm({
-                            title:
+                            title: (
                                 <span id={`delete-confirm-${runName}-title`}>
                                     Delete training run &quot;{runName}&quot;?
-                                </span>,
-                            content:
-                                <span id={`delete-confirm-${runName}-message`}>
-                                    This cannot be undone.
-                                </span>,
+                                </span>
+                            ),
+                            content: <span id={`delete-confirm-${runName}-message`}>This cannot be undone.</span>,
                             okButtonProps: {
-                                id: `delete-confirm-${runName}-ok-button`
+                                id: `delete-confirm-${runName}-ok-button`,
                             },
                             okText: "Delete",
                             onOk: async () => {
                                 await deleteRun(idx, run)
                             },
                             cancelButtonProps: {
-                                id: `delete-confirm-${runName}-cancel-button`
+                                id: `delete-confirm-${runName}-cancel-button`,
                             },
                         })
                     }}
-            >
-                <AiFillDelete id={`delete-training-run-${idx}-fill`}
-                              className="hover:text-red-700"
-                              size={25}/>
-            </button>
-        </Tooltip>
+                >
+                    <AiFillDelete
+                        id={`delete-training-run-${idx}-fill`}
+                        className="hover:text-red-700"
+                        size={25}
+                    />
+                </button>
+            </Tooltip>
+        )
     }
 
     /**
@@ -550,43 +645,49 @@ export default function RunsTable(props: RunTableProps): ReactElement {
      * @param idx - the index of the run in the runs array
      */
     function getTerminateRunButton(runId: string, run: Run, idx: number) {
-        return <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            content="Terminate Run">
-            <button id={`terminate-training-run-${runId}-button`}
+        return (
+            <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                content="Terminate Run"
+            >
+                <button
+                    id={`terminate-training-run-${runId}-button`}
                     disabled={run.completed}
                     className="align-center"
                     onClick={(event) => {
                         const runName = run.name ?? run.id
                         event.preventDefault()
                         Modal.confirm({
-                            title:
+                            title: (
                                 <span id={`delete-confirm-${runName}-title`}>
-                                                                Terminate in-progress training run &quot;{runName}&quot;?
-                                                            </span>,
-                            content:
+                                    Terminate in-progress training run &quot;{runName}&quot;?
+                                </span>
+                            ),
+                            content: (
                                 <span id={`delete-confirm-${runName}-message`}>
-                                                                This cannot be undone. All existing training progress
-                                                                will be lost.
-                                                            </span>,
+                                    This cannot be undone. All existing training progress will be lost.
+                                </span>
+                            ),
                             okButtonProps: {
-                                id: `terminate-confirm-${runName}-ok-button`
+                                id: `terminate-confirm-${runName}-ok-button`,
                             },
                             okText: "Terminate",
                             onOk: async () => {
                                 await abortRun(idx, run)
                             },
                             cancelButtonProps: {
-                                id: `terminate-confirm-${runName}-cancel-button`
+                                id: `terminate-confirm-${runName}-cancel-button`,
                             },
                         })
                     }}
-            >
-                <BiNoEntry id={`terminate-training-run-${runId}-fill`}
-                           className="hover:text-red-700"
-                           size={25}
-                />
-            </button>
-        </Tooltip>
+                >
+                    <BiNoEntry
+                        id={`terminate-training-run-${runId}-fill`}
+                        className="hover:text-red-700"
+                        size={25}
+                    />
+                </button>
+            </Tooltip>
+        )
     }
 
     /**
@@ -600,41 +701,68 @@ export default function RunsTable(props: RunTableProps): ReactElement {
      * the Run's status.
      */
     function getActionsColumn(idx: number, runId: string, run: Run) {
-        return <>
-            {
-                runsBeingDeleted.includes(idx)
-                    ? <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
+        return (
+            <>
+                {runsBeingDeleted.includes(idx) ? (
+                    <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - ClipLoader does not have an id property when compiling
-                        color={MaximumBlue} loading={true} size={25}/>
-                    : <div id={`action-buttons-div-${idx}`} style={{display: "flex"}}>
-                        {run.completed
-                            ?   getDeleteRunButton(runId, run, idx)
-                            :   getTerminateRunButton(runId, run, idx)
-                        }
+                        color={MaximumBlue}
+                        loading={true}
+                        size={25}
+                    />
+                ) : (
+                    <div
+                        id={`action-buttons-div-${idx}`}
+                        style={{display: "flex"}}
+                    >
+                        {run.completed ? getDeleteRunButton(runId, run, idx) : getTerminateRunButton(runId, run, idx)}
                     </div>
-            }
-        </>
+                )}
+            </>
+        )
     }
 
-    const runRows = createRunRows();
+    const runRows = createRunRows()
 
-    return <>
-        <div id="run-table-div-1" className="flex flex-col mt-4">
-            <div id="run-table-div-2" className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                <div id="run-table-div-3" className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div id="run-table-div-4" className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                        <table id="run-table" className="min-w-full divide-y divide-gray-200">
-                            <thead  id="run-table-head" className="bg-gray-50">
-                            <tr id="run-table-header-elements">{tableHeaderElements}</tr>
-                            </thead>
-                            <tbody id="run-table-body" className="bg-white divide-y divide-gray-200">
-                                {runRows}
-                            </tbody>
-                        </table>
+    return (
+        <>
+            <div
+                id="run-table-div-1"
+                className="flex flex-col mt-4"
+            >
+                <div
+                    id="run-table-div-2"
+                    className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8"
+                >
+                    <div
+                        id="run-table-div-3"
+                        className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
+                    >
+                        <div
+                            id="run-table-div-4"
+                            className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg"
+                        >
+                            <table
+                                id="run-table"
+                                className="min-w-full divide-y divide-gray-200"
+                            >
+                                <thead
+                                    id="run-table-head"
+                                    className="bg-gray-50"
+                                >
+                                    <tr id="run-table-header-elements">{tableHeaderElements}</tr>
+                                </thead>
+                                <tbody
+                                    id="run-table-body"
+                                    className="bg-white divide-y divide-gray-200"
+                                >
+                                    {runRows}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         </>
+    )
 }
-

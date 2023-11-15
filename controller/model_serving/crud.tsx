@@ -7,7 +7,7 @@ import {
     ModelFormat,
     ModelMetaData,
     ModelServingEnvironment,
-    TearDownRequest
+    TearDownRequest,
 } from "./types"
 import {MD_BASE_URL} from "../../const"
 import {toSafeFilename} from "../../utils/file"
@@ -27,17 +27,12 @@ const TEARDOWN_MODELS_ROUTE = `${MD_BASE_URL}/api/v1/serving/teardown`
 // For inferencing deployed models
 const MODEL_INFERENCE_ROUTE = "v2/models"
 
-function generateDeploymentID(run_id: number,
-                                     experiment_id: number,
-                                     project_id: number,
-                                     cid?: string): string {
-
+function generateDeploymentID(run_id: number, experiment_id: number, project_id: number, cid?: string): string {
     let deployment_id = `deployment-${project_id}-${experiment_id}-${run_id}`
     if (cid) {
         deployment_id = `${deployment_id}-${cid}`
     }
     return deployment_id
-
 }
 
 async function deployModel(
@@ -48,23 +43,23 @@ async function deployModel(
     run_name: string,
     cid?: string,
     min_replicas = 0,
-    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE): Promise<DeployedModel> {
-
+    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE
+): Promise<DeployedModel> {
     const model_meta_data: ModelMetaData = {
         // In our case our model urls are in the output artifacts
         // and our predictor server takes care of it.
         model_uri: "",
-        model_format: ModelFormat.CUSTOM_MODEL_FORMAT
+        model_format: ModelFormat.CUSTOM_MODEL_FORMAT,
     }
 
     const labels: StringString = {
         run_id: run_id.toString(),
         experiment_id: experiment_id.toString(),
         project_id: project_id.toString(),
-        
-        // We have to sanitize the run name as it's used by kserve to generate the model inference URL, which has to be 
+
+        // We have to sanitize the run name as it's used by kserve to generate the model inference URL, which has to be
         // a valid "domain" (no special chars, spaces etc.)
-        run_name: toSafeFilename(run_name)
+        run_name: toSafeFilename(run_name),
     }
     if (cid) {
         labels.cid = cid
@@ -74,7 +69,7 @@ async function deployModel(
     if (model_serving_environment === ModelServingEnvironment.KSERVE) {
         custom_predictor_args = {
             gateway_url: MD_BASE_URL,
-            run_id: run_id.toString()
+            run_id: run_id.toString(),
         }
         if (cid) {
             custom_predictor_args.prescriptor_cid = cid
@@ -87,30 +82,35 @@ async function deployModel(
         deployment_id: deployment_id,
         model_serving_environment: model_serving_environment,
         labels: labels,
-        custom_predictor_args: custom_predictor_args
+        custom_predictor_args: custom_predictor_args,
     }
 
     try {
         const response = await fetch(DEPLOY_MODELS_ROUTE, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                "Accept": "application/json",
+                Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(deployRequest)
+            body: JSON.stringify(deployRequest),
         })
 
         if (response.status != 200) {
-            sendNotification(NotificationType.error,
+            sendNotification(
+                NotificationType.error,
                 `Failed to deploy models for run ${run_name ?? "no name"}: ${run_id}`,
-                response.statusText)
+                response.statusText
+            )
             return null
         }
 
         return await response.json()
     } catch (e) {
-        sendNotification(NotificationType.error, "Model deployment error",
-            "Unable to deploy model. See console for more details.")
+        sendNotification(
+            NotificationType.error,
+            "Model deployment error",
+            "Unable to deploy model. See console for more details."
+        )
         console.error(e, e.stack)
         return null
     }
@@ -122,15 +122,9 @@ export async function deployRun(
     min_replicas = 0,
     cid: string = null,
     model_serving_env: ModelServingEnvironment = ModelServingEnvironment.KSERVE
-    ) {
-
+) {
     // Fetch the already deployed models
-    const deployment_id: string = generateDeploymentID(
-        run.id,
-        run.experiment_id,
-        project_id,
-        cid
-    )
+    const deployment_id: string = generateDeploymentID(run.id, run.experiment_id, project_id, cid)
 
     // Only deploy the model if it is not deployed
     const result = await isRunDeployed(run.id, deployment_id, model_serving_env)
@@ -140,40 +134,45 @@ export async function deployRun(
     }
 
     try {
-        return await deployModel(deployment_id, run.id, run.experiment_id, project_id, run.name, cid, min_replicas,
-            model_serving_env)
+        return await deployModel(
+            deployment_id,
+            run.id,
+            run.experiment_id,
+            project_id,
+            run.name,
+            cid,
+            min_replicas,
+            model_serving_env
+        )
     } catch (e) {
-        sendNotification(NotificationType.error, "Internal error",
-            `Unable to deploy model for run id ${run.id}. See console for more details.`)
+        sendNotification(
+            NotificationType.error,
+            "Internal error",
+            `Unable to deploy model for run id ${run.id}. See console for more details.`
+        )
         console.error(e, e.stack)
         return null
     }
 }
 
 /**
- * This function cleans up the model deployments using the <code>navigator.sendBeacon</code> browser feature. It is 
+ * This function cleans up the model deployments using the <code>navigator.sendBeacon</code> browser feature. It is
  * intended to be set up as an event handler for when the user closes the tab or navigates away from the app.
- * 
+ *
  * For documentation on this API see {@link https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon}
- * 
+ *
  * @param project_id Numeric current Project ID
  * @param run The Run that we wish to undeploy
  * @return <code>void<code> -- works by "side effects".
  */
-export function undeployRunUsingBeacon(project_id: number,
-                                       run: Run) {
+export function undeployRunUsingBeacon(project_id: number, run: Run) {
     // Get deployment ID that we want to undeploy
-    const deployment_id: string = generateDeploymentID(
-        run.id,
-        run.experiment_id,
-        project_id,
-        null
-    )
+    const deployment_id: string = generateDeploymentID(run.id, run.experiment_id, project_id, null)
 
     // Generate the request
     const tearDownRequest: TearDownRequest = {
         deployment_id: deployment_id,
-        model_serving_environment: ModelServingEnvironment.KSERVE
+        model_serving_environment: ModelServingEnvironment.KSERVE,
     }
     navigator.sendBeacon(TEARDOWN_MODELS_ROUTE, JSON.stringify(tearDownRequest))
 }
@@ -184,33 +183,28 @@ export function undeployRunUsingBeacon(project_id: number,
  * @param run Run object for these models
  * @return A <code>Promise</code> that resolves either to <code>null</code> or the JSON result of the undeploy operation
  */
-export async function undeployRun(project_id: number,
-                                  run: Run
-// Typescript lib uses "any" so we have to as well
+export async function undeployRun(
+    project_id: number,
+    run: Run
+    // Typescript lib uses "any" so we have to as well
 ) {
-
     // Get deployment ID that we want to undeploy
-    const deployment_id: string = generateDeploymentID(
-        run.id,
-        run.experiment_id,
-        project_id,
-        null
-    )
+    const deployment_id: string = generateDeploymentID(run.id, run.experiment_id, project_id, null)
 
     // Generate the request
     const tearDownRequest: TearDownRequest = {
         deployment_id: deployment_id,
-        model_serving_environment: ModelServingEnvironment.KSERVE
+        model_serving_environment: ModelServingEnvironment.KSERVE,
     }
 
     try {
         const response = await fetch(TEARDOWN_MODELS_ROUTE, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                "Accept": "application/json",
+                Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(tearDownRequest)
+            body: JSON.stringify(tearDownRequest),
         })
 
         if (response.status != 200) {
@@ -221,11 +215,11 @@ export async function undeployRun(project_id: number,
     }
 }
 
-async function isRunDeployed(run_id: number,
-                             deployment_id: string,
-                             model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE,
+async function isRunDeployed(
+    run_id: number,
+    deployment_id: string,
+    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE
 ): Promise<boolean> {
-
     // Fetch the already deployed models
     const deployments: Deployments = await getDeployments(run_id, model_serving_environment)
     if (!deployments || Object.keys(deployments).length === 0) {
@@ -233,29 +227,29 @@ async function isRunDeployed(run_id: number,
         return false
     }
 
-    return deployments.deployed_models.map(model => model.model_status.deployment_id).includes(deployment_id)
+    return deployments.deployed_models.map((model) => model.model_status.deployment_id).includes(deployment_id)
 }
 
 async function getDeployments(
     run_id: number,
-    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE): Promise<Deployments> {
-
+    model_serving_environment: ModelServingEnvironment = ModelServingEnvironment.KSERVE
+): Promise<Deployments> {
     const labels: StringString = {
-        run_id: run_id.toString()
+        run_id: run_id.toString(),
     }
     const request: GetDeploymentsRequest = {
         labels: labels,
-        model_serving_environment: model_serving_environment
+        model_serving_environment: model_serving_environment,
     }
 
     try {
         const response: Response = await fetch(QUERY_DEPLOYMENTS_ROUTE, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                "Accept": "application/json",
+                Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(request)
+            body: JSON.stringify(request),
         })
 
         if (response.status != 200) {
@@ -264,8 +258,11 @@ async function getDeployments(
 
         return await response.json()
     } catch (e) {
-        sendNotification(NotificationType.error, "Model fetch error",
-            "Unable to fetch deployed model. See console for more details.")
+        sendNotification(
+            NotificationType.error,
+            "Model fetch error",
+            "Unable to fetch deployed model. See console for more details."
+        )
         console.error(e, e.stack)
         return null
     }
@@ -278,7 +275,7 @@ async function getDeployments(
  * @return A ready-to-use inference URL for the model requested
  */
 function getModelInferenceUrl(baseUrl: string, modelName: string) {
-    return `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}/${modelName}/infer`;
+    return `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}/${modelName}/infer`
 }
 
 /**
@@ -291,26 +288,25 @@ function getModelInferenceUrl(baseUrl: string, modelName: string) {
  * @return An object with an array of predictors, prescriptors and RIO models.
  * Each item in the arrays is a ready-to-use kserve endpoint (URL) that can be accessed for inferencing that model.
  */
-async function getModels(
-    baseUrl: string,
-    runId: number,
-    cid: string) {
-
+async function getModels(baseUrl: string, runId: number, cid: string) {
     const url = `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}`
     try {
-        const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`,  {
-            method: 'POST',
-            mode: 'cors',
+        const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`, {
+            method: "POST",
+            mode: "cors",
             body: JSON.stringify({
                 url: url,
                 method: "GET",
-                payload: {}
-            })
+                payload: {},
+            }),
         })
 
         if (response.status != 200) {
-            sendNotification(NotificationType.error, `Failed to obtain model names for run: ${runId}`,
-                response.statusText)
+            sendNotification(
+                NotificationType.error,
+                `Failed to obtain model names for run: ${runId}`,
+                response.statusText
+            )
             return null
         }
 
@@ -322,8 +318,12 @@ async function getModels(
             .filter((model: string) => model.startsWith("predictor"))
             .map((model: string) => [model, getModelInferenceUrl(baseUrl, model)])
         const prescriptors = modelsArray
-            .filter((model: string) => model.startsWith("prescriptor") && !model.startsWith("prescriptor-text")
-                && model.endsWith(`-${cid}`))
+            .filter(
+                (model: string) =>
+                    model.startsWith("prescriptor") &&
+                    !model.startsWith("prescriptor-text") &&
+                    model.endsWith(`-${cid}`)
+            )
             .map((model: string) => [model, getModelInferenceUrl(baseUrl, model)])
         const rioModels = modelsArray
             .filter((model: string) => model.startsWith("rio"))
@@ -332,11 +332,14 @@ async function getModels(
         return {
             predictors: predictors,
             prescriptors: prescriptors,
-            rioModels: rioModels
+            rioModels: rioModels,
         }
     } catch (e) {
-        sendNotification(NotificationType.error, `Error retrieving model names for run: ${runId}`,
-            "See console for more details.")
+        sendNotification(
+            NotificationType.error,
+            `Error retrieving model names for run: ${runId}`,
+            "See console for more details."
+        )
         console.error(e, e.stack)
         return null
     }
@@ -358,10 +361,9 @@ export async function checkIfModelsDeployed(runID: number, prescriptorIDToDeploy
             // Check if model is ready for use
             if (model.model_status.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_READY]) {
                 const baseUrl = model.model_reference.base_url
-                models =  await getModels(baseUrl, runID, prescriptorIDToDeploy);
+                models = await getModels(baseUrl, runID, prescriptorIDToDeploy)
             }
         }
     }
     return models
 }
-

@@ -4,8 +4,7 @@ import {
     SUPPORTED_CLASSIFICATION_MODELS,
     SUPPORTED_CLASSIFIER_METRICS,
     SUPPORTED_REGRESSION_MODELS,
-    SUPPORTED_REGRESSOR_METRICS
-
+    SUPPORTED_REGRESSOR_METRICS,
 } from "../components/internal/flow/predictorinfo"
 
 export function FetchPredictors(predictorType: string): string[] {
@@ -13,7 +12,7 @@ export function FetchPredictors(predictorType: string): string[] {
     This function returns the types for predictor available within a given super-type such as "regressor" or
     "classifier"
     */
-    
+
     let predictorResp: string[]
 
     if (predictorType == "regressor") {
@@ -21,9 +20,8 @@ export function FetchPredictors(predictorType: string): string[] {
     } else if (predictorType == "classifier") {
         predictorResp = Object.keys(SUPPORTED_CLASSIFICATION_MODELS)
     }
-    
-    return predictorResp
 
+    return predictorResp
 }
 
 export function FetchMetrics(predictorType: string) {
@@ -39,13 +37,12 @@ export function FetchParams(predictorType: string, predictorName: string): Predi
     This function returns the configuration parameters for the predictor
     */
     let params
- 
+
     if (predictorType == "regressor") {
         params = structuredClone(SUPPORTED_REGRESSION_MODELS[predictorName])
     } else if (predictorType == "classifier") {
         params = structuredClone(SUPPORTED_CLASSIFICATION_MODELS[predictorName])
     }
-    
+
     return params
-    
 }
