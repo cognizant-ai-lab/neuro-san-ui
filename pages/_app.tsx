@@ -4,6 +4,8 @@ import "antd/dist/reset.css"
 import "../styles/globals.css"
 import "bootstrap/dist/css/bootstrap.css"
 import "reactflow/dist/style.css"
+// Tailwind is a dev dependency but this file is a "production" source. Weird situation, so disable the rule
+// eslint-disable-next-line import/no-extraneous-dependencies
 import "tailwindcss/tailwind.css"
 import "../styles/styles.css"
 import "../styles/updatenode.css"

@@ -11,7 +11,7 @@
     "env": {
         "jest": true
     },
-    "plugins": ["@typescript-eslint", "enforce-ids-in-jsx"],
+    "plugins": ["@typescript-eslint", "enforce-ids-in-jsx", "jest"],
     "extends": [
         "next",
         "prettier",
@@ -25,6 +25,7 @@
         "plugin:@typescript-eslint/all",
         "plugin:import/recommended",
         "plugin:import/typescript",
+        "plugin:jest/recommended",
         "plugin:react/all",
 
         // This next one has to be included or else the React rules will complain that "React is not in scope".
@@ -153,7 +154,18 @@
                 "newlines-between": "always"
             }
         ],
-        "import/no-extraneous-dependencies": "error",
+        "import/no-extraneous-dependencies": [
+            "error",
+            {
+                "includeInternal": true,
+                "includeTypes": true,
+                "devDependencies": [
+                    "__tests__/**",
+                    "jest.*",
+                    "tailwind.config.js"
+                ]
+            }
+        ],
         "import/no-named-as-default-member": "error",
         "import/no-self-import": "error",
         "import/no-useless-path-segments": "error",

@@ -19,6 +19,8 @@
         "unit_test": "jest '__tests__/unit' --verbose --config jest.config.ts",
         "about:component_test": "echo 'Runs the front-end component-based tests using `jest` and `react-testing-library`'",
         "component_test": "jest '__tests__/component' --verbose --config jest.config.mjs",
+        "about:integration_test": "echo 'Runs the front-end unit tests using `jest`'",
+        "integration_test": "jest '__tests__/integration' --verbose --config jest.config.ts",
         "about:check-format": "Runs prettier to check if the code is formatted correctly",
         "check-format": "prettier --check ."
     },
@@ -63,6 +65,7 @@
         "styled-components": "5.3.9"
     },
     "devDependencies": {
+        "@jest/types": "29.6.3",
         "@tailwindcss/typography": "0.5.9",
         "@testing-library/jest-dom": "6.1.4",
         "@testing-library/react": "14.0.0",
@@ -91,6 +94,7 @@
         "eslint-import-resolver-typescript": "3.6.1",
         "eslint-plugin-enforce-ids-in-jsx": "1.0.0",
         "eslint-plugin-import": "2.29.0",
+        "eslint-plugin-jest": "^27.6.0",
         "eslint-plugin-react": "7.33.2",
         "jest": "29.7.0",
         "jest-environment-jsdom": "29.7.0",
@@ -100,5 +104,8 @@
         "ts-jest": "29.1.1",
         "ts-node": "10.9.1",
         "typescript": "5.0.3"
+    }, "resolutions": {
+      "@types/react": "18.0.33",
+      "@types/react-dom": "18.0.11"
     }
 }

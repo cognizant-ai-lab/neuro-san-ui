@@ -101,6 +101,8 @@ async function deployModel(
         custom_predictor_args: customPredictorArgs,
     }
 
+    console.log(`Deploying model with request: ${JSON.stringify(deployRequest)}`)
+
     try {
         const response = await fetch(DEPLOY_MODELS_ROUTE, {
             method: "POST",
@@ -135,7 +137,7 @@ async function deployModel(
 
 /**
  * Request deployment of all models associated with a particular Run -- predictors, prescriptors, RIO, ...
- *
+ * If the models are already deployed, this function simply returns <code>true</code>.
  * @param projectId Project ID for the Run in question
  * @param run The Run for which the models are to be deployed
  * @param minReplicas (not currently used) Minimum number of Kubernetes pods to host the models
@@ -376,7 +378,8 @@ async function getModels(baseUrl: string, runId: number, cid: string) {
 
 /**
  * Polls the model server for a particular model for a given runID. If the models are "warmed up" and ready for use,
- * return the predictor(s) and prescriptor for that runID and prescriptor ID.
+ * return the predictor(s) and prescriptor for that runID and prescriptor ID. If the models are not ready yet, return
+ * <code>null</code>.
  * @param runID ID of the Run object to query
  * @param prescriptorIDToDeploy Specific prescriptor ID to check for
  */
