@@ -486,15 +486,12 @@ export default function ProfileTable(props: ProfileTableProps) {
             }
 
             if (!categoryMap[field]) {
-                categoryMap[field] = new Set(fields[field].discrete_categorical_values)
+                categoryMap[field] = new Set(fields[field].original_discrete_categorical_values) // pending BE implementation
             }
         })
 
         setDataSetCategories(categoryMap)
     }, [profile])
-
-    console.log("fields", fields)
-    console.log("data", dataSetCategories)
 
     const propsId = `${props.id}`
     // Wrap everything in a DragDropContext as recommended by react-beautiful-dnd doc
