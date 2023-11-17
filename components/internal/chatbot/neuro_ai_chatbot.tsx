@@ -87,26 +87,24 @@ const NeuroAIChatbot = (props: {id: string; userAvatar: string; pageContext: str
     const chatbotSteps = getChatbotSteps(pageContext, addChatToHistory, () => chatHistory.current, welcomeMessage)
 
     return (
-        <>
-            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                theme={chatbotTheme}
-            >
-                <ChatBot
-                    id={id}
-                    cache={false}
-                    floating={true}
-                    headerTitle={isGeneric ? "Autopilot AI assistant" : "Cognizant Neuro™ AI Assistant"}
-                    placeholder="What is a prescriptor?"
-                    userAvatar={props.userAvatar}
-                    botAvatar={isGeneric ? "/robot.png" : "/cognizantfavicon.ico"}
-                    steps={chatbotSteps}
-                    width="400px"
-                    // Use a random key to force a new instance of the chatbot, so we don't get stale context from
-                    // previous page
-                    key={uuid()}
-                />
-            </ThemeProvider>
-        </>
+        <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            theme={chatbotTheme}
+        >
+            <ChatBot
+                id={id}
+                cache={false}
+                floating={true}
+                headerTitle={isGeneric ? "Autopilot AI assistant" : "Cognizant Neuro™ AI Assistant"}
+                placeholder="What is a prescriptor?"
+                userAvatar={props.userAvatar}
+                botAvatar={isGeneric ? "/robot.png" : "/cognizantfavicon.ico"}
+                steps={chatbotSteps}
+                width="400px"
+                // Use a random key to force a new instance of the chatbot, so we don't get stale context from
+                // previous page
+                key={uuid()}
+            />
+        </ThemeProvider>
     )
 }
 

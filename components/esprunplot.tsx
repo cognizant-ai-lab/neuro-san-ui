@@ -10,18 +10,18 @@ interface EspRunPlotProps {
 }
 
 export default function ESPRunPlot(props: EspRunPlotProps) {
-    const PrescriptorRunData = props.PrescriptorRunData
+    const prescriptorRunData = props.PrescriptorRunData
 
-    const Nodes: string[] = Object.keys(PrescriptorRunData)
+    const nodes: string[] = Object.keys(prescriptorRunData)
 
     const nodePlots = []
-    Nodes.forEach((nodeID) => {
-        const Objectives = Object.keys(PrescriptorRunData[nodeID])
+    nodes.forEach((nodeID) => {
+        const objectives = Object.keys(prescriptorRunData[nodeID])
 
         const cells = []
-        Objectives.forEach((objective) => {
+        objectives.forEach((objective) => {
             // Create a plot for each objective. Each objective will have min, max, mean across generations.
-            const objectiveData = PrescriptorRunData[nodeID][objective]
+            const objectiveData = prescriptorRunData[nodeID][objective]
             const objectiveMetricGraphLabelId = `${objective}-metric-graph-label`
             const options = {
                 xAxis: {
@@ -111,44 +111,42 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
     const propsId = `${props.id}`
 
     return (
-        <>
-            <div id={`${propsId}`}>
-                <NewBar
-                    id="prescriptor-metrics-bar"
-                    InstanceId="prescriptor-metrics"
-                    Title="Prescriptor Metrics"
-                    DisplayNewLink={false}
-                />
-                {nodePlots && nodePlots.length > 0 ? (
-                    nodePlots
-                ) : (
-                    <>
+        <div id={`${propsId}`}>
+            <NewBar
+                id="prescriptor-metrics-bar"
+                InstanceId="prescriptor-metrics"
+                Title="Prescriptor Metrics"
+                DisplayNewLink={false}
+            />
+            {nodePlots && nodePlots.length > 0 ? (
+                nodePlots
+            ) : (
+                <>
+                    <span
+                        id="prescriptor-metrics-span"
+                        style={{display: "flex"}}
+                    >
+                        <FiAlertCircle
+                            id="prescriptor-metrics-dot"
+                            color="red"
+                            size={50}
+                        />
                         <span
-                            id="prescriptor-metrics-span"
-                            style={{display: "flex"}}
+                            id="prescriptor-metrics-none-found"
+                            className="ml-4 fs-4 my-auto"
                         >
-                            <FiAlertCircle
-                                id="prescriptor-metrics-dot"
-                                color="red"
-                                size={50}
-                            />
-                            <span
-                                id="prescriptor-metrics-none-found"
-                                className="ml-4 fs-4 my-auto"
-                            >
-                                No prescriptors found.
-                            </span>
-                            <div
-                                id="prescriptor-metrics-break"
-                                className="break"
-                            />
+                            No prescriptors found.
                         </span>
-                        <br id="prescriptor-metrics-instructions" />
-                        Navigate to the Runs table and view the error logs for your Run to see what went wrong.
-                    </>
-                )}
-            </div>
-        </>
+                        <div
+                            id="prescriptor-metrics-break"
+                            className="break"
+                        />
+                    </span>
+                    <br id="prescriptor-metrics-instructions" />
+                    Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                </>
+            )}
+        </div>
     )
 }
 

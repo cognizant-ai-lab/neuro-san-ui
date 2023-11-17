@@ -232,7 +232,7 @@ export function AIAssistant(props: {
             closable={true}
             onClose={props.onClose}
             open={props.open}
-            width={"35%"}
+            width="35%"
             destroyOnClose={true}
         >
             <Form

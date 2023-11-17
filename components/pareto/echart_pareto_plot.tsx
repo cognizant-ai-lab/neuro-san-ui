@@ -213,18 +213,16 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     const showAllGenerations = props.showAllGenerations ?? false
 
     return (
-        <>
-            <GenerationsAnimation
-                id={id}
-                NumberOfGenerations={numberOfGenerations}
-                Plot={plot}
-                SetSelectedGen={(gen: number) => setSelectedGen(gen)}
-                SelectedGen={selectedGen}
-                ShowAllGenerations={showAllGenerations}
-                FrameDelayMs={frameDelayMs}
-                SetPlaying={setPlaying}
-                Playing={playing}
-            />
-        </>
+        <GenerationsAnimation
+            id={id}
+            NumberOfGenerations={numberOfGenerations}
+            Plot={plot}
+            SetSelectedGen={(gen: number) => setSelectedGen(gen)}
+            SelectedGen={selectedGen}
+            ShowAllGenerations={showAllGenerations}
+            FrameDelayMs={frameDelayMs}
+            SetPlaying={setPlaying}
+            Playing={playing}
+        />
     )
 }

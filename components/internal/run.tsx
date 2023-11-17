@@ -109,8 +109,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
         */
         const tempRuns = props.runs
         let selectedIndex = null
-        tempRuns.forEach((iterated_run, idx) => {
-            if (runID === iterated_run.id) {
+        tempRuns.forEach((tmpRun, idx) => {
+            if (runID === tmpRun.id) {
                 selectedIndex = idx
             }
         })
@@ -216,7 +216,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
 
         const projects: Projects = await BrowserFetchProjects(currentUser, projectID, ["name", "description"])
-        if (projects && projects.length == 1) {
+        if (projects && projects.length === 1) {
             setProject(projects[0])
         }
     }
@@ -508,23 +508,21 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const runId = run.id
         const dmsLink = `/projects/${projectId}/experiments/${experimentId}/runs/${runId}/prescriptors/${prescriptorID}`
         return (
-            <>
-                <Link
-                    id="dms-link"
-                    href={{
-                        pathname: dmsLink,
+            <Link
+                id="dms-link"
+                href={{
+                    pathname: dmsLink,
 
-                        // Pass along query params, including "demo" option if present
-                        query: {...router.query, data_source_id: dataSourceId},
-                    }}
-                    style={{
-                        color: "white",
-                    }}
-                    target="_blank"
-                >
-                    Go to Decision Making System with Prescriptor: {prescriptorID}
-                </Link>
-            </>
+                    // Pass along query params, including "demo" option if present
+                    query: {...router.query, data_source_id: dataSourceId},
+                }}
+                style={{
+                    color: "white",
+                }}
+                target="_blank"
+            >
+                Go to Decision Making System with Prescriptor: {prescriptorID}
+            </Link>
         )
     }
 

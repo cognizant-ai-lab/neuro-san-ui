@@ -238,54 +238,52 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                         <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - Popover does not have an id property when compiling
                             content={
-                                <>
-                                    <Card.Body
-                                        id={`${flowPrefix}-config`}
-                                        className="h-40 text-xs"
+                                <Card.Body
+                                    id={`${flowPrefix}-config`}
+                                    className="h-40 text-xs"
+                                >
+                                    <div
+                                        id={`${flowPrefix}-basic-settings-div`}
+                                        className="mt-3"
+                                    >
+                                        {Object.keys(ParameterSet)
+                                            .filter((key) => !ParameterSet[key].isAdvanced)
+                                            .map((param) => getInputComponent(param))}
+                                    </div>
+                                    <div
+                                        id={`${flowPrefix}-advanced-settings-label-div`}
+                                        className="mt-4 mb-2"
+                                    >
+                                        <EvergreenText id={`${flowPrefix}-advanced-settings-text`}>
+                                            <b id={`${flowPrefix}-advanced-settings-label`}>Advanced settings</b> (most
+                                            users should not change these)
+                                        </EvergreenText>
+                                    </div>
+                                    <button
+                                        id={`${flowPrefix}-show-advanced-settings-button`}
+                                        onClick={() => setShowAdvanced(!showAdvanced)}
+                                    >
+                                        {showAdvanced ? (
+                                            <u id={`${flowPrefix}-show-advanced-settings`}>Hide</u>
+                                        ) : (
+                                            <u id={`${flowPrefix}-hide-advanced-settings`}>Show</u>
+                                        )}
+                                    </button>
+                                    <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                        // 2/6/23 DEF - Collapse does not have an id property when compiling
+                                        in={showAdvanced}
+                                        timeout={5}
                                     >
                                         <div
                                             id={`${flowPrefix}-basic-settings-div`}
                                             className="mt-3"
                                         >
                                             {Object.keys(ParameterSet)
-                                                .filter((key) => !ParameterSet[key].isAdvanced)
+                                                .filter((key) => ParameterSet[key].isAdvanced)
                                                 .map((param) => getInputComponent(param))}
                                         </div>
-                                        <div
-                                            id={`${flowPrefix}-advanced-settings-label-div`}
-                                            className="mt-4 mb-2"
-                                        >
-                                            <EvergreenText id={`${flowPrefix}-advanced-settings-text`}>
-                                                <b id={`${flowPrefix}-advanced-settings-label`}>Advanced settings</b>{" "}
-                                                (most users should not change these)
-                                            </EvergreenText>
-                                        </div>
-                                        <button
-                                            id={`${flowPrefix}-show-advanced-settings-button`}
-                                            onClick={() => setShowAdvanced(!showAdvanced)}
-                                        >
-                                            {showAdvanced ? (
-                                                <u id={`${flowPrefix}-show-advanced-settings`}>Hide</u>
-                                            ) : (
-                                                <u id={`${flowPrefix}-hide-advanced-settings`}>Show</u>
-                                            )}
-                                        </button>
-                                        <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                            // 2/6/23 DEF - Collapse does not have an id property when compiling
-                                            in={showAdvanced}
-                                            timeout={5}
-                                        >
-                                            <div
-                                                id={`${flowPrefix}-basic-settings-div`}
-                                                className="mt-3"
-                                            >
-                                                {Object.keys(ParameterSet)
-                                                    .filter((key) => ParameterSet[key].isAdvanced)
-                                                    .map((param) => getInputComponent(param))}
-                                            </div>
-                                        </Collapse>
-                                    </Card.Body>
-                                </>
+                                    </Collapse>
+                                </Card.Body>
                             }
                             statelessProps={{
                                 height: "800px",

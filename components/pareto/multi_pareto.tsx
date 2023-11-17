@@ -180,64 +180,62 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
     const propsId = `${props.id}`
 
     return (
-        <>
-            <div
-                id={`${propsId}`}
-                key={`${propsId}`}
+        <div
+            id={`${propsId}`}
+            key={`${propsId}`}
+        >
+            <NewBar
+                id="pareto-prescriptors-bar"
+                InstanceId="pareto-prescriptors"
+                Title="Pareto Prescriptors"
+                DisplayNewLink={false}
+            />
+            <br id="pareto-plot-br" />
+            <Container
+                fluid
+                id="pareto-plot-container"
             >
-                <NewBar
-                    id="pareto-prescriptors-bar"
-                    InstanceId="pareto-prescriptors"
-                    Title="Pareto Prescriptors"
-                    DisplayNewLink={false}
-                />
-                <br id="pareto-plot-br" />
-                <Container
-                    fluid
-                    id="pareto-plot-container"
-                >
-                    <Row id="plot-type-row">
-                        <Col
-                            id="tooltip-column"
-                            style={{display: "flex"}}
+                <Row id="plot-type-row">
+                    <Col
+                        id="tooltip-column"
+                        style={{display: "flex"}}
+                    >
+                        <h4 id="plot-type-h4">Plot type:</h4>
+                        <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            // Tooltip does not have an id property
+                            content={
+                                "Some plot types may not be available, depending on the number of outcomes " +
+                                "in your experiment"
+                            }
                         >
-                            <h4 id="plot-type-h4">Plot type:</h4>
-                            <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // Tooltip does not have an id property
-                                content={
-                                    "Some plot types may not be available, depending on the number of outcomes " +
-                                    "in your experiment"
-                                }
+                            <div
+                                id="plot-info-bubble"
+                                className="ps-1"
                             >
-                                <div
-                                    id="plot-info-bubble"
-                                    className="ps-1"
-                                >
-                                    <InfoSignIcon
-                                        id="plot-info-bubble-icon"
-                                        color="blue"
-                                        size={10}
-                                    />
-                                </div>
-                            </Tooltip>
-                        </Col>
-                    </Row>
-                    <Row id="select-chart-row">
-                        <Col
-                            id="select-chart-col"
-                            style={{marginTop: "16px"}}
-                        >
-                            {paretoChartSelect}
-                        </Col>
-                    </Row>
-                    <Row
-                        id="pareto-plot-row"
+                                <InfoSignIcon
+                                    id="plot-info-bubble-icon"
+                                    color="blue"
+                                    size={10}
+                                />
+                            </div>
+                        </Tooltip>
+                    </Col>
+                </Row>
+                <Row id="select-chart-row">
+                    <Col
+                        id="select-chart-col"
                         style={{marginTop: "16px"}}
                     >
-                        <Col id="pareto-plots-col">{nodePlots}</Col>
-                    </Row>
-                </Container>
-            </div>
-        </>
+                        {paretoChartSelect}
+                    </Col>
+                </Row>
+                <Row
+                    id="pareto-plot-row"
+                    style={{marginTop: "16px"}}
+                >
+                    <Col id="pareto-plots-col">{nodePlots}</Col>
+                </Row>
+            </Container>
+        </div>
     )
 }

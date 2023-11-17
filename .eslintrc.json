@@ -59,7 +59,11 @@
                 "warnOnDuplicates": true
             }
         ],
-
+        "react/jsx-no-useless-fragment": ["error",
+            {
+                "allowExpressions": true
+            }
+        ],
         // Want to allow short circuit like foo && useFoo(foo)
         "no-unused-expressions": [
             "error",
@@ -99,6 +103,12 @@
             }
         ],
         "@typescript-eslint/prefer-for-of": "error",
+        "camelcase": [
+            "error",
+            {
+                "properties": "never"
+            }
+        ],
         "consistent-return": "error",
         "constructor-super": "error",
         "default-case": "error",
@@ -283,7 +293,6 @@
         "arrow-parens": "off",
         "block-spacing": "off",
         "brace-style": "off",
-        "camelcase": "off",
         "capitalized-comments": "off",
         "comma-dangle": "off",
         "complexity": "off",
@@ -345,7 +354,7 @@
         "react/jsx-boolean-value": "off",
         "react/jsx-closing-bracket-location": "off",
         "react/jsx-closing-tag-location": "off",
-        "react/jsx-curly-brace-presence": "off",
+        "react/jsx-curly-brace-presence": "error",
         "react/jsx-curly-newline": "off",
         "react/jsx-curly-spacing": "off",
         "react/jsx-filename-extension": "off",
@@ -358,7 +367,6 @@
         "react/jsx-no-bind": "off",
         "react/jsx-no-leaked-render": "off",
         "react/jsx-no-literals": "off",
-        "react/jsx-no-useless-fragment": "off",
         "react/jsx-one-expression-per-line": "off",
         "react/jsx-props-no-multi-spaces": "off",
         "react/jsx-props-no-spreading": "off",

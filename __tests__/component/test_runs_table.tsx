@@ -7,11 +7,11 @@ describe("Runs Table Test", () => {
     it("Generates the correct number of rows", () => {
         const {container} = render(
             <RunsTable
-                currentUser={""}
+                currentUser=""
                 editingLoading={[{editing: false, loading: false}]}
                 experimentId={0}
                 projectId={0}
-                projectName={""}
+                projectName=""
                 experiment={{name: "test experiment", flow: null}}
                 runDrawer={false}
                 runs={[

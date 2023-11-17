@@ -365,7 +365,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                       >
                           <span
                               id={`${columnName}-rejected`}
-                              className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}
+                              className="px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"
                               style={{display: "flex", flexWrap: "nowrap"}}
                           >
                               <AiFillWarning
@@ -382,7 +382,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                       >
                           <span
                               id={`${columnName}-rejection-reason`}
-                              className={"px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"}
+                              className="px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"
                           >
                               {`${rejectedColumns[columnName]}: ${reasonToHumanReadable(rejectedColumns[columnName])}`}
                           </span>

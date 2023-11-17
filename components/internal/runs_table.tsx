@@ -409,7 +409,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 >
                     <span
                         id={`run-created-at-${runId}-text`}
-                        className={"px-2 inline-flex text-xs leading-5 font-semibold rounded-full"}
+                        className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
                     >
                         {toFriendlyDateTime(run.created_at)}
                     </span>
@@ -725,44 +725,42 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     const runRows = createRunRows()
 
     return (
-        <>
+        <div
+            id="run-table-div-1"
+            className="flex flex-col mt-4"
+        >
             <div
-                id="run-table-div-1"
-                className="flex flex-col mt-4"
+                id="run-table-div-2"
+                className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8"
             >
                 <div
-                    id="run-table-div-2"
-                    className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8"
+                    id="run-table-div-3"
+                    className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
                 >
                     <div
-                        id="run-table-div-3"
-                        className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
+                        id="run-table-div-4"
+                        className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg"
                     >
-                        <div
-                            id="run-table-div-4"
-                            className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg"
+                        <table
+                            id="run-table"
+                            className="min-w-full divide-y divide-gray-200"
                         >
-                            <table
-                                id="run-table"
-                                className="min-w-full divide-y divide-gray-200"
+                            <thead
+                                id="run-table-head"
+                                className="bg-gray-50"
                             >
-                                <thead
-                                    id="run-table-head"
-                                    className="bg-gray-50"
-                                >
-                                    <tr id="run-table-header-elements">{tableHeaderElements}</tr>
-                                </thead>
-                                <tbody
-                                    id="run-table-body"
-                                    className="bg-white divide-y divide-gray-200"
-                                >
-                                    {runRows}
-                                </tbody>
-                            </table>
-                        </div>
+                                <tr id="run-table-header-elements">{tableHeaderElements}</tr>
+                            </thead>
+                            <tbody
+                                id="run-table-body"
+                                className="bg-white divide-y divide-gray-200"
+                            >
+                                {runRows}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     )
 }

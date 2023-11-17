@@ -128,7 +128,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                 position={Position.Right}
             />
             <Handle
-                id={`data-source-target-handle`}
+                id="data-source-target-handle"
                 type="target"
                 position={Position.Left}
             />

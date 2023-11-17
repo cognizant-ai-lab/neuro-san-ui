@@ -694,7 +694,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                     <Col id={`${flowPrefix}-split-rng-seed-column`}>
                         <input
                             id={`${flowPrefix}-split-rng-seed-input`}
-                            type={"number"}
+                            type="number"
                             min={0}
                             value={ParentPredictorState.rngSeedValue}
                             onChange={(event) => {
