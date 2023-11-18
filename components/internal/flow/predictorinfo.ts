@@ -130,10 +130,10 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
         },
         n_jobs: {
             default_value: 1,
-            description: `The number of jobs to run in parallel. fit, predict, 
-                           decision_path and apply are all parallelized over the trees. 
-                           None means 1 unless in a joblib.parallel_backend context. 
-                           -1 means using all processors. See Glossary for more details.`,
+            description:
+                "The number of jobs to run in parallel. fit, predict, decision_path and apply are all parallelized " +
+                "over the trees. None means 1 unless in a joblib.parallel_backend context. -1 means using all " +
+                "processors. See Glossary for more details.",
             type: "int",
         },
         random_state: {
@@ -152,9 +152,9 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
         },
         ccp_alpha: {
             default_value: 0.0,
-            description: `Complexity parameter used for Minimal Cost-Complexity Pruning. 
-                           The subtree with the largest cost complexity that is smaller than 
-                           ccp_alpha will be chosen. By default, no pruning is performed. `,
+            description:
+                "Complexity parameter used for Minimal Cost-Complexity Pruning. The subtree with the largest cost " +
+                "complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed. ",
             type: "float",
         },
         max_samples: {
@@ -329,12 +329,12 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
         },
         DATABRICKS_HOST: {
             default_value: "https://cog-leaftest.cloud.databricks.com",
-            description: `The URL of the Databricks™ host`,
+            description: "The URL of the Databricks™ host",
             type: "string",
         },
         DATABRICKS_TOKEN: {
             default_value: "",
-            description: `A generated token to access the Databricks™ instance`,
+            description: "A generated token to access the Databricks™ instance",
             type: "password",
         },
     },

@@ -101,8 +101,8 @@ export default function RunsTable(props: RunTableProps): ReactElement {
             ])
 
             if (updatedRunStatuses) {
-                // For each status returned, match it up to a corresponding Run object (if we have one) and update that Run
-                // object's status and "completed" fields
+                // For each status returned, match it up to a corresponding Run object (if we have one) and update
+                // that Run object's status and "completed" fields
                 const runsCopy = [...props.runs]
                 for (const run of updatedRunStatuses) {
                     const runToUpdate = runsCopy.find((r) => r.id === run.id)
@@ -545,7 +545,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     function createRunRows() {
         const runRows = []
-        if (props.runs && props.runs.length != 0 && props.editingLoading.length != 0) {
+        if (props.runs && props.runs.length !== 0 && props.editingLoading.length !== 0) {
             props.runs.forEach((run, idx) => {
                 let runNameColumn: JSX.Element
                 if (props.editingLoading[idx] && props.editingLoading[idx].editing) {
@@ -565,7 +565,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     }
 
     // Declare table headers
-    const TableHeaders = [
+    const tableHeaders = [
         "Training Run Name",
         "Created At",
         "Last Modified",
@@ -577,7 +577,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     // Create Table header elements
     const tableHeaderElements: ReactElement[] = []
-    TableHeaders.forEach((header) => {
+    tableHeaders.forEach((header) => {
         tableHeaderElements.push(
             <th
                 id={`header-${header}`}

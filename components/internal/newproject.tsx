@@ -121,7 +121,7 @@ export default function NewProject(props: NewProps) {
                                 opacity: enabledDataTagSection ? OPAQUE : SEMI_OPAQUE,
                             }}
                         >
-                            {`${4 + startIndexOffset}. ` + (isNewProject ? "Create project" : "Create data profile")}
+                            {`${4 + startIndexOffset}. ${isNewProject ? "Create project" : "Create data profile"}`}
                         </Button>
                     </Tooltip>
                 }
@@ -590,9 +590,8 @@ export default function NewProject(props: NewProps) {
                 Columns: {`${tmpProfile.data_source.num_cols}`}
                 <br id="data-source-rejection-reasons" />
                 {anyColumnsRejected &&
-                    `WARNING: ${
-                        Object.keys(rejectedColumns).length
-                    } column(s) were rejected from your data source. Proceed to "Tag your Data" to see which columns and why.`}
+                    `WARNING: ${Object.keys(rejectedColumns).length} column(s) were rejected from your data source. ` +
+                        'Proceed to "Tag your Data" to see which columns and why.'}
             </>
         )
 
@@ -902,9 +901,9 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
                 // We set noValidate to turn off the intrinsic HTML 5 validation since we'll be using Bootstrap's
                 // validation instead.
                 noValidate
-                // Setting this next property to "true" causes the "invalid feedback" to appear immediately. Normally one
-                // would only set this after the user attempts to submit the form, but we have a complex form here with
-                // multiple "submit"-type steps so that doesn't work for us.
+                // Setting this next property to "true" causes the "invalid feedback" to appear immediately.
+                // Normally one would only set this after the user attempts to submit the form, but we have a complex
+                // form here with multiple "submit"-type steps so that doesn't work for us.
                 validated={true}
             >
                 <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids

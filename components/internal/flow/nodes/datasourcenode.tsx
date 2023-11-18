@@ -47,7 +47,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                         NotificationType.error,
                         "Failed to load Data tags",
                         `Unable to load data tags for project ${projectId} due to an internal error. Your experiment` +
-                            `may not behave as expected. Please report this to the development team`
+                            "may not behave as expected. Please report this to the development team"
                     )
                 }
             }
@@ -105,7 +105,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                                 // DEF: Right now there is only ever one data source, but someday
                                 //      there will be more and Vince would like the id to correspond
                                 //      to what is visible so he can verify more easily.
-                                const id = `data-source-node-selected`
+                                const id = "data-source-node-selected"
                                 return (
                                     <option
                                         key={dataTmp.DataSource.id}

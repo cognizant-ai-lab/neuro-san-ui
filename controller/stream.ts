@@ -28,7 +28,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     }
 
     // Check for error
-    if (response.status != 200) {
+    if (!response.ok) {
         console.error(`Failed to fetch ${resourceName}`, response.statusText)
         return null
     }
@@ -56,14 +56,14 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     // gRPC streams items to us delimited by newline. But JSON requires commas between items.
     // Therefore, this regex replaces all newlines except the last (which is a legit newline) with comma + newline
     // We also need to sandwich it in square brackets to conform to JSON array syntax
-    buffer = "[" + buffer.replace(/\n(?=.*\n)/gu, ",\n") + "]"
+    buffer = `[${buffer.replace(/\n(?=.*\n)/gu, ",\n")}]`
 
     let results: MDServerResponse[]
     try {
         results = JSON.parse(buffer)
     } catch (e) {
         console.error(
-            `Error parsing ${resourceName} data from server. First 100 bytes: ` + String(results).substring(0, 100)
+            `Error parsing ${resourceName} data from server. First 100 bytes: ${String(results).substring(0, 100)}`
         )
         throw e
     }
@@ -77,7 +77,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
                 items.push(itemResult)
             }
         } catch (e) {
-            console.error(`Error parsing JSON for ${resourceName}: ` + String(e))
+            console.error(`Error parsing JSON for ${resourceName}: ${String(e)}`)
             throw e
         }
     }

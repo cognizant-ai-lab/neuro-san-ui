@@ -119,7 +119,8 @@ export default function Flow(props: FlowProps) {
                             GetElementIndex: (nodeId) => _getElementIndex(nodeId),
                         }
                         break
-                    case "uncertaintymodelnode": // Backward compatibility -- "uncertaintymodelnode" are now "configurableNode"
+                    case "uncertaintymodelnode":
+                        // Backward compatibility -- "uncertaintymodelnode" are now "configurableNode"
                         node.data = {
                             ...node.data,
                             SetParentNodeState: (state) => ParentNodeSetStateHandler(state, node.id),
@@ -166,7 +167,8 @@ export default function Flow(props: FlowProps) {
     // Tidy flow when nodes are added or removed
     useEffect(() => {
         tidyView()
-        flowInstance && setTimeout(flowInstance.fitView, 50) // UN-1135 Make sure fitView is called after ReactFlow finishes rendering.
+        // UN-1135 Make sure fitView is called after ReactFlow finishes rendering.
+        flowInstance && setTimeout(flowInstance.fitView, 50)
     }, [nodes.length, edges.length])
 
     // Initial population of the element type -> uuid list mapping used for simplified testing ids

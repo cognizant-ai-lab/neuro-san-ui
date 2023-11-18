@@ -105,7 +105,7 @@ export function AIAssistant(props: {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            setUserLlmChatOutput((currentOutput) => currentOutput + `Query: ${userQuery}\n\nResponse:\n\n`)
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}Query: ${userQuery}\n\nResponse:\n\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
@@ -128,7 +128,7 @@ export function AIAssistant(props: {
             setTimeout(highlightFinalAnswer, 100, currentResponse.current)
 
             // Add a couple of blank lines after response
-            setUserLlmChatOutput((currentOutput) => currentOutput + "\n\n")
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
 
             // Record bot answer in history. Only record the final answer or we will end up using a crazy amount of
             // tokens.
@@ -138,7 +138,7 @@ export function AIAssistant(props: {
             }
         } catch (error) {
             if (error.name === "AbortError") {
-                setUserLlmChatOutput((currentOutput) => currentOutput + "\n\nRequest cancelled.")
+                setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nRequest cancelled.`)
             } else {
                 setUserLlmChatOutput(
                     `Internal error: \n\n${error}\n More information may be available in the browser console.`
@@ -197,7 +197,7 @@ export function AIAssistant(props: {
                     await sendQuery(userLlmChatInput)
                 }
             } else {
-                setUserLlmChatInput(userLlmChatInput + "\n")
+                setUserLlmChatInput(`${userLlmChatInput}\n`)
             }
         }
     }

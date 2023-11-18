@@ -645,8 +645,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                         ) : (
                                             <div id="markdown-div">
                                                 <ReactMarkdown // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                                // ReactMarkdown doesn"t have (or need) an id property. The items it generates
-                                                // each have their own referenceable id.
+                                                // ReactMarkdown doesn"t have (or need) an id property.
+                                                // The items it generates each have their own referenceable id.
                                                 >
                                                     {interpretedRules}
                                                 </ReactMarkdown>
@@ -786,6 +786,6 @@ RunPage.pageContext =
     "predictors defined for your experiment, and the progress in metrics (fitness) for the prescriptors trained " +
     "during your run. On this page you can also view various plots of the pareto front of your experiment (for multi-" +
     "objective experiments) and view the evolution of the Pareto front over subsequent generations. If you chose a " +
-    "rules-based representation for your run, you can also view the evolved ruleset on this page, along with insights " +
-    "and rules intepretations provided by an LLM. Finally, you can select a prescriptor from the final generation" +
-    "and launch the decision making system (DMS) to expore the behavior of that prescriptor."
+    "rules-based representation for your run, you can also view the evolved ruleset on this page, along with " +
+    "insights and rules intepretations provided by an LLM. Finally, you can select a prescriptor from the final " +
+    "generation and launch the decision making system (DMS) to expore the behavior of that prescriptor."

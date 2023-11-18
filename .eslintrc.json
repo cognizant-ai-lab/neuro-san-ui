@@ -59,7 +59,8 @@
                 "warnOnDuplicates": true
             }
         ],
-        "react/jsx-no-useless-fragment": ["error",
+        "react/jsx-no-useless-fragment": [
+            "error",
             {
                 "allowExpressions": true
             }
@@ -109,6 +110,9 @@
                 "properties": "never"
             }
         ],
+        "prefer-template": "error",
+        // Enforce double quotes (already handled by prettier) _and_ prevent backtick expressions with no interpolation
+        "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
         "consistent-return": "error",
         "constructor-super": "error",
         "default-case": "error",
@@ -310,7 +314,13 @@
         "init-declarations": "off",
         "line-comment-position": "off",
         "lines-around-comment": "off",
-        "max-len": "off",
+        "max-len": [
+            "error",
+            {
+                "code": 120,
+                "ignoreUrls": true
+            }
+        ],
         "max-lines": "off",
         "max-lines-per-function": "off",
         "max-params": "off",
@@ -342,9 +352,7 @@
         "operator-linebreak": "off",
         "padded-blocks": "off",
         "prefer-destructuring": "off",
-        "prefer-template": "off",
         "quote-props": "off",
-        "quotes": "off",
         "radix": "off",
         "react-hooks/exhaustive-deps": "off",
         "react/button-has-type": "off",

@@ -13,12 +13,12 @@ interface MetricstableProps {
 }
 
 export default function MetricsTable(props: MetricstableProps) {
-    const PredictorRunData = props.PredictorRunData
-    const Predictors = props.Predictors
+    const predictorRunData = props.PredictorRunData
+    const predictors = props.Predictors
     const predictorRenders = []
 
     function getRioImprovement(unCorrectedValue: number, rioMetrics, metrics, metricName: string, nodeID: string) {
-        const predictor = FlowQueries.getNodeByID(Predictors, nodeID) as PredictorNode
+        const predictor = FlowQueries.getNodeByID(predictors, nodeID) as PredictorNode
         if (!predictor) {
             return null
         }
@@ -53,7 +53,7 @@ export default function MetricsTable(props: MetricstableProps) {
                 id={`rio-diff-${metricName}`}
             >
                 {((rioDiff / nonAdjustedValue) * 100).toFixed(2)}%
-                {rioDiff != 0 &&
+                {rioDiff !== 0 &&
                     (isImproved ? (
                         <FaArrowUp
                             id="arrow-up"
@@ -69,10 +69,10 @@ export default function MetricsTable(props: MetricstableProps) {
         )
     }
 
-    Object.keys(PredictorRunData).forEach((nodeID) => {
-        const metrics = PredictorRunData[nodeID].metrics
-        const rioMetrics = PredictorRunData[nodeID].rioMetrics
-        const predictorMetricsId = `predictor-with-objectives-${PredictorRunData[nodeID].objectives}`
+    Object.keys(predictorRunData).forEach((nodeID) => {
+        const metrics = predictorRunData[nodeID].metrics
+        const rioMetrics = predictorRunData[nodeID].rioMetrics
+        const predictorMetricsId = `predictor-with-objectives-${predictorRunData[nodeID].objectives}`
 
         const cells = Object.keys(metrics).map((metricName) => {
             const unCorrectedValue = metrics[metricName]
@@ -103,7 +103,7 @@ export default function MetricsTable(props: MetricstableProps) {
                     className="mt-4 mb-4"
                     id={predictorMetricsId}
                 >
-                    Predictor with Objectives: {PredictorRunData[nodeID].objectives}
+                    Predictor with Objectives: {predictorRunData[nodeID].objectives}
                 </h4>
                 <p id={`${predictorMetricsId}-node-id`}>Node ID: {nodeID}</p>
                 <Table.Body id={`${predictorMetricsId}-table-body`}>
@@ -151,6 +151,7 @@ export default function MetricsTable(props: MetricstableProps) {
                                     </b>
                                     {/* 2/6/23 DEF - Tooltip does not have an id property when compiling */}
                                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                        /* eslint-disable-next-line max-len */
                                         content="Improvement of uncertainty model enhanced predictor metric over original predictor metric, as a percentage"
                                         statelessProps={{className: "opacity-75"}}
                                         position={Position.TOP_RIGHT}

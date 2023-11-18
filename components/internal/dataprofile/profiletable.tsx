@@ -467,8 +467,10 @@ export default function ProfileTable(props: ProfileTableProps) {
                                             profile && fieldBeingEditedName
                                                 ? currentCategoryValues.map((val, index) => {
                                                       return (
+                                                          // eslint-disable-next-line max-len
                                                           <Draggable // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                                              // 2/6/23 DEF - Draggable doesn't have an id property when compiling
+                                                              // 2/6/23 DEF - Draggable doesn't have an id
+                                                              // property when compiling
                                                               key={val}
                                                               draggableId={val}
                                                               index={index}
@@ -480,7 +482,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                                                                   return (
                                                                       <Row
                                                                           id={`${val}-row`}
-                                                                          className={"my-1 " + opacity}
+                                                                          className={`my-1 ${opacity}`}
                                                                           ref={providedInner.innerRef}
                                                                           {...providedInner.draggableProps}
                                                                           {...providedInner.dragHandleProps}
@@ -499,6 +501,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                                                                           </Col>
                                                                           <Col
                                                                               id={`${val}-delete-value-column`}
+                                                                              /* eslint-disable-next-line max-len */
                                                                               className="d-flex vertical-align-middle mx-0 px-1"
                                                                           >
                                                                               <button

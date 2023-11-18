@@ -50,15 +50,16 @@ for outcome_list in CAO_MAP["outcome"]:
 
         metrics[outcome_list[0]] = np.mean(predictor.predict(consolidated_df))
     else:
-        # If a predictor predcits multiple outcomes
+        # If a predictor predicts multiple outcomes
         outcomes = predictor.predict(consolidated_df)
         for idx, outcome in enumerate(outcome_list):
             metrics[outcome] = np.mean(outcomes[:, idx])
 
 return metrics        
 `
-
-export const OutputOverrideCode: string = `def override_predictions(self, predictions: pd.Dataframe) -> predictions: pd.Dataframe:
+// prettier-ignore
+export const OutputOverrideCode =
+`def override_predictions(self, predictions: pd.Dataframe) -> predictions: pd.Dataframe:
 """
 This function receives the predictions from the predictor as a dataframe.
 The DataFrame contains the outcomes that have been selected as checkboxes

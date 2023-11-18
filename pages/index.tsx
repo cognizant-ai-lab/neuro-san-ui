@@ -129,8 +129,8 @@ export default function Index(): React.ReactElement {
                         </HeaderLineOne>
                         <Link
                             id="get-started-link"
-                            // Use the URL object form of `href` to pass along the query string, in case the user entered
-                            // with /?demo
+                            // Use the URL object form of `href` to pass along the query string, in case the user
+                            // entered with /?demo
                             href={{
                                 pathname: "/projects",
                                 query: router.query,
