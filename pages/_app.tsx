@@ -1,14 +1,16 @@
 import "@blueprintjs/core/lib/css/blueprint.css"
 import "@blueprintjs/icons/lib/css/blueprint-icons.css"
 import "antd/dist/reset.css"
-import "../styles/globals.css"
+
 import "bootstrap/dist/css/bootstrap.css"
 import "reactflow/dist/style.css"
 // Tailwind is a dev dependency but this file is a "production" source. Weird situation, so disable the rule
 // eslint-disable-next-line import/no-extraneous-dependencies
 import "tailwindcss/tailwind.css"
-import "../styles/styles.css"
+
 import "../styles/updatenode.css"
+import "../styles/globals.css"
+import "../styles/styles.css"
 
 import Head from "next/head"
 import {useRouter} from "next/router"
