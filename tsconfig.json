@@ -19,7 +19,7 @@
       "dom.iterable",
       "es2022"
     ],
-    "module": "NodeNext",
+    "module": "esnext",
     "moduleDetection": "force",
     "moduleResolution": "node",
     "noEmit": true,
