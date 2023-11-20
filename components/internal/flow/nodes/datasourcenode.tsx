@@ -25,7 +25,7 @@ export interface DataSourceNodeData {
 
 export type DataSourceNode = RFNode<DataSourceNodeData>
 
-const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = props => {
+const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
     const data = props.data
     const {idExtension = ""} = data
     const projectId: number = data.ProjectID
@@ -74,7 +74,11 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = props => {
             elevation={Elevation.TWO}
             style={{padding: 0, width: "8rem", height: "6rem"}}
         >
-            <Card id={`data-source-card${idExtension}`} border="warning" style={{height: "100%"}}>
+            <Card
+                id={`data-source-card${idExtension}`}
+                border="warning"
+                style={{height: "100%"}}
+            >
                 <Card.Header id={`data-source-header${idExtension}`}>Data Source</Card.Header>
                 <Card.Body id={`data-source-body${idExtension}`}>
                     {taggedDataList.length > 0 ? (
@@ -88,9 +92,9 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = props => {
                                 paddingLeft: 4,
                                 paddingRight: 24,
                             }}
-                            onChange={event => {
+                            onChange={(event) => {
                                 const filteredSelectedData = taggedDataList.filter(
-                                    dataTmp => parseInt(event.target.value) === dataTmp.DataSource.id
+                                    (dataTmp) => parseInt(event.target.value) === dataTmp.DataSource.id
                                 )[0]
                                 data.SelfStateUpdateHandler(
                                     filteredSelectedData.DataSource,
@@ -99,7 +103,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = props => {
                             }}
                             defaultValue={taggedDataList.length > 0 && taggedDataList[0].DataSource.id}
                         >
-                            {taggedDataList.map(dataTmp => {
+                            {taggedDataList.map((dataTmp) => {
                                 // Hack to get valid id into the option tag
                                 // DEF: Right now there is only ever one data source, but someday
                                 //      there will be more and Vince would like the id to correspond
@@ -120,8 +124,16 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = props => {
                     )}
                 </Card.Body>
             </Card>
-            <Handle id={`data-source-handle${idExtension}`} type="source" position={Position.Right} />
-            <Handle id={`data-source-target-handle${idExtension}`} type="target" position={Position.Left} />
+            <Handle
+                id={`data-source-handle${idExtension}`}
+                type="source"
+                position={Position.Right}
+            />
+            <Handle
+                id={`data-source-target-handle${idExtension}`}
+                type="target"
+                position={Position.Left}
+            />
         </BlueprintCard>
     )
 }

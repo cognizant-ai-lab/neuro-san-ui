@@ -276,7 +276,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }, [run])
 
-    const constructMetrics = metrics => {
+    const constructMetrics = (metrics) => {
         setPrescriptors(null)
         if (metrics) {
             const [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(
@@ -314,11 +314,11 @@ export default function RunPage(props: RunProps): React.ReactElement {
             // This is the 1D case - if the Pareto does not exist
             if (Object.keys(paretoPlotData).length === 0) {
                 // Get all the artifacts that start with the keyword prescriptor
-                const prescriptorArtifactNames = Object.keys(JSON.parse(run.output_artifacts)).filter(artifactName =>
+                const prescriptorArtifactNames = Object.keys(JSON.parse(run.output_artifacts)).filter((artifactName) =>
                     artifactName.startsWith("prescriptor")
                 )
 
-                prescriptorArtifactNames.forEach(artifact => {
+                prescriptorArtifactNames.forEach((artifact) => {
                     // Split the name of the prescriptor to extract the node id and the cid
                     const splitName = artifact.split("-")
                     const nodeId = splitName.slice(1, splitName.length - 1).join("-")
@@ -326,7 +326,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 })
             } else {
                 // Loop over the nodes
-                Object.keys(paretoPlotData).forEach(nodeId => {
+                Object.keys(paretoPlotData).forEach((nodeId) => {
                     const nodeInfo = paretoPlotData[nodeId].data
                     const numGen = nodeInfo.length
                     nodeToCIDMapTmp[nodeId] = nodeInfo[numGen - 1].data[0].cid
@@ -340,16 +340,16 @@ export default function RunPage(props: RunProps): React.ReactElement {
         const caoState = prescriptorNode.data.ParentPrescriptorState.caoState
 
         const contextFields = Object.entries(caoState.context)
-            .filter(item => item[1] === true)
-            .map(item => item[0])
+            .filter((item) => item[1] === true)
+            .map((item) => item[0])
 
         const actionFields = Object.entries(caoState.action)
-            .filter(item => item[1] === true)
-            .map(item => item[0])
+            .filter((item) => item[1] === true)
+            .map((item) => item[0])
 
         const outcomeFields = Object.assign(
             {},
-            ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map(item => ({
+            ...prescriptorNode.data.ParentPrescriptorState.evolution.fitness.map((item) => ({
                 [item.metric_name]: item.maximize ? "maximize" : "minimize",
             }))
         )
@@ -456,7 +456,12 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     if (prescriptorPlotData) {
-        plotDiv.push(<ESPRunPlot id="esp-run-plot" PrescriptorRunData={prescriptorPlotData} />)
+        plotDiv.push(
+            <ESPRunPlot
+                id="esp-run-plot"
+                PrescriptorRunData={prescriptorPlotData}
+            />
+        )
     }
 
     // Figure out how many objectives we have. Sum over all prescriptors.
@@ -526,7 +531,11 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     if (!predictorPlotData && !prescriptorPlotData) {
         plotDiv.push(
-            <div id="clip-loader-div" className="container" key="plot-data-div">
+            <div
+                id="clip-loader-div"
+                className="container"
+                key="plot-data-div"
+            >
                 {/* 2/6/23 DEF - ClipLoader does not have an id property when compiling */}
                 <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     key="plot-data-clip-loader"
@@ -578,7 +587,12 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     borderColor: "red",
                 }}
             >
-                <SyntaxHighlighter id="syntax-highlighter" language="scala" style={docco} showLineNumbers={true}>
+                <SyntaxHighlighter
+                    id="syntax-highlighter"
+                    language="scala"
+                    style={docco}
+                    showLineNumbers={true}
+                >
                     {rules}
                 </SyntaxHighlighter>
             </div>
@@ -589,14 +603,37 @@ export default function RunPage(props: RunProps): React.ReactElement {
         // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
         // the rules are in to get a decent coloring scheme
         plotDiv.push(
-            <div id="rules-div" style={{marginBottom: "600px"}}>
-                <NewBar id="rules-bar" InstanceId="rules" Title="Rules" DisplayNewLink={false} />
+            <div
+                id="rules-div"
+                style={{marginBottom: "600px"}}
+            >
+                <NewBar
+                    id="rules-bar"
+                    InstanceId="rules"
+                    Title="Rules"
+                    DisplayNewLink={false}
+                />
                 {isDemoUser ? (
-                    <Tabs defaultActiveKey="decoded" id="rules-tabs" className="my-10" justify>
-                        <Tab id="rules-decoded-tab" eventKey="decoded" title="Details">
+                    <Tabs
+                        defaultActiveKey="decoded"
+                        id="rules-tabs"
+                        className="my-10"
+                        justify
+                    >
+                        <Tab
+                            id="rules-decoded-tab"
+                            eventKey="decoded"
+                            title="Details"
+                        >
                             <Container id="rules-decoded-container">
-                                <Row id="rules-decoded-row" style={{marginTop: 10}}>
-                                    <Col id="rules-decoded-column" md={10}>
+                                <Row
+                                    id="rules-decoded-row"
+                                    style={{marginTop: 10}}
+                                >
+                                    <Col
+                                        id="rules-decoded-column"
+                                        md={10}
+                                    >
                                         {selectedRulesFormat === "raw" ? (
                                             getRawRulesDiv()
                                         ) : rulesInterpretationLoading ? (
@@ -616,12 +653,18 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                 >
                                                     {interpretedRules}
                                                 </ReactMarkdown>
-                                                <BlankLines id="bl1" count={3} />
+                                                <BlankLines
+                                                    id="bl1"
+                                                    count={3}
+                                                />
                                                 <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
                                             </div>
                                         )}
                                     </Col>
-                                    <Col id="radio-column" md={2}>
+                                    <Col
+                                        id="radio-column"
+                                        md={2}
+                                    >
                                         <Radio.Group
                                             id="radio-group"
                                             value={selectedRulesFormat}
@@ -629,11 +672,21 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                 setSelectedRulesFormat(e.target.value)
                                             }}
                                         >
-                                            <Space id="radio-space" direction="vertical" size="middle">
-                                                <Radio id="radio-raw" value="raw">
+                                            <Space
+                                                id="radio-space"
+                                                direction="vertical"
+                                                size="middle"
+                                            >
+                                                <Radio
+                                                    id="radio-raw"
+                                                    value="raw"
+                                                >
                                                     Raw
                                                 </Radio>
-                                                <Radio id="radio-interpreted" value="interpreted">
+                                                <Radio
+                                                    id="radio-interpreted"
+                                                    value="interpreted"
+                                                >
                                                     Interpreted (Beta)
                                                 </Radio>
                                             </Space>
@@ -642,8 +695,16 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                 </Row>
                             </Container>
                         </Tab>
-                        <Tab id="insights-tab" eventKey="insights" title="Insights">
-                            <div id="insights-div" className="my-2 py-2" style={{whiteSpace: "pre-wrap"}}>
+                        <Tab
+                            id="insights-tab"
+                            eventKey="insights"
+                            title="Insights"
+                        >
+                            <div
+                                id="insights-div"
+                                className="my-2 py-2"
+                                style={{whiteSpace: "pre-wrap"}}
+                            >
                                 {insightsLoading ? (
                                     <>
                                         <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -664,7 +725,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                         >
                                             {insights}
                                         </ReactMarkdown>
-                                        <BlankLines id="bl2" count={3} />
+                                        <BlankLines
+                                            id="bl2"
+                                            count={3}
+                                        />
                                         <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
                                     </div>
                                 )}
@@ -682,7 +746,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     if (run && flow) {
         flowDiv.push(
-            <div id="run-flow" key="run-flow-div">
+            <div
+                id="run-flow"
+                key="run-flow-div"
+            >
                 {/* 2/6/23 DEF - ReactFlowProvider does not have an id property when compiling */}
                 <ReactFlowProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 >
@@ -700,12 +767,19 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const propsId = `${props.id}`
     return (
-        <div id={`${propsId}`} className="mr-8 ml-8">
+        <div
+            id={`${propsId}`}
+            className="mr-8 ml-8"
+        >
             {flowDiv}
 
             {plotDiv}
 
-            <NeuroAIChatbot id="chatbot" userAvatar={undefined} pageContext={RunPage.pageContext} />
+            <NeuroAIChatbot
+                id="chatbot"
+                userAvatar={undefined}
+                pageContext={RunPage.pageContext}
+            />
         </div>
     )
 }

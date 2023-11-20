@@ -109,7 +109,10 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
                         </>
                     }
                 >
-                    <div id={`${flowPrefix}-gr-settings-div${idExtension}`} className="flex">
+                    <div
+                        id={`${flowPrefix}-gr-settings-div${idExtension}`}
+                        className="flex"
+                    >
                         <button
                             id={`${flowPrefix}-gr-settings-button${idExtension}`}
                             type="button"
