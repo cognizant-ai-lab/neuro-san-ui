@@ -1,4 +1,3 @@
-/* eslint-disable enforce-ids-in-jsx/missing-ids */
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {useSession} from "next-auth/react"
 import {FC, useEffect, useState} from "react"
