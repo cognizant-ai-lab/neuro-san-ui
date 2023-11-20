@@ -72,7 +72,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
         this.triggerNext = this.triggerNext.bind(this)
     }
 
-    componentDidMount() {
+    override componentDidMount() {
         // Need to alias "this" (apparently) so we can use it inside the function below. This appears to be some kind
         // of lexical capture, but it's beyond my knowledge, and I'm just copying the example from the doc.
         // eslint-disable-next-line @typescript-eslint/no-this-alias,consistent-this
@@ -85,7 +85,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
 
         xhr.addEventListener("readystatechange", readyStateChange)
 
-        function readyStateChange() {
+        function readyStateChange(this: XMLHttpRequest) {
             // Hint to non-JS gurus like me: this "this" is not the "this" you think it is. It has nothing to do with
             // the "this" for the current instance of `CustomStep`. Rather, it is the "this" of the event handler
             // for XMLHttpRequest. For more, see https://xhr.spec.whatwg.org/#xmlhttprequest-response
@@ -144,7 +144,7 @@ export class CustomStep extends Component<PropTypes, StepState> {
         })
     }
 
-    render() {
+    override render() {
         const {nextStepTriggered, loading, answer, sources} = this.state
         if (!nextStepTriggered && !loading) {
             this.triggerNext()

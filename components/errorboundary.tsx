@@ -54,12 +54,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         this.state = {hasError: false, error: null}
     }
 
-    componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    override componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
         // TODO: Send this to central logging service once it's available
         console.error({error, errorInfo})
     }
 
-    render() {
+    override render() {
         // Check if the error is thrown
         if (this.state.hasError) {
             // Render fallback UI
