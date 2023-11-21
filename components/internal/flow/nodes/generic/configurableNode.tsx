@@ -52,7 +52,7 @@ export type ConfigurableNode = RFNode<ConfigurableNodeData>
  * which component we are dealing with. So we have to do it their way.
  *
  */
-const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => {
+const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
     // Unpack props
     const data = props.data
     const {idExtension = ""} = data
@@ -63,7 +63,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
     useEffect(() => {
         const nodeState = {...ParentNodeState}
         nodeState &&
-            Object.keys(nodeState).forEach(key => {
+            Object.keys(nodeState).forEach((key) => {
                 if (nodeState[key].value == null) {
                     if (Array.isArray(nodeState[key].default_value)) {
                         // If the type has to be a choice, select the first choice
@@ -127,9 +127,18 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
 
         return (
             <Container id={`${paramPrefix}-container${idExtension}`}>
-                <Row id={`${paramPrefix}-row${idExtension}`} className="mx-2 my-4">
-                    <Col id={`${paramPrefix}-param-col${idExtension}`} md={2}>
-                        <label id={`${paramPrefix}-label${idExtension}`} className="capitalize">
+                <Row
+                    id={`${paramPrefix}-row${idExtension}`}
+                    className="mx-2 my-4"
+                >
+                    <Col
+                        id={`${paramPrefix}-param-col${idExtension}`}
+                        md={2}
+                    >
+                        <label
+                            id={`${paramPrefix}-label${idExtension}`}
+                            className="capitalize"
+                        >
                             {param}:{" "}
                         </label>
                     </Col>
@@ -140,7 +149,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                                 paramName={param}
                                 defaultParam={defaultParams[param]}
                                 value={(parentNodeStateElement?.value ?? defaultParams[param]?.default_value) as number}
-                                onParamChange={event => onParamChange(event, param)}
+                                onParamChange={(event) => onParamChange(event, param)}
                                 style={{width: "100%"}}
                             />
                         )}
@@ -149,7 +158,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                                 id={`${paramPrefix}-value${idExtension}`}
                                 type="checkbox"
                                 checked={Boolean(parentNodeStateElement?.value ?? defaultParams[param]?.default_value)}
-                                onChange={event => onCheckboxChange(event, param)}
+                                onChange={(event) => onCheckboxChange(event, param)}
                             />
                         )}
                         {item.type === BaseParameterType.ENUM && item.enum && (
@@ -158,12 +167,12 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                                 value={(
                                     parentNodeStateElement?.value ?? defaultParams[param]?.default_value
                                 )?.toString()}
-                                onChange={event => onParamChange(event, param)}
+                                onChange={(event) => onParamChange(event, param)}
                                 style={{width: "100%"}}
                             >
                                 {Object.entries(item.enum)
                                     .sort((first, second) => first[0].localeCompare(second[0]))
-                                    .map(enumItem => (
+                                    .map((enumItem) => (
                                         <option
                                             id={`${paramPrefix}-${enumItem[0]}${idExtension}`}
                                             key={enumItem[0]}
@@ -179,13 +188,16 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                                 style={{width: "100%", fontFamily: "monospace"}}
                                 rows={item.rows || 10}
                                 id={`${paramPrefix}-value${idExtension}`}
-                                onChange={event => onParamChange(event, param)}
+                                onChange={(event) => onParamChange(event, param)}
                             >
                                 {(parentNodeStateElement?.value ?? defaultParams[param]?.default_value)?.toString()}
                             </textarea>
                         )}
                     </Col>
-                    <Col id={`${paramPrefix}-tooltip${idExtension}`} md={1}>
+                    <Col
+                        id={`${paramPrefix}-tooltip${idExtension}`}
+                        md={1}
+                    >
                         <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - Tooltip does not have an id property when compiling
                             content={item.description}
@@ -206,25 +218,41 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
             elevation={Elevation.TWO}
             style={{padding: 0, width: "10rem", height: "4rem"}}
         >
-            <Card id={`${flowPrefix}-card-1${idExtension}`} border="warning" style={{height: "100%"}}>
-                <Card.Body id={`${flowPrefix}-card-2${idExtension}`} className="flex justify-center content-center">
-                    <EvergreenText id={`${flowPrefix}-text${idExtension}`} className="mr-2">
+            <Card
+                id={`${flowPrefix}-card-1${idExtension}`}
+                border="warning"
+                style={{height: "100%"}}
+            >
+                <Card.Body
+                    id={`${flowPrefix}-card-2${idExtension}`}
+                    className="flex justify-center content-center"
+                >
+                    <EvergreenText
+                        id={`${flowPrefix}-text${idExtension}`}
+                        className="mr-2"
+                    >
                         {NodeTitle}
                     </EvergreenText>
                     <div
                         id={`${flowPrefix}-popover-div${idExtension}`}
-                        onMouseDown={event => {
+                        onMouseDown={(event) => {
                             event.stopPropagation()
                         }}
                     >
                         <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - Popover does not have an id property when compiling
                             content={
-                                <Card.Body id={`${flowPrefix}-config${idExtension}`} className="h-40 text-xs">
-                                    <div id={`${flowPrefix}-basic-settings-div${idExtension}`} className="mt-3">
+                                <Card.Body
+                                    id={`${flowPrefix}-config${idExtension}`}
+                                    className="h-40 text-xs"
+                                >
+                                    <div
+                                        id={`${flowPrefix}-basic-settings-div${idExtension}`}
+                                        className="mt-3"
+                                    >
                                         {Object.keys(ParameterSet)
-                                            .filter(key => !ParameterSet[key].isAdvanced)
-                                            .map(param => getInputComponent(param))}
+                                            .filter((key) => !ParameterSet[key].isAdvanced)
+                                            .map((param) => getInputComponent(param))}
                                     </div>
                                     <div
                                         id={`${flowPrefix}-advanced-settings-label-div${idExtension}`}
@@ -252,10 +280,13 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                                         in={showAdvanced}
                                         timeout={5}
                                     >
-                                        <div id={`${flowPrefix}-basic-settings-div${idExtension}`} className="mt-3">
+                                        <div
+                                            id={`${flowPrefix}-basic-settings-div${idExtension}`}
+                                            className="mt-3"
+                                        >
                                             {Object.keys(ParameterSet)
-                                                .filter(key => ParameterSet[key].isAdvanced)
-                                                .map(param => getInputComponent(param))}
+                                                .filter((key) => ParameterSet[key].isAdvanced)
+                                                .map((param) => getInputComponent(param))}
                                         </div>
                                     </Collapse>
                                 </Card.Body>
@@ -266,7 +297,10 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                                 backgroundColor: "ghostwhite",
                             }}
                         >
-                            <div id={`${flowPrefix}-show-config${idExtension}`} className="flex">
+                            <div
+                                id={`${flowPrefix}-show-config${idExtension}`}
+                                className="flex"
+                            >
                                 <button
                                     id={`${flowPrefix}-show-config-button${idExtension}`}
                                     type="button"
@@ -295,12 +329,23 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = props => 
                             sendNotification(NotificationType.success, "Node deleted")
                         }}
                     >
-                        <AiFillDelete id={`${flowPrefix}-delete-button-fill${idExtension}`} size="10" />
+                        <AiFillDelete
+                            id={`${flowPrefix}-delete-button-fill${idExtension}`}
+                            size="10"
+                        />
                     </button>
                 </div>
             </Card>
-            <Handle id={`${flowPrefix}-source-handle${idExtension}`} type="source" position={HandlePosition.Right} />
-            <Handle id={`${flowPrefix}-target-handle${idExtension}`} type="target" position={HandlePosition.Left} />
+            <Handle
+                id={`${flowPrefix}-source-handle${idExtension}`}
+                type="source"
+                position={HandlePosition.Right}
+            />
+            <Handle
+                id={`${flowPrefix}-target-handle${idExtension}`}
+                type="target"
+                position={HandlePosition.Left}
+            />
         </BlueprintCard>
     )
 }

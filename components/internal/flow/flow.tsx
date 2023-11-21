@@ -100,7 +100,7 @@ export default function Flow(props: FlowProps) {
         if (props.Flow && props.Flow.length > 0) {
             // If we are loading from a persisted flow, we need to add the handlers to the nodes since the handlers
             // do not get persisted.
-            initialFlowValue = props.Flow.map(node => {
+            initialFlowValue = props.Flow.map((node) => {
                 switch (node.type) {
                     case "datanode":
                         node.data = {
@@ -113,18 +113,18 @@ export default function Flow(props: FlowProps) {
                         node.data = {
                             ...node.data,
                             idExtension,
-                            SetParentPredictorState: state => PredictorSetStateHandler(state, node.id),
-                            DeleteNode: nodeId => _deleteNodeById(nodeId),
-                            GetElementIndex: nodeId => _getElementIndex(nodeId),
+                            SetParentPredictorState: (state) => PredictorSetStateHandler(state, node.id),
+                            DeleteNode: (nodeId) => _deleteNodeById(nodeId),
+                            GetElementIndex: (nodeId) => _getElementIndex(nodeId),
                         }
                         break
                     case "prescriptornode":
                         node.data = {
                             ...node.data,
                             idExtension,
-                            SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, node.id),
-                            DeleteNode: nodeId => _deleteNodeById(nodeId),
-                            GetElementIndex: nodeId => _getElementIndex(nodeId),
+                            SetParentPrescriptorState: (state) => PrescriptorSetStateHandler(state, node.id),
+                            DeleteNode: (nodeId) => _deleteNodeById(nodeId),
+                            GetElementIndex: (nodeId) => _getElementIndex(nodeId),
                         }
                         break
                     case "uncertaintymodelnode":
@@ -132,9 +132,9 @@ export default function Flow(props: FlowProps) {
                         node.data = {
                             ...node.data,
                             idExtension,
-                            SetParentNodeState: state => ParentNodeSetStateHandler(state, node.id),
-                            DeleteNode: nodeId => _deleteNodeById(nodeId),
-                            GetElementIndex: nodeId => _getElementIndex(nodeId),
+                            SetParentNodeState: (state) => ParentNodeSetStateHandler(state, node.id),
+                            DeleteNode: (nodeId) => _deleteNodeById(nodeId),
+                            GetElementIndex: (nodeId) => _getElementIndex(nodeId),
 
                             // These two have to be added in since nodes in legacy experiments don't have them
                             ParameterSet: UNCERTAINTY_MODEL_PARAMS,
@@ -145,7 +145,7 @@ export default function Flow(props: FlowProps) {
                         node.data = {
                             ...node.data,
                             idExtension,
-                            UpdateOutputOverrideCode: value => UpdateOutputOverrideCode(node.id, value),
+                            UpdateOutputOverrideCode: (value) => UpdateOutputOverrideCode(node.id, value),
                         }
                         break
                     case "llmnode":
@@ -153,9 +153,9 @@ export default function Flow(props: FlowProps) {
                         node.data = {
                             ...node.data,
                             idExtension,
-                            SetParentNodeState: state => ParentNodeSetStateHandler(state, node.id),
-                            DeleteNode: nodeId => _deleteNodeById(nodeId),
-                            GetElementIndex: nodeId => _getElementIndex(nodeId),
+                            SetParentNodeState: (state) => ParentNodeSetStateHandler(state, node.id),
+                            DeleteNode: (nodeId) => _deleteNodeById(nodeId),
+                            GetElementIndex: (nodeId) => _getElementIndex(nodeId),
                         }
                         break
                     default:
@@ -196,7 +196,7 @@ export default function Flow(props: FlowProps) {
 
         // Update the selected data source
         setNodes(
-            nodes.map(node => {
+            nodes.map((node) => {
                 if (node.type === "datanode") {
                     debug("Recreating Data node: ", node.type)
                     node.data = {
@@ -222,7 +222,7 @@ export default function Flow(props: FlowProps) {
         Called by nodes to update their state in the flow
          */
         setNodes(
-            nodes.map(node => {
+            nodes.map((node) => {
                 // If this is the right node
                 if (node.id === NodeID) {
                     node.data = {
@@ -244,7 +244,7 @@ export default function Flow(props: FlowProps) {
         */
 
         setNodes(
-            nodes.map(node => {
+            nodes.map((node) => {
                 // If this is the right predictor node, update its state
                 if (node.id === NodeID) {
                     node.data = {
@@ -262,13 +262,13 @@ export default function Flow(props: FlowProps) {
                     // Get all predictors in the experiment except the one that just got updated because the data in
                     // that node is stale. Remember, we are inside the set state handler so the state there
                     // is before the update.
-                    const predictors = FlowQueries.getPredictorNodes(nodes).filter(aNode => aNode.id !== NodeID)
+                    const predictors = FlowQueries.getPredictorNodes(nodes).filter((aNode) => aNode.id !== NodeID)
 
                     // Take the Union of all the checked outcomes on the predictors
                     let checkedOutcomes = FlowQueries.extractCheckedFields(predictors, CAOType.OUTCOME)
 
                     // Append the new state outcome
-                    Object.keys(newState.caoState.outcome).forEach(outcome => {
+                    Object.keys(newState.caoState.outcome).forEach((outcome) => {
                         if (newState.caoState.outcome[outcome]) {
                             checkedOutcomes.push(outcome)
                         }
@@ -280,11 +280,11 @@ export default function Flow(props: FlowProps) {
                     )
 
                     // Convert checkedOutcomes to fitness structure
-                    const fitness = checkedOutcomes.map(outcome => {
+                    const fitness = checkedOutcomes.map((outcome) => {
                         // Maintain the state if it exists otherwise set maximize to true
                         const maximize = _node.data.ParentPrescriptorState.evolution.fitness
-                            .filter(outcomeDict => outcomeDict.metric_name === outcome)
-                            .map(outcomeDict => outcomeDict.maximize)
+                            .filter((outcomeDict) => outcomeDict.metric_name === outcome)
+                            .map((outcomeDict) => outcomeDict.maximize)
                         return {
                             metric_name: outcome,
                             maximize: maximize[0] ?? "true",
@@ -313,7 +313,7 @@ export default function Flow(props: FlowProps) {
         used to override the output of the predictor.
         */
         setEdges(
-            edges.map(node => {
+            edges.map((node) => {
                 if (node.id === prescriptorEdgeID) {
                     node.data = {
                         ...node.data,
@@ -333,7 +333,7 @@ export default function Flow(props: FlowProps) {
         */
 
         setNodes(
-            nodes.map(node => {
+            nodes.map((node) => {
                 if (node.id === NodeID) {
                     node.data = {
                         ...node.data,
@@ -383,7 +383,7 @@ export default function Flow(props: FlowProps) {
             type: "prescriptoredge",
             data: {
                 OutputOverrideCode: OutputOverrideCode,
-                UpdateOutputOverrideCode: value => UpdateOutputOverrideCode(edgeId, value),
+                UpdateOutputOverrideCode: (value) => UpdateOutputOverrideCode(edgeId, value),
                 idExtension,
             },
         }
@@ -434,14 +434,14 @@ export default function Flow(props: FlowProps) {
         // We also do not support uncertainty nodes for predictors with multiple outcomes
         const predictorsWithoutUncertaintyNodes = predictorNodes
             .filter(
-                node =>
+                (node) =>
                     node.data.ParentPredictorState.selectedPredictorType !== "classifier" &&
                     getOutgoers<NodeData, PredictorNodeData>(node, nodes, edges).every(
-                        aNode => aNode.type !== "uncertaintymodelnode"
+                        (aNode) => aNode.type !== "uncertaintymodelnode"
                     ) &&
                     !FlowQueries.hasMultipleOutcomes(node)
             )
-            .map(node => node.id)
+            .map((node) => node.id)
         if (predictorsWithoutUncertaintyNodes.length === 0) {
             sendNotification(
                 NotificationType.warning,
@@ -483,7 +483,7 @@ export default function Flow(props: FlowProps) {
 
         // Add the Predictor Node
         const MaxPredictorNodeY = Math.max(
-            ...FlowQueries.getPredictorNodes(nodes).map(node => node.position.y),
+            ...FlowQueries.getPredictorNodes(nodes).map((node) => node.position.y),
             nodes[0].position.y - 100
         )
 
@@ -495,9 +495,9 @@ export default function Flow(props: FlowProps) {
                 NodeID: NodeID,
                 SelectedDataSourceId: dataSourceNode.data.DataSource.id,
                 ParentPredictorState: _getInitialPredictorState(),
-                SetParentPredictorState: state => PredictorSetStateHandler(state, NodeID),
-                DeleteNode: predictorNodeId => _deleteNodeById(predictorNodeId),
-                GetElementIndex: id => _getElementIndex(id),
+                SetParentPredictorState: (state) => PredictorSetStateHandler(state, NodeID),
+                DeleteNode: (predictorNodeId) => _deleteNodeById(predictorNodeId),
+                GetElementIndex: (id) => _getElementIndex(id),
                 idExtension,
             },
             position: {
@@ -627,7 +627,7 @@ export default function Flow(props: FlowProps) {
         outcomes = outcomes.filter((value, index, sourceArray) => sourceArray.indexOf(value) === index)
 
         // Default to maximizing outcomes until user tells us otherwise
-        const fitness = outcomes.map(outcome => ({metric_name: outcome, maximize: true}))
+        const fitness = outcomes.map((outcome) => ({metric_name: outcome, maximize: true}))
 
         // Add a Prescriptor Node
 
@@ -646,11 +646,11 @@ export default function Flow(props: FlowProps) {
                 NodeID: NodeID,
                 SelectedDataSourceId: FlowQueries.getDataNodes(nodes)[0].data.DataSource.id,
                 ParentPrescriptorState: _getInitialPrescriptorState(fitness),
-                SetParentPrescriptorState: state => PrescriptorSetStateHandler(state, NodeID),
+                SetParentPrescriptorState: (state) => PrescriptorSetStateHandler(state, NodeID),
                 EvaluatorOverrideCode: EvaluateCandidateCode,
-                UpdateEvaluateOverrideCode: value => UpdateOutputOverrideCode(NodeID, value),
-                DeleteNode: prescriptorNodeId => _deleteNodeById(prescriptorNodeId),
-                GetElementIndex: id => _getElementIndex(id),
+                UpdateEvaluateOverrideCode: (value) => UpdateOutputOverrideCode(NodeID, value),
+                DeleteNode: (prescriptorNodeId) => _deleteNodeById(prescriptorNodeId),
+                GetElementIndex: (id) => _getElementIndex(id),
                 idExtension,
             },
             position: {
@@ -660,11 +660,11 @@ export default function Flow(props: FlowProps) {
         })
 
         // Add edges to all the predictor nodes
-        predictorNodes.forEach(predictorNode => {
+        predictorNodes.forEach((predictorNode) => {
             const downstreamNodes = getOutgoers<NodeData, PredictorNodeData>(predictorNode, nodes, edges)
             if (downstreamNodes && downstreamNodes.length > 0) {
                 const downStreamUncertaintyModelNodes = downstreamNodes.filter(
-                    node => node.type === "uncertaintymodelnode"
+                    (node) => node.type === "uncertaintymodelnode"
                 )
                 if (downStreamUncertaintyModelNodes && downStreamUncertaintyModelNodes.length === 1) {
                     // should only be one uncertainty model node per predictor!
@@ -697,7 +697,7 @@ export default function Flow(props: FlowProps) {
         // Make a copy of the graph
         const nodesCopy = nodes.slice()
         let edgesCopy = edges.slice()
-        predictorNodeIDs.forEach(predictorNodeID => {
+        predictorNodeIDs.forEach((predictorNodeID) => {
             // Find associated predictor for this RIO node
             const predictorNode = FlowQueries.getPredictorNode(nodes, predictorNodeID)
             if (!predictorNode) {
@@ -711,7 +711,7 @@ export default function Flow(props: FlowProps) {
             const alreadyHasUncertaintyNode =
                 downstreamNodes &&
                 downstreamNodes.length > 0 &&
-                downstreamNodes.some(node => node.type === "uncertaintymodelnode")
+                downstreamNodes.some((node) => node.type === "uncertaintymodelnode")
             if (alreadyHasUncertaintyNode) {
                 sendNotification(
                     NotificationType.warning,
@@ -739,9 +739,9 @@ export default function Flow(props: FlowProps) {
                 data: {
                     NodeID: newNodeID,
                     ParentNodeState: _getInitialUncertaintyNodeState(),
-                    SetParentNodeState: state => ParentNodeSetStateHandler(state, newNodeID),
-                    DeleteNode: id => _deleteNodeById(id),
-                    GetElementIndex: id => _getElementIndex(id),
+                    SetParentNodeState: (state) => ParentNodeSetStateHandler(state, newNodeID),
+                    DeleteNode: (id) => _deleteNodeById(id),
+                    GetElementIndex: (id) => _getElementIndex(id),
                     ParameterSet: UNCERTAINTY_MODEL_PARAMS,
                     NodeTitle: "Uncertainty Model",
                     idExtension,
@@ -769,7 +769,7 @@ export default function Flow(props: FlowProps) {
                 const connectedEdges = getConnectedEdges([predictorNode], edges)
                 for (const edge of connectedEdges) {
                     if (edge.type === "prescriptoredge") {
-                        edgesCopy = edgesCopy.filter(e => e.id !== edge.id)
+                        edgesCopy = edgesCopy.filter((e) => e.id !== edge.id)
                     }
                 }
 
@@ -797,8 +797,8 @@ export default function Flow(props: FlowProps) {
         const dataNode = dataNodes[0]
 
         // Disconnect data source from predictors
-        const dataSourceOutgoingEdges = getConnectedEdges([dataNode], edges).map(e => e.id)
-        edgesCopy = edgesCopy.filter(e => !dataSourceOutgoingEdges.includes(e.id))
+        const dataSourceOutgoingEdges = getConnectedEdges([dataNode], edges).map((e) => e.id)
+        edgesCopy = edgesCopy.filter((e) => !dataSourceOutgoingEdges.includes(e.id))
 
         const dataLlmNodeID = uuid()
         // LLM after data source node
@@ -808,9 +808,9 @@ export default function Flow(props: FlowProps) {
             data: {
                 NodeID: dataLlmNodeID,
                 ParentNodeState: structuredClone(LLM_MODEL_PARAMS_DATA_LLM),
-                SetParentNodeState: state => ParentNodeSetStateHandler(state, dataLlmNodeID),
-                DeleteNode: nodeID => _deleteNodeById(nodeID),
-                GetElementIndex: nodeID => _getElementIndex(nodeID),
+                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, dataLlmNodeID),
+                DeleteNode: (nodeID) => _deleteNodeById(nodeID),
+                GetElementIndex: (nodeID) => _getElementIndex(nodeID),
                 ParameterSet: LLM_MODEL_PARAMS_DATA_LLM,
                 NodeTitle: "Confabulation LLM",
                 idExtension,
@@ -840,9 +840,9 @@ export default function Flow(props: FlowProps) {
             data: {
                 NodeID: categoryReducerLlmNodeID,
                 ParentNodeState: structuredClone(LLM_MODEL_PARAMS_CATEGORY_REDUCER),
-                SetParentNodeState: state => ParentNodeSetStateHandler(state, categoryReducerLlmNodeID),
-                DeleteNode: nodeID => _deleteNodeById(nodeID),
-                GetElementIndex: nodeID => _getElementIndex(nodeID),
+                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, categoryReducerLlmNodeID),
+                DeleteNode: (nodeID) => _deleteNodeById(nodeID),
+                GetElementIndex: (nodeID) => _getElementIndex(nodeID),
                 ParameterSet: LLM_MODEL_PARAMS_CATEGORY_REDUCER,
                 NodeTitle: "Category Reducer LLM",
                 idExtension,
@@ -872,9 +872,9 @@ export default function Flow(props: FlowProps) {
             data: {
                 NodeID: analyticsLlmNodeID,
                 ParentNodeState: structuredClone(LLM_MODEL_PARAMS2),
-                SetParentNodeState: state => ParentNodeSetStateHandler(state, analyticsLlmNodeID),
-                DeleteNode: newNodeID => _deleteNodeById(newNodeID),
-                GetElementIndex: newNodeID => _getElementIndex(newNodeID),
+                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, analyticsLlmNodeID),
+                DeleteNode: (newNodeID) => _deleteNodeById(newNodeID),
+                GetElementIndex: (newNodeID) => _getElementIndex(newNodeID),
                 ParameterSet: LLM_MODEL_PARAMS2,
                 NodeTitle: "Analytics LLM",
                 idExtension,
@@ -897,7 +897,7 @@ export default function Flow(props: FlowProps) {
         // Connect Analytics LLM to predictor(s)
         const predictorNodes = FlowQueries.getPredictorNodes(nodes)
         if (predictorNodes && predictorNodes.length > 0) {
-            const llmToPredictorsEdges = predictorNodes.map(node => ({
+            const llmToPredictorsEdges = predictorNodes.map((node) => ({
                 id: uuid(),
                 source: analyticsLlmNodeID,
                 target: node.id,
@@ -922,9 +922,9 @@ export default function Flow(props: FlowProps) {
                 data: {
                     NodeID: actuationLlmNodeID,
                     ParentNodeState: structuredClone(LLM_MODEL_PARAMS3),
-                    SetParentNodeState: state => ParentNodeSetStateHandler(state, actuationLlmNodeID),
-                    DeleteNode: nodeID => _deleteNodeById(nodeID),
-                    GetElementIndex: nodeID => _getElementIndex(nodeID),
+                    SetParentNodeState: (state) => ParentNodeSetStateHandler(state, actuationLlmNodeID),
+                    DeleteNode: (nodeID) => _deleteNodeById(nodeID),
+                    GetElementIndex: (nodeID) => _getElementIndex(nodeID),
                     ParameterSet: LLM_MODEL_PARAMS3,
                     NodeTitle: "Actuation LLM",
                     idExtension,
@@ -990,7 +990,7 @@ export default function Flow(props: FlowProps) {
         */
 
         // Do not allow deletion of data nodes
-        const dataNodeDeleted = nodesToDelete.some(element => element.type === "datanode")
+        const dataNodeDeleted = nodesToDelete.some((element) => element.type === "datanode")
         if (dataNodeDeleted) {
             sendNotification(
                 NotificationType.warning,
@@ -1000,12 +1000,12 @@ export default function Flow(props: FlowProps) {
             return
         }
 
-        const removableNodes = nodesToDelete.filter(element => element.type !== "datanode")
+        const removableNodes = nodesToDelete.filter((element) => element.type !== "datanode")
         // Also get the edges associated with this uncertainty node
         const removableEdges = getConnectedEdges(removableNodes, currentEdges)
 
         const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes(nodesToDelete)
-        const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map(node => node.id)
+        const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map((node) => node.id)
 
         const uncertaintyNodesBeingRemoved = FlowQueries.getUncertaintyModelNodes(nodesToDelete)
 
@@ -1014,9 +1014,9 @@ export default function Flow(props: FlowProps) {
         // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
         if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
             const uncertaintyNodesToRemove = predictorNodesBeingRemoved.flatMap<ConfigurableNode>(
-                node =>
+                (node) =>
                     getOutgoers<NodeData, PredictorNodeData>(node, currentNodes, currentEdges).filter(
-                        aNode => aNode.type === "uncertaintymodelnode"
+                        (aNode) => aNode.type === "uncertaintymodelnode"
                     ) as ConfigurableNode[]
             )
             removableNodes.push(...uncertaintyNodesToRemove)
@@ -1035,14 +1035,14 @@ export default function Flow(props: FlowProps) {
             // Also if the removable elements have predictor nodes we
             // need to clean up their outcomes from showing in the prescriptor
             const predictorsLeft = currentNodes.filter(
-                node => node.type === "predictornode" && !predictorIdsBeingRemoved.includes(node.id)
+                (node) => node.type === "predictornode" && !predictorIdsBeingRemoved.includes(node.id)
             ) as PredictorNode[]
 
             // Connect any remaining predictors to the prescriptor
             if (uncertaintyNodesBeingRemoved && prescriptorNodes && prescriptorNodes.length > 0) {
-                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved.flatMap(node =>
+                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved.flatMap((node) =>
                     getIncomers<NodeData, ConfigurableNodeData>(node, currentNodes, currentEdges).filter(
-                        aNode => aNode.type === "predictornode"
+                        (aNode) => aNode.type === "predictornode"
                     )
                 )
                 for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
@@ -1057,9 +1057,9 @@ export default function Flow(props: FlowProps) {
             outcomes = outcomes.filter((value, index, sourceArray) => sourceArray.indexOf(value) === index)
 
             // Default to maximizing outcomes until user tells us otherwise
-            const fitness = outcomes.map(outcome => ({metric_name: outcome, maximize: true}))
+            const fitness = outcomes.map((outcome) => ({metric_name: outcome, maximize: true}))
 
-            newNodes = currentNodes.map(singleNode => {
+            newNodes = currentNodes.map((singleNode) => {
                 const prescriptorNode = singleNode as PrescriptorNode
                 if (singleNode.type === "prescriptornode") {
                     prescriptorNode.data = {
@@ -1078,7 +1078,7 @@ export default function Flow(props: FlowProps) {
         }
 
         // Update the uuid index map for testing ids
-        removableNodes.forEach(element => {
+        removableNodes.forEach((element) => {
             const uuidIndex = FlowQueries.getIndexForElement(elementTypeToUuidList, element)
             if (uuidIndex >= 0) {
                 const elementType = String(element.type)
@@ -1092,14 +1092,14 @@ export default function Flow(props: FlowProps) {
         })
 
         // Construct a list of changes
-        const nodeChanges = removableNodes.map<NodeRemoveChange>(element => ({
+        const nodeChanges = removableNodes.map<NodeRemoveChange>((element) => ({
             type: "remove",
             id: element.id,
         }))
 
         const remainingNodes = applyNodeChanges<NodeData>(nodeChanges, newNodes) as NodeType[]
 
-        const edgeChanges = removableEdges.map<EdgeRemoveChange>(element => ({
+        const edgeChanges = removableEdges.map<EdgeRemoveChange>((element) => ({
             type: "remove",
             id: element.id,
         }))
@@ -1123,7 +1123,7 @@ export default function Flow(props: FlowProps) {
         const nodesCopy = nodes.slice()
 
         // Locate which node was moved
-        const movedNode = nodesCopy.find(n => n.id === node.id)
+        const movedNode = nodesCopy.find((n) => n.id === node.id)
         if (movedNode) {
             // Only update if we found the node. There should be no circumstances where the node is not found here
             // since we're in the event handler for the node itself, but just to be careful.
@@ -1165,18 +1165,18 @@ export default function Flow(props: FlowProps) {
         // Don't want to update nodes directly in existing flow so make a copy
         const _nodes = nodes.slice()
 
-        _nodes.forEach(node => {
+        _nodes.forEach((node) => {
             dagreGraph.setNode(node.id, {width: nodeWidth, height: nodeHeight})
         })
 
-        edges.forEach(edge => {
+        edges.forEach((edge) => {
             dagreGraph.setEdge(edge.source, edge.target)
         })
 
         dagre.layout(dagreGraph)
 
         // Convert dagre's layout to what our flow graph needs
-        _nodes.forEach(node => {
+        _nodes.forEach((node) => {
             const nodeWithPosition = dagreGraph.node(node.id)
             node.targetPosition = Position.Left
             node.sourcePosition = Position.Right
@@ -1194,8 +1194,8 @@ export default function Flow(props: FlowProps) {
         // naturally already be aligned, and there can only be one prescriptor node currently.
         const predictorNodes = FlowQueries.getPredictorNodes(_nodes)
         if (predictorNodes.length > 1) {
-            const minX = Math.min(...predictorNodes.map(node => node.position.x))
-            predictorNodes.forEach(node => {
+            const minX = Math.min(...predictorNodes.map((node) => node.position.x))
+            predictorNodes.forEach((node) => {
                 node.position.x = minX
             })
         }
@@ -1211,13 +1211,13 @@ export default function Flow(props: FlowProps) {
     const onNodesChange = useCallback((changes: NodeChange[]) => {
         // Get the Id of the data node
         const dataNode = FlowQueries.getDataNodes(nodes)[0]
-        if (changes.some(change => change.type === "remove" && change.id === dataNode.id)) {
+        if (changes.some((change) => change.type === "remove" && change.id === dataNode.id)) {
             // If the node being removed is a data node, then we do not remove it
             return
         }
-        setNodes(ns => applyNodeChanges<NodeData>(changes, ns) as NodeType[])
+        setNodes((ns) => applyNodeChanges<NodeData>(changes, ns) as NodeType[])
     }, [])
-    const onEdgesChange = useCallback(changes => setEdges(es => applyEdgeChanges(changes, es)), [])
+    const onEdgesChange = useCallback((changes) => setEdges((es) => applyEdgeChanges(changes, es)), [])
 
     // Figure out how many columns we need -- one for each button (add predictor, add prescriptor, add uncertainty),
     // plus an extra one if demo mode is enabled, for the "add LLMs" button.
@@ -1229,7 +1229,10 @@ export default function Flow(props: FlowProps) {
         <Container id={`${propsId}`}>
             {/* Only render if ElementsSelectable is true */}
             {elementsSelectable && (
-                <div id="flow-buttons" className={`grid grid-cols-${cols} gap-4 mb-4`}>
+                <div
+                    id="flow-buttons"
+                    className={`grid grid-cols-${cols} gap-4 mb-4`}
+                >
                     <Button
                         id="add_predictor_btn"
                         size="sm"
@@ -1259,13 +1262,22 @@ export default function Flow(props: FlowProps) {
                     </Button>
                     {isDemoUser && (
                         // Only show "add LLMs" button if demo functionality requested
-                        <Button id="add_llm_btn" size="sm" onClick={() => _addLlms()} type="button" style={buttonStyle}>
+                        <Button
+                            id="add_llm_btn"
+                            size="sm"
+                            onClick={() => _addLlms()}
+                            type="button"
+                            style={buttonStyle}
+                        >
                             Add LLMs
                         </Button>
                     )}
                 </div>
             )}
-            <div id="react-flow-div" style={{width: "100%", height: "50vh"}}>
+            <div
+                id="react-flow-div"
+                style={{width: "100%", height: "50vh"}}
+            >
                 {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <ReactFlowProvider>
                     <ReactFlow
@@ -1274,9 +1286,9 @@ export default function Flow(props: FlowProps) {
                         edges={edges}
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
-                        onNodesDelete={currentNodes => _onElementsRemove(currentNodes)}
+                        onNodesDelete={(currentNodes) => _onElementsRemove(currentNodes)}
                         onConnect={void 0} // Prevent user manually connecting nodes
-                        onInit={instance => _onLoad(instance)}
+                        onInit={(instance) => _onLoad(instance)}
                         snapToGrid={true}
                         snapGrid={[10, 10]}
                         nodeTypes={NodeTypes}
@@ -1295,7 +1307,10 @@ export default function Flow(props: FlowProps) {
                             onFitView={() => tidyView()}
                         />
                         {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                        <Background color="#000048" gap={5} />
+                        <Background
+                            color="#000048"
+                            gap={5}
+                        />
                     </ReactFlow>
                 </ReactFlowProvider>
             </div>
