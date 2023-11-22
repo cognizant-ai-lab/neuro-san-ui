@@ -530,9 +530,10 @@ export default function ProfileTable(props: ProfileTableProps) {
                                                                                           deleteValue(val)
                                                                                       }}
                                                                                   >
+                                                                                      {/* eslint-disable max-len */}
                                                                                       <AiFillDelete
-                                                                                          /* eslint-disable-next-line max-len */
                                                                                           id={`${val}-delete-value-fill`}
+                                                                                          /* eslint-enable max-len */
                                                                                           size="14"
                                                                                           style={{
                                                                                               cursor: "pointer",
