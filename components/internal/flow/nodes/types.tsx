@@ -8,12 +8,14 @@ import PrescriptorNodeComponent, {PrescriptorNode, PrescriptorNodeData} from "./
 // Based on the declared nodes above we declare a constant holder to reference the Node objects. These references are
 // later passed to the Flow component to render the graph
 const NodeTypes: RFNodeTypes = {
+    activation_node: ConfigurableNodeComponent,
+    analytics_node: ConfigurableNodeComponent,
+    category_reducer_node: ConfigurableNodeComponent,
+    confabulation_node: ConfigurableNodeComponent,
     datanode: DataSourceNodeComponent,
     predictornode: PredictorNodeComponent,
     prescriptornode: PrescriptorNodeComponent,
     uncertaintymodelnode: ConfigurableNodeComponent,
-    llmnode: ConfigurableNodeComponent,
-    category_reducer_node: ConfigurableNodeComponent,
 }
 
 export type NodeData = DataSourceNodeData | PredictorNodeData | PrescriptorNodeData | ConfigurableNodeData

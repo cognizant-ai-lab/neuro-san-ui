@@ -1,6 +1,7 @@
 // eslint-disable-next-line import/no-named-as-default
 import Debug from "debug"
 import {isEdge, isNode} from "reactflow"
+import {CAOType} from "../../../controller/datatag/types"
 
 import {EdgeType} from "./edges/types"
 import {DataSourceNode} from "./nodes/datasourcenode"
@@ -8,7 +9,6 @@ import {ConfigurableNode} from "./nodes/generic/configurableNode"
 import {PredictorNode} from "./nodes/predictornode"
 import {PrescriptorNode} from "./nodes/prescriptornode"
 import {NodeType} from "./nodes/types"
-import {CAOType} from "../../../controller/datatag/types"
 
 const debug = Debug("flowqueries")
 
@@ -211,5 +211,15 @@ export class FlowQueries {
         This function returns any LLM nodes found in the graph
         */
         return nodes?.filter((node) => node.type === "llmnode") as ConfigurableNode[]
+    }
+
+    /**
+     * Returns any confabulation nodes found in the graph
+     * @param nodes The graph to search
+     * @return The list of confabulation nodes found or empty array if none found
+     */
+    static getConfabulationNodes(nodes: NodeType[]): ConfigurableNode[] {
+        // Look for nodes of type "confabulation_node"
+        return nodes.filter((node) => node.type === "confabulation_node") as ConfigurableNode[]
     }
 }

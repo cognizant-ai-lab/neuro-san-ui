@@ -128,11 +128,6 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                 type="source"
                 position={Position.Right}
             />
-            <Handle
-                id={`data-source-target-handle${idExtension}`}
-                type="target"
-                position={Position.Left}
-            />
         </BlueprintCard>
     )
 }
