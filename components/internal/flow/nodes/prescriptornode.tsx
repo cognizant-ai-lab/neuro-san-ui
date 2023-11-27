@@ -94,8 +94,8 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
         //TODO: If the data node has the data source and tag available we should not fetch it but use that.
         //TODO: Reason: Data Tags can change and we don"t version them explicitly - this will be an easy way of doing
         // that. If they were to change and we had to re-run a run it might fail
-        function callSetTaggedData() {
-            return async () => setTaggedData(await loadDataTag(currentUser, data.SelectedDataSourceId))
+        async function callSetTaggedData() {
+            return setTaggedData(await loadDataTag(currentUser, data.SelectedDataSourceId))
         }
 
         callSetTaggedData()
