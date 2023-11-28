@@ -408,7 +408,6 @@ export default function ProfileTable(props: ProfileTableProps) {
         setCurrentCategoryValues(tmpValues)
     }
 
-<<<<<<< HEAD
     const renderCategoryDragList = (val, index) => {
         return (
             <Draggable // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -470,7 +469,6 @@ export default function ProfileTable(props: ProfileTableProps) {
         )
     }
 
-=======
     const saveHandler = (e: ReactMouseEvent<HTMLElement>) => {
         e.preventDefault()
 
@@ -528,7 +526,6 @@ export default function ProfileTable(props: ProfileTableProps) {
         </Modal>
     )
 
->>>>>>> 1cb629d17 (show confirmation modal if changes are moade)
     const editCategoryValuesModal = (
         <Modal // eslint-disable-line enforce-ids-in-jsx/missing-ids
             // 2/6/23 DEF - Modal doesn't have an id property when compiling
