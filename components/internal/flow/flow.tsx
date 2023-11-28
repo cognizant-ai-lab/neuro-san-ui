@@ -1,5 +1,7 @@
+import {Tooltip} from "antd"
 import dagre from "dagre"
 import debugModule from "debug"
+import {InfoSignIcon} from "evergreen-ui"
 import {useRouter} from "next/router"
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
 import {Button, Container, Dropdown} from "react-bootstrap"
@@ -10,12 +12,9 @@ import ReactFlow, {
     applyNodeChanges,
     Background,
     Controls,
-    EdgeRemoveChange,
     getConnectedEdges,
-    getIncomers,
     getOutgoers,
     NodeChange,
-    NodeRemoveChange,
     Position,
     ReactFlowInstance,
     ReactFlowProvider,
@@ -26,9 +25,9 @@ import EdgeTypes, {EdgeType} from "./edges/types"
 import {FlowQueries} from "./flowqueries"
 import {CONFABULATION_NODE_PARAMS, LLM_MODEL_PARAMS3} from "./llmInfo"
 import {DataSourceNode} from "./nodes/datasourcenode"
-import {ConfigurableNode, ConfigurableNodeData} from "./nodes/generic/configurableNode"
+import {ConfigurableNode} from "./nodes/generic/configurableNode"
 import {NodeParams} from "./nodes/generic/types"
-import {CAOChecked, PredictorNode, PredictorNodeData, PredictorState} from "./nodes/predictornode"
+import {CAOChecked, PredictorNodeData, PredictorState} from "./nodes/predictornode"
 import {PrescriptorNode} from "./nodes/prescriptornode"
 import NodeTypes, {NodeData, NodeType} from "./nodes/types"
 import {PredictorParams} from "./predictorinfo"
@@ -172,29 +171,37 @@ export default function Flow(props: FlowProps) {
     const [nodes, setNodes] = useState<NodeType[]>(FlowQueries.getAllNodes(initialNodes))
     const [edges, setEdges] = useState<EdgeType[]>(initialEdges)
 
-    function deleteConfabulationNode(nodeToDelete: NodeType) {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    // @ts-expect-error "unused params until we implement"
+    function deleteConfabulationNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         console.debug(`Deleting confabulation node ${nodeToDelete.id}`)
     }
 
-    function deleteAnalyticsNode(nodeToDelete: NodeType) {
+    // @ts-expect-error "unused params until we implement"
+    function deleteAnalyticsNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         console.debug(`Deleting analytics node ${nodeToDelete.id}`)
     }
 
-    function deleteCategoryReducerNode(nodeToDelete: NodeType) {
+    // @ts-expect-error "unused params until we implement"
+    function deleteCategoryReducerNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         console.debug(`Deleting category reducer node ${nodeToDelete.id}`)
     }
 
-    function deleteUncertaintyModelNode(nodeToDelete: NodeType) {
+    // @ts-expect-error "unused params until we implement"
+    function deleteUncertaintyModelNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         console.debug(`Deleting uncertainty model node ${nodeToDelete.id}`)
     }
 
-    function deletePrescriptorNode(nodeToDelete: NodeType) {
+    // @ts-expect-error "unused params until we implement"
+    function deletePrescriptorNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         console.debug(`Deleting prescriptor node ${nodeToDelete.id}`)
     }
 
-    function deletePredictorNode(nodeToDelete: NodeType) {
+    // @ts-expect-error "unused params until we implement"
+    function deletePredictorNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         console.debug(`Deleting predictor node ${nodeToDelete.id}`)
     }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
 
     // Tidy flow when nodes are added or removed
     useEffect(() => {
@@ -1015,6 +1022,7 @@ export default function Flow(props: FlowProps) {
      * @param nodeToDelete The node to delete from the graph
      * @param currentNodes The current list of nodes in the graph
      * @param currentEdges The current list of edges in the graph
+     * @return Nothing: does its work by modifying the nodes and edges of the graph in place
      */
     function deleteNode(nodeToDelete: NodeType, currentNodes: NodeType[], currentEdges: EdgeType[]) {
         switch (nodeToDelete.type) {
@@ -1022,25 +1030,25 @@ export default function Flow(props: FlowProps) {
                 deleteDataNode()
                 break
             case "predictornode":
-                deletePredictorNode(nodeToDelete)
+                deletePredictorNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "prescriptornode":
-                deletePrescriptorNode(nodeToDelete)
+                deletePrescriptorNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "uncertaintymodelnode":
-                deleteUncertaintyModelNode(nodeToDelete)
+                deleteUncertaintyModelNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "category_reducer_node":
-                deleteCategoryReducerNode(nodeToDelete)
+                deleteCategoryReducerNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "analytics_node":
-                deleteAnalyticsNode(nodeToDelete)
+                deleteAnalyticsNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "activation_node":
-                deleteAnalyticsNode(nodeToDelete)
+                deleteAnalyticsNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "confabulation":
-                deleteConfabulationNode(nodeToDelete)
+                deleteConfabulationNode(nodeToDelete, currentNodes, currentEdges)
                 break
             default:
                 // Unknown node type -- do nothing
@@ -1050,139 +1058,7 @@ export default function Flow(props: FlowProps) {
                     `Unknown node type ${nodeToDelete.type}`
                 )
                 console.error(`Unknown node type ${nodeToDelete.type}`)
-                break
         }
-
-        const nodesToDelete = [nodeToDelete]
-
-        // Also get the edges associated with this node
-        const edgesToDelete = getConnectedEdges([nodeToDelete], edges)
-
-        const predictorNodesBeingRemoved = FlowQueries.getPredictorNodes([nodeToDelete])
-        const predictorIdsBeingRemoved = predictorNodesBeingRemoved.map((node) => node.id)
-
-        const prescriptorNodes = FlowQueries.getPrescriptorNodes(currentNodes)
-
-        // If we're deleting a predictor, delete associated Uncertainty nodes connected to this predictor
-        if (predictorIdsBeingRemoved && predictorIdsBeingRemoved.length > 0) {
-            const uncertaintyNodesToRemove = predictorNodesBeingRemoved.flatMap<ConfigurableNode>(
-                (node) =>
-                    getOutgoers<NodeData, PredictorNodeData>(node, currentNodes, currentEdges).filter(
-                        (aNode) => aNode.type === "uncertaintymodelnode"
-                    ) as ConfigurableNode[]
-            )
-            nodesToDelete.push(...uncertaintyNodesToRemove)
-            // Also get the edges associated with this uncertainty node
-            edgesToDelete.push(...getConnectedEdges(uncertaintyNodesToRemove, currentEdges))
-        }
-
-        // If this delete will remove all predictors, also delete the prescriptor
-        let newEdges = currentEdges
-        let newNodes = currentNodes
-        const numPredictorNodesLeft =
-            FlowQueries.getPredictorNodes(currentNodes).length - predictorIdsBeingRemoved.length
-        if (numPredictorNodesLeft === 0) {
-            // If we're deleting the last predictor, also delete the prescriptor
-            nodesToDelete.push(...prescriptorNodes)
-        } else {
-            // Also if the removable elements have predictor nodes we
-            // need to clean up their outcomes from showing in the prescriptor
-            const predictorsLeft = currentNodes.filter(
-                (node) => node.type === "predictornode" && !predictorIdsBeingRemoved.includes(node.id)
-            ) as PredictorNode[]
-
-            // Connect any remaining predictors to the prescriptor
-            const uncertaintyNodesBeingRemoved = FlowQueries.getUncertaintyModelNodes([nodeToDelete])
-            if (uncertaintyNodesBeingRemoved && prescriptorNodes && prescriptorNodes.length > 0) {
-                const predictorNodesWithUncertaintyNodesBeingRemoved = uncertaintyNodesBeingRemoved.flatMap((node) =>
-                    getIncomers<NodeData, ConfigurableNodeData>(node, currentNodes, currentEdges).filter(
-                        (aNode) => aNode.type === "predictornode"
-                    )
-                )
-                for (const node of predictorNodesWithUncertaintyNodesBeingRemoved) {
-                    newEdges = addEdgeToPrescriptorNode(currentEdges, node.id, prescriptorNodes[0].id)
-                }
-            }
-
-            // Get outcomes from all current predictors to use for prescriptor fitness
-            let outcomes = FlowQueries.extractCheckedFields(predictorsLeft, CAOType.OUTCOME)
-
-            // Make this a set
-            outcomes = outcomes.filter((value, index, sourceArray) => sourceArray.indexOf(value) === index)
-
-            // Default to maximizing outcomes until user tells us otherwise
-            const fitness = outcomes.map((outcome) => ({metric_name: outcome, maximize: true}))
-
-            newNodes = currentNodes.map((singleNode) => {
-                const prescriptorNode = singleNode as PrescriptorNode
-                if (singleNode.type === "prescriptornode") {
-                    prescriptorNode.data = {
-                        ...prescriptorNode.data,
-                        ParentPrescriptorState: {
-                            ...prescriptorNode.data.ParentPrescriptorState,
-                            evolution: {
-                                ...prescriptorNode.data.ParentPrescriptorState.evolution,
-                                fitness,
-                            },
-                        },
-                    }
-                }
-                return prescriptorNode
-            })
-        }
-
-        // If deleting a confabulation LLM, rewire the data source to whatever this LLM was connected to
-        if (nodeToDelete.type === "confabulation") {
-            const connectedEdges = getConnectedEdges([nodeToDelete], currentEdges)
-            if (connectedEdges && connectedEdges.length > 0) {
-                const edge = connectedEdges[0]
-                const newEdge: EdgeType = {
-                    id: edge.id,
-                    source: "root",
-                    target: edge.target,
-                    animated: false,
-                    type: "predictoredge",
-                }
-                newEdges = currentEdges.filter((e) => e.id !== edge.id)
-                newEdges.push(newEdge)
-                edgesToDelete.push(edge)
-            }
-        }
-
-        // Update the uuid index map for testing ids
-        nodesToDelete.forEach((element) => {
-            const uuidIndex = FlowQueries.getIndexForElement(elementTypeToUuidList, element)
-            if (uuidIndex >= 0) {
-                const elementType = String(element.type)
-                const uuidList = elementTypeToUuidList.get(elementType)
-
-                // Update the list with a marker that says the node has been deleted
-                // This lets the other indexes in the list not to have to change.
-                uuidList[uuidIndex] = "deleted"
-                elementTypeToUuidList.set(elementType, uuidList)
-            }
-        })
-
-        // Construct a list of changes
-        const nodeChanges = nodesToDelete.map<NodeRemoveChange>((element) => ({
-            type: "remove",
-            id: element.id,
-        }))
-
-        const remainingNodes = applyNodeChanges<NodeData>(nodeChanges, newNodes) as NodeType[]
-
-        const edgeChanges = edgesToDelete.map<EdgeRemoveChange>((element) => ({
-            type: "remove",
-            id: element.id,
-        }))
-
-        const remainingEdges = applyEdgeChanges(edgeChanges, newEdges) as EdgeType[]
-
-        // Update the flow, removing the deleted nodes
-        setNodes(remainingNodes)
-        setEdges(remainingEdges)
-        setParentState([...remainingNodes, ...remainingEdges])
-        setElementTypeToUuidList(elementTypeToUuidList)
     }
 
     function onNodeDragStop(_event, node) {
@@ -1283,13 +1159,35 @@ export default function Flow(props: FlowProps) {
     }, [])
     const onEdgesChange = useCallback((changes) => setEdges((es) => applyEdgeChanges(changes, es)), [])
 
-    // Figure out how many columns we need -- one for each button (add predictor, add prescriptor, add uncertainty),
-    // plus an extra one if demo mode is enabled, for the "add LLM" button.
-    const numButtonsWithAddLLMs = 4
-    const numButtonsWithoutAddLLMs = 3
-    const cols = isDemoUser ? numButtonsWithAddLLMs : numButtonsWithoutAddLLMs
+    /**
+     * @param shortId
+     * @param itemDescription
+     * @param itemName
+     */
+    function getLlmMenuItem(shortId: string, itemDescription: string, itemName: string) {
+        return (
+            <div
+                id={`${shortId}-div`}
+                style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}
+            >
+                {itemName}
+                <Tooltip
+                    id={`${shortId}-tooltip`}
+                    title={itemDescription}
+                >
+                    <InfoSignIcon id={`${shortId}-info-icon`} />
+                </Tooltip>
+            </div>
+        )
+    }
 
     function getFlowButtons() {
+        // Figure out how many columns we need -- one for each button (add predictor, add prescriptor, add uncertainty),
+        // plus an extra one if demo mode is enabled, for the "add LLM" button.
+        const numButtonsWithAddLLMs = 4
+        const numButtonsWithoutAddLLMs = 3
+        const cols = isDemoUser ? numButtonsWithAddLLMs : numButtonsWithoutAddLLMs
+
         return (
             <div
                 id="flow-buttons"
@@ -1340,28 +1238,39 @@ export default function Flow(props: FlowProps) {
                                 as="div"
                                 onClick={() => addActivationLlm()}
                             >
-                                Activation
+                                {getLlmMenuItem("activation", "For future use", "Activation")}
                             </Dropdown.Item>
                             <Dropdown.Item
                                 id="add-analytics-llm-btn"
                                 as="div"
                                 onClick={() => addAnalyticsLlm()}
                             >
-                                Analytics
+                                {getLlmMenuItem("analytics", "For future use", "Analytics")}
                             </Dropdown.Item>
                             <Dropdown.Item
                                 id="add-category-reduction-llm-btn"
                                 as="div"
                                 onClick={() => addCategoryReductionLlm()}
                             >
-                                Category reduction
+                                {getLlmMenuItem(
+                                    "category-reduction",
+                                    "Attempts to reduce the number of categories in categorical fields " +
+                                        "intelligently by using an LLM. For example, a field that contains " +
+                                        "categories 'carrot', 'onion', and 'pea' might be reduced to 'vegetable'",
+                                    "Category reduction"
+                                )}
                             </Dropdown.Item>
                             <Dropdown.Item
                                 id="add-confabulation-llm-btn"
                                 as="div"
                                 onClick={() => addConfabulationLlm()}
                             >
-                                Confabulation
+                                {getLlmMenuItem(
+                                    "confabulation",
+                                    "Confabulates (synthesizes) missing data using an LLM to provide " +
+                                        "reasonable values, based on the values in the rest of your data set",
+                                    "Confabulation"
+                                )}
                             </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
