@@ -31,7 +31,7 @@ import {
     ACTIVATION_NODE_PARAMS,
     ANALYTICS_NODE_PARAMS,
     CATEGORY_REDUCER_NODE_PARAMS,
-    CONFABULATION_NODE_PARAMS,
+    CONFABULATOR_NODE_PARAMS,
 } from "./llmInfo"
 import {DataSourceNode} from "./nodes/datasourcenode"
 import {ConfigurableNode, ConfigurableNodeData} from "./nodes/generic/configurableNode"
@@ -152,7 +152,7 @@ export default function Flow(props: FlowProps) {
                     case "activation_node":
                     case "analytics_node":
                     case "category_reducer_node":
-                    case "confabulation_node":
+                    case "confabulator_node":
                     case "llmnode":
                         node.data = {
                             ...node.data,
@@ -713,11 +713,11 @@ export default function Flow(props: FlowProps) {
             }
         }
 
-        // If there's a confabulation node, add after that
+        // If there's a confabulator node, add after that
         if (!addAfter) {
-            const confabulationNodes = FlowQueries.getNodesByType(nodes, "confabulation_node")
-            if (confabulationNodes?.length === 1) {
-                addAfter = confabulationNodes[0]
+            const confabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulator_node")
+            if (confabulatorNodes?.length === 1) {
+                addAfter = confabulatorNodes[0]
             }
         }
 
@@ -1099,10 +1099,10 @@ export default function Flow(props: FlowProps) {
         if (categoryReducerNodes && categoryReducerNodes.length === 1) {
             addAfter = categoryReducerNodes[0]
         } else {
-            // If there's a confabulation node, add after that
-            const confabulationNodes = FlowQueries.getNodesByType(nodes, "confabulation_node")
-            if (confabulationNodes && confabulationNodes.length === 1) {
-                addAfter = confabulationNodes[0]
+            // If there's a confabulator node, add after that
+            const confabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulator_node")
+            if (confabulatorNodes && confabulatorNodes.length === 1) {
+                addAfter = confabulatorNodes[0]
             }
         }
 
@@ -1110,8 +1110,7 @@ export default function Flow(props: FlowProps) {
             sendNotification(
                 NotificationType.warning,
                 "Cannot add analytics LLM node",
-                "A data node, category reducer node, or confabulation node must be added before adding an " +
-                    "analytics LLM node"
+                "A data node must be added before adding an analytics LLM node"
             )
             return
         }
@@ -1158,10 +1157,10 @@ export default function Flow(props: FlowProps) {
             sendNotification(NotificationType.error, "Cannot add Predictor node", "Unable to locate a data source node")
         }
 
-        // If there's a confabulation node, add after that
-        const confabulationNodes = FlowQueries.getNodesByType(nodes, "confabulation_node")
-        if (confabulationNodes?.length === 1) {
-            addAfter = confabulationNodes[0]
+        // If there's a confabulator node, add after that
+        const confabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulator_node")
+        if (confabulatorNodes?.length === 1) {
+            addAfter = confabulatorNodes[0]
         }
 
         // If not, add after the data source node
@@ -1199,15 +1198,15 @@ export default function Flow(props: FlowProps) {
         smartAddNode(categoryReducerNode, addAfter, currentNodes, currentEdges)
     }
 
-    function addConfabulationLlm(currentNodes: NodeType[], currentEdges: EdgeType[]) {
+    function addConfabulatorNode(currentNodes: NodeType[], currentEdges: EdgeType[]) {
         // Only one LLM of this type allowed per experiment
-        const hasConfabulationNodes = FlowQueries.getNodesByType(nodes, "confabulation_node")?.length > 0
-        if (hasConfabulationNodes) {
+        const hasConfabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulation_node")?.length > 0
+        if (hasConfabulatorNodes) {
             sendNotification(
                 NotificationType.warning,
-                "Unable to add confabulation LLM node",
-                "Only one confabulation LLM node is allowed per experiment and this experiment already has a " +
-                    "confabulation LLM node."
+                "Unable to add confabulator LLM node",
+                "Only one confabulator LLM node is allowed per experiment and this experiment already has a " +
+                    "confabulator LLM node."
             )
             return
         }
@@ -1218,30 +1217,30 @@ export default function Flow(props: FlowProps) {
             // No data node or more than one data node -- can't add LLM
             sendNotification(
                 NotificationType.warning,
-                "Cannot add confabulation LLM node",
+                "Cannot add confabulator LLM node",
                 `There must be exactly one data node in the experiment but there are ${dataNodes?.length}`
             )
             return
         }
 
-        // Confabulation node goes after data node
+        // Confabulator node goes after data node
         const dataNode = dataNodes[0]
 
         // Create a unique ID
-        const confabulationNodeID = uuid()
+        const confabulatorNodeID = uuid()
 
         // Create new node
-        const confabulationNode = {
-            id: confabulationNodeID,
-            type: "confabulation_node",
+        const confabulatorNode = {
+            id: confabulatorNodeID,
+            type: "confabulator_node",
             data: {
-                NodeID: confabulationNodeID,
-                ParentNodeState: structuredClone(CONFABULATION_NODE_PARAMS),
-                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, confabulationNodeID),
+                NodeID: confabulatorNodeID,
+                ParentNodeState: structuredClone(CONFABULATOR_NODE_PARAMS),
+                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, confabulatorNodeID),
                 DeleteNode: (id) => deleteNodeById(id),
                 GetElementIndex: (id) => getElementIndex(id),
-                ParameterSet: CONFABULATION_NODE_PARAMS,
-                NodeTitle: "Confabulation LLM",
+                ParameterSet: CONFABULATOR_NODE_PARAMS,
+                NodeTitle: "Confabulator LLM",
                 idExtension,
             },
             position: {
@@ -1250,7 +1249,7 @@ export default function Flow(props: FlowProps) {
             },
         }
 
-        smartAddNode(confabulationNode, dataNode, currentNodes, currentEdges)
+        smartAddNode(confabulatorNode, dataNode, currentNodes, currentEdges)
     }
 
     function addElementUuid(elementType: string, elementId: string) {
@@ -1425,18 +1424,10 @@ export default function Flow(props: FlowProps) {
                 deletePrescriptorNode(nodeToDelete, currentNodes, currentEdges)
                 break
             case "uncertaintymodelnode":
-                smartDeleteNode(nodeToDelete, currentNodes, currentEdges)
-                break
             case "category_reducer_node":
-                smartDeleteNode(nodeToDelete, currentNodes, currentEdges)
-                break
             case "analytics_node":
-                smartDeleteNode(nodeToDelete, currentNodes, currentEdges)
-                break
             case "activation_node":
-                smartDeleteNode(nodeToDelete, currentNodes, currentEdges)
-                break
-            case "confabulation_node":
+            case "confabulator_node":
                 smartDeleteNode(nodeToDelete, currentNodes, currentEdges)
                 break
             default:
@@ -1624,15 +1615,15 @@ export default function Flow(props: FlowProps) {
                         )}
                     </Dropdown.Item>
                     <Dropdown.Item
-                        id="add-confabulation-llm-btn"
+                        id="add-confabulator-llm-btn"
                         as="div"
-                        onClick={() => addConfabulationLlm(nodes, edges)}
+                        onClick={() => addConfabulatorNode(nodes, edges)}
                     >
                         {getLlmMenuItem(
-                            "confabulation",
+                            "confabulator",
                             "Confabulates (synthesizes) missing data using an LLM to provide " +
                                 "reasonable values, based on the values in the rest of your data set",
-                            "Confabulation"
+                            "Confabulator"
                         )}
                     </Dropdown.Item>
                 </Dropdown.Menu>

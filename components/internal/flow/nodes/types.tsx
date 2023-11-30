@@ -11,7 +11,7 @@ const NodeTypes: RFNodeTypes = {
     activation_node: ConfigurableNodeComponent,
     analytics_node: ConfigurableNodeComponent,
     category_reducer_node: ConfigurableNodeComponent,
-    confabulation_node: ConfigurableNodeComponent,
+    confabulator_node: ConfigurableNodeComponent,
     datanode: DataSourceNodeComponent,
     predictornode: PredictorNodeComponent,
     prescriptornode: PrescriptorNodeComponent,

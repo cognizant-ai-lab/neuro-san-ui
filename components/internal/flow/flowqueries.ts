@@ -11,7 +11,7 @@ import {CAOType} from "../../../controller/datatag/types"
 const debug = debugModule("flowqueries")
 
 // These nodes are considered "demo only" and have restrictions on usage (eg. only demo users)
-const DEMO_NODES = ["activation_node", "analytics_node", "category_reducer_node", "confabulation_node"]
+const DEMO_NODES = ["activation_node", "analytics_node", "category_reducer_node", "confabulator_node"]
 
 /**
  * Contains various methods for query items from the experiment flow

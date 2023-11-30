@@ -86,9 +86,9 @@ enum PromptTemplate {
 }
 
 /**
- * Configuration params for data confabulation LLM
+ * Configuration params for data confabulator LLM
  */
-export const CONFABULATION_NODE_PARAMS: NodeParams = {
+export const CONFABULATOR_NODE_PARAMS: NodeParams = {
     model: {
         default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
