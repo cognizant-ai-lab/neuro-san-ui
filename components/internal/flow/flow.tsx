@@ -736,7 +736,6 @@ export default function Flow(props: FlowProps) {
         )
 
         const dataSourceNode = FlowQueries.getDataNodes(nodes)[0]
-        console.debug("dataSourceNode: ", JSON.stringify(dataSourceNode, null, 2))
         nodesCopy.push({
             id: predictorNodeID,
             type: "predictornode",

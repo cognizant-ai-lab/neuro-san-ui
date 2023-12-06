@@ -3,6 +3,7 @@ import "@testing-library/jest-dom"
 import {render, screen} from "@testing-library/react"
 
 import Flow from "../../components/internal/flow/flow"
+import {NodeType} from "../../components/internal/flow/nodes/types"
 import loadDataTags from "../../controller/fetchdatataglist"
 
 // Values to use in tests
@@ -51,13 +52,18 @@ jest.mock("../../controller/fetchdatataglist.ts", () => ({
     default: jest.fn(),
 }))
 
-function getFlow(demoUser: boolean = false, elementsSelectable: boolean = true, setParentState: jest.Mock = jest.fn()) {
+function getFlow(
+    demoUser: boolean = false,
+    elementsSelectable: boolean = true,
+    setParentState: jest.Mock = jest.fn(),
+    initialFlow: NodeType[] = []
+) {
     return (
         <Flow
             id="test-flow"
             ProjectID={testProjectId}
             SetParentState={setParentState}
-            Flow={[]}
+            Flow={initialFlow}
             ElementsSelectable={elementsSelectable}
             isDemoUser={demoUser}
         />
@@ -75,7 +81,7 @@ describe("Flow Test", () => {
 
     it("Generates a single data node for empty flow", () => {
         const setParentState = jest.fn()
-        render(getFlow(false, true, setParentState))
+        render(getFlow(false, true, setParentState, []))
 
         // Get all the nodes
         const nodes = screen.getAllByText("Data Source")
@@ -88,7 +94,7 @@ describe("Flow Test", () => {
     })
 
     it("Doesn't show 'add' buttons when ElementsSelectable is false", () => {
-        const {container} = render(getFlow(false, false, jest.fn()))
+        const {container} = render(getFlow(false, false, jest.fn(), []))
 
         // Look for buttons
         const buttons = container.getElementsByClassName("btn")
@@ -114,7 +120,7 @@ describe("Flow Test", () => {
     })
 
     it("Shows extra button for demo user", () => {
-        const {container} = render(getFlow(true, true, jest.fn()))
+        const {container} = render(getFlow(true, true, jest.fn(), []))
 
         // Look for buttons
         const buttons = container.getElementsByClassName("btn")
