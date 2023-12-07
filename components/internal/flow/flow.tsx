@@ -153,7 +153,8 @@ export default function Flow(props: FlowProps) {
                     case "analytics_node":
                     case "category_reducer_node":
                     case "confabulator_node":
-                    case "llmnode":
+                    case "confabulation_node": // legacy
+                    case "llmnode": // legacy
                         node.data = {
                             ...node.data,
                             idExtension,
@@ -1428,6 +1429,8 @@ export default function Flow(props: FlowProps) {
             case "analytics_node":
             case "activation_node":
             case "confabulator_node":
+            case "confabulation_node":
+            case "llmnode":
                 smartDeleteNode(nodeToDelete, currentNodes, currentEdges)
                 break
             default:
