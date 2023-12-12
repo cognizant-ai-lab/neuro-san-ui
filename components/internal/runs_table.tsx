@@ -452,11 +452,11 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         run.output_artifacts &&
                         JSON.parse(run.output_artifacts).experiment && (
                             <div
-                                id={`download-artifacts-div-${idx}`}
+                                id={`download-artifacts-div-${runId}`}
                                 style={{display: "flex"}}
                             >
                                 <select
-                                    id={`download-artifact-select-${idx}`}
+                                    id={`download-artifact-select-${runId}`}
                                     disabled={!anyArtifactsAvailable}
                                     style={{
                                         fontSize: 15,
