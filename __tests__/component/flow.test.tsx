@@ -131,7 +131,7 @@ describe("Flow Test", () => {
     })
 
     it("Refuses to add a prescriptor node if there is no predictor node", () => {
-        render(createFlow())
+        render(createFlow(false, true, setParentState))
 
         // Get the add prescriptor button
         const addPrescriptorButton = screen.getByText("Add Prescriptor")
@@ -147,7 +147,7 @@ describe("Flow Test", () => {
     })
 
     it("Refuses to add an uncertainty node if there is no predictor node", () => {
-        render(createFlow())
+        render(createFlow(false, true, setParentState))
 
         // Get the add prescriptor button
         const addUncertaintyNodeButton = screen.getByText("Add Uncertainty Model")
