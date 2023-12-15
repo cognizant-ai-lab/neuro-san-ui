@@ -229,7 +229,6 @@
 
         // Rules from the various plugins and base ESLint that we are not yet ready to enable
         "@typescript-eslint/await-thenable": "off",
-        "@typescript-eslint/class-methods-use-this": "error",
         "@typescript-eslint/consistent-indexed-object-style": "off",
         "@typescript-eslint/consistent-type-assertions": "off",
         "@typescript-eslint/consistent-type-definitions": "off",
