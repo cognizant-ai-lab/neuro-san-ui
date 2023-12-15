@@ -942,6 +942,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill${idExtension}`}
                             size="15"
+                            color="red"
                         />
                     </button>
                 </div>

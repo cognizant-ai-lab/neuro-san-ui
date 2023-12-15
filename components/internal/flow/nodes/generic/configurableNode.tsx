@@ -330,6 +330,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill${idExtension}`}
                             size="15"
+                            color="red"
                         />
                     </button>
                 </div>

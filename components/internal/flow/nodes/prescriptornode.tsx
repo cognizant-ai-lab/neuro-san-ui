@@ -1109,6 +1109,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill`}
                             size="15"
+                            color="red"
                         />
                     </button>
                 </div>
