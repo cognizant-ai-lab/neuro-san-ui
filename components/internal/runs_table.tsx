@@ -371,7 +371,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                     autoFocus={true}
                     disabled={false}
                     defaultValue={run.name || run.id}
-                    onBlur={(event) => updateRunName(event.target.value, run, idx)}
+                    onBlur={async (event) => updateRunName(event.target.value, run, idx)}
                     onKeyUp={async (event: ReactKeyboardEvent<HTMLInputElement>) => {
                         if (event.key === "Enter") {
                             await updateRunName((event.target as HTMLInputElement).value, run, idx)
@@ -390,7 +390,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     function getRunRow(run, runNameRow, idx) {
         const runId = run.id
         // Get list of available artifacts as returned by server
-        const availableArtifacts = run && run.output_artifacts && JSON.parse(run.output_artifacts)
+        const availableArtifacts = run?.output_artifacts && JSON.parse(run.output_artifacts)
 
         // To handle pathological cases where an experiment failed and no artifacts were generated
         const anyArtifactsAvailable = availableArtifacts && Object.keys(availableArtifacts).length !== 0
@@ -495,7 +495,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                                     id={`download-artifacts-${runId}-download`}
                                     size={25}
                                     style={{marginLeft: "12px", marginTop: "4px", cursor: "pointer"}}
-                                    onClick={() =>
+                                    onClick={async () =>
                                         downloadArtifact(
                                             run,
                                             selectedArtifacts[run.id] || DEFAULT_DOWNLOAD_ARTIFACT,

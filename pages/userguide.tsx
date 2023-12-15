@@ -15,7 +15,7 @@ export default function UserGuide() {
                 Accept: "text/markdown",
             },
         })
-            .then((response) => response.text())
+            .then(async (response) => response.text())
             .then((text) => setUserGuide(text))
     }
     useEffect(() => {

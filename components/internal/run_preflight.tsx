@@ -46,6 +46,8 @@ export function checkValidity(flow: NodeType[]): boolean {
 
     // Each predictor must have at least one outcome checked
     const hasAnyOutcomesChecked = predictorNodes.every((node) =>
+        // External data -- don't trust it to be a clean bool
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
         Object.values(node.data.ParentPredictorState.caoState.outcome).some((val) => val === true)
     )
 
@@ -59,6 +61,8 @@ export function checkValidity(flow: NodeType[]): boolean {
 
     // Must have at least one context checked
     const hasAnyContextsChecked = predictorNodes.some((node) =>
+        // External data -- don't trust it to be a clean bool
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
         Object.values(node.data.ParentPredictorState.caoState.context).some((val) => val === true)
     )
 

@@ -68,8 +68,7 @@ export function AIAssistant(props: {
     }
 
     function extractFinalAnswer(response: string) {
-        const finalAnswerRegex = /Final Answer: .*/su
-        return response.match(finalAnswerRegex)
+        return /Final Answer: .*/su.exec(response)
     }
 
     /**
@@ -81,7 +80,7 @@ export function AIAssistant(props: {
         if (llmOutputTextArea && response) {
             const llmOutputText = llmOutputTextArea.value
             const finalAnswerMatch = extractFinalAnswer(response)
-            if (finalAnswerMatch) {
+            if (finalAnswerMatch && finalAnswerMatch.length > 0) {
                 const finalAnswer = finalAnswerMatch[0]
                 const finalAnswerIndex = llmOutputText.indexOf(finalAnswer)
                 const finalAnswerLength = finalAnswer.length
@@ -193,13 +192,11 @@ export function AIAssistant(props: {
     async function handleInputAreaKeyUp(event) {
         // If shift enter pressed, just add a newline. Otherwise, if enter pressed, send query.
         if (event.key === "Enter") {
-            if (!event.shiftKey) {
-                if (!isEmptyExceptForWhitespace(userLlmChatInput)) {
-                    event.preventDefault()
-                    await sendQuery(userLlmChatInput)
-                }
-            } else {
+            if (event.shiftKey) {
                 setUserLlmChatInput(`${userLlmChatInput}\n`)
+            } else if (!isEmptyExceptForWhitespace(userLlmChatInput)) {
+                event.preventDefault()
+                await sendQuery(userLlmChatInput)
             }
         }
     }

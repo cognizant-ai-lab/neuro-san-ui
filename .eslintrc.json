@@ -37,11 +37,13 @@
 
         "prettier"
     ],
+    "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaFeatures": {
             "jsx": true
         },
         "ecmaVersion": 2022,
+        "project": ["./tsconfig.json"],
         "sourceType": "module"
     },
     "rules": {
@@ -107,6 +109,9 @@
             }
         ],
         "@typescript-eslint/prefer-for-of": "error",
+        // Enforce double quotes (already handled by prettier) _and_ prevent backtick expressions with no interpolation
+        // See: https://github.com/prettier/eslint-config-prettier "special rules" "quotes"
+        "@typescript-eslint/quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
         "camelcase": [
             "error",
             {
@@ -117,6 +122,7 @@
         "eqeqeq": ["error", "always", {"null": "ignore"}],
         "prefer-template": "error",
         // Enforce double quotes (already handled by prettier) _and_ prevent backtick expressions with no interpolation
+        // See: https://github.com/prettier/eslint-config-prettier "special rules" "quotes"
         "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
         "consistent-return": "error",
         "constructor-super": "error",
@@ -207,6 +213,9 @@
 
         // Permanently off
 
+        // Conflicts with react/sort-comp
+        "@typescript-eslint/member-ordering": "off",
+
         // We like being explicit about types even when "obvious"
         "@typescript-eslint/no-inferrable-types": "off",
 
@@ -233,7 +242,6 @@
         "@typescript-eslint/init-declarations": "off",
         "@typescript-eslint/lines-around-comment": "off",
         "@typescript-eslint/max-params": "off",
-        "@typescript-eslint/member-ordering": "off",
         "@typescript-eslint/naming-convention": "off",
         "@typescript-eslint/no-base-to-string": "off",
         "@typescript-eslint/no-confusing-void-expression": "off",
@@ -243,12 +251,10 @@
         "@typescript-eslint/no-implied-eval": "off",
         "@typescript-eslint/no-invalid-this": "off",
         "@typescript-eslint/no-magic-numbers": "off",
-        "@typescript-eslint/no-meaningless-void-operator": "off",
         "@typescript-eslint/no-misused-promises": "off",
         "@typescript-eslint/no-mixed-enums": "off",
         "@typescript-eslint/no-redundant-type-constituents": "off",
         "@typescript-eslint/no-throw-literal": "off",
-        "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
         "@typescript-eslint/no-unnecessary-condition": "off",
         "@typescript-eslint/no-unnecessary-qualifier": "off",
         "@typescript-eslint/no-unsafe-argument": "off",
@@ -257,13 +263,10 @@
         "@typescript-eslint/no-unsafe-member-access": "off",
         "@typescript-eslint/no-unsafe-return": "off",
         "@typescript-eslint/no-unnecessary-type-arguments": "off",
-        "@typescript-eslint/no-unnecessary-type-assertion": "off",
         "@typescript-eslint/no-unsafe-enum-comparison": "off",
-        "@typescript-eslint/no-unsafe-unary-minus": "off",
         "@typescript-eslint/non-nullable-type-assertion-style": "off",
         "@typescript-eslint/prefer-includes": "off",
         "@typescript-eslint/no-use-before-define": "off",
-        "@typescript-eslint/no-require-imports": "off",
         "@typescript-eslint/prefer-readonly": "off",
         "@typescript-eslint/prefer-reduce-type-parameter": "off",
         "@typescript-eslint/prefer-return-this-type": "off",
@@ -276,15 +279,11 @@
         "@typescript-eslint/prefer-destructuring": "off",
         "@typescript-eslint/prefer-enum-initializers": "off",
         "@typescript-eslint/prefer-nullish-coalescing": "off",
-        "@typescript-eslint/prefer-optional-chain": "off",
         "@typescript-eslint/prefer-readonly-parameter-types": "off",
-        "@typescript-eslint/prefer-regexp-exec": "off",
         "@typescript-eslint/promise-function-async": "off",
-        "@typescript-eslint/quotes": "off",
         "@typescript-eslint/require-await": "off",
         "@typescript-eslint/restrict-plus-operands": "off",
         "@typescript-eslint/restrict-template-expressions": "off",
-        "@typescript-eslint/return-await": "off",
         "@typescript-eslint/sort-type-constituents": "off",
         "@typescript-eslint/strict-boolean-expressions": "off",
         "arrow-body-style": "off",

@@ -512,8 +512,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                     paramName={param}
                                     defaultParam={defaultParams[param]}
                                     value={
-                                        ParentPredictorState.predictorParams[param] != null &&
-                                        ParentPredictorState.predictorParams[param].value != null &&
+                                        ParentPredictorState.predictorParams[param]?.value != null &&
                                         ParentPredictorState.predictorParams[param].value
                                     }
                                     onParamChange={(event) => onParamChange(event, param)}
@@ -524,12 +523,11 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                     id={`${flowPrefix}-${param}-value${idExtension}`}
                                     type="checkbox"
                                     checked={
-                                        ParentPredictorState.predictorParams[param] != null &&
-                                        ParentPredictorState.predictorParams[param].value != null
-                                            ? Boolean(ParentPredictorState.predictorParams[param].value)
-                                            : defaultParams[param].default_value == null
-                                              ? undefined
-                                              : Boolean(defaultParams[param].default_value)
+                                        ParentPredictorState.predictorParams[param]?.value == null
+                                            ? defaultParams[param].default_value == null
+                                                ? undefined
+                                                : Boolean(defaultParams[param].default_value)
+                                            : Boolean(ParentPredictorState.predictorParams[param].value)
                                     }
                                     onChange={(event) => onPredictorParamCheckBoxChange(event, param)}
                                 />
@@ -538,12 +536,11 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                 <select
                                     id={`${flowPrefix}-${param}-value${idExtension}`}
                                     value={
-                                        ParentPredictorState.predictorParams[param] != null &&
-                                        ParentPredictorState.predictorParams[param].value != null
-                                            ? ParentPredictorState.predictorParams[param].value.toString()
-                                            : defaultParams[param].default_value == null
-                                              ? undefined
-                                              : defaultParams[param].default_value.toString()
+                                        ParentPredictorState.predictorParams[param]?.value == null
+                                            ? defaultParams[param].default_value == null
+                                                ? undefined
+                                                : defaultParams[param].default_value.toString()
+                                            : ParentPredictorState.predictorParams[param].value.toString()
                                     }
                                     onChange={(event) => onParamChange(event, param)}
                                     className="w-32 p-0"
@@ -565,11 +562,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                     className="w-full"
                                     type="text"
                                     defaultValue={defaultParams[param].default_value.toString()}
-                                    value={
-                                        ParentPredictorState.predictorParams[param] != null &&
-                                        ParentPredictorState.predictorParams[param].value != null &&
-                                        ParentPredictorState.predictorParams[param].value.toString()
-                                    }
+                                    value={ParentPredictorState.predictorParams[param]?.value?.toString()}
                                     onChange={(event) => onParamChange(event, param)}
                                 />
                             )}
@@ -579,11 +572,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
                                     className="w-full"
                                     type="password"
                                     defaultValue={defaultParams[param].default_value.toString()}
-                                    value={
-                                        ParentPredictorState.predictorParams[param] != null &&
-                                        ParentPredictorState.predictorParams[param].value != null &&
-                                        ParentPredictorState.predictorParams[param].value.toString()
-                                    }
+                                    value={ParentPredictorState.predictorParams[param]?.value?.toString()}
                                     onChange={(event) => onParamChange(event, param)}
                                 />
                             )}

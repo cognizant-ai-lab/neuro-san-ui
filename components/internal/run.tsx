@@ -131,8 +131,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         a cache hit if the run has all these properties.
          */
         if (
-            tempRun != null &&
-            tempRun.flow != null &&
+            tempRun?.flow != null &&
             tempRun.output_artifacts != null &&
             tempRun.metrics != null &&
             tempRun.experiment_id != null

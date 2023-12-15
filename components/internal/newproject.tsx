@@ -369,7 +369,7 @@ export default function NewProject(props: NewProps) {
                                     color: "white",
                                     opacity: getCreatButtonTooltip() === null ? OPAQUE : SEMI_OPAQUE,
                                 }}
-                                onClick={() => createDataSource(getS3Key())}
+                                onClick={async () => createDataSource(getS3Key())}
                                 disabled={getCreatButtonTooltip() !== null}
                             >
                                 Create

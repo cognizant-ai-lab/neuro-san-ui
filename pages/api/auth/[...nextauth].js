@@ -7,6 +7,8 @@
 import NextAuth from "next-auth"
 import Auth0Provider from "next-auth/providers/auth0"
 
+// Needs to be exported for next-auth to use it
+// ts-prune-ignore-next
 export default NextAuth({
     // Configure one or more authentication providers
     providers: [

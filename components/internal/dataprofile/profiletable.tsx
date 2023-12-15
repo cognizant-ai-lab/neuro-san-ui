@@ -351,7 +351,7 @@ export default function ProfileTable(props: ProfileTableProps) {
     ))
 
     function getRejectedColumnRows() {
-        if (!profile || !profile.data_source || !profile.data_source.rejectedColumns) {
+        if (!profile?.data_source?.rejectedColumns) {
             return []
         }
 
@@ -443,8 +443,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                                 id={`${val}-delete-value-column`}
                                 className="d-flex vertical-align-middle mx-0 px-1"
                             >
-                                {dataSetCategories[fieldBeingEditedName] &&
-                                dataSetCategories[fieldBeingEditedName].has(val) ? null : (
+                                {dataSetCategories[fieldBeingEditedName]?.has(val) ? null : (
                                     <button
                                         id={`${val}-delete-value`}
                                         onClick={() => {

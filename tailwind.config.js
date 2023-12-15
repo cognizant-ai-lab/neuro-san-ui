@@ -25,5 +25,7 @@ module.exports = {
         },
     },
     variants: {},
+    // Not confident enough to convert this to import/convert module to ESM yet
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     plugins: [require("@tailwindcss/typography")],
 }

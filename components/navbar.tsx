@@ -122,7 +122,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
-                            {signedIn && ENABLE_AUTHENTICATION && session && session.user && (
+                            {signedIn && ENABLE_AUTHENTICATION && session?.user && (
                                 <Dropdown
                                     id="user-dropdown"
                                     as={NavItem}
@@ -172,7 +172,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                             button
                                             id="user-sign-out"
                                             target="_blank"
-                                            onClick={() => signOut({redirect: false})}
+                                            onClick={async () => signOut({redirect: false})}
                                         >
                                             Sign out
                                         </Dropdown.Item>

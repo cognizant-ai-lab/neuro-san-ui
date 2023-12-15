@@ -401,7 +401,7 @@ export async function checkIfModelsDeployed(runID: number, prescriptorIDToDeploy
     }
 
     let models = null
-    if (deploymentStatus && deploymentStatus.deployed_models) {
+    if (deploymentStatus?.deployed_models) {
         const deployedModels = deploymentStatus.deployed_models
         if (deployedModels.length === 1) {
             const model = deploymentStatus.deployed_models[0]

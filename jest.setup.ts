@@ -48,7 +48,7 @@ class DOMMatrixReadOnly {
     m22: number
 
     constructor(transform: string) {
-        const scale = transform?.match(/scale\((?<group>[1-9.])\)/u)?.[1]
+        const scale = /scale\((?<group>[1-9.])\)/u.exec(transform)?.[1]
         this.m22 = scale === undefined ? 1 : Number(scale)
     }
 }

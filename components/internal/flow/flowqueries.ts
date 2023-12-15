@@ -73,15 +73,14 @@ export class FlowQueries {
                 : "ParentPredictorState"
         const caoTypeAsString = CAOType[caoType].toLowerCase()
         const checkedFields = []
-        nodes &&
-            nodes.forEach((node) => {
-                const caoNode = node.data[parentNode].caoState[caoTypeAsString]
-                Object.entries(caoNode).forEach((field) => {
-                    if (field[1]) {
-                        checkedFields.push(field[0])
-                    }
-                })
+        nodes?.forEach((node) => {
+            const caoNode = node.data[parentNode].caoState[caoTypeAsString]
+            Object.entries(caoNode).forEach((field) => {
+                if (field[1]) {
+                    checkedFields.push(field[0])
+                }
             })
+        })
         return checkedFields
     }
 
@@ -221,7 +220,7 @@ export class FlowQueries {
      * @return An array of nodes of the given type or empty array if none found
      */
     static getNodesByType(nodes: NodeType[], type: string): NodeType[] {
-        return nodes?.filter((node) => node.type === type) as NodeType[]
+        return nodes?.filter((node) => node.type === type)
     }
 
     /**

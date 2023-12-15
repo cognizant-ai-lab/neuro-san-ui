@@ -6,9 +6,13 @@
 /**
  * @type {import('next').NextConfig}
  **/
+import path from "path"
+import {fileURLToPath} from "url"
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const path = require("path")
+/* eslint-disable no-shadow */
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+/* eslint-enable no-shadow */
 
 // Extra headers to be returned
 // Gleaned from here: https://nextjs.org/docs/advanced-features/security-headers
@@ -41,11 +45,11 @@ const nextConfig = {
         ignoreBuildErrors: false,
     },
     eslint: {
-        // We lint clean now so enable linting as part of the build
-        ignoreDuringBuilds: false,
+        // We lint elsewhere so disable linting during build
+        ignoreDuringBuilds: true,
 
-        // Only these dirs will be scanned by ESLint
-        dirs: ["components", "controller", "pages", "public", "styles", "tests", "utils", "."],
+        // Only these dirs will be scanned by ESLint. Apparently "." is enough to catch all subdirs (tested)
+        dirs: ["."],
     },
 
     publicRuntimeConfig: {
@@ -88,4 +92,6 @@ const nextConfig = {
     },
 }
 
-module.exports = nextConfig
+// Seems to need to be exported for NextJS to pick it up
+// ts-prune-ignore-next
+export default nextConfig

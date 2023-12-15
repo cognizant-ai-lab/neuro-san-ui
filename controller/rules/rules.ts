@@ -24,7 +24,7 @@ export async function fetchLlmRules(
     actionFields: string[],
     outcomeFields
 ) {
-    return await fetch("/api/gpt/rules", {
+    return fetch("/api/gpt/rules", {
         method: "POST",
         headers: {
             Accept: "application/json",
