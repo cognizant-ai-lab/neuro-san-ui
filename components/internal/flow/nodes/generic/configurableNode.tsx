@@ -62,7 +62,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
 
     // Allows the trash icon to change color when hovered over
     const [trashHover, setTrashHover] = useState(false)
-    const trashColor = trashHover ? "red" : null
+    const trashColor = trashHover ? "var(--bs-red)" : null
 
     useEffect(() => {
         const nodeState = {...ParentNodeState}

@@ -91,7 +91,7 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
 
     // Allows the trash icon to change color when hovered over
     const [trashHover, setTrashHover] = useState(false)
-    const trashColor = trashHover ? "red" : null
+    const trashColor = trashHover ? "var(--bs-red)" : null
 
     // Fetch the Data Tag
     useEffect(() => {

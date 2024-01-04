@@ -118,7 +118,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
 
     // Allows the trash icon to change color when hovered over
     const [trashHover, setTrashHover] = useState(false)
-    const trashColor = trashHover ? "red" : null
+    const trashColor = trashHover ? "var(--bs-red)" : null
 
     //Set the dropdown defaults here since the dropdown is created here
     const DEFAULT_CLASSIFIER_METRIC = Array.from(metrics.classifier.keys())[0]

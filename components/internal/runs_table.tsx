@@ -54,6 +54,10 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     // Can't initialize this to anything useful here because we don't yet know how many Runs there will be.
     const [selectedArtifacts, setSelectedArtifacts] = useState({})
 
+    // Allows the trash icon to change color when user hovers over it.
+    // It will be a map of run id to boolean since we can have multiple runs per page.
+    const [trashHover, setTrashHover] = useState<Record<string, boolean>>({})
+
     // List of all artifacts we know about
     const downloadableArtifacts = getDownloadableArtifacts()
 
@@ -619,6 +623,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                                 id: `delete-confirm-${runName}-ok-button`,
                             },
                             okText: "Delete",
+                            cancelText: "Keep",
                             onOk: async () => {
                                 await deleteRun(idx, run)
                             },
@@ -632,6 +637,9 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         id={`delete-training-run-${idx}-fill`}
                         className="hover:text-red-700"
                         size={25}
+                        color={trashHover[runId] ? "red" : null}
+                        onMouseEnter={() => setTrashHover({...trashHover, [runId]: true})}
+                        onMouseLeave={() => setTrashHover({...trashHover, [runId]: false})}
                     />
                 </button>
             </Tooltip>
