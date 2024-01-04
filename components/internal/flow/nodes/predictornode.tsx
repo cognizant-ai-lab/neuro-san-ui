@@ -713,6 +713,7 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
             <Card
                 id={`${flowPrefix}-card-1${idExtension}`}
                 border="warning"
+                style={{height: "100%"}}
             >
                 <Card.Body
                     id={`${flowPrefix}-card-2${idExtension}`}
