@@ -1,5 +1,5 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {Tooltip as AntdTooltip} from "antd"
+import {Tooltip as AntdTooltip, Modal} from "antd"
 import {Text as EvergreenText, Popover, Position, Tab, Tablist} from "evergreen-ui"
 import {useSession} from "next-auth/react"
 import Slider from "rc-slider"
@@ -88,6 +88,10 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
 
     // Since predictors change
     const [taggedData, setTaggedData] = useState(null)
+
+    // Allows the trash icon to change color when hovered over
+    const [trashHover, setTrashHover] = useState(false)
+    const trashColor = trashHover ? "red" : null
 
     // Fetch the Data Tag
     useEffect(() => {
@@ -1101,15 +1105,41 @@ const PrescriptorNodeComponent: React.FC<NodeProps<PrescriptorNodeData>> = (prop
                     <button
                         id={`${flowPrefix}-delete-button`}
                         type="button"
-                        className="hover:text-red-700 text-xs"
-                        onClick={() => {
-                            DeleteNode(NodeID)
+                        onClick={(event) => {
+                            event.preventDefault()
+                            Modal.confirm({
+                                title: (
+                                    <span id={`delete-confirm-${flowPrefix}-title`}>Delete this Prescriptor node?</span>
+                                ),
+                                content: (
+                                    <span id={`delete-confirm-${flowPrefix}-message`}>
+                                        The node will be removed permanently{" "}
+                                        <b id={`bold-tag-${flowPrefix}`}>along with any associated downstream nodes.</b>
+                                        This cannot be undone.
+                                    </span>
+                                ),
+                                centered: true,
+                                closable: true,
+                                okButtonProps: {
+                                    id: `delete-confirm-${flowPrefix}-ok-button`,
+                                },
+                                okText: "Delete",
+                                onOk: async () => {
+                                    DeleteNode(NodeID)
+                                },
+                                cancelText: "Keep",
+                                cancelButtonProps: {
+                                    id: `delete-confirm-${flowPrefix}-cancel-button`,
+                                },
+                            })
                         }}
                     >
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill`}
                             size="15"
-                            color="red"
+                            color={trashColor}
+                            onMouseEnter={() => setTrashHover(true)}
+                            onMouseLeave={() => setTrashHover(false)}
                         />
                     </button>
                 </div>

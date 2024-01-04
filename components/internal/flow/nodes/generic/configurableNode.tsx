@@ -1,4 +1,5 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {Modal} from "antd"
 import {Text as EvergreenText, InfoSignIcon, Popover, Tooltip} from "evergreen-ui"
 import {Dispatch, FC, SetStateAction, useEffect, useState} from "react"
 import {Card, Col, Collapse, Container, Row} from "react-bootstrap"
@@ -58,6 +59,10 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
 
     // Unpack the data
     const {NodeID, ParentNodeState, SetParentNodeState, DeleteNode, GetElementIndex, ParameterSet, NodeTitle} = data
+
+    // Allows the trash icon to change color when hovered over
+    const [trashHover, setTrashHover] = useState(false)
+    const trashColor = trashHover ? "red" : null
 
     useEffect(() => {
         const nodeState = {...ParentNodeState}
@@ -322,15 +327,45 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     <button
                         id={`${flowPrefix}-delete-button${idExtension}`}
                         type="button"
-                        className="hover:text-red-700 text-xs"
-                        onClick={() => {
-                            DeleteNode(NodeID)
+                        onClick={(event) => {
+                            event.preventDefault()
+                            Modal.confirm({
+                                title: (
+                                    <span id={`delete-confirm-${flowPrefix}-title${idExtension}`}>
+                                        Delete node &quot;{NodeTitle}&quot;?
+                                    </span>
+                                ),
+                                content: (
+                                    <span id={`delete-confirm-${flowPrefix}-message${idExtension}`}>
+                                        The node will be removed permanently{" "}
+                                        <b id={`bold-tag-${flowPrefix}-${idExtension}`}>
+                                            along with any associated downstream nodes.
+                                        </b>{" "}
+                                        This cannot be undone.
+                                    </span>
+                                ),
+                                centered: true,
+                                closable: true,
+                                okButtonProps: {
+                                    id: `delete-confirm-${flowPrefix}-ok-button${idExtension}`,
+                                },
+                                okText: "Delete",
+                                onOk: async () => {
+                                    DeleteNode(NodeID)
+                                },
+                                cancelText: "Keep",
+                                cancelButtonProps: {
+                                    id: `delete-confirm-${flowPrefix}-cancel-button${idExtension}`,
+                                },
+                            })
                         }}
                     >
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill${idExtension}`}
                             size="15"
-                            color="red"
+                            color={trashColor}
+                            onMouseEnter={() => setTrashHover(true)}
+                            onMouseLeave={() => setTrashHover(false)}
                         />
                     </button>
                 </div>
