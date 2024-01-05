@@ -1,4 +1,5 @@
-import {Radio, RadioChangeEvent, Space} from "antd"
+import {Radio, RadioChangeEvent, Space, Tooltip} from "antd"
+import {InfoSignIcon} from "evergreen-ui"
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
 import {useSession} from "next-auth/react"
@@ -389,7 +390,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }
         }
 
-        if (rules && flow && isDemoUser) {
+        if (rules && flow) {
             void fetchRulesInterpretations()
         }
     }, [rules])
@@ -435,7 +436,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             }
         }
 
-        if (rules && flow && isDemoUser) {
+        if (rules && flow) {
             void fetchRulesInsights()
         }
     }, [rules])
@@ -612,7 +613,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     Title="Rules"
                     DisplayNewLink={false}
                 />
-                {isDemoUser ? (
+                {
                     <Tabs
                         defaultActiveKey="decoded"
                         id="rules-tabs"
@@ -676,18 +677,51 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                 direction="vertical"
                                                 size="middle"
                                             >
-                                                <Radio
-                                                    id="radio-raw"
-                                                    value="raw"
+                                                <div
+                                                    id="radio-raw-help"
+                                                    style={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                    }}
                                                 >
-                                                    Raw
-                                                </Radio>
-                                                <Radio
-                                                    id="radio-interpreted"
-                                                    value="interpreted"
+                                                    <Radio
+                                                        id="radio-raw"
+                                                        value="raw"
+                                                    >
+                                                        Raw
+                                                    </Radio>
+                                                    <Tooltip
+                                                        id="raw-tooltip"
+                                                        title="View rules exactly as they were generated during the
+                                                        evolutionary search."
+                                                    >
+                                                        <InfoSignIcon id="raw-info-icon" />
+                                                    </Tooltip>
+                                                </div>
+                                                <div
+                                                    id="radio-raw-help"
+                                                    style={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                    }}
                                                 >
-                                                    Interpreted (Beta)
-                                                </Radio>
+                                                    <Radio
+                                                        id="radio-interpreted"
+                                                        value="interpreted"
+                                                    >
+                                                        Interpreted
+                                                    </Radio>
+                                                    <Tooltip
+                                                        id="raw-tooltip"
+                                                        title="View rules as interpreted by using an LLM
+                                                        (large language model) to express them in a more human-readable
+                                                        format."
+                                                    >
+                                                        <InfoSignIcon id="raw-info-icon" />
+                                                    </Tooltip>
+                                                </div>
                                             </Space>
                                         </Radio.Group>
                                     </Col>
@@ -734,9 +768,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                             </div>
                         </Tab>
                     </Tabs>
-                ) : (
-                    getRawRulesDiv()
-                )}
+                }
             </div>
         )
     }
