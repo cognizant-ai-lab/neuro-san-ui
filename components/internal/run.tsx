@@ -61,9 +61,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const {data: session} = useSession()
     const currentUser: string = session.user.name
 
-    const [predictorPlotData, setPredictorPlotData] = useState(null)
-    const [prescriptorPlotData, setPrescriptorPlotData] = useState(null)
+    const [predictorPlotData, setPredictorPlotData] = useState({})
+    const [prescriptorPlotData, setPrescriptorPlotData] = useState({})
     const [paretoPlotData, setParetoPlotData] = useState({})
+    const [isLoadingPlotData, setIsLoadingPlotData] = useState(false)
     const [nodeToCIDMap, setNodeToCIDMap] = useState<Record<string, string>>({})
     const [run, setRun] = useState(null)
     const [rules, setRules] = useState(null)
@@ -278,6 +279,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     const constructMetrics = (metrics) => {
         setPrescriptors(null)
+        setIsLoadingPlotData(true)
         if (metrics) {
             const [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(
                 flow,
@@ -286,6 +288,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             setPredictorPlotData(constructedPredictorResults)
             setPrescriptorPlotData(constructedPrescriptorResults)
             setParetoPlotData(pareto)
+            setIsLoadingPlotData(false)
 
             // Retrieve objectives and prescriptor IDs from Pareto front and save them to local storage so that
             // DMS can retrieve them later
@@ -442,7 +445,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }, [rules])
 
     const plotDiv = []
-    if (predictorPlotData) {
+    if (predictorPlotData && !isLoadingPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
         plotDiv.push(
             <MetricsTable // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -455,7 +458,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         )
     }
 
-    if (prescriptorPlotData) {
+    if (prescriptorPlotData && !isLoadingPlotData) {
         plotDiv.push(
             <ESPRunPlot
                 id="esp-run-plot"
@@ -471,7 +474,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         0
     )
 
-    if (objectivesCount && Object.keys(paretoPlotData).length > 0) {
+    if (paretoPlotData && !isLoadingPlotData) {
         plotDiv.push(
             <MultiPareto
                 id="pareto-plot-table"
@@ -529,7 +532,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         )
     }
 
-    if (!predictorPlotData && !prescriptorPlotData) {
+    if (isLoadingPlotData) {
         plotDiv.push(
             <div
                 id="clip-loader-div"

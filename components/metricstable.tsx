@@ -185,6 +185,7 @@ export default function MetricsTable(props: MetricstableProps) {
                 Title="Predictor Metrics"
                 DisplayNewLink={false}
             />
+            <br id="predictor-plot-br" />
             {predictorRenders && predictorRenders.length > 0 ? (
                 predictorRenders
             ) : (

@@ -118,6 +118,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                 Title="Prescriptor Metrics"
                 DisplayNewLink={false}
             />
+            <br id="prescriptor-plot-br" />
             {nodePlots && nodePlots.length > 0 ? (
                 nodePlots
             ) : (
