@@ -196,7 +196,7 @@ export default function MetricsTable(props: MetricstableProps) {
                     >
                         <FiAlertCircle
                             id="no-predictors-alert-circle"
-                            color="red"
+                            color="var(--bs-red)"
                             size={50}
                         />
                         <span

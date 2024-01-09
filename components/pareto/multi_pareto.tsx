@@ -176,6 +176,10 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
 
     const propsId = `${props.id}`
 
+    if (props.ObjectivesCount < 2 && nodePlots.length) {
+        return null
+    }
+
     return (
         <div
             id={`${propsId}`}
@@ -188,32 +192,27 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                 DisplayNewLink={false}
             />
             <br id="pareto-plot-br" />
-            {props.ObjectivesCount < 2 || nodePlots.length < 1 ? (
-                <span
-                    id="prescriptor-metrics-span"
-                    style={{display: "flex"}}
-                >
-                    <FiAlertCircle
-                        id="prescriptor-metrics-dot"
-                        color={props.ObjectivesCount > 2 ? "#eed202" : "red"}
-                        size={50}
-                    />
-                    {props.ObjectivesCount < 2 ? (
-                        <span
-                            id="pareto-metrics-less-than-2"
-                            className="ml-4 fs-4 my-auto"
-                        >
-                            Pareto display is only valid for ≥ 2 objectives
-                        </span>
-                    ) : (
+            {!nodePlots.length ? (
+                <>
+                    <span
+                        id="prescriptor-metrics-span"
+                        style={{display: "flex"}}
+                    >
+                        <FiAlertCircle
+                            id="prescriptor-metrics-dot"
+                            color="var(--bs-red)"
+                            size={50}
+                        />
                         <span
                             id="pareto-metrics-none-found"
                             className="ml-4 fs-4 my-auto"
                         >
-                            No pareto data found.
+                            No pareto data found because prescriptor training has failed.
                         </span>
-                    )}
-                </span>
+                    </span>
+                    <br id="pareto-metrics-instructions" />
+                    Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                </>
             ) : (
                 <Container
                     fluid

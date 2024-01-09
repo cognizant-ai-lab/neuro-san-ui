@@ -288,7 +288,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
             setPredictorPlotData(constructedPredictorResults)
             setPrescriptorPlotData(constructedPrescriptorResults)
             setParetoPlotData(pareto)
-            setIsLoadingPlotData(false)
 
             // Retrieve objectives and prescriptor IDs from Pareto front and save them to local storage so that
             // DMS can retrieve them later
@@ -308,6 +307,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 })
             }
         }
+        setIsLoadingPlotData(false)
     }
 
     useEffect(() => {

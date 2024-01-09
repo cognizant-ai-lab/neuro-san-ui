@@ -129,7 +129,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                     >
                         <FiAlertCircle
                             id="prescriptor-metrics-dot"
-                            color="red"
+                            color="var(--bs-red)"
                             size={50}
                         />
                         <span
