@@ -1,4 +1,4 @@
-import {useRouter} from "next/router"
+import {ReactElement} from "react"
 
 import BlankLines from "./blanklines"
 import Navbar from "./navbar"
@@ -10,8 +10,7 @@ import useFeaturesStore from "../state/features"
  * @param id HTML id for the <code>div</code> for this page
  * @param errorText Error text to be displayed
  */
-export default function ErrorPage({id, errorText}): React.ReactElement {
-    useRouter()
+export default function ErrorPage({id, errorText}): ReactElement {
     // Get "generic branding" flag
     const {isGeneric} = useFeaturesStore()
 
