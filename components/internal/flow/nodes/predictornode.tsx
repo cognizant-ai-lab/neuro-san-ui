@@ -1,7 +1,6 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Tooltip as AntdTooltip, Modal} from "antd"
 import {Text as EvergreenText, InfoSignIcon, Popover, Position, Tab, Tablist, Tooltip} from "evergreen-ui"
-import {NextRouter, useRouter} from "next/router"
 import {useSession} from "next-auth/react"
 import Slider from "rc-slider"
 import {Dispatch, FC, SetStateAction, useEffect, useState} from "react"
@@ -17,6 +16,7 @@ import {DataTag} from "../../../../controller/datatag/types"
 import {loadDataTag} from "../../../../controller/fetchdatataglist"
 import {NotificationType, sendNotification} from "../../../../controller/notification"
 import {FetchMetrics, FetchParams, FetchPredictors} from "../../../../controller/predictor"
+import useFeaturesStore from "../../../../state/features"
 import ConfigNumeric from "../confignumeric"
 import {EdgeType} from "../edges/types"
 import {FlowQueries} from "../flowqueries"
@@ -72,11 +72,8 @@ const PredictorNodeComponent: FC<NodeProps<PredictorNodeData>> = (props) => {
     This function is responsible to render the Predictor Node
     */
 
-    // Get the router hook
-    const router: NextRouter = useRouter()
-
-    // Check if demo user as requested by URL param
-    const isDemoUser = "demo" in router.query
+    // Retrieve the demo user flag from the store
+    const {isDemoUser} = useFeaturesStore()
 
     const data: PredictorNodeData = props.data
     const {idExtension = ""} = data

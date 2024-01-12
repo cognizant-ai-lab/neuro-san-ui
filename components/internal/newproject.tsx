@@ -25,6 +25,7 @@ import {uploadFile} from "../../controller/files/upload"
 import {NotificationType, sendNotification} from "../../controller/notification"
 import AccessionProject from "../../controller/projects/accession"
 import {Project} from "../../controller/projects/types"
+import useFeaturesStore from "../../state/features"
 import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
 import BlankLines from "../blanklines"
@@ -67,8 +68,8 @@ export default function NewProject(props: NewProps) {
     // Get the router hook
     const router: NextRouter = useRouter()
 
-    // Check if demo user as requested by URL param
-    const isDemoUser = "demo" in router.query
+    // Retrieve the demo flag from the store
+    const {isDemoUser} = useFeaturesStore()
 
     const [inputFields, setInputFields] = useState({
         projectName: "",

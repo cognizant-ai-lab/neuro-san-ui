@@ -27,6 +27,7 @@ import {fetchLlmRules} from "../../controller/rules/rules"
 import {BrowserFetchRuns, FetchSingleRunArtifact} from "../../controller/run/fetch"
 import {constructRunMetricsForRunPlot} from "../../controller/run/results"
 import {Artifact, Run, Runs} from "../../controller/run/types"
+import useFeaturesStore from "../../state/features"
 import decode from "../../utils/conversion"
 import {empty} from "../../utils/objects"
 import {useLocalStorage} from "../../utils/use_local_storage"
@@ -80,8 +81,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [project, setProject] = useState<Project>(null)
 
-    // Check if demo user as requested by URL param
-    const isDemoUser = "demo" in router.query
+    // Retrieve the demo flag from the store
+    const {isDemoUser} = useFeaturesStore()
 
     function getProjectTitle() {
         return project != null ? project.name : ""
@@ -519,7 +520,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 href={{
                     pathname: dmsLink,
 
-                    // Pass along query params, including "demo" option if present
+                    // Pass along query params
                     query: {...router.query, data_source_id: dataSourceId},
                 }}
                 style={{

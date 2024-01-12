@@ -62,7 +62,8 @@
         "rehype-raw": "7.0.0",
         "remark-gfm": "4.0.0",
         "sharp": "0.32.6",
-        "styled-components": "5.3.9"
+        "styled-components": "5.3.9",
+        "zustand": "4.4.7"
     },
     "devDependencies": {
         "@jest/types": "29.6.3",

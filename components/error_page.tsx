@@ -3,6 +3,7 @@ import {useRouter} from "next/router"
 import BlankLines from "./blanklines"
 import Navbar from "./navbar"
 import {GENERIC_LOGO, LOGO} from "../const"
+import useFeaturesStore from "../state/features"
 
 /**
  * This is the page that will be shown to users when the outer error boundary is triggered
@@ -10,10 +11,9 @@ import {GENERIC_LOGO, LOGO} from "../const"
  * @param errorText Error text to be displayed
  */
 export default function ErrorPage({id, errorText}): React.ReactElement {
-    const router = useRouter()
-
+    useRouter()
     // Get "generic branding" flag
-    const isGeneric = "generic" in router.query
+    const {isGeneric} = useFeaturesStore()
 
     return (
         <div

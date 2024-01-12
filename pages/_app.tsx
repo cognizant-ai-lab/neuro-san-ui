@@ -15,7 +15,7 @@ import "../styles/styles.css"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
-import {ReactElement} from "react"
+import {ReactElement, useEffect} from "react"
 import {Container} from "react-bootstrap"
 
 import {Auth} from "../components/auth"
@@ -23,15 +23,23 @@ import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {GENERIC_LOGO, LOGO} from "../const"
+import useFeaturesStore from "../state/features"
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
+    const {isGeneric, setIsGeneric, setIsDemoUser} = useFeaturesStore()
+
     const router = useRouter()
 
-    // Get "generic branding" flag
-    const isGeneric = "generic" in router.query
+    useEffect(() => {
+        // Set "generic branding" flag in store
+        setIsGeneric("generic" in router.query)
+
+        // Set "demo" flag in store
+        setIsDemoUser("demo" in router.query)
+    }, [router.query])
 
     let body
     if (router.pathname === "/") {

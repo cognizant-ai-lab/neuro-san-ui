@@ -5,6 +5,7 @@ import {useEffect} from "react"
 import styled from "styled-components"
 
 import {GENERIC_LOGO, LOGO} from "../const"
+import useFeaturesStore from "../state/features"
 import {getTitleBase} from "../utils/title"
 
 const OuterContainer = styled.div`
@@ -82,10 +83,10 @@ const Right = styled.div`
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function Index(): React.ReactElement {
-    const router = useRouter()
+    // Get "generic branding" flag from store
+    const {isGeneric} = useFeaturesStore()
 
-    // Get "generic branding" flag
-    const isGeneric = "generic" in router.query
+    const router = useRouter()
 
     // Dynamically set the title to the current host
     useEffect(() => {

@@ -1,5 +1,4 @@
 import {ChatMessage} from "langchain/schema"
-import {useRouter} from "next/router"
 import {memo, useRef} from "react"
 import ChatBot from "react-simple-chatbot"
 import uuid from "react-uuid"
@@ -7,6 +6,7 @@ import {ThemeProvider} from "styled-components"
 
 import {CustomStep} from "./custom_step"
 import {chatbotTheme} from "../../../const"
+import useFeaturesStore from "../../../state/features"
 
 /**
  * "Steps" for controlling the chatbot. This is a JSON description of an FSM (finite state machine).
@@ -64,10 +64,8 @@ function getChatbotSteps(
  * @param props Basic settings for the chatbot. See declaration for details.
  */
 const NeuroAIChatbot = (props: {id: string; userAvatar: string; pageContext: string}): React.ReactElement => {
-    const router = useRouter()
-
     // Get "generic branding" flag
-    const isGeneric = "generic" in router.query
+    const {isGeneric} = useFeaturesStore()
 
     const id = props.id
     const pageContext = props.pageContext || "No page context available"
