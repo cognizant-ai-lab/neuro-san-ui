@@ -24,6 +24,30 @@ export interface ModelMetaData {
     model_format: ModelFormat
 }
 
+export type InferenceModelMetaData = {
+   model_uri: string
+   model_id?: string
+   model_format: string
+}
+
+export type InferenceDeploymentRequest = {
+  deployment_id: string
+  models: InferenceModelMetaData[]
+}
+
+export type InferenceDeploymentStatusRequest = {
+  deployment_id: string
+}
+
+export type InferenceRunDeploymentMetaData = {
+    run_id: number
+    deployment_id: number
+    models: [model_id: string]: {
+        model_uri: string
+        node_id: string
+    }
+}
+
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
 export enum ModelServingEnvironment {

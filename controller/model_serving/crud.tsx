@@ -10,6 +10,10 @@ import {
     ModelMetaData,
     ModelServingEnvironment,
     TearDownRequest,
+    InferenceModelMetaData,
+    InferenceDeploymentRequest,
+    InferenceDeploymentStatusRequest,
+    InferenceRunDeploymentMetaData
 } from "./types"
 import {MD_BASE_URL} from "../../const"
 import {toSafeFilename} from "../../utils/file"
@@ -27,6 +31,10 @@ const TEARDOWN_MODELS_ROUTE = `${MD_BASE_URL}/api/v1/serving/teardown`
 
 // For inferencing deployed models
 const MODEL_INFERENCE_ROUTE = "v2/models"
+
+const INFERENCE_DEPLOY_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/deploy`
+const INFERENCE_DEPLOY_STATUS_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/getstatus`
+
 
 function generateDeploymentID(runId: number, experimentId: number, projectId: number, cid?: string): string {
     let deploymentId = `deployment-${projectId}-${experimentId}-${runId}`
@@ -138,6 +146,55 @@ async function deployModel(
     }
 }
 
+export async function getInferenceDeploymentStatus(deploymentID: string): Promise<string> {
+    let request: DeploymentStatusRequest = {
+        deployment_id: deploymentID
+    }
+    const response = await fetch(DEPLOY_STATUS_URL, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        })
+
+    let my_response = await response.json()
+    console.log(my_response)
+    if (!response.ok) {
+        console.debug("Error:", JSON.stringify(response))
+        console.error(
+            `Error getting deployment status`
+        )
+        return `getInferenceDeploymentStatus: ${deploymentID} error`
+    }
+    return my_response['status']
+}
+
+function isModel(model: string): boolean {
+    if (model.startsWith("prescriptor") &&
+       !model.startsWith("prescriptor-text")) {
+       return true
+    }
+    if (model.startsWith("predictor")) {
+        return true
+    }
+    return model.startsWith("rio")
+}
+
+function getNodeId(model_id: string): string {
+    if (model_id.startsWith("predictor-")) {
+        return model_id.substring("predictor-".length)
+    }
+    if (model_id.startsWith("prescriptor-")) {
+        return model_id.substring("prescriptor-".length).split("-").slice(0, -1).join("-")
+    }
+    if (model_id.startsWith("rio-")) {
+        return model_id.substring("rio-".length).split("-").slice(0, -1).join("-")
+    }
+    return ""
+}
+
 /**
  * Request deployment of all models associated with a particular Run -- predictors, prescriptors, RIO, ...
  * If the models are already deployed, this function simply returns <code>true</code>.
@@ -146,7 +203,7 @@ async function deployModel(
  * @param minReplicas (not currently used) Minimum number of Kubernetes pods to host the models
  * @param cid Prescriptor (candidate) ID to deploy. If null, all prescriptors are deployed.
  * @param modelServingEnvironment Model serving environment to use. Currently only KSERVE is supported.
- * @return A tuple of a boolean indicating success or failure, and an optional error message.
+ * @return A tuple of a boolean indicating success or failure, deployment id and an optional error message.
  */
 export async function deployRun(
     projectId: number,
@@ -154,47 +211,118 @@ export async function deployRun(
     minReplicas = 0,
     cid: string = null,
     modelServingEnvironment: ModelServingEnvironment = ModelServingEnvironment.KSERVE
-): Promise<[boolean, ErrorResult?]> {
+): Promise<[boolean, InferenceRunDeploymentMetaData, ErrorResult?]> {
     // Fetch the already deployed models
     const deploymentID: string = generateDeploymentID(run.id, run.experiment_id, projectId, cid)
 
+    console.log(`deployRun=> DeploymentID: ${deploymentID}`)
+
+//     await status = getInferenceDeploymentStatus(deploymentID)
+//     if (status == "DEPLOYMENT_READY") {
+//         // short-circuit -- already deployed
+//         return [true, deploymentID, null]
+//     }
+
     // Only deploy the model if it is not already deployed
-    const isDeployed = await isRunDeployed(run.id, deploymentID, modelServingEnvironment)
-    if (isDeployed) {
-        // short-circuit -- already deployed
-        return [true, null]
+//     const isDeployed = await isRunDeployed(run.id, deploymentID, modelServingEnvironment)
+//     if (isDeployed) {
+//         // short-circuit -- already deployed
+//         return [true, null]
+//     }
+
+    // Request deployment for all generated models in our Run:
+    const maskFields: string[] = ['output_artifacts']
+    const runsTmp: Runs = await BrowserFetchRuns(run.request_user, null, run.id, maskFields)
+
+    let artifacts = {}
+    let flow: string = ""
+    for (const run of runsTmp) {
+        console.log(run.output_artifacts)
+        artifacts = JSON.parse(run.output_artifacts)
+        console.log(">>>>>>>>>>>>>>>>>>")
+        console.log(artifacts)
+        console.log(">>>>>>>>>>>>>>>>>>")
+    }
+    let models_to_deploy: InferenceModelMetaData[] = [];
+    let run_data: InferenceRunDeploymentMetaData = {
+        run_id: run.id,
+        deployment_id: deploymentID,
+        models: {}
+    }
+    for (let key in artifacts) {
+        if (artifacts.hasOwnProperty(key) && isModel(key)) {
+            models_to_deploy.push({
+                model_uri: artifacts[key],
+                model_format: "UNKNOWN_MODEL_FORMAT"
+            })
+            run_data.models[key] = {
+                model_uri: artifacts[key],
+                mode_id: getNodeId(key)
+            }
+        }
+    }
+
+    const request: InferenceDeploymentRequest = {
+        deployment_id: deploymentID,
+        models: models
     }
 
     try {
-        const result = await deployModel(
-            deploymentID,
-            run.id,
-            run.experiment_id,
-            projectId,
-            run.name,
-            cid,
-            minReplicas,
-            modelServingEnvironment
-        )
-        if (result && "error" in result) {
-            return [false, result]
-        } else {
-            return [true, null]
-        }
+        const response = await fetch(INFERENCE_DEPLOY_ROUTE, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        })
+        return [true, run_data, null]
     } catch (error) {
         console.error(
-            `Unable to deploy model for run ${JSON.stringify(run)}`,
+            `Unable to deploy models for run ${JSON.stringify(run)}`,
             error,
             error instanceof Error ? error.message : error
         )
         return [
             false,
+            null,
             {
                 error: "Internal error",
                 description: `Unable to deploy model for run id ${run.id}. See console for more details.`,
             },
         ]
     }
+
+//     try {
+//         const result = await deployModel(
+//             deploymentID,
+//             run.id,
+//             run.experiment_id,
+//             projectId,
+//             run.name,
+//             cid,
+//             minReplicas,
+//             modelServingEnvironment
+//         )
+//         if (result && "error" in result) {
+//             return [false, result]
+//         } else {
+//             return [true, null]
+//         }
+//     } catch (error) {
+//         console.error(
+//             `Unable to deploy model for run ${JSON.stringify(run)}`,
+//             error,
+//             error instanceof Error ? error.message : error
+//         )
+//         return [
+//             false,
+//             {
+//                 error: "Internal error",
+//                 description: `Unable to deploy model for run id ${run.id}. See console for more details.`,
+//             },
+//         ]
+//     }
 }
 
 /**
@@ -413,6 +541,31 @@ export async function checkIfModelsDeployed(runID: number, prescriptorIDToDeploy
         }
     }
     return models
+}
+
+export async function checkIfDeploymentReady(deploymentID: number): boolean {
+    const request: DeploymentStatusRequest = {
+        deployment_id: deploymentID
+    }
+    const response = await fetch(INFERENCE_DEPLOY_STATUS_ROUTE, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        })
+
+    let my_response = await response.json()
+    console.log(my_response)
+    if (!response.ok) {
+        console.debug("Error:", JSON.stringify(response))
+        console.error(
+            `Error getting deployment status`
+        )
+        return false
+    }
+    return my_response['status'] == "DEPLOYMENT_READY"
 }
 
 /**
