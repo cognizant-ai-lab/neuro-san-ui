@@ -28,6 +28,7 @@ const FLOW_WITH_PREDICTOR = [
                 id: 1234,
                 name: testDataSourceName,
                 options: {},
+                request_user: testUser,
             },
             DataTag: {
                 id: 1,

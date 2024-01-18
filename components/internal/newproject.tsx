@@ -551,6 +551,8 @@ export default function NewProject(props: NewProps) {
             options: {
                 allow_nans: isDemoUser,
             },
+
+            request_user: currentUser,
         }
 
         debug("Data source: ", dataSource)
