@@ -369,7 +369,7 @@ export default function NewProject(props: NewProps) {
                                     color: "white",
                                     opacity: getCreatButtonTooltip() === null ? OPAQUE : SEMI_OPAQUE,
                                 }}
-                                onClick={async () => createDataSource(getS3Key())}
+                                onClick={async () => generateDataProfile(getS3Key())}
                                 disabled={getCreatButtonTooltip() !== null}
                             >
                                 Create
@@ -541,7 +541,7 @@ export default function NewProject(props: NewProps) {
     */
 
     // Create data source based on user selections
-    const createDataSource = async (s3Key: string) => {
+    const generateDataProfile = async (s3Key: string) => {
         // Create the Data source Message
         const dataSource: DataSource = {
             s3_key: s3Key,
@@ -605,7 +605,7 @@ export default function NewProject(props: NewProps) {
     }
 
     // Persists the profile with associated tags and data source
-    const createDataProfile = async (event: FormEvent<HTMLFormElement>, s3Key: string) => {
+    const createDataSourceAndDataTag = async (event: FormEvent<HTMLFormElement>, s3Key: string) => {
         event.preventDefault()
 
         let tmpProjectId = projectId
@@ -812,7 +812,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
         try {
             // Upload the user's file and create the data source
             await uploadFile(selectedFile, s3Path)
-            await createDataSource(s3Path)
+            await generateDataProfile(s3Path)
         } finally {
             setIsUploading(false)
         }
@@ -898,7 +898,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
         <Container id={`${propsId}`}>
             <Form
                 id="create-data-profile"
-                onSubmit={(event) => void createDataProfile(event, getS3Key())}
+                onSubmit={(event) => void createDataSourceAndDataTag(event, getS3Key())}
                 target="_blank"
                 // We set noValidate to turn off the intrinsic HTML 5 validation since we'll be using Bootstrap's
                 // validation instead.
