@@ -39,13 +39,23 @@ export type InferenceDeploymentStatusRequest = {
   deployment_id: string
 }
 
+// Model ID, Model URL, Node ID
+export type InferenceModelDescriptor = [string, string, string]
+
 export type InferenceRunDeploymentMetaData = {
     run_id: number
-    deployment_id: number
-    models: [model_id: string]: {
-        model_uri: string
+    predictors: InferenceModelDescriptor[],
+    prescriptors: InferenceModelDescriptor[],
+    rio: InferenceModelDescriptor[],
+}
+
+export type InferenceQueryRequest = {
+    model: InferenceModelMetaData
+    run_flow: {
+        flow: string
         node_id: string
     }
+    sample: string
 }
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
