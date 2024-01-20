@@ -239,6 +239,19 @@ export async function getRunModelsData(run_id: number, request_user: string): In
     return result
 }
 
+function addModelsToDeployment(descriptors: InferenceModelDescriptor[], models: InferenceModelMetaData[]) {
+    for (const model_descr of descriptors) {
+        const id = model_descr[0]
+        const uri = model_descr[1]
+        models.push({
+            model_id: id,
+            model_uri: uri,
+            model_format: "UNKNOWN_MODEL_FORMAT"
+        })
+        console.log(`Added model: ${id}: ${uri}`)
+    }
+}
+
 /**
  * Request deployment of all models associated with a particular Run -- predictors, prescriptors, RIO, ...
  * If the models are already deployed, this function simply returns <code>true</code>.
@@ -288,29 +301,9 @@ export async function deployRun(
 
     // Request deployment for all generated models in our Run:
     let models_to_deploy: InferenceModelMetaData[] = [];
-
-    for (const model_descr in runData.predictors) {
-        models_to_deploy.push({
-            model_id: model_descr[0],
-            model_uri: model_descr[1],
-            model_format: "UNKNOWN_MODEL_FORMAT"
-        })
-    }
-    for (const model_descr in runData.prescriptors) {
-        models_to_deploy.push({
-            model_id: model_descr[0],
-            model_uri: model_descr[1],
-            model_format: "UNKNOWN_MODEL_FORMAT"
-        })
-    }
-    for (const model_descr in runData.rio) {
-        models_to_deploy.push({
-            model_id: model_descr[0],
-            model_uri: model_descr[1],
-            model_format: "UNKNOWN_MODEL_FORMAT"
-        })
-    }
-
+    addModelsToDeployment(runData.predictors, models_to_deploy)
+    addModelsToDeployment(runData.prescriptors, models_to_deploy)
+    addModelsToDeployment(runData.rio, models_to_deploy)
     const request: InferenceDeploymentRequest = {
         deployment_id: deploymentId,
         models: models_to_deploy
@@ -325,7 +318,16 @@ export async function deployRun(
             },
             body: JSON.stringify(request),
         })
-        return [true, null]
+        if (response.ok) {
+            return [true, null]
+        } else {
+            console.error(`FAILED request for deployment ${deploymentId}`)
+            return [ false,
+                { error: "Models deployment error",
+                  description: `Unable to deploy ${deploymentId} for run id ${run.id}. See console for more details.`,
+                },
+            ]
+        }
     } catch (error) {
         console.error(
             `Unable to deploy models for run ${JSON.stringify(run)}`,
@@ -675,7 +677,7 @@ export async function queryModel(
         const model_data: InferenceModelMetaData = {
             model_id: model_id,
             model_uri: modelUrl,
-            model_format: "RULES_MODEL_FORMAT"
+            model_format: "UNKNOWN_MODEL_FORMAT"
         }
         const request: InferenceQueryRequest = {
             model: model_data,
