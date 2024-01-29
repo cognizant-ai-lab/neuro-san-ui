@@ -39,9 +39,9 @@ const INFERENCE_DEPLOY_STATUS_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/g
 const INFERENCE_INFER_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/infer`
 
 function generateDeploymentID(runId: number, experimentId: number, projectId: number, cid?: string): string {
-    const nextGenModelServing = useFeaturesStore.getState().useNextGenModelServing
+    const modelServingVersion = useFeaturesStore.getState().modelServingVersion
 
-    if (nextGenModelServing) {
+    if (modelServingVersion === "new") {
         return `deployment-${runId}`
     } else {
         let deploymentId = `deployment-${projectId}-${experimentId}-${runId}`
@@ -365,8 +365,8 @@ export async function deployRun(
     projectId: number,
     outputArtifacts: StringString
 ): Promise<[boolean, ErrorResult?]> {
-    const nextGenModelServing = useFeaturesStore.getState().useNextGenModelServing
-    if (nextGenModelServing) {
+    const modelServingVersion = useFeaturesStore.getState().modelServingVersion
+    if (modelServingVersion === "new") {
         return deployRunNew(runID, experimentId, projectId, outputArtifacts)
     } else {
         return deployRunOld(runID, runName, experimentId, projectId, 0, null, ModelServingEnvironment.KSERVE)
@@ -773,7 +773,8 @@ export async function queryModel(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
     // Use old or new model inference system depending on the feature flag
-    if (useFeaturesStore.getState().useNextGenModelServing) {
+    const modelServingVersion = useFeaturesStore.getState().modelServingVersion
+    if (modelServingVersion === "new") {
         return queryModelNew(run, modelUrl, inputs)
     } else {
         return queryModelOld(modelUrl, inputs)

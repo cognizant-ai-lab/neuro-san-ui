@@ -23,13 +23,13 @@ import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {GENERIC_LOGO, LOGO, MODEL_SERVING_VERSION} from "../const"
-import useFeaturesStore from "../state/features"
+import useFeaturesStore, {ModelServingVersion} from "../state/features"
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
-    const {isGeneric, setIsGeneric, setIsDemoUser, setUseNextGenModelServing} = useFeaturesStore()
+    const {isGeneric, setIsGeneric, setIsDemoUser, setModelServingVersion} = useFeaturesStore()
 
     const router = useRouter()
 
@@ -43,16 +43,15 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
 
     useEffect(() => {
         // default to using old model serving
-        let useNextGenModelServing: boolean
-        const queryStringSetting = router.query?.modelServing
-        console.debug("queryStringSetting", queryStringSetting, typeof queryStringSetting)
+        let modelServingVersion: ModelServingVersion
+        const queryStringSetting = router.query?.modelServingVersion
         if (queryStringSetting) {
-            useNextGenModelServing = queryStringSetting === "new"
+            modelServingVersion = queryStringSetting as ModelServingVersion
         } else {
-            useNextGenModelServing = MODEL_SERVING_VERSION === "new"
+            modelServingVersion = MODEL_SERVING_VERSION as ModelServingVersion
         }
 
-        setUseNextGenModelServing(useNextGenModelServing)
+        setModelServingVersion(modelServingVersion)
     }, [MODEL_SERVING_VERSION, router.query])
 
     let body

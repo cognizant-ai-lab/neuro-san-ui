@@ -4,6 +4,9 @@
  */
 import {create} from "zustand"
 
+// Currently support two mod
+export type ModelServingVersion = "old" | "new"
+
 /**
  * Zustand state store for "feature flags" like "demo mode", "generic branding".
  */
@@ -17,8 +20,8 @@ interface FeaturesStore {
     setIsGeneric: (isGeneric: boolean) => void
 
     // Whether to use next gen model serving
-    useNextGenModelServing: boolean
-    setUseNextGenModelServing: (useNextGenModelServing: boolean) => void
+    modelServingVersion: ModelServingVersion
+    setModelServingVersion: (modelServingVersion: ModelServingVersion) => void
 }
 
 /**
@@ -29,9 +32,9 @@ const useFeaturesStore = create<FeaturesStore>((set) => ({
     setIsDemoUser: (isDemoUser) => set(() => ({isDemoUser: isDemoUser})),
     isGeneric: false,
     setIsGeneric: (isGeneric) => set(() => ({isGeneric: isGeneric})),
-    useNextGenModelServing: false,
-    setUseNextGenModelServing: (useNextGenModelServing) =>
-        set(() => ({useNextGenModelServing: useNextGenModelServing})),
+    modelServingVersion: "old",
+    setModelServingVersion: (modelServingVersion: ModelServingVersion) =>
+        set(() => ({modelServingVersion: modelServingVersion})),
 }))
 
 export default useFeaturesStore
