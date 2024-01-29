@@ -4,6 +4,8 @@
 
 import {ChatMessage} from "langchain/schema"
 
+import {Run} from "../run/types"
+
 /**
  * Access the API for DMS chat. Client is responsible for catching and handling exceptions that may be thrown.
  *
@@ -13,6 +15,7 @@ import {ChatMessage} from "langchain/schema"
  * @param predictorUrls The URLs of the predictors for inference.
  * @param callback The callback function to be called when a chunk of data is received from the server.
  * @param signal The AbortSignal object to be used for aborting the request.
+ * @param run The current Run for the DMS page
  * @param chatHistory The chat history to be sent to the server. Contains user requests and server responses.
  * @param projectName The name of the project the user is working on.
  * @param projectDescription The description of the project the user is working on.
@@ -24,6 +27,7 @@ export async function sendDmsChatQuery(
     predictorUrls: string[],
     callback: (string) => void,
     signal: AbortSignal,
+    run: Run,
     chatHistory?: ChatMessage[],
     projectName?: string,
     projectDescription?: string
@@ -42,6 +46,7 @@ export async function sendDmsChatQuery(
             userQuery: userQuery,
             projectName: projectName,
             projectDescription: projectDescription,
+            run: run,
         }),
         signal: signal,
     })

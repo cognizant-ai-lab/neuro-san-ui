@@ -38,7 +38,7 @@ const INFERENCE_DEPLOY_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/deploy`
 const INFERENCE_DEPLOY_STATUS_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/getstatus`
 const INFERENCE_INFER_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/infer`
 
-export function generateDeploymentID(runId: number, experimentId: number, projectId: number, cid?: string): string {
+function generateDeploymentID(runId: number, experimentId: number, projectId: number, cid?: string): string {
     const nextGenModelServing = useFeaturesStore.getState().useNextGenModelServing
 
     if (nextGenModelServing) {
@@ -53,7 +53,7 @@ export function generateDeploymentID(runId: number, experimentId: number, projec
 }
 
 // For returning errors
-export type ErrorResult = {error: string; description?: string}
+type ErrorResult = {error: string; description?: string}
 
 /**
  * Given a fetch <code>Response</code>, return a human-readable string describing the error.
@@ -283,7 +283,7 @@ export async function deployRunOld(
  * @param outputArtifacts Output artifacts for the Run in question (predictors, prescriptors, RIO models etc.)
  * @return A tuple of a boolean indicating success or failure, deployment id and an optional error message.
  */
-export async function deployRunNew(
+async function deployRunNew(
     runId: number,
     experimentId: number,
     projectId: number,
@@ -604,7 +604,7 @@ export async function checkModelsReady(
     return checkIfDeploymentReady(deploymentId)
 }
 
-export async function checkIfDeploymentReady(deploymentID: string): Promise<boolean> {
+async function checkIfDeploymentReady(deploymentID: string): Promise<boolean> {
     const request = {
         deployment_id: deploymentID,
     }
@@ -655,7 +655,9 @@ function findModelDataByUrl(runData: InferenceRunDeploymentMetaData, modelUrl: s
     return ["", ""]
 }
 
-async function queryModelNew(run: Run, modelUrl: string, flow: string, inputs: PredictorParams | RioParams) {
+async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams) {
+    console.debug("queryModelNew", inputs, modelUrl)
+
     const runData: InferenceRunDeploymentMetaData = getRunModelsData(run.id, JSON.parse(run.output_artifacts))
     if (runData == null) {
         console.error(`queryModel: Failed to get Run metadata for ${run.id}`)
@@ -675,7 +677,7 @@ async function queryModelNew(run: Run, modelUrl: string, flow: string, inputs: P
         const request: InferenceQueryRequest = {
             model: modelData,
             run_flow: {
-                flow: JSON.stringify({flow_graph: flow}),
+                flow: JSON.stringify({flow_graph: JSON.parse(run.flow)}),
                 node_id: nodeId,
             },
             sample: JSON.stringify(inputs),
@@ -688,7 +690,9 @@ async function queryModelNew(run: Run, modelUrl: string, flow: string, inputs: P
             },
             body: JSON.stringify(request),
         })
+        console.log(`queryModelNew: response.ok=${response.ok}`)
         if (!response.ok) {
+            // console.log("Error:", response.status, await response.json())
             return {
                 error: `Failed to query model at ${modelUrl}`,
                 description: `Error code ${response.status}, response: ${(await response.json())?.error}`,
@@ -711,6 +715,8 @@ async function queryModelNew(run: Run, modelUrl: string, flow: string, inputs: P
 }
 
 async function queryModelOld(modelUrl: string, inputs: PredictorParams | RioParams) {
+    console.debug("queryModelOld", inputs, modelUrl)
+
     // Use old model inference system
     try {
         const body = JSON.stringify({
@@ -749,70 +755,27 @@ async function queryModelOld(modelUrl: string, inputs: PredictorParams | RioPara
     }
 }
 
-export async function queryModel(
-    run: Run,
-    modelUrl: string,
-    flow: string,
-    inputs: PredictorParams | RioParams
-    // Typescript lib uses "any" so we have to as well
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> {
-    // Use old or new model inference system depending on the feature flag
-    if (useFeaturesStore.getState().useNextGenModelServing) {
-        return queryModelNew(run, modelUrl, flow, inputs)
-    } else {
-        return queryModelOld(modelUrl, inputs)
-    }
-}
-
 /**
  * Query a model for a given set of inputs. The model must have already been deployed by a preceding call to
  * {@link deployRunNew} and is specified by its URL.
  * The inputs are specified as a set of vectorized name-value inputs. See {@link vectorize} for more details.
  * See {@link PredictorParams} for specification.
  *
+ * @param run The Run object for the run whose model we want to query
  * @param modelUrl URL of the model to query
  * @param inputs An object with keys each mapping to a single-element array of strings or numbers.
  */
-// export async function queryModel(
-//     modelUrl: string,
-//     inputs: PredictorParams | RioParams
-//     // Typescript lib uses "any" so we have to as well
-//     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// ): Promise<any> {
-//     try {
-//         const body = JSON.stringify({
-//             url: modelUrl,
-//             method: "POST",
-//             payload: inputs,
-//         })
-//
-//         const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`, {
-//             method: "POST",
-//             mode: "cors",
-//             headers: {
-//                 Accept: "application/json",
-//                 "Content-Type": "application/json",
-//             },
-//             body: body,
-//         })
-//
-//         if (!response.ok) {
-//             return {
-//                 error: `Failed to query model at ${modelUrl}`,
-//                 description: `Error code ${response.status}, response: ${(await response.json())?.error}`,
-//             }
-//         }
-//
-//         return await response.json()
-//     } catch (error) {
-//         console.error("Unable to access model", modelUrl)
-//         console.error(error, error instanceof Error && error.stack)
-//         return {
-//             error: "Model access error",
-//             description: `Failed to query model at ${modelUrl}. Error: ${
-//                 error instanceof Error ? error.message : error
-//             }`,
-//         }
-//     }
-// }
+export async function queryModel(
+    run: Run,
+    modelUrl: string,
+    inputs: PredictorParams | RioParams
+    // Typescript lib uses "any" so we have to as well
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+    // Use old or new model inference system depending on the feature flag
+    if (useFeaturesStore.getState().useNextGenModelServing) {
+        return queryModelNew(run, modelUrl, inputs)
+    } else {
+        return queryModelOld(modelUrl, inputs)
+    }
+}

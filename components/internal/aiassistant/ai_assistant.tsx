@@ -5,17 +5,19 @@ import {Drawer} from "antd"
 import {ChatMessage} from "langchain/schema"
 import {ChangeEvent, FormEvent, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
-import {BsStopBtn} from "react-icons/bs"
+import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {MaximumBlue} from "../../../const"
 import {StringToStringOrNumber} from "../../../controller/base_types"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
+import {Run} from "../../../controller/run/types"
 import {isEmptyExceptForWhitespace} from "../../../utils/text"
 
 /**
- * AI assistant, initially for DMS page but in theory could be used elsewhere.
+ * AI assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
+ * (via the backend) with full context about the current DMS page, in a question-and-answer chat format.
  */
 export function AIAssistant(props: {
     predictorUrls: string[]
@@ -24,6 +26,7 @@ export function AIAssistant(props: {
     onClose: () => void
     open: boolean
     resetUndeployModelsTimer: () => void
+    run: Run
     projectName?: string
     projectDescription?: string
 }) {
@@ -119,6 +122,7 @@ export function AIAssistant(props: {
                 props.predictorUrls,
                 tokenReceivedHandler,
                 abortController.signal,
+                props.run,
                 chatHistory.current,
                 props.projectName,
                 props.projectDescription
@@ -271,7 +275,7 @@ export function AIAssistant(props: {
                                 zIndex: 99999,
                             }}
                         >
-                            <BsStopBtn
+                            <BsTrash
                                 id="stop-button-icon"
                                 size={15}
                                 className="mr-2"

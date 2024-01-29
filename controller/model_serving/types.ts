@@ -35,12 +35,8 @@ export type InferenceDeploymentRequest = {
     models: InferenceModelMetaData[]
 }
 
-export type InferenceDeploymentStatusRequest = {
-    deployment_id: string
-}
-
 // Model ID, Model URL, Node ID
-export type InferenceModelDescriptor = [string, string, string]
+type InferenceModelDescriptor = [string, string, string]
 
 export type InferenceRunDeploymentMetaData = {
     run_id: number
