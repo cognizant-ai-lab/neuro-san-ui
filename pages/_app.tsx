@@ -12,6 +12,7 @@ import "../styles/updatenode.css"
 import "../styles/globals.css"
 import "../styles/styles.css"
 
+import debugModule from "debug"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
@@ -24,6 +25,8 @@ import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {GENERIC_LOGO, LOGO, MODEL_SERVING_VERSION} from "../const"
 import useFeaturesStore, {ModelServingVersion} from "../state/features"
+
+const debug = debugModule("app")
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -44,11 +47,14 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             }
 
             // Set features in store
-            useFeaturesStore.setState({
+            const featureFlags = {
                 isGeneric: "generic" in query,
                 isDemoUser: "demo" in query,
                 modelServingVersion: modelServingVersion,
-            })
+            }
+
+            debug(`Setting feature flags to ${JSON.stringify(featureFlags, null, 2)}`)
+            useFeaturesStore.setState(featureFlags)
         }
     }, [isReady])
 
