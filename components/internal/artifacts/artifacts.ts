@@ -29,10 +29,11 @@ interface ArtifactInfo {
 // Artifacts that can be downloaded.
 const DOWNLOADABLE_ARTIFACTS: ArtifactInfo[] = [
     {value: "llm_log_file", label: "LLM chat log", fileType: "txt"},
+    {value: "modified_dataset", label: "Modified Dataset", fileType: "csv"},
     {value: "notebook", label: "Notebook", fileType: "ipynb"},
     {value: "predictors", label: "Predictors (future)", fileType: ""},
     {value: "prescriptors", label: "Prescriptors (future)", fileType: ""},
-    {value: "modified_dataset", label: "Modified Dataset", fileType: "csv"},
+    {value: "requirements", label: "Notebook Python Dependencies", fileType: "txt"},
     {value: "all", label: "All artifacts (zip, future)", fileType: "zip"},
 ]
 
@@ -70,6 +71,8 @@ export function isArtifactAvailable(requestedArtifact: string, availableArtifact
         return artifactNames.includes("llm_log_file")
     } else if (requestedArtifact === "modified_dataset") {
         return artifactUrls.some((artifact) => artifact.endsWith(".csv"))
+    } else if (requestedArtifact === "requirements") {
+        return artifactNames.includes("requirements")
     } else {
         return false
     }
@@ -93,6 +96,9 @@ export async function downloadArtifact(
         case "llm_log_file":
             downloadUrl = availableArtifacts.llm_log_file
             break
+        case "modified_dataset":
+            downloadUrl = Object.values(availableArtifacts).find((a) => a.endsWith(".csv"))
+            break
         case "notebook":
             downloadUrl = availableArtifacts.experiment
             break
@@ -102,8 +108,8 @@ export async function downloadArtifact(
         case "prescriptors":
             // not yet supported
             return
-        case "modified_dataset":
-            downloadUrl = Object.values(availableArtifacts).find((a) => a.endsWith(".csv"))
+        case "requirements":
+            downloadUrl = availableArtifacts.requirements
             break
         case "all":
             // not yet supported
