@@ -12,6 +12,7 @@ import ClipLoader from "react-spinners/ClipLoader"
 import {MaximumBlue} from "../../../const"
 import {StringToStringOrNumber} from "../../../controller/base_types"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
+import {isEmptyExceptForWhitespace} from "../../../utils/text"
 
 /**
  * AI assistant, initially for DMS page but in theory could be used elsewhere.
@@ -153,16 +154,6 @@ export function AIAssistant(props: {
             setUserLlmChatInput("")
             currentResponse.current = ""
         }
-    }
-
-    /**
-     * Tests if input contains only whitespace (meaning, not a valid query)
-     *
-     * @param input Input to be tested
-     * @returns True if input contains only whitespace, false otherwise
-     */
-    function isEmptyExceptForWhitespace(input: string) {
-        return !/\S/u.test(input)
     }
 
     /**
