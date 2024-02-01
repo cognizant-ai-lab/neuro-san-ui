@@ -681,6 +681,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                             onOk: async () => {
                                 await abortRun(idx, run)
                             },
+                            cancelText: "Do not terminate",
                             cancelButtonProps: {
                                 id: `terminate-confirm-${runName}-cancel-button`,
                             },
