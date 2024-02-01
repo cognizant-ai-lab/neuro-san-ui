@@ -6,7 +6,7 @@ import {ThemeProvider} from "styled-components"
 import {CustomStep} from "./custom_step"
 import {chatbotTheme} from "../../../const"
 import useFeaturesStore from "../../../state/features"
-import {isEmptyExceptForWhitespace} from "../../../utils/text"
+import {hasOnlyWhitespace} from "../../../utils/text"
 
 /**
  * "Steps" for controlling the chatbot. This is a JSON description of an FSM (finite state machine).
@@ -35,7 +35,7 @@ function getChatbotSteps(
             id: "search",
             user: true,
             validator: (value) => {
-                if (isEmptyExceptForWhitespace(value)) {
+                if (hasOnlyWhitespace(value)) {
                     return "Please enter a search query"
                 } else {
                     return true

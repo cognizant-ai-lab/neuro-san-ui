@@ -19,6 +19,7 @@ import {MD_BASE_URL} from "../../const"
 import useFeaturesStore from "../../state/features"
 import {toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
+import {extractId} from "../../utils/text"
 import {StringString} from "../base_types"
 import {PredictorParams, RioParams, Run} from "../run/types"
 
@@ -154,40 +155,39 @@ async function deployModel(
     }
 }
 function isPredictor(model: string): boolean {
-    return model.startsWith("predictor")
+    return model.startsWith("predictor-")
 }
 
 function isRioModel(model: string): boolean {
-    return model.startsWith("rio")
+    return model.startsWith("rio-")
 }
 
 function isPrescriptor(model: string): boolean {
-    return model.startsWith("prescriptor")
+    return model.startsWith("prescriptor-") && !model.startsWith("prescriptor-text")
 }
+
+/**
+ * Get the node ID from a model ID. The node ID is the part of the model ID that is the same as the node ID in the
+ * flow.
+ * @param modelId
+ */
 function getNodeId(modelId: string): string {
-    if (modelId.startsWith("predictor-")) {
+    if (isPredictor(modelId)) {
+        // For example "predictor-849b7281-95ba-83dd-2e8c-f73cd996112a"
         return modelId.substring("predictor-".length)
     }
-    if (modelId.startsWith("prescriptor-")) {
-        // conflicts with ESLint newline-per-chained-call rule
-        // prettier-ignore
-        return modelId.substring("prescriptor-".length)
-            .split("-")
-            .slice(0, -1)
-            .join("-")
+    if (isPrescriptor(modelId)) {
+        // For example "prescriptor-67fb86d3-9047-4ce0-0d42-4e3d3b0f715e-83_28"
+        return extractId(modelId, "prescriptor")
     }
-    if (modelId.startsWith("rio-")) {
-        // conflicts with ESLint newline-per-chained-call rule
-        // prettier-ignore
-        return modelId.substring("rio-".length)
-            .split("-")
-            .slice(0, -1)
-            .join("-")
+    if (isRioModel(modelId)) {
+        // For example "rio-4462ba0-e870-736f-5d1-fbe46366f57e-Survived"
+        return extractId(modelId, "rio")
     }
     return ""
 }
 
-export function getRunModelsData(runId: number, outputArtifacts: StringString): InferenceRunDeploymentMetaData {
+export function getRunModelData(runId: number, outputArtifacts: StringString): InferenceRunDeploymentMetaData {
     const result: InferenceRunDeploymentMetaData = {
         run_id: runId,
         predictors: [],
@@ -290,7 +290,7 @@ async function deployRunNew(
     outputArtifacts: StringString
 ): Promise<[boolean, ErrorResult?]> {
     // Fetch the already deployed models
-    const runData: InferenceRunDeploymentMetaData = getRunModelsData(runId, outputArtifacts)
+    const runData: InferenceRunDeploymentMetaData = getRunModelData(runId, outputArtifacts)
     if (runData == null || empty(runData)) {
         console.error(`deployRunNew: Failed to get Run metadata for ${runId}`)
         return [
@@ -516,7 +516,6 @@ function extractModelURLs(modelsArray: string[], baseUrl: string, cid: string) {
 
 /**
  * Retrieve model names (predictor, prescriptor) for a particular run.
- * Only supports kserve-hosted models!
  *
  * @param baseUrl The kserve base URL
  * @param runId Run ID for the run whose models are requested
@@ -633,6 +632,15 @@ export function vectorize(inputs: {[key: string]: string | number}): PredictorPa
     return Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, [v]]))
 }
 
+/**
+ * The thing here is that we only specify model url in our inference request,
+ * so we need to get node ID from somewhere. We take it from table which was built from Run's list of generated
+ * artifacts. Yes, the whole thing is awkward for sure. Maybe we can extract node id from model url right here.
+ * If we lock current assumption that model url does contain node id.
+ * Or leave it until we come up with better way of handling Run data in general.
+ * @param runData Data returned by a call to {@link getRunModelData}
+ * @param modelUrl URL of the model to query
+ */
 function findModelDataByUrl(runData: InferenceRunDeploymentMetaData, modelUrl: string): [string, string] {
     for (const model of runData.prescriptors) {
         if (model[1] === modelUrl) {
@@ -653,7 +661,7 @@ function findModelDataByUrl(runData: InferenceRunDeploymentMetaData, modelUrl: s
 }
 
 async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams) {
-    const runData: InferenceRunDeploymentMetaData = getRunModelsData(run.id, JSON.parse(run.output_artifacts))
+    const runData: InferenceRunDeploymentMetaData = getRunModelData(run.id, JSON.parse(run.output_artifacts))
     if (runData == null) {
         console.error(`queryModel: Failed to get Run metadata for ${run.id}`)
         return null
@@ -693,7 +701,15 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         }
 
         const jsonResponse = await response.json()
-        const innerResponse = jsonResponse["response"]
+        const inferenceStatus = jsonResponse.status
+        if (inferenceStatus !== "SUCCESS") {
+            return {
+                error: `Failed to query model at ${modelUrl}`,
+                description: `Error code ${response.status}, response: ${JSON.stringify(jsonResponse)}`,
+            }
+        }
+
+        const innerResponse = jsonResponse.response
         return JSON.parse(innerResponse)
     } catch (error) {
         console.error("Unable to access model", modelUrl)

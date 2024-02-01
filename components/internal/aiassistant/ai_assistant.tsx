@@ -13,7 +13,7 @@ import {MaximumBlue} from "../../../const"
 import {StringToStringOrNumber} from "../../../controller/base_types"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 import {Run} from "../../../controller/run/types"
-import {isEmptyExceptForWhitespace} from "../../../utils/text"
+import {hasOnlyWhitespace} from "../../../utils/text"
 
 /**
  * AI assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
@@ -189,7 +189,7 @@ export function AIAssistant(props: {
         if (event.key === "Enter") {
             if (event.shiftKey) {
                 setUserLlmChatInput(`${userLlmChatInput}\n`)
-            } else if (!isEmptyExceptForWhitespace(userLlmChatInput)) {
+            } else if (!hasOnlyWhitespace(userLlmChatInput)) {
                 event.preventDefault()
                 await sendQuery(userLlmChatInput)
             }
@@ -208,7 +208,7 @@ export function AIAssistant(props: {
     }
 
     // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = isEmptyExceptForWhitespace(userLlmChatInput)
+    const userInputEmpty = hasOnlyWhitespace(userLlmChatInput)
 
     // Disable Send when request is in progress
     const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
