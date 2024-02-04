@@ -1,9 +1,10 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Tooltip as AntdTooltip, Modal} from "antd"
 import {Text as EvergreenText, Popover, Position, Tab, Tablist} from "evergreen-ui"
+import debounce from "lodash/debounce"
 import {useSession} from "next-auth/react"
 import Slider from "rc-slider"
-import {FC, useEffect, useState} from "react"
+import {FC, MouseEvent as ReactMouseEvent, useCallback, useEffect, useState} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
 import {AiFillDelete} from "react-icons/ai"
 import {BiPlusMedical} from "react-icons/bi"
@@ -92,6 +93,46 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     // Allows the trash icon to change color when hovered over
     const [trashHover, setTrashHover] = useState(false)
     const trashColor = trashHover ? "var(--bs-red)" : null
+
+    // Called when a user clicks the trash can to delete the node
+    const handleDelete = (event) => {
+        event.preventDefault()
+        Modal.confirm({
+            title: <span id={`delete-confirm-${flowPrefix}-title`}>Delete this Prescriptor node?</span>,
+            content: (
+                <span id={`delete-confirm-${flowPrefix}-message`}>
+                    The node will be removed permanently{" "}
+                    <b id={`bold-tag-${flowPrefix}`}>along with any associated downstream nodes.</b>
+                    This cannot be undone.
+                </span>
+            ),
+            centered: true,
+            closable: true,
+            okButtonProps: {
+                id: `delete-confirm-${flowPrefix}-ok-button`,
+            },
+            okText: "Delete",
+            onOk: async () => {
+                DeleteNode(NodeID)
+            },
+            cancelText: "Keep",
+            cancelButtonProps: {
+                id: `delete-confirm-${flowPrefix}-cancel-button`,
+            },
+        })
+    }
+
+    // Use lodash to debounce delete (in case user clicks delete multiple times)
+    const debouncedDelete = useCallback(
+        debounce(
+            (event: ReactMouseEvent<HTMLElement>) => {
+                handleDelete(event)
+            },
+            1000,
+            {leading: true, trailing: false, maxWait: 1000}
+        ),
+        []
+    )
 
     // Fetch the Data Tag
     useEffect(() => {
@@ -1105,34 +1146,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     <button
                         id={`${flowPrefix}-delete-button`}
                         type="button"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            Modal.confirm({
-                                title: (
-                                    <span id={`delete-confirm-${flowPrefix}-title`}>Delete this Prescriptor node?</span>
-                                ),
-                                content: (
-                                    <span id={`delete-confirm-${flowPrefix}-message`}>
-                                        The node will be removed permanently{" "}
-                                        <b id={`bold-tag-${flowPrefix}`}>along with any associated downstream nodes.</b>
-                                        This cannot be undone.
-                                    </span>
-                                ),
-                                centered: true,
-                                closable: true,
-                                okButtonProps: {
-                                    id: `delete-confirm-${flowPrefix}-ok-button`,
-                                },
-                                okText: "Delete",
-                                onOk: async () => {
-                                    DeleteNode(NodeID)
-                                },
-                                cancelText: "Keep",
-                                cancelButtonProps: {
-                                    id: `delete-confirm-${flowPrefix}-cancel-button`,
-                                },
-                            })
-                        }}
+                        onClick={debouncedDelete}
                     >
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill`}

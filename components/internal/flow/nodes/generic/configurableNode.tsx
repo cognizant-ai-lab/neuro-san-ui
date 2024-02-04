@@ -1,7 +1,8 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Modal} from "antd"
 import {Text as EvergreenText, InfoSignIcon, Popover, Tooltip} from "evergreen-ui"
-import {Dispatch, FC, SetStateAction, useEffect, useState} from "react"
+import debounce from "lodash/debounce"
+import {Dispatch, FC, MouseEvent as ReactMouseEvent, SetStateAction, useCallback, useEffect, useState} from "react"
 import {Card, Col, Collapse, Container, Row} from "react-bootstrap"
 import {AiFillDelete} from "react-icons/ai"
 import {GrSettingsOption} from "react-icons/gr"
@@ -63,6 +64,49 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     // Allows the trash icon to change color when hovered over
     const [trashHover, setTrashHover] = useState(false)
     const trashColor = trashHover ? "var(--bs-red)" : null
+
+    const handleDelete = (event: ReactMouseEvent<HTMLElement>) => {
+        event.preventDefault()
+        Modal.confirm({
+            title: (
+                <span id={`delete-confirm-${flowPrefix}-title${idExtension}`}>
+                    Delete node &quot;{NodeTitle}&quot;?
+                </span>
+            ),
+            content: (
+                <span id={`delete-confirm-${flowPrefix}-message${idExtension}`}>
+                    The node will be removed permanently{" "}
+                    <b id={`bold-tag-${flowPrefix}-${idExtension}`}>along with any associated downstream nodes.</b> This
+                    cannot be undone.
+                </span>
+            ),
+            centered: true,
+            closable: true,
+            okButtonProps: {
+                id: `delete-confirm-${flowPrefix}-ok-button${idExtension}`,
+            },
+            okText: "Delete",
+            onOk: async () => {
+                DeleteNode(NodeID)
+            },
+            cancelText: "Keep",
+            cancelButtonProps: {
+                id: `delete-confirm-${flowPrefix}-cancel-button${idExtension}`,
+            },
+        })
+    }
+
+    // Use lodash to debounce delete (in case user clicks delete multiple times)
+    const debouncedDelete = useCallback(
+        debounce(
+            (event: ReactMouseEvent<HTMLElement>) => {
+                handleDelete(event)
+            },
+            1000,
+            {leading: true, trailing: false, maxWait: 1000}
+        ),
+        []
+    )
 
     useEffect(() => {
         const nodeState = {...ParentNodeState}
@@ -327,38 +371,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     <button
                         id={`${flowPrefix}-delete-button${idExtension}`}
                         type="button"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            Modal.confirm({
-                                title: (
-                                    <span id={`delete-confirm-${flowPrefix}-title${idExtension}`}>
-                                        Delete node &quot;{NodeTitle}&quot;?
-                                    </span>
-                                ),
-                                content: (
-                                    <span id={`delete-confirm-${flowPrefix}-message${idExtension}`}>
-                                        The node will be removed permanently{" "}
-                                        <b id={`bold-tag-${flowPrefix}-${idExtension}`}>
-                                            along with any associated downstream nodes.
-                                        </b>{" "}
-                                        This cannot be undone.
-                                    </span>
-                                ),
-                                centered: true,
-                                closable: true,
-                                okButtonProps: {
-                                    id: `delete-confirm-${flowPrefix}-ok-button${idExtension}`,
-                                },
-                                okText: "Delete",
-                                onOk: async () => {
-                                    DeleteNode(NodeID)
-                                },
-                                cancelText: "Keep",
-                                cancelButtonProps: {
-                                    id: `delete-confirm-${flowPrefix}-cancel-button${idExtension}`,
-                                },
-                            })
-                        }}
+                        onClick={(event: ReactMouseEvent<HTMLElement>) => debouncedDelete(event)}
                     >
                         <AiFillDelete
                             id={`${flowPrefix}-delete-button-fill${idExtension}`}

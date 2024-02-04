@@ -4,7 +4,15 @@
 
 import {Tooltip as AntdTooltip, Modal} from "antd"
 import {Position, Tooltip} from "evergreen-ui"
-import {ReactElement, KeyboardEvent as ReactKeyboardEvent, useEffect, useState} from "react"
+import debounce from "lodash/debounce"
+import {
+    ReactElement,
+    KeyboardEvent as ReactKeyboardEvent,
+    MouseEvent as ReactMouseEvent,
+    useCallback,
+    useEffect,
+    useState,
+} from "react"
 import {Col, Container, Row} from "react-bootstrap"
 import {AiFillDelete, AiFillEdit} from "react-icons/ai"
 import {BiNoEntry} from "react-icons/bi"
@@ -26,6 +34,7 @@ import {BrowserFetchRuns} from "../../controller/run/fetch"
 import {Run, Runs} from "../../controller/run/types"
 import {toFriendlyDateTime} from "../../utils/date_time"
 import {downloadFile} from "../../utils/file"
+import {useExtendedState} from "../../utils/state"
 import {removeItemOnce} from "../../utils/transformation"
 import {InfoTip} from "../infotip"
 
@@ -47,7 +56,7 @@ interface RunTableProps {
 
 export default function RunsTable(props: RunTableProps): ReactElement {
     // State for runs that are being deleted. In general there would be only one unless the user is clicking like mad
-    const [runsBeingDeleted, setRunsBeingDeleted] = useState<number[]>([])
+    const [runsBeingDeleted, setRunsBeingDeleted, getRunsBeingDeleted] = useExtendedState<number[]>([])
 
     // Keeps track of which artifact user wants to download for each Run. Map of runId: artifact_name.
     // Can't initialize this to anything useful here because we don't yet know how many Runs there will be.
@@ -59,6 +68,78 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     // List of all artifacts we know about
     const downloadableArtifacts = getDownloadableArtifacts()
+
+    function handleTerminateRun(event: ReactMouseEvent<HTMLElement>, run: Run, idx: number) {
+        const runName = run.name ?? run.id
+        event.preventDefault()
+        Modal.confirm({
+            title: (
+                <span id={`terminate-confirm-${runName}-title`}>
+                    Terminate in-progress training run &quot;{runName}&quot;?
+                </span>
+            ),
+            content: (
+                <span id={`terminate-confirm-${runName}-message`}>
+                    This cannot be undone. All existing training progress will be lost.
+                </span>
+            ),
+            okButtonProps: {
+                id: `terminate-confirm-${runName}-ok-button`,
+            },
+            okText: "Terminate",
+            onOk: async () => {
+                await abortRun(idx, run)
+            },
+            cancelText: "Do not terminate",
+            cancelButtonProps: {
+                id: `terminate-confirm-${runName}-cancel-button`,
+            },
+        })
+    }
+
+    // Use lodash to debounce delete (in case user clicks delete multiple times)
+    const debouncedTerminateRun = useCallback(
+        debounce(
+            (event: ReactMouseEvent<HTMLElement>, run: Run, idx: number) => {
+                handleTerminateRun(event, run, idx)
+            },
+            1000,
+            {leading: true, trailing: false, maxWait: 1000}
+        ),
+        []
+    )
+
+    function handleDelete(event, idx: number, run: Run) {
+        event.preventDefault()
+        const runName = run.name ?? run.id
+        Modal.confirm({
+            title: <span id={`delete-confirm-${runName}-title`}>Delete training run &quot;{runName}&quot;?</span>,
+            content: <span id={`delete-confirm-${runName}-message`}>This cannot be undone.</span>,
+            okButtonProps: {
+                id: `delete-confirm-${runName}-ok-button`,
+            },
+            okText: "Delete",
+            cancelText: "Keep",
+            onOk: async () => {
+                await deleteRun(idx, run)
+            },
+            cancelButtonProps: {
+                id: `delete-confirm-${runName}-cancel-button`,
+            },
+        })
+    }
+
+    // Use lodash to debounce delete (in case user clicks delete multiple times)
+    const debouncedDelete = useCallback(
+        debounce(
+            (event, idx: number, run: Run) => {
+                handleDelete(event, idx, run)
+            },
+            1000,
+            {leading: true, trailing: false, maxWait: 1000}
+        ),
+        []
+    )
 
     function resetEditingLoading(idx: number) {
         // Reset the Editing Field
@@ -246,7 +327,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     async function abortRun(idx: number, run: Run) {
         try {
             // Treat it same as deleting -- no renaming etc. while in progress
-            setRunsBeingDeleted([...runsBeingDeleted, idx])
+            setRunsBeingDeleted([...(await getRunsBeingDeleted()), idx])
 
             const success = await sendAbortRequest(run.id, props.currentUser)
 
@@ -255,14 +336,14 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 sendNotification(NotificationType.success, "Run abort request sent")
             }
         } finally {
-            const tmp = [...runsBeingDeleted]
+            const tmp = [...(await getRunsBeingDeleted())]
             setRunsBeingDeleted(removeItemOnce(tmp, idx))
         }
     }
 
     async function deleteRun(idx: number, run: Run) {
         try {
-            setRunsBeingDeleted([...runsBeingDeleted, idx])
+            setRunsBeingDeleted([...(await getRunsBeingDeleted()), idx])
             const hiddenRun: Run = {
                 ...run,
                 updated_at: null,
@@ -279,7 +360,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
             newRunsList.splice(idx, 1)
             props.setRuns(newRunsList)
         } finally {
-            const tmp = [...runsBeingDeleted]
+            const tmp = [...(await getRunsBeingDeleted())]
             setRunsBeingDeleted(removeItemOnce(tmp, idx))
         }
     }
@@ -601,7 +682,6 @@ export default function RunsTable(props: RunTableProps): ReactElement {
      * @return      The button, enclosed in a <code>Tooltip</code>
      */
     function getDeleteRunButton(runId: string, run: Run, idx: number) {
-        const runName = run.name ?? run.id
         return (
             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 content="Delete Run"
@@ -609,28 +689,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 <button
                     id={`delete-training-run-${runId}-button`}
                     className="align-center"
-                    onClick={(event) => {
-                        event.preventDefault()
-                        Modal.confirm({
-                            title: (
-                                <span id={`delete-confirm-${runName}-title`}>
-                                    Delete training run &quot;{runName}&quot;?
-                                </span>
-                            ),
-                            content: <span id={`delete-confirm-${runName}-message`}>This cannot be undone.</span>,
-                            okButtonProps: {
-                                id: `delete-confirm-${runName}-ok-button`,
-                            },
-                            okText: "Delete",
-                            cancelText: "Keep",
-                            onOk: async () => {
-                                await deleteRun(idx, run)
-                            },
-                            cancelButtonProps: {
-                                id: `delete-confirm-${runName}-cancel-button`,
-                            },
-                        })
-                    }}
+                    onClick={(event: ReactMouseEvent<HTMLElement>) => debouncedDelete(event, idx, run)}
                 >
                     <AiFillDelete
                         id={`delete-training-run-${idx}-fill`}
@@ -660,33 +719,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                     id={`terminate-training-run-${runId}-button`}
                     disabled={run.completed}
                     className="align-center"
-                    onClick={(event) => {
-                        const runName = run.name ?? run.id
-                        event.preventDefault()
-                        Modal.confirm({
-                            title: (
-                                <span id={`terminate-confirm-${runName}-title`}>
-                                    Terminate in-progress training run &quot;{runName}&quot;?
-                                </span>
-                            ),
-                            content: (
-                                <span id={`terminate-confirm-${runName}-message`}>
-                                    This cannot be undone. All existing training progress will be lost.
-                                </span>
-                            ),
-                            okButtonProps: {
-                                id: `terminate-confirm-${runName}-ok-button`,
-                            },
-                            okText: "Terminate",
-                            onOk: async () => {
-                                await abortRun(idx, run)
-                            },
-                            cancelText: "Do not terminate",
-                            cancelButtonProps: {
-                                id: `terminate-confirm-${runName}-cancel-button`,
-                            },
-                        })
-                    }}
+                    onClick={(event: ReactMouseEvent<HTMLElement>) => debouncedTerminateRun(event, run, idx)}
                 >
                     <BiNoEntry
                         id={`terminate-training-run-${runId}-fill`}
