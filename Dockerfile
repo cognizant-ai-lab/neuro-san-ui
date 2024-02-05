@@ -39,6 +39,10 @@ ENV MD_SERVER_URL ${GATEWAY}
 ARG UNILEAF_VERSION
 ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 
+# Handle switch between old and new model serving
+ARG MODEL_SERVING_VERSION
+ENV MODEL_SERVING_VERSION ${MODEL_SERVING_VERSION}
+
 # Use yarn to build and install dependencies
 RUN yarn build
 
