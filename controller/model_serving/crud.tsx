@@ -629,7 +629,10 @@ async function checkIfDeploymentReady(deploymentID: string): Promise<boolean> {
         return false
     }
 
-    return jsonResponse.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_READY]
+    return (
+        jsonResponse.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_READY] ||
+        jsonResponse.status === DeploymentStatus[DeploymentStatus.DEPLOYMENT_ALREADY_EXISTS]
+    )
 }
 
 /**
