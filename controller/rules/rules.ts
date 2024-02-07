@@ -2,6 +2,8 @@
  * Controller module for interacting with the rules LLM API.
  */
 
+import {StringToStringOrNumber} from "../base_types"
+
 /**
  * Access the API for either rules interpretation or insights.
  *
@@ -46,7 +48,8 @@ export async function fetchLlmInferenceInsights(
     projectTitle: string,
     projectDescription: string,
     inferenceRules: string,
-    trainingRules: string
+    trainingRules: string,
+    contextInputs: StringToStringOrNumber
 ) {
     return fetch("/api/gpt/inference", {
         method: "POST",
@@ -59,6 +62,7 @@ export async function fetchLlmInferenceInsights(
             projectDescription: projectDescription,
             inferenceRules: inferenceRules,
             trainingRules: trainingRules,
+            contextInputs: contextInputs,
         }),
     })
 }
