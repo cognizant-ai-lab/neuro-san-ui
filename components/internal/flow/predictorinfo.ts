@@ -27,7 +27,7 @@ interface SupportedModels {
     [key: string]: PredictorParams
 }
 
-export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
+const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
     "Random Forest": {
         n_estimators: {
             default_value: 100,
@@ -341,7 +341,7 @@ export const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
     Transformer: {},
     LLM: {},
 }
-export const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
+const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
     "Random Forest": {
         n_estimators: {
             default_value: 100,
@@ -490,7 +490,7 @@ export const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
     },
 }
 
-export const SUPPORTED_REGRESSOR_METRICS = new Map([
+const SUPPORTED_REGRESSOR_METRICS = new Map([
     /*
 This list should match the list of supported metrics in the backend.
 See SUPPORTED_METRICS in <unileaf_util library>/framework/metrics/metrics_manager.py
@@ -512,7 +512,7 @@ The first item in the list is the default value.
     ["Matthews correlation coefficient", true],
 ])
 
-export const SUPPORTED_CLASSIFIER_METRICS = new Map([
+const SUPPORTED_CLASSIFIER_METRICS = new Map([
     /*
     This list represents the metrics we want to be available for classifiers.
     The first item in the list is the default value.
