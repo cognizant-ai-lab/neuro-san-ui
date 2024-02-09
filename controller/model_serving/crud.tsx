@@ -15,7 +15,7 @@ import {
     ModelServingEnvironment,
     TearDownRequest,
 } from "./types"
-import {MD_BASE_URL} from "../../const"
+import {getBaseUrl} from "../../state/environment"
 import useFeaturesStore from "../../state/features"
 import {toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
@@ -23,21 +23,8 @@ import {extractId} from "../../utils/text"
 import {StringString} from "../base_types"
 import {PredictorParams, RioParams, Run} from "../run/types"
 
-// For deploying models
-const DEPLOY_MODELS_ROUTE = `${MD_BASE_URL}/api/v1/serving/deploy`
-
-// For checking if models are deployed
-const QUERY_DEPLOYMENTS_ROUTE = `${MD_BASE_URL}/api/v1/serving/deployments`
-
-// For tearing down deployed models
-const TEARDOWN_MODELS_ROUTE = `${MD_BASE_URL}/api/v1/serving/teardown`
-
 // For inferencing deployed models
 const MODEL_INFERENCE_ROUTE = "v2/models"
-
-const INFERENCE_DEPLOY_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/deploy`
-const INFERENCE_DEPLOY_STATUS_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/getstatus`
-const INFERENCE_INFER_ROUTE: string = `${MD_BASE_URL}/api/v1/inference/infer`
 
 function generateDeploymentID(runId: number, experimentId: number, projectId: number, cid?: string): string {
     const modelServingVersion = useFeaturesStore.getState().modelServingVersion
@@ -101,7 +88,7 @@ async function deployModel(
     let customPredictorArgs: StringString
     if (modelServingEnvironment === ModelServingEnvironment.KSERVE) {
         customPredictorArgs = {
-            gateway_url: MD_BASE_URL,
+            gateway_url: getBaseUrl(),
             run_id: runId.toString(),
         }
         if (cid) {
@@ -118,8 +105,11 @@ async function deployModel(
         custom_predictor_args: customPredictorArgs,
     }
 
+    const baseUrl = getBaseUrl()
+    const deployModelsRoute = `${baseUrl}/api/v1/serving/deploy`
+
     try {
-        const response = await fetch(DEPLOY_MODELS_ROUTE, {
+        const response = await fetch(deployModelsRoute, {
             method: "POST",
             headers: {
                 Accept: "application/json",
@@ -319,8 +309,11 @@ async function deployRunNew(
         models: modelsToDeploy,
     }
 
+    const baseUrl = getBaseUrl()
+    const inferDeployRoute = `${baseUrl}/api/v1/inference/deploy`
+
     try {
-        const response = await fetch(INFERENCE_DEPLOY_ROUTE, {
+        const response = await fetch(inferDeployRoute, {
             method: "POST",
             headers: {
                 Accept: "application/json",
@@ -392,7 +385,10 @@ export function undeployRunUsingBeacon(projectId: number, run: Run) {
         deployment_id: deploymentID,
         model_serving_environment: ModelServingEnvironment.KSERVE,
     }
-    navigator.sendBeacon(TEARDOWN_MODELS_ROUTE, JSON.stringify(tearDownRequest))
+
+    const baseUrl = getBaseUrl()
+    const tearDownModelsRoute = `${baseUrl}/api/v1/serving/teardown`
+    navigator.sendBeacon(tearDownModelsRoute, JSON.stringify(tearDownRequest))
 }
 
 /**
@@ -414,8 +410,11 @@ export async function undeployRun(
         model_serving_environment: ModelServingEnvironment.KSERVE,
     }
 
+    const baseUrl = getBaseUrl()
+    const tearDownModelsRoute = `${baseUrl}/api/v1/serving/teardown`
+
     try {
-        const response = await fetch(TEARDOWN_MODELS_ROUTE, {
+        const response = await fetch(tearDownModelsRoute, {
             method: "POST",
             headers: {
                 Accept: "application/json",
@@ -459,8 +458,11 @@ async function getDeployments(
         model_serving_environment: modelServingEnvironment,
     }
 
+    const baseUrl = getBaseUrl()
+    const queryDeploymentsRoute = `${baseUrl}/api/v1/serving/deployments`
+
     try {
-        const response: Response = await fetch(QUERY_DEPLOYMENTS_ROUTE, {
+        const response: Response = await fetch(queryDeploymentsRoute, {
             method: "POST",
             headers: {
                 Accept: "application/json",
@@ -517,16 +519,20 @@ function extractModelURLs(modelsArray: string[], baseUrl: string, cid: string) {
 /**
  * Retrieve model names (predictor, prescriptor) for a particular run.
  *
- * @param baseUrl The kserve base URL
+ * @param modelBaseUrl The kserve base URL
  * @param runId Run ID for the run whose models are requested
  * @param cid Prescriptor (candidate) ID to look for among the models
  * @return An object with an array of predictors, prescriptors and RIO models.
  * Each item in the arrays is a ready-to-use kserve endpoint (URL) that can be accessed for inferencing that model.
  */
-async function getModels(baseUrl: string, runId: number, cid: string) {
-    const url = `http://${baseUrl}/${MODEL_INFERENCE_ROUTE}`
+async function getModels(modelBaseUrl: string, runId: number, cid: string) {
+    const url = `http://${modelBaseUrl}/${MODEL_INFERENCE_ROUTE}`
+
+    const baseUrl = getBaseUrl()
+    const passThroughUrl = `${baseUrl}/api/v1/passthrough`
+
     try {
-        const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`, {
+        const response = await fetch(passThroughUrl, {
             method: "POST",
             mode: "cors",
             body: JSON.stringify({
@@ -546,7 +552,7 @@ async function getModels(baseUrl: string, runId: number, cid: string) {
         const modelsObject = await response.json()
         const modelsArray: string[] = modelsObject.models
 
-        const {predictors, prescriptors, rioModels} = extractModelURLs(modelsArray, baseUrl, cid)
+        const {predictors, prescriptors, rioModels} = extractModelURLs(modelsArray, modelBaseUrl, cid)
 
         return {
             predictors: predictors,
@@ -604,7 +610,11 @@ async function checkIfDeploymentReady(deploymentID: string): Promise<boolean> {
     const request = {
         deployment_id: deploymentID,
     }
-    const response = await fetch(INFERENCE_DEPLOY_STATUS_ROUTE, {
+
+    const baseUrl = getBaseUrl()
+    const inferDeployStatusRoute = `${baseUrl}/api/v1/inference/getstatus`
+
+    const response = await fetch(inferDeployStatusRoute, {
         method: "POST",
         headers: {
             Accept: "application/json",
@@ -685,7 +695,11 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
             },
             sample: JSON.stringify(inputs),
         }
-        const response = await fetch(INFERENCE_INFER_ROUTE, {
+
+        const baseUrl = getBaseUrl()
+        const inferRoute = `${baseUrl}/api/v1/inference/infer`
+
+        const response = await fetch(inferRoute, {
             method: "POST",
             headers: {
                 Accept: "application/json",
@@ -734,7 +748,10 @@ async function queryModelOld(modelUrl: string, inputs: PredictorParams | RioPara
             payload: inputs,
         })
 
-        const response = await fetch(`${MD_BASE_URL}/api/v1/passthrough`, {
+        const baseUrl = getBaseUrl()
+        const passThroughUrl = `${baseUrl}/api/v1/passthrough`
+
+        const response = await fetch(passThroughUrl, {
             method: "POST",
             mode: "cors",
             headers: {

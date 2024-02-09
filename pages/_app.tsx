@@ -24,6 +24,7 @@ import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {GENERIC_LOGO, LOGO, MODEL_SERVING_VERSION} from "../const"
+import useEnvironmentStore from "../state/environment"
 import useFeaturesStore, {ModelServingVersion} from "../state/features"
 
 const debug = debugModule("app")
@@ -33,6 +34,7 @@ const debug = debugModule("app")
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
     const {isGeneric} = useFeaturesStore()
+    const {setBackendApiUrl} = useEnvironmentStore()
 
     const {query, isReady, pathname} = useRouter()
 
@@ -57,6 +59,34 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             useFeaturesStore.setState(featureFlags)
         }
     }, [isReady])
+
+    useEffect(() => {
+        async function getBackendApiUrl() {
+            // Fetch URL for backend API. Since this gets saved in the zustand store, subsequent pages will not need
+            // to fetch it again
+            const res = await fetch("/api/environment", {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+            })
+
+            if (!res.ok) {
+                throw new Error(`Failed to fetch environment variables: ${res.status} ${res.statusText}`)
+            }
+
+            const data = await res.json()
+            if (!data.backendApiUrl) {
+                throw new Error("No backend API URL found in response")
+            }
+
+            // Cache backend API URL in feature store
+            setBackendApiUrl(data.backendApiUrl)
+        }
+
+        void getBackendApiUrl()
+    }, [])
 
     let body: JSX.Element | ReactFragment
     if (pathname === "/") {
