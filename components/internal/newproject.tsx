@@ -15,14 +15,14 @@ import {checkValidity} from "./dataprofile/dataprofileutils"
 import ProfileTable from "./dataprofile/profiletable"
 import {MaximumBlue} from "../../const"
 import {GrpcError} from "../../controller/base_types"
-import {CreateProfile} from "../../controller/dataprofile/generate"
+import {createProfile} from "../../controller/dataprofile/generate"
 import {Profile} from "../../controller/dataprofile/types"
 import {DataSource} from "../../controller/datasources/types"
 import {updateDataSource} from "../../controller/datasources/update"
-import AccessionDataTag from "../../controller/datatag/accession"
+import updateDataTag from "../../controller/datatag/accession"
 import {DataTag, DataTagFields} from "../../controller/datatag/types"
 import {uploadFile} from "../../controller/files/upload"
-import AccessionProject from "../../controller/projects/accession"
+import updateProject from "../../controller/projects/accession"
 import {Project} from "../../controller/projects/types"
 import useFeaturesStore from "../../state/features"
 import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
@@ -559,7 +559,7 @@ export default function NewProject(props: NewProps) {
         debug("Data source: ", dataSource)
 
         // Trigger the Data Source Controller
-        const response: Response = await CreateProfile(dataSource)
+        const response: Response = await createProfile(dataSource)
         if (response.status !== httpStatus.OK) {
             // Maybe "invalid request"?
             if (response.status === httpStatus.BAD_REQUEST) {
@@ -639,7 +639,7 @@ export default function NewProject(props: NewProps) {
             debug("Project: ", projectMessage)
 
             // Trigger the Project Controller
-            const accessionProjectResp: Project = await AccessionProject(projectMessage, "create")
+            const accessionProjectResp: Project = await updateProject(projectMessage, "create")
 
             // If Project creation failed, everything fails
             if (accessionProjectResp === null) {
@@ -714,7 +714,7 @@ export default function NewProject(props: NewProps) {
 
         debug("DataTag: ", dataTagMessage)
         // Trigger the Data tag Controller
-        const savedDataTag = await AccessionDataTag(dataTagMessage)
+        const savedDataTag = await updateDataTag(dataTagMessage)
         if (savedDataTag) {
             sendNotification(NotificationType.success, `Data profile "${datasetName}" created`)
         }
