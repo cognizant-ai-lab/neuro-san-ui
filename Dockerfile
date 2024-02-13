@@ -52,6 +52,9 @@ RUN yarn build
 # Production image, copy all the files and run next
 FROM gcr.io/distroless/nodejs:$NODEJS_VERSION AS runner
 
+ARG GATEWAY
+ENV MD_SERVER_URL ${GATEWAY}
+
 WORKDIR /app
 
 ENV NODE_ENV production

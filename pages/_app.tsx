@@ -23,7 +23,7 @@ import {Auth} from "../components/auth"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
-import {GENERIC_LOGO, LOGO, MODEL_SERVING_VERSION} from "../const"
+import {GENERIC_LOGO, LOGO, MD_BASE_URL, MODEL_SERVING_VERSION} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore, {ModelServingVersion} from "../state/features"
 
@@ -43,8 +43,10 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             let modelServingVersion: ModelServingVersion
             const queryStringSetting = query?.modelServingVersion
             if (queryStringSetting) {
+                debug(`Setting model serving version from query string: ${queryStringSetting}`)
                 modelServingVersion = queryStringSetting as ModelServingVersion
             } else {
+                debug(`Setting model serving version from const: ${MODEL_SERVING_VERSION}`)
                 modelServingVersion = MODEL_SERVING_VERSION as ModelServingVersion
             }
 
@@ -72,17 +74,22 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 },
             })
 
-            if (!res.ok) {
+            // If error, and no MD_BASE_URL to fall back on, throw error
+            if (!res.ok && !MD_BASE_URL) {
                 throw new Error(`Failed to fetch environment variables: ${res.status} ${res.statusText}`)
             }
 
             const data = await res.json()
-            if (!data.backendApiUrl) {
+            // If error, and no MD_BASE_URL to fall back on, throw error
+            if (!data.backendApiUrl && !MD_BASE_URL) {
                 throw new Error("No backend API URL found in response")
             }
 
-            // Cache backend API URL in feature store
-            setBackendApiUrl(data.backendApiUrl)
+            if (data.backendApiUrl) {
+                // Cache backend API URL in feature store
+                debug(`Received backend API URL from NodeJS server. Setting to ${data.backendApiUrl}`)
+                setBackendApiUrl(data.backendApiUrl)
+            }
         }
 
         void getBackendApiUrl()

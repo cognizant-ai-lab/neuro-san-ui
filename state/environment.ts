@@ -2,9 +2,12 @@
  * Zustand state store for "environment settings", like the backend API URL
  *
  */
+import debugModule from "debug"
 import {create} from "zustand"
 
 import {MD_BASE_URL} from "../const"
+
+const debug = debugModule("environment")
 
 /**
  * State store interface
@@ -28,7 +31,13 @@ const useEnvironmentStore = create<EnvironmentStore>((set) => ({
  * variable like before.
  */
 export function getBaseUrl() {
-    return useEnvironmentStore.getState().backendApiUrl || MD_BASE_URL
+    const backendApiUrl = useEnvironmentStore.getState().backendApiUrl
+    debug(
+        backendApiUrl
+            ? `Using NodeJS backend API URL: ${backendApiUrl}`
+            : `Falling back to environment variable: ${MD_BASE_URL}`
+    )
+    return backendApiUrl || MD_BASE_URL
 }
 
 export default useEnvironmentStore
