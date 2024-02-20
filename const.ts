@@ -9,7 +9,7 @@ const {publicRuntimeConfig} = getConfig()
 export const MD_BASE_URL: string = publicRuntimeConfig.md_server_url
 
 // Name to use for application
-export const LOGO: string = "Cognizant Neuro® AI Model Orchestrator"
+export const LOGO: string = "Cognizant Neuro® AI"
 export const GENERIC_LOGO: string = "Autopilot"
 
 // Build version (passed in from build system)

@@ -1,8 +1,10 @@
 import NextImage from "next/legacy/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {ReactElement, useEffect} from "react"
+import {useState} from "react"
+import {MouseEvent as ReactMouseEvent, ReactElement, useEffect} from "react"
 import {styled} from "styled-components"
+import {FaStar} from "react-icons/fa"
 
 import {GENERIC_LOGO, LOGO} from "../const"
 import useFeaturesStore from "../state/features"
@@ -56,7 +58,7 @@ const HeaderLineOne = styled.h1`
 const GetStartedButton = styled.div`
     display: inline-block;
     margin-top: 4rem;
-    color: #000048;
+    // color: #000048;
     font-weight: bold;
     font-size: 1.25rem;
     border-radius: 1000px;
@@ -88,10 +90,39 @@ export default function Index(): ReactElement {
 
     const router = useRouter()
 
+    // Keeps track of which button the user is hovering over. Either a button id or null
+    const [hoveredId, setHoveredId] = useState<string>(null)
+
+    const handleMouseEnter = (event: ReactMouseEvent) => {
+        setHoveredId((event.target as HTMLElement).id)
+    }
+
+    const handleMouseLeave = () => {
+        setHoveredId(null)
+    }
+
+    function getButtonStyle(id: string) {
+        console.debug("hoveredId", hoveredId, "id", id)
+        return {
+            // backgroundColor: hoveredId === id ? "#ffffff" : "#26efe9", // Change color on hover
+            color: hoveredId === id ? "white" : "#000000", // Change text color on hover
+            cursor: "pointer",
+            transition: "background-color 0.3s, color 0.3s", // Smooth transition effect
+        }
+    }
+
     // Dynamically set the title to the current host
     useEffect(() => {
         document.title = getTitleBase()
     }, [])
+
+    // Function to build the query string from the current route
+    const buildQueryString = () => {
+        const {query} = router
+        return Object.keys(query)
+            .map((key) => `${key}=${query[key]}`)
+            .join("&")
+    }
 
     return (
         <OuterContainer id="outer-container">
@@ -121,23 +152,79 @@ export default function Index(): ReactElement {
                             >
                                 {isGeneric ? GENERIC_LOGO : LOGO}
                             </div>
-                            <div
-                                id="tagline-h2"
-                                className="h2"
-                            >
-                                Accelerate Generative AI Model Orchestration at Enterprise Scale
-                            </div>
                         </HeaderLineOne>
                         <Link
-                            id="get-started-link"
+                            id="of-link"
+                            href={`/of?${buildQueryString()}`}
+                            legacyBehavior={true}
+                            passHref
+                        >
+                            <a
+                                id="of-link-anchor"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={`/of?${buildQueryString()}`}
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                            >
+                                <GetStartedButton
+                                    id="opportunity-finder-button"
+                                    style={{position: "relative", ...getButtonStyle("opportunity-finder-button")}}
+                                >
+                                    Opportunity Finder
+                                    <span
+                                        style={{
+                                            display: "flex",
+                                            position: "absolute",
+                                            top: 0,
+                                            right: 0,
+                                            paddingRight: "12px",
+                                            marginRight: "10px",
+                                            marginTop: "4px",
+                                        }}
+                                    >
+                                        <FaStar
+                                            style={{color: "gold"}}
+                                            size={16}
+                                        />
+                                        <span
+                                            style={{
+                                                fontVariantCaps: "all-small-caps",
+                                                verticalAlign: "middle",
+                                                fontSize: "small",
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            NEW!
+                                        </span>
+                                    </span>
+                                </GetStartedButton>
+                            </a>
+                        </Link>
+                        <Link
+                            id="orchestrator-link"
                             // Use the URL object form of `href` to pass along the query string, in case the user
                             // entered with /?demo
-                            href={{
-                                pathname: "/projects",
-                                query: router.query,
-                            }}
+                            href={`/projects?${buildQueryString()}`}
+                            legacyBehavior={true}
+                            passHref
                         >
-                            <GetStartedButton id="get-started">Get started</GetStartedButton>
+                            <a
+                                id="of-link-anchor"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={`/projects?${buildQueryString()}`}
+                                style={{marginLeft: "50px"}}
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                            >
+                                <GetStartedButton
+                                    id="model-orchestrator-button"
+                                    style={{position: "relative", ...getButtonStyle("model-orchestrator-button")}}
+                                >
+                                    Model Orchestrator
+                                </GetStartedButton>
+                            </a>
                         </Link>
                         {!isGeneric && (
                             <Description id="description">
