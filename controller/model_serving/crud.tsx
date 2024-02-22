@@ -55,7 +55,7 @@ function interpretFetchResponse(response: Response) {
     )
 }
 
-async function deployModel(
+async function deployModelOld(
     deploymentId: string,
     runId: number,
     experimentId: number,
@@ -232,7 +232,7 @@ async function deployRunOld(
     }
 
     try {
-        const result = await deployModel(
+        const result = await deployModelOld(
             deploymentID,
             runID,
             experimentId,
