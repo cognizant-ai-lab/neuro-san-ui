@@ -7,7 +7,10 @@ import NewBar from "../../components/newbar"
 
 export default function OpportunityFinderPage() {
     return (
-            <div id="main-div" style={{width: "90%", height: "600px"}}>
+        <div
+            id="main-div"
+            style={{width: "90%", height: "600px"}}
+        >
             <NewBar
                 id="projects-bar"
                 InstanceId="opportunity_finder"
@@ -21,8 +24,8 @@ export default function OpportunityFinderPage() {
                     />
                 }
             />
-            <OpportunityFinder />
-            </div>
+            <OpportunityFinder /* eslint-disable-line enforce-ids-in-jsx/missing-ids */ />
+        </div>
     )
 }
 

@@ -2,9 +2,9 @@ import {ChatMessage} from "langchain/schema"
 
 export async function sendOpportunityFinderRequest(
     userQuery: string,
-    callback: (string) => void,
+    callback: (token: string) => void,
     signal: AbortSignal,
-    chatHistory?: ChatMessage[],
+    chatHistory?: ChatMessage[]
 ) {
     const res = await fetch("/api/gpt/of", {
         method: "POST",

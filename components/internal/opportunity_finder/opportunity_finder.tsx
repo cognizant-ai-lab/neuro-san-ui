@@ -2,7 +2,7 @@
  * This is the module for the "AI decision assistant".
  */
 import {ChatMessage} from "langchain/schema"
-import {ChangeEvent, FormEvent, useRef, useState} from "react"
+import {ChangeEvent, FormEvent, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {Typeahead} from "react-bootstrap-typeahead"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
@@ -14,6 +14,7 @@ import {sendOpportunityFinderRequest} from "../../../controller/of"
 import data from "../../../top_500.json"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
+
 /**
  * AI assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
  * (via the backend) with full context about the current DMS page, in a question-and-answer chat format.
@@ -47,6 +48,13 @@ export function OpportunityFinder() {
     // chat session
     const currentResponse = useRef<string>("")
 
+    useEffect(() => {
+        // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
+        setTimeout(() => {
+            inputAreaRef?.current.focus()
+        }, 1000)
+    }, [])
+
     /**
      * Handles a token received from the LLM via callback on the fetch request.
      * @param token The token received from the LLM
@@ -75,15 +83,19 @@ export function OpportunityFinder() {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}Query: ${userQuery}\n\nResponse:\n\n`)
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}Company: ${userQuery}\n\nResponse:\n\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
 
             // Send the query to the server. Response will be streamed to our callback which updates the output
             // display as tokens are received.
-            const query = `Run the opportunity finder for this company: ${userQuery}`
-            await sendOpportunityFinderRequest(query, tokenReceivedHandler, abortController.signal, chatHistory.current)
+            await sendOpportunityFinderRequest(
+                userQuery,
+                tokenReceivedHandler,
+                abortController.signal,
+                chatHistory.current
+            )
 
             // Add a couple of blank lines after response
             setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
@@ -126,7 +138,7 @@ export function OpportunityFinder() {
         await sendQuery(userLlmChatInput)
     }
 
-    const handleInputAreaChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleInputAreaChange = (event: ChangeEvent<HTMLInputElement>) => {
         // Check if enter key was pressed. Seems a bit of a cheesy way to do it but couldn't find a better way in
         // this event handler, given what is passed as the Event.
         const isEnter = "inputType" in event.nativeEvent && event.nativeEvent.inputType === "insertLineBreak"
@@ -292,7 +304,8 @@ export function OpportunityFinder() {
                                 id="user-input"
                                 allowNew={true}
                                 minLength={2}
-                                // onChange={handleInputAreaChange}
+                                onInputChange={(_, event) => handleInputAreaChange(event)}
+                                onKeyDown={handleInputAreaKeyUp}
                                 // onKeyUp={handleInputAreaKeyUp}
                                 placeholder="Company name, for example, IBM"
                                 ref={inputAreaRef}
@@ -372,7 +385,10 @@ export function OpportunityFinder() {
                     </div>
                 </Form.Group>
             </Form>
-            <BlankLines numLines={8} />
+            <BlankLines
+                id="blank-lines"
+                numLines={8}
+            />
         </>
     )
 }

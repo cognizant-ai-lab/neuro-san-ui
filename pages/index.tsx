@@ -1,10 +1,9 @@
 import NextImage from "next/legacy/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {useState} from "react"
-import {MouseEvent as ReactMouseEvent, ReactElement, useEffect} from "react"
-import {styled} from "styled-components"
+import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {FaStar} from "react-icons/fa"
+import {styled} from "styled-components"
 
 import {GENERIC_LOGO, LOGO} from "../const"
 import useFeaturesStore from "../state/features"
@@ -169,7 +168,11 @@ export default function Index(): ReactElement {
                                     id="opportunity-finder-button"
                                     style={{
                                         position: "relative",
-                                        ...getButtonStyle(["opportunity-finder-button", "star-new-span"]),
+                                        ...getButtonStyle([
+                                            "opportunity-finder-button",
+                                            "star-new-span",
+                                            "of-link-anchor",
+                                        ]),
                                     }}
                                 >
                                     Opportunity Finder
@@ -185,11 +188,11 @@ export default function Index(): ReactElement {
                                             marginTop: "4px",
                                         }}
                                     >
-                                        <FaStar
+                                        <FaStar id="star"
                                             style={{color: "gold"}}
                                             size={16}
                                         />
-                                        <span
+                                        <span id="new-span"
                                             style={{
                                                 fontVariantCaps: "all-small-caps",
                                                 verticalAlign: "middle",
