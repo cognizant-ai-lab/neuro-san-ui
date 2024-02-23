@@ -693,10 +693,11 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
             model_uri: modelUrl,
             model_format: "UNKNOWN_MODEL_FORMAT",
         }
+
         const request: InferenceQueryRequest = {
             model: modelData,
             run_flow: {
-                flow: JSON.stringify({flow_graph: JSON.parse(run.flow)}),
+                flow: JSON.stringify(JSON.parse(run.flow)),
                 node_id: nodeId,
             },
             sample: JSON.stringify(inputs),
