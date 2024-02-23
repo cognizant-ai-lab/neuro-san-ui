@@ -55,10 +55,9 @@ const HeaderLineOne = styled.h1`
     color: white;
 `
 
-const GetStartedButton = styled.div`
+const LaunchButton = styled.div`
     display: inline-block;
     margin-top: 4rem;
-    // color: #000048;
     font-weight: bold;
     font-size: 1.25rem;
     border-radius: 1000px;
@@ -101,13 +100,12 @@ export default function Index(): ReactElement {
         setHoveredId(null)
     }
 
-    function getButtonStyle(id: string) {
-        console.debug("hoveredId", hoveredId, "id", id)
+    function getButtonStyle(ids: string[]) {
         return {
-            // backgroundColor: hoveredId === id ? "#ffffff" : "#26efe9", // Change color on hover
-            color: hoveredId === id ? "white" : "#000000", // Change text color on hover
+            color: ids.includes(hoveredId) ? "white" : "#000000", // Change text color on hover
             cursor: "pointer",
             transition: "background-color 0.3s, color 0.3s", // Smooth transition effect
+            boxShadow: ids.includes(hoveredId) ? "0 0 30px 0 #26efe9" : "none", // Add shadow on hover
         }
     }
 
@@ -156,7 +154,7 @@ export default function Index(): ReactElement {
                         <Link
                             id="of-link"
                             href={`/of?${buildQueryString()}`}
-                            legacyBehavior={true}
+                            legacyBehavior={true} // Need this so we can "open in new tab"
                             passHref
                         >
                             <a
@@ -167,12 +165,16 @@ export default function Index(): ReactElement {
                                 onMouseEnter={handleMouseEnter}
                                 onMouseLeave={handleMouseLeave}
                             >
-                                <GetStartedButton
+                                <LaunchButton
                                     id="opportunity-finder-button"
-                                    style={{position: "relative", ...getButtonStyle("opportunity-finder-button")}}
+                                    style={{
+                                        position: "relative",
+                                        ...getButtonStyle(["opportunity-finder-button", "star-new-span"]),
+                                    }}
                                 >
                                     Opportunity Finder
                                     <span
+                                        id="star-new-span"
                                         style={{
                                             display: "flex",
                                             position: "absolute",
@@ -198,7 +200,7 @@ export default function Index(): ReactElement {
                                             NEW!
                                         </span>
                                     </span>
-                                </GetStartedButton>
+                                </LaunchButton>
                             </a>
                         </Link>
                         <Link
@@ -218,12 +220,12 @@ export default function Index(): ReactElement {
                                 onMouseEnter={handleMouseEnter}
                                 onMouseLeave={handleMouseLeave}
                             >
-                                <GetStartedButton
+                                <LaunchButton
                                     id="model-orchestrator-button"
-                                    style={{position: "relative", ...getButtonStyle("model-orchestrator-button")}}
+                                    style={{position: "relative", ...getButtonStyle(["model-orchestrator-button"])}}
                                 >
                                     Model Orchestrator
-                                </GetStartedButton>
+                                </LaunchButton>
                             </a>
                         </Link>
                         {!isGeneric && (
