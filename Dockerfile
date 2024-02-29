@@ -28,13 +28,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Pass in the gateway (production or staging) at docker build time
-# This value is provided in codefresh where we build both
-# flavors in parallel. This env var needs to be set before
-# the yarn build command.
-ARG GATEWAY
-ENV MD_SERVER_URL ${GATEWAY}
-
 # Extract build version
 ARG UNILEAF_VERSION
 ENV UNILEAF_VERSION ${UNILEAF_VERSION}
@@ -51,9 +44,6 @@ RUN yarn build
 
 # Production image, copy all the files and run next
 FROM gcr.io/distroless/nodejs:$NODEJS_VERSION AS runner
-
-ARG GATEWAY
-ENV MD_SERVER_URL ${GATEWAY}
 
 WORKDIR /app
 
