@@ -48,7 +48,7 @@ export function checkValidity(flow: NodeType[]): boolean {
     const hasAnyOutcomesChecked = predictorNodes.every((node) =>
         // External data -- don't trust it to be a clean bool
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
-        Object.values(node.data.ParentPredictorState.caoState.outcome).some((val) => val === true)
+        Object.values(node.data.ParentNodeState.caoState.outcome).some((val) => val === true)
     )
 
     if (!hasAnyOutcomesChecked) {
@@ -63,7 +63,7 @@ export function checkValidity(flow: NodeType[]): boolean {
     const hasAnyContextsChecked = predictorNodes.some((node) =>
         // External data -- don't trust it to be a clean bool
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
-        Object.values(node.data.ParentPredictorState.caoState.context).some((val) => val === true)
+        Object.values(node.data.ParentNodeState.caoState.context).some((val) => val === true)
     )
 
     if (!hasAnyContextsChecked) {

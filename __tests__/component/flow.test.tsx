@@ -64,11 +64,11 @@ const FLOW_WITH_PREDICTOR = [
         data: {
             NodeID: "81e04790-f085-6645-c06a-1013b0259dfb",
             SelectedDataSourceId: 1234,
-            ParentPredictorState: {
+            ParentNodeState: {
                 selectedPredictorType: "regressor",
                 selectedPredictor: "",
                 selectedMetric: "",
-                predictorParams: {},
+                params: {},
                 caoState: {
                     context: {},
                     action: {},
@@ -78,7 +78,7 @@ const FLOW_WITH_PREDICTOR = [
                 testSliderValue: 20,
                 rngSeedValue: null,
             },
-            SetParentPredictorState: jest.fn(),
+            SetParentNodeState: jest.fn(),
             DeleteNode: jest.fn(),
             GetElementIndex: jest.fn(),
         },

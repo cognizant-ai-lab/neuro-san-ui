@@ -1,38 +1,22 @@
+import {BaseParameterType, ConfigurableNodeParameter} from "./nodes/generic/types"
 /*
 Configuration settings and constants for predictor configuration popup
  */
 
-export interface PredictorParamFields {
-    default_value: boolean | number | string
-    description: string
-
-    // TODO: there's probably a safer and more elegant way to handle types with something like Typescript Generics,
-    // rather than putting the name of the type in a string
-    type: string | string[] | number[]
-
-    // Value is an optional field that can be used within a form
-    // etc to denote user input
-    value?: boolean | number | string
-
-    min?: number
-    max?: number
-    step?: number
+export interface PredictorNodeParameters {
+    [key: string]: ConfigurableNodeParameter
 }
 
 export interface PredictorParams {
-    [key: string]: PredictorParamFields
+    [key: string]: PredictorNodeParameters
 }
 
-interface SupportedModels {
-    [key: string]: PredictorParams
-}
-
-const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
+const SUPPORTED_REGRESSION_MODELS: PredictorParams = {
     "Random Forest": {
         n_estimators: {
             default_value: 100,
             description: "The number of trees in the forest.",
-            type: "int",
+            type: BaseParameterType.INT,
         },
         criterion: {
             default_value: "mse",
@@ -40,7 +24,8 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
                            Supported criteria are mse for the mean squared error, 
                            which is equal to variance reduction as feature selection 
                            criterion, and mae for the mean absolute error.`,
-            type: ["mse", "mae"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["mse", "mae"],
         },
         max_depth: {
             default_value: 100,
@@ -48,12 +33,12 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
                            If None, then nodes are expanded until all 
                            leaves are pure or until all leaves contain less than 
                            min_samples_split samples.`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         min_samples_split: {
             default_value: 2,
             description: "The minimum number of samples required to split an internal node.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         min_samples_leaf: {
             default_value: 1,
@@ -67,14 +52,14 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             If float, then min_samples_leaf is a fraction and ceil(min_samples_leaf * n_samples) 
             are the minimum number of samples for each node.
             `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         min_weight_fraction_leaf: {
             default_value: 0.0,
             description: `The minimum weighted fraction of the sum total of
                            weights (of all the input samples) required to be at a leaf node. 
                            Samples have equal weight when sample_weight is not provided.`,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         max_features: {
             default_value: "auto",
@@ -91,14 +76,15 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             Note: the search for a split does not stop until at least one valid partition of the node samples 
             is found, even if it requires to effectively inspect more than max_features features.
             `,
-            type: ["auto", "sqrt", "log2"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["auto", "sqrt", "log2"],
         },
         max_leaf_nodes: {
             default_value: 100,
             description: `Grow trees with max_leaf_nodes in best-first fashion. 
                            Best nodes are defined as relative reduction in impurity. 
                            If None then unlimited number of leaf nodes.`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         min_impurity_decrease: {
             default_value: 0.0,
@@ -115,18 +101,18 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             
             N, N_t, N_t_R and N_t_L all refer to the weighted sum, if sample_weight is passed.
             `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         bootstrap: {
             default_value: true,
             description: `Whether bootstrap samples are used when building trees. 
                            If false, the whole dataset is used to build each tree.`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         oob_score: {
             default_value: false,
             description: "whether to use out-of-bag samples to estimate the R^2 on unseen data",
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         n_jobs: {
             default_value: 1,
@@ -134,7 +120,7 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
                 "The number of jobs to run in parallel. fit, predict, decision_path and apply are all parallelized " +
                 "over the trees. None means 1 unless in a joblib.parallel_backend context. -1 means using all " +
                 "processors. See Glossary for more details.",
-            type: "int",
+            type: BaseParameterType.INT,
         },
         random_state: {
             default_value: 0,
@@ -142,20 +128,20 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
                            used when building trees (if bootstrap=True) and the sampling of the 
                            features to consider when looking for the best split at each 
                            node (if max_features < n_features)`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         warm_start: {
             default_value: false,
             description: `When set to True, reuse the solution of the previous call to 
                            fit and add more estimators to the ensemble, otherwise, just fit a whole new forest.`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         ccp_alpha: {
             default_value: 0.0,
             description:
                 "Complexity parameter used for Minimal Cost-Complexity Pruning. The subtree with the largest cost " +
                 "complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed. ",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         max_samples: {
             default_value: 1,
@@ -167,7 +153,7 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             If float, then draw max_samples * X.shape[0] samples. 
             Thus, max_samples should be in the interval (0, 1).
             `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
     },
     "Linear Regressor": {
@@ -176,20 +162,20 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             description: `Whether to calculate the intercept for this model. 
                            If set to False, no intercept will be used in calculations 
                            (i.e. data is expected to be centered).`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         normalize: {
             default_value: false,
             description: `This parameter is ignored when fit_intercept is set to False. 
                            If True, the regressors X will be normalized before regression by 
                            subtracting the mean and dividing by the l2-norm.`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         positive: {
             default_value: false,
             description: `When set to True, forces the coefficients to be positive. 
                            This option is only supported for dense arrays.`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
     },
     XGBoost: {
@@ -197,27 +183,29 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             default_value: 100,
             description: `Number of gradient boosted trees.  
                            Equivalent to number of boosting rounds.`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         max_depth: {
             default_value: 6,
             description: "Maximum tree depth for base learners.",
-            type: "int",
+            type: BaseParameterType.INT,
         },
         learning_rate: {
             default_value: 0.3,
             description: "Boosting learning rate (xgb's 'eta')",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         verbosity: {
             default_value: 1,
             description: "The degree of verbosity. Valid values are 0 (silent) - 3 (debug).",
-            type: [0, 1, 2, 3],
+            type: BaseParameterType.ARRAY,
+            typeArray: [0, 1, 2, 3],
         },
         booster: {
             default_value: "gbtree",
             description: "Specify which booster to use: gbtree, gblinear or dart.",
-            type: ["gbtree", "gblinear", "dart"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["gbtree", "gblinear", "dart"],
         },
         tree_method: {
             default_value: "auto",
@@ -227,7 +215,8 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
                 available.  It's recommended to study this option from parameters
                 document.
                 `,
-            type: ["auto", "exact", "approx", "hist", "gpu_hist"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["auto", "exact", "approx", "hist", "gpu_hist"],
         },
         n_jobs: {
             default_value: 1,
@@ -237,74 +226,74 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             balance the threads.  Creating thread contention will significantly slow dowm both
             algorithms.
             `,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         gamma: {
             default_value: 0.0,
             description: `Minimum loss reduction required to make a further 
                            partition on a leaf node of the tree.`,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         min_child_weight: {
             default_value: 1.0,
             description: `Minimum loss reduction required to make a further 
                            partition on a leaf node of the tree.`,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         max_delta_step: {
             default_value: 0.0,
             description: "Maximum delta step we allow each tree's weight estimation to be.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         subsample: {
             default_value: 1.0,
             description: "Subsample ratio of the training instance.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         colsample_bytree: {
             default_value: 1.0,
             description: "Subsample ratio of columns when constructing each tree.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         colsample_bylevel: {
             default_value: 1.0,
             description: "Subsample ratio of columns for each level.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         colsample_bynode: {
             default_value: 1.0,
             description: "Subsample ratio of columns for each split.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         reg_alpha: {
             default_value: 0.0,
             description: "L1 regularization term on weights",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         reg_lambda: {
             default_value: 0.0,
             description: "L2 regularization term on weights",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         scale_pos_weight: {
             default_value: 1.0,
             description: "Balancing of positive and negative weights.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         random_state: {
             default_value: 0,
             description: "Random number seed.",
-            type: "int",
+            type: BaseParameterType.INT,
         },
         base_score: {
             default_value: 0.5,
             description: "The initial prediction score of all instances, global bias.",
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         num_parallel_tree: {
             default_value: 1,
             description: "Used for boosting random forest.",
-            type: "int",
+            type: BaseParameterType.INT,
         },
         importance_type: {
             default_value: "gain",
@@ -312,7 +301,8 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             The feature importance type for the feature_importances. property:
             either "gain", "weight", "cover", "total_gain" or "total_cover".
             `,
-            type: ["gain", "weight", "cover", "total_gain", "total_cover"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["gain", "weight", "cover", "total_gain", "total_cover"],
         },
     },
     Databricks: {
@@ -325,28 +315,28 @@ const SUPPORTED_REGRESSION_MODELS: SupportedModels = {
             models:/<model_name>/<model_version>
             models:/<model_name>/<stage>
             `,
-            type: "string",
+            type: BaseParameterType.STRING,
         },
         DATABRICKS_HOST: {
             default_value: "https://cog-leaftest.cloud.databricks.com",
             description: "The URL of the Databricks™ host",
-            type: "string",
+            type: BaseParameterType.STRING,
         },
         DATABRICKS_TOKEN: {
             default_value: "",
             description: "A generated token to access the Databricks™ instance",
-            type: "password",
+            type: BaseParameterType.PASSWORD,
         },
     },
     Transformer: {},
     LLM: {},
 }
-const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
+const SUPPORTED_CLASSIFICATION_MODELS: PredictorParams = {
     "Random Forest": {
         n_estimators: {
             default_value: 100,
             description: "The number of trees in the forest.",
-            type: "int",
+            type: BaseParameterType.INT,
         },
         criterion: {
             default_value: "gini",
@@ -354,7 +344,8 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
                            Supported criteria are mse for the mean squared error, 
                            which is equal to variance reduction as feature selection 
                            criterion, and mae for the mean absolute error.`,
-            type: ["gini", "entropy", "log_loss"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["gini", "entropy", "log_loss"],
         },
         max_depth: {
             default_value: 100,
@@ -362,7 +353,7 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
                            If None, then nodes are expanded until all 
                            leaves are pure or until all leaves contain less than 
                            min_samples_split samples.`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         min_samples_split: {
             default_value: 2,
@@ -371,7 +362,7 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
             If int, then consider min_samples_split as the minimum number.
             If float, then min_samples_split is a fraction and ceil(min_samples_split * n_samples) are the minimum 
             number of samples for each split.`,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         min_samples_leaf: {
             default_value: 1,
@@ -385,14 +376,14 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
             If float, then min_samples_leaf is a fraction and ceil(min_samples_leaf * n_samples) 
             are the minimum number of samples for each node.
             `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         min_weight_fraction_leaf: {
             default_value: 0.0,
             description: `The minimum weighted fraction of the sum total of
                            weights (of all the input samples) required to be at a leaf node. 
                            Samples have equal weight when sample_weight is not provided.`,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         max_features: {
             default_value: "auto",
@@ -409,14 +400,15 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
             Note: the search for a split does not stop until at least one valid partition of the node samples 
             is found, even if it requires to effectively inspect more than max_features features.
             `,
-            type: ["auto", "sqrt", "log2"],
+            type: BaseParameterType.ARRAY,
+            typeArray: ["auto", "sqrt", "log2"],
         },
         max_leaf_nodes: {
             default_value: 100,
             description: `Grow trees with max_leaf_nodes in best-first fashion. 
                            Best nodes are defined as relative reduction in impurity. 
                            If None then unlimited number of leaf nodes.`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         min_impurity_decrease: {
             default_value: 0.0,
@@ -433,18 +425,18 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
             
             N, N_t, N_t_R and N_t_L all refer to the weighted sum, if sample_weight is passed.
             `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         bootstrap: {
             default_value: true,
             description: `Whether bootstrap samples are used when building trees. 
                            If false, the whole dataset is used to build each tree.`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         oob_score: {
             default_value: false,
             description: "whether to use out-of-bag samples to estimate the R^2 on unseen data",
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         n_jobs: {
             default_value: 1,
@@ -452,7 +444,7 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
                            decision_path and apply are all parallelized over the trees. 
                            None means 1 unless in a joblib.parallel_backend context. 
                            -1 means using all processors. See Glossary for more details.`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         random_state: {
             default_value: 0,
@@ -460,20 +452,20 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
                            used when building trees (if bootstrap=True) and the sampling of the 
                            features to consider when looking for the best split at each 
                            node (if max_features < n_features)`,
-            type: "int",
+            type: BaseParameterType.INT,
         },
         warm_start: {
             default_value: false,
             description: `When set to True, reuse the solution of the previous call to 
                            fit and add more estimators to the ensemble, otherwise, just fit a whole new forest.`,
-            type: "bool",
+            type: BaseParameterType.BOOLEAN,
         },
         ccp_alpha: {
             default_value: 0.0,
             description: `Complexity parameter used for Minimal Cost-Complexity Pruning. 
                            The subtree with the largest cost complexity that is smaller than 
                            ccp_alpha will be chosen. By default, no pruning is performed. `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
         max_samples: {
             default_value: 1,
@@ -485,7 +477,7 @@ const SUPPORTED_CLASSIFICATION_MODELS: SupportedModels = {
             If float, then draw max_samples * X.shape[0] samples. 
             Thus, max_samples should be in the interval (0, 1).
             `,
-            type: "float",
+            type: BaseParameterType.FLOAT,
         },
     },
 }

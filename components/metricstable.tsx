@@ -3,8 +3,8 @@ import {FaArrowDown, FaArrowUp} from "react-icons/fa"
 import {FiAlertCircle} from "react-icons/fi"
 
 import {FlowQueries} from "./internal/flow/flowqueries"
-import {PredictorNode} from "./internal/flow/nodes/predictornode"
 import {fetchMetrics} from "./internal/flow/predictorinfo"
+import {ConfigurableNode} from "./internal/flow/nodes/generic/configurableNode"
 import NewBar from "./newbar"
 
 interface MetricstableProps {
@@ -18,13 +18,13 @@ export default function MetricsTable(props: MetricstableProps) {
     const predictorRenders = []
 
     function getRioImprovement(rioMetrics, metrics, metricName: string, nodeID: string) {
-        const predictor = FlowQueries.getNodeByID(predictors, nodeID) as PredictorNode
+        const predictor = FlowQueries.getNodeByID(predictors, nodeID) as ConfigurableNode
         if (!predictor) {
             return null
         }
 
         // Get the predictor type (regressor/classifier) so we can get the appropriate list of metrics info
-        const predictorType = predictor.data.ParentPredictorState.selectedPredictorType
+        const predictorType = predictor.data.ParentNodeState.selectedPredictorType
         const metricsInfo = fetchMetrics(predictorType)
 
         // After training, metrics IDs are returned to us in the format [test|train]_[metric name]_[outcome name]

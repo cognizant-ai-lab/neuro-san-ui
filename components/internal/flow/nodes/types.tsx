@@ -2,7 +2,7 @@ import {NodeTypes as RFNodeTypes} from "reactflow"
 
 import DataSourceNodeComponent, {DataSourceNode, DataSourceNodeData} from "./datasourcenode"
 import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from "./generic/configurableNode"
-import PredictorNodeComponent, {PredictorNode, PredictorNodeData} from "./predictornode"
+import PredictorNodeComponent from "./predictornode"
 import PrescriptorNodeComponent, {PrescriptorNode, PrescriptorNodeData} from "./prescriptornode"
 
 // Based on the declared nodes above we declare a constant holder to reference the Node objects. These references are
@@ -18,8 +18,8 @@ const NodeTypes: RFNodeTypes = {
     uncertaintymodelnode: ConfigurableNodeComponent,
 }
 
-export type NodeData = DataSourceNodeData | PredictorNodeData | PrescriptorNodeData | ConfigurableNodeData
+export type NodeData = DataSourceNodeData | PrescriptorNodeData | ConfigurableNodeData
 
-export type NodeType = DataSourceNode | PredictorNode | PrescriptorNode | ConfigurableNode
+export type NodeType = DataSourceNode | PrescriptorNode | ConfigurableNode
 
 export default NodeTypes

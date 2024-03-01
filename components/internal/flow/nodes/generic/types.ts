@@ -1,3 +1,4 @@
+import {StringBool} from "../../../../../controller/base_types"
 /**
  * Common types for flow nodes
  */
@@ -36,19 +37,27 @@ export enum BaseParameterType {
     INT,
     FLOAT,
     ENUM,
+    ARRAY,
+    PASSWORD,
+}
+
+export interface CAOChecked {
+    context?: StringBool
+    action?: StringBool
+    outcome?: StringBool
 }
 
 export interface ConfigurableNodeParameter {
-    description: string
+    description?: string
 
     // Data type of the parameter
-    type: BaseParameterType
+    type?: BaseParameterType
 
     // Associated enum, if this is an enum type parameter
     enum?: Enum
 
     // Default value for the field
-    default_value: ParameterType
+    default_value?: ParameterType
 
     // Value is an optional field that can be used within a form
     // etc to denote user input
@@ -58,11 +67,26 @@ export interface ConfigurableNodeParameter {
     max?: number
     step?: number
 
-    isAdvanced: boolean
+    isAdvanced?: boolean
 
     rows?: number
+
+    typeArray?: string[] | number[]
 }
 
 export interface NodeParams {
     [key: string]: ConfigurableNodeParameter
+}
+
+export interface ConfigurableNodeState {
+    selectedPredictorType?: string
+    selectedPredictor?: string
+    selectedMetric?: string
+    caoState?: CAOChecked
+    trainSliderValue?: number
+    testSliderValue?: number
+    rngSeedValue?: number | null
+    params: {
+        [key: string]: ConfigurableNodeParameter
+    }
 }

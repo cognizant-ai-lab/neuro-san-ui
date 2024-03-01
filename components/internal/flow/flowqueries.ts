@@ -4,7 +4,6 @@ import {isEdge, isNode} from "reactflow"
 import {EdgeType} from "./edges/types"
 import {DataSourceNode} from "./nodes/datasourcenode"
 import {ConfigurableNode} from "./nodes/generic/configurableNode"
-import {PredictorNode} from "./nodes/predictornode"
 import {PrescriptorNode} from "./nodes/prescriptornode"
 import {NodeType} from "./nodes/types"
 import {CAOType} from "../../../controller/datatag/types"
@@ -24,20 +23,20 @@ const DEMO_NODES = [
  * Contains various methods for query items from the experiment flow
  */
 export class FlowQueries {
-    static getPredictorNodes(nodes: NodeType[]): PredictorNode[] {
+    static getPredictorNodes(nodes: NodeType[]): ConfigurableNode[] {
         /*
         This function filters the predictor nodes
         from the graph and returns them
         */
-        return FlowQueries.getNodesByType(nodes, "predictornode") as PredictorNode[]
+        return FlowQueries.getNodesByType(nodes, "predictornode") as ConfigurableNode[]
     }
 
-    static getPredictorNode(nodes: NodeType[], nodeID: string): PredictorNode {
+    static getPredictorNode(nodes: NodeType[], nodeID: string): ConfigurableNode {
         /*
         This function filters the predictor nodes
         from the graph and returns the one with the supplied ID, or undefined if not found
         */
-        return FlowQueries.getNodesByType(nodes, "predictornode").find((node) => node.id === nodeID) as PredictorNode
+        return FlowQueries.getNodesByType(nodes, "predictornode").find((node) => node.id === nodeID) as ConfigurableNode
     }
 
     static getPrescriptorNodes(nodes: NodeType[]): PrescriptorNode[] {
@@ -68,9 +67,7 @@ export class FlowQueries {
         relevant sub-nodes. It knows which nodes to search for each CAOType.
          */
         const parentNode =
-            caoType === CAOType.CONTEXT || caoType === CAOType.ACTION
-                ? "ParentPrescriptorState"
-                : "ParentPredictorState"
+            caoType === CAOType.CONTEXT || caoType === CAOType.ACTION ? "ParentPrescriptorState" : "ParentNodeState"
         const caoTypeAsString = CAOType[caoType].toLowerCase()
         const checkedFields = []
         nodes?.forEach((node) => {
@@ -89,7 +86,7 @@ export class FlowQueries {
        The function extracts all user-selected (checked) fields of the given CAOType from the
        given node. For example, "get all checked Actions for this Predictor".
         */
-        const parentNode = node.type === "prescriptornode" ? "ParentPrescriptorState" : "ParentPredictorState"
+        const parentNode = node.type === "prescriptornode" ? "ParentPrescriptorState" : "ParentNodeState"
         const caoTypeString = CAOType[caoType].toLowerCase()
         return Object.entries(node.data[parentNode].caoState[caoTypeString])
             .filter((e) => e[1] === true) // only checked items
