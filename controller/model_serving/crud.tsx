@@ -320,7 +320,7 @@ async function deployRunNew(
     const inferDeployRoute = `${baseUrl}/api/v1/inference/deploy`
 
     try {
-        console.info(`Requesting deployment for run ${runId} with deployment ID ${deploymentId}`)
+        debug(`Requesting deployment for run ${runId} with deployment ID ${deploymentId}`)
         const response = await fetch(inferDeployRoute, {
             method: "POST",
             headers: {
