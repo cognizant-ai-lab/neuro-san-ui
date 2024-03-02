@@ -1,7 +1,6 @@
 /**
  * This is the module for the "AI decision assistant".
  */
-import {ChatMessage} from "langchain/schema"
 import {FormEvent, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {Typeahead} from "react-bootstrap-typeahead"
@@ -31,10 +30,13 @@ export function OpportunityFinder() {
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
     // State for the typeahead
-    const [selected, setSelected] = useState<string>("")
+    const [selectedString, setSelectedString] = useState<string>("")
 
     // Has LLM already provided opportunities?
     const [hasOpportunities, setHasOpportunities] = useState(false)
+
+    // Have we already generated data for an opportunity?
+    const [hasGeneratedData, setHasGeneratedData] = useState(false)
 
     // Ref for output text area, so we can auto scroll it
     const llmOutputTextAreaRef = useRef(null)
@@ -44,9 +46,6 @@ export function OpportunityFinder() {
 
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
-
-    // Use useRef here since we don't want changes in the chat history to trigger a re-render
-    const chatHistory = useRef<ChatMessage[]>([])
 
     // To accumulate current response, which will be different than the contents of the output window if there is a
     // chat session
@@ -61,6 +60,7 @@ export function OpportunityFinder() {
                 id={`option-${i}`}
                 key={i}
                 onClick={async () => {
+                    setHasGeneratedData(true)
                     await sendQuery((i + 1).toString(), "DataGenerator", i + 1)
                 }}
                 disabled={isAwaitingLlm}
@@ -86,7 +86,7 @@ export function OpportunityFinder() {
 
     function clearInput() {
         inputAreaRef?.current?.clear()
-        setSelected("")
+        setSelectedString("")
     }
 
     useEffect(() => {
@@ -112,9 +112,6 @@ export function OpportunityFinder() {
     // Sends user query to backend.
     async function sendQuery(userQuery: string, requestType: OpportunityFinderRequestType, optionNumber?: number) {
         try {
-            // Record user query in chat history
-            chatHistory.current = [...chatHistory.current, new ChatMessage(userQuery, "human")]
-
             setPreviousUserQuery(userQuery)
 
             setIsAwaitingLlm(true)
@@ -136,16 +133,12 @@ export function OpportunityFinder() {
                 requestType,
                 tokenReceivedHandler,
                 abortController.signal,
-                optionNumber,
-                chatHistory.current
+                optionNumber == null ? null : userLlmChatOutput,
+                optionNumber
             )
 
             // Add a couple of blank lines after response
             setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
-
-            // Record bot answer in history. Only record the final answer or we will end up using a crazy amount of
-            // tokens.
-            chatHistory.current = [...chatHistory.current, new ChatMessage(currentResponse.current, "ai")]
         } catch (error) {
             if (error instanceof Error) {
                 if (error.name === "AbortError") {
@@ -175,7 +168,7 @@ export function OpportunityFinder() {
         // Prevent submitting form
         event.preventDefault()
         setHasOpportunities(true)
-        await sendQuery(selected, "OpportunityFinder")
+        await sendQuery(selectedString, "OpportunityFinder")
     }
 
     function handleStop() {
@@ -190,7 +183,7 @@ export function OpportunityFinder() {
     }
 
     // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = !selected || selected.length === 0 || hasOnlyWhitespace(selected)
+    const userInputEmpty = !selectedString || selectedString.length === 0 || hasOnlyWhitespace(selectedString)
 
     // Disable Send when request is in progress
     const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
@@ -200,6 +193,8 @@ export function OpportunityFinder() {
 
     // Width for the various buttons -- "regenerate", "stop" etc.
     const actionButtonWidth = 126
+
+    const shouldShowOptionsButtons = hasOpportunities && !hasGeneratedData
 
     return (
         <>
@@ -229,14 +224,13 @@ export function OpportunityFinder() {
                             tabIndex={-1}
                             value={userLlmChatOutput}
                         />
-                        {/*<Form.Text>Option :</Form.Text>*/}
-                        {hasOpportunities && getOptionButtons()}
+                        {shouldShowOptionsButtons && getOptionButtons()}
                         <Button
                             id="clear-chat-button"
                             onClick={() => {
                                 setUserLlmChatOutput("")
                                 setHasOpportunities(false)
-                                chatHistory.current = []
+                                setHasGeneratedData(false)
                             }}
                             variant="secondary"
                             style={{
@@ -335,15 +329,19 @@ export function OpportunityFinder() {
                                 // value={userLlmChatInput}
                                 options={data.companies}
                                 onInputChange={(text: string) => {
-                                    console.debug("sel", text)
-                                    setSelected(text)
+                                    setSelectedString(text)
                                 }}
                                 onChange={(selectedItems) => {
                                     if (selectedItems && selectedItems.length > 0) {
-                                        setSelected(selectedItems[0] as string)
+                                        const item = selectedItems[0]
+                                        if (typeof item === "string") {
+                                            setSelectedString(item)
+                                        } else {
+                                            setSelectedString(item.label)
+                                        }
                                     }
                                 }}
-                                selected={[selected]}
+                                selected={[selectedString]}
                             />
                             <Button
                                 id="clear-input-button"
