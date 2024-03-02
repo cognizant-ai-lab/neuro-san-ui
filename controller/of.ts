@@ -1,9 +1,13 @@
 import {ChatMessage} from "langchain/schema"
 
+import {OpportunityFinderRequestType} from "../pages/api/gpt/of/types"
+
 export async function sendOpportunityFinderRequest(
     userQuery: string,
+    requestType: OpportunityFinderRequestType,
     callback: (token: string) => void,
     signal: AbortSignal,
+    optionNumber?: number,
     chatHistory?: ChatMessage[]
 ) {
     const res = await fetch("/api/gpt/of", {
@@ -15,6 +19,8 @@ export async function sendOpportunityFinderRequest(
         body: JSON.stringify({
             chatHistory: chatHistory,
             userQuery: userQuery,
+            requestType: requestType,
+            optionNumber: optionNumber,
         }),
         signal: signal,
     })

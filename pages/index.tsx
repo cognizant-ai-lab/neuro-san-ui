@@ -188,11 +188,13 @@ export default function Index(): ReactElement {
                                             marginTop: "4px",
                                         }}
                                     >
-                                        <FaStar id="star"
+                                        <FaStar
+                                            id="star"
                                             style={{color: "gold"}}
                                             size={16}
                                         />
-                                        <span id="new-span"
+                                        <span
+                                            id="new-span"
                                             style={{
                                                 fontVariantCaps: "all-small-caps",
                                                 verticalAlign: "middle",

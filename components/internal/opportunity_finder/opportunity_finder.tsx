@@ -11,6 +11,7 @@ import ClipLoader from "react-spinners/ClipLoader"
 
 import {MaximumBlue} from "../../../const"
 import {sendOpportunityFinderRequest} from "../../../controller/of"
+import {OpportunityFinderRequestType} from "../../../pages/api/gpt/of/types"
 import data from "../../../top_500.json"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
@@ -32,6 +33,9 @@ export function OpportunityFinder() {
     // State for the typeahead
     const [selected, setSelected] = useState<string>("")
 
+    // Has LLM already provided opportunities?
+    const [hasOpportunities, setHasOpportunities] = useState(false)
+
     // Ref for output text area, so we can auto scroll it
     const llmOutputTextAreaRef = useRef(null)
 
@@ -47,6 +51,38 @@ export function OpportunityFinder() {
     // To accumulate current response, which will be different than the contents of the output window if there is a
     // chat session
     const currentResponse = useRef<string>("")
+
+    const itemButtonWidth = 40
+
+    function getOptionButtons() {
+        // Generate 5 buttons using an array for the range and map
+        return Array.from(Array(5).keys()).map((i) => (
+            <Button
+                id={`option-${i}`}
+                key={i}
+                onClick={async () => {
+                    await sendQuery((i + 1).toString(), "DataGenerator", i + 1)
+                }}
+                disabled={isAwaitingLlm}
+                variant="outline-primary"
+                style={{
+                    background: MaximumBlue,
+                    borderColor: MaximumBlue,
+                    bottom: 10,
+                    color: "white",
+                    display: isAwaitingLlm ? "none" : "inline",
+                    fontSize: "13.3px",
+                    opacity: "70%",
+                    position: "absolute",
+                    left: 25 + i * 60,
+                    width: itemButtonWidth,
+                    zIndex: 99999,
+                }}
+            >
+                {i + 1}
+            </Button>
+        ))
+    }
 
     function clearInput() {
         inputAreaRef?.current?.clear()
@@ -73,12 +109,8 @@ export function OpportunityFinder() {
         setUserLlmChatOutput((currentOutput) => currentOutput + token)
     }
 
-    function extractFinalAnswer(response: string) {
-        return /Final Answer: .*/su.exec(response)
-    }
-
     // Sends user query to backend.
-    async function sendQuery(userQuery: string) {
+    async function sendQuery(userQuery: string, requestType: OpportunityFinderRequestType, optionNumber?: number) {
         try {
             // Record user query in chat history
             chatHistory.current = [...chatHistory.current, new ChatMessage(userQuery, "human")]
@@ -88,7 +120,11 @@ export function OpportunityFinder() {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}Company: ${userQuery}\n\nResponse:\n\n`)
+            setUserLlmChatOutput((currentOutput) =>
+                optionNumber == null
+                    ? `${currentOutput}Company: ${userQuery}\n\nResponse:\n\n`
+                    : `${currentOutput}Option selected: ${optionNumber}\n\nResponse:\n\n`
+            )
 
             const abortController = new AbortController()
             controller.current = abortController
@@ -97,8 +133,10 @@ export function OpportunityFinder() {
             // display as tokens are received.
             await sendOpportunityFinderRequest(
                 userQuery,
+                requestType,
                 tokenReceivedHandler,
                 abortController.signal,
+                optionNumber,
                 chatHistory.current
             )
 
@@ -107,10 +145,7 @@ export function OpportunityFinder() {
 
             // Record bot answer in history. Only record the final answer or we will end up using a crazy amount of
             // tokens.
-            const finalAnswer = extractFinalAnswer(currentResponse.current)
-            if (finalAnswer && finalAnswer.length > 0) {
-                chatHistory.current = [...chatHistory.current, new ChatMessage(finalAnswer[0], "ai")]
-            }
+            chatHistory.current = [...chatHistory.current, new ChatMessage(currentResponse.current, "ai")]
         } catch (error) {
             if (error instanceof Error) {
                 if (error.name === "AbortError") {
@@ -139,9 +174,9 @@ export function OpportunityFinder() {
     async function handleUserQuery(event: FormEvent<HTMLFormElement>) {
         // Prevent submitting form
         event.preventDefault()
-        await sendQuery(selected)
+        setHasOpportunities(true)
+        await sendQuery(selected, "OpportunityFinder")
     }
-
 
     function handleStop() {
         try {
@@ -164,7 +199,7 @@ export function OpportunityFinder() {
     const shouldDisableRegenerateButton = !previousUserQuery || isAwaitingLlm
 
     // Width for the various buttons -- "regenerate", "stop" etc.
-    const buttonWidth = 126
+    const actionButtonWidth = 126
 
     return (
         <>
@@ -194,10 +229,13 @@ export function OpportunityFinder() {
                             tabIndex={-1}
                             value={userLlmChatOutput}
                         />
+                        {/*<Form.Text>Option :</Form.Text>*/}
+                        {hasOpportunities && getOptionButtons()}
                         <Button
                             id="clear-chat-button"
                             onClick={() => {
                                 setUserLlmChatOutput("")
+                                setHasOpportunities(false)
                                 chatHistory.current = []
                             }}
                             variant="secondary"
@@ -211,7 +249,7 @@ export function OpportunityFinder() {
                                 opacity: "70%",
                                 position: "absolute",
                                 right: 145,
-                                width: buttonWidth,
+                                width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
                         >
@@ -237,7 +275,7 @@ export function OpportunityFinder() {
                                 opacity: "70%",
                                 position: "absolute",
                                 right: 10,
-                                width: buttonWidth,
+                                width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
                         >
@@ -251,7 +289,7 @@ export function OpportunityFinder() {
                         </Button>
                         <Button
                             id="regenerate-output-button"
-                            onClick={() => sendQuery(previousUserQuery)}
+                            onClick={() => sendQuery(previousUserQuery, "OpportunityFinder")}
                             disabled={shouldDisableRegenerateButton}
                             variant="secondary"
                             style={{
@@ -264,7 +302,7 @@ export function OpportunityFinder() {
                                 opacity: shouldDisableRegenerateButton ? "50%" : "70%",
                                 position: "absolute",
                                 right: 10,
-                                width: buttonWidth,
+                                width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
                         >
