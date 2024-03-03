@@ -55,33 +55,58 @@ export function OpportunityFinder() {
 
     function getOptionButtons() {
         // Generate 5 buttons using an array for the range and map
-        return Array.from(Array(5).keys()).map((i) => (
-            <Button
-                id={`option-${i}`}
-                key={i}
-                onClick={async () => {
-                    setHasGeneratedData(true)
-                    await sendQuery((i + 1).toString(), "DataGenerator", i + 1)
-                }}
-                disabled={isAwaitingLlm}
-                variant="outline-primary"
+        return (
+            <div
+                id="option-buttons-div"
                 style={{
-                    background: MaximumBlue,
+                    backgroundColor: "lightblue",
                     borderColor: MaximumBlue,
-                    bottom: 10,
-                    color: "white",
+                    borderStyle: "solid",
+                    borderRadius: "10000px",
+                    borderWidth: "1px",
                     display: isAwaitingLlm ? "none" : "inline",
-                    fontSize: "13.3px",
-                    opacity: "70%",
                     position: "absolute",
-                    left: 25 + i * 60,
-                    width: itemButtonWidth,
                     zIndex: 99999,
+                    bottom: "1px",
+                    padding: "20px",
+                    marginLeft: "20px",
+                    marginBottom: "10px",
+                    opacity: "70%",
                 }}
             >
-                {i + 1}
-            </Button>
-        ))
+                <span
+                    id="title-span"
+                    style={{textAlign: "center", verticalAlign: "middle"}}
+                >
+                    Decision point:
+                </span>
+                {Array.from(Array(5).keys()).map((i) => (
+                    <Button
+                        id={`option-${i}`}
+                        key={i}
+                        onClick={async () => {
+                            setHasGeneratedData(true)
+                            await sendQuery((i + 1).toString(), "DataGenerator", i + 1)
+                        }}
+                        disabled={isAwaitingLlm}
+                        variant="outline-primary"
+                        style={{
+                            background: MaximumBlue,
+                            borderColor: MaximumBlue,
+                            bottom: 10,
+                            color: "white",
+                            fontSize: "13.3px",
+                            opacity: "70%",
+                            marginLeft: "10px",
+                            marginTop: "10px",
+                            width: itemButtonWidth,
+                        }}
+                    >
+                        {i + 1}
+                    </Button>
+                ))}
+            </div>
+        )
     }
 
     function clearInput() {
@@ -138,7 +163,7 @@ export function OpportunityFinder() {
             )
 
             // Add a couple of blank lines after response
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n\n\n`)
         } catch (error) {
             if (error instanceof Error) {
                 if (error.name === "AbortError") {
@@ -168,6 +193,8 @@ export function OpportunityFinder() {
         // Prevent submitting form
         event.preventDefault()
         setHasOpportunities(true)
+        setHasGeneratedData(false)
+        setUserLlmChatOutput("")
         await sendQuery(selectedString, "OpportunityFinder")
     }
 
@@ -179,6 +206,8 @@ export function OpportunityFinder() {
             setIsAwaitingLlm(false)
             clearInput()
             currentResponse.current = ""
+            setHasOpportunities(false)
+            setHasGeneratedData(false)
         }
     }
 
@@ -205,7 +234,7 @@ export function OpportunityFinder() {
                 <Form.Group id="llm-chat-group">
                     <div
                         id="llm-response-div"
-                        style={{height: "80vh", margin: "10px", display: "flow", position: "relative"}}
+                        style={{height: "80vh", margin: "10px", position: "relative"}}
                     >
                         <Form.Control
                             id="llm-responses"

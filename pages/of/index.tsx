@@ -5,6 +5,8 @@ import {OpportunityFinder} from "../../components/internal/opportunity_finder/op
 // ts-prune-ignore-next
 import NewBar from "../../components/newbar"
 
+// Has to be export default for NextJS so tell ts-prune to ignore
+// ts-prune-ignore-next
 export default function OpportunityFinderPage() {
     return (
         <div
