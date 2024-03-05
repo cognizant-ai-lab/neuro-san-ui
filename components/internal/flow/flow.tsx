@@ -43,7 +43,6 @@ import {DataSource} from "../../../controller/datasources/types"
 import {CAOType, DataTag} from "../../../controller/datatag/types"
 import {useStateWithCallback} from "../../../utils/react_utils"
 import {NotificationType, sendNotification} from "../../notification"
-import StateManagedSelect from "react-select/dist/declarations/src/stateManager"
 
 const debug = debugModule("flow")
 
@@ -469,78 +468,6 @@ export default function Flow(props: FlowProps) {
                                 },
                             },
                         }
-                    }
-                }
-                return node
-            })
-        )
-    }
-
-    function PredictorSetStateHandler(newState, NodeID) {
-        /*
-        This Handler is supposed to be triggered by a predictor node
-        to update the data it stores withing itself and the related
-        prescriptor edges linked to it.
-        The NodeID parameter is used to bind it to the state
-        */
-
-        setNodes(
-            nodes.map((node) => {
-                // If this is the right predictor node, update its state
-                if (node.id === NodeID) {
-                    node.data = {
-                        ...node.data,
-                        ParentNodeState: newState,
-                    }
-                } else if (node.type === "prescriptornode") {
-                    // Update prescriptor with outcomes from all predictors.
-                    // NOTE: this is simplified logic since we only support one prescriptor right now, so all predictors
-                    // are necessarily connected to it. Will need to revisit this if we ever support multiple
-                    // prescriptors.
-
-                    const _node = node as PrescriptorNode
-
-                    // Get all predictors in the experiment except the one that just got updated because the data in
-                    // that node is stale. Remember, we are inside the set state handler so the state there
-                    // is before the update.
-                    const predictors = FlowQueries.getPredictorNodes(nodes).filter((aNode) => aNode.id !== NodeID)
-
-                    // Take the Union of all the checked outcomes on the predictors
-                    let checkedOutcomes = FlowQueries.extractCheckedFields(predictors, CAOType.OUTCOME)
-
-                    // Append the new state outcome
-                    Object.keys(newState.caoState.outcome).forEach((outcome) => {
-                        if (newState.caoState.outcome[outcome]) {
-                            checkedOutcomes.push(outcome)
-                        }
-                    })
-
-                    // Remove dupe outcomes
-                    checkedOutcomes = checkedOutcomes.filter(
-                        (value, index, sourceArray) => sourceArray.indexOf(value) === index
-                    )
-
-                    // Convert checkedOutcomes to fitness structure
-                    const fitness = checkedOutcomes.map((outcome) => {
-                        // Maintain the state if it exists otherwise set maximize to true
-                        const maximize = _node.data.ParentPrescriptorState.evolution.fitness
-                            .filter((outcomeDict) => outcomeDict.metric_name === outcome)
-                            .map((outcomeDict) => outcomeDict.maximize)
-                        return {
-                            metric_name: outcome,
-                            maximize: maximize[0] ?? "true",
-                        }
-                    })
-
-                    node.data = {
-                        ...node.data,
-                        ParentPrescriptorState: {
-                            ..._node.data.ParentPrescriptorState,
-                            evolution: {
-                                ..._node.data.ParentPrescriptorState.evolution,
-                                fitness,
-                            },
-                        },
                     }
                 }
                 return node

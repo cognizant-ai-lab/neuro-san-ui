@@ -3,8 +3,8 @@ import {FaArrowDown, FaArrowUp} from "react-icons/fa"
 import {FiAlertCircle} from "react-icons/fi"
 
 import {FlowQueries} from "./internal/flow/flowqueries"
-import {fetchMetrics} from "./internal/flow/predictorinfo"
 import {ConfigurableNode} from "./internal/flow/nodes/generic/configurableNode"
+import {fetchMetrics} from "./internal/flow/predictorinfo"
 import NewBar from "./newbar"
 
 interface MetricstableProps {
