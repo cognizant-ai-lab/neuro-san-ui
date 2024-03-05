@@ -24,7 +24,7 @@ on the type in order to render the node configuration using the correct UI eleme
  */
 
 // Use for strict typing of the value of parameters, so Typescript can catch issues
-type ParameterType = boolean | number | string | Enum
+export type ParameterType = boolean | number | string | Enum
 
 // Used for nodes to reflect on the type of each parameter and potentially do different things depending on the type.
 // For example, a boolean parameter might be rendered as a checkbox, while a string parameter might be rendered as a
@@ -53,20 +53,20 @@ export interface NodeTabs {
 }
 
 export interface ConfigurableNodeParameter {
-    description: string
+    description?: string
 
     // Data type of the parameter
-    type: BaseParameterType
+    type?: BaseParameterType
 
     // Associated enum, if this is an enum type parameter
     enum?: Enum
 
     // Default value for the field
-    default_value: ParameterType
+    default_value?: ParameterType
 
     // Value is an optional field that can be used within a form
     // etc to denote user input
-    value: ParameterType
+    value?: ParameterType
 
     min?: number
     max?: number
@@ -75,6 +75,8 @@ export interface ConfigurableNodeParameter {
     isAdvanced?: boolean
 
     rows?: number
+
+    typeArray?: string[] | number[]
 }
 
 export interface NodeParams {

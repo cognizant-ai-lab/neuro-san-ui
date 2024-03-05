@@ -3,7 +3,7 @@ import {BaseParameterType, ConfigurableNodeParameter} from "./nodes/generic/type
 Configuration settings and constants for predictor configuration popup
  */
 
-export interface PredictorNodeParameters {
+interface PredictorNodeParameters {
     [key: string]: ConfigurableNodeParameter
 }
 
@@ -540,7 +540,7 @@ export function fetchMetrics(predictorType: string) {
     return predictorType === "regressor" ? SUPPORTED_REGRESSOR_METRICS : SUPPORTED_CLASSIFIER_METRICS
 }
 
-export function fetchParams(predictorType: string, predictorName: string): PredictorParams {
+export function fetchParams(predictorType: string, predictorName: string): PredictorNodeParameters {
     /*
     This function returns the configuration parameters for the predictor
     */
