@@ -433,6 +433,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
             id={`${flowPrefix}-config${idExtension}`}
         >
             {ParentNodeState.params &&
+                Object.keys(ParentNodeState.params).length &&
                 Object.keys(defaultParams).map((param) => (
                     <div
                         id={`${flowPrefix}-${param}-input-component${idExtension}`}
