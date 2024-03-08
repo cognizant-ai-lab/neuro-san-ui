@@ -1,8 +1,7 @@
 /**
  * Controller module for interacting with the DMS CHAT LLM API.
  */
-
-import {ChatMessage} from "langchain/schema"
+import {ChatMessage} from "@langchain/core/messages"
 
 import {sendLlmRequest} from "../llm/llm_chat"
 import {Run} from "../run/types"

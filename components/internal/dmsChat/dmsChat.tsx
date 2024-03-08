@@ -1,8 +1,8 @@
 /**
  * This is the module for the "AI decision assistant".
  */
+import {ChatMessage} from "@langchain/core/messages"
 import {Drawer} from "antd"
-import {ChatMessage} from "langchain/schema"
 import {ChangeEvent, FormEvent, ReactElement, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"

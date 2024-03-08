@@ -1,6 +1,6 @@
+import {ChatMessage} from "@langchain/core/messages"
 import {Collapse} from "antd"
 import httpStatus from "http-status"
-import {ChatMessage} from "langchain/schema"
 import {Component} from "react"
 import {Loading} from "react-simple-chatbot"
 

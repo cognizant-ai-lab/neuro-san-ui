@@ -1,4 +1,4 @@
-import {ChatMessage} from "langchain/schema"
+import {ChatMessage} from "@langchain/core/messages"
 import {memo, ReactElement, useRef} from "react"
 import ChatBot from "react-simple-chatbot"
 import {ThemeProvider} from "styled-components"

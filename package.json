@@ -29,8 +29,11 @@
         "@babel/core": "7.23.7",
         "@blueprintjs/core": "4.17.8",
         "@blueprintjs/icons": "4.14.5",
-        "@langchain/core": "0.1.61",
-        "@pinecone-database/pinecone": "2.0.1",
+        "@langchain/community": "0.0.32",
+        "@langchain/core": "0.1.43",
+        "@langchain/openai": "0.0.18",
+        "@langchain/pinecone": "0.0.3",
+        "@pinecone-database/pinecone": "2.1.0",
         "@popperjs/core": "2.11.8",
         "antd": "5.13.1",
         "bootstrap": "5.3.2",
@@ -46,6 +49,7 @@
         "next": "14.0.4",
         "next-auth": "4.24.5",
         "nextjs-breadcrumbs2": "2.0.4",
+        "package.json": "^2.0.1",
         "pretty-bytes": "6.1.1",
         "rc-slider": "10.5.0",
         "react": "18.2.0",
@@ -125,5 +129,6 @@
         "glob-parent": "^5.1.2",
         "jose": "4.15.5",
         "postcss": "^8.1.0"
-    }
+    },
+    "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
 }
