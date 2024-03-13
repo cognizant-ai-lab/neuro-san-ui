@@ -49,7 +49,12 @@ export interface CAOChecked {
 
 export interface NodeTabs {
     title: string
-    component: JSX.Element
+    component?: JSX.Element
+    tabComponentProps?: {
+        inputTypes: Set<string>
+        flowPrefix: string
+        id: string
+    }
 }
 
 export interface ConfigurableNodeParameter {

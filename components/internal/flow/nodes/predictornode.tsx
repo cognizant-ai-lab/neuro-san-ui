@@ -1,20 +1,15 @@
-import {Tooltip as AntdTooltip} from "antd"
-import {InfoSignIcon, Tooltip} from "evergreen-ui"
 import {useSession} from "next-auth/react"
-import Slider from "rc-slider"
 import {FC, useEffect, useState} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
 import "rc-slider/assets/index.css"
 import {getOutgoers, NodeProps, useEdges, useNodes} from "reactflow"
 
 import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from "./generic/configurableNode"
-import {BaseParameterType} from "./generic/types"
 import {NodeData, NodeType} from "./types"
 import {loadDataTag} from "../../../../controller/datatag/fetchdatataglist"
 import {DataTag} from "../../../../controller/datatag/types"
 import useFeaturesStore from "../../../../state/features"
 import {NotificationType, sendNotification} from "../../../notification"
-import ConfigNumeric from "../confignumeric"
 import {EdgeType} from "../edges/types"
 import {FlowQueries} from "../flowqueries"
 import {fetchMetrics, fetchParams, fetchPredictors} from "../predictorinfo"
@@ -237,58 +232,6 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
         })
     }
 
-    const onParamChange = (event, paramName: string) => {
-        /*
-        This function is used to update the state of the predictor
-        parameters.
-        */
-        const {value} = event.target
-        const paramsCopy = {...ParentNodeState.params}
-        paramsCopy[paramName].value = value
-        SetParentNodeState({
-            ...ParentNodeState,
-            params: {
-                ...ParentNodeState.params,
-                ...paramsCopy,
-            },
-        })
-    }
-
-    const onPredictorParamCheckBoxChange = (event, paramName) => {
-        /*
-        This function is used to update the state of the predictor
-        parameter checkboxes.
-        */
-        const {checked} = event.target
-        const paramsCopy = {...ParentNodeState.params}
-        paramsCopy[paramName].value = checked
-        SetParentNodeState({
-            ...ParentNodeState,
-            params: {
-                ...ParentNodeState.params,
-                ...paramsCopy,
-            },
-        })
-    }
-
-    const onTrainSliderChange = (newValue) => {
-        const newTestSliderValue = 100 - newValue
-        SetParentNodeState({
-            ...ParentNodeState,
-            testSliderValue: newTestSliderValue,
-            trainSliderValue: newValue,
-        })
-    }
-
-    const onTestSliderChange = (newValue) => {
-        const newTrainSliderValue = 100 - newValue
-        SetParentNodeState({
-            ...ParentNodeState,
-            testSliderValue: newValue,
-            trainSliderValue: newTrainSliderValue,
-        })
-    }
-
     // Create the selection Panel
     const predictorSelectionPanel = (
         <Card.Body id={`${flowPrefix}-predictor-selection-panel${idExtension}`}>
@@ -426,236 +369,26 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
         ParentNodeState.selectedPredictor || predictors[ParentNodeState.selectedPredictorType || ""][0]
     const defaultParams = fetchParams(ParentNodeState.selectedPredictorType || "", selectedPredictor)
 
-    // Create the configuration Panel
-    const predictorConfigurationPanel = (
-        <Card.Body
-            className="overflow-y-scroll h-40 text-xs pl-4 pr-4"
-            id={`${flowPrefix}-config${idExtension}`}
-        >
-            {ParentNodeState.params &&
-                Object.keys(ParentNodeState.params).length &&
-                Object.keys(defaultParams).map((param) => (
-                    <div
-                        id={`${flowPrefix}-${param}-input-component${idExtension}`}
-                        className="grid grid-cols-8 gap-12 mb-3"
-                        key={param}
-                    >
-                        <div
-                            id={`${flowPrefix}-${param}-input-component-div${idExtension}`}
-                            className="item1 col-span-3"
-                        >
-                            <label
-                                id={`${flowPrefix}-${param}-label${idExtension}`}
-                                className="capitalize"
-                            >
-                                {param}:
-                            </label>
-                        </div>
-                        <div
-                            id={`${flowPrefix}-${param}-data-type-div${idExtension}`}
-                            className="item2 col-span-4"
-                        >
-                            {(defaultParams[param].type === BaseParameterType.INT ||
-                                defaultParams[param].type === BaseParameterType.FLOAT) && (
-                                <ConfigNumeric
-                                    id={`${flowPrefix}-${param}-value${idExtension}`}
-                                    paramName={param}
-                                    defaultParam={defaultParams[param]}
-                                    value={
-                                        ParentNodeState.params[param]?.value !== null &&
-                                        ParentNodeState.params[param].value
-                                    }
-                                    onParamChange={(event) => onParamChange(event, param)}
-                                />
-                            )}
-                            {defaultParams[param].type === BaseParameterType.BOOLEAN && (
-                                <input
-                                    id={`${flowPrefix}-${param}-value${idExtension}`}
-                                    type="checkbox"
-                                    checked={
-                                        ParentNodeState.params[param]?.value == null
-                                            ? defaultParams[param].default_value == null
-                                                ? undefined
-                                                : Boolean(defaultParams[param].default_value)
-                                            : Boolean(ParentNodeState.params[param].value)
-                                    }
-                                    onChange={(event) => onPredictorParamCheckBoxChange(event, param)}
-                                />
-                            )}
-                            {defaultParams[param].type === BaseParameterType.ENUM && (
-                                <select
-                                    id={`${flowPrefix}-${param}-value${idExtension}`}
-                                    value={
-                                        ParentNodeState.params[param]?.value == null
-                                            ? defaultParams[param].default_value == null
-                                                ? undefined
-                                                : defaultParams[param].default_value?.toString()
-                                            : ParentNodeState.params[param].value?.toString()
-                                    }
-                                    onChange={(event) => onParamChange(event, param)}
-                                    className="w-32 p-0"
-                                >
-                                    {Object.entries(defaultParams[param].enum).map((value) => (
-                                        <option
-                                            id={`${flowPrefix}-${param}-${value[0]}${idExtension}`}
-                                            key={value[0]}
-                                            value={value[1].toString()}
-                                        >
-                                            {value[0]}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            {defaultParams[param].type === BaseParameterType.STRING && (
-                                <input
-                                    id={`${flowPrefix}-${param}-value${idExtension}`}
-                                    className="w-full"
-                                    type="text"
-                                    defaultValue={defaultParams[param].default_value?.toString()}
-                                    value={ParentNodeState.params[param]?.value?.toString()}
-                                    onChange={(event) => onParamChange(event, param)}
-                                />
-                            )}
-                            {defaultParams[param].type === BaseParameterType.PASSWORD && (
-                                <input
-                                    id={`${flowPrefix}-${param}-value${idExtension}`}
-                                    className="w-full"
-                                    type="password"
-                                    defaultValue={defaultParams[param].default_value?.toString()}
-                                    value={ParentNodeState.params[param]?.value?.toString()}
-                                    onChange={(event) => onParamChange(event, param)}
-                                />
-                            )}
-                        </div>
-                        <div
-                            id={`${flowPrefix}-${param}-tooltip-div${idExtension}`}
-                            className="item3 col-span-1"
-                        >
-                            <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                                content={defaultParams?.[param].description}
-                            >
-                                <InfoSignIcon id={`${flowPrefix}-${param}-tooltip-info-sign-icon${idExtension}`} />
-                            </Tooltip>
-                        </div>
-                    </div>
-                ))}
-        </Card.Body>
-    )
-
-    const marks = {
-        0: {label: "0%"},
-        100: {label: "100%", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
-    }
-
-    // Create the data split card
-    const dataSplitConfigurationPanel = (
-        <Card.Body id={`${flowPrefix}-data-split-configuration-panel${idExtension}`}>
-            <Container id={`${flowPrefix}-data-split-config${idExtension}`}>
-                <Row
-                    id={`${flowPrefix}-train${idExtension}`}
-                    className="mx-2 my-8"
-                >
-                    <Col
-                        id={`${flowPrefix}-train-label${idExtension}`}
-                        md={2}
-                        className="mr-4"
-                    >
-                        Train:
-                    </Col>
-                    <Col
-                        id={`${flowPrefix}-train-slider${idExtension}`}
-                        md={9}
-                    >
-                        <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Slider does not have an id property when compiling
-                            onChange={(event) => onTrainSliderChange(event)}
-                            min={0}
-                            max={100}
-                            value={ParentNodeState.trainSliderValue}
-                            marks={marks}
-                            handleRender={(node) => {
-                                return (
-                                    <AntdTooltip
-                                        id={`${flowPrefix}-train-slider-tooltip${idExtension}`}
-                                        title={`${ParentNodeState.trainSliderValue}%`}
-                                    >
-                                        {node}
-                                    </AntdTooltip>
-                                )
-                            }}
-                        />
-                    </Col>
-                </Row>
-                <Row
-                    id={`${flowPrefix}-test${idExtension}`}
-                    className="mx-2 my-8"
-                >
-                    <Col
-                        id={`${flowPrefix}-test-label${idExtension}`}
-                        md={2}
-                        className="mr-4"
-                    >
-                        Test:
-                    </Col>
-                    <Col
-                        id={`${flowPrefix}-test-slider${idExtension}`}
-                        md={9}
-                    >
-                        <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Slider does not have an id property when compiling
-                            onChange={(event) => onTestSliderChange(event)}
-                            min={0}
-                            max={100}
-                            value={ParentNodeState.testSliderValue}
-                            marks={marks}
-                            handleRender={(node) => {
-                                return (
-                                    <AntdTooltip
-                                        id={`${flowPrefix}-test-slider-tooltip${idExtension}`}
-                                        title={`${ParentNodeState.testSliderValue}%`}
-                                    >
-                                        {node}
-                                    </AntdTooltip>
-                                )
-                            }}
-                        />
-                    </Col>
-                </Row>
-                <Row
-                    id={`${flowPrefix}-split-rng-seed${idExtension}`}
-                    className="mx-2 my-8"
-                >
-                    <Col
-                        id={`${flowPrefix}-split-rng-seed-label${idExtension}`}
-                        md="auto"
-                    >
-                        RNG seed:
-                    </Col>
-                    <Col id={`${flowPrefix}-split-rng-seed-column${idExtension}`}>
-                        <input
-                            id={`${flowPrefix}-split-rng-seed-input${idExtension}`}
-                            type="number"
-                            min={0}
-                            value={ParentNodeState.rngSeedValue}
-                            onChange={(event) => {
-                                SetParentNodeState({
-                                    ...ParentNodeState,
-                                    rngSeedValue: parseInt(event.target.value),
-                                })
-                            }}
-                            className="input-field w-50"
-                        />
-                    </Col>
-                </Row>
-            </Container>
-        </Card.Body>
-    )
-
     const tabs = [
+        // Selection panel is very custom to Predictors. We still render it once here and pass it to Configurable Node
         {title: "Predictor", component: predictorSelectionPanel},
-        {title: "Configuration", component: predictorConfigurationPanel},
-        {title: "Data Split", component: dataSplitConfigurationPanel},
+        {
+            title: "Configuration",
+            tabComponentProps: {
+                inputTypes: new Set(["inputs"]),
+                flowPrefix,
+                id: `${flowPrefix}-config${idExtension}`,
+            },
+        },
+
+        {
+            title: "Data Split",
+            tabComponentProps: {
+                inputTypes: new Set(["sliders"]),
+                flowPrefix,
+                id: `${flowPrefix}-data-split-configuration-panel${idExtension}`,
+            },
+        },
     ]
     // Create the Component structure
     return (
@@ -666,6 +399,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
                 tabs,
                 NodeTitle: ParentNodeState.selectedPredictor,
                 enableCAOActions: true,
+                ParameterSet: defaultParams,
             }}
             type="predictor"
             selected={false}

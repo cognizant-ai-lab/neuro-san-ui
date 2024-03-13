@@ -13,55 +13,56 @@ interface PredictorParams {
 
 // eslint-disable-next-line no-shadow
 enum MaxFeatures {
-    "auto",
-    "sqrt",
-    "log2",
+    "auto" = "auto",
+    "sqrt" = "sqrt",
+    "log2" = "log2",
 }
 
 // eslint-disable-next-line no-shadow
 enum Booster {
-    "gbtree",
-    "gblinear",
-    "dart",
+    "gbtree" = "gbtree",
+    "gblinear" = "gblinear",
+    "dart" = "dart",
 }
 
 // eslint-disable-next-line no-shadow
 enum TreeMethod {
-    "auto",
-    "exact",
-    "approx",
-    "hist",
-    "gpu_hist",
+    "auto" = "auto",
+    "exact" = "exact",
+    "approx" = "approx",
+    "hist" = "hist",
+    "gpu_hist" = "gpu_hist",
 }
 
 // eslint-disable-next-line no-shadow
 enum ImportanceType {
-    "gain",
-    "weight",
-    "cover",
-    "total_gain",
-    "total_cover",
+    "gain" = "gain",
+    "weight" = "weight",
+    "cover" = "cover",
+    "total_Gain" = "total_gain",
+    "total_Cover" = "total_cover",
 }
 
 // eslint-disable-next-line no-shadow
 enum SupportedRegressionCriterion {
-    "mse",
-    "mae",
+    "mse" = "mse",
+    "mae" = "mae",
 }
 
 // eslint-disable-next-line no-shadow
 enum SupportedClassificationCriterion {
-    "gini",
-    "entropy",
-    "log_loss",
+    "gini" = "gini",
+    "entropy" = "entropy",
+    "log_loss" = "log_loss",
 }
 
+// The NUM in the enum name is a hack to get around rendering enums that are actual numbers.
 // eslint-disable-next-line no-shadow
 enum Verbosity {
-    ZERO,
-    ONE,
-    TWO,
-    THREE,
+    "NUM_ZERO" = "0",
+    "NUM_ONE" = "1",
+    "NUM_TWO" = "2",
+    "NUM_THREE" = "3",
 }
 
 const SUPPORTED_REGRESSION_MODELS: PredictorParams = {

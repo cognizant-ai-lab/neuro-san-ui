@@ -1,15 +1,15 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Modal} from "antd"
-import {Text as EvergreenText, InfoSignIcon, Popover, Tab, Tablist, Tooltip} from "evergreen-ui"
+import {Text as EvergreenText, Popover, Tab, Tablist} from "evergreen-ui"
 import {Dispatch, FC, MouseEvent as ReactMouseEvent, SetStateAction, useEffect, useState} from "react"
-import {Card, Col, Collapse, Container, Row} from "react-bootstrap"
+import {Card, Collapse} from "react-bootstrap"
 import {AiFillDelete} from "react-icons/ai"
 import {GrSettingsOption} from "react-icons/gr"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
 import CAOButtons from "./CAOButtons"
-import {BaseParameterType, ConfigurableNodeState, NodeParams, NodeTabs} from "./types"
-import ConfigNumeric from "../../confignumeric"
+import NodeConfigPanel from "./NodeConfigPanel"
+import {ConfigurableNodeState, NodeParams, NodeTabs} from "./types"
 
 // Define an interface for the structure of the node
 export interface ConfigurableNodeData {
@@ -84,6 +84,9 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const trashColor = trashHover ? "var(--bs-red)" : null
     const [selectedIndex, setSelectedIndex] = useState(0)
+    // For showing advanced configuration settings
+    const [showAdvanced, setShowAdvanced] = useState(false)
+    const [showConfig, setShowConfig] = useState(false)
 
     const handleDelete = (event: ReactMouseEvent<HTMLElement>) => {
         event.preventDefault()
@@ -121,6 +124,29 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
         })
     }
 
+    const handleShowConfig = (event: ReactMouseEvent<HTMLElement>) => {
+        event.preventDefault()
+        setShowConfig((prevShowConfig) => !prevShowConfig)
+    }
+
+    const handleShowAdvanced = (event: ReactMouseEvent<HTMLElement>) => {
+        event.preventDefault()
+        setShowAdvanced(!showAdvanced)
+
+        /*
+         ** Increasing the size of the popover doesn't re-render the popover
+         ** To trigger a re-render, we'll close and reopen the configuration panel.
+         ** The setTimeouts are used to prevent React from batching the state updates.
+         */
+        setTimeout(() => {
+            setShowConfig(false)
+        }, 10)
+
+        setTimeout(() => {
+            setShowConfig(true)
+        }, 20)
+    }
+
     useEffect(() => {
         const nodeState = {...ParentNodeState}
         nodeState &&
@@ -139,182 +165,78 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
         SetParentNodeState(nodeState)
     }, [])
 
-    /**
-     * This function is used to update the state of any parameter based on a user event (e.g. onChange)
-     *
-     * @param event UI event that triggered the change
-     * @param paramName Name of the parameter that changed
-     */
-    const onParamChange = (event, paramName: string) => {
-        const {value} = event.target
-        const paramsCopy = {...ParentNodeState.params}
-        switch (paramsCopy[paramName].type) {
-            case BaseParameterType.INT:
-            case BaseParameterType.FLOAT:
-                paramsCopy[paramName].value = Number(value)
-                break
-            case BaseParameterType.BOOLEAN:
-                paramsCopy[paramName].value = Boolean(value)
-                break
-            case BaseParameterType.STRING:
-            case BaseParameterType.ENUM:
-            default:
-                paramsCopy[paramName].value = value
-        }
-        SetParentNodeState({
-            ...ParentNodeState,
-            params: paramsCopy,
-        })
-    }
-
-    const onCheckboxChange = (event, paramName) => {
-        /*
-        This function is used to update the state of any checkbox parameters
-        */
-        const {checked} = event.target
-        const paramsCopy = {...ParentNodeState.params}
-        paramsCopy[paramName].value = checked
-        SetParentNodeState({...ParentNodeState, params: paramsCopy})
-    }
-
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `${props.type}-${flowIndex}`
-    const defaultParams = ParameterSet
 
-    // For showing advanced configuration settings
-    const [showAdvanced, setShowAdvanced] = useState(false)
-
-    function getInputComponent(param) {
-        const item = ParameterSet?.[param]
-        const paramPrefix = `${flowPrefix}-${param}`
-        const parentNodeStateElement = ParentNodeState?.params?.[param]
-
+    function getInputComponent(updatedParameterSet) {
+        // create the configuration panel
         return (
-            <Container id={`${paramPrefix}-container${idExtension}`}>
-                <Row
-                    id={`${paramPrefix}-row${idExtension}`}
-                    className="mx-2 my-4"
-                >
-                    <Col
-                        id={`${paramPrefix}-param-col${idExtension}`}
-                        style={{
-                            display: "flex",
-                            gap: "12px",
-                            alignItems: "center",
-                            width: "875px",
-                        }}
-                    >
-                        <div
-                            id="llm-label-div"
-                            className="flex w-100 gap-2 items-center"
-                        >
-                            <label
-                                id={`${paramPrefix}-label${idExtension}`}
-                                className="capitalize"
-                            >
-                                {param}:{" "}
-                            </label>
-                            {item.type === BaseParameterType.BOOLEAN && (
-                                <input
-                                    id={`${paramPrefix}-value${idExtension}`}
-                                    type="checkbox"
-                                    checked={Boolean(
-                                        parentNodeStateElement?.value ?? defaultParams?.[param]?.default_value
-                                    )}
-                                    onChange={(event) => onCheckboxChange(event, param)}
-                                />
-                            )}
-                            {(item.type === BaseParameterType.INT || item?.type === BaseParameterType.FLOAT) && (
-                                <ConfigNumeric
-                                    id={`${paramPrefix}-value${idExtension}`}
-                                    paramName={param}
-                                    defaultParam={defaultParams?.[param]}
-                                    value={
-                                        (parentNodeStateElement?.value ??
-                                            defaultParams?.[param]?.default_value) as number
-                                    }
-                                    onParamChange={(event) => onParamChange(event, param)}
-                                    style={{width: "100%"}}
-                                />
-                            )}
-
-                            {item?.type === BaseParameterType.ENUM && item?.enum && (
-                                <select
-                                    id={`${paramPrefix}-value${idExtension}`}
-                                    value={(
-                                        parentNodeStateElement?.value ?? defaultParams?.[param]?.default_value
-                                    )?.toString()}
-                                    onChange={(event) => onParamChange(event, param)}
-                                    style={{width: "100%"}}
-                                >
-                                    {Object.entries(item.enum)
-                                        .sort((first, second) => first[0].localeCompare(second[0]))
-                                        .map((enumItem) => (
-                                            <option
-                                                id={`${paramPrefix}-${enumItem[0]}${idExtension}`}
-                                                key={enumItem[0]}
-                                                value={enumItem[1].toString()}
-                                            >
-                                                {enumItem[0]}
-                                            </option>
-                                        ))}
-                                </select>
-                            )}
-
-                            {item.type === BaseParameterType.STRING && (
-                                <textarea
-                                    style={{width: "100%", fontFamily: "monospace"}}
-                                    rows={item.rows || 10}
-                                    id={`${paramPrefix}-value${idExtension}`}
-                                    onChange={(event) => onParamChange(event, param)}
-                                >
-                                    {(
-                                        parentNodeStateElement?.value ?? defaultParams?.[param]?.default_value
-                                    )?.toString()}
-                                </textarea>
-                            )}
-                        </div>
-
-                        <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                            content={item.description}
-                        >
-                            <InfoSignIcon
-                                id={`${paramPrefix}-tooltip-info-sign-icon${idExtension}`}
-                                style={{
-                                    flexShrink: 0,
-                                }}
-                            />
-                        </Tooltip>
-                    </Col>
-                </Row>
-            </Container>
+            <NodeConfigPanel
+                id={`${flowPrefix}-container${idExtension}`}
+                defaultParams={updatedParameterSet}
+                flowPrefix={flowPrefix}
+                idExtension={idExtension}
+                parentNodeState={ParentNodeState}
+                setParentNodeState={SetParentNodeState}
+                inputTypes={new Set(["inputs", "showTextArea"])}
+                customStyles={{
+                    inputsCardHeight: "h-100",
+                    inputRowWidth: "w-100",
+                    inputCompnentStyles: {
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                        width: "875px",
+                    },
+                }}
+            />
         )
     }
 
-    const multiTabComponent = (tabComponents) => (
-        <>
-            <Tablist
-                id={`${flowPrefix}-settings-tablist${idExtension}`}
-                marginBottom={16}
-                flexBasis={240}
-                marginRight={24}
-            >
-                {tabs?.map(({title}, index) => (
-                    <Tab
-                        id={`${flowPrefix}-settings-${title}${idExtension}`}
-                        key={title}
-                        onSelect={() => setSelectedIndex(index)}
-                        isSelected={index === selectedIndex}
-                        aria-controls={`panel-${title}`}
-                    >
-                        {title}
-                    </Tab>
-                ))}
-            </Tablist>
-            {tabComponents[selectedIndex].component}
-        </>
-    )
+    const multiTabComponent = (tabComponentsData) => {
+        const tabComponents = tabComponentsData.map((componentData) => {
+            const {tabComponentProps, component} = componentData
+
+            if (component) return component
+            return (
+                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+                <NodeConfigPanel
+                    id={`${tabComponentProps["id"]}`}
+                    defaultParams={ParameterSet}
+                    flowPrefix={tabComponentProps.flowPrefix}
+                    idExtension={idExtension}
+                    parentNodeState={ParentNodeState}
+                    setParentNodeState={SetParentNodeState}
+                    inputTypes={tabComponentProps.inputTypes}
+                    key={`${tabComponentProps["id"]}`}
+                />
+            )
+        })
+
+        return (
+            <>
+                <Tablist
+                    id={`${flowPrefix}-settings-tablist${idExtension}`}
+                    marginBottom={16}
+                    flexBasis={240}
+                    marginRight={24}
+                >
+                    {tabs?.map(({title}, index) => (
+                        <Tab
+                            id={`${flowPrefix}-settings-${title}${idExtension}`}
+                            key={title}
+                            onSelect={() => setSelectedIndex(index)}
+                            isSelected={index === selectedIndex}
+                            aria-controls={`panel-${title}`}
+                        >
+                            {title}
+                        </Tab>
+                    ))}
+                </Tablist>
+                {tabComponents[selectedIndex]}
+            </>
+        )
+    }
 
     // Create the outer Card
     return (
@@ -347,6 +269,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     >
                         <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - Popover does not have an id property when compiling
+                            isShown={showConfig}
                             content={
                                 tabs?.length ? (
                                     multiTabComponent(tabs)
@@ -359,9 +282,14 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                             id={`${flowPrefix}-basic-settings-div${idExtension}`}
                                             className="mt-3"
                                         >
-                                            {Object.keys(ParameterSet)
-                                                .filter((key) => !ParameterSet[key].isAdvanced)
-                                                .map((param) => getInputComponent(param))}
+                                            {getInputComponent(
+                                                Object.keys(ParameterSet)
+                                                    .filter((key) => !ParameterSet?.[key].isAdvanced)
+                                                    .reduce((res, key) => {
+                                                        res[key] = ParameterSet[key]
+                                                        return res
+                                                    }, {})
+                                            )}
                                         </div>
                                         <div
                                             id={`${flowPrefix}-advanced-settings-label-div${idExtension}`}
@@ -376,7 +304,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                         </div>
                                         <button
                                             id={`${flowPrefix}-show-advanced-settings-button${idExtension}`}
-                                            onClick={() => setShowAdvanced(!showAdvanced)}
+                                            onClick={handleShowAdvanced}
                                             className="pl-4"
                                         >
                                             {showAdvanced ? (
@@ -394,9 +322,14 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                                 id={`${flowPrefix}-basic-settings-div${idExtension}`}
                                                 className="mt-3"
                                             >
-                                                {Object.keys(ParameterSet)
-                                                    .filter((key) => ParameterSet?.[key].isAdvanced)
-                                                    .map((param) => getInputComponent(param))}
+                                                {getInputComponent(
+                                                    Object.keys(ParameterSet)
+                                                        .filter((key) => ParameterSet?.[key].isAdvanced)
+                                                        .reduce((res, key) => {
+                                                            res[key] = ParameterSet[key]
+                                                            return res
+                                                        }, {})
+                                                )}
                                             </div>
                                         </Collapse>
                                     </Card.Body>
@@ -408,6 +341,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                 overflowY: "scroll",
                                 margin: 0,
                             }}
+                            onClose={() => setShowConfig(false)}
                         >
                             <div
                                 id={`${flowPrefix}-show-config${idExtension}`}
@@ -418,6 +352,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                     type="button"
                                     className="mt-1"
                                     style={{height: 0}}
+                                    onClick={handleShowConfig}
                                 >
                                     <GrSettingsOption
                                         id={`${flowPrefix}-show-config-button-settings-option${idExtension}`}

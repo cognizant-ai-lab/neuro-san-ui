@@ -22,7 +22,7 @@ export const consolidateFlow = (flowNodes) => {
         const copyNode = structuredClone(node)
 
         const isLLMNode =
-            (node?.data && node?.type === "uncertaintymodelnode") ||
+            node?.type === "uncertaintymodelnode" ||
             node?.type === "category_reducer_node" ||
             node?.type === "analytics_node" ||
             node?.type === "activation_node" ||
