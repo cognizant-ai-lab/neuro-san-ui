@@ -234,13 +234,14 @@ export function OpportunityFinder() {
                 <Form.Group id="llm-chat-group">
                     <div
                         id="llm-response-div"
-                        style={{height: "80vh", margin: "10px", position: "relative"}}
+                        style={{height: "60vh", margin: "10px", position: "relative"}}
                     >
                         <Form.Control
                             id="llm-responses"
                             readOnly={true}
                             ref={llmOutputTextAreaRef}
                             as="textarea"
+                            placeholder="(Opportunity Finder output will appear here)"
                             style={{
                                 background: "ghostwhite",
                                 borderColor: MaximumBlue,
@@ -347,12 +348,11 @@ export function OpportunityFinder() {
                                 id="user-input"
                                 allowNew={true}
                                 minLength={2}
-                                placeholder="Company name, for example, IBM"
+                                placeholder="Enter a single organization or company name, for example, IBM"
                                 ref={inputAreaRef}
                                 style={{
                                     fontSize: "90%",
                                     marginLeft: "7px",
-                                    width: "100%",
                                 }}
                                 options={data.companies}
                                 onInputChange={(text: string) => {
