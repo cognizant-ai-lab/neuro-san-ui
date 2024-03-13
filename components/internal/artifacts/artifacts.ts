@@ -57,16 +57,16 @@ export function getDownloadableArtifacts(): ArtifactInfo[] {
  * An artifact is defined to be available if we can figure out the URL for the requested artifact from the list
  * of output_artifacts in the Run.
  *
- * @param outputArtifacts The list of output artifacts from the Run, as name-value pairs
  * @param requestedArtifact Name of the artifact we're interested in, eg. "notebook"
+ * @param outputArtifacts The list of output artifacts from the Run, as name-value pairs
  * @return A boolean indicating whether we think the artifact requested is one of those the server listed.
  */
-export function isArtifactAvailable(outputArtifacts: Record<string, string>, requestedArtifact: string) {
-    return getUrlForArtifact(outputArtifacts, requestedArtifact) != null
+export function isArtifactAvailable(requestedArtifact: string, outputArtifacts: Record<string, string>) {
+    return getUrlForArtifact(requestedArtifact, outputArtifacts) != null
 }
 
 // Allows user to download artifacts created by the run: models, Jupyter notebook etc.
-export function getUrlForArtifact(availableArtifacts: Record<string, string>, artifactToDownload: string) {
+export function getUrlForArtifact(artifactToDownload: string, availableArtifacts: Record<string, string>) {
     // Find out what is available in the Run
     switch (artifactToDownload) {
         case "llm_log_file":
@@ -109,7 +109,7 @@ export async function downloadArtifact(
     experiment: Experiment
 ) {
     // Pull out the download URL for the requested artifact.
-    const downloadUrl: string = getUrlForArtifact(availableArtifacts, artifactToDownload)
+    const downloadUrl: string = getUrlForArtifact(artifactToDownload, availableArtifacts)
 
     if (!downloadUrl) {
         // If we got this far, it means we think the artifact _should_ be available, so something has gone wrong.
@@ -120,7 +120,6 @@ export async function downloadArtifact(
         )
         return
     }
-
 
     // Retrieve the artifact
     const artifacts: Artifact[] = await fetchRunArtifact(downloadUrl)

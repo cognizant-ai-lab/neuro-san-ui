@@ -561,7 +561,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                                 >
                                     {downloadableArtifacts.map((option) => {
                                         const id = `download-option-${option.value}-${runId}`
-                                        const available: boolean = isArtifactAvailable(availableArtifacts, option.value)
+                                        const available: boolean = isArtifactAvailable(option.value, availableArtifacts)
                                         return (
                                             <option
                                                 id={id}
