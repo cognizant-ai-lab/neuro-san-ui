@@ -212,13 +212,15 @@ const NodeConfigPanel = ({
         </Card.Body>
     )
 
+    const hasParams =
+        parentNodeState.params && Object.keys(parentNodeState.params).length && Object.keys(defaultParams).length
+
     const inputsComponent = inputTypes.has("inputs") && (
         <Card.Body
             className={`overflow-y-scroll ${customStyles?.inputsCardHeight || "h-40"} text-xs pl-4 pr-4`}
             id={id}
         >
-            {parentNodeState.params &&
-                Object.keys(parentNodeState.params).length &&
+            {hasParams ? (
                 Object.keys(defaultParams).map((param) => (
                     <div
                         id={`${flowPrefix}-${param}-input-component${idExtension}`}
@@ -345,7 +347,10 @@ const NodeConfigPanel = ({
                             </Tooltip>
                         </div>
                     </div>
-                ))}
+                ))
+            ) : (
+                <p id="no-config-params">No config settings available for this predictor type.</p>
+            )}
         </Card.Body>
     )
 
