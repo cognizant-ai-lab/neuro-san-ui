@@ -196,7 +196,7 @@ const NodeConfigPanel = ({
                                 id={`${flowPrefix}-split-rng-seed-input${idExtension}`}
                                 type="number"
                                 min={0}
-                                value={parentNodeState.rngSeedValue || 0}
+                                value={parentNodeState.rngSeedValue}
                                 onChange={(event) => {
                                     setParentNodeState({
                                         ...parentNodeState,

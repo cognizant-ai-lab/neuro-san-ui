@@ -93,7 +93,7 @@ export interface ConfigurableNodeState {
     caoState?: CAOChecked
     trainSliderValue?: number
     testSliderValue?: number
-    rngSeedValue?: number | null
+    rngSeedValue?: number | undefined
     params: {
         [key: string]: ConfigurableNodeParameter
     }
