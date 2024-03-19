@@ -230,7 +230,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
             // Use temporary variable to avoid shadowing outer "flow" variable
             const flowTmp = JSON.parse(runTmp.flow)
-            setFlow(flowTmp)
+            const consolidatedFlow = consolidateFlow(flowTmp)
+            setFlow(consolidatedFlow)
         } else {
             // Cache miss -- have to load from backend
             void loadRun(props.RunID)
