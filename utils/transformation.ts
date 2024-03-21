@@ -30,15 +30,15 @@ export const consolidateFlow = (flowNodes) => {
             node?.type === "llmnode"
 
         const isUncertaintyNode = node?.type === "uncertaintymodelnode"
-        const uncertaintymodelnodeWithParams =
+        const uncertaintymodelnodeNoParams =
             isUncertaintyNode &&
-            !copyNode?.data?.ParentNodeState?.params &&
-            Object.keys(copyNode?.data?.ParentNodeState?.params).length > 0
+            (!copyNode?.data?.ParentNodeState?.params ||
+                Object.keys(copyNode?.data?.ParentNodeState?.params).length < 1)
 
         if (isLLMNode && !node?.data?.ParentNodeState?.params) {
             copyNode.data.ParentNodeState = {params: node.data.ParentNodeState}
-        } else if (!uncertaintymodelnodeWithParams) {
-            copyNode.data.ParentNodeState = {params: node.data.ParameterSet}
+        } else if (uncertaintymodelnodeNoParams) {
+            copyNode.data.ParentNodeState = {params: node.data.ParentUncertaintyNodeState}
         } else if (!node?.data?.ParentNodeState && node?.data?.ParentPredictorState) {
             copyNode.data.ParentNodeState = copyNode.data.ParentPredictorState
             if (node?.data?.ParentPredictorState?.predictorParams) {
