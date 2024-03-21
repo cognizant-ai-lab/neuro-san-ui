@@ -35,16 +35,10 @@ export const consolidateFlow = (flowNodes) => {
             !copyNode?.data?.ParentNodeState?.params &&
             Object.keys(copyNode?.data?.ParentNodeState?.params).length > 0
 
-        // For LLM Node conversion, if there are no params on the ParentNodeState
-        // Populate params property on ParentNodeState with the current Params
         if (isLLMNode && !node?.data?.ParentNodeState?.params) {
             copyNode.data.ParentNodeState = {params: node.data.ParentNodeState}
-            // For UncertaintyNodes, if there is no params on the ParentNodeState
-            // Populate params propery on ParentNodeState with ParameterSet
         } else if (!uncertaintymodelnodeWithParams) {
             copyNode.data.ParentNodeState = {params: node.data.ParameterSet}
-            // For PredictorNodes, copy current predictorState params into
-            // ParentNodeState params
         } else if (!node?.data?.ParentNodeState && node?.data?.ParentPredictorState) {
             copyNode.data.ParentNodeState = copyNode.data.ParentPredictorState
             if (node?.data?.ParentPredictorState?.predictorParams) {
@@ -52,7 +46,6 @@ export const consolidateFlow = (flowNodes) => {
             }
         }
 
-        // Remove any predictorParams that are still on ParentNodeState
         delete copyNode?.data?.ParentNodeState?.predictorParams
         consolidatedFlowNodes.push(copyNode)
     })
