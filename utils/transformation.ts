@@ -11,6 +11,17 @@ export function removeItemOnce(arr, value) {
     return arr
 }
 
+export const isLLMNodeType = (node) => {
+    return (
+        node?.type === "category_reducer_node" ||
+        node?.type === "analytics_node" ||
+        node?.type === "activation_node" ||
+        node?.type === "confabulator_node" ||
+        node?.type === "confabulation_node" ||
+        node?.type === "llmnode"
+    )
+}
+
 /*
  * This method consolidates the old flow schema with the new one
  * while also keeping backwards compatibility for
@@ -21,13 +32,7 @@ export const consolidateFlow = (flowNodes) => {
     flowNodes.forEach((node) => {
         const copyNode = structuredClone(node)
 
-        const isLLMNode =
-            node?.type === "category_reducer_node" ||
-            node?.type === "analytics_node" ||
-            node?.type === "activation_node" ||
-            node?.type === "confabulator_node" ||
-            node?.type === "confabulation_node" ||
-            node?.type === "llmnode"
+        const isLLMNode = isLLMNodeType(node)
 
         const isUncertaintyNode = node?.type === "uncertaintymodelnode"
         // Make sure nodes has valid params on ParentNodeState
