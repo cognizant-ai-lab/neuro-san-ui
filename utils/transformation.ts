@@ -11,7 +11,7 @@ export function removeItemOnce(arr, value) {
     return arr
 }
 
-export const isLLMNodeType = (node) => {
+const isLLMNodeType = (node) => {
     return (
         node?.type === "category_reducer_node" ||
         node?.type === "analytics_node" ||
