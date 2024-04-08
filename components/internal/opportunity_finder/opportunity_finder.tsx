@@ -100,7 +100,7 @@ export function OpportunityFinder() {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}\nQuery:${userQuery}\n\nResponse:\n\n`)
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\nQuery:\n${userQuery}\n\nResponse:\n\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
