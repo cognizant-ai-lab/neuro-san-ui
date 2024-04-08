@@ -1,12 +1,12 @@
 import {OpportunityFinderRequestType} from "../../pages/api/gpt/opportunityFinder/types"
+import {MessageWithKargs} from "../../pages/api/gpt/shared/types"
 
 export async function sendOpportunityFinderRequest(
     userQuery: string,
     requestType: OpportunityFinderRequestType,
     callback: (token: string) => void,
     signal: AbortSignal,
-    opportunitiesText?: string,
-    optionNumber?: number
+    chatHistory: MessageWithKargs[]
 ) {
     const res = await fetch("/api/gpt/opportunityFinder", {
         method: "POST",
@@ -15,10 +15,9 @@ export async function sendOpportunityFinderRequest(
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
+            chatHistory: chatHistory,
             userQuery: userQuery,
             requestType: requestType,
-            opportunitiesText: opportunitiesText,
-            optionNumber: optionNumber,
         }),
         signal: signal,
     })

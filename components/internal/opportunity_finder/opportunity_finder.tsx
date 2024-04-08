@@ -1,17 +1,17 @@
 /**
  * This is the module for the "AI decision assistant".
  */
+import {ChatMessage} from "langchain/schema"
 import {FormEvent, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
-import {Typeahead} from "react-bootstrap-typeahead"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
+import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {MaximumBlue} from "../../../const"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
-import data from "../../../top_500.json"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
 
@@ -32,11 +32,29 @@ export function OpportunityFinder() {
     // State for the typeahead
     const [selectedString, setSelectedString] = useState<string>("")
 
-    // Has LLM already provided opportunities?
-    const [hasOpportunities, setHasOpportunities] = useState(false)
+    // Type for agent options
+    type AgentOption = {
+        label: string
+        value: OpportunityFinderRequestType
+        isDisabled?: boolean
+    }
 
-    // Have we already generated data for an opportunity?
-    const [hasGeneratedData, setHasGeneratedData] = useState(false)
+    // These are the agents the user can interact with. Not all are available yet.
+    const agentOptions: AgentOption[] = [
+        {label: "Opportunity Explorer", value: "OpportunityFinder"},
+        {label: "Data Generator", value: "DataGenerator"},
+        {label: "Experiment Generator (coming soon)", value: "ExperimentGenerator", isDisabled: true},
+    ]
+
+    // Selected option for agent to interact with
+    const [selectedAgent, setSelectedAgent] = useState(agentOptions[0])
+
+    // Use useRef here since we don't want changes in the chat history to trigger a re-render
+    const chatHistory = useRef<ChatMessage[]>([])
+
+    // To accumulate current response, which will be different than the contents of the output window if there is a
+    // chat session
+    const currentResponse = useRef<string>("")
 
     // Ref for output text area, so we can auto scroll it
     const llmOutputTextAreaRef = useRef(null)
@@ -47,70 +65,7 @@ export function OpportunityFinder() {
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
 
-    // To accumulate current response, which will be different than the contents of the output window if there is a
-    // chat session
-    const currentResponse = useRef<string>("")
-
-    const itemButtonWidth = 40
-
-    function getOptionButtons() {
-        // Generate 5 buttons using an array for the range and map
-        return (
-            <div
-                id="option-buttons-div"
-                style={{
-                    backgroundColor: "lightblue",
-                    borderColor: MaximumBlue,
-                    borderStyle: "solid",
-                    borderRadius: "10000px",
-                    borderWidth: "1px",
-                    display: isAwaitingLlm ? "none" : "inline",
-                    position: "absolute",
-                    zIndex: 99999,
-                    bottom: "1px",
-                    padding: "20px",
-                    marginLeft: "20px",
-                    marginBottom: "10px",
-                    opacity: "70%",
-                }}
-            >
-                <span
-                    id="title-span"
-                    style={{textAlign: "center", verticalAlign: "middle"}}
-                >
-                    Decision point:
-                </span>
-                {Array.from(Array(5).keys()).map((i) => (
-                    <Button
-                        id={`option-${i}`}
-                        key={i}
-                        onClick={async () => {
-                            setHasGeneratedData(true)
-                            await sendQuery((i + 1).toString(), "DataGenerator", i + 1)
-                        }}
-                        disabled={isAwaitingLlm}
-                        variant="outline-primary"
-                        style={{
-                            background: MaximumBlue,
-                            borderColor: MaximumBlue,
-                            bottom: 10,
-                            color: "white",
-                            fontSize: "13.3px",
-                            opacity: "70%",
-                            marginLeft: "10px",
-                            marginTop: "10px",
-                            width: itemButtonWidth,
-                        }}
-                    >
-                        {i + 1}
-                    </Button>
-                ))}
-            </div>
-        )
-    }
-
     function clearInput() {
-        inputAreaRef?.current?.clear()
         setSelectedString("")
     }
 
@@ -135,18 +90,17 @@ export function OpportunityFinder() {
     }
 
     // Sends user query to backend.
-    async function sendQuery(userQuery: string, requestType: OpportunityFinderRequestType, optionNumber?: number) {
+    async function sendQuery(userQuery: string) {
         try {
+            // Record user query in chat history
+            chatHistory.current = [...chatHistory.current, new ChatMessage(userQuery, "human")]
+
             setPreviousUserQuery(userQuery)
 
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            setUserLlmChatOutput((currentOutput) =>
-                optionNumber == null
-                    ? `${currentOutput}Company: ${userQuery}\n\nResponse:\n\n`
-                    : `${currentOutput}Option selected: ${optionNumber}\n\nResponse:\n\n`
-            )
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\nQuery:${userQuery}\n\nResponse:\n\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
@@ -155,15 +109,19 @@ export function OpportunityFinder() {
             // display as tokens are received.
             await sendOpportunityFinderRequest(
                 userQuery,
-                requestType,
+                selectedAgent.value,
                 tokenReceivedHandler,
                 abortController.signal,
-                optionNumber == null ? null : userLlmChatOutput,
-                optionNumber
+                chatHistory.current
             )
 
             // Add a couple of blank lines after response
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n\n\n`)
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
+
+            // Record bot answer in history.
+            if (currentResponse.current) {
+                chatHistory.current = [...chatHistory.current, new ChatMessage(currentResponse.current, "ai")]
+            }
         } catch (error) {
             if (error instanceof Error) {
                 if (error.name === "AbortError") {
@@ -192,10 +150,7 @@ export function OpportunityFinder() {
     async function handleUserQuery(event: FormEvent<HTMLFormElement>) {
         // Prevent submitting form
         event.preventDefault()
-        setHasOpportunities(true)
-        setHasGeneratedData(false)
-        setUserLlmChatOutput("")
-        await sendQuery(selectedString, "OpportunityFinder")
+        await sendQuery(selectedString)
     }
 
     function handleStop() {
@@ -206,8 +161,6 @@ export function OpportunityFinder() {
             setIsAwaitingLlm(false)
             clearInput()
             currentResponse.current = ""
-            setHasOpportunities(false)
-            setHasGeneratedData(false)
         }
     }
 
@@ -223,7 +176,7 @@ export function OpportunityFinder() {
     // Width for the various buttons -- "regenerate", "stop" etc.
     const actionButtonWidth = 126
 
-    const shouldShowOptionsButtons = hasOpportunities && !hasGeneratedData
+    const disableClearChatButton = isAwaitingLlm || userLlmChatOutput.length === 0
 
     return (
         <>
@@ -254,13 +207,11 @@ export function OpportunityFinder() {
                             tabIndex={-1}
                             value={userLlmChatOutput}
                         />
-                        {shouldShowOptionsButtons && getOptionButtons()}
                         <Button
                             id="clear-chat-button"
                             onClick={() => {
                                 setUserLlmChatOutput("")
-                                setHasOpportunities(false)
-                                setHasGeneratedData(false)
+                                chatHistory.current = []
                             }}
                             variant="secondary"
                             style={{
@@ -270,12 +221,13 @@ export function OpportunityFinder() {
                                 color: "white",
                                 display: isAwaitingLlm ? "none" : "inline",
                                 fontSize: "13.3px",
-                                opacity: "70%",
+                                opacity: disableClearChatButton ? "50%" : "70%",
                                 position: "absolute",
                                 right: 145,
                                 width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
+                            disabled={disableClearChatButton}
                         >
                             <BsTrash
                                 id="stop-button-icon"
@@ -313,7 +265,7 @@ export function OpportunityFinder() {
                         </Button>
                         <Button
                             id="regenerate-output-button"
-                            onClick={() => sendQuery(previousUserQuery, "OpportunityFinder")}
+                            onClick={() => sendQuery(previousUserQuery)}
                             disabled={shouldDisableRegenerateButton}
                             variant="secondary"
                             style={{
@@ -340,35 +292,44 @@ export function OpportunityFinder() {
                         </Button>
                     </div>
                     <div
+                        id="agent-select-div"
+                        style={{
+                            fontSize: "90%",
+                            marginTop: "15px",
+                            marginBottom: "15px",
+                            paddingLeft: "10px",
+                            paddingRight: "10px",
+                        }}
+                    >
+                        <Select
+                            id="agent-select"
+                            isOptionDisabled={(option) => option.isDisabled}
+                            onChange={(selectedOption) => {
+                                setSelectedAgent(selectedOption)
+                            }}
+                            options={agentOptions}
+                            placeholder="Choose an agent to interact with"
+                            value={selectedAgent}
+                        />
+                    </div>
+                    <div
                         id="user-input-div"
                         style={{display: "flex"}}
                     >
                         <InputGroup id="user-input-group">
-                            <Typeahead
+                            <Form.Control
                                 id="user-input"
-                                allowNew={true}
-                                minLength={2}
-                                placeholder="Enter a single organization or company name, for example, IBM"
+                                type="text"
+                                placeholder={`Message the ${selectedAgent.label} agent`}
                                 ref={inputAreaRef}
                                 style={{
                                     fontSize: "90%",
                                     marginLeft: "7px",
                                 }}
-                                options={data.companies}
-                                onInputChange={(text: string) => {
-                                    setSelectedString(text)
+                                onChange={(event) => {
+                                    setSelectedString(event.target.value)
                                 }}
-                                onChange={(selectedItems) => {
-                                    if (selectedItems && selectedItems.length > 0) {
-                                        const item = selectedItems[0]
-                                        if (typeof item === "string") {
-                                            setSelectedString(item)
-                                        } else {
-                                            setSelectedString(item.label)
-                                        }
-                                    }
-                                }}
-                                selected={[selectedString]}
+                                value={selectedString}
                             />
                             <Button
                                 id="clear-input-button"
