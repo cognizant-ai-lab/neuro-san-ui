@@ -304,9 +304,7 @@ export function OpportunityFinder() {
                         <Select
                             id="agent-select"
                             isOptionDisabled={(option) => option.isDisabled}
-                            onChange={(selectedOption) => {
-                                setSelectedAgent(selectedOption)
-                            }}
+                            onChange={setSelectedAgent}
                             options={agentOptions}
                             placeholder="Choose an agent to interact with"
                             value={selectedAgent}
