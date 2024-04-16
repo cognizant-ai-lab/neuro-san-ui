@@ -1,11 +1,13 @@
 /**
  * This is the module for the "AI decision assistant".
  */
+import {Tooltip} from "antd"
 import {ChatMessage} from "langchain/schema"
 import {FormEvent, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
+import {MdOutlineWrapText} from "react-icons/md"
 import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
 
@@ -70,6 +72,9 @@ export function OpportunityFinder() {
 
     // Internal flag to let us know when we generated a scroll event programmatically
     const isProgrammaticScroll = useRef<boolean>(false)
+
+    // Whether to wrap output text
+    const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
     function clearInput() {
         setSelectedString("")
@@ -199,6 +204,30 @@ export function OpportunityFinder() {
                         id="llm-response-div"
                         style={{height: "60vh", margin: "10px", position: "relative"}}
                     >
+                        <Tooltip
+                            id="wrap-tooltip"
+                            title="Wrap/unwrap text"
+                        >
+                            <Button
+                                id="wrap-button"
+                                style={{
+                                    position: "absolute",
+                                    right: 10,
+                                    top: 10,
+                                    zIndex: 99999,
+                                    background: MaximumBlue,
+                                    borderColor: MaximumBlue,
+                                    color: "white",
+                                }}
+                            >
+                                <MdOutlineWrapText
+                                    id="wrap-icon"
+                                    size="15px"
+                                    style={{color: "white", opacity: shouldWrapOutput ? "100%" : "50%"}}
+                                    onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
+                                />
+                            </Button>
+                        </Tooltip>
                         <Form.Control
                             id="llm-responses"
                             readOnly={true}
@@ -212,7 +241,7 @@ export function OpportunityFinder() {
                                 fontSize: "smaller",
                                 height: "100%",
                                 resize: "none",
-                                whiteSpace: "pre-wrap",
+                                whiteSpace: shouldWrapOutput ? "pre-wrap" : "pre",
                             }}
                             tabIndex={-1}
                             value={userLlmChatOutput}
