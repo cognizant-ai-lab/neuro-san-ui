@@ -65,6 +65,12 @@ export function OpportunityFinder() {
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
 
+    // Ref for tracking if we're autoscrolling. We stop autoscrolling if the user scrolls manually
+    const autoScrollEnabled = useRef<boolean>(true)
+
+    // Internal flag to let us know when we generated a scroll event programmatically
+    const isProgrammaticScroll = useRef<boolean>(false)
+
     function clearInput() {
         setSelectedString("")
     }
@@ -82,7 +88,8 @@ export function OpportunityFinder() {
      */
     function tokenReceivedHandler(token: string) {
         // Auto scroll as response is generated
-        if (llmOutputTextAreaRef.current) {
+        if (llmOutputTextAreaRef.current && autoScrollEnabled.current) {
+            isProgrammaticScroll.current = true
             llmOutputTextAreaRef.current.scrollTop = llmOutputTextAreaRef.current.scrollHeight
         }
         currentResponse.current += token
@@ -92,6 +99,9 @@ export function OpportunityFinder() {
     // Sends user query to backend.
     async function sendQuery(userQuery: string) {
         try {
+            // Enable autoscrolling by default
+            autoScrollEnabled.current = true
+
             // Record user query in chat history
             chatHistory.current = [...chatHistory.current, new ChatMessage(userQuery, "human")]
 
@@ -206,6 +216,18 @@ export function OpportunityFinder() {
                             }}
                             tabIndex={-1}
                             value={userLlmChatOutput}
+                            onScroll={
+                                // Disable autoscroll if user scrolls manually
+                                () => {
+                                    if (isProgrammaticScroll.current) {
+                                        isProgrammaticScroll.current = false
+                                        return
+                                    }
+
+                                    // Must be user initiated scroll, so disable autoscroll
+                                    autoScrollEnabled.current = false
+                                }
+                            }
                         />
                         <Button
                             id="clear-chat-button"
