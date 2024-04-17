@@ -24,7 +24,6 @@ import updateDataTag from "../../controller/datatag/update"
 import {uploadFile} from "../../controller/files/upload"
 import {Project} from "../../controller/projects/types"
 import updateProject from "../../controller/projects/update"
-import useFeaturesStore from "../../state/features"
 import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
 import BlankLines from "../blanklines"
@@ -67,9 +66,6 @@ export default function NewProject(props: NewProps) {
 
     // Get the router hook
     const router: NextRouter = useRouter()
-
-    // Retrieve the demo flag from the store
-    const {isDemoUser} = useFeaturesStore()
 
     const [inputFields, setInputFields] = useState({
         projectName: "",
@@ -547,10 +543,8 @@ export default function NewProject(props: NewProps) {
         const dataSource: DataSource = {
             s3_key: s3Key,
 
-            // Currently only demo users are allowed to skip the NaN check. The idea is they will use an LLM
-            // to fill in the NaNs later.
             options: {
-                allow_nans: isDemoUser,
+                allow_nans: true,
             },
 
             request_user: currentUser,
@@ -683,9 +677,16 @@ export default function NewProject(props: NewProps) {
         // Unpack the values for data fields
         const inputFieldsMapped: DataTagFields = {}
 
+        const fields = profile?.data_tag?.fields
+        let hasNaNField = false
         // Loop over the Data fields
-        Object.keys(profile.data_tag.fields).forEach((fieldName) => {
-            const dataField = profile.data_tag.fields[fieldName]
+        Object.keys(fields).forEach((fieldName) => {
+            const dataField = fields[fieldName]
+            // If the any field in the data_tag contains has_nan === true
+            // set the hasNaNField to true
+            if (dataField.has_nan) {
+                hasNaNField = true
+            }
 
             // Set the value
             inputFieldsMapped[fieldName] = {
@@ -717,6 +718,15 @@ export default function NewProject(props: NewProps) {
         const savedDataTag = await updateDataTag(dataTagMessage)
         if (savedDataTag) {
             sendNotification(NotificationType.success, `Data profile "${datasetName}" created`)
+        }
+
+        // Send notification if data source contains a field where has_nan === true.
+        if (hasNaNField) {
+            sendNotification(
+                NotificationType.success,
+                /* eslint-disable-next-line max-len */
+                "This Project's data source contains rows that have NaN values. A confabulator node will need to be added to fill in the NaN values."
+            )
         }
         debug("Saved DT: ", savedDataTag)
 
