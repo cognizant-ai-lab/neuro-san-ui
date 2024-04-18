@@ -723,7 +723,7 @@ export default function NewProject(props: NewProps) {
         // Send notification if data source contains a field where has_nan === true.
         if (hasNaNField) {
             sendNotification(
-                NotificationType.success,
+                NotificationType.warning,
                 /* eslint-disable-next-line max-len */
                 "This Project's data source contains rows that have NaN values. A confabulator node will need to be added to fill in the NaN values."
             )
