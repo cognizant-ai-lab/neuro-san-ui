@@ -40,8 +40,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
         classifier: fetchMetrics("classifier"),
     }
 
-    // These predictors will only be shown in demo mode. As of writing (June 2023) they aren't implement and are
-    // only in the list for demo purposes.
+    // These predictors are disabled until implementation is complete.
     const DISABLED_PREDICTORS = new Set(["Transformer", "LLM"])
 
     const predictors = {
@@ -55,6 +54,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
     //Set the dropdown defaults here since the dropdown is created here
     const DEFAULT_CLASSIFIER_METRIC = Array.from(metrics.classifier.keys())[0]
     const DEFAULT_REGRESSOR_METRIC = Array.from(metrics.regressor.keys())[0]
+
     // Fetch the Data Tag
     useEffect(() => {
         //TODO: If the data node has the data source and tag available we should not fetch it but use that.
@@ -308,7 +308,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
                                         value={predictor}
                                         disabled={DISABLED_PREDICTORS.has(predictor)}
                                     >
-                                        {predictor}
+                                        {`${predictor}${DISABLED_PREDICTORS.has(predictor) ? " (Coming soon)" : ""}`}
                                     </option>
                                 ))}
                         </select>
