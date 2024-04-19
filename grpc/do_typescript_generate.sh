@@ -14,6 +14,10 @@
 GENERATED_DIR=./generated
 PROTOS_DIR=./proto
 
+# Hack: google proto files expect to be in a certain hardcoded location, so we copy them there
+mkdir -p "${PROTOS_DIR}/internal"
+cp -r "node_modules/protobufjs/google" "${PROTOS_DIR}/internal"
+
 # Ordering matters w/rt where generated file is output
 PROTO_PATH="--proto_path=${GENERATED_DIR} \
             --proto_path=${PROTOS_DIR} \
@@ -27,7 +31,7 @@ mkdir -p "${GENERATED_DIR}"
 # Clean existing
 rm -rf "${GENERATED_DIR:?}"/*
 
-ALL_PROTO_FILES=$(< "${PROTOS_DIR}"/backend_shared_proto.txt)
+ALL_PROTO_FILES=$(< "${PROTOS_DIR}"/mdserver_proto.txt)
 
 # Generate the Typepscript types for the services
 for PROTO_FILE in ${ALL_PROTO_FILES}
