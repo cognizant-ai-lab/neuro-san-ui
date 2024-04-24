@@ -47,7 +47,9 @@ do
             --ts_proto_opt=lowerCaseServiceMethods=true \
             --ts_proto_opt=outputClientImpl=false \
             --ts_proto_opt=outputEncodeMethods=false \
+            --ts_proto_opt=outputJsonMethods=to-only \
             --ts_proto_opt=removeEnumPrefix=true \
+            --ts_proto_opt=snakeToCamel=keys \
             --ts_proto_opt=stringEnums=true \
             --ts_proto_opt=useSnakeTypeName=false \
             --ts_proto_out="${GENERATED_DIR}" "${PROTO_FILE}"

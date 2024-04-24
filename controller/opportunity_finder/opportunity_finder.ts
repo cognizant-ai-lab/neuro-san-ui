@@ -1,5 +1,10 @@
+/**
+ * Controller for Opportunity Finder chat requests
+ */
+
 import {OpportunityFinderRequestType} from "../../pages/api/gpt/opportunityFinder/types"
 import {MessageWithKargs} from "../../pages/api/gpt/shared/types"
+import {sendLlmRequest} from "../llm/llm_chat"
 
 export async function sendOpportunityFinderRequest(
     userQuery: string,
@@ -8,35 +13,5 @@ export async function sendOpportunityFinderRequest(
     signal: AbortSignal,
     chatHistory: MessageWithKargs[]
 ) {
-    const res = await fetch("/api/gpt/opportunityFinder", {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            chatHistory: chatHistory,
-            userQuery: userQuery,
-            requestType: requestType,
-        }),
-        signal: signal,
-    })
-
-    const reader = res.body.getReader()
-    const utf8decoder = new TextDecoder("utf8")
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        const {done, value} = await reader.read()
-
-        if (done) {
-            break // End of stream
-        }
-
-        // Decode chunk from server
-        const chunk = utf8decoder.decode(value)
-
-        // Send current chunk to callback
-        callback(chunk)
-    }
+    await sendLlmRequest(callback, signal, "/api/gpt/opportunityFinder", {requestType}, userQuery, chatHistory)
 }

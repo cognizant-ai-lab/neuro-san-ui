@@ -2,26 +2,38 @@
  * This is the module for the "AI decision assistant".
  */
 import {Tooltip} from "antd"
-import {ChatMessage} from "langchain/schema"
+import debugModule from "debug"
+import {ChatMessage as LangchainChatMessage} from "langchain/schema"
 import {FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
 import {MdOutlineWrapText} from "react-icons/md"
-import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {MaximumBlue} from "../../../const"
-import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
-import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
+import {sendAnalyticsChatQuery} from "../../../controller/analyticsChat/analyticsChat"
+import {fetchDataSources} from "../../../controller/datasources/fetch"
+import {CsvDataChatResponse} from "../../../generated/analytics_chat"
+import {ChatMessage as AnalyticsChatMessage, ChatMessageChatMessageType} from "../../../generated/chat"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
+import {NotificationType, sendNotification} from "../../notification"
+
+interface AnalyticsChatProps {
+    readonly projectId: number
+    readonly dataSourceId: number
+    readonly user: string
+}
+
+const debug = debugModule("analytics_chat")
 
 /**
- * AI assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
- * (via the backend) with full context about the current DMS page, in a question-and-answer chat format.
+ * Analytics Chat page. For using an LLM to analyze your data, and graph it in various ways using a backend service.
  */
-export function OpportunityFinder(): ReactElement {
+export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
+    console.debug("Analytics Chat props: ", props)
+
     // Previous user query (for "regenerate" feature)
     const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
 
@@ -31,28 +43,11 @@ export function OpportunityFinder(): ReactElement {
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
-    // State for the typeahead
-    const [selectedString, setSelectedString] = useState<string>("")
-
-    // Type for agent options
-    type AgentOption = {
-        label: string
-        value: OpportunityFinderRequestType
-        isDisabled?: boolean
-    }
-
-    // These are the agents the user can interact with. Not all are available yet.
-    const agentOptions: AgentOption[] = [
-        {label: "Opportunity Explorer", value: "OpportunityFinder"},
-        {label: "Data Generator", value: "DataGenerator"},
-        {label: "Experiment Generator (coming soon)", value: "ExperimentGenerator", isDisabled: true},
-    ]
-
-    // Selected option for agent to interact with
-    const [selectedAgent, setSelectedAgent] = useState(agentOptions[0])
+    // User input
+    const [userInput, setUserInput] = useState<string>("")
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
-    const chatHistory = useRef<ChatMessage[]>([])
+    const chatHistory = useRef<LangchainChatMessage[]>([])
 
     // To accumulate current response, which will be different than the contents of the output window if there is a
     // chat session
@@ -76,8 +71,11 @@ export function OpportunityFinder(): ReactElement {
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
+    // Data source URL
+    const [dataSourceUrl, setDataSourceUrl] = useState<string>("")
+
     function clearInput() {
-        setSelectedString("")
+        setUserInput("")
     }
 
     useEffect(() => {
@@ -86,6 +84,26 @@ export function OpportunityFinder(): ReactElement {
             inputAreaRef?.current?.focus()
         }, 1000)
     }, [])
+
+    useEffect(() => {
+        async function retrieveDataSourceUrl() {
+            if (props.dataSourceId && props.projectId && props.user) {
+                const dataSources = await fetchDataSources(props.user, props.projectId, props.dataSourceId, ["s3_url"])
+                if (dataSources.length > 0) {
+                    console.debug("Data source: ", dataSources[0])
+                    setDataSourceUrl(dataSources[0].s3_url)
+                } else {
+                    sendNotification(
+                        NotificationType.error,
+                        `Unable to retrieve data source for project ${props.projectId} ` +
+                            `data source ID ${props.dataSourceId}`
+                    )
+                }
+            }
+        }
+
+        void retrieveDataSourceUrl()
+    }, [props.dataSourceId])
 
     /**
      * Handles a token received from the LLM via callback on the fetch request.
@@ -98,7 +116,16 @@ export function OpportunityFinder(): ReactElement {
             llmOutputTextAreaRef.current.scrollTop = llmOutputTextAreaRef.current.scrollHeight
         }
         currentResponse.current += token
-        setUserLlmChatOutput((currentOutput) => currentOutput + token)
+    }
+
+    function convertToAnalyticsChatHistory(messages: LangchainChatMessage[]): AnalyticsChatMessage[] {
+        return messages.map((message) => {
+            return AnalyticsChatMessage.toJSON({
+                type: message.role === "human" ? ChatMessageChatMessageType.HUMAN : ChatMessageChatMessageType.AI,
+                text: message.content as string,
+                imageData: undefined,
+            }) as AnalyticsChatMessage
+        })
     }
 
     // Sends user query to backend.
@@ -108,34 +135,40 @@ export function OpportunityFinder(): ReactElement {
             autoScrollEnabled.current = true
 
             // Record user query in chat history
-            chatHistory.current = [...chatHistory.current, new ChatMessage(userQuery, "human")]
+            chatHistory.current = [...chatHistory.current, new LangchainChatMessage(userQuery, "human")]
 
             setPreviousUserQuery(userQuery)
 
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}\nQuery:\n${userQuery}\n\nResponse:\n\n`)
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\nQuery:\n${userQuery}\n\nResponse:`)
 
             const abortController = new AbortController()
             controller.current = abortController
 
             // Send the query to the server. Response will be streamed to our callback which updates the output
             // display as tokens are received.
-            await sendOpportunityFinderRequest(
-                userQuery,
-                selectedAgent.value,
+            await sendAnalyticsChatQuery(
                 tokenReceivedHandler,
                 abortController.signal,
-                chatHistory.current
+                [{url: dataSourceUrl, versionId: null, user: {login: props.user}}],
+                convertToAnalyticsChatHistory(chatHistory.current)
             )
 
-            // Add a couple of blank lines after response
-            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
+            // Extract response
+            const response: CsvDataChatResponse = JSON.parse(currentResponse.current)
+            console.debug("Response: ", response)
+
+            // Get last message from response
+            const lastMessage = response.chat_response
+
+            // Add response to chat output
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n${lastMessage?.text}\n`)
 
             // Record bot answer in history.
             if (currentResponse.current) {
-                chatHistory.current = [...chatHistory.current, new ChatMessage(currentResponse.current, "ai")]
+                chatHistory.current = [...chatHistory.current, new LangchainChatMessage(currentResponse.current, "ai")]
             }
         } catch (error) {
             if (error instanceof Error) {
@@ -165,7 +198,7 @@ export function OpportunityFinder(): ReactElement {
     async function handleUserQuery(event: FormEvent<HTMLFormElement>) {
         // Prevent submitting form
         event.preventDefault()
-        await sendQuery(selectedString)
+        await sendQuery(userInput)
     }
 
     function handleStop() {
@@ -180,10 +213,10 @@ export function OpportunityFinder(): ReactElement {
     }
 
     // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = !selectedString || selectedString.length === 0 || hasOnlyWhitespace(selectedString)
+    const userInputEmpty = !userInput || userInput.length === 0 || hasOnlyWhitespace(userInput)
 
     // Disable Send when request is in progress
-    const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
+    const shouldDisableSendButton = userInputEmpty || isAwaitingLlm || !dataSourceUrl
 
     // Disable Send when request is in progress
     const shouldDisableRegenerateButton = !previousUserQuery || isAwaitingLlm
@@ -233,7 +266,7 @@ export function OpportunityFinder(): ReactElement {
                             readOnly={true}
                             ref={llmOutputTextAreaRef}
                             as="textarea"
-                            placeholder="(Opportunity Finder output will appear here)"
+                            placeholder="(Analytics Chat output will appear here)"
                             style={{
                                 background: "ghostwhite",
                                 borderColor: MaximumBlue,
@@ -343,25 +376,6 @@ export function OpportunityFinder(): ReactElement {
                         </Button>
                     </div>
                     <div
-                        id="agent-select-div"
-                        style={{
-                            fontSize: "90%",
-                            marginTop: "15px",
-                            marginBottom: "15px",
-                            paddingLeft: "10px",
-                            paddingRight: "10px",
-                        }}
-                    >
-                        <Select
-                            id="agent-select"
-                            isOptionDisabled={(option) => option.isDisabled}
-                            onChange={setSelectedAgent}
-                            options={agentOptions}
-                            placeholder="Choose an agent to interact with"
-                            value={selectedAgent}
-                        />
-                    </div>
-                    <div
                         id="user-input-div"
                         style={{display: "flex"}}
                     >
@@ -369,16 +383,16 @@ export function OpportunityFinder(): ReactElement {
                             <Form.Control
                                 id="user-input"
                                 type="text"
-                                placeholder={`Message the ${selectedAgent.label} agent`}
+                                placeholder="Message the analytics chat agent"
                                 ref={inputAreaRef}
                                 style={{
                                     fontSize: "90%",
                                     marginLeft: "7px",
                                 }}
                                 onChange={(event) => {
-                                    setSelectedString(event.target.value)
+                                    setUserInput(event.target.value)
                                 }}
-                                value={selectedString}
+                                value={userInput}
                             />
                             <Button
                                 id="clear-input-button"

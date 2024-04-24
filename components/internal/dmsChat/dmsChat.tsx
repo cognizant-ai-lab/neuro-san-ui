@@ -3,7 +3,7 @@
  */
 import {Drawer} from "antd"
 import {ChatMessage} from "langchain/schema"
-import {ChangeEvent, FormEvent, useRef, useState} from "react"
+import {ChangeEvent, FormEvent, ReactElement, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
@@ -19,7 +19,7 @@ import {hasOnlyWhitespace} from "../../../utils/text"
  * AI assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
  * (via the backend) with full context about the current DMS page, in a question-and-answer chat format.
  */
-export function AIAssistant(props: {
+export function DMSChat(props: {
     predictorUrls: string[]
     prescriptorUrl: string
     contextInputs: StringToStringOrNumber
@@ -29,7 +29,7 @@ export function AIAssistant(props: {
     run: Run
     projectName?: string
     projectDescription?: string
-}) {
+}): ReactElement {
     // User LLM chat input
     const [userLlmChatInput, setUserLlmChatInput] = useState<string>("")
 

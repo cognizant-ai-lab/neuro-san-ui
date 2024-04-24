@@ -4,6 +4,7 @@
 
 import {ChatMessage} from "langchain/schema"
 
+import {sendLlmRequest} from "../llm/llm_chat"
 import {Run} from "../run/types"
 
 /**
@@ -32,40 +33,19 @@ export async function sendDmsChatQuery(
     projectName?: string,
     projectDescription?: string
 ) {
-    const res = await fetch("/api/gpt/dmschat", {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
+    await sendLlmRequest(
+        callback,
+        signal,
+        "/api/gpt/dmschat",
+        {
+            prescriptorUrl,
+            predictorUrls,
+            context,
+            run,
+            projectName,
+            projectDescription,
         },
-        body: JSON.stringify({
-            chatHistory: chatHistory,
-            context: context,
-            predictorUrls: predictorUrls,
-            prescriptorUrl: prescriptorUrl,
-            userQuery: userQuery,
-            projectName: projectName,
-            projectDescription: projectDescription,
-            run: run,
-        }),
-        signal: signal,
-    })
-
-    const reader = res.body.getReader()
-    const utf8decoder = new TextDecoder("utf8")
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        const {done, value} = await reader.read()
-
-        if (done) {
-            break // End of stream
-        }
-
-        // Decode chunk from server
-        const chunk = utf8decoder.decode(value)
-
-        // Send current chunk to callback
-        callback(chunk)
-    }
+        userQuery,
+        chatHistory
+    )
 }
