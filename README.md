@@ -75,7 +75,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Try making a simple change to the UI
 
-If you've made this far, try a simple change within the UI. Here's an example:
+If you've made this far, try a simple change within the UI.
+
+Here's an example:
 
 1.  Open `nextfront/pages/projects/[projectID]/index.tsx`
 1.  Add a message at the appropriate place in the tsx file (somewhere within the `return` statement, inside the `<>`  
