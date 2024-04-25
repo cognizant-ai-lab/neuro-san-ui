@@ -58,7 +58,6 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             // Set features in store
             const featureFlags = {
                 isGeneric: "generic" in query,
-                isDemoUser: "demo" in query,
                 modelServingVersion: modelServingVersion,
             }
 

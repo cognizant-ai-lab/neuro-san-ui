@@ -140,7 +140,7 @@ export function checkValidity(flow: NodeType[]): boolean {
         return false
     }
 
-    // If any columns have NaNs, we must be in demo mode (or columns would have been rejected) so user needs to add
+    // If any columns have NaNs, user needs to add
     // an LLM to fill in the blanks
     const dataNodes = FlowQueries.getDataNodes(flow)
     if (dataNodes && dataNodes.length === 1) {

@@ -210,8 +210,7 @@ export default function Index(): ReactElement {
                         </Link>
                         <Link
                             id="orchestrator-link"
-                            // Use the URL object form of `href` to pass along the query string, in case the user
-                            // entered with /?demo
+                            // Use the URL object form of `href` to pass along the query string
                             href={`/projects?${buildQueryString()}`}
                             legacyBehavior={true}
                             passHref

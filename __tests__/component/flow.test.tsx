@@ -103,7 +103,6 @@ jest.mock("next/router", () => ({
         return {
             route: "/",
             pathname: "",
-            query: ["demo"],
             asPath: "",
             push: jest.fn(),
             events: {
@@ -143,7 +142,6 @@ jest.mock("../../controller/datatag/fetchdatataglist", () => {
 })
 
 function createFlow(
-    demoUser: boolean = false,
     elementsSelectable: boolean = true,
     setParentState: jest.Mock = jest.fn(),
     initialFlow: (NodeType | EdgeType)[] = []
@@ -155,7 +153,6 @@ function createFlow(
             SetParentState={setParentState}
             Flow={initialFlow}
             ElementsSelectable={elementsSelectable}
-            isDemoUser={demoUser}
         />
     )
 }
@@ -179,7 +176,7 @@ describe("Flow Test", () => {
     })
 
     it("Generates a single data node for empty flow", async () => {
-        render(createFlow(false, true, setParentState))
+        render(createFlow(true, setParentState))
 
         // Should be no popup warnings or errors
         expect(sendNotification).not.toHaveBeenCalled()
@@ -196,7 +193,7 @@ describe("Flow Test", () => {
     })
 
     it("Doesn't show 'add' buttons when ElementsSelectable is false", async () => {
-        const {container} = render(createFlow(false, false))
+        const {container} = render(createFlow(false))
 
         // Should be no popup warnings or errors
         expect(sendNotification).not.toHaveBeenCalled()
@@ -222,18 +219,15 @@ describe("Flow Test", () => {
         // Look for buttons
         const buttons = container.getElementsByClassName("btn")
 
-        // Should be three buttons for non-demo user
-        expect(buttons.length).toBe(3)
+        // Should be four buttons
+        expect(buttons.length).toBe(4)
 
         const titles = new Set([...buttons].map((button) => button.textContent))
-        expect(titles).toStrictEqual(new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor"]))
-
-        // Make sure LLM options not shown to non-demo users
-        expect(container.querySelector("#add-llm-dropdown")).toBeNull()
+        expect(titles).toStrictEqual(new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM"]))
     })
 
-    it("Shows extra button for demo user", async () => {
-        const {container} = render(createFlow(true, true))
+    it("Shows extra button for all user", async () => {
+        const {container} = render(createFlow(true))
 
         await waitFor(() => {
             expect(screen.getByText("Add Predictor")).toBeInTheDocument()
@@ -242,18 +236,18 @@ describe("Flow Test", () => {
         // Look for buttons
         const buttons = container.getElementsByClassName("btn")
 
-        // Should be four buttons for demo user
+        // Should be four buttons for alls user
         expect(buttons.length).toBe(4)
 
         const titles = new Set([...buttons].map((button) => button.textContent))
         expect(titles).toStrictEqual(new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM"]))
 
-        // Make sure LLM options shown to demo users
+        // Make sure LLM options shown
         expect(container.querySelector("#add-llm-dropdown")).not.toBeNull()
     })
 
     it("Refuses to add a prescriptor node if there is no predictor node", async () => {
-        render(createFlow(false, true, setParentState))
+        render(createFlow(true, setParentState))
 
         await waitFor(() => {
             expect(screen.getByText("Data Source")).toBeInTheDocument()
@@ -273,7 +267,7 @@ describe("Flow Test", () => {
     })
 
     it("Refuses to add an uncertainty node if there is no predictor node", async () => {
-        render(createFlow(false, true, setParentState))
+        render(createFlow(true, setParentState))
 
         await waitFor(() => {
             expect(screen.getByText("Data Source")).toBeInTheDocument()
@@ -296,7 +290,7 @@ describe("Flow Test", () => {
     })
 
     it("Refuses to add an activation node if there's no prescriptor node", async () => {
-        render(createFlow(true, true, setParentState, []))
+        render(createFlow(true, setParentState, []))
 
         let addLLmButton: Element
         await waitFor(() => {
@@ -323,7 +317,7 @@ describe("Flow Test", () => {
     })
 
     it("Adds a predictor node when the add predictor button is clicked", async () => {
-        const flow = createFlow(false, true, setParentState)
+        const flow = createFlow(true, setParentState)
 
         render(flow)
 
@@ -369,7 +363,7 @@ describe("Flow Test", () => {
 
         // Fake re-rendering the flow with the new predictor node. Here we are acting as the container for the Flow,
         // so it's on us to "remember" the state of the flow and pass it back in when we re-render.
-        render(createFlow(false, true, setParentState, callWithThreeElements))
+        render(createFlow(true, setParentState, callWithThreeElements))
 
         await waitFor(() => {
             expect(screen.getByText("Random Forest")).toBeInTheDocument()
@@ -388,7 +382,7 @@ describe("Flow Test", () => {
             return dataTags
         })
 
-        const flow = createFlow(false, true, setParentState, FLOW_WITH_PREDICTOR)
+        const flow = createFlow(true, setParentState, FLOW_WITH_PREDICTOR)
 
         const {container} = render(flow)
 
@@ -427,7 +421,7 @@ describe("Flow Test", () => {
 
         // Fake re-rendering the flow with the new prescriptor node. Here we are acting as the container for the Flow,
         // so it's on us to "remember" the state of the flow and pass it back in when we re-render.
-        const flowWithPrescriptor = createFlow(false, true, setParentState, callWithPrescriptor)
+        const flowWithPrescriptor = createFlow(true, setParentState, callWithPrescriptor)
         render(flowWithPrescriptor)
 
         // Make sure prescriptor node was rendered

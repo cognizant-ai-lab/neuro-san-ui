@@ -69,9 +69,6 @@ interface FlowProps {
 
     // Used to differentiate Id's in drawer vs outside
     idExtension?: string
-
-    // Used to determine if the user is a demo user and therefore has access to unreleased features
-    isDemoUser?: boolean
 }
 
 /**
@@ -81,8 +78,6 @@ interface FlowProps {
  * @param props Input props for this component. See {@link FlowProps} interface for details.
  */
 export default function Flow(props: FlowProps) {
-    const isDemoUser = props.isDemoUser ?? false
-
     const projectId = props.ProjectID
 
     const idExtension = props.idExtension
@@ -1614,11 +1609,9 @@ export default function Flow(props: FlowProps) {
     }
 
     function getFlowButtons() {
-        // Figure out how many columns we need -- one for each button (add predictor, add prescriptor, add uncertainty),
-        // plus an extra one if demo mode is enabled, for the "add LLM" button.
+        // Columns we need -- one for each button (add predictor, add prescriptor, add uncertainty, add LLM),
         const numButtonsWithAddLLMs = 4
-        const numButtonsWithoutAddLLMs = 3
-        const cols = isDemoUser ? numButtonsWithAddLLMs : numButtonsWithoutAddLLMs
+        const cols = numButtonsWithAddLLMs
 
         return (
             <div
@@ -1649,7 +1642,7 @@ export default function Flow(props: FlowProps) {
                 >
                     Add Prescriptor
                 </Button>
-                {isDemoUser && getLLmsDropDownMenu()}
+                {getLLmsDropDownMenu()}
             </div>
         )
     }

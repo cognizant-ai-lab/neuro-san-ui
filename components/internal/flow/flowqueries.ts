@@ -9,8 +9,8 @@ import {NodeType} from "./nodes/types"
 import {CAOType} from "../../../controller/datatag/types"
 const debug = debugModule("flowqueries")
 
-// These nodes are considered "demo only" and have restrictions on usage (eg. only demo users)
-const DEMO_NODES = [
+// These nodes are LLM Nodes
+const LLM_NODES = [
     "activation_node",
     "analytics_node",
     "category_reducer_node",
@@ -221,12 +221,12 @@ export class FlowQueries {
     }
 
     /**
-     * Returns true if the supplied graph contains any of the demo nodes
+     * Returns true if the supplied graph contains any of the LLM nodes
      * @param nodes The graph to search
-     * @return <code>true</code> if the graph contains any of the demo nodes, <code>false</code> otherwise
+     * @return <code>true</code> if the graph contains any of the LLM nodes, <code>false</code> otherwise
      */
-    static hasDemoNodes(nodes: NodeType[]) {
-        return nodes?.some((node) => DEMO_NODES.includes(node.type))
+    static hasLLMNodes(nodes: NodeType[]) {
+        return nodes?.some((node) => LLM_NODES.includes(node.type))
     }
 
     /**

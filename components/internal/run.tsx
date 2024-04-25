@@ -26,7 +26,6 @@ import {fetchLlmRules} from "../../controller/rules/rules"
 import {fetchRunArtifact, fetchRuns} from "../../controller/run/fetch"
 import {constructRunMetricsForRunPlot} from "../../controller/run/results"
 import {Artifact, Run, Runs} from "../../controller/run/types"
-import useFeaturesStore from "../../state/features"
 import decode from "../../utils/conversion"
 import {empty} from "../../utils/objects"
 import {consolidateFlow} from "../../utils/transformation"
@@ -81,9 +80,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [rulesInterpretationLoading, setRulesInterpretationLoading] = useState(false)
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [project, setProject] = useState<Project>(null)
-
-    // Retrieve the demo flag from the store
-    const {isDemoUser} = useFeaturesStore()
 
     function getProjectTitle() {
         return project != null ? project.name : ""
@@ -791,7 +787,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
                         Flow={flow}
                         ElementsSelectable={false}
                         idExtension={props.idExtension}
-                        isDemoUser={isDemoUser}
                     />
                 </ReactFlowProvider>
             </div>
