@@ -226,7 +226,7 @@ describe("Flow Test", () => {
         expect(titles).toStrictEqual(new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM"]))
     })
 
-    it("Shows extra button for all user", async () => {
+    it("Shows extra button for all users", async () => {
         const {container} = render(createFlow(true))
 
         await waitFor(() => {
@@ -236,7 +236,7 @@ describe("Flow Test", () => {
         // Look for buttons
         const buttons = container.getElementsByClassName("btn")
 
-        // Should be four buttons for alls user
+        // Should be four buttons for all users
         expect(buttons.length).toBe(4)
 
         const titles = new Set([...buttons].map((button) => button.textContent))

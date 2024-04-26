@@ -1609,14 +1609,10 @@ export default function Flow(props: FlowProps) {
     }
 
     function getFlowButtons() {
-        // Columns we need -- one for each button (add predictor, add prescriptor, add uncertainty, add LLM),
-        const numButtonsWithAddLLMs = 4
-        const cols = numButtonsWithAddLLMs
-
         return (
             <div
                 id="flow-buttons"
-                className={`grid grid-cols-${cols} gap-4 mb-4`}
+                className="grid grid-cols-4 gap-4 mb-4"
             >
                 <Button
                     id="add_predictor_btn"
