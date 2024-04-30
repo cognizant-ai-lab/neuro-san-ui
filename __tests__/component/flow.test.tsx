@@ -47,7 +47,6 @@ const FLOW_WITH_PREDICTOR = [
                         is_ordered: false,
                     },
                 },
-                fields_blob: "",
             },
             SelfStateUpdateHandler: jest.fn(),
         },
