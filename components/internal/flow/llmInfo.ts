@@ -187,22 +187,8 @@ export const ANALYTICS_NODE_PARAMS: NodeParams = {
         type: BaseParameterType.FLOAT,
         isAdvanced: false,
     },
-    prompt_template: {
-        default_value: PromptTemplate["Repair data"].valueOf(),
-        description: "Choose a pre-created template or write your own prompt",
-        type: BaseParameterType.ENUM,
-        enum: PromptTemplate,
-        isAdvanced: true,
-    },
-    system_prompt: {
-        default_value: `In the table below, change the value of the ESP TYPE field to ‘Outcome’ if the attribute is a 
-decision objective that is affected by the choice of actions, and change it to ‘Action’ an action that can be taken 
-in order to optimize outcomes.
- 
-Also, using the DB API, analyze the data and provide a sensitivity analysis.
- 
-Finally, given the data description is <field1>, devise some analysis on the data and provide any interesting patterns 
-or insights you observe, along with charts baking your observations.`,
+    default_prompt: {
+        default_value: "Generate a histogram for one of the variables in the dataset. Include labels and legend.",
         description: "System prompt for the LLM",
         type: BaseParameterType.STRING,
         isAdvanced: true,
