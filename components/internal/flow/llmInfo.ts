@@ -77,14 +77,6 @@ enum TokenEncoding {
     /* eslint-enable @typescript-eslint/no-duplicate-enum-values */
 }
 
-// no-shadow doesn't do well with enums. Search their github issues if you're curious.
-// eslint-disable-next-line no-shadow
-enum PromptTemplate {
-    "Repair data" = "Repair data",
-    "Augment data" = "Augment data",
-    "Augment and repair data" = "Augment and repair data",
-}
-
 /**
  * Configuration params for data confabulator LLM
  */
