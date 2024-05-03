@@ -374,6 +374,8 @@ body {
 .splash-link {
     color: white;
     text-decoration: underline;
+    display: block;
+    width: fit-content;
 }
 
 .splash-link:hover {
