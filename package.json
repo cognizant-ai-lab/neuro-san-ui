@@ -29,7 +29,6 @@
         "@babel/core": "7.23.7",
         "@blueprintjs/core": "4.17.8",
         "@blueprintjs/icons": "4.14.5",
-        "@langchain/community": "0.0.32",
         "@langchain/core": "0.1.61",
         "@pinecone-database/pinecone": "2.0.1",
         "@popperjs/core": "2.11.8",

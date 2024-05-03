@@ -1026,7 +1026,7 @@
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.4.0.tgz#08d6c5e20cf7e4cc02fd181c4b0c225cd31dbb60"
   integrity sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==
 
-"@langchain/community@0.0.32", "@langchain/community@~0.0.32":
+"@langchain/community@~0.0.32":
   version "0.0.32"
   resolved "https://registry.yarnpkg.com/@langchain/community/-/community-0.0.32.tgz#d0e4ce8eeb8152cc9c3ace402e97cefd1ef5ce74"
   integrity sha512-jN4BxGKAmLbA87hqXH5Mx1IRMMVOgcn1TY1MLOVyBcBa12EvHFx8suogtXgA2ekfc8U8nIryVb1ftSupwUBv/A==
