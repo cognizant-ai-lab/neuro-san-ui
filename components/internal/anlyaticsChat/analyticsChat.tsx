@@ -3,6 +3,7 @@
  */
 import {Modal, Tooltip} from "antd"
 import {ChatMessage as LangchainChatMessage} from "langchain/schema"
+import {omit} from "lodash"
 import {FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
@@ -211,7 +212,12 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
 
             // Record bot answer in history.
             if (currentResponse.current) {
-                chatHistory.current = [...chatHistory.current, new LangchainChatMessage(currentResponse.current, "ai")]
+                // remove imageBytes from response to save tokens since all history gets sent to LLM each time
+                const responseWithoutImageBytes = omit(responseAsJSON, ["chat_response.image_data"])
+                chatHistory.current = [
+                    ...chatHistory.current,
+                    new LangchainChatMessage(JSON.stringify(responseWithoutImageBytes), "ai"),
+                ]
             }
         } catch (error) {
             if (error instanceof Error) {
