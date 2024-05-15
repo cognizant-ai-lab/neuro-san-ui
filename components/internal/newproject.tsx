@@ -546,7 +546,6 @@ export default function NewProject(props: NewProps) {
 
             options: {
                 allow_nans: true,
-                max_categories: 10000,
             },
 
             request_user: currentUser,
