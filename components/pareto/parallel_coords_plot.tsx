@@ -2,7 +2,7 @@ import {EChartsOption} from "echarts-for-react/src/types"
 
 import {EchartParetoPlot} from "./echart_pareto_plot"
 import {ParetoPlotProps} from "./types"
-import {getDataTable} from "./utils"
+import {calculateMinMax, getDataTable} from "./utils"
 
 /**
  * This component generates a parallel coordinates plot. See {@link https://en.wikipedia.org/wiki/Parallel_coordinates}
@@ -11,9 +11,6 @@ import {getDataTable} from "./utils"
  * @param props See {@link ParetoPlotProps} for details.
  */
 export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
-    // How much to extend axes above and below min/max values
-    const scalePadding = 0.05
-
     const optionsGenerator: EChartsOption = function (genData, objectives, minMaxPerObjective) {
         const plotData = genData.map((row) => ({
             name: row.cid,
@@ -54,12 +51,14 @@ export function ParallelCoordsPlot(props: ParetoPlotProps): JSX.Element {
             parallelAxis: Object.keys(genData[0])
                 .filter((k) => k !== "cid")
                 .map((key, idx) => {
+                    const paddedMinMax = calculateMinMax(minMaxPerObjective[key].min, minMaxPerObjective[key].max, 10)
                     return {
                         dim: key,
                         name: objectives[idx],
                         type: "value",
-                        min: (minMaxPerObjective[key].min * (1 - scalePadding)).toFixed(2),
-                        max: (minMaxPerObjective[key].max * (1 + scalePadding)).toFixed(2),
+                        min: paddedMinMax.niceMin.toPrecision(5),
+                        max: paddedMinMax.niceMax.toPrecision(5),
+                        interval: paddedMinMax.tickSpacing,
                     }
                 }),
             series: [

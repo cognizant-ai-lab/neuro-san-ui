@@ -3,6 +3,7 @@ import {Table} from "evergreen-ui"
 import {FiAlertCircle} from "react-icons/fi"
 
 import NewBar from "./newbar"
+import {calculateMinMax} from "./pareto/utils"
 
 interface EspRunPlotProps {
     id: string
@@ -11,17 +12,27 @@ interface EspRunPlotProps {
 
 export default function ESPRunPlot(props: EspRunPlotProps) {
     const prescriptorRunData = props.PrescriptorRunData
-
     const nodes: string[] = Object.keys(prescriptorRunData)
 
     const nodePlots = []
     nodes.forEach((nodeID) => {
-        const objectives = Object.keys(prescriptorRunData[nodeID])
+        const objectives: string[] = Object.keys(prescriptorRunData[nodeID])
 
         const cells = []
         objectives.forEach((objective) => {
             // Create a plot for each objective. Each objective will have min, max, mean across generations.
             const objectiveData = prescriptorRunData[nodeID][objective]
+
+            const minAllGenerations = Math.min.apply(
+                null,
+                objectiveData.flatMap((row: {data: {y: number}[]}) => row.data.map((datum: {y: number}) => datum.y))
+            )
+            const maxAllGenerations = Math.max.apply(
+                null,
+                objectiveData.flatMap((row: {data: {y: number}[]}) => row.data.map((datum: {y: number}) => datum.y))
+            )
+
+            const objectiveMinMax = calculateMinMax(minAllGenerations, maxAllGenerations)
             const objectiveMetricGraphLabelId = `${objective}-metric-graph-label`
             const options = {
                 xAxis: {
@@ -31,8 +42,9 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                 },
                 yAxis: {
                     type: "value",
-                    min: "dataMin",
-                    max: "dataMax",
+                    min: objectiveMinMax.niceMin.toPrecision(5),
+                    max: objectiveMinMax.niceMax.toPrecision(5),
+                    interval: objectiveMinMax.tickSpacing,
                 },
                 series: objectiveData.map((anObjective) => ({
                     data: anObjective.data.map((row) => ({

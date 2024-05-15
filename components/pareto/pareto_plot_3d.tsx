@@ -8,7 +8,7 @@ import "echarts-gl"
 
 import {EchartParetoPlot} from "./echart_pareto_plot"
 import {ParetoPlotProps} from "./types"
-import {getDataTable} from "./utils"
+import {calculateMinMax, getDataTable} from "./utils"
 
 /**
  * This component generates a 3D surface plot.
@@ -21,9 +21,6 @@ import {getDataTable} from "./utils"
  * @param props See {@link ParetoPlotProps} for details.
  */
 export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
-    // How much to extend axes above and below min/max values
-    const scalePadding = 0.01
-
     const pareto = props.Pareto
 
     // First (and only, for now) prescriptor node ID
@@ -92,6 +89,10 @@ export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
             })
         }
 
+        const objective0MinMax = calculateMinMax(minMaxPerObjective.objective0.min, minMaxPerObjective.objective0.max)
+        const objective1MinMax = calculateMinMax(minMaxPerObjective.objective1.min, minMaxPerObjective.objective1.max)
+        const objective2MinMax = calculateMinMax(minMaxPerObjective.objective2.min, minMaxPerObjective.objective2.max)
+
         return {
             toolbox: {
                 // Add desired toolbox features
@@ -111,22 +112,27 @@ export function ParetoPlot3D(props: ParetoPlotProps): JSX.Element {
             xAxis3D: {
                 type: "value",
                 name: objectives[0],
-                min: (minMaxPerObjective.objective0.min * (1 - scalePadding)).toFixed(2),
-                max: (minMaxPerObjective.objective0.max * (1 + scalePadding)).toFixed(2),
+                min: objective0MinMax.niceMin.toPrecision(5),
+                max: objective0MinMax.niceMax.toPrecision(5),
+                interval: objective0MinMax.tickSpacing,
             },
             yAxis3D: {
                 type: "value",
                 name: objectives[1],
-                min: (minMaxPerObjective.objective1.min * (1 - scalePadding)).toFixed(2),
-                max: (minMaxPerObjective.objective1.max * (1 + scalePadding)).toFixed(2),
+                min: objective1MinMax.niceMin.toPrecision(5),
+                max: objective1MinMax.niceMax.toPrecision(5),
+                interval: objective1MinMax.tickSpacing,
             },
             zAxis3D: {
                 type: "value",
                 name: objectives[2],
-                min: (minMaxPerObjective.objective2.min * (1 - scalePadding)).toFixed(2),
-                max: (minMaxPerObjective.objective2.max * (1 + scalePadding)).toFixed(2),
+                min: objective2MinMax.niceMin.toPrecision(5),
+                max: objective2MinMax.niceMax.toPrecision(5),
+                interval: objective2MinMax.tickSpacing,
             },
             grid3D: {
+                boxWidth: 150,
+                boxDepth: 150,
                 viewControl: {
                     projection: "orthographic",
                     zoomSensitivity: 0, // Disable mousewheel zooming on chart

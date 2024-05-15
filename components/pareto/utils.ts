@@ -38,3 +38,63 @@ export function getDataTable(data, objectives) {
 </table>
 `
 }
+
+export function calculateMinMax(
+    min: number,
+    max: number,
+    maxTicks: number = 10
+): {niceMin: number; niceMax: number; tickSpacing: number} {
+    const originalRange = max - min
+    const range = niceNum(originalRange, false)
+    const tickSpacing = niceNum(range / (maxTicks - 1), true)
+    const niceMin = Math.floor(min / tickSpacing) * tickSpacing - tickSpacing
+    const niceMax = Math.ceil(max / tickSpacing) * tickSpacing + tickSpacing
+
+    return {niceMin, niceMax, tickSpacing}
+}
+
+/**
+ * Returns a "nice" number approximately equal to `input`
+ * Rounds the number if round = true. Takes the ceiling if round = false.
+ *
+ * @param input The number to be converted to a "nice" value
+ * @param round whether to round the result
+ * @return a "nice" number to be used for the data range
+ */
+function niceNum(input: number, round: boolean): number {
+    // exponent of range
+    const exponent = Math.floor(Math.log10(input))
+
+    // fractional part of range
+    const fraction = input / 10 ** exponent
+
+    // nice, rounded fraction
+    let niceFraction: number
+
+    // Two cases, depending whether we're rounding or not
+    if (round) {
+        if (fraction < 1.5) {
+            niceFraction = 1
+        } else if (fraction < 3) {
+            niceFraction = 2
+        } else if (fraction < 7) {
+            niceFraction = 5
+        } else {
+            niceFraction = 10
+        }
+    }
+
+    if (!round) {
+        if (fraction <= 1) {
+            niceFraction = 1
+        } else if (fraction <= 2) {
+            niceFraction = 2
+        } else if (fraction <= 5) {
+            niceFraction = 5
+        } else {
+            niceFraction = 10
+        }
+    }
+
+    return niceFraction * 10 ** exponent
+}

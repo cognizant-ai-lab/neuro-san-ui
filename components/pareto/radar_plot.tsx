@@ -2,7 +2,7 @@ import {EChartsOption} from "echarts-for-react/src/types"
 
 import {EchartParetoPlot} from "./echart_pareto_plot"
 import {ParetoPlotProps} from "./types"
-import {getDataTable} from "./utils"
+import {calculateMinMax, getDataTable} from "./utils"
 
 /**
  * This component generates a radar plot. See {@link https://en.wikipedia.org/wiki/Radar_chart}
@@ -14,9 +14,6 @@ import {getDataTable} from "./utils"
  * @param props See {@link ParetoPlotProps} for details.
  */
 export function RadarPlot(props: ParetoPlotProps): JSX.Element {
-    // How much to extend axes above and below min/max values
-    const scalePadding = 0.05
-
     const optionsGenerator: EChartsOption = function (genData, objectives, minMaxPerObjective, selectedGen) {
         const plotData = genData.map((row) => ({
             name: row.cid,
@@ -43,11 +40,19 @@ export function RadarPlot(props: ParetoPlotProps): JSX.Element {
                 shape: "circle",
                 indicator: Object.keys(genData[0])
                     .filter((k) => k !== "cid")
-                    .map((key, idx) => ({
-                        name: objectives[idx],
-                        min: minMaxPerObjective[key].min * (1 - scalePadding),
-                        max: minMaxPerObjective[key].max * (1 + scalePadding),
-                    })),
+                    .map((key, idx) => {
+                        const paddedMinMax = calculateMinMax(
+                            minMaxPerObjective[key].min,
+                            minMaxPerObjective[key].max,
+                            10
+                        )
+                        return {
+                            name: objectives[idx],
+                            min: paddedMinMax.niceMin.toPrecision(5),
+                            max: paddedMinMax.niceMax.toPrecision(5),
+                            interval: paddedMinMax.tickSpacing,
+                        }
+                    }),
                 radius: "80%",
             },
             series: [

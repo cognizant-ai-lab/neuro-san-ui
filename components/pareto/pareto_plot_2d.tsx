@@ -3,20 +3,17 @@ import {useMemo} from "react"
 
 import {EchartParetoPlot} from "./echart_pareto_plot"
 import {ParetoPlotProps} from "./types"
-import {getDataTable} from "./utils"
+import {calculateMinMax, getDataTable} from "./utils"
 
 /**
  * This function generates a 2-dimensional pareto plot.
  *
- * It only works for the case of 2outcomes. For experiments with anything other than 3 outcomes, other kinds of plots
+ * It only works for the case of 2 outcomes. For experiments with anything other than 2 outcomes, other kinds of plots
  * needs to be used.
  *
  * @param props See {@link ParetoPlotProps} for details.
  */
 export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
-    // How much to extend axes above and below min/max values. For this plot, looks better not to pad so set to 0.
-    const scalePadding = 0.0
-
     const pareto = props.Pareto
 
     // First (and only, for now) prescriptor node ID
@@ -53,6 +50,9 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
             name: generation.id,
         }))
 
+        const objective0MinMax = calculateMinMax(minMaxPerObjective.objective0.min, minMaxPerObjective.objective0.max)
+        const objective1MinMax = calculateMinMax(minMaxPerObjective.objective1.min, minMaxPerObjective.objective1.max)
+
         return {
             toolbox: {
                 // Add desired toolbox features
@@ -72,14 +72,16 @@ export function ParetoPlot2D(props: ParetoPlotProps): JSX.Element {
             xAxis: {
                 type: "value",
                 name: objectives[0],
-                min: (minMaxPerObjective.objective0.min * (1 - scalePadding)).toFixed(2),
-                max: (minMaxPerObjective.objective0.max * (1 + scalePadding)).toFixed(2),
+                min: objective0MinMax.niceMin.toPrecision(5),
+                max: objective0MinMax.niceMax.toPrecision(5),
+                interval: objective0MinMax.tickSpacing,
             },
             yAxis: {
                 type: "value",
                 name: objectives[1],
-                min: (minMaxPerObjective.objective1.min * (1 - scalePadding)).toFixed(2),
-                max: (minMaxPerObjective.objective1.max * (1 + scalePadding)).toFixed(2),
+                min: objective1MinMax.niceMin.toPrecision(5),
+                max: objective1MinMax.niceMax.toPrecision(5),
+                interval: objective1MinMax.tickSpacing,
             },
             series: series,
             legend: {
