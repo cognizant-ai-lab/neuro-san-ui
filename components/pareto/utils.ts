@@ -39,6 +39,19 @@ export function getDataTable(data, objectives) {
 `
 }
 
+/**
+ * Next two functions inspired by this post:
+ * https://stackoverflow.com/questions/8506881/nice-label-algorithm-for-charts-with-minimum-ticks/16363437#16363437
+ */
+
+/**
+ * Calculate the min, max, and tick spacing for a given range. Uses "nice" numbers for min, max and the tick spacing,
+ * where "nice" means a round multiple of 1, 2, 5, 10, or powers of 10 multiples of the same.
+ *
+ * @param min Original minimum value
+ * @param max Original maximum value
+ * @param maxTicks Maximum number of ticks required for the axis
+ */
 export function calculateMinMax(
     min: number,
     max: number,
@@ -78,7 +91,9 @@ export function niceNum(input: number, roundDown: boolean): number {
     // nice, rounded fraction
     let niceFraction: number
 
-    // Two cases, depending whether we're rounding or not
+    // Two cases, depending whether we're rounding or not.
+    // We rather arbitrarily declare that "nice" numbers are multiples of 1, 2, 5, or 10 or multiples of 10^x of the
+    // same. Humans like such numbers.
     if (roundDown) {
         if (fraction < 1.5) {
             niceFraction = 1
