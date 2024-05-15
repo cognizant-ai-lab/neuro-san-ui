@@ -55,13 +55,20 @@ export function calculateMinMax(
 
 /**
  * Returns a "nice" number approximately equal to `input`
- * Rounds the number if round = true. Takes the ceiling if round = false.
+ * Rounds the number if roundDown = true. Takes the ceiling if roundDown = false.
+ *
+ * @Note Only designed to work with positive numbers. For negative numbers, the original value is returned.
  *
  * @param input The number to be converted to a "nice" value
- * @param round whether to round the result
+ * @param roundDown whether to round the result
  * @return a "nice" number to be used for the data range
  */
-function niceNum(input: number, round: boolean): number {
+export function niceNum(input: number, roundDown: boolean): number {
+    // We don't handle negative values
+    if (input < 0) {
+        return input
+    }
+
     // exponent of range
     const exponent = Math.floor(Math.log10(input))
 
@@ -72,7 +79,7 @@ function niceNum(input: number, round: boolean): number {
     let niceFraction: number
 
     // Two cases, depending whether we're rounding or not
-    if (round) {
+    if (roundDown) {
         if (fraction < 1.5) {
             niceFraction = 1
         } else if (fraction < 3) {
@@ -84,7 +91,7 @@ function niceNum(input: number, round: boolean): number {
         }
     }
 
-    if (!round) {
+    if (!roundDown) {
         if (fraction <= 1) {
             niceFraction = 1
         } else if (fraction <= 2) {
