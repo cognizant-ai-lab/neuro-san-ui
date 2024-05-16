@@ -11,24 +11,17 @@ import {BaseParameterType, NodeParams} from "./nodes/generic/types"
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
 enum LlmModel {
+    "OpenAI : gpt-4-turbo" = "gpt-4-turbo",
+    "OpenAI : gpt-4" = "gpt-4",
+    "OpenAI : gpt-3.5-turbo" = "gpt-3.5-turbo",
     "Azure GPT 3.5 turbo" = "azure-gpt-3.5-turbo",
-    "Azure GPT 4" = "azure-gpt-4",
-    "Bring your own model (BYOM)" = "byom",
-    "Google Chirp" = "google_chirp",
-    "Google Codey" = "google_codey",
-    "Google DeepMind Chinchilla" = "google_deepmind_chinchilla",
-    "Google DeepMind Gemini (future)" = "google_deepmind_gemini",
-    "Google Imagen" = "google_imagen",
-    "Google MedPALM 2" = "google_medpalm_2",
-    "Google PaLM 2 Bison" = "google_palm_2_bison",
-    "Google PaLM 2 Gecko" = "google_palm_2_gecko",
-    "Google PaLM 2 Otter" = "google_palm_2_otter",
-    "Google PaLM 2 Unicorn" = "google_palm_2_unicorn",
-    "Google PaLM-540B" = "google_palm_540b",
-    "Google Sec-PaLM" = "google_sec_palm",
-    "OpenAI GPT 4" = "gpt-4",
-    "OpenAI GPT 3.5 turbo" = "gpt-3.5-turbo",
-    "Vicuna" = "Vicuna",
+    "Anthropic : claude-3-opus-20240229" = "claude-3-opus-20240229",
+    "Anthropic : claude-3-sonnet-20240229" = "claude-3-sonnet-20240229",
+    "Anthropic : claude-3-haiku-20240307" = "claude-3-haiku-20240307",
+    "Ollama : llama2" = "llama2",
+    "Ollama : llama3" = "llama3",
+    "Ollama : mistral" = "mistral",
+    "Ollama : mixtral" = "mixtral",
 }
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
@@ -82,7 +75,7 @@ enum TokenEncoding {
  */
 export const CONFABULATOR_NODE_PARAMS: NodeParams = {
     model: {
-        default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
+        default_value: LlmModel["OpenAI : gpt-4-turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
@@ -165,7 +158,7 @@ export const CONFABULATOR_NODE_PARAMS: NodeParams = {
 
 export const ANALYTICS_NODE_PARAMS: NodeParams = {
     model: {
-        default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
+        default_value: LlmModel["OpenAI : gpt-4-turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
@@ -189,7 +182,7 @@ export const ANALYTICS_NODE_PARAMS: NodeParams = {
 
 export const ACTIVATION_NODE_PARAMS: NodeParams = {
     model: {
-        default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
+        default_value: LlmModel["OpenAI : gpt-4-turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
@@ -213,7 +206,7 @@ export const ACTIVATION_NODE_PARAMS: NodeParams = {
 
 export const CATEGORY_REDUCER_NODE_PARAMS: NodeParams = {
     model: {
-        default_value: LlmModel["OpenAI GPT 3.5 turbo"].valueOf(),
+        default_value: LlmModel["OpenAI : gpt-4-turbo"].valueOf(),
         description: "Large Language Model (LLM) to be used",
         type: BaseParameterType.ENUM,
         enum: LlmModel,
