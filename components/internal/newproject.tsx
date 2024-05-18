@@ -546,6 +546,9 @@ export default function NewProject(props: NewProps) {
 
             options: {
                 allow_nans: true,
+                // This is tha max number of categories any categorical column can have
+                // https://leaf-ai.atlassian.net/browse/UN-2078
+                max_categories: 200,
             },
 
             request_user: currentUser,
