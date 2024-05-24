@@ -1,8 +1,8 @@
 /**
  * This is the module for the "AI decision assistant".
  */
+import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {Tooltip} from "antd"
-import {AIMessage, BaseMessage, HumanMessage} from "langchain/schema"
 import {FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"

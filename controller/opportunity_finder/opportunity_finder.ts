@@ -2,7 +2,7 @@
  * Controller for Opportunity Finder chat requests
  */
 
-import {BaseMessage} from "langchain/schema"
+import {BaseMessage} from "@langchain/core/messages"
 
 import {OpportunityFinderRequestType} from "../../pages/api/gpt/opportunityFinder/types"
 import {sendLlmRequest} from "../llm/llm_chat"

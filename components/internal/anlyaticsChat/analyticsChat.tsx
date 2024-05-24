@@ -1,8 +1,8 @@
 /**
  * This is the module for the "AI decision assistant".
  */
+import {ChatMessage as LangchainChatMessage} from "@langchain/core/messages"
 import {Modal, Tooltip} from "antd"
-import {ChatMessage as LangchainChatMessage} from "langchain/schema"
 import {omit} from "lodash"
 import {FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"

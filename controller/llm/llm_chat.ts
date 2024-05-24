@@ -3,7 +3,7 @@
  * Allows streaming callback for a more interactive experience.
  */
 
-import {BaseMessage} from "langchain/schema"
+import {BaseMessage} from "@langchain/core/messages"
 
 import {MessageWithKargs} from "../../pages/api/gpt/shared/types"
 
