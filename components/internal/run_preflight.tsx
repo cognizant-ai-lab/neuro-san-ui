@@ -148,11 +148,25 @@ export function checkValidity(flow: NodeType[]): boolean {
         // Currently we only support a single datasource node
         const dataNode = dataNodes[0]
         const dataTag = dataNode.data.DataTag
-        const columnsWithNaNs = Object.keys(dataTag.fields).filter((key) => dataTag.fields[key].has_nan)
+
+        // Store all checked fields from predictor actions and context so that preflight check can verify whether
+        // any fields blocked by category reducer field or hasNaN fields are unchecked, which should enable training
+        const checkedPredictorContextActions = new Set()
+        for (const predictor of predictorNodes) {
+            const predictorContexts: string[] = FlowQueries.extractCheckedFieldsForNode(predictor, CAOType.CONTEXT)
+            predictorContexts.forEach((context) => checkedPredictorContextActions.add(context))
+
+            const predictorActions: string[] = FlowQueries.extractCheckedFieldsForNode(predictor, CAOType.ACTION)
+            predictorActions.forEach((action) => checkedPredictorContextActions.add(action))
+        }
+        const columnsWithNaNs = Object.keys(dataTag.fields).filter(
+            (key) => dataTag.fields[key].has_nan && checkedPredictorContextActions.has(key)
+        )
         const columnsWithTooManyCategories = Object.keys(dataTag.fields).filter(
             (key) =>
                 dataTag.fields[key].valued === "CATEGORICAL" &&
-                dataTag.fields[key].discrete_categorical_values.length > MAX_ALLOWED_CATEGORIES
+                dataTag.fields[key].discrete_categorical_values.length > MAX_ALLOWED_CATEGORIES &&
+                checkedPredictorContextActions.has(key)
         )
         let validFlow = true
 
