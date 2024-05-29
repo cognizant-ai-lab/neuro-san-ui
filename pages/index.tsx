@@ -2,7 +2,6 @@ import NextImage from "next/legacy/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
-import {FaStar} from "react-icons/fa"
 import {styled} from "styled-components"
 
 import {GENERIC_LOGO, LOGO} from "../const"
@@ -166,35 +165,6 @@ export default function Index(): ReactElement {
                                     }}
                                 >
                                     Opportunity Finder
-                                    <span
-                                        id="star-new-span"
-                                        style={{
-                                            display: "flex",
-                                            position: "absolute",
-                                            top: 0,
-                                            right: 0,
-                                            paddingRight: "12px",
-                                            marginRight: "10px",
-                                            marginTop: "4px",
-                                        }}
-                                    >
-                                        <FaStar
-                                            id="star"
-                                            style={{color: "gold"}}
-                                            size={16}
-                                        />
-                                        <span
-                                            id="new-span"
-                                            style={{
-                                                fontVariantCaps: "all-small-caps",
-                                                verticalAlign: "middle",
-                                                fontSize: "small",
-                                                textAlign: "center",
-                                            }}
-                                        >
-                                            NEW!
-                                        </span>
-                                    </span>
                                 </LaunchButton>
                             </a>
                         </Link>
