@@ -81,6 +81,9 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     // Generation for which we are displaying data. Default to last generation.
     const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
 
+    // For hidden notifications
+    const [notifications, setNotifications] = useState<[string, string][]>([])
+
     const allGensSelected = selectedGen === numberOfGenerations + 1
 
     // Calculate min and max values for each objective across all generations (if playing animation) or for current
@@ -153,6 +156,13 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
                   selectedCIDStateUpdator(selectedCID)
               }
             : () => {
+                  setNotifications((currentNotifications) => {
+                      return [
+                          ...(currentNotifications ?? []),
+                          [NotificationType[NotificationType.error], "Model Selection Error"],
+                          [NotificationType[NotificationType.warning], "Sample warning message"],
+                      ]
+                  })
                   sendNotification(
                       NotificationType.error,
                       "Model Selection Error",
@@ -213,16 +223,24 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     const showAllGenerations = props.showAllGenerations ?? false
 
     return (
-        <GenerationsAnimation
-            id={id}
-            NumberOfGenerations={numberOfGenerations}
-            Plot={plot}
-            SetSelectedGen={(gen: number) => setSelectedGen(gen)}
-            SelectedGen={selectedGen}
-            ShowAllGenerations={showAllGenerations}
-            FrameDelayMs={frameDelayMs}
-            SetPlaying={setPlaying}
-            Playing={playing}
-        />
+        <>
+            <div
+                id="notifications"
+                style={{display: "none"}}
+            >
+                {JSON.stringify(notifications, null, 2)}
+            </div>
+            <GenerationsAnimation
+                id={id}
+                NumberOfGenerations={numberOfGenerations}
+                Plot={plot}
+                SetSelectedGen={(gen: number) => setSelectedGen(gen)}
+                SelectedGen={selectedGen}
+                ShowAllGenerations={showAllGenerations}
+                FrameDelayMs={frameDelayMs}
+                SetPlaying={setPlaying}
+                Playing={playing}
+            />
+        </>
     )
 }
