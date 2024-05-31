@@ -44,6 +44,7 @@
         "echarts-gl": "2.0.9",
         "evergreen-ui": "7.1.9",
         "http-status": "1.7.3",
+        "jsonrepair": "3.8.0",
         "langchain": "0.2.2",
         "lodash": "4.17.21",
         "next": "14.0.4",

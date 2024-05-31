@@ -207,7 +207,7 @@ export function DMSChat(props: {
     }
 
     // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = hasOnlyWhitespace(userLlmChatInput)
+    const userInputEmpty = !userLlmChatInput || userLlmChatInput.length === 0 || hasOnlyWhitespace(userLlmChatInput)
 
     // Disable Send when request is in progress
     const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
@@ -216,7 +216,9 @@ export function DMSChat(props: {
     const shouldDisableRegenerateButton = !previousUserQuery || isAwaitingLlm
 
     // Width for the various buttons -- "regenerate", "stop" etc.
-    const buttonWidth = 126
+    const actionButtonWidth = 126
+
+    const disableClearChatButton = isAwaitingLlm || userLlmChatOutput.length === 0
 
     return (
         <Drawer // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -269,12 +271,13 @@ export function DMSChat(props: {
                                 color: "white",
                                 display: isAwaitingLlm ? "none" : "inline",
                                 fontSize: "95%",
-                                opacity: "70%",
+                                opacity: disableClearChatButton ? "50%" : "70%",
                                 position: "absolute",
                                 right: 145,
-                                width: buttonWidth,
+                                width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
+                            disabled={disableClearChatButton}
                         >
                             <BsTrash
                                 id="stop-button-icon"
@@ -298,7 +301,7 @@ export function DMSChat(props: {
                                 opacity: "70%",
                                 position: "absolute",
                                 right: 10,
-                                width: buttonWidth,
+                                width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
                         >
@@ -325,7 +328,7 @@ export function DMSChat(props: {
                                 opacity: shouldDisableRegenerateButton ? "50%" : "70%",
                                 position: "absolute",
                                 right: 10,
-                                width: buttonWidth,
+                                width: actionButtonWidth,
                                 zIndex: 99999,
                             }}
                         >
@@ -359,7 +362,9 @@ export function DMSChat(props: {
                             />
                             <Button
                                 id="clear-input-button"
-                                onClick={() => setUserLlmChatInput("")}
+                                onClick={() => {
+                                    clearInput()
+                                }}
                                 style={{
                                     backgroundColor: "transparent",
                                     color: "var(--bs-primary)",
@@ -368,11 +373,13 @@ export function DMSChat(props: {
                                     left: "calc(100% - 45px)",
                                     top: 10,
                                     lineHeight: "35px",
+                                    opacity: userInputEmpty ? "25%" : "100%",
                                     position: "absolute",
                                     width: "10px",
                                     zIndex: 99999,
                                 }}
                                 disabled={userInputEmpty}
+                                tabIndex={-1}
                             >
                                 X
                             </Button>
