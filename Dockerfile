@@ -46,11 +46,9 @@ RUN apt-get update && \
     apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests \
       protobuf-compiler libprotobuf-dev
 
-# Generate probotobuf files
-RUN /bin/bash -c "./grpc/do_typescript_generate.sh"
-
-# Use yarn to build and install dependencies
-RUN yarn build
+# Generate probotobuf files and run yarn
+RUN /bin/bash -c "./grpc/do_typescript_generate.sh" \
+    && yarn build
 
 # Production image, copy all the files and run next
 FROM gcr.io/distroless/nodejs:$NODEJS_VERSION AS runner
