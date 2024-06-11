@@ -4,11 +4,13 @@ import debugModule from "debug"
 import {InfoSignIcon} from "evergreen-ui"
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
 import {Button, Container, Dropdown} from "react-bootstrap"
+import {SlMagicWand} from "react-icons/sl"
 // eslint-disable-next-line import/no-named-as-default
 import ReactFlow, {
     applyEdgeChanges,
     applyNodeChanges,
     Background,
+    ControlButton,
     Controls,
     EdgeRemoveChange,
     getConnectedEdges,
@@ -68,6 +70,9 @@ interface FlowProps {
 
     // Used to differentiate Id's in drawer vs outside
     idExtension?: string
+
+    // Will be called when user clicks magic wand
+    handleMagicWand?: () => void
 }
 
 /**
@@ -1675,7 +1680,19 @@ export default function Flow(props: FlowProps) {
                                 left: "0px",
                             }}
                             onFitView={() => tidyView()}
-                        />
+                        >
+                            <ControlButton
+                                id="magic-wand"
+                                onClick={props.handleMagicWand}
+                            >
+                                <SlMagicWand
+                                    id="magic-wand-icon"
+                                    color="black"
+                                    strokeWidth={10}
+                                    size={20}
+                                />
+                            </ControlButton>
+                        </Controls>
                         {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                         <Background
                             color="#000048"
