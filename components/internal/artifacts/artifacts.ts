@@ -36,6 +36,7 @@ const DOWNLOADABLE_ARTIFACTS: ArtifactInfo[] = [
     {value: "predictors", label: "Predictors (future)", fileType: ""},
     {value: "prescriptors", label: "Prescriptors (future)", fileType: ""},
     {value: "requirements", label: "Notebook Python Dependencies", fileType: "txt"},
+    {value: "private_dependencies", label: "Tar file containing private library wheel files", fileType: "tar.gz"},
     {value: "all", label: "All artifacts (zip, future)", fileType: "zip"},
 ]
 
@@ -96,6 +97,9 @@ function getUrlForArtifact(artifactToDownload: string, availableArtifacts: Recor
             return availableArtifacts.requirements
         case "predictors":
         case "prescriptors":
+        case "private_dependencies":
+            // For example "s3://leaf-unileaf-dev-artifacts/run_data/4435/artifacts/private_dependencies.tar.gz"
+            return availableArtifacts.private_dependencies
         case "all":
             // not yet supported
             return null
