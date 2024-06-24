@@ -14,7 +14,7 @@
     "env": {
         "jest": true
     },
-    "plugins": ["@typescript-eslint", "enforce-ids-in-jsx", "jest"],
+    "plugins": ["@typescript-eslint", "enforce-ids-in-jsx", "jest", "react-hooks"],
     "extends": [
         "next",
 

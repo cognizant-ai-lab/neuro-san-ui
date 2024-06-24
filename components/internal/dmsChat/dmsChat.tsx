@@ -87,7 +87,7 @@ export function DMSChat(props: {
             const finalAnswerMatch = extractFinalAnswer(response)
             if (finalAnswerMatch && finalAnswerMatch.length > 0) {
                 const finalAnswer = finalAnswerMatch[0]
-                const finalAnswerIndex = llmOutputText.indexOf(finalAnswer)
+                const finalAnswerIndex = llmOutputText.lastIndexOf(finalAnswer)
                 const finalAnswerLength = finalAnswer.length
                 llmOutputTextArea.setSelectionRange(finalAnswerIndex, finalAnswerIndex + finalAnswerLength)
                 llmOutputTextArea.focus()
