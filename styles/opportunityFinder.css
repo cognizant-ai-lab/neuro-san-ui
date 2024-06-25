@@ -1,0 +1,17 @@
+.opp-finder-agent-button {
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    padding: 10px;
+}
+
+.opp-finder-agent-button.selected {
+    background: linear-gradient(to bottom, #cad1d7, #f0f0f0);
+    border-color: var(--bs-red);
+    border-width: 1px;
+}
+
+.opp-finder-agent-button:hover {
+    border-radius: 30px;
+    border-color: var(--bs-red);
+    border-width: 1px;
+}

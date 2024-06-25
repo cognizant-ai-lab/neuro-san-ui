@@ -16,6 +16,7 @@ import "../styles/updatenode.css"
 import "../styles/globals.css"
 import "../styles/splashpage.css"
 import "../styles/styles.css"
+import "../styles/opportunityFinder.css"
 
 import debugModule from "debug"
 import Head from "next/head"

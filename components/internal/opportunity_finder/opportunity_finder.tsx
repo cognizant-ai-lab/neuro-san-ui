@@ -3,12 +3,15 @@
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {Tooltip} from "antd"
-import {FormEvent, ReactElement, useEffect, useRef, useState} from "react"
+import {CSSProperties, FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
-import {BsStopBtn, BsTrash} from "react-icons/bs"
+import {BsDatabaseAdd, BsStopBtn, BsTrash} from "react-icons/bs"
+import {FaArrowRightLong} from "react-icons/fa6"
 import {FiRefreshCcw} from "react-icons/fi"
+import {LuBrainCircuit} from "react-icons/lu"
 import {MdOutlineWrapText} from "react-icons/md"
-import Select from "react-select"
+import {RiMenuSearchLine} from "react-icons/ri"
+import {TfiPencilAlt} from "react-icons/tfi"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {MaximumBlue} from "../../../const"
@@ -51,12 +54,13 @@ export function OpportunityFinder(): ReactElement {
     // These are the agents the user can interact with. Not all are available yet.
     const agentOptions: AgentOption[] = [
         {label: "Opportunity Explorer", value: "OpportunityFinder"},
+        {label: "Scoping Agent", value: "ScopingAgent"},
         {label: "Data Generator", value: "DataGenerator"},
-        {label: "Experiment Generator (coming soon)", value: "ExperimentGenerator", isDisabled: true},
+        {label: "Orchestration Agent", value: "OrchestrationAgent", isDisabled: true},
     ]
 
     // Selected option for agent to interact with
-    const [selectedAgent, setSelectedAgent] = useState(agentOptions[0])
+    const [selectedAgent, setSelectedAgent] = useState<AgentOption>(agentOptions[0])
 
     // Ref for output text area, so we can auto scroll it
     const llmOutputTextAreaRef = useRef(null)
@@ -191,12 +195,128 @@ export function OpportunityFinder(): ReactElement {
 
     const disableClearChatButton = isAwaitingLlm || userLlmChatOutput.length === 0
 
+    /**
+     * Get the class name for the agent button.
+     * @param index The index of the agent button
+     * @returns The class name for the agent button
+     */
+    function getClassName(index: number) {
+        return `opp-finder-agent-button${selectedAgent.value === agentOptions[index].value ? " selected" : ""}`
+    }
+
+    function getStyle(): CSSProperties {
+        return {
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            pointerEvents: isAwaitingLlm ? "none" : "auto",
+            opacity: isAwaitingLlm ? 0.5 : 1,
+        }
+    }
+
+    /**
+     * Generate the agent buttons
+     * @returns A div containing the agent buttons
+     */
+    function getAgentButtons() {
+        return (
+            <div
+                id="agent-icons-div"
+                style={{
+                    display: "flex",
+                    justifyContent: "space-evenly",
+                    alignItems: "center",
+                    height: "100%", // Adjust this as needed
+                    marginTop: "1rem",
+                    marginBottom: "1rem",
+                    marginLeft: "6rem",
+                    marginRight: "6rem",
+                }}
+            >
+                <div
+                    id="opp-finder-agent-div"
+                    style={getStyle()}
+                    onClick={() => setSelectedAgent(agentOptions[0])}
+                    className={getClassName(0)}
+                >
+                    <RiMenuSearchLine
+                        id="opp-finder-agent-icon"
+                        size={100}
+                    />
+                    Opportunity Finder
+                </div>
+                <FaArrowRightLong
+                    id="arrow1"
+                    size={100}
+                    color="var(--bs-secondary)"
+                />
+                <div
+                    id="scoping-agent-div"
+                    style={getStyle()}
+                    onClick={() => setSelectedAgent(agentOptions[1])}
+                    className={getClassName(1)}
+                >
+                    <TfiPencilAlt
+                        id="scoping-agent-icon"
+                        size={100}
+                    />
+                    Scoping Agent
+                </div>
+                <FaArrowRightLong
+                    id="arrow2"
+                    size={100}
+                    color="var(--bs-secondary)"
+                />
+                <div
+                    id="opp-finder-agent-div"
+                    style={getStyle()}
+                    onClick={() => setSelectedAgent(agentOptions[2])}
+                    className={getClassName(2)}
+                >
+                    <BsDatabaseAdd
+                        id="db-agent-icon"
+                        size={100}
+                    />
+                    Data Generator
+                </div>
+                <FaArrowRightLong
+                    id="arrow3"
+                    size={100}
+                    color="var(--bs-secondary)"
+                />
+                <div
+                    id="opp-finder-agent-div"
+                    style={getStyle()}
+                    className={getClassName(3)}
+                >
+                    <LuBrainCircuit
+                        id="db-agent-icon"
+                        size={100}
+                    />
+                    <div
+                        id="orchestration-agent-text"
+                        style={{textAlign: "center"}}
+                    >
+                        Orchestration Agent
+                    </div>
+                    <div
+                        id="coming-soon-text"
+                        style={{textAlign: "center"}}
+                    >
+                        (Coming Soon)
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <>
             <Form
                 id="user-query-form"
                 onSubmit={handleUserQuery}
             >
+                {getAgentButtons()}
                 <Form.Group id="llm-chat-group">
                     <div
                         id="llm-response-div"
@@ -350,16 +470,7 @@ export function OpportunityFinder(): ReactElement {
                             paddingLeft: "10px",
                             paddingRight: "10px",
                         }}
-                    >
-                        <Select
-                            id="agent-select"
-                            isOptionDisabled={(option) => option.isDisabled}
-                            onChange={setSelectedAgent}
-                            options={agentOptions}
-                            placeholder="Choose an agent to interact with"
-                            value={selectedAgent}
-                        />
-                    </div>
+                    />
                     <div
                         id="user-input-div"
                         style={{display: "flex"}}
@@ -368,7 +479,7 @@ export function OpportunityFinder(): ReactElement {
                             <Form.Control
                                 id="user-input"
                                 type="text"
-                                placeholder={`Message the ${selectedAgent.label} agent`}
+                                placeholder={`Message the ${selectedAgent.label}`}
                                 ref={inputAreaRef}
                                 style={{
                                     fontSize: "90%",
