@@ -11,7 +11,7 @@ import {getTitleBase} from "../utils/title"
 const OuterContainer = styled.div`
     width: 100%;
     min-height: 75vh;
-    overflow: scroll;
+    overflow: auto;
 `
 
 const Marginer = styled.div`
