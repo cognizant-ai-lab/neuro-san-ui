@@ -306,7 +306,7 @@ export function OpportunityFinder(): ReactElement {
                 <Form.Group id="llm-chat-group">
                     <div
                         id="llm-response-div"
-                        style={{height: "60vh", margin: "10px", position: "relative"}}
+                        style={{height: "50vh", margin: "10px", position: "relative"}}
                     >
                         <Tooltip
                             id="wrap-tooltip"
@@ -464,6 +464,7 @@ export function OpportunityFinder(): ReactElement {
                         <InputGroup id="user-input-group">
                             <Form.Control
                                 id="user-input"
+                                as="textarea"
                                 type="text"
                                 placeholder={`Message the ${selectedAgent} agent`}
                                 ref={inputAreaRef}
