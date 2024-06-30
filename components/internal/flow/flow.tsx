@@ -1681,7 +1681,10 @@ export default function Flow(props: FlowProps) {
                             }}
                             onFitView={() => tidyView()}
                         >
-                            <Tooltip title="Use a powerful LLM to analyze your experiment and suggest improvements">
+                            <Tooltip
+                                id="magic-wand-tooltip"
+                                title="Use a powerful LLM to analyze your experiment and suggest improvements"
+                            >
                                 <ControlButton
                                     id="magic-wand"
                                     onClick={props.handleMagicWand}

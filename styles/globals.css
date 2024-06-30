@@ -513,30 +513,3 @@ button[id*="prescriptoredge"] {
     font-family: "Gellix", sans-serif;
     white-space: pre-wrap;
 }
-
-.pulsing-button {
-    /*background-color: #007bff;*/
-    color: white;
-    border: none;
-    /*padding: 10px 20px;*/
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    outline: none;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
-    }
-    70% {
-        transform: scale(1.1);
-        box-shadow: 0 0 10px 20px rgba(0, 123, 255, 0);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
-    }
-}
