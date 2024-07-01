@@ -2,7 +2,7 @@
     margin-left: 3.5rem;
     margin-top: 25px;
     display: flex;
-    flex-direction: column;
+    column-gap: 60px;
 }
 
 .splash-link {

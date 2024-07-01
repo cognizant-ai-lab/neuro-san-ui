@@ -197,57 +197,82 @@ export default function Index(): ReactElement {
             </OuterContainer>
             <footer id="footer">
                 <div id="footer_divider" />
+
                 <div id="additional-links-container">
-                    <HeaderLineFive id="additional-links-header">Links</HeaderLineFive>
                     <div
-                        id="additional-links-divider"
-                        className="link-divider"
-                    />
-                    <a
-                        id="learn-more-link"
-                        className="splash-link"
-                        href="https://www.cognizant.com/us/en/services/ai/ai-lab"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        id="team-links"
+                        className="more-links"
                     >
-                        About
-                    </a>
-                    <a
-                        id="ai-innovation-studios-link"
-                        className="splash-link"
-                        href="https://portal-innovationstudio-apps-prod-we-001.azurewebsites.net/"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        <HeaderLineFive id="additional-links-header">Team</HeaderLineFive>
+                        <div
+                            id="additional-links-divider"
+                            className="link-divider"
+                        />
+                        <a
+                            id="learn-more-link"
+                            className="splash-link"
+                            href="https://www.cognizant.com/us/en/services/ai/ai-lab"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            About
+                        </a>
+                    </div>
+                    <div
+                        id="services-links"
+                        className="more-links"
                     >
-                        AI Innovation Studios
-                    </a>
-                    <a
-                        id="neuro-it-ops-link"
-                        className="splash-link"
-                        href="https://www.cognizant.com/us/en/services/neuro-intelligent-automation/neuro-ai-it-operations"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Neuro IT Ops
-                    </a>
-                    <a
-                        id="flowsource-link"
-                        className="splash-link"
-                        href="https://www.cognizant.com/us/en/services/software-engineering-services/flowsource"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Flowsource
-                    </a>
-                    <a
-                        id="skygrade-link"
-                        className="splash-link"
-                        href="https://www.cognizant.com/us/en/services/cloud-solutions/cognizant-skygrade"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Skygrade
-                    </a>
+                        <HeaderLineFive id="additional-links-header">Services</HeaderLineFive>
+                        <div
+                            id="additional-links-divider"
+                            className="link-divider"
+                        />
+                        <a
+                            id="ai-innovation-studios-link"
+                            className="splash-link"
+                            href="https://portal-innovationstudio-apps-prod-we-001.azurewebsites.net/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            AI Innovation Studios
+                        </a>
+                        <a
+                            id="neuro-it-ops-link"
+                            className="splash-link"
+                            href="https://www.cognizant.com/us/en/services/neuro-intelligent-automation/neuro-ai-it-operations"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Neuro IT Ops
+                        </a>
+                        <a
+                            id="flowsource-link"
+                            className="splash-link"
+                            href="https://www.cognizant.com/us/en/services/software-engineering-services/flowsource"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Flowsource
+                        </a>
+                        <a
+                            id="skygrade-link"
+                            className="splash-link"
+                            href="https://www.cognizant.com/us/en/services/cloud-solutions/cognizant-skygrade"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Skygrade
+                        </a>
+                        <a
+                            id="cdit-link"
+                            className="splash-link"
+                            href="https://www.cditoolkit.cognizant.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Cognizant Data Integration Toolkit
+                        </a>
+                    </div>
                 </div>
             </footer>
         </div>
