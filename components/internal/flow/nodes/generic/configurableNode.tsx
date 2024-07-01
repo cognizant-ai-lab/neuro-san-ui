@@ -45,6 +45,7 @@ export interface ConfigurableNodeData {
 
     enableCAOActions?: boolean
 
+    // Data tag fields that can be passed to predictor nodes for CAO formatting
     dataSourceFields?: {[key: string]: DataTagField}
 }
 

@@ -3,35 +3,34 @@ import {Text as EvergreenText, Popover, Position} from "evergreen-ui"
 import {useEffect, useState} from "react"
 import {Card} from "react-bootstrap"
 
-import {formatOutcomes} from "../utils"
+import {addDisabledPropertyToOutcomes, Outcomes} from "../utils"
 
 // Renders the C A O call to action buttons on the flow node.
 const CAOButtons = (props) => {
     const {ParentNodeState, SetParentNodeState, flowPrefix, idExtension, fields} = props
-    const [dataOutcomes, setDataOutcomes] = useState({})
+    const [dataOutcomes, setDataOutcomes] = useState<Outcomes>(null)
 
     useEffect(() => {
         // extract outcomes object to include a disabled property to disable outcomes of
         // incorrect predictor type <--> outcome type match
-        const formattedOutcomes = formatOutcomes(ParentNodeState, fields)
+        const formattedOutcomes: Outcomes = addDisabledPropertyToOutcomes(ParentNodeState, fields)
         setDataOutcomes(formattedOutcomes)
-    }, [fields, ParentNodeState.caoState, ParentNodeState.selectedPredictorType])
+    }, [fields, ParentNodeState])
 
     useEffect(() => {
         // If outcome type and predictor type become mismatched, we have to uncheck the mismatched outcomes
         // by getting all of the updated outcomes and updating the parent node state with it.
-        const formattedOutcomes = formatOutcomes(ParentNodeState, fields)
-        const updatedOutcomes = {}
-        const outcomeKeys = Object.keys(formattedOutcomes)
-        outcomeKeys.forEach((key) => {
-            updatedOutcomes[key] = formattedOutcomes[key].outcome
-        })
+        const formattedOutcomes: Outcomes = addDisabledPropertyToOutcomes(ParentNodeState, fields)
+        const updatedOutcomes = Object.fromEntries(
+            Object.entries(formattedOutcomes).map(([key, value]) => [key, value.outcome])
+        )
 
-        const caoStateCopy = {...ParentNodeState.caoState}
-        caoStateCopy.outcome = {...updatedOutcomes}
         SetParentNodeState({
             ...ParentNodeState,
-            caoState: caoStateCopy,
+            caoState: {
+                ...ParentNodeState.caoState,
+                outcome: updatedOutcomes,
+            },
         })
     }, [ParentNodeState.selectedPredictorType])
 
@@ -163,43 +162,44 @@ const CAOButtons = (props) => {
                         >
                             Outcomes
                         </EvergreenText>
-                        {Object.keys(dataOutcomes).map((element) => (
-                            <Tooltip
-                                id="disabled-outcomes__tooltip"
-                                placement="right"
-                                key={element}
-                                title={
-                                    dataOutcomes[element].disabled
-                                        ? "This outcome is not applicable for the chosen predictor type"
-                                        : ""
-                                }
-                            >
-                                <div
-                                    id={`${flowPrefix}-outcomes-div-${element}${idExtension}`}
-                                    className="grid grid-cols-2 gap-4 mb-2"
+                        {dataOutcomes &&
+                            Object.keys(dataOutcomes).map((element) => (
+                                <Tooltip
+                                    id={`${flowPrefix}-disabled-outcomes__tooltip`}
+                                    placement="right"
+                                    key={element}
+                                    title={
+                                        dataOutcomes[element].disabled
+                                            ? "This outcome is not applicable for the chosen predictor type"
+                                            : ""
+                                    }
                                 >
-                                    <label
-                                        id={`${flowPrefix}-outcomes-label-${element}${idExtension}`}
-                                        className="capitalize"
-                                        style={{
-                                            ...(dataOutcomes[element].disabled && {color: "gray"}),
-                                        }}
+                                    <div
+                                        id={`${flowPrefix}-outcomes-div-${element}${idExtension}`}
+                                        className="grid grid-cols-2 gap-4 mb-2"
                                     >
-                                        {" "}
-                                        {element}{" "}
-                                    </label>
-                                    <input
-                                        name={element}
-                                        id={`${flowPrefix}-outcomes-input-${element}${idExtension}`}
-                                        type="checkbox"
-                                        defaultChecked={false}
-                                        checked={dataOutcomes[element].outcome}
-                                        onChange={(event) => onUpdateCAOState(event, "outcome")}
-                                        disabled={dataOutcomes[element].disabled}
-                                    />
-                                </div>
-                            </Tooltip>
-                        ))}
+                                        <label
+                                            id={`${flowPrefix}-outcomes-label-${element}${idExtension}`}
+                                            className="capitalize"
+                                            style={{
+                                                ...(dataOutcomes[element].disabled && {color: "gray"}),
+                                            }}
+                                        >
+                                            {" "}
+                                            {element}{" "}
+                                        </label>
+                                        <input
+                                            name={element}
+                                            id={`${flowPrefix}-outcomes-input-${element}${idExtension}`}
+                                            type="checkbox"
+                                            defaultChecked={false}
+                                            checked={dataOutcomes[element].outcome}
+                                            onChange={(event) => onUpdateCAOState(event, "outcome")}
+                                            disabled={dataOutcomes[element].disabled}
+                                        />
+                                    </div>
+                                </Tooltip>
+                            ))}
                     </Card.Body>
                 }
             >
