@@ -266,7 +266,7 @@ export default function Index(): ReactElement {
                         <a
                             id="cdit-link"
                             className="splash-link"
-                            href="https://www.cditoolkit.cognizant.com"
+                            href="https://cditoolkit.cognizant.com"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
