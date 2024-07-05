@@ -44,7 +44,7 @@ ENV MODEL_SERVING_VERSION ${MODEL_SERVING_VERSION}
 # Install protobuf compiler and lib
 RUN apt-get update && \
     apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests \
-      protobuf-compiler==27.1 libprotobuf-dev==3.21.12-8.2
+      protobuf-compiler=27.1 libprotobuf-dev=3.21.12-8.2
 
 # Generate probotobuf files and run yarn
 RUN /bin/bash -c "./grpc/do_typescript_generate.sh" \
