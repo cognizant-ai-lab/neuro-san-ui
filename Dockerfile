@@ -48,6 +48,8 @@ ENV MODEL_SERVING_VERSION ${MODEL_SERVING_VERSION}
 RUN apt-get update
 RUN apt-cache policy protobuf-compiler
 RUN apt-cache policy libprotobuf-dev
+RUN apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests protobuf-compiler=3.12.4-1
+RUN apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests libprotobuf-dev=3.12.4-1
 RUN yadayadayada
 # Generate probotobuf files and run yarn
 RUN /bin/bash -c "./grpc/do_typescript_generate.sh" \
