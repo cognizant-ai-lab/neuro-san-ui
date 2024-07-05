@@ -33,9 +33,8 @@ const DOWNLOADABLE_ARTIFACTS: ArtifactInfo[] = [
     {value: "modified_dataset", label: "Modified Dataset", fileType: "csv"},
     {value: "notebook", label: "Notebook", fileType: "ipynb"},
     {value: "llm_dataops", label: "LLM Data Operations Notebook", fileType: "ipynb"},
-    {value: "predictors", label: "Predictors (future)", fileType: ""},
-    {value: "prescriptors", label: "Prescriptors (future)", fileType: ""},
     {value: "requirements", label: "Notebook Python Dependencies", fileType: "txt"},
+    {value: "private_dependencies", label: "Archive file containing private library wheel files", fileType: "zip"},
     {value: "all", label: "All artifacts (zip, future)", fileType: "zip"},
 ]
 
@@ -94,8 +93,9 @@ function getUrlForArtifact(artifactToDownload: string, availableArtifacts: Recor
         case "requirements":
             // For example "s3://leaf-unileaf-dev-artifacts/run_data/4435/artifacts/requirements.txt"
             return availableArtifacts.requirements
-        case "predictors":
-        case "prescriptors":
+        case "private_dependencies":
+            // For example "s3://leaf-unileaf-dev-artifacts/run_data/4435/artifacts/private_dependencies.zip"
+            return availableArtifacts.private_dependencies
         case "all":
             // not yet supported
             return null

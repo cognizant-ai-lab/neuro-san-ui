@@ -1,0 +1,36 @@
+#additional-links-container {
+    margin-left: 3.5rem;
+    margin-top: 25px;
+    display: flex;
+    column-gap: 60px;
+}
+
+.splash-link {
+    color: rgb(120, 115, 115);
+    display: block;
+    width: fit-content;
+}
+
+.splash-link:hover {
+    color: white;
+}
+
+#footer_divider {
+    border: 1px solid rgb(190, 199, 199);
+    border-bottom: 0;
+    margin-left: 2rem;
+    margin-right: 2rem;
+}
+
+.link-divider {
+    border: 1px solid rgb(38 239 233);
+    margin-bottom: 1rem;
+    width: 2.5rem;
+}
+
+#body-div {
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/NeuroAI_SC_BH1.webp");
+    background-size: cover;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+}

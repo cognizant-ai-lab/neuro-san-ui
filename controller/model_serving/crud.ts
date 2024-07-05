@@ -686,14 +686,27 @@ function findModelDataByUrl(runData: InferenceRunDeploymentMetaData, modelUrl: s
 }
 
 async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams) {
+    if (!run.flow) {
+        return {
+            error: "Model access error",
+            description: `Error querying model ${modelUrl}. Run ${run.id} has no flow`,
+        }
+    }
+
     const runData: InferenceRunDeploymentMetaData = getRunModelData(run.id, JSON.parse(run.output_artifacts))
     if (runData == null) {
-        console.error(`queryModel: Failed to get Run metadata for ${run.id}`)
-        return null
+        const message = `Error querying model ${modelUrl}. Failed to get Run metadata for ${run.id}`
+        return {
+            error: "Model access error",
+            description: message,
+        }
     }
     const [modelId, nodeId] = findModelDataByUrl(runData, modelUrl)
     if (!modelId) {
-        return null
+        return {
+            error: "Model access error",
+            description: `Error querying model ${modelUrl}. Failed to get Run metadata for ${run.id}`,
+        }
     }
 
     try {

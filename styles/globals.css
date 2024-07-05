@@ -361,27 +361,6 @@ body {
     width: 200px !important;
 }
 
-#splash-links-container {
-    margin-top: 8rem;
-}
-
-#additional-links-container {
-    margin-top: 25px;
-    display: flex;
-    flex-direction: column;
-}
-
-.splash-link {
-    color: white;
-    text-decoration: underline;
-    display: block;
-    width: fit-content;
-}
-
-.splash-link:hover {
-    color: white;
-}
-
 /* For antd tables */
 .ant-table-thead .ant-table-cell {
     background-color: #2f78c4 !important;

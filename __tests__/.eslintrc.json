@@ -1,7 +1,7 @@
 // ESLint configuration specific to testing
 
 {
-    "plugins": ["jest-dom", "react-hooks", "testing-library"],
+    "plugins": ["jest-dom", "testing-library"],
     "extends": ["plugin:jest-dom/recommended", "plugin:testing-library/react"],
     "rules": {
         "enforce-ids-in-jsx/missing-ids": "off",

@@ -1,4 +1,8 @@
 module.exports = {
+    corePlugins: {
+        // Disable this as it conflicts with react-bootstrap Collapse component
+        visibility: false,
+    },
     content: ["./pages/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
     theme: {
         colors: {

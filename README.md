@@ -57,7 +57,7 @@ PINECONE_INDEX=prod
 PINECONE_ENVIRONMENT=us-east-1-aws
 
 # Next item is if you want to use Bing search in Opportunity Finder
-BingApiKey=ca930e94677e42d0b3b9ec86a75f4e0c
+BingApiKey=<redacted>
 
 ```
 
