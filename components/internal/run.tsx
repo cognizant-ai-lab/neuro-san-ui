@@ -81,6 +81,8 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [project, setProject] = useState<Project>(null)
 
+    const [runLoading, setRunLoading] = useState(false)
+
     function getProjectTitle() {
         return project != null ? project.name : ""
     }
@@ -181,6 +183,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     async function loadRun(runID: number) {
+        setRunLoading(true)
         if (runID) {
             const propertiesToRetrieve = ["output_artifacts", "metrics", "flow", "id", "experiment_id"]
             const runs: Runs = await fetchRuns(currentUser, null, runID, propertiesToRetrieve)
@@ -203,6 +206,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         } else {
             sendNotification(NotificationType.error, "Internal error", "No run ID passed")
         }
+        setRunLoading(false)
     }
 
     async function loadProject(projectID: number) {
@@ -794,7 +798,21 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     const propsId = props.id
-    return (
+    return runLoading ? (
+        <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            // ClipLoader does not have an id property
+            color={MaximumBlue}
+            loading={true}
+            cssOverride={{
+                position: "absolute",
+                top: "50%",
+                left: "0",
+                right: "0",
+                margin: "auto",
+            }}
+            size={100}
+        />
+    ) : (
         <div
             id={propsId}
             className="mr-8 ml-8"
