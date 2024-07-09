@@ -1,12 +1,16 @@
 # UI Developer Start Guide
 
-This README is intended to help a new UI developer get up to speed toward making changes to the NeuroAI®️ UI code.
+This README is intended to help a new UI developer get up to speed toward making changes to the NeuroAI️ UI code.
+By following these instructions, you will be able to run the UI locally on your development machine and make changes
+to the code locally, without deploying anything to the hosted services.
+
+You will configure your local environment to connect to the NeuroAI️ backend services.
 
 Note: Previously the project was known as UniLEAF and that name is still used in some places.
 
 ## Set Up Prerequisites
 
--   Install `nodejs` on your development machine. At time of writing Node 18 is the current LTS version.
+-   Install [NodeJS](https://nodejs.org/) on your development machine. At time of writing Node 18 is the current LTS version.
     -   Example on mac: `brew install node@18`
     -   For Ubuntu, see this link: https://joshtronic.com/2022/04/24/how-to-install-nodejs-18-on-ubuntu-2004-lts/
     -   Make sure that the node executable is in your path. You can do this by typing `node --version`.
@@ -16,18 +20,21 @@ Note: Previously the project was known as UniLEAF and that name is still used in
     -   Example using current version on mac: `brew install yarn`
     -   For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
     -   Make sure that the yarn executable is in your path. You can do this by typing `yarn --version`.
+-   Clone the repository:
+    -   `git clone git@github.com:leaf-ai/unileaf.git`
 -   Install app dependencies.
-    -   Assuming you've cloned the UniLEAF repo: `cd unileaf/nextfront && yarn install`
+    -   `cd unileaf/nextfront && yarn install && cd ..`
 -   Generate the protocol buffer files for the UI. This is done by running the following command in the `nextfront` directory:
     -   `yarn generate`
     -   This command will generate the necessary files in the `nextfront/generated` directory.
     -   To view the files: `ls nextfront/generated`
--   Set environment variable to specify the gateway.
-    -   Most likely you'll want the Dev environment: `export MD_SERVER_URL=https://neuro-ai-dev.evolution.ml`
 -   In your `nextfront` directory, create a file named `.env` which contains the following keys.  
     Ask a current UI developer for the redacted values or get them self-serve from the leaf-team-vault server (see below).
 
 ```bash
+# Determines which backend API server to access. This one is for the Dev environment -- change as necessary.
+MD_SERVER_URL=https://neuro-ai-dev.evolution.ml
+
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=<redacted>
 
@@ -64,9 +71,13 @@ BingApiKey=<redacted>
 -   Instructions for generating NEXTAUTH_SECRET are [here](https://next-auth.js.org/configuration/options#secret).
 -   Values for most of the redacted items can be obtained from the `leaf-team-vault` server with these commands. Note:
     this assumes you have the vault cli installed and configured to talk to the `leaf-team-vault` server.
-    -- `vault kv get /secret/auth0/unileaf-dev`  
-    -- `vault kv get /secret/github-app/authorize-unileaf-dev`  
-    -- `vault kv get /secret/nextauth/unileaf-dev`
+
+    ```bash
+    vault kv get /secret/auth0/unileaf-dev
+    vault kv get /secret/github-app/authorize-unileaf-dev
+    vault kv get /secret/nextauth/unileaf-dev
+    ```
+
 -   Instructions on generating OPENAI_API_KEY are [here](https://platform.openai.com/account/api-keys).  
     You will need an active account with OpenAI to generate this key. This is only needed if you are working on the  
     LLM features of the UI.
@@ -78,10 +89,7 @@ BingApiKey=<redacted>
 ## Run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or, by setting the UNILEAF_VERSION value, the ui will display your current branch
+# By setting the UNILEAF_VERSION value, the ui will display your current branch in the header after Build:
 export UNILEAF_VERSION=$(git branch --show-current) && yarn run dev
 ```
 
@@ -91,18 +99,28 @@ To run with verbose debugging:
 DEBUG='*,-send,-compression,-babel,-next:*' UNILEAF_VERSION=$(git branch --show-current) && yarn run dev
 ```
 
+You can also set the `DEBUG` variable to a list of modules to only see output for those modules, for example:
+
+```bash
+export DEBUG="new_project,flow"
+```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Try making a simple change to the UI
 
-If you've made this far, try a simple change within the UI. Here's an example:
+Now you've made it this far, try a simple change within the UI. Here's an example:
 
-1.  Open `nextfront/pages/projects/[projectID]/index.tsx`
-1.  Add a message at the appropriate place in the tsx file (somewhere within the `return` statement, inside the `<>`  
-    fragment).
-
-             {`Hello world! The current project ID is ${projectId}`}
-
-1.  You should notice that the code is compiled automatically and your change appears in the UI when loading a project.
+1. Navigate to the page for any Project within Neuro AI, using the `http://localhost:3000` URL mentioned above.
+1. Open `nextfront/pages/projects/[projectID]/index.tsx`
+1. Add a message at the appropriate place in the tsx file (somewhere within the `return` statement, inside the `<>`  
+   fragment).
+    ```typescript
+    {
+        ;`Hello world! The current project ID is ${projectId}`
+    }
+    ```
+1. Your change appears immediately in the UI for the Project page, without relaunching any services or recompiling, thanks to
+   [Hot Module Replacement](https://webpack.js.org/guides/hot-module-replacement/) in Webpack which is used by NextJS. If you don't see your change, try holding down `Shift` and clicking the browser refresh button -- this bypasses the browser cache.
 
 ### Congratulations, you are now a UI developer!
