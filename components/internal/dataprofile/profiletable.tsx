@@ -76,7 +76,9 @@ export default function ProfileTable(props: ProfileTableProps) {
     const fields = profile ? profile.dataTag.fields : {}
 
     // Headers should be in CSV column order. For backward compatibility, use data tag fields if headers missing
-    const headers = profile ? profile.dataSource.headers || Object.keys(fields) : []
+    const headers = profile
+        ? (profile?.dataSource?.headers?.length && profile.dataSource.headers) || Object.keys(fields)
+        : []
 
     // Only display fields that weren't dropped by DataProfiler due to errors
     const fieldsInCsvOrder = headers.filter((header) => Object.keys(fields).includes(header))
