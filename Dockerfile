@@ -3,7 +3,7 @@
 #
 # Taken from here with slight modifications: https://github.com/vercel/next.js/blob/main/examples/with-docker/Dockerfile
 #
-# It uses multi-stage builds for a smaller resulting image
+# It uses multi-stage builds for a smaller resulting image TEST TRIGGER
 #
 
 # This is the major version of NodeJS we will enforce
