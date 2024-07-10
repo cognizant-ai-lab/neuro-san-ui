@@ -81,7 +81,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [project, setProject] = useState<Project>(null)
 
-    const [runLoading, setRunLoading] = useState(false)
+    const [runLoading, setRunLoading] = useState<boolean>(false)
 
     function getProjectTitle() {
         return project != null ? project.name : ""
@@ -183,30 +183,35 @@ export default function RunPage(props: RunProps): React.ReactElement {
     }
 
     async function loadRun(runID: number) {
-        setRunLoading(true)
-        if (runID) {
-            const propertiesToRetrieve = ["output_artifacts", "metrics", "flow", "id", "experiment_id"]
-            const runs: Runs = await fetchRuns(currentUser, null, runID, propertiesToRetrieve)
-            if (runs.length === 1) {
-                const runTmp = runs[0]
+        try {
+            setRunLoading(true)
+            if (runID) {
+                const propertiesToRetrieve = ["output_artifacts", "metrics", "flow", "id", "experiment_id"]
+                const runs: Runs = await fetchRuns(currentUser, null, runID, propertiesToRetrieve)
+                if (runs.length === 1) {
+                    const runTmp = runs[0]
 
-                // Use temporary variable to avoid shadowing outer "flow" variable
-                const flowTmp: NodeType[] = JSON.parse(runTmp.flow)
-                const consolidatedFlow = consolidateFlow(flowTmp)
-                setFlow(consolidatedFlow)
-                setRun(runTmp)
-                cacheRun(runTmp)
+                    // Use temporary variable to avoid shadowing outer "flow" variable
+                    const flowTmp: NodeType[] = JSON.parse(runTmp.flow)
+                    const consolidatedFlow = consolidateFlow(flowTmp)
+                    setFlow(consolidatedFlow)
+                    setRun(runTmp)
+                    cacheRun(runTmp)
+                } else {
+                    sendNotification(
+                        NotificationType.error,
+                        "Internal error",
+                        `Unexpected number of runs returned: ${runs.length} for run ${runID}`
+                    )
+                }
             } else {
-                sendNotification(
-                    NotificationType.error,
-                    "Internal error",
-                    `Unexpected number of runs returned: ${runs.length} for run ${runID}`
-                )
+                sendNotification(NotificationType.error, "Internal error", "No run ID passed")
             }
-        } else {
-            sendNotification(NotificationType.error, "Internal error", "No run ID passed")
+        } catch (e) {
+            throw new Error("Error Loading Run")
+        } finally {
+            setRunLoading(false)
         }
-        setRunLoading(false)
     }
 
     async function loadProject(projectID: number) {
