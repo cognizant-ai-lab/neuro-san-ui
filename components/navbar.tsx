@@ -6,13 +6,13 @@ import {startCase} from "lodash"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {signOut, useSession} from "next-auth/react"
+import {signOut} from "next-auth/react"
 import Breadcrumbs from "nextjs-breadcrumbs2"
 import {ReactElement} from "react"
 import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
-import {isSignedIn} from "./auth"
 import {MaximumBlue, UNILEAF_VERSION} from "../const"
+import useUserInfoStore from "../state/userInfo"
 
 // Define Constants
 const LOGO_COLOR: string = "white"
@@ -37,9 +37,7 @@ function Navbar(props: NavbarProps): ReactElement {
     */
     const router = useRouter()
 
-    // eslint-disable-next-line no-shadow
-    const {data: session, status} = useSession()
-    const signedIn: boolean = isSignedIn(session, status)
+    const {currentUser, picture} = useUserInfoStore()
 
     const propsId = props.id
 
@@ -122,7 +120,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
-                            {signedIn && session?.user && (
+                            {currentUser && (
                                 <Dropdown
                                     id="user-dropdown"
                                     as={NavItem}
@@ -133,13 +131,13 @@ function Navbar(props: NavbarProps): ReactElement {
                                         id="user-dropdown-toggle"
                                         style={{color: NAV_ITEMS_COLOR, background: MaximumBlue}}
                                     >
-                                        {session.user.image && (
+                                        {picture && (
                                             <NextImage
                                                 id="user-image"
-                                                src={session.user.image}
+                                                src={picture}
                                                 width="30"
                                                 height="30"
-                                                title={session.user.name}
+                                                title={currentUser}
                                                 alt="..."
                                             />
                                         )}
@@ -160,7 +158,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                                 fontWeight: "bold",
                                             }}
                                         >
-                                            {session.user.name}
+                                            {currentUser}
                                         </Dropdown.Item>
                                         <Dropdown.Divider
                                             id="user-divider"

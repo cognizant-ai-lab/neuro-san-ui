@@ -26,13 +26,13 @@ import {ReactElement, ReactFragment, useEffect} from "react"
 import {Container} from "react-bootstrap"
 import ClipLoader from "react-spinners/ClipLoader"
 
-import {Auth} from "../components/auth"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {GENERIC_LOGO, LOGO, MaximumBlue, MODEL_SERVING_VERSION} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore, {ModelServingVersion} from "../state/features"
+import useUserInfoStore from "../state/userInfo"
 
 const debug = debugModule("app")
 
@@ -42,6 +42,9 @@ const debug = debugModule("app")
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
     const {isGeneric} = useFeaturesStore()
     const {backendApiUrl, setBackendApiUrl} = useEnvironmentStore()
+
+    // access user info store
+    const {currentUser, setCurrentUser, picture, setPicture} = useUserInfoStore()
 
     const {query, isReady, pathname} = useRouter()
 
@@ -99,6 +102,36 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
         void getBackendApiUrl()
     }, [])
 
+    useEffect(() => {
+        async function getUserInfo() {
+            console.debug("Fetching user info from ALB")
+            const res = await fetch("/api/userInfo", {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+            })
+
+            // Check result
+            if (!res.ok) {
+                throw new Error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
+            }
+
+            const data = await res.json()
+            // Make sure we got the user info
+            if (!data.username) {
+                throw new Error("No username found in response")
+            }
+
+            // Save user info for future use
+            setCurrentUser(data.username)
+            setPicture(data.picture)
+        }
+
+        void getUserInfo()
+    }, [])
+
     let body: JSX.Element | ReactFragment
     if (pathname === "/") {
         // Main page is special
@@ -125,21 +158,11 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                         />
 
                         <Container id="body-container">
-                            {backendApiUrl ? (
-                                Component.authRequired ? (
-                                    <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    >
-                                        <Component
-                                            id="body-auth-component"
-                                            {...pageProps}
-                                        />
-                                    </Auth>
-                                ) : (
-                                    <Component
-                                        id="body-non-auth-component"
-                                        {...pageProps}
-                                    />
-                                )
+                            {backendApiUrl && currentUser ? (
+                                <Component
+                                    id="body-non-auth-component"
+                                    {...pageProps}
+                                />
                             ) : (
                                 <h3 id="loading-header">
                                     <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -161,7 +184,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                             >
                                 <NeuroAIChatbot
                                     id="chatbot"
-                                    userAvatar={undefined}
+                                    userAvatar={picture}
                                     pageContext={Component.pageContext || ""}
                                 />
                             </div>
