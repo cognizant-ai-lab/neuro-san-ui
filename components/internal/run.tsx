@@ -803,6 +803,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const propsId = props.id
     return runLoading ? (
         <div
+            id="run-loading__wrapper"
             style={{
                 position: "absolute",
                 top: "50%",
@@ -812,7 +813,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 textAlign: "center",
             }}
         >
-            <h5>Training Run loading... Please wait</h5>
+            <h5 id="run-loading__message">Training Run loading... Please wait</h5>
             <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 // ClipLoader does not have an id property
                 color={MaximumBlue}
