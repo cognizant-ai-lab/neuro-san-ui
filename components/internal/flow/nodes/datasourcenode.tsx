@@ -1,6 +1,5 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Tooltip} from "evergreen-ui"
-import {useSession} from "next-auth/react"
 import {FC, useEffect, useState} from "react"
 import {Card} from "react-bootstrap"
 import {BsDatabaseGear} from "react-icons/bs"
@@ -9,6 +8,7 @@ import {Handle, NodeProps, Position, Node as RFNode} from "reactflow"
 import loadDataTags from "../../../../controller/datatag/fetchdatataglist"
 import {DataSource, DataTag} from "../../../../generated/metadata"
 import {TaggedDataInfo} from "../../../../pages/projects/[projectID]/experiments/new"
+import {useAuthentication} from "../../../../utils/authentication"
 import {NotificationType, sendNotification} from "../../../notification"
 
 export interface DataSourceNodeData {
@@ -34,7 +34,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
     const [taggedDataList, setTaggedDataList] = useState<TaggedDataInfo[]>([])
 
     // Get the current user
-    const {data: session} = useSession()
+    const {data: session} = useAuthentication()
     const currentUser: string = session.user.name
 
     // Fetch the Data Sources and the Data Tags

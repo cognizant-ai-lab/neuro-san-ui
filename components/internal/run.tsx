@@ -2,7 +2,6 @@ import {Radio, RadioChangeEvent, Space, Tooltip} from "antd"
 import {InfoSignIcon} from "evergreen-ui"
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
-import {useSession} from "next-auth/react"
 import {useEffect, useState} from "react"
 import {Button, Col, Container, Row} from "react-bootstrap"
 import Tab from "react-bootstrap/Tab"
@@ -26,6 +25,7 @@ import {fetchLlmRules} from "../../controller/rules/rules"
 import {fetchRunArtifact, fetchRuns} from "../../controller/run/fetch"
 import {constructRunMetricsForRunPlot} from "../../controller/run/results"
 import {Artifact, Run, Runs} from "../../controller/run/types"
+import {useAuthentication} from "../../utils/authentication"
 import decode from "../../utils/conversion"
 import {empty} from "../../utils/objects"
 import {consolidateFlow} from "../../utils/transformation"
@@ -59,7 +59,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     // Get the router hook
     const router: NextRouter = useRouter()
 
-    const {data: session} = useSession()
+    const {data: session} = useAuthentication()
     const currentUser: string = session.user.name
 
     const [predictorPlotData, setPredictorPlotData] = useState({})

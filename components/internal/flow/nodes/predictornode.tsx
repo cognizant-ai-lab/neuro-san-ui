@@ -1,4 +1,3 @@
-import {useSession} from "next-auth/react"
 import {FC, useEffect, useState} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
 import "rc-slider/assets/index.css"
@@ -8,6 +7,7 @@ import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from 
 import {NodeData, NodeType} from "./types"
 import {loadDataTag} from "../../../../controller/datatag/fetchdatataglist"
 import {DataTag} from "../../../../generated/metadata"
+import {useAuthentication} from "../../../../utils/authentication"
 import {NotificationType, sendNotification} from "../../../notification"
 import {EdgeType} from "../edges/types"
 import {FlowQueries} from "../flowqueries"
@@ -22,7 +22,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
     const {idExtension = ""} = data
 
     // Get the current user
-    const {data: session} = useSession()
+    const {data: session} = useAuthentication()
     const currentUser: string = session?.user?.name || ""
 
     // Unpack the data

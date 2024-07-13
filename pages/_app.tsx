@@ -26,6 +26,7 @@ import {ReactElement, ReactFragment, useEffect} from "react"
 import {Container} from "react-bootstrap"
 import ClipLoader from "react-spinners/ClipLoader"
 
+import {UserInfoResponse} from "./api/userInfo/types"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
@@ -115,18 +116,18 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
 
             // Check result
             if (!res.ok) {
+                // This is bad: it means we saw the ALB header but it's not in the right format so we're stuck
+                console.debug("Failed to fetch user info")
                 throw new Error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
             }
 
-            const data = await res.json()
-            // Make sure we got the user info
-            if (!data.username) {
-                throw new Error("No username found in response")
-            }
+            const response: UserInfoResponse = await res.json()
 
-            // Save user info for future use
-            setCurrentUser(data.username)
-            setPicture(data.picture)
+            // Make sure we got the user info
+            if (response.oidcHeaderFound) {
+                setCurrentUser(response.username)
+                setPicture(response.picture)
+            }
         }
 
         void getUserInfo()

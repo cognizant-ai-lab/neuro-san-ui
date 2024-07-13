@@ -5,7 +5,6 @@ import Debug from "debug"
 import {InfoSignIcon} from "evergreen-ui"
 import httpStatus from "http-status"
 import {NextRouter, useRouter} from "next/router"
-import {useSession} from "next-auth/react"
 import prettyBytes from "pretty-bytes"
 import {FormEvent, useEffect, useRef, useState} from "react"
 import {Container, Form} from "react-bootstrap"
@@ -22,6 +21,7 @@ import {uploadFile} from "../../controller/files/upload"
 import {Project} from "../../controller/projects/types"
 import updateProject from "../../controller/projects/update"
 import {DataSource, DataSourceDataSourceType, DataTag, DataTagField, Profile} from "../../generated/metadata"
+import {useAuthentication} from "../../utils/authentication"
 import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
 import BlankLines from "../blanklines"
@@ -85,7 +85,7 @@ export default function NewProject(props: NewProps) {
     const [chosenDataSource, setChosenDataSource] = useState(localFileOption)
 
     // For access to logged in session and current user name
-    const {data: session} = useSession()
+    const {data: session} = useAuthentication()
     const currentUser: string = session.user.name
 
     // For file upload

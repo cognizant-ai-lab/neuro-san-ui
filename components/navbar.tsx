@@ -12,7 +12,7 @@ import {ReactElement} from "react"
 import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
 import {MaximumBlue, UNILEAF_VERSION} from "../const"
-import useUserInfoStore from "../state/userInfo"
+import {useAuthentication} from "../utils/authentication"
 
 // Define Constants
 const LOGO_COLOR: string = "white"
@@ -37,12 +37,14 @@ function Navbar(props: NavbarProps): ReactElement {
     */
     const router = useRouter()
 
-    const {currentUser, picture} = useUserInfoStore()
+    const {data: session} = useAuthentication()
 
     const propsId = props.id
 
     const withBreadcrumbs = props.WithBreadcrumbs ?? true
 
+    const userInfo = session.user
+    const userName = userInfo.name
     return (
         <Container id="nav-bar-container">
             <Row id="nav-bar-menu-row">
@@ -120,7 +122,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
-                            {currentUser && (
+                            {userInfo && (
                                 <Dropdown
                                     id="user-dropdown"
                                     as={NavItem}
@@ -131,13 +133,13 @@ function Navbar(props: NavbarProps): ReactElement {
                                         id="user-dropdown-toggle"
                                         style={{color: NAV_ITEMS_COLOR, background: MaximumBlue}}
                                     >
-                                        {picture && (
+                                        {session?.user?.image && (
                                             <NextImage
                                                 id="user-image"
-                                                src={picture}
+                                                src={userInfo.image}
                                                 width="30"
                                                 height="30"
-                                                title={currentUser}
+                                                title={userName}
                                                 alt="..."
                                             />
                                         )}
@@ -158,7 +160,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                                 fontWeight: "bold",
                                             }}
                                         >
-                                            {currentUser}
+                                            {userName}
                                         </Dropdown.Item>
                                         <Dropdown.Divider
                                             id="user-divider"

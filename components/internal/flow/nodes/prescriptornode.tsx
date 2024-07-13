@@ -1,7 +1,6 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Tooltip as AntdTooltip, Modal} from "antd"
 import {Text as EvergreenText, Popover, Position, Tab, Tablist} from "evergreen-ui"
-import {useSession} from "next-auth/react"
 import Slider from "rc-slider"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
@@ -15,6 +14,7 @@ import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "rea
 
 import {loadDataTag} from "../../../../controller/datatag/fetchdatataglist"
 import {DataTag} from "../../../../generated/metadata"
+import {useAuthentication} from "../../../../utils/authentication"
 import {NotificationType, sendNotification} from "../../../notification"
 
 // Define an interface for the structure
@@ -58,7 +58,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     const data = props.data
 
     // Get the current user
-    const {data: session} = useSession()
+    const {data: session} = useAuthentication()
     const currentUser: string = session.user.name
 
     // Unpack the mapping

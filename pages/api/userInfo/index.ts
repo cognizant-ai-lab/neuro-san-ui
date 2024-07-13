@@ -1,34 +1,64 @@
+import debugModule from "debug"
+import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+import {UserInfoResponse} from "./types"
+
+const debug = debugModule("userInfo")
+
+const EXPECTED_NUMBER_OF_JWT_HEADERS = 3
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse<UserInfoResponse>) {
     // Fetch user info from ALB or your backend service
     const userInfo = await fetchUserInfoFromALB(req)
-
-    if (userInfo) {
-        res.status(200).json(userInfo)
-    } else {
-        res.status(401).json({message: "Unauthorized"})
+    if (!userInfo) {
+        // We found the header, but couldn't parse it
+        res.status(httpStatus.UNAUTHORIZED).json({oidcHeaderFound: false})
+        return
     }
+
+    // We either didn't find the header at all, or we found it and parsed it
+    res.status(httpStatus.OK).json(userInfo)
 }
 
 async function fetchUserInfoFromALB(req) {
-    console.log("Headers:", req.headers) // Log the headers
+    debug("Headers:", req.headers)
 
     const oidcDataHeader = req.headers["x-amzn-oidc-data"] as string
-    console.info("OIDC Data Header:", oidcDataHeader)
 
+    if (!oidcDataHeader) {
+        debug("OIDC header not found")
+        return {
+            oidcHeaderFound: false,
+        }
+    }
+
+    // We expect the OIDC data header to be two parts, separated by a period
+    if (!oidcDataHeader.includes(".")) {
+        debug("OIDC header does not contain a period")
+        return null
+    }
+
+    // Split the header into two parts
     const jwtHeaders = oidcDataHeader.split(".")
+    if (!jwtHeaders || jwtHeaders.length !== EXPECTED_NUMBER_OF_JWT_HEADERS) {
+        debug("OIDC header is not in the expected format", jwtHeaders)
+        return null
+    }
 
     // now base64 decode jwtheader
     const buff = Buffer.from(jwtHeaders[1], "base64")
-    console.log("Decoded JWT Header:", buff.toString("utf-8"))
-    const userInfo = JSON.parse(buff.toString("utf-8"))
+    const decoded = buff.toString("utf-8")
+    debug("Decoded JWT Header:", decoded)
 
-    console.log("User Info:", userInfo)
+    const userInfo = JSON.parse(decoded)
+
+    debug("User Info:", userInfo)
 
     // Optionally, pass the headers to the page component as props
     return {
         username: userInfo.nickname,
         picture: userInfo.picture,
+        oidcHeaderFound: true,
     }
 }
