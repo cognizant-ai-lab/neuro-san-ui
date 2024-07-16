@@ -16,6 +16,7 @@ export default function MetricsTable(props: MetricstableProps) {
     const predictorRunData = props.PredictorRunData
     const predictors = props.Predictors
     const predictorRenders = []
+    const shouldRender = Object.keys(predictorRunData).length
 
     function getRioImprovement(rioMetrics, metrics, metricName: string, nodeID: string) {
         const predictor = FlowQueries.getNodeByID(predictors, nodeID) as ConfigurableNode
@@ -179,37 +180,41 @@ export default function MetricsTable(props: MetricstableProps) {
 
     return (
         <>
-            <NewBar
-                id="predictor-metrics-bar"
-                InstanceId="predictor-metrics"
-                Title="Predictor Metrics"
-                DisplayNewLink={false}
-            />
-            <br id="predictor-plot-br" />
-            {predictorRenders && predictorRenders.length > 0 ? (
-                predictorRenders
-            ) : (
+            {shouldRender ? (
                 <>
-                    <span
-                        id="no-predictors"
-                        style={{display: "flex"}}
-                    >
-                        <FiAlertCircle
-                            id="no-predictors-alert-circle"
-                            color="var(--bs-red)"
-                            size={50}
-                        />
-                        <span
-                            id="no-predictors-message"
-                            className="ml-4 fs-4 my-auto"
-                        >
-                            No predictors found
-                        </span>
-                    </span>
-                    <br id="no-predictor-advice" />
-                    Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                    <NewBar
+                        id="predictor-metrics-bar"
+                        InstanceId="predictor-metrics"
+                        Title="Predictor Metrics"
+                        DisplayNewLink={false}
+                    />
+                    <br id="predictor-plot-br" />
+                    {predictorRenders && predictorRenders.length > 0 ? (
+                        predictorRenders
+                    ) : (
+                        <>
+                            <span
+                                id="no-predictors"
+                                style={{display: "flex"}}
+                            >
+                                <FiAlertCircle
+                                    id="no-predictors-alert-circle"
+                                    color="var(--bs-red)"
+                                    size={50}
+                                />
+                                <span
+                                    id="no-predictors-message"
+                                    className="ml-4 fs-4 my-auto"
+                                >
+                                    No predictors found
+                                </span>
+                            </span>
+                            <br id="no-predictor-advice" />
+                            Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                        </>
+                    )}
                 </>
-            )}
+            ) : null}
         </>
     )
 }

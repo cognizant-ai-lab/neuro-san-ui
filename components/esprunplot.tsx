@@ -13,6 +13,7 @@ interface EspRunPlotProps {
 export default function ESPRunPlot(props: EspRunPlotProps) {
     const prescriptorRunData = props.PrescriptorRunData
     const nodes: string[] = Object.keys(prescriptorRunData)
+    const shouldRender = Object.keys(prescriptorRunData).length
 
     const nodePlots = []
     nodes.forEach((nodeID) => {
@@ -123,43 +124,47 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
     const propsId = props.id
 
     return (
-        <div id={propsId}>
-            <NewBar
-                id="prescriptor-metrics-bar"
-                InstanceId="prescriptor-metrics"
-                Title="Prescriptor Metrics"
-                DisplayNewLink={false}
-            />
-            <br id="prescriptor-plot-br" />
-            {nodePlots && nodePlots.length > 0 ? (
-                nodePlots
-            ) : (
-                <>
-                    <span
-                        id="prescriptor-metrics-span"
-                        style={{display: "flex"}}
-                    >
-                        <FiAlertCircle
-                            id="prescriptor-metrics-dot"
-                            color="var(--bs-red)"
-                            size={50}
-                        />
-                        <span
-                            id="prescriptor-metrics-none-found"
-                            className="ml-4 fs-4 my-auto"
-                        >
-                            No prescriptors found.
-                        </span>
-                        <div
-                            id="prescriptor-metrics-break"
-                            className="break"
-                        />
-                    </span>
-                    <br id="prescriptor-metrics-instructions" />
-                    Navigate to the Runs table and view the error logs for your Run to see what went wrong.
-                </>
-            )}
-        </div>
+        <>
+            {shouldRender ? (
+                <div id={propsId}>
+                    <NewBar
+                        id="prescriptor-metrics-bar"
+                        InstanceId="prescriptor-metrics"
+                        Title="Prescriptor Metrics"
+                        DisplayNewLink={false}
+                    />
+                    <br id="prescriptor-plot-br" />
+                    {nodePlots && nodePlots.length > 0 ? (
+                        nodePlots
+                    ) : (
+                        <>
+                            <span
+                                id="prescriptor-metrics-span"
+                                style={{display: "flex"}}
+                            >
+                                <FiAlertCircle
+                                    id="prescriptor-metrics-dot"
+                                    color="var(--bs-red)"
+                                    size={50}
+                                />
+                                <span
+                                    id="prescriptor-metrics-none-found"
+                                    className="ml-4 fs-4 my-auto"
+                                >
+                                    No prescriptors found.
+                                </span>
+                                <div
+                                    id="prescriptor-metrics-break"
+                                    className="break"
+                                />
+                            </span>
+                            <br id="prescriptor-metrics-instructions" />
+                            Navigate to the Runs table and view the error logs for your Run to see what went wrong.
+                        </>
+                    )}
+                </div>
+            ) : null}
+        </>
     )
 }
 
