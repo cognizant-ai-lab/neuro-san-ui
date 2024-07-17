@@ -239,7 +239,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                         >
                             <NeuroAIChatbot
                                 id="chatbot"
-                                userAvatar={picture}
+                                userAvatar={picture || undefined}
                                 pageContext={Component.pageContext || ""}
                             />
                         </div>
