@@ -10,14 +10,8 @@ import useUserInfoStore from "../state/userInfo"
  * of NextAuth's useSession hook.
  */
 export function useAuthentication() {
-    // eslint-disable-next-line no-shadow
-    const {data: session, status} = useSession()
+    const {data: session} = useSession()
     const {currentUser: albUser, picture: albPicture} = useUserInfoStore()
-
-    console.debug(
-        `useAuthentication: session=${JSON.stringify(session)}, status=${status}, albUser=${albUser}, ` +
-            `albPicture=${albPicture}`
-    )
 
     // Return the user data in the same format as NextAuth's useSession hook. We prioritize the ALB info if we have
     // it, but if not degrade gracefully to the NextAuth info.
@@ -28,6 +22,5 @@ export function useAuthentication() {
                 image: albPicture || session?.user?.image,
             },
         },
-        status,
     }
 }

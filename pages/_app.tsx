@@ -27,6 +27,7 @@ import {Container} from "react-bootstrap"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {UserInfoResponse} from "./api/userInfo/types"
+import {Auth} from "../components/auth"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
@@ -125,8 +126,13 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
 
             // Make sure we got the user info
             if (response.oidcHeaderFound) {
+                // Save user info from ALB
                 setCurrentUser(response.username)
                 setPicture(response.picture)
+            } else {
+                // Indicate that we didn't get the user info from the ALB
+                setCurrentUser(null)
+                setPicture(null)
             }
         }
 
@@ -134,6 +140,72 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     }, [])
 
     let body: JSX.Element | ReactFragment
+
+    function getLoadingSpinner() {
+        return (
+            <h3 id="loading-header">
+                <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    color={MaximumBlue}
+                    loading={true}
+                    size={35}
+                />
+                <span
+                    id="main-page-loading-span"
+                    style={{marginLeft: "1em"}}
+                >
+                    Loading...
+                </span>
+            </h3>
+        )
+    }
+
+    /**
+     * Gets the outer container of the app.
+     * This is a transition function to allow a smooth migration to ALB authentication. For now, this function
+     * switches between the NextAuth and ALB authentication cases. If we retrieved the ALB authentication headers,
+     * we use that path. Otherwise, we use NextAuth.
+     *
+     * @returns The outer container of the app
+     */
+    function getAppContainer() {
+        // Haven't figured out whether we have ALB headers yet
+        if (picture === undefined || !backendApiUrl) {
+            console.debug("Rendering loading spinner")
+            return getLoadingSpinner()
+        }
+
+        if (picture != null) {
+            // We got the ALB headers
+            console.debug("Rendering ALB authentication case")
+
+            return backendApiUrl && currentUser ? (
+                <Component
+                    id="body-non-auth-component"
+                    {...pageProps}
+                />
+            ) : (
+                getLoadingSpinner()
+            )
+        } else {
+            console.debug("Rendering NextAuth authentication case")
+
+            return Component.authRequired ? (
+                <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                >
+                    <Component
+                        id="body-auth-component"
+                        {...pageProps}
+                    />
+                </Auth>
+            ) : (
+                <Component
+                    id="body-non-auth-component"
+                    {...pageProps}
+                />
+            )
+        }
+    }
+
     if (pathname === "/") {
         // Main page is special
         body = (
@@ -146,53 +218,34 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
         )
     } else {
         body = (
-            <>
-                {/* 2/6/23 DEF - SessionProvider does not have an id property when compiling */}
-                <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    session={session}
-                >
-                    <ErrorBoundary id="error_boundary">
-                        <Navbar
-                            id="nav-bar"
-                            Logo={isGeneric ? GENERIC_LOGO : LOGO}
-                            WithBreadcrumbs={Component.withBreadcrumbs ?? true}
-                        />
+            // Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
+            // unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be removed
+            // when we fully switch to ALB auth.
+            <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                session={session}
+            >
+                <ErrorBoundary id="error_boundary">
+                    <Navbar
+                        id="nav-bar"
+                        Logo={isGeneric ? GENERIC_LOGO : LOGO}
+                        WithBreadcrumbs={Component.withBreadcrumbs ?? true}
+                    />
 
-                        <Container id="body-container">
-                            {backendApiUrl && currentUser ? (
-                                <Component
-                                    id="body-non-auth-component"
-                                    {...pageProps}
-                                />
-                            ) : (
-                                <h3 id="loading-header">
-                                    <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                        color={MaximumBlue}
-                                        loading={true}
-                                        size={35}
-                                    />
-                                    <span
-                                        id="main-page-loading-span"
-                                        style={{marginLeft: "1em"}}
-                                    >
-                                        Loading...
-                                    </span>
-                                </h3>
-                            )}
-                            <div
-                                id="fixed-pos-div"
-                                style={{position: "fixed", right: "20px", bottom: "0"}}
-                            >
-                                <NeuroAIChatbot
-                                    id="chatbot"
-                                    userAvatar={picture}
-                                    pageContext={Component.pageContext || ""}
-                                />
-                            </div>
-                        </Container>
-                    </ErrorBoundary>
-                </SessionProvider>
-            </>
+                    <Container id="body-container">
+                        {getAppContainer()}
+                        <div
+                            id="fixed-pos-div"
+                            style={{position: "fixed", right: "20px", bottom: "0"}}
+                        >
+                            <NeuroAIChatbot
+                                id="chatbot"
+                                userAvatar={picture}
+                                pageContext={Component.pageContext || ""}
+                            />
+                        </div>
+                    </Container>
+                </ErrorBoundary>
+            </SessionProvider>
         )
     }
 
