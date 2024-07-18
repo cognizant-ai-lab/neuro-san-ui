@@ -6,14 +6,13 @@ import {startCase} from "lodash"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {signOut} from "next-auth/react"
 import Breadcrumbs from "nextjs-breadcrumbs2"
 import {ReactElement} from "react"
 import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
 import {MaximumBlue, UNILEAF_VERSION} from "../const"
 import useUserInfoStore from "../state/userInfo"
-import {useAuthentication} from "../utils/authentication"
+import {smartSignOut, useAuthentication} from "../utils/authentication"
 
 // Define Constants
 const LOGO_COLOR: string = "white"
@@ -50,49 +49,15 @@ function Navbar(props: NavbarProps): ReactElement {
     // access user info store
     const {currentUser, setCurrentUser, setPicture} = useUserInfoStore()
 
-    function createAuth0LogoutUrl(returnTo: string) {
-        // const AUTH0_DOMAIN = process.env.NEXT_PUBLIC_AUTH0_DOMAIN
-        // const CLIENT_ID = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID
-
-        // https://YOUR_AUTH0_DOMAIN/v2/logout?client_id=YOUR_CLIENT_ID&returnTo=YOUR_RETURN_URL
-
-        const AUTH0_DOMAIN = "cognizant-ai.auth0.com"
-        const CLIENT_ID = "MKuUdcFmgAqwD9qGemVSQHJBLxui7juf"
-
-        return `https://${AUTH0_DOMAIN}/v2/logout?client_id=${CLIENT_ID}&returnTo=${encodeURIComponent(returnTo)}`
-    }
-
-    async function handleSignOut() {
-        if (currentUser === undefined) {
-            // Don't know what authentication provider we're using, so just return
-            return
-        }
-
-        if (currentUser !== null) {
-            // ALB case
-
-            // Clear our state storage variables
-            setCurrentUser(undefined)
-            setPicture(undefined)
-
-            // Use server endpoint to clear ALB cookies
-            void (await fetch("/api/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            }))
-
-            const logoutUrl = createAuth0LogoutUrl("https://uitest.evolution.ml")
-            console.debug("Logging out with URL:", logoutUrl)
-            window.location.href = logoutUrl
-        } else {
-            // NextAuth case
-            await signOut({redirect: false})
-        }
-    }
-
     const brand = `${props.Logo} (${currentUser ? "ALB" : "NextAuth"})`
+
+    async function handleSignOut1() {
+        // Clear our state storage variables
+        setCurrentUser(undefined)
+        setPicture(undefined)
+
+        await smartSignOut(currentUser)
+    }
 
     return (
         <Container id="nav-bar-container">
@@ -214,7 +179,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                         <Dropdown.Item
                                             id="user-sign-out"
                                             target="_blank"
-                                            onClick={handleSignOut}
+                                            onClick={handleSignOut1}
                                         >
                                             Sign out
                                         </Dropdown.Item>
