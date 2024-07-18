@@ -43,7 +43,7 @@ const debug = debugModule("app")
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
     const {isGeneric} = useFeaturesStore()
-    const {backendApiUrl, setBackendApiUrl} = useEnvironmentStore()
+    const {backendApiUrl, setBackendApiUrl, setAuth0ClientId, setAuth0Domain} = useEnvironmentStore()
 
     // access user info store
     const {currentUser, setCurrentUser, picture, setPicture} = useUserInfoStore()
@@ -74,9 +74,9 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     }, [isReady])
 
     useEffect(() => {
-        async function getBackendApiUrl() {
-            // Fetch URL for backend API. Since this gets saved in the zustand store, subsequent pages will not need
-            // to fetch it again
+        async function getEnvironment() {
+            // Fetch environment settings.
+            // Save these in the zustand store so that subsequent pages will not need to fetch them again
             const res = await fetch("/api/environment", {
                 method: "GET",
                 headers: {
@@ -91,6 +91,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             }
 
             const data = await res.json()
+
             // Make sure we got the backend API URL
             if (!data.backendApiUrl) {
                 throw new Error("No backend API URL found in response")
@@ -99,14 +100,32 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 debug(`Received backend API URL from NodeJS server. Setting to ${data.backendApiUrl}`)
                 setBackendApiUrl(data.backendApiUrl)
             }
+
+            // Make sure we got the auth0 client ID
+            if (!data.auth0ClientId) {
+                throw new Error("No Auth0 client ID found in response")
+            } else {
+                // Cache auth0 client ID in feature store
+                debug(`Received Auth0 client ID from NodeJS server. Setting to ${data.auth0ClientId}`)
+                setAuth0ClientId(data.auth0ClientId)
+            }
+
+            // Make sure we got the auth0 domain
+            if (!data.auth0Domain) {
+                throw new Error("No Auth0 domain found in response")
+            } else {
+                // Cache auth0 domain in feature store
+                debug(`Received Auth0 domain from NodeJS server. Setting to ${data.auth0Domain}`)
+                setAuth0Domain(data.auth0Domain)
+            }
         }
 
-        void getBackendApiUrl()
+        void getEnvironment()
     }, [])
 
     useEffect(() => {
         async function getUserInfo() {
-            console.debug("Fetching user info from ALB")
+            debug("Fetching user info from ALB")
             const res = await fetch("/api/userInfo", {
                 method: "GET",
                 headers: {
@@ -118,7 +137,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             // Check result
             if (!res.ok) {
                 // This is bad: it means we saw the ALB header but it's not in the right format so we're stuck
-                console.debug("Failed to fetch user info")
+                debug("Failed to fetch user info")
                 throw new Error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
             }
 
@@ -170,13 +189,13 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     function getAppContainer() {
         // Haven't figured out whether we have ALB headers yet
         if (picture === undefined || !backendApiUrl) {
-            console.debug("Rendering loading spinner")
+            debug("Rendering loading spinner")
             return getLoadingSpinner()
         }
 
         if (picture != null) {
             // We got the ALB headers
-            console.debug("Rendering ALB authentication case")
+            debug("Rendering ALB authentication case")
 
             return backendApiUrl && currentUser ? (
                 <Component
@@ -187,7 +206,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 getLoadingSpinner()
             )
         } else {
-            console.debug("Rendering NextAuth authentication case")
+            debug("Rendering NextAuth authentication case")
 
             return Component.authRequired ? (
                 <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids

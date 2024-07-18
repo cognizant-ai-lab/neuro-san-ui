@@ -4,9 +4,6 @@ import {signOut, useSession} from "next-auth/react"
 
 import useUserInfoStore from "../state/userInfo"
 
-const AUTH0_DOMAIN = "cognizant-ai.auth0.com"
-const CLIENT_ID = "MKuUdcFmgAqwD9qGemVSQHJBLxui7juf"
-
 /**
  * Hook for abstracting away the authentication provider. We are migrating to ALB-based authentication, instead of it
  * being handled by the app via NextAuth. This way existing pages only need trivial changes to use this hook instead
@@ -30,10 +27,14 @@ export function useAuthentication() {
 
 /**
  * Create the logout URL for Auth0.
- * @param returnTo The URL to return to after logging out.
+ * @param auth0Domain The Auth0 domain. See Auth0 doc for more details.
+ * @param auth0ClientId The Auth0 client ID. See Auth0 doc for more details. Identifies the app being used in Auth0.
+ * @return The logout URL.
  */
-function createAuth0LogoutUrl(returnTo: string) {
-    return `https://${AUTH0_DOMAIN}/v2/logout?client_id=${CLIENT_ID}&returnTo=${encodeURIComponent(returnTo)}`
+function createAuth0LogoutUrl(auth0Domain: string, auth0ClientId: string) {
+    const baseUrl = `${window.location.protocol}//${window.location.host}`
+    const returnTo = encodeURIComponent(baseUrl)
+    return `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${returnTo}`
 }
 
 /**
@@ -42,10 +43,12 @@ function createAuth0LogoutUrl(returnTo: string) {
  * handles the sign out process for both NextAuth and ALB.
  * @param currentUser The username of the current user. If undefined, we don't know what authentication provider we're
  * using, so just return. If null, we're using NextAuth. Otherwise, we're using ALB.
+ * @param auth0Domain The Auth0 domain. See Auth0 doc for more details.
+ * @param auth0ClientId The Auth0 client ID. See Auth0 doc for more details. Identifies the app being used in Auth0.
  * @return Nothing, but executes the sign out process.
  *
  */
-export async function smartSignOut(currentUser: string) {
+export async function smartSignOut(currentUser: string, auth0Domain: string, auth0ClientId: string) {
     if (currentUser === undefined) {
         // Don't know what authentication provider we're using, so just return
         return
@@ -62,11 +65,9 @@ export async function smartSignOut(currentUser: string) {
             },
         }))
 
-        const logoutUrl = createAuth0LogoutUrl("https://uitest.evolution.ml")
-        console.debug("Logging out with URL:", logoutUrl)
-        window.location.href = logoutUrl
+        window.location.href = createAuth0LogoutUrl(auth0Domain, auth0ClientId)
     } else {
         // NextAuth case
-        await signOut({redirect: false})
+        await signOut({redirect: true})
     }
 }

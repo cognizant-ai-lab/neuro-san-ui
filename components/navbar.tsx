@@ -11,6 +11,7 @@ import {ReactElement} from "react"
 import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
 import {MaximumBlue, UNILEAF_VERSION} from "../const"
+import useEnvironmentStore from "../state/environment"
 import useUserInfoStore from "../state/userInfo"
 import {smartSignOut, useAuthentication} from "../utils/authentication"
 
@@ -46,17 +47,20 @@ function Navbar(props: NavbarProps): ReactElement {
     const userInfo = session.user
     const userName = userInfo.name
 
-    // access user info store
+    // Access user info store
     const {currentUser, setCurrentUser, setPicture} = useUserInfoStore()
 
-    const brand = `${props.Logo} (${currentUser ? "ALB" : "NextAuth"})`
+    // Access environment info
+    const {auth0ClientId, auth0Domain} = useEnvironmentStore()
 
-    async function handleSignOut1() {
+    const authenticationType = `(Authentication: ${currentUser ? "ALB" : "NextAuth"})`
+
+    async function handleSignOut() {
         // Clear our state storage variables
         setCurrentUser(undefined)
         setPicture(undefined)
 
-        await smartSignOut(currentUser)
+        await smartSignOut(currentUser, auth0Domain, auth0ClientId)
     }
 
     return (
@@ -83,7 +87,7 @@ function Navbar(props: NavbarProps): ReactElement {
                             style={{color: LOGO_COLOR}}
                             className="font-bold ml-2"
                         >
-                            {brand}
+                            {props.Logo}
                         </BootstrapNavbar.Brand>
                     </Link>
                     <BootstrapNavbar.Collapse id="responsive-navbar-nav">
@@ -121,6 +125,13 @@ function Navbar(props: NavbarProps): ReactElement {
                                         target="_blank"
                                     >
                                         User guide
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                        href={null}
+                                        id="authentication-type-menu-item"
+                                        as="div"
+                                    >
+                                        {authenticationType}
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
@@ -179,7 +190,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                         <Dropdown.Item
                                             id="user-sign-out"
                                             target="_blank"
-                                            onClick={handleSignOut1}
+                                            onClick={handleSignOut}
                                         >
                                             Sign out
                                         </Dropdown.Item>
