@@ -70,8 +70,19 @@ function Navbar(props: NavbarProps): ReactElement {
 
         if (currentUser !== null) {
             // ALB case
+
+            // Clear our state storage variables
             setCurrentUser(undefined)
             setPicture(undefined)
+
+            // Use server endpoint to clear ALB cookies
+            void (await fetch("/api/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }))
+
             const logoutUrl = createAuth0LogoutUrl("https://uitest.evolution.ml")
             console.debug("Logging out with URL:", logoutUrl)
             window.location.href = logoutUrl
