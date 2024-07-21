@@ -185,7 +185,7 @@
             {
                 "includeInternal": true,
                 "includeTypes": true,
-                "devDependencies": ["__tests__/**", "jest.*", "tailwind.config.js"]
+                "devDependencies": ["__tests__/**", "jest*.*", "tailwind.config.js"]
             }
         ],
         "import/no-self-import": "error",
