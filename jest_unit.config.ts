@@ -4,7 +4,7 @@
 import path from "path"
 
 module.exports = {
-    // For details on these settings: https://jestjs.io/docs/configuration#coveragethreshold-object
+    // For details on these settings: https://jestjs.io/docs/configuration
 
     verbose: true,
     transform: {

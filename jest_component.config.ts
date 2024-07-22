@@ -13,7 +13,7 @@ const createJestConfig = nextJest({
 
 /** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
-    // For details on these settings: https://jestjs.io/docs/configuration#coveragethreshold-object
+    // For details on these settings: https://jestjs.io/docs/configuration
 
     verbose: true,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
