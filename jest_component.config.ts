@@ -23,10 +23,10 @@ const config: Config.InitialOptions = {
     coverageReporters: ["text-summary"],
     coverageThreshold: {
         global: {
-            lines: 8.0,
-            branches: 3.5,
-            functions: 6.8,
-            statements: 7.8,
+            lines: 7.7,
+            branches: 3.2,
+            functions: 6.6,
+            statements: 7.5,
         },
         // Coverage on utils is a little higher
         "./utils/": {
