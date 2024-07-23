@@ -66,13 +66,11 @@ export class FlowQueries {
         The function extracts all user-selected (checked) fields of the given DataTagFieldCAOType from the
         relevant sub-nodes. It knows which nodes to search for each DataTagFieldCAOType.
          */
-        const parentNode =
-            caoType === DataTagFieldCAOType.CONTEXT || caoType === DataTagFieldCAOType.ACTION
-                ? "ParentPrescriptorState"
-                : "ParentNodeState"
+
         const caoTypeAsString = DataTagFieldCAOType[caoType].toLowerCase()
         const checkedFields = []
         nodes?.forEach((node) => {
+            const parentNode = node.type === "prescriptornode" ? "ParentPrescriptorState" : "ParentNodeState"
             const caoNode = node.data[parentNode].caoState[caoTypeAsString]
             Object.entries(caoNode).forEach((field) => {
                 if (field[1]) {

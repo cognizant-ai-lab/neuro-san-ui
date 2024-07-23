@@ -4,18 +4,17 @@ import httpStatus from "http-status"
 import {
     DeployedModel,
     Deployments,
-    DeploymentStatus,
     DeployRequest,
     GetDeploymentsRequest,
-    InferenceDeploymentRequest,
-    InferenceModelMetaData,
-    InferenceQueryRequest,
-    InferenceRunDeploymentMetaData,
-    ModelFormat,
-    ModelMetaData,
     ModelServingEnvironment,
+    RunModels,
     TearDownRequest,
 } from "./types"
+import {FlowQueries} from "../../components/internal/flow/flowqueries"
+import {DataField} from "../../generated/csv_data_description"
+import {DeployModelsRequest, InferenceRequest, ModelEncoderData, ModelMetaData} from "../../generated/inference_service"
+import {DataTagFieldCAOType} from "../../generated/metadata"
+import {DeploymentStatus, ModelFormat} from "../../generated/model_serving_common"
 import useEnvironmentStore from "../../state/environment"
 import useFeaturesStore from "../../state/features"
 import {toSafeFilename} from "../../utils/file"
@@ -71,8 +70,10 @@ async function deployModelOld(
     const modelMetaData: ModelMetaData = {
         // In our case our model urls are in the output artifacts
         // and our predictor server takes care of it.
-        model_uri: "",
-        model_format: ModelFormat.CUSTOM_MODEL_FORMAT,
+        modelUri: "",
+        modelFormat: ModelFormat.UNKNOWN_MODEL_FORMAT,
+        modelId: undefined,
+        labels: undefined,
     }
 
     const labels: StringString = {
@@ -180,9 +181,9 @@ function getNodeId(modelId: string): string {
     return ""
 }
 
-export function getRunModelData(runId: number, outputArtifacts: StringString): InferenceRunDeploymentMetaData {
-    const result: InferenceRunDeploymentMetaData = {
-        run_id: runId,
+export function getRunModelData(runId: number, outputArtifacts: StringString): RunModels {
+    const result: RunModels = {
+        runId: runId,
         predictors: [],
         prescriptors: [],
         rio: [],
@@ -287,7 +288,7 @@ async function deployRunNew(
     outputArtifacts: StringString
 ): Promise<[boolean, ErrorResult?]> {
     // Fetch the already deployed models
-    const runData: InferenceRunDeploymentMetaData = getRunModelData(runId, outputArtifacts)
+    const runData: RunModels = getRunModelData(runId, outputArtifacts)
     if (runData == null || empty(runData)) {
         console.error(`deployRunNew: Failed to get Run metadata for ${runId}`)
         return [
@@ -301,20 +302,21 @@ async function deployRunNew(
 
     // Request deployment for all generated models in our Run
     const deploymentId: string = generateDeploymentID(runId, experimentId, projectId)
-    const modelsToDeploy: InferenceModelMetaData[] = [
-        ...runData.predictors,
-        ...runData.prescriptors,
-        ...runData.rio,
-    ].map((model) => ({
-        model_id: model[0],
-        model_uri: model[1],
-        model_format: "UNKNOWN_MODEL_FORMAT",
-    }))
+    const modelsToDeploy: ModelMetaData[] = [...runData.predictors, ...runData.prescriptors, ...runData.rio].map(
+        (model) => ({
+            modelId: model[0],
+            modelUri: model[1],
+            modelFormat: ModelFormat.UNKNOWN_MODEL_FORMAT,
+            labels: undefined,
+        })
+    )
 
-    const request: InferenceDeploymentRequest = {
-        deployment_id: deploymentId,
+    const request: DeployModelsRequest = {
+        deploymentId: deploymentId,
         models: modelsToDeploy,
     }
+
+    const requestAsJson = DeployModelsRequest.toJSON(request)
 
     const baseUrl = useEnvironmentStore.getState().backendApiUrl
     const inferDeployRoute = `${baseUrl}/api/v1/inference/deploy`
@@ -327,7 +329,7 @@ async function deployRunNew(
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(request),
+            body: JSON.stringify(requestAsJson),
         })
         if (response.ok) {
             return [true, null]
@@ -666,7 +668,7 @@ export function vectorize(inputs: {[key: string]: string | number}): PredictorPa
  * @param runData Data returned by a call to {@link getRunModelData}
  * @param modelUrl URL of the model to query
  */
-function findModelDataByUrl(runData: InferenceRunDeploymentMetaData, modelUrl: string): [string, string] {
+function findModelDataByUrl(runData: RunModels, modelUrl: string): [string, string] {
     for (const model of runData.prescriptors) {
         if (model[1] === modelUrl) {
             return [model[0], model[2]]
@@ -682,7 +684,54 @@ function findModelDataByUrl(runData: InferenceRunDeploymentMetaData, modelUrl: s
             return [model[0], model[2]]
         }
     }
+
+    // Not found
     return ["", ""]
+}
+
+/**
+ * Convert a flow to the format required by the inference API.
+ * @param flow Flow JSON string, from the Run we're using for inference
+ * @param nodeId Node ID of the model we're interested in, within the flow
+ * @return An object with the fields and CAO mapping required by the inference API
+ */
+function flowToEncoder(flow: string, nodeId: string): ModelEncoderData {
+    // Get flow as object
+    const flowObj = JSON.parse(flow)
+
+    // Retrieve the model node we're interested in for this inference request (eg. predictor)
+    const node = FlowQueries.getNodeByID(flowObj, nodeId)
+    if (!node) {
+        throw new Error(`Node ${nodeId} not found in flow`)
+    }
+
+    // Extract the CAO mapping from the node
+    const context = FlowQueries.extractCheckedFields([node], DataTagFieldCAOType.CONTEXT)
+    const actions = FlowQueries.extractCheckedFields([node], DataTagFieldCAOType.ACTION)
+    const outcomes = FlowQueries.extractCheckedFields([node], DataTagFieldCAOType.OUTCOME)
+
+    // Names of all fields this model was trained on
+    const allFields = context.concat(actions).concat(outcomes)
+
+    // Now access the data node to get the field objects, required by inference API
+    const dataNode = FlowQueries.getDataNodes(flowObj)[0]
+
+    // Pull the relevant fields out of the data node and convert them to the format required by the inference API
+    const fields = Object.entries(dataNode.data.DataTag.fields)
+        .filter((field) => allFields.includes(field[0]))
+        .reduce((acc, [key, value]) => {
+            acc[key] = DataField.fromJSON(value)
+            return acc
+        }, {})
+
+    return {
+        fields: fields,
+        cao: {
+            context: context,
+            actions: actions,
+            outcomes: outcomes,
+        },
+    }
 }
 
 async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams) {
@@ -693,7 +742,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         }
     }
 
-    const runData: InferenceRunDeploymentMetaData = getRunModelData(run.id, JSON.parse(run.output_artifacts))
+    const runData: RunModels = getRunModelData(run.id, JSON.parse(run.output_artifacts))
     if (runData == null) {
         const message = `Error querying model ${modelUrl}. Failed to get Run metadata for ${run.id}`
         return {
@@ -710,21 +759,22 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
     }
 
     try {
-        const modelData: InferenceModelMetaData = {
-            model_id: modelId,
-            model_uri: modelUrl,
-            model_format: "UNKNOWN_MODEL_FORMAT",
+        const modelData: ModelMetaData = {
+            modelId: modelId,
+            modelUri: modelUrl,
+            modelFormat: ModelFormat.UNKNOWN_MODEL_FORMAT,
+            labels: undefined,
         }
 
-        const request: InferenceQueryRequest = {
+        // Build the inference request
+        const request: InferenceRequest = {
             model: modelData,
-            run_flow: {
-                flow: JSON.stringify(JSON.parse(run.flow)),
-                node_id: nodeId,
-            },
-            sample: JSON.stringify(inputs),
+            encoder: flowToEncoder(run.flow, nodeId),
+            sampleData: JSON.stringify(inputs),
         }
 
+
+        const requestJson = InferenceRequest.toJSON(request)
         const baseUrl = useEnvironmentStore.getState().backendApiUrl
         const inferRoute = `${baseUrl}/api/v1/inference/infer`
 
@@ -734,7 +784,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(request),
+            body: JSON.stringify(requestJson),
         })
         if (!response.ok) {
             return {

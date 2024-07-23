@@ -2,58 +2,18 @@
 // For custom model formats the request must specify
 // UNKNOWN_MODEL_FORMAT and a custom predictor image
 // with args when the adapter server is spun up.
+import {ModelMetaData} from "../../generated/inference_service"
 import {StringString} from "../base_types"
 
-// no-shadow doesn't do well with enums. Search their github issues if you're curious.
-// eslint-disable-next-line no-shadow
-export enum ModelFormat {
-    // Ignored
-    DEFAULT_MODEL_FORMAT_ENUM = 0,
-    UNKNOWN_MODEL_FORMAT = 1,
-    H5 = 2,
-    SKLEARN_JOBLIB = 3,
-    CUSTOM_MODEL_FORMAT = 4,
-}
-
-export interface ModelMetaData {
-    // The location of the model on the S3 bucket.
-    // This could be any blob store/http uri but for now I have only tested S3.
-    model_uri: string
-
-    // The format the model is based on
-    model_format: ModelFormat
-}
-
-export type InferenceModelMetaData = {
-    model_uri: string
-    model_id?: string
-    model_format: string
-}
-
-export type InferenceDeploymentRequest = {
-    deployment_id: string
-    models: InferenceModelMetaData[]
-}
-
 // Model ID, Model URL, Node ID
-type InferenceModelDescriptor = [string, string, string]
+type RunModel = [string, string, string]
 
-export type InferenceRunDeploymentMetaData = {
-    run_id: number
-    predictors: InferenceModelDescriptor[]
-    prescriptors: InferenceModelDescriptor[]
-    rio: InferenceModelDescriptor[]
+export type RunModels = {
+    runId: number
+    predictors: RunModel[]
+    prescriptors: RunModel[]
+    rio: RunModel[]
 }
-
-export type InferenceQueryRequest = {
-    model: InferenceModelMetaData
-    run_flow: {
-        flow: string
-        node_id: string
-    }
-    sample: string
-}
-
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
 export enum ModelServingEnvironment {
@@ -61,48 +21,6 @@ export enum ModelServingEnvironment {
     DEFAULT_MODEL_SERVING_ENV_ENUM = 0,
     UNKNOWN_MODEL_SERVING_ENV = 1,
     KSERVE = 2,
-}
-
-// no-shadow doesn't do well with enums. Search their github issues if you're curious.
-// eslint-disable-next-line no-shadow
-export enum DeploymentStatus {
-    // Ignored
-    DEFAULT_DEPLOYMENT_STATUS_ENUM = 0,
-
-    // UNKNOWN means wait until one of the
-    // other status is reflected - the request is premature
-    // and will take a bit to determine the actual status.
-    DEPLOYMENT_STATUS_UNKNOWN = 1,
-
-    // DEPLOYMENT_READY does not indicate that the pods are actually up
-    // and rather means that no error occoured while spinning up the resources
-    // to spin up the pod.
-    // The case where this might not mean you can curl the URL even if Deployment
-    // is ready is when the cluster does not have enough nodes to spin up the pods.
-    // In this case one of the following will happen:
-    // 1. The pods will be in pending state and the request will timeout.
-    // 2. If min_replicas for other deployments was 0, when the others spin to zero
-    // this pod will spin up
-    // 3. If the cluster has a node autoscaler, that will be kicked off to spin nodes
-    // to allocate these pods
-    // TODO: Provide more granular status by looking at the pods directly
-    DEPLOYMENT_READY = 2,
-
-    DEPLOYMENT_NOT_READY = 3,
-
-    // This error occurs mostly when deployments with not a unique
-    // id are requested to be spun
-    DEPLOYMENT_ALREADY_EXISTS = 4,
-
-    // This error occurs while trying to delete a deployment
-    // that does not exist
-    DEPLOYMENT_DOES_NOT_EXIST = 5,
-
-    // This happens when a not supported model uri format is provided.
-    INCOMPATIBLE_STORAGE_ADAPTER = 6,
-
-    // This happens when the environment is not supported
-    INCOMPATIBLE_ENVIRONMENT = 7,
 }
 
 export interface DeployRequest {
