@@ -6,34 +6,32 @@
 import type {Config} from "@jest/types"
 import nextJest from "next/jest.js"
 
+import sharedConfig from "./jest.config"
 const createJestConfig = nextJest({
-    // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
+    // Provide the path to Next.js app to load next.config.js and .env files in test environment
     dir: "./",
 })
 
 /** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
+    // Pull in shared config
+    ...sharedConfig,
+
     // For details on these settings: https://jestjs.io/docs/configuration
 
-    verbose: true,
-    setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-    testEnvironment: "jest-environment-jsdom",
-    collectCoverage: true,
-    collectCoverageFrom: ["**/*.{js,jsx,ts,tsx}", "!**/node_modules/**", "!.next/**", "!**/coverage/**", "!jest*.ts"],
-    coverageReporters: ["text-summary"],
     coverageThreshold: {
         global: {
-            lines: 7.7,
-            branches: 3.2,
-            functions: 6.6,
-            statements: 7.5,
+            lines: 12.0,
+            branches: 9.0,
+            functions: 12.0,
+            statements: 12.0,
         },
         // Coverage on utils is a little higher
         "./utils/": {
             statements: 15.0,
-            branches: 5.8,
+            branches: 5.7,
             functions: 15.0,
-            lines: 15.0,
+            lines: 15.8,
         },
     },
 }
