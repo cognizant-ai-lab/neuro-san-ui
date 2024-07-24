@@ -62,9 +62,9 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const {data: session} = useAuthentication()
     const currentUser: string = session.user.name
 
-    const [predictorPlotData, setPredictorPlotData] = useState<object | null>(null)
-    const [prescriptorPlotData, setPrescriptorPlotData] = useState<object | null>(null)
-    const [paretoPlotData, setParetoPlotData] = useState<object | null>(null)
+    const [predictorPlotData, setPredictorPlotData] = useState({})
+    const [prescriptorPlotData, setPrescriptorPlotData] = useState({})
+    const [paretoPlotData, setParetoPlotData] = useState({})
     const [isLoadingPlotData, setIsLoadingPlotData] = useState(false)
     const [nodeToCIDMap, setNodeToCIDMap] = useState<Record<string, string>>({})
     const [run, setRun] = useState(null)
@@ -184,18 +184,42 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     async function loadRun(runID: number) {
         try {
+            let runTmp
+            let flowTmp
+
+            runTmp = getRunFromCache(runID)
+            // If Attempt to get the run from the cache
+            if (runTmp) {
+                // Cache hit -- use the cached run
+                setRun(props.runs[getRunIndexByID(runID)])
+
+                // Use temporary variable to avoid shadowing outer "flow" variable
+                flowTmp = JSON.parse(runTmp.flow)
+                const consolidatedFlow = consolidateFlow(flowTmp)
+                setFlow(consolidatedFlow)
+                if (consolidatedFlow !== null) {
+                    constructMetrics(runTmp.metrics, consolidatedFlow)
+                }
+
+                return
+            }
+
             setRunLoading(true)
+            // Cache miss -- have to load from backend
             if (runID) {
                 const propertiesToRetrieve = ["output_artifacts", "metrics", "flow", "id", "experiment_id"]
                 const runs: Runs = await fetchRuns(currentUser, null, runID, propertiesToRetrieve)
                 if (runs.length === 1) {
-                    const runTmp = runs[0]
+                    runTmp = runs[0]
 
                     // Use temporary variable to avoid shadowing outer "flow" variable
-                    const flowTmp: NodeType[] = JSON.parse(runTmp.flow)
+                    flowTmp = JSON.parse(runTmp.flow)
                     const consolidatedFlow = consolidateFlow(flowTmp)
                     setFlow(consolidatedFlow)
                     setRun(runTmp)
+                    if (runTmp !== null && consolidatedFlow !== null) {
+                        constructMetrics(runTmp.metrics, consolidatedFlow)
+                    }
                     cacheRun(runTmp)
                 } else {
                     sendNotification(
@@ -225,20 +249,11 @@ export default function RunPage(props: RunProps): React.ReactElement {
 
     // Fetch the experiment and the runs
     useEffect(() => {
-        // Attempt to get the run from the cache
-        const runTmp = getRunFromCache(props.RunID)
-        if (runTmp) {
-            // Cache hit -- use the cached run
-            setRun(props.runs[getRunIndexByID(props.RunID)])
-
-            // Use temporary variable to avoid shadowing outer "flow" variable
-            const flowTmp = JSON.parse(runTmp.flow)
-            const consolidatedFlow = consolidateFlow(flowTmp)
-            setFlow(consolidatedFlow)
-        } else {
-            // Cache miss -- have to load from backend
-            void loadRun(props.RunID)
+        async function getRuns() {
+            await loadRun(props.RunID)
         }
+
+        getRuns()
     }, [props.RunID])
 
     // Fetch the rules
@@ -272,18 +287,12 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }, [artifactObj])
 
-    useEffect(() => {
-        if (run != null && flow != null) {
-            constructMetrics(run.metrics)
-        }
-    }, [run])
-
-    const constructMetrics = (metrics) => {
+    const constructMetrics = (metrics, currentFlow) => {
         setPrescriptors(null)
         setIsLoadingPlotData(true)
         if (metrics) {
             const [constructedPredictorResults, constructedPrescriptorResults, pareto] = constructRunMetricsForRunPlot(
-                flow,
+                currentFlow,
                 JSON.parse(metrics)
             )
             setPredictorPlotData(constructedPredictorResults)
@@ -307,10 +316,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     prescriptors: prescriptorInfo,
                 })
             }
-        } else {
-            setPredictorPlotData({})
-            setPrescriptorPlotData({})
-            setParetoPlotData({})
         }
         setIsLoadingPlotData(false)
     }
