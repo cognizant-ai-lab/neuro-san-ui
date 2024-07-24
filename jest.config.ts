@@ -4,12 +4,6 @@
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
 import path from "path"
-// import nextJest from "next/jest.js"
-
-// const createJestConfig = nextJest({
-//     // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
-//     dir: "./",
-// })
 
 /** @type {import('jest').Config} */
 const config: Config.InitialOptions = {

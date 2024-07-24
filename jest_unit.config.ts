@@ -10,7 +10,6 @@ const config: Config.InitialOptions = {
     ...sharedConfig,
 
     // For details on these settings: https://jestjs.io/docs/configuration
-
     coverageThreshold: {
         global: {
             lines: 0.5,
