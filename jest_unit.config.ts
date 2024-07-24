@@ -28,4 +28,6 @@ const config: Config.InitialOptions = {
     },
 }
 
+// Required for Jest to function so tell ts-prune to ignore it
+// ts-prune-ignore-next
 export default config
