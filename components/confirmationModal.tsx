@@ -1,6 +1,8 @@
 import {Button, Modal} from "antd"
 import {useState} from "react"
 
+// Will be used in https://github.com/leaf-ai/unileaf/pull/1764
+// ts-prune-ignore-next
 export const ConfirmationModal = ({title = "", text = ""}) => {
     const [modalOpen, setModalOpen] = useState(true)
 
