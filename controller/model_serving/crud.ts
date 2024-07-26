@@ -13,7 +13,7 @@ import {
 import {FlowQueries} from "../../components/internal/flow/flowqueries"
 import {DataField} from "../../generated/csv_data_description"
 import {DeployModelsRequest, InferenceRequest, ModelEncoderData, ModelMetaData} from "../../generated/inference_service"
-import {DataTagFieldCAOType} from "../../generated/metadata"
+import {DataTag, DataTagFieldCAOType} from "../../generated/metadata"
 import {DeploymentStatus, ModelFormat} from "../../generated/model_serving_common"
 import useEnvironmentStore from "../../state/environment"
 import useFeaturesStore from "../../state/features"
@@ -693,9 +693,11 @@ function findModelDataByUrl(runData: RunModels, modelUrl: string): [string, stri
  * Convert a flow to the format required by the inference API.
  * @param flow Flow JSON string, from the Run we're using for inference
  * @param nodeId Node ID of the model we're interested in, within the flow
+ * @param dataTag DataTag object from the Run we're using for inference, potentially modified by LLM nodes
+ * (eg. category reducer)
  * @return An object with the fields and CAO mapping required by the inference API
  */
-function flowToEncoder(flow: string, nodeId: string): ModelEncoderData {
+function flowToEncoder(flow: string, nodeId: string, dataTag: DataTag): ModelEncoderData {
     // Get flow as object
     const flowObj = JSON.parse(flow)
 
@@ -713,11 +715,8 @@ function flowToEncoder(flow: string, nodeId: string): ModelEncoderData {
     // Names of all fields this model was trained on
     const allFields = context.concat(actions).concat(outcomes)
 
-    // Now access the data node to get the field objects, required by inference API
-    const dataNode = FlowQueries.getDataNodes(flowObj)[0]
-
     // Pull the relevant fields out of the data node and convert them to the format required by the inference API
-    const fields = Object.entries(dataNode.data.DataTag.fields)
+    const fields = Object.entries(dataTag.fields)
         .filter((field) => allFields.includes(field[0]))
         .reduce((acc, [key, value]) => {
             acc[key] = DataField.fromJSON(value)
@@ -734,7 +733,7 @@ function flowToEncoder(flow: string, nodeId: string): ModelEncoderData {
     }
 }
 
-async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams) {
+async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams, dataTag: DataTag) {
     if (!run.flow) {
         return {
             error: "Model access error",
@@ -769,7 +768,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         // Build the inference request
         const request: InferenceRequest = {
             model: modelData,
-            encoder: flowToEncoder(run.flow, nodeId),
+            encoder: flowToEncoder(run.flow, nodeId, dataTag),
             sampleData: JSON.stringify(inputs),
         }
 
@@ -868,18 +867,20 @@ async function queryModelOld(modelUrl: string, inputs: PredictorParams | RioPara
  * @param run The Run object for the run whose model we want to query
  * @param modelUrl URL of the model to query
  * @param inputs An object with keys each mapping to a single-element array of strings or numbers.
+ * @param dataTag DataTag object from the Run we're using for inference, potentially modified by LLM nodes
  */
 export async function queryModel(
     run: Run,
     modelUrl: string,
-    inputs: PredictorParams | RioParams
+    inputs: PredictorParams | RioParams,
+    dataTag?: DataTag
     // Typescript lib uses "any" so we have to as well
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
     // Use old or new model inference system depending on the feature flag
     const modelServingVersion = useFeaturesStore.getState().modelServingVersion
     if (modelServingVersion === "new") {
-        return queryModelNew(run, modelUrl, inputs)
+        return queryModelNew(run, modelUrl, inputs, dataTag)
     } else {
         return queryModelOld(modelUrl, inputs)
     }

@@ -31,6 +31,7 @@ const DOWNLOADABLE_ARTIFACTS: ArtifactInfo[] = [
     {value: "llm_log_file", label: "LLM chat log", fileType: "txt"},
     {value: "original_dataset", label: "Original Dataset", fileType: "csv"},
     {value: "modified_dataset", label: "Modified Dataset", fileType: "csv"},
+    {value: "modified_profile", label: "Modified Data Profile", fileType: "json"},
     {value: "notebook", label: "Notebook", fileType: "ipynb"},
     {value: "llm_dataops", label: "LLM Data Operations Notebook", fileType: "ipynb"},
     {value: "requirements", label: "Notebook Python Dependencies", fileType: "txt"},
@@ -59,7 +60,7 @@ export function getDownloadableArtifacts(): ArtifactInfo[] {
  *
  * @param requestedArtifact Name of the artifact we're interested in, eg. "notebook"
  * @param outputArtifacts The list of output artifacts from the Run, as name-value pairs
- * @return A boolean indicating whether we think the artifact requested is one of those the server listed.
+ * @returns A boolean indicating whether we think the artifact requested is one of those the server listed.
  */
 export function isArtifactAvailable(requestedArtifact: string, outputArtifacts: Record<string, string>) {
     return getUrlForArtifact(requestedArtifact, outputArtifacts) != null
@@ -87,6 +88,12 @@ function getUrlForArtifact(artifactToDownload: string, availableArtifacts: Recor
             const regex = /\/\d+_\d+-\d+.csv/u
             return Object.values(availableArtifacts).find((artifactUrl) => regex.test(artifactUrl))
         }
+        case "modified_profile": {
+            // Modified profiles have URLs like this, with a timestamp:
+            // "s3://leaf-unileaf-staging-artifacts/run_data/11840/artifacts/6741_profile.json"
+            const regex = /\/\d+_profile.json/u
+            return Object.values(availableArtifacts).find((artifactUrl) => regex.test(artifactUrl))
+        }
         case "notebook":
             // For example "s3://leaf-unileaf-dev-artifacts/run_data/4435/artifacts/experiment.ipynb"
             return availableArtifacts.experiment
@@ -105,7 +112,72 @@ function getUrlForArtifact(artifactToDownload: string, availableArtifacts: Recor
     }
 }
 
-// Allows user to download artifacts created by the run: models, Jupyter notebook etc.
+/**
+ * Retrieve the artifact(s) from the server, and returns them as an array of Artifact objects in memory
+ * @param artifactToDownload See {@link downloadArtifact}
+ * @param artifactFriendlyName See {@link downloadArtifact}
+ * @param availableArtifacts See {@link downloadArtifact}
+ * @param runId The ID of the Run from which to retrieve the artifact
+ *
+ * @returns An array of Artifact objects, or null if there was an error
+ */
+export async function retrieveArtifact(
+    artifactToDownload: string,
+    artifactFriendlyName: string,
+    availableArtifacts: Record<string, string>,
+    runId: number
+): Promise<Artifact[] | null> {
+    // Pull out the download URL for the requested artifact.
+    const downloadUrl: string = getUrlForArtifact(artifactToDownload, availableArtifacts)
+
+    if (!downloadUrl) {
+        // If we got this far, it means we think the artifact _should_ be available, so something has gone wrong.
+        sendNotification(
+            NotificationType.error,
+            "Internal error",
+            `No download URL found for "${artifactFriendlyName}" in run id ${runId}`
+        )
+        return null
+    }
+
+    // Retrieve the artifact
+    try {
+        const artifacts: Artifact[] = await fetchRunArtifact(downloadUrl)
+        if (!artifacts || artifacts.length !== 1) {
+            sendNotification(
+                NotificationType.error,
+                "Internal error",
+                `Unexpected number of ${artifactFriendlyName} artifacts returned for Run id ${runId}: ` +
+                    `${artifacts == null ? 0 : artifacts.length}`
+            )
+            return null
+        }
+
+        return artifacts
+    } catch (e) {
+        sendNotification(
+            NotificationType.error,
+            "Internal error",
+            `Error fetching ${artifactFriendlyName} artifact : ${e}`
+        )
+        return null
+    }
+}
+
+/**
+ * Allows user to download artifacts created by the run: models, Jupyter notebook etc.
+ *
+ * @param run The Run object from which to download the artifact
+ * @param artifactToDownload The machine-readable name of the artifact to download, for example "llm_dataops"
+ * @param artifactFriendlyName The human-readable name of the artifact to download, for example
+ * "LLM Data Operations Notebook"
+ * @param availableArtifacts The list of available artifacts from the Run
+ * @param projectName The name of the project to which the Run belongs. Used for generating a download filename.
+ * @param projectId The ID of the project to which the Run belongs. Used for generating a download filename.
+ * @param experiment The Experiment object to which the Run belongs. Used for generating a download filename.
+ *
+ * @returns Nothing, but saves the file to the user's local machine as a side effect.
+ */
 export async function downloadArtifact(
     run: Run,
     artifactToDownload: string,
@@ -115,40 +187,51 @@ export async function downloadArtifact(
     projectId: number,
     experiment: Experiment
 ) {
-    // Pull out the download URL for the requested artifact.
-    const downloadUrl: string = getUrlForArtifact(artifactToDownload, availableArtifacts)
+    // Retrieve the artifact(s)
+    const artifacts: Artifact[] = await retrieveArtifact(
+        artifactToDownload,
+        artifactFriendlyName,
+        availableArtifacts,
+        run.id
+    )
 
-    if (!downloadUrl) {
-        // If we got this far, it means we think the artifact _should_ be available, so something has gone wrong.
+    if (!artifacts) {
+        return
+    }
+
+    if (artifacts.length !== 1) {
         sendNotification(
             NotificationType.error,
             "Internal error",
-            `No download URL found for "${artifactFriendlyName}" in run id ${run.id}`
+            `Unexpected number of artifacts returned for Run id ${run.id} artifact type ` +
+                `${artifactFriendlyName}: ${artifacts.length}`
         )
         return
     }
 
-    // Retrieve the artifact
-    const artifacts: Artifact[] = await fetchRunArtifact(downloadUrl)
-    if (!artifacts || artifacts.length !== 1) {
-        sendNotification(
-            NotificationType.error,
-            "Internal error",
-            `Unexpected number of artifacts returned for Run id ${run.id}: ${artifacts == null ? 0 : artifacts.length}`
-        )
-    }
-
-    // Convert to text and save to file
-    // TODO: this doesn't handle binary files yet (like models) nor the zip archive case. For the future.
+    // Download the artifact
     const artifact = artifacts[0]
+
+    // We receive the payload as base64 encoded bytes, so we need to decode it either to text or binary, depending
+    // which type of artifact we're dealing with. Binary covers both cases.
+    // Example text artifact: Notebook
+    // Example binary artifact: private Python dependencies zip
     const base64EncodedBytes: string = artifact.bytes
     const decodedString: Uint8Array = fromBinary(base64EncodedBytes)
+
+    // Construct a filename for the downloaded artifact
     const fileName =
         `project_${projectName || projectId || "unknown project"}_${artifactToDownload}_` +
         `${experiment.name || experiment.id}_run_${run.name || run.id}`
+
+    // Determine the filetype
     const fileType = DOWNLOADABLE_ARTIFACTS.find((a) => a.value === artifactToDownload).fileType
+
+    // Sanitize the filename to avoid any issues with special characters
     const safeFilename = toSafeFilename(fileName)
     const downloadFileName = `${safeFilename}.${fileType}`
+
+    // Download
     downloadFile(decodedString, downloadFileName)
 
     // Show notification at top center as in Firefox "downloads popup" hides it on the right
