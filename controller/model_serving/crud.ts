@@ -11,6 +11,7 @@ import {
     TearDownRequest,
 } from "./types"
 import {FlowQueries} from "../../components/internal/flow/flowqueries"
+import {NodeType} from "../../components/internal/flow/nodes/types"
 import {DataField} from "../../generated/csv_data_description"
 import {DeployModelsRequest, InferenceRequest, ModelEncoderData, ModelMetaData} from "../../generated/inference_service"
 import {DataTag, DataTagFieldCAOType} from "../../generated/metadata"
@@ -691,18 +692,15 @@ function findModelDataByUrl(runData: RunModels, modelUrl: string): [string, stri
 
 /**
  * Convert a flow to the format required by the inference API.
- * @param flow Flow JSON string, from the Run we're using for inference
+ * @param flow Flow object, from the Run we're using for inference
  * @param nodeId Node ID of the model we're interested in, within the flow
  * @param dataTag DataTag object from the Run we're using for inference, potentially modified by LLM nodes
  * (eg. category reducer)
  * @return An object with the fields and CAO mapping required by the inference API
  */
-function flowToEncoder(flow: string, nodeId: string, dataTag: DataTag): ModelEncoderData {
-    // Get flow as object
-    const flowObj = JSON.parse(flow)
-
+function flowToEncoder(flow: NodeType[], nodeId: string, dataTag: DataTag): ModelEncoderData {
     // Retrieve the model node we're interested in for this inference request (eg. predictor)
-    const node = FlowQueries.getNodeByID(flowObj, nodeId)
+    const node = FlowQueries.getNodeByID(flow, nodeId)
     if (!node) {
         throw new Error(`Node ${nodeId} not found in flow`)
     }
@@ -733,8 +731,14 @@ function flowToEncoder(flow: string, nodeId: string, dataTag: DataTag): ModelEnc
     }
 }
 
-async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams | RioParams, dataTag: DataTag) {
-    if (!run.flow) {
+async function queryModelNew(
+    run: Run,
+    modelUrl: string,
+    inputs: PredictorParams | RioParams,
+    dataTag: DataTag,
+    flow: NodeType[]
+) {
+    if (!flow) {
         return {
             error: "Model access error",
             description: `Error querying model ${modelUrl}. Run ${run.id} has no flow`,
@@ -768,7 +772,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         // Build the inference request
         const request: InferenceRequest = {
             model: modelData,
-            encoder: flowToEncoder(run.flow, nodeId, dataTag),
+            encoder: flowToEncoder(flow, nodeId, dataTag),
             sampleData: JSON.stringify(inputs),
         }
 
@@ -786,7 +790,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         })
         if (!response.ok) {
             return {
-                error: `Failed to query model at ${modelUrl}`,
+                error: `Received HTTP error response while querying model at ${modelUrl}`,
                 description: `Error code ${response.status}, response: ${(await response.json())?.error}`,
             }
         }
@@ -795,7 +799,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         const inferenceStatus = jsonResponse.status
         if (inferenceStatus !== "SUCCESS") {
             return {
-                error: `Failed to query model at ${modelUrl}`,
+                error: `Received error code while querying model server at ${modelUrl}`,
                 description: `Error code ${response.status}, response: ${JSON.stringify(jsonResponse)}`,
             }
         }
@@ -807,7 +811,7 @@ async function queryModelNew(run: Run, modelUrl: string, inputs: PredictorParams
         console.error(error, error instanceof Error && error.stack)
         return {
             error: "Model access error",
-            description: `Failed to query model at ${modelUrl}. Error: ${
+            description: `Exception encountered while querying model at ${modelUrl}. Error: ${
                 error instanceof Error ? error.message : error
             }`,
         }
@@ -868,19 +872,21 @@ async function queryModelOld(modelUrl: string, inputs: PredictorParams | RioPara
  * @param modelUrl URL of the model to query
  * @param inputs An object with keys each mapping to a single-element array of strings or numbers.
  * @param dataTag DataTag object from the Run we're using for inference, potentially modified by LLM nodes
+ * @param flow Flow for this run, after running through converter {@link consolidateFlow}.
  */
 export async function queryModel(
     run: Run,
     modelUrl: string,
     inputs: PredictorParams | RioParams,
-    dataTag?: DataTag
+    dataTag?: DataTag,
+    flow?: NodeType[]
     // Typescript lib uses "any" so we have to as well
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
     // Use old or new model inference system depending on the feature flag
     const modelServingVersion = useFeaturesStore.getState().modelServingVersion
     if (modelServingVersion === "new") {
-        return queryModelNew(run, modelUrl, inputs, dataTag)
+        return queryModelNew(run, modelUrl, inputs, dataTag, flow)
     } else {
         return queryModelOld(modelUrl, inputs)
     }
