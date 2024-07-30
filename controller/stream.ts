@@ -70,7 +70,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
 
     for (const item of results) {
         try {
-            const itemResult: ObjectType = item.result
+            const itemResult: ObjectType = item.result as ObjectType
             if (itemResult) {
                 itemResult.updated_at = toFriendlyDateTime(itemResult.updated_at)
                 itemResult.created_at = toFriendlyDateTime(itemResult.created_at)

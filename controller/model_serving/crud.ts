@@ -1,16 +1,23 @@
 import debugModule from "debug"
 
-import {RunModels} from "./types"
+import {ModelResponse, RunModels} from "./types"
 import {FlowQueries} from "../../components/internal/flow/flowqueries"
 import {NodeType} from "../../components/internal/flow/nodes/types"
 import {DataField} from "../../generated/csv_data_description"
-import {DeployModelsRequest, InferenceRequest, ModelEncoderData, ModelMetaData} from "../../generated/inference_service"
+import {
+    DeployModelsRequest,
+    InferenceRequest,
+    InferenceResponse,
+    InferenceStatus,
+    ModelEncoderData,
+    ModelMetaData,
+} from "../../generated/inference_service"
 import {DataTag, DataTagFieldCAOType} from "../../generated/metadata"
 import {DeploymentStatus, ModelFormat} from "../../generated/model_serving_common"
 import useEnvironmentStore from "../../state/environment"
 import {empty} from "../../utils/objects"
 import {extractId} from "../../utils/text"
-import {StringString} from "../base_types"
+import {ErrorResult, StringString, StringToArrayOfStringOrNumber} from "../base_types"
 import {PredictorParams, RioParams, Run} from "../run/types"
 
 // For inferencing deployed models
@@ -19,9 +26,6 @@ const debug = debugModule("crud")
 function generateDeploymentID(runId: number): string {
     return `deployment-${runId}`
 }
-
-// For returning errors
-type ErrorResult = {error: string; description?: string}
 
 function isPredictor(model: string): boolean {
     return model.startsWith("predictor-")
@@ -81,14 +85,12 @@ export function getRunModelData(runId: number, outputArtifacts: StringString): R
 
 /**
  * Request deployment of all models associated with a particular Run -- predictors, prescriptors, RIO, ...
- * This function is idempotent: If the models are already deployed, this function simply returns
- * <code>true</code>.
  * @param runId Run ID for the Run in question
  * @param outputArtifacts Output artifacts for the Run in question (predictors, prescriptors, RIO models etc.)
  * @return A tuple of a boolean indicating success or failure, deployment id and an optional error message.
  */
 export async function deployRun(runId: number, outputArtifacts: StringString): Promise<[boolean, ErrorResult?]> {
-    // Fetch the already deployed models
+    // Determine models associated with this Run
     const runData: RunModels = getRunModelData(runId, outputArtifacts)
     if (runData == null || empty(runData)) {
         console.error(`deployRunNew: Failed to get Run metadata for ${runId}`)
@@ -272,6 +274,34 @@ function flowToEncoder(flow: NodeType[], nodeId: string, dataTag: DataTag): Mode
 }
 
 /**
+ * Convert the response from the inference API to a {@link ModelResponse} object.
+ * Mainly used for snake_case to camelCase conversion. ts-proto can't do this for us because the model response is
+ * simply defined as "string" in the contract.
+ *
+ * @param inferenceModelResponse The response from the inference API
+ * @returns A {@link ModelResponse} object with the results of the query
+ */
+function toModelResponse(inferenceModelResponse: {
+    prescribed_actions: StringToArrayOfStringOrNumber
+    predicted_outcomes: StringToArrayOfStringOrNumber
+    rules_inference: string
+}): ModelResponse {
+    if (
+        inferenceModelResponse.prescribed_actions ||
+        inferenceModelResponse.predicted_outcomes ||
+        inferenceModelResponse.rules_inference
+    ) {
+        return {
+            prescribedActions: inferenceModelResponse?.prescribed_actions,
+            predictedOutcomes: inferenceModelResponse?.predicted_outcomes,
+            rulesInference: inferenceModelResponse?.rules_inference,
+        }
+    } else {
+        return inferenceModelResponse as ModelResponse
+    }
+}
+
+/**
  * Query a model for a given set of inputs. The model must have already been deployed by a preceding call to
  * {@link deployRun} and is specified by its URL.
  * The inputs are specified as a set of vectorized name-value inputs. See {@link vectorize} for more details.
@@ -280,6 +310,11 @@ function flowToEncoder(flow: NodeType[], nodeId: string, dataTag: DataTag): Mode
  * @param run The Run object for the run whose model we want to query
  * @param modelUrl URL of the model to query
  * @param inputs An object with keys each mapping to a single-element array of strings or numbers.
+ * @param dataTag DataTag object from the Run we're using for inference, potentially modified by LLM nodes
+ * @param flow Flow object, from the Run we're using for inference, potentially converted to new format (new names
+ * for ParentNodeData etc.)
+ *
+ * @returns A {@link ModelResponse} object with the results of the query, or an {@link ErrorResult} object if an error
  */
 export async function queryModel(
     run: Run,
@@ -287,7 +322,7 @@ export async function queryModel(
     inputs: PredictorParams | RioParams,
     dataTag: DataTag,
     flow: NodeType[]
-) {
+): Promise<ModelResponse | ErrorResult> {
     if (!flow) {
         return {
             error: "Model access error",
@@ -345,17 +380,26 @@ export async function queryModel(
             }
         }
 
-        const jsonResponse = await response.json()
-        const inferenceStatus = jsonResponse.status
-        if (inferenceStatus !== "SUCCESS") {
+        const responseJson: InferenceResponse = await response.json()
+        const responseObject = InferenceResponse.fromJSON(responseJson)
+
+        const inferenceStatus: InferenceStatus = responseObject.status
+        if (inferenceStatus !== InferenceStatus.SUCCESS) {
             return {
                 error: `Received error code while querying model server at ${modelUrl}`,
-                description: `Error code ${response.status}, response: ${JSON.stringify(jsonResponse)}`,
+                description: `Error code ${response.status}, response: ${JSON.stringify(responseObject)}`,
             }
         }
 
-        const innerResponse = jsonResponse.response
-        return JSON.parse(innerResponse)
+        const modelResponse: string = responseObject.responseData
+        if (!modelResponse) {
+            return {
+                error: "Model access error",
+                description: `Error querying model at ${modelUrl}. No response received.`,
+            }
+        }
+
+        return toModelResponse(JSON.parse(modelResponse))
     } catch (error) {
         console.error("Unable to access model", modelUrl)
         console.error(error, error instanceof Error && error.stack)

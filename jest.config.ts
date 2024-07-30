@@ -1,4 +1,4 @@
-// This file is used by Jest to configure the testing environment for component tests
+// This is the base jest config file from which other configs inherit.
 
 // This file initially cargo culted from here:
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
@@ -31,7 +31,11 @@ const config: Config.InitialOptions = {
         "!**/coverage/**",
         "!**/generated/**",
         "!jest*.ts",
+        "!next-env.d.ts",
+        "!postcss.config.js",
+        "!tailwind.config.js",
     ],
+    // coverageReporters: ["clover", "json", "lcov", "text"],
     coverageReporters: ["text-summary"],
 }
 
