@@ -35,7 +35,6 @@ const config: Config.InitialOptions = {
         "!postcss.config.js",
         "!tailwind.config.js",
     ],
-    // coverageReporters: ["clover", "json", "lcov", "text"],
     coverageReporters: ["text-summary"],
 }
 
