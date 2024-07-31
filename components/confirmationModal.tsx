@@ -23,12 +23,15 @@ export const ConfirmationModal = ({
             type="primary"
             disabled={isLoading}
             onClick={async () => {
-                if (handleOk) {
-                    setIsLoading(true)
-                    await handleOk()
+                try {
+                    if (handleOk) {
+                        setIsLoading(true)
+                        await handleOk()
+                    }
+                } finally {
+                    setModalOpen(false)
                     setIsLoading(false)
                 }
-                setModalOpen(false)
             }}
         >
             Confirm
