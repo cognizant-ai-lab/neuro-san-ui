@@ -89,3 +89,11 @@ export const MAX_DATA_PROFILE_ALLOWED_CATEGORIES = 100
 
 // "Magic" user name for demo projects
 export const DEMO_USER = "leaf_demo_user"
+
+export const EDIT_EXPERIMENT_DIALOG_TITLE = "Renaming Experiment Name"
+
+export const EDIT_EXPERIMENT_DIALOG_TEXT =
+    "If you rename this experiment, notebooks from past runs for this experiment will " +
+    "no longer function, as they will be referencing the old experiment name for " +
+    "accessing datasets and Python requirements files. It will be your responsibility " +
+    "to update those notebooks if you wish to download and use them. Proceed anyway?"
