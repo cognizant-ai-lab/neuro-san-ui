@@ -221,9 +221,9 @@ export async function downloadArtifact(
 
     // Construct a filename for the downloaded artifact
     const fileName =
-        `project_${projectName || projectId || "unknown project"}_${artifactToDownload}_` +
-        `${experiment.name || experiment.id}_run_${run.name || run.id}`
-
+        `project_${projectName || projectId || "unknown project"}_` +
+        `experiment_${experiment.name || experiment.id}_` +
+        `run_${run.name || run.id}_${artifactToDownload}`
     // Determine the filetype
     const fileType = DOWNLOADABLE_ARTIFACTS.find((a) => a.value === artifactToDownload).fileType
 
