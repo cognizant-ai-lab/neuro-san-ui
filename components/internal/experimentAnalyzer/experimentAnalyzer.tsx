@@ -67,8 +67,8 @@ export function ExperimentAnalyzer(props: {
                 key,
                 {
                     ...value,
-                        // For continuous fields, drop the categories entirely so as not to confuse the LLM
-                        // For categorical fields, limit the number of categories to MAX_ALLOWED_CATEGORIES
+                    // For continuous fields, drop the categories entirely so as not to confuse the LLM
+                    // For categorical fields, limit the number of categories to MAX_ALLOWED_CATEGORIES
                     discreteCategoricalValues:
                         value.valued === DataTagFieldValued.CATEGORICAL
                             ? value.discreteCategoricalValues.slice(0, MAX_ALLOWED_CATEGORIES)
