@@ -1,4 +1,5 @@
 import {Drawer, Tooltip} from "antd"
+import {cloneDeep} from "lodash"
 import {useEffect, useRef, useState} from "react"
 import {MdOutlineSaveAlt} from "react-icons/md"
 import ReactMarkdown from "react-markdown"
@@ -6,10 +7,13 @@ import ClipLoader from "react-spinners/ClipLoader"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 
-import {MaximumBlue} from "../../../const"
+import {MAX_ALLOWED_CATEGORIES, MaximumBlue} from "../../../const"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
+import {DataTag, DataTagFieldValued} from "../../../generated/metadata"
 import {toSafeFilename} from "../../../utils/file"
 import {omitDeep} from "../../../utils/objects"
+import {FlowQueries} from "../flow/flowqueries"
+import {DataSourceNode} from "../flow/nodes/datasourcenode"
 import {NodeType} from "../flow/nodes/types"
 
 // Main function for the Experiment Analyzer component.
@@ -45,11 +49,38 @@ export function ExperimentAnalyzer(props: {
 
     /**
      * Clean up the flow object to remove unnecessary fields that would just confuse the LLM and bloat the payload.
+     * Also prunes the number of categories in fields to avoid huge payloads.
      * @param flowTmp The flow object to clean up.
      * @returns The cleaned up flow object.
      */
-    function cleanFlow(flowTmp: object) {
-        return omitDeep(flowTmp, [
+    function cleanFlow(flowTmp: NodeType[]): NodeType[] {
+        // Make a copy of the flow. Can't use structuredClone because it doesn't handle functions.
+        const flowClone: NodeType[] = cloneDeep(flowTmp)
+
+        // Remove excess categories from fields. Some older experiments have fields that were defined as
+        // continuous but all possible values were stored as if they were categories. This makes for HUGE payloads
+        // that causes requests to fail.
+        const dataNode: DataSourceNode = FlowQueries.getDataNodes(flowClone)[0]
+        const dataTag: DataTag = DataTag.fromJSON(dataNode.data.DataTag)
+        dataTag.fields = Object.fromEntries(
+            Object.entries(dataTag.fields).map(([key, value]) => {
+                return [
+                    key,
+                    {
+                        ...value,
+                        // For continuous fields, drop the categories entirely so as not to confuse the LLM
+                        // For categorical fields, limit the number of categories to MAX_ALLOWED_CATEGORIES
+                        discreteCategoricalValues:
+                            value.valued === DataTagFieldValued.CATEGORICAL
+                                ? value.discreteCategoricalValues.slice(0, MAX_ALLOWED_CATEGORIES)
+                                : undefined,
+                    },
+                ]
+            })
+        )
+
+        dataNode.data.DataTag = dataTag
+        return omitDeep(flowClone, [
             "ParameterSet",
             "ParentPredictorState",
             "OutputOverrideCode",
@@ -76,6 +107,7 @@ export function ExperimentAnalyzer(props: {
         autoScrollEnabled.current = true
 
         const cleanedFlow = cleanFlow(props.flow)
+
         await sendLlmRequest(
             tokenReceivedHandler,
             null,
