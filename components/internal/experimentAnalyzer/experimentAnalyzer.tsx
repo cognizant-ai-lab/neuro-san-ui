@@ -81,7 +81,6 @@ export function ExperimentAnalyzer(props: {
         return omitDeep(flowClone, [
             "ParameterSet",
             "ParentPredictorState",
-            "OutputOverrideCode",
             "ParentUncertaintyNodeState",
             "EvaluatorOverrideCode",
         ])

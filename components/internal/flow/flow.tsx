@@ -40,7 +40,6 @@ import {PrescriptorNode} from "./nodes/prescriptornode"
 import NodeTypes, {NodeData, NodeType} from "./nodes/types"
 import {FlowElementsType} from "./types"
 import {UNCERTAINTY_MODEL_PARAMS} from "./uncertaintymodelinfo"
-import {EvaluateCandidateCode, OutputOverrideCode} from "../../../const"
 import {DataSource, DataTag, DataTagFieldCAOType} from "../../../generated/metadata"
 import {useStateWithCallback} from "../../../utils/react_utils"
 import {NotificationType, sendNotification} from "../../notification"
@@ -142,7 +141,6 @@ export default function Flow(props: FlowProps) {
                         node.data = {
                             ...node.data,
                             idExtension,
-                            UpdateOutputOverrideCode: (value) => UpdateOutputOverrideCode(node.id, value),
                         }
                         break
                     case "activation_node":
@@ -474,24 +472,6 @@ export default function Flow(props: FlowProps) {
         )
     }
 
-    function UpdateOutputOverrideCode(prescriptorEdgeID, value) {
-        /*
-        This function is used to update the code block in the predictor Edge
-        used to override the output of the predictor.
-        */
-        setEdges(
-            edges.map((node) => {
-                if (node.id === prescriptorEdgeID) {
-                    node.data = {
-                        ...node.data,
-                        OutputOverrideCode: value,
-                    }
-                }
-                return node
-            })
-        )
-    }
-
     function PrescriptorSetStateHandler(newState, NodeID) {
         /*
         This Handler is supposed to be triggered by a prescriptor node
@@ -555,8 +535,6 @@ export default function Flow(props: FlowProps) {
             animated: false,
             type: "prescriptoredge",
             data: {
-                OutputOverrideCode: OutputOverrideCode,
-                UpdateOutputOverrideCode: (value) => UpdateOutputOverrideCode(edgeId, value),
                 idExtension,
             },
         }
@@ -870,8 +848,6 @@ export default function Flow(props: FlowProps) {
                 SelectedDataSourceId: FlowQueries.getDataNodes(nodes)[0].data.DataSource.id,
                 ParentPrescriptorState: getInitialPrescriptorState(fitness),
                 SetParentPrescriptorState: (state) => PrescriptorSetStateHandler(state, prescriptorNodeID),
-                EvaluatorOverrideCode: EvaluateCandidateCode,
-                UpdateEvaluateOverrideCode: (value) => UpdateOutputOverrideCode(prescriptorNodeID, value),
                 DeleteNode: (prescriptorNodeId) => deleteNodeById(prescriptorNodeId),
                 GetElementIndex: (id) => getElementIndex(id),
                 idExtension,

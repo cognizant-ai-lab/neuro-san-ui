@@ -8,8 +8,6 @@ import {AiFillDelete} from "react-icons/ai"
 import {BiPlusMedical} from "react-icons/bi"
 import {GrSettingsOption} from "react-icons/gr"
 import {MdDelete} from "react-icons/md"
-import SyntaxHighlighter from "react-syntax-highlighter"
-import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
 import {loadDataTag} from "../../../../controller/datatag/fetchdatataglist"
@@ -28,9 +26,6 @@ export interface PrescriptorNodeData {
 
     // This map describes the field names
     readonly SelectedDataSourceId: number
-
-    readonly EvaluatorOverrideCode
-    readonly UpdateEvaluateOverrideCode
 
     readonly ParentPrescriptorState
     readonly SetParentPrescriptorState
@@ -62,14 +57,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     const currentUser: string = session.user.name
 
     // Unpack the mapping
-    const {
-        NodeID,
-        ParentPrescriptorState,
-        SetParentPrescriptorState,
-        EvaluatorOverrideCode,
-        DeleteNode,
-        GetElementIndex,
-    } = data
+    const {NodeID, ParentPrescriptorState, SetParentPrescriptorState, DeleteNode, GetElementIndex} = data
 
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `prescriptor-${flowIndex}`
@@ -191,7 +179,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     // Declare state to keep track of the Tabs
     const [selectedIndex, setSelectedIndex] = useState(0)
 
-    const tabs = ["Representation", "Evolution Parameters", "Objective Configuration", "Override Evaluator"]
+    const tabs = ["Representation", "Evolution Parameters", "Objective Configuration"]
 
     // Create a min/max selector for each desired outcome
     const objectiveConfigurationPanel = ParentPrescriptorState.evolution.fitness.map((metric) => {
@@ -246,19 +234,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             </div>
         )
     })
-
-    const evaluatorOverridePanel = (
-        <Card.Body id={`${flowPrefix}-evaluator-override-code`}>
-            <SyntaxHighlighter
-                id={`${flowPrefix}-evaluator-override-code-syntax-highlighter`}
-                language="python"
-                style={docco}
-                showLineNumbers={true}
-            >
-                {EvaluatorOverrideCode}
-            </SyntaxHighlighter>
-        </Card.Body>
-    )
 
     // We need to maintain state for selected Representation
     // Possible options are:
@@ -1015,7 +990,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                     {selectedIndex === 0 && prescriptorRepresentationPanel}
                                     {selectedIndex === 1 && evolutionConfigurationPanel}
                                     {selectedIndex === 2 && objectiveConfigurationPanel}
-                                    {selectedIndex === 3 && evaluatorOverridePanel}
                                 </>
                             }
                             statelessProps={{

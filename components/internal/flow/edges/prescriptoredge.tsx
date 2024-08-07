@@ -1,16 +1,6 @@
-import {Popover, Position, Tab, Tablist} from "evergreen-ui"
-import {FC, useState} from "react"
-import {Card} from "react-bootstrap"
-import {GrSettingsOption} from "react-icons/gr"
-import SyntaxHighlighter from "react-syntax-highlighter"
-import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
+import {FC} from "react"
 import {Edge, EdgeProps, getBezierPath} from "reactflow"
-
-const foreignObjectSize = 20
-
 type PrescriptorEdgeData = {
-    OutputOverrideCode: string
-    UpdateOutputOverrideCode: (code: string) => void
     idExtension?: string
 }
 
@@ -30,7 +20,7 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
     data,
     markerEnd,
 }) => {
-    const [edgePath, edgeCenterX, edgeCenterY] = getBezierPath({
+    const [edgePath] = getBezierPath({
         sourceX,
         sourceY,
         sourcePosition,
@@ -41,90 +31,18 @@ const PrescriptorEdgeComponent: FC<EdgeProps<PrescriptorEdgeData>> = ({
 
     const idExtension = data?.idExtension ?? ""
 
-    // We want to have a tabbed predictor configuration, and thus we build the following component
-    // Declare state to keep track of the Tabs
-    const [selectedIndex, setSelectedIndex] = useState(0)
-
-    const tabs = ["Override Predictor Output"]
-
     // XXX  This could use some GetElementIndex love similar to what is going on
     //      in predictornode, prescriptornode, uncertaintyModelNode
     const flowPrefix = `prescriptoredge-${id}`
 
-    const PredictorOverride = (
-        <Card.Body id={`${flowPrefix}-output-override-code`}>
-            <SyntaxHighlighter
-                id={`${flowPrefix}-output-override-code-syntax-highlighter`}
-                language="python"
-                style={docco}
-                showLineNumbers={true}
-            >
-                {data.OutputOverrideCode}
-            </SyntaxHighlighter>
-        </Card.Body>
-    )
     return (
-        <>
-            <path
-                id={`${flowPrefix}${idExtension}`}
-                style={style}
-                className="react-flow__edge-path"
-                d={edgePath}
-                markerEnd={markerEnd}
-            />
-            <foreignObject
-                id={`${flowPrefix}-settings-div${idExtension}`}
-                width={foreignObjectSize}
-                height={foreignObjectSize}
-                x={edgeCenterX - foreignObjectSize / 2}
-                y={edgeCenterY - foreignObjectSize / 2}
-                className="edgebutton-foreignobject"
-                requiredExtensions="http://www.w3.org/1999/xhtml"
-            >
-                <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    // 2/6/23 DEF - Popover does not have an id property when compiling
-                    position={Position.LEFT}
-                    minWidth="1rem"
-                    content={
-                        <>
-                            <Tablist
-                                id={`${flowPrefix}-settings-tablist${idExtension}`}
-                                marginBottom={16}
-                                flexBasis={240}
-                                marginRight={24}
-                            >
-                                {tabs.map((tab, index) => (
-                                    <Tab
-                                        key={tab}
-                                        id={`${flowPrefix}-settings-${tab}${idExtension}`}
-                                        onSelect={() => setSelectedIndex(index)}
-                                        isSelected={index === selectedIndex}
-                                        aria-controls={`panel-${tab}`}
-                                    >
-                                        {tab}
-                                    </Tab>
-                                ))}
-                            </Tablist>
-                            {selectedIndex === 0 && PredictorOverride}
-                        </>
-                    }
-                >
-                    <div
-                        id={`${flowPrefix}-gr-settings-div${idExtension}`}
-                        className="flex"
-                    >
-                        <button
-                            id={`${flowPrefix}-gr-settings-button${idExtension}`}
-                            type="button"
-                            className="mt-1"
-                            style={{height: 0}}
-                        >
-                            <GrSettingsOption id={`${flowPrefix}-gr-settings-option${idExtension}`} />
-                        </button>
-                    </div>
-                </Popover>
-            </foreignObject>
-        </>
+        <path
+            id={`${flowPrefix}${idExtension}`}
+            style={style}
+            className="react-flow__edge-path"
+            d={edgePath}
+            markerEnd={markerEnd}
+        />
     )
 }
 
