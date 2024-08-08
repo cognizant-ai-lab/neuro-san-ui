@@ -12,6 +12,7 @@ describe("Runs Table Test", () => {
                 experimentId={0}
                 projectId={0}
                 projectName=""
+                projectCanWrite={true}
                 experiment={{name: "test experiment", flow: null}}
                 runDrawer={false}
                 runs={[

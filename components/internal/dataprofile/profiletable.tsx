@@ -13,6 +13,7 @@ interface ProfileTableProps {
     id: string
     Profile: Profile
     ProfileUpdateHandler: (value: Profile) => void
+    readonly readOnly?: boolean
 }
 
 export default function ProfileTable(props: ProfileTableProps) {
@@ -241,24 +242,26 @@ export default function ProfileTable(props: ProfileTableProps) {
                                 </option>
                             ))}
                         </select>
-                        <button
-                            id={`${field}-set-current-category-values`}
-                            onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
-                                // Don't want to submit form here!
-                                e.preventDefault()
+                        {!props.readOnly ? (
+                            <button
+                                id={`${field}-set-current-category-values`}
+                                onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
+                                    // Don't want to submit form here!
+                                    e.preventDefault()
 
-                                setFieldBeingEditedName(field)
-                                setCurrentCategoryValues(fields[field].discreteCategoricalValues)
-                                setCategoryOrder(fields[field].discreteCategoricalValues)
-                                setShowFieldEditor(true)
-                            }}
-                        >
-                            <AiFillEdit
-                                id={`${field}-set-current-category-values-fill`}
-                                size="14"
-                                style={{cursor: "pointer"}}
-                            />
-                        </button>
+                                    setFieldBeingEditedName(field)
+                                    setCurrentCategoryValues(fields[field].discreteCategoricalValues)
+                                    setCategoryOrder(fields[field].discreteCategoricalValues)
+                                    setShowFieldEditor(true)
+                                }}
+                            >
+                                <AiFillEdit
+                                    id={`${field}-set-current-category-values-fill`}
+                                    size="14"
+                                    style={{cursor: "pointer"}}
+                                />
+                            </button>
+                        ) : null}
                     </span>
                 ) : (
                     "N/A"

@@ -241,7 +241,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             return
         }
 
-        const projects: Projects = await fetchProjects(currentUser, projectID, ["name", "description"])
+        const projects: Projects = await fetchProjects(currentUser, projectID, ["name", "description", "owner"])
         if (projects && projects.length === 1) {
             setProject(projects[0])
         }
@@ -803,6 +803,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                         Flow={flow}
                         ElementsSelectable={false}
                         idExtension={props.idExtension}
+                        readOnly={!project?.canWrite}
                     />
                 </ReactFlowProvider>
             </div>

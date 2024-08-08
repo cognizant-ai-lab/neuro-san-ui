@@ -85,6 +85,7 @@ const FLOW_WITH_PREDICTOR: (NodeType | EdgeType)[] = [
         id: "81e04790-f085-6645-c06a-1013b0259dfb",
         type: "predictornode",
         data: {
+            readOnly: false,
             NodeID: "81e04790-f085-6645-c06a-1013b0259dfb",
             SelectedDataSourceId: 1234,
             ParentNodeState: {

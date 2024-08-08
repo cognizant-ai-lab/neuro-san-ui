@@ -35,6 +35,9 @@ export interface PrescriptorNodeData {
 
     // Gets a simpler index for testing ids (at least)
     readonly GetElementIndex: (nodeID: string) => number
+
+    // Disables deleting of flow node.
+    readonly readOnly: boolean
 }
 
 // For RuleBased
@@ -1110,29 +1113,31 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         </Popover>
                     </div>
                 </Card.Body>
-                <div
-                    id={`${flowPrefix}-delete-div`}
-                    className="px-1 my-1"
-                    style={{position: "absolute", bottom: "0px", right: "1px"}}
-                >
-                    <button
-                        id={`${flowPrefix}-delete-button`}
-                        type="button"
-                        onClick={(event) => {
-                            if (!showDeleteModal) {
-                                handleDelete(event)
-                            }
-                        }}
+                {!readOnly ? (
+                    <div
+                        id={`${flowPrefix}-delete-div`}
+                        className="px-1 my-1"
+                        style={{position: "absolute", bottom: "0px", right: "1px"}}
                     >
-                        <AiFillDelete
-                            id={`${flowPrefix}-delete-button-fill`}
-                            size="15"
-                            color={trashColor}
-                            onMouseEnter={() => setTrashHover(true)}
-                            onMouseLeave={() => setTrashHover(false)}
-                        />
-                    </button>
-                </div>
+                        <button
+                            id={`${flowPrefix}-delete-button`}
+                            type="button"
+                            onClick={(event) => {
+                                if (!showDeleteModal) {
+                                    handleDelete(event)
+                                }
+                            }}
+                        >
+                            <AiFillDelete
+                                id={`${flowPrefix}-delete-button-fill`}
+                                size="15"
+                                color={trashColor}
+                                onMouseEnter={() => setTrashHover(true)}
+                                onMouseLeave={() => setTrashHover(false)}
+                            />
+                        </button>
+                    </div>
+                ) : null}
             </Card>
 
             <Handle
