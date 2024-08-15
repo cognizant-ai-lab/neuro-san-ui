@@ -27,6 +27,7 @@ export function middleware(req: NextRequest) {
     return res
 }
 
+// ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
 export const config = {
     matcher: "/:path*",
 }
