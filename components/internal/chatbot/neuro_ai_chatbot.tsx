@@ -102,7 +102,7 @@ const NeuroAIChatbot = (props: {id: string; userAvatar: string; pageContext: str
                 headerTitle={isGeneric ? "Autopilot AI assistant" : "Cognizant Neuro™ AI Assistant"}
                 placeholder="What is a prescriptor?"
                 userAvatar={props.userAvatar}
-                botAvatar={isGeneric ? "/robot.png" : "/images/cognizantfavicon.ico"}
+                botAvatar={isGeneric ? "/robot.png" : "/cognizantfavicon.ico"}
                 steps={chatbotSteps}
                 width="400px"
                 // Use a random key to force a new instance of the chatbot, so we don't get stale context from

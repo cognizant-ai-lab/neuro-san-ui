@@ -27,6 +27,7 @@ import {Container} from "react-bootstrap"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {UserInfoResponse} from "./api/userInfo/types"
+import {Auth} from "../components/auth"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
@@ -42,7 +43,7 @@ const debug = debugModule("app")
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
     const {isGeneric} = useFeaturesStore()
-    const {backendApiUrl, setBackendApiUrl} = useEnvironmentStore()
+    const {backendApiUrl, setBackendApiUrl, setAuth0ClientId, setAuth0Domain} = useEnvironmentStore()
 
     // access user info store
     const {currentUser, setCurrentUser, picture, setPicture} = useUserInfoStore()
@@ -88,6 +89,24 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 debug(`Received backend API URL from NodeJS server. Setting to ${data.backendApiUrl}`)
                 setBackendApiUrl(data.backendApiUrl)
             }
+
+            // See if we got the auth0 client ID
+            if (data.auth0ClientId) {
+                // Cache auth0 client ID in feature store
+                debug(`Received Auth0 client ID from NodeJS server. Setting to ${data.auth0ClientId}`)
+                setAuth0ClientId(data.auth0ClientId)
+            } else {
+                debug("No Auth0 client ID found in response")
+            }
+
+            // See if we got the auth0 domain
+            if (data.auth0Domain) {
+                // Cache auth0 domain in feature store
+                debug(`Received Auth0 domain from NodeJS server. Setting to ${data.auth0Domain}`)
+                setAuth0Domain(data.auth0Domain)
+            } else {
+                debug("No Auth0 domain found in response")
+            }
         }
 
         void getEnvironment()
@@ -127,6 +146,8 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
 
         void getUserInfo()
     }, [])
+
+    let body: JSX.Element | ReactFragment
 
     function getLoadingSpinner() {
         return (
@@ -176,20 +197,35 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
         } else {
             debug("Rendering NextAuth authentication case")
 
-            return Component.authRequired ? <div>Auth required but could not auth</div> : <div>No auth required</div>
+            return Component.authRequired ? (
+                <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                >
+                    <Component
+                        id="body-auth-component"
+                        {...pageProps}
+                    />
+                </Auth>
+            ) : (
+                <Component
+                    id="body-non-auth-component"
+                    {...pageProps}
+                />
+            )
         }
     }
 
-    const body: JSX.Element | ReactFragment =
-        pathname === "/public" ? (
-            // Main page is special
+    if (pathname === "/") {
+        // Main page is special
+        body = (
             <div id="body-div">
                 <Component
                     id="body-component"
                     {...pageProps}
                 />
             </div>
-        ) : (
+        )
+    } else {
+        body = (
             // Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
             // unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be removed
             // when we fully switch to ALB auth.
@@ -219,6 +255,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 </ErrorBoundary>
             </SessionProvider>
         )
+    }
 
     return (
         <div id="unileaf">
@@ -234,7 +271,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 <link
                     id="unileaf-link"
                     rel="icon"
-                    href="/images/cognizantfavicon.ico"
+                    href="/cognizantfavicon.ico"
                 />
             </Head>
             {body}

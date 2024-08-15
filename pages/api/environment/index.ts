@@ -10,28 +10,16 @@ import httpStatus from "http-status"
 export default async function handler(_req, res) {
     res.setHeader("Content-Type", "application/json")
     const backendApiUrl = process.env.MD_SERVER_URL
-    // if (!backendApiUrl) {
-    //     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-    //         error: "MD_SERVER_URL not set in environment",
-    //     })
-    //     return
-    // }
+    if (!backendApiUrl) {
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            error: "MD_SERVER_URL not set in environment",
+        })
+        return
+    }
 
+    // These are now optional depending on which authentication method we are using
     const auth0ClientId = process.env.AUTH0_CLIENT_ID
-    // if (!auth0ClientId) {
-    //     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-    //         error: "AUTH0_CLIENT_ID not set in environment",
-    //     })
-    //     return
-    // }
-
     const auth0Domain = process.env.AUTH0_DOMAIN
-    // if (!auth0Domain) {
-    //     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-    //         error: "AUTH0_DOMAIN not set in environment",
-    //     })
-    //     return
-    // }
 
     res.status(httpStatus.OK).json({
         backendApiUrl: backendApiUrl,

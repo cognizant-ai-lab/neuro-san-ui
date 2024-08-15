@@ -29,7 +29,7 @@
 }
 
 #body-div {
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("../public/NeuroAI_SC_BH1.webp");
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/NeuroAI_SC_BH1.webp");
     background-size: cover;
     min-height: 100vh;
     padding-bottom: 2rem;
