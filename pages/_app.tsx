@@ -90,22 +90,22 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 setBackendApiUrl(data.backendApiUrl)
             }
 
-            // See if we got the auth0 client ID
-            if (data.auth0ClientId) {
+            // Make sure we got the auth0 client ID
+            if (!data.auth0ClientId) {
+                throw new Error("No Auth0 client ID found in response")
+            } else {
                 // Cache auth0 client ID in feature store
                 debug(`Received Auth0 client ID from NodeJS server. Setting to ${data.auth0ClientId}`)
                 setAuth0ClientId(data.auth0ClientId)
-            } else {
-                debug("No Auth0 client ID found in response")
             }
 
-            // See if we got the auth0 domain
-            if (data.auth0Domain) {
+            // Make sure we got the auth0 domain
+            if (!data.auth0Domain) {
+                throw new Error("No Auth0 domain found in response")
+            } else {
                 // Cache auth0 domain in feature store
                 debug(`Received Auth0 domain from NodeJS server. Setting to ${data.auth0Domain}`)
                 setAuth0Domain(data.auth0Domain)
-            } else {
-                debug("No Auth0 domain found in response")
             }
         }
 
