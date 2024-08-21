@@ -16,8 +16,8 @@ const debug = debugModule("middleware")
  */
 // ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
 export function middleware(req: NextRequest) {
-    const {method, url} = req
-    const host = req.headers.get("host") || "unknown host"
+    const {method, url, headers} = req
+    const host = headers?.get("host") || "unknown host"
     const res = NextResponse.next()
 
     // Get the real host from the HTTP headers, or else the request will just appear to come from 0.0.0.0
