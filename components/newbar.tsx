@@ -1,7 +1,9 @@
+import {Tooltip} from "evergreen-ui"
 import Link, {LinkProps} from "next/link"
 import {ReactElement, useState} from "react"
 import {AiFillEdit} from "react-icons/ai"
 import {BsFillPlusSquareFill} from "react-icons/bs"
+import {MdOutlineShare} from "react-icons/md"
 
 // Define the Props Interface
 interface NavbarProps {
@@ -14,6 +16,7 @@ interface NavbarProps {
     ButtonComponent?
     EditableCallback?
     InstanceId?: string
+    handleSharingCallback?
 }
 
 export default function NewBar(props: NavbarProps) {
@@ -59,6 +62,32 @@ export default function NewBar(props: NavbarProps) {
         } else if (props.ButtonComponent) {
             newButton = props.ButtonComponent
         }
+    }
+
+    // Determine if the Sharing button needs to be shown or not
+    let sharingButton = null
+    if (props.handleSharingCallback) {
+        sharingButton = (
+            <h3
+                id="share-item"
+                style={{marginLeft: "auto"}}
+            >
+                <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    showDelay={1}
+                    content="Share this project"
+                >
+                    <span
+                        id="project-tooltip-share"
+                        style={{cursor: "pointer"}}
+                    >
+                        <MdOutlineShare
+                            id="project-share"
+                            onClick={props.handleSharingCallback}
+                        />
+                    </span>
+                </Tooltip>
+            </h3>
+        )
     }
 
     const [editing, setEditing] = useState(false)
@@ -141,6 +170,7 @@ export default function NewBar(props: NavbarProps) {
         >
             {title}
             {newButton}
+            {sharingButton}
         </div>
     )
 }
