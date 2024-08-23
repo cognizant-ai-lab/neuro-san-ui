@@ -3,7 +3,7 @@ Unit tests for the various small utility modules
  */
 
 import decode from "../../utils/conversion"
-import {arraysEqual} from "../../utils/objects"
+import {arraysEqual, omitDeep} from "../../utils/objects"
 import sortByTime from "../../utils/sort"
 import {removeItemOnce} from "../../utils/transformation"
 
@@ -59,5 +59,29 @@ describe("Various utilities", () => {
         // different contents
         res = arraysEqual(["a", "b", "c"], ["a", "b", "d"])
         expect(res).toEqual(false)
+    })
+
+    it("should omit keys from an object", () => {
+        let res
+
+        // null
+        res = omitDeep(null, [])
+        expect(res).toEqual(null)
+
+        // array 1 deep
+        res = omitDeep([{a: true}, 1, 2, 3], ["a"])
+        expect(res).toEqual([{}, 1, 2, 3])
+
+        // array 2 deep
+        res = omitDeep([[{a: true}], 1, 2, 3], ["a"])
+        expect(res).toEqual([[{}], 1, 2, 3])
+
+        // 1 level obj
+        res = omitDeep({a: true, b: true, c: true}, ["a"])
+        expect(res).toEqual({b: true, c: true})
+
+        // 2 level obj
+        res = omitDeep({b: true, c: true, hello: {a: true, mock: "hi"}}, ["a"])
+        expect(res).toEqual({b: true, c: true, hello: {mock: "hi"}})
     })
 })

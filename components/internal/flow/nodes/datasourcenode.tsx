@@ -31,7 +31,7 @@ export type DataSourceNode = RFNode<DataSourceNodeData>
 
 const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
     const data = props.data
-    const {idExtension = ""} = data
+    const {idExtension = "", readOnlyNode = false} = data
     const projectId: number = data.ProjectID
 
     const [taggedDataList, setTaggedDataList] = useState<TaggedDataInfo[]>([])
@@ -110,6 +110,10 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                     </div>
                     {taggedDataList.length > 0 ? (
                         <select
+                            // Hack: Disabling entire dropdown here for READONLY Nodes because of
+                            // focus issue causing disabled options to never lose drag focus in flow nodes.
+                            // We can revisit this if more options are added to DataSource Node
+                            disabled={readOnlyNode}
                             name="dataset"
                             id={`data-source-node-select-dataset${idExtension}`}
                             style={{
@@ -140,7 +144,6 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                                         key={dataTmp.DataSource.id}
                                         id={`data-source-node-selected${idExtension}`}
                                         value={dataTmp.DataSource.id}
-                                        disabled={data.readOnlyNode}
                                     >
                                         {dataTmp.DataSource.name}
                                     </option>

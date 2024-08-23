@@ -1718,7 +1718,7 @@ export default function Flow(props: FlowProps) {
             id={propsId}
             className="mt-5"
         >
-            {/* Only render buttons if ElementsSelectable is true, meaning Flow is editable */}
+            {/* Only render buttons if ElementsSelectable is true and readOnly is, meaning Flow is editable */}
             {elementsSelectable && !readOnlyFlow && getFlowButtons()}
             {readOnlyFlow ? (
                 <div

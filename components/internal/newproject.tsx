@@ -807,6 +807,7 @@ export default function NewProject(props: NewProps) {
             id={`${idPrefix}-profile-table`}
             Profile={profile}
             ProfileUpdateHandler={setProfile}
+            updatePermission
         />
     )
 

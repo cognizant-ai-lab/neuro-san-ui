@@ -681,7 +681,7 @@ export default function ProfileTable(props: ProfileTableProps) {
         >
             {!updatePermission ? (
                 <div
-                    className="flex justify-content-center align-items-center gap-2 mt-2 mb-2 text-red"
+                    className="flex justify-content-center align-items-center gap-2 mt-2 mb-2"
                     id="profile-table-read-only-message-container"
                 >
                     <AiFillLock
@@ -692,6 +692,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                     <h3
                         id="profile-table-read-only-message"
                         className="mb-0"
+                        style={{color: "red"}}
                     >
                         You are not authorized to make changes to this project.
                     </h3>
