@@ -33,9 +33,12 @@ export default async function handler(_req, res) {
         return
     }
 
+    const enableProjectSharing = process.env.ENABLE_PROJECT_SHARING || false
+
     res.status(httpStatus.OK).json({
-        backendApiUrl: backendApiUrl,
-        auth0ClientId: auth0ClientId,
-        auth0Domain: auth0Domain,
+        backendApiUrl,
+        auth0ClientId,
+        auth0Domain,
+        enableProjectSharing,
     })
 }

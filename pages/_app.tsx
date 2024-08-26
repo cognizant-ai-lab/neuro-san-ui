@@ -42,7 +42,7 @@ const debug = debugModule("app")
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
-    const {isGeneric} = useFeaturesStore()
+    const {isGeneric, setEnableProjectSharing} = useFeaturesStore()
     const {backendApiUrl, setBackendApiUrl, setAuth0ClientId, setAuth0Domain} = useEnvironmentStore()
 
     // access user info store
@@ -107,6 +107,10 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 debug(`Received Auth0 domain from NodeJS server. Setting to ${data.auth0Domain}`)
                 setAuth0Domain(data.auth0Domain)
             }
+
+            // Set project sharing enabled flag
+            const enableProjectSharing = data.enableProjectSharing
+            setEnableProjectSharing(enableProjectSharing || false)
         }
 
         void getEnvironment()

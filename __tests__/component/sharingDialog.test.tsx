@@ -21,7 +21,7 @@ const mockCurrentShares = [
     ["user2", "OWNER"],
 ]
 
-describe("SharingDialog Component", () => {
+describe("Project sharing Component", () => {
     beforeEach(() => {
         ;(getShares as jest.Mock).mockResolvedValue(mockCurrentShares)
     })
