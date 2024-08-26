@@ -33,7 +33,6 @@ export default function SharingDialog({
         async function getCurrentShares() {
             try {
                 const currentSharesTmp = await getShares(project.id, currentUser)
-                console.debug("currentSharesTmp", currentSharesTmp)
                 setCurrentShares(currentSharesTmp)
             } catch (e) {
                 sendNotification(NotificationType.error, "Failed to get current shares", `Due to: ${e}`)
@@ -91,19 +90,19 @@ export default function SharingDialog({
         >
             <Form id="sharing-form">
                 <Form.Group
-                    id="sharing-form-group-email"
+                    id="sharing-form-group-target-user"
                     as={Row}
                     style={{marginTop: "16px", paddingRight: "0", paddingLeft: "0"}}
                 >
                     <Col
-                        id="sharing-form-col-email"
+                        id="sharing-form-col-target-user"
                         md={8}
                         style={{margin: "0", padding: "0 4px"}}
                     >
                         <Form.Control
                             id="sharing-form-target-user"
                             placeholder="User to share with"
-                            value={targetUser}
+                            value={targetUser || ""}
                             onChange={handleInputChange}
                             disabled={operationComplete}
                             ref={(input) => input?.focus()}
@@ -165,12 +164,12 @@ export default function SharingDialog({
                     id="sharing-form-group-current-shares"
                     style={{marginTop: "16px"}}
                 >
-                    <text
+                    <div
                         id="sharing-form-current-shares-text"
                         style={{fontSize: "large"}}
                     >
                         People with access
-                    </text>
+                    </div>
                     <hr id="sharing-form-current-shares-hr" />
 
                     {currentShares && currentShares.length > 0 ? (
