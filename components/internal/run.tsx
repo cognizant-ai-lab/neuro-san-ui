@@ -244,7 +244,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
             return
         }
 
-        const projects: Projects = await fetchProjects(currentUser, projectID, ["name", "description", "owner"])
+        const projects: Projects = await fetchProjects(currentUser, projectID, ["name", "description"])
         if (projects && projects.length === 1) {
             setProject(projects[0])
         }

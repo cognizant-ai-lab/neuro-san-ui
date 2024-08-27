@@ -96,8 +96,7 @@ export default function Flow(props: FlowProps) {
 
     const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>(null)
 
-    const readOnlyFlow =
-        !props.projectPermissions?.create && !props.projectPermissions?.update && !props.projectPermissions?.delete
+    const readOnlyFlow = !props.projectPermissions?.update && !props.projectPermissions?.delete
 
     const [initialNodes, initialEdges] = useMemo(() => {
         let initialFlowValue
