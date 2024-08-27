@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 
 import * as authFetch from "../../controller/authorize/fetch"
 import * as projectFetch from "../../controller/projects/fetch"
@@ -127,12 +127,14 @@ describe("Projects Page", () => {
         expect(demoProject).toBeInTheDocument()
     })
 
-    it("should allow user to delete projects if they have delete authorization", async () => {
+    it("should show delete button if they have delete authorization", async () => {
         render(<ProjectsPage />)
         let demoProjectDeleteBtnFound
 
-        const projectDeleteBtn = await screen.findByTestId("project-1-delete-button")
-        expect(projectDeleteBtn).toBeInTheDocument()
+        await waitFor(async () => {
+            const deleteProjectBtn = await screen.findByTestId("project-1-delete-button")
+            expect(deleteProjectBtn).toBeInTheDocument()
+        })
 
         try {
             await screen.findByTestId("project-2-delete-button")
