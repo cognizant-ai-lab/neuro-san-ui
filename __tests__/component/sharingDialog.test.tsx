@@ -6,10 +6,10 @@
 import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 
 import SharingDialog from "../../components/internal/sharingDialog"
-import {getShares, share} from "../../controller/authorization/share"
+import {getShares, share} from "../../controller/authorize/share"
 
 // Mock the share and getShares functions
-jest.mock("../../controller/authorization/share", () => ({
+jest.mock("../../controller/authorize/share", () => ({
     share: jest.fn(),
     getShares: jest.fn(),
 }))

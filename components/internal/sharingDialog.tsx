@@ -4,7 +4,7 @@ import {ChangeEvent, ReactNode, useEffect, useState} from "react"
 import {Col, Form, Row} from "react-bootstrap"
 import {IoMdClose} from "react-icons/io"
 
-import {getShares, share} from "../../controller/authorization/share"
+import {getShares, share} from "../../controller/authorize/share"
 import {Project} from "../../controller/projects/types"
 import {RelationType} from "../../generated/auth"
 import {NotificationType, sendNotification} from "../notification"
