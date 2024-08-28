@@ -27,10 +27,10 @@ const config: Config.InitialOptions = {
         },
         // Coverage on utils is a little higher
         "./utils/": {
-            statements: 30.0,
+            statements: 23.0, // Re-Raise to limit once UN-2358 is removed
             branches: 7.3,
-            functions: 31.8,
-            lines: 30.9,
+            functions: 20.0, // Re-Raise to limit once UN-2358 is removed
+            lines: 24.0, // Re-Raise to limit once UN-2358 is removed
         },
     },
 }

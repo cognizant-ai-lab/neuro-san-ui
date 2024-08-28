@@ -2,6 +2,7 @@ import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
 import {render, screen, waitFor} from "@testing-library/react"
 
+import {DEMO_USER} from "../../const"
 import * as authFetch from "../../controller/authorize/fetch"
 import * as projectFetch from "../../controller/projects/fetch"
 import {Projects} from "../../controller/projects/types"
@@ -110,8 +111,8 @@ describe("Projects Page", () => {
                         name: "demo project",
                         description: "demo project description",
                         hidden: false,
-                        owner: "leaf_demo_user",
-                        lastEditedBy: "leaf_demo_user",
+                        owner: DEMO_USER,
+                        lastEditedBy: DEMO_USER,
                     },
                 ] as unknown as Promise<Projects>
         )
