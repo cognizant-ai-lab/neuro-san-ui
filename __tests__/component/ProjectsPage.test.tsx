@@ -110,8 +110,8 @@ describe("Projects Page", () => {
                         name: "demo project",
                         description: "demo project description",
                         hidden: false,
-                        owner: "demo-user",
-                        lastEditedBy: "demo-user",
+                        owner: "leaf_demo_user",
+                        lastEditedBy: "leaf_demo_user",
                     },
                 ] as unknown as Promise<Projects>
         )
