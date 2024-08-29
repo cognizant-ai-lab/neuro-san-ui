@@ -479,7 +479,7 @@ describe("Flow Test", () => {
 
         render(flow)
 
-        const unAuthorizedMessage = screen.getByText("You are not authorized to make changes to this experiment")
+        const unAuthorizedMessage = await screen.findByText("You are not authorized to make changes to this experiment")
         expect(unAuthorizedMessage).toBeInTheDocument()
     })
 })
