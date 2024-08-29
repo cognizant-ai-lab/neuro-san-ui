@@ -12,17 +12,17 @@ const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
     coverageThreshold: {
         global: {
-            lines: 0.5,
+            lines: 0.6,
             branches: 0.7,
-            functions: 0.1,
-            statements: 0.5,
+            functions: 0.25,
+            statements: 0.6,
         },
         // Coverage on utils is a little higher
         "./utils/": {
             statements: 41.1,
             branches: 22.0,
-            functions: 40.8,
-            lines: 38.9,
+            functions: 43.0,
+            lines: 39.5,
         },
     },
 }

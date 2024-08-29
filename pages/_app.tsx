@@ -42,7 +42,7 @@ const debug = debugModule("app")
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
-    const {isGeneric} = useFeaturesStore()
+    const {isGeneric, setEnableProjectSharing} = useFeaturesStore()
     const {backendApiUrl, setBackendApiUrl, setAuth0ClientId, setAuth0Domain, setEnableAuthorizeAPI} =
         useEnvironmentStore()
 
@@ -111,6 +111,10 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
 
             // get enableAuthorizeAPI flag
             setEnableAuthorizeAPI(data.enableAuthorizeAPI)
+
+            // Set project sharing enabled flag
+            const enableProjectSharing = data.enableProjectSharing
+            setEnableProjectSharing(enableProjectSharing || false)
         }
 
         void getEnvironment()
