@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom"
-
+import failOnConsole from "jest-fail-on-console"
 // Work around for crypto not being available in jsdom environment. See: https://github.com/jsdom/jsdom/issues/1612
 import {webcrypto} from "node:crypto"
 // eslint-disable-next-line no-undef
@@ -93,3 +93,5 @@ jest.mock("next/config", () => () => ({
 // Cheesy mock implementation of structuredClone since it's not available in jsdom
 // See: https://github.com/jsdom/jsdom/issues/3363
 global.structuredClone = (val) => JSON.parse(JSON.stringify(val))
+
+failOnConsole()

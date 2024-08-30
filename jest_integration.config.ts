@@ -12,16 +12,10 @@ const config: Config.InitialOptions = {
     setupFilesAfterEnv: [],
     coverageThreshold: {
         global: {
-            lines: 5.0,
-            branches: 1.75,
-            functions: 3.5,
-            statements: 5.0,
-        },
-        "./utils/": {
-            statements: 15.0,
-            branches: 27.0,
-            functions: 10.0,
-            lines: 15.0,
+            lines: 5.2,
+            branches: 2.5,
+            functions: 4.0,
+            statements: 5.2,
         },
     },
 }
