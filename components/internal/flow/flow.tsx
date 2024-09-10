@@ -5,6 +5,7 @@ import {InfoSignIcon} from "evergreen-ui"
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
 import {Button, Container, Dropdown} from "react-bootstrap"
 import {SlMagicWand} from "react-icons/sl"
+import Skeleton from "react-loading-skeleton"
 // eslint-disable-next-line import/no-named-as-default
 import ReactFlow, {
     applyEdgeChanges,
@@ -40,7 +41,11 @@ import {PrescriptorNode} from "./nodes/prescriptornode"
 import NodeTypes, {NodeData, NodeType} from "./nodes/types"
 import {FlowElementsType} from "./types"
 import {UNCERTAINTY_MODEL_PARAMS} from "./uncertaintymodelinfo"
+import {CATEGORICAL} from "../../../const"
+import loadDataTags from "../../../controller/datatag/fetchdatataglist"
 import {DataSource, DataTag, DataTagFieldCAOType} from "../../../generated/metadata"
+import {TaggedDataInfo} from "../../../pages/projects/[projectID]/experiments/new"
+import {useAuthentication} from "../../../utils/authentication"
 import {AuthorizationInfo} from "../../../utils/authorization"
 import {useStateWithCallback} from "../../../utils/react_utils"
 import {NotificationType, sendNotification} from "../../notification"
@@ -93,7 +98,14 @@ export default function Flow(props: FlowProps) {
 
     const elementsSelectable = props.ElementsSelectable
 
+    const {data: session} = useAuthentication()
+    const currentUser: string = session?.user?.name || ""
+
     const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>(null)
+
+    const [taggedDataList, setTaggedDataList] = useState<TaggedDataInfo[]>([])
+    // for loading data tags
+    const [loadingDataTags, setLoadingDataTags] = useState<boolean>(false)
 
     const readOnlyFlow = !props.projectPermissions?.update && !props.projectPermissions?.delete
 
@@ -412,6 +424,34 @@ export default function Flow(props: FlowProps) {
             })
         )
     }
+
+    // Fetch the Data Sources and the Data Tags
+    useEffect(() => {
+        async function loadDataTagList() {
+            try {
+                if (projectId != null) {
+                    setLoadingDataTags(true)
+                    const taggedDataListTmp: TaggedDataInfo[] = await loadDataTags(currentUser, projectId)
+                    if (taggedDataListTmp != null && taggedDataListTmp.length > 0) {
+                        setTaggedDataList(taggedDataListTmp)
+                    } else {
+                        // This is an internal error. Shouldn't have been able to create a project and an experiment
+                        // without having data tags!
+                        sendNotification(
+                            NotificationType.error,
+                            "Failed to load Data tags",
+                            `Unable to load data tags for project ${projectId} ` +
+                                "due to an internal error. Your experiment" +
+                                "may not behave as expected. Please report this to the development team"
+                        )
+                    }
+                }
+            } finally {
+                setLoadingDataTags(false)
+            }
+        }
+        void loadDataTagList()
+    }, [projectId])
 
     function ParentNodeSetStateHandler(newState, NodeID) {
         /*
@@ -1537,6 +1577,12 @@ export default function Flow(props: FlowProps) {
         )
     }
 
+    const dataTagFieldHasNaN = (dataTagFields) =>
+        dataTagFields && Object.keys(dataTagFields)?.some((field) => dataTagFields[field].has_nan)
+
+    const dataTagFieldHasCategoricalValue = (dataTagFields) =>
+        dataTagFields && Object.keys(dataTagFields)?.some((field) => dataTagFields[field].valued === CATEGORICAL)
+
     function getLLmsDropDownMenu() {
         return (
             <Dropdown id="add-llm-dropdown">
@@ -1552,56 +1598,93 @@ export default function Flow(props: FlowProps) {
                 <Dropdown.Menu
                     id="llm-dropdown-menu"
                     className="w-100"
-                    style={{cursor: "pointer"}}
+                    style={{cursor: "pointer", padding: loadingDataTags ? "0 8px" : "0"}}
                 >
-                    <Dropdown.Item
-                        id="add-activation-llm-btn"
-                        as="div"
-                        onClick={() => addActivationLlm(nodes, edges)}
-                    >
-                        {getLlmMenuItem(
-                            "activation",
-                            "Maps the intent of the prescriptor to front-end interactions and back-end and " +
-                                "model API calls",
-                            "Activation"
-                        )}
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                        id="add-analytics-llm-btn"
-                        as="div"
-                        onClick={() => addAnalyticsLlm(nodes, edges)}
-                    >
-                        {getLlmMenuItem(
-                            "analytics",
-                            "Helps data scientists analyze the data with smart, LLM-enabled queries",
-                            "Analytics"
-                        )}
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                        id="add-category-reducer-llm-btn"
-                        as="div"
-                        onClick={() => addCategoryReducerLLM(nodes, edges)}
-                    >
-                        {getLlmMenuItem(
-                            "category-reducer",
-                            "Attempts to reduce the number of categories in categorical fields " +
-                                "intelligently by using an LLM. For example, a field that contains " +
-                                "categories 'carrot', 'onion', and 'pea' might be reduced to 'vegetable'",
-                            "Category reducer"
-                        )}
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                        id="add-confabulator-llm-btn"
-                        as="div"
-                        onClick={() => addConfabulatorNode(nodes, edges)}
-                    >
-                        {getLlmMenuItem(
-                            "confabulator",
-                            "Confabulates (synthesizes) missing data using an LLM to provide " +
-                                "reasonable values, based on the values in the rest of your data set",
-                            "Confabulator"
-                        )}
-                    </Dropdown.Item>
+                    {loadingDataTags ? (
+                        <div id="add-analytics-llm-loading-skeleton">
+                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                            <Skeleton />
+                        </div>
+                    ) : (
+                        <Dropdown.Item
+                            id="add-activation-llm-btn"
+                            as="div"
+                            onClick={() => addActivationLlm(nodes, edges)}
+                        >
+                            {getLlmMenuItem(
+                                "activation",
+                                "Maps the intent of the prescriptor to front-end interactions and back-end and " +
+                                    "model API calls",
+                                "Activation"
+                            )}
+                        </Dropdown.Item>
+                    )}
+                    {loadingDataTags ? (
+                        <div id="add-analytics-llm-loading-skeleton">
+                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                            <Skeleton />
+                        </div>
+                    ) : (
+                        <Dropdown.Item
+                            id="add-analytics-llm-btn"
+                            as="div"
+                            onClick={() => addAnalyticsLlm(nodes, edges)}
+                        >
+                            {getLlmMenuItem(
+                                "analytics",
+                                "Helps data scientists analyze the data with smart, LLM-enabled queries",
+                                "Analytics"
+                            )}
+                        </Dropdown.Item>
+                    )}
+
+                    {loadingDataTags ? (
+                        <div id="add-category-reducer-loading-skeleton">
+                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                            <Skeleton />
+                        </div>
+                    ) : (
+                        <>
+                            {dataTagFieldHasCategoricalValue(taggedDataList[0]?.LatestDataTag?.fields) ? (
+                                <Dropdown.Item
+                                    id="add-category-reducer-llm-btn"
+                                    as="div"
+                                    onClick={() => addCategoryReducerLLM(nodes, edges)}
+                                >
+                                    {getLlmMenuItem(
+                                        "category-reducer",
+                                        "Attempts to reduce the number of categories in categorical fields " +
+                                            "intelligently by using an LLM. For example, a field that contains " +
+                                            "categories 'carrot', 'onion', and 'pea' might be reduced to 'vegetable'",
+                                        "Category reducer"
+                                    )}
+                                </Dropdown.Item>
+                            ) : null}
+                        </>
+                    )}
+                    {loadingDataTags ? (
+                        <div id="add-confabulator-loading-skeleton">
+                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                            <Skeleton />
+                        </div>
+                    ) : (
+                        <>
+                            {dataTagFieldHasNaN(taggedDataList[0]?.LatestDataTag?.fields) ? (
+                                <Dropdown.Item
+                                    id="add-confabulator-llm-btn"
+                                    as="div"
+                                    onClick={() => addConfabulatorNode(nodes, edges)}
+                                >
+                                    {getLlmMenuItem(
+                                        "confabulator",
+                                        "Confabulates (synthesizes) missing data using an LLM to provide " +
+                                            "reasonable values, based on the values in the rest of your data set",
+                                        "Confabulator"
+                                    )}
+                                </Dropdown.Item>
+                            ) : null}
+                        </>
+                    )}
                 </Dropdown.Menu>
             </Dropdown>
         )

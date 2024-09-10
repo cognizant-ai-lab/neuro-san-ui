@@ -7,6 +7,7 @@ import "reactflow/dist/style.css"
 
 import "react-bootstrap-typeahead/css/Typeahead.css"
 import "react-bootstrap-typeahead/css/Typeahead.bs5.css"
+import "react-loading-skeleton/dist/skeleton.css"
 
 // Tailwind is a dev dependency but this file is a "production" source. Weird situation, so disable the rule
 // eslint-disable-next-line import/no-extraneous-dependencies

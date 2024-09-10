@@ -36,6 +36,8 @@ export const MAX_ALLOWED_CATEGORIES = 20
 // https://leaf-ai.atlassian.net/browse/UN-2078
 export const MAX_DATA_PROFILE_ALLOWED_CATEGORIES = 100
 
+export const CATEGORICAL = "CATEGORICAL"
+
 // "Magic" user name for demo projects
 export const DEMO_USER = "leaf_demo_user"
 
