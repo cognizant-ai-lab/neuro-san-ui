@@ -15,8 +15,10 @@ import {TfiPencilAlt} from "react-icons/tfi"
 import ClipLoader from "react-spinners/ClipLoader"
 
 import {MaximumBlue} from "../../../const"
+import {sendDecisionAssistantQuery} from "../../../controller/decisionAssistant/decisionAssistant"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
+import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
 
@@ -44,6 +46,15 @@ export function OpportunityFinder(): ReactElement {
     // chat session
     const currentResponse = useRef<string>("")
 
+    // Previous responses from the agents. Necessary to save this since currentResponse gets cleared each time, and
+    // when we call the experiment generator we need the scoping agent + data generator responses as input
+    const previousResponse = useRef<Record<OpportunityFinderRequestType, string | null>>({
+        OpportunityFinder: null,
+        ScopingAgent: null,
+        DataGenerator: null,
+        OrchestrationAgent: null,
+    })
+
     // Selected option for agent to interact with
     const [selectedAgent, setSelectedAgent] = useState<OpportunityFinderRequestType>("OpportunityFinder")
 
@@ -64,6 +75,10 @@ export function OpportunityFinder(): ReactElement {
 
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
+
+    // For access to logged in session and current user name
+    const {data: session} = useAuthentication()
+    const currentUser: string = session.user.name
 
     function clearInput() {
         setUserLlmChatInput("")
@@ -140,6 +155,7 @@ export function OpportunityFinder(): ReactElement {
             // Reset state, whatever happened during request
             setIsAwaitingLlm(false)
             clearInput()
+            previousResponse.current[selectedAgent] = currentResponse.current
             currentResponse.current = ""
         }
     }
@@ -162,6 +178,7 @@ export function OpportunityFinder(): ReactElement {
         } finally {
             setIsAwaitingLlm(false)
             clearInput()
+            previousResponse.current[selectedAgent] = currentResponse.current
             currentResponse.current = ""
         }
     }
@@ -197,6 +214,23 @@ export function OpportunityFinder(): ReactElement {
             pointerEvents: isAwaitingLlm ? "none" : "auto",
             opacity: isAwaitingLlm ? 0.5 : 1,
         }
+    }
+
+    async function handleOrchestration() {
+        console.debug("previous response", previousResponse.current)
+        const abortController = new AbortController()
+        controller.current = abortController
+
+        const orchestrationQuery = `${previousResponse.current.ScopingAgent}\n${previousResponse.current.DataGenerator}`
+
+        try {
+            const res = await sendDecisionAssistantQuery(null, abortController.signal, orchestrationQuery, currentUser)
+            console.debug("Orchestration response", res)
+        } catch (e) {
+            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nError occurred: ${e}\n\n`)
+        }
+
+        // window.open("/projects/2463/experiments/2526", "_blank").focus()
     }
 
     /**
@@ -275,8 +309,8 @@ export function OpportunityFinder(): ReactElement {
                 <div
                     id="opp-finder-agent-div"
                     style={{...getStyle(), cursor: "pointer"}}
-                    onClick={() => {
-                        window.open("/projects", "_blank").focus()
+                    onClick={async () => {
+                        await handleOrchestration()
                     }}
                     className={getClassName("OrchestrationAgent")}
                 >

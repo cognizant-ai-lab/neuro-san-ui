@@ -44,21 +44,27 @@ export async function sendLlmRequest(
         throw new Error(`Failed to fetch: ${res.statusText} error code ${res.status}`)
     }
 
-    const reader = res.body.getReader()
-    const utf8decoder = new TextDecoder("utf8")
+    if (callback) {
+        const reader = res.body.getReader()
+        const utf8decoder = new TextDecoder("utf8")
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        const {done, value} = await reader.read()
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const {done, value} = await reader.read()
 
-        if (done) {
-            break // End of stream
+            if (done) {
+                break // End of stream
+            }
+
+            // Decode chunk from server
+            const chunk = utf8decoder.decode(value)
+
+            // Send current chunk to callback
+            callback(chunk)
         }
 
-        // Decode chunk from server
-        const chunk = utf8decoder.decode(value)
-
-        // Send current chunk to callback
-        callback(chunk)
+        return null
+    } else {
+        return res.text()
     }
 }
