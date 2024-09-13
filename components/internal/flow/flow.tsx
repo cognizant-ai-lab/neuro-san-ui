@@ -1,9 +1,8 @@
-import {Alert, Skeleton, Tooltip} from "antd"
+import {Alert, Tooltip} from "antd"
 import dagre from "dagre"
 import debugModule from "debug"
-import {InfoSignIcon} from "evergreen-ui"
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
-import {Button, Container, Dropdown} from "react-bootstrap"
+import {Button, Container} from "react-bootstrap"
 import {SlMagicWand} from "react-icons/sl"
 // eslint-disable-next-line import/no-named-as-default
 import ReactFlow, {
@@ -27,12 +26,7 @@ import {PredictorEdge} from "./edges/predictoredge"
 import {PrescriptorEdge} from "./edges/prescriptoredge"
 import EdgeTypes, {EdgeType} from "./edges/types"
 import {FlowQueries} from "./flowqueries"
-import {
-    ACTIVATION_NODE_PARAMS,
-    ANALYTICS_NODE_PARAMS,
-    CATEGORY_REDUCER_NODE_PARAMS,
-    CONFABULATOR_NODE_PARAMS,
-} from "./llmInfo"
+import LLMDropdownMenu from "./LLMDropdownMenu"
 import {DataSourceNode} from "./nodes/datasourcenode"
 import {ConfigurableNode, ConfigurableNodeData} from "./nodes/generic/configurableNode"
 import {CAOChecked, ConfigurableNodeState, NodeParams} from "./nodes/generic/types"
@@ -41,7 +35,7 @@ import NodeTypes, {NodeData, NodeType} from "./nodes/types"
 import {FlowElementsType} from "./types"
 import {UNCERTAINTY_MODEL_PARAMS} from "./uncertaintymodelinfo"
 import loadDataTags from "../../../controller/datatag/fetchdatataglist"
-import {DataSource, DataTag, DataTagFieldCAOType, DataTagFieldValued} from "../../../generated/metadata"
+import {DataSource, DataTag, DataTagFieldCAOType} from "../../../generated/metadata"
 import {TaggedDataInfo} from "../../../pages/projects/[projectID]/experiments/new"
 import {useAuthentication} from "../../../utils/authentication"
 import {AuthorizationInfo} from "../../../utils/authorization"
@@ -107,6 +101,35 @@ export default function Flow(props: FlowProps) {
 
     const readOnlyFlow = !props.projectPermissions?.update && !props.projectPermissions?.delete
 
+    // Fetch the Data Sources and the Data Tags
+    useEffect(() => {
+        async function loadDataTagList() {
+            try {
+                if (projectId != null) {
+                    setLoadingDataTags(true)
+                    const taggedDataListTmp: TaggedDataInfo[] = await loadDataTags(currentUser, projectId)
+                    if (taggedDataListTmp != null && taggedDataListTmp.length > 0) {
+                        setTaggedDataList(taggedDataListTmp)
+                    } else {
+                        // This is an internal error. Shouldn't have been able to create a project and an experiment
+                        // without having data tags!
+                        sendNotification(
+                            NotificationType.error,
+                            "Failed to load Data tags",
+                            `Unable to load data tags for project ${projectId} ` +
+                                "due to an internal error. Your experiment " +
+                                "may not behave as expected. Please report this to the development team"
+                        )
+                    }
+                }
+            } finally {
+                setLoadingDataTags(false)
+            }
+        }
+
+        void loadDataTagList()
+    }, [projectId])
+
     const [initialNodes, initialEdges] = useMemo(() => {
         let initialFlowValue
         if (props.Flow && props.Flow.length > 0) {
@@ -120,6 +143,7 @@ export default function Flow(props: FlowProps) {
                             idExtension,
                             readOnlyNode: readOnlyFlow,
                             SelfStateUpdateHandler: DataNodeStateUpdateHandler,
+                            ...(taggedDataList.length && {taggedDataList}),
                         }
                         break
                     case "predictornode":
@@ -130,6 +154,9 @@ export default function Flow(props: FlowProps) {
                             DeleteNode: (nodeId) => deleteNodeById(nodeId),
                             GetElementIndex: (nodeId) => getElementIndex(nodeId),
                             readOnlyNode: readOnlyFlow,
+                            taggedData: taggedDataList[0]?.LatestDataTag
+                                ? DataTag.fromJSON(taggedDataList[0].LatestDataTag)
+                                : null,
                         }
                         break
                     case "prescriptornode":
@@ -140,6 +167,9 @@ export default function Flow(props: FlowProps) {
                             DeleteNode: (nodeId) => deleteNodeById(nodeId),
                             GetElementIndex: (nodeId) => getElementIndex(nodeId),
                             readOnlyNode: readOnlyFlow,
+                            taggedData: taggedDataList[0]?.LatestDataTag
+                                ? DataTag.fromJSON(taggedDataList[0].LatestDataTag)
+                                : null,
                         }
                         break
                     case "uncertaintymodelnode":
@@ -189,7 +219,7 @@ export default function Flow(props: FlowProps) {
             initialFlowValue = initializeFlow()
         }
         return [FlowQueries.getAllNodes(initialFlowValue), FlowQueries.getAllEdges(initialFlowValue)]
-    }, [props.Flow])
+    }, [props.Flow, taggedDataList])
 
     // The flow is the collection of nodes and edges all identified by a node type and a uuid
     const [nodes, setNodes] = useState<NodeType[]>(FlowQueries.getAllNodes(initialNodes))
@@ -220,83 +250,6 @@ export default function Flow(props: FlowProps) {
         })
 
         setElementTypeToUuidList(uuidListCopy)
-    }
-
-    /**
-     * Adds any node after the specified node, and rewires the graph accordingly.
-     *
-     * Example:
-     * <pre>
-     *     Before:  A -> B -> C
-     *                   |
-     *                   +--> D
-     *
-     *     smartAddNode(X, B, edges)
-     *
-     *     After: A -> B -> X -> C
-     *                      |
-     *                      +--> D
-     *  </pre>
-     *
-     * @param nodeToAdd New node to be added
-     * @param addAfter Node after which the new node should be added
-     * @param currentNodes Current nodes in the graph
-     * @param currentEdges Current edges in the graph
-     * @param connectToNode If specified, the new node will be connected to this node
-     * @return Nothing, but updates the state of the graph in place
-     */
-    function smartAddNode(
-        nodeToAdd: NodeType,
-        addAfter: NodeType,
-        currentNodes: NodeType[],
-        currentEdges: EdgeType[],
-        connectToNode?: NodeType
-    ) {
-        // Make a copy of the graph
-        const nodesCopy: NodeType[] = currentNodes.slice()
-        let edgesCopy = currentEdges.slice()
-
-        // First, record what addAfter node is connected to
-        const addAfterOutgoing = getOutgoers<NodeData, NodeData>(addAfter, currentNodes, currentEdges)
-
-        // Remove existing outgoing edges of addAfter node
-        edgesCopy = edgesCopy.filter((edge) => edge.source !== addAfter.id)
-
-        // Add edge from addAfter node to new node
-        const edge =
-            nodeToAdd.type === "prescriptornode"
-                ? getPrescriptorEdge(addAfter.id, nodeToAdd.id)
-                : getGeneralEdge(addAfter.id, nodeToAdd.id)
-        edgesCopy.push(edge)
-
-        // Connect new node to whatever addAfter node used to be connected to (if anything)
-        addAfterOutgoing.forEach((targetNode) => {
-            const newEdge =
-                targetNode.type === "prescriptornode"
-                    ? getPrescriptorEdge(nodeToAdd.id, targetNode.id)
-                    : getGeneralEdge(nodeToAdd.id, targetNode.id)
-            edgesCopy.push(newEdge)
-        })
-
-        // If specified, connect new node to the specified node
-        if (connectToNode) {
-            const newEdge =
-                connectToNode.type === "prescriptornode"
-                    ? getPrescriptorEdge(nodeToAdd.id, connectToNode.id)
-                    : getGeneralEdge(nodeToAdd.id, connectToNode.id)
-            edgesCopy.push(newEdge)
-        }
-
-        // Add the new node
-        nodesCopy.push(nodeToAdd)
-
-        // Update graph
-        setNodes(nodesCopy)
-        setEdges(edgesCopy)
-        setParentState([...nodesCopy, ...edgesCopy])
-
-        // Record ID for testing
-        addElementUuid(nodeToAdd.type, nodeToAdd.id)
     }
 
     /**
@@ -561,6 +514,7 @@ export default function Flow(props: FlowProps) {
                 SelfStateUpdateHandler: DataNodeStateUpdateHandler,
                 idExtension,
                 readOnlyNode: readOnlyFlow,
+                ...(taggedDataList.length && {taggedDataList}),
             },
             position: {x: 500, y: 500},
         }
@@ -755,6 +709,7 @@ export default function Flow(props: FlowProps) {
                 GetElementIndex: (id) => getElementIndex(id),
                 idExtension,
                 readOnlyNode: readOnlyFlow,
+                taggedData: taggedDataList[0]?.LatestDataTag ? DataTag.fromJSON(taggedDataList[0].LatestDataTag) : null,
             },
             position: {
                 x: nodes[0].position.x + 250,
@@ -903,6 +858,7 @@ export default function Flow(props: FlowProps) {
                 GetElementIndex: (id) => getElementIndex(id),
                 idExtension,
                 readOnlyNode: readOnlyFlow,
+                taggedData: taggedDataList[0]?.LatestDataTag ? DataTag.fromJSON(taggedDataList[0].LatestDataTag) : null,
             },
             position: {
                 x: prescriptorNodeXPos,
@@ -1026,242 +982,6 @@ export default function Flow(props: FlowProps) {
         setNodes(nodesCopy)
         setEdges(edgesCopy)
         setParentState([...nodesCopy, ...edgesCopy])
-    }
-
-    function addActivationLlm(currentNodes: NodeType[], currentEdges: EdgeType[]) {
-        // Only one LLM of this type allowed per experiment
-        const hasActivationNodes = FlowQueries.getNodesByType(nodes, "activation_node").length > 0
-        if (hasActivationNodes) {
-            sendNotification(
-                NotificationType.warning,
-                "Unable to add activation LLM node",
-                "Only one activation LLM node is allowed per experiment and this experiment already has an " +
-                    "activation LLM node."
-            )
-            return
-        }
-
-        const prescriptorNodes = FlowQueries.getPrescriptorNodes(nodes)
-        if (!prescriptorNodes || prescriptorNodes.length === 0) {
-            // No prescriptor node or more than one prescriptor node -- can't add LLM
-            sendNotification(
-                NotificationType.warning,
-                "Cannot add activation LLM node",
-                "A prescriptor node must be added before adding an activation LLM node"
-            )
-            return
-        }
-
-        const prescriptorNode = prescriptorNodes[0]
-        // Add Activation LLM after prescriptor
-
-        // Create a unique ID
-        const actuationLlmNodeID = crypto.randomUUID()
-
-        // LLM after prescriptor
-        const actuationLlmNode: ConfigurableNode = {
-            id: actuationLlmNodeID,
-            type: "activation_node",
-            data: {
-                NodeID: actuationLlmNodeID,
-                ParentNodeState: structuredClone({params: ACTIVATION_NODE_PARAMS}),
-                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, actuationLlmNodeID),
-                DeleteNode: (nodeID) => deleteNodeById(nodeID),
-                GetElementIndex: (nodeID) => getElementIndex(nodeID),
-                ParameterSet: ACTIVATION_NODE_PARAMS,
-                NodeTitle: "Activation LLM",
-                idExtension,
-                readOnlyNode: readOnlyFlow,
-            },
-            position: {
-                x: prescriptorNode.position.x + 200,
-                y: prescriptorNode.position.y,
-            },
-        }
-
-        smartAddNode(actuationLlmNode, prescriptorNode, currentNodes, currentEdges)
-    }
-
-    function addAnalyticsLlm(currentNodes: NodeType[], currentEdges: EdgeType[]) {
-        // Only one LLM of this type allowed per experiment
-        const hasAnalyticsNodes = FlowQueries.getNodesByType(nodes, "analytics_node")?.length > 0
-        if (hasAnalyticsNodes) {
-            sendNotification(
-                NotificationType.warning,
-                "Unable to add Analytics LLM node",
-                "Only one Analytics LLM node is allowed per experiment and this experiment already has an " +
-                    "Analytics LLM node."
-            )
-            return
-        }
-
-        let addAfter = null
-
-        // By default, add after the data source node
-        const dataSourceNodes = FlowQueries.getDataNodes(nodes)
-        if (dataSourceNodes && dataSourceNodes.length === 1) {
-            addAfter = dataSourceNodes[0]
-        }
-
-        // If there's a category reducer node, add after that
-        const categoryReducerNodes = FlowQueries.getNodesByType(nodes, "category_reducer_node")
-        if (categoryReducerNodes && categoryReducerNodes.length === 1) {
-            addAfter = categoryReducerNodes[0]
-        } else {
-            // If there's a confabulator node, add after that
-            const confabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulator_node")
-            if (confabulatorNodes && confabulatorNodes.length === 1) {
-                addAfter = confabulatorNodes[0]
-            }
-        }
-
-        if (!addAfter) {
-            sendNotification(
-                NotificationType.warning,
-                "Cannot add analytics LLM node",
-                "A data node must be added before adding an analytics LLM node"
-            )
-            return
-        }
-
-        // Create new node
-        const analyticsNodeID = crypto.randomUUID()
-        const analyticsNode: NodeType = {
-            id: analyticsNodeID,
-            type: "analytics_node",
-            data: {
-                NodeID: analyticsNodeID,
-                ParentNodeState: structuredClone({params: ANALYTICS_NODE_PARAMS}),
-                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, analyticsNodeID),
-                DeleteNode: (id) => deleteNodeById(id),
-                GetElementIndex: (id) => getElementIndex(id),
-                ParameterSet: ANALYTICS_NODE_PARAMS,
-                NodeTitle: "Analytics LLM",
-                idExtension,
-                readOnlyNode: readOnlyFlow,
-            },
-            position: {x: addAfter.position.x + 250, y: addAfter.position.y},
-        }
-
-        smartAddNode(analyticsNode, addAfter, currentNodes, currentEdges)
-    }
-
-    function addCategoryReducerLLM(currentNodes: NodeType[], currentEdges: EdgeType[]) {
-        // Only one LLM of this type allowed per experiment
-        const hasCategoryReducerNodes = FlowQueries.getNodesByType(nodes, "category_reducer_node")?.length > 0
-        if (hasCategoryReducerNodes) {
-            sendNotification(
-                NotificationType.warning,
-                "Unable to add Category Reducer LLM node",
-                "Only one Category Reducer LLM node is allowed per experiment and this experiment already has a " +
-                    "Category Reducer LLM node."
-            )
-            return
-        }
-
-        let addAfter = null
-
-        // Get data source node
-        const dataSourceNodes = FlowQueries.getDataNodes(currentNodes)
-        if (dataSourceNodes?.length !== 1) {
-            sendNotification(NotificationType.error, "Cannot add Predictor node", "Unable to locate a data source node")
-        }
-
-        // If there's a confabulator node, add after that
-        const confabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulator_node")
-        if (confabulatorNodes?.length === 1) {
-            addAfter = confabulatorNodes[0]
-        }
-
-        // If not, add after the data source node
-        if (!addAfter) {
-            addAfter = dataSourceNodes[0]
-        }
-
-        if (!addAfter) {
-            sendNotification(
-                NotificationType.warning,
-                "Cannot add Category Reducer node",
-                "Unable to locate a suitable node to connect the Category Reducer node to"
-            )
-            return
-        }
-
-        // Create new node
-        const categoryReducerNodeID = crypto.randomUUID()
-        const categoryReducerNode: NodeType = {
-            id: categoryReducerNodeID,
-            type: "category_reducer_node",
-            data: {
-                NodeID: categoryReducerNodeID,
-                ParentNodeState: structuredClone({params: CATEGORY_REDUCER_NODE_PARAMS}),
-                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, categoryReducerNodeID),
-                DeleteNode: (id) => deleteNodeById(id),
-                GetElementIndex: (id) => getElementIndex(id),
-                ParameterSet: CATEGORY_REDUCER_NODE_PARAMS,
-                NodeTitle: "Category Reducer LLM",
-                idExtension,
-                readOnlyNode: readOnlyFlow,
-            },
-            position: {x: addAfter.position.x + 250, y: addAfter.position.y},
-        }
-
-        smartAddNode(categoryReducerNode, addAfter, currentNodes, currentEdges)
-    }
-
-    function addConfabulatorNode(currentNodes: NodeType[], currentEdges: EdgeType[]) {
-        // Only one LLM of this type allowed per experiment
-        const hasConfabulatorNodes = FlowQueries.getNodesByType(nodes, "confabulator_node")?.length > 0
-        if (hasConfabulatorNodes) {
-            sendNotification(
-                NotificationType.warning,
-                "Unable to add confabulator LLM node",
-                "Only one confabulator LLM node is allowed per experiment and this experiment already has a " +
-                    "confabulator LLM node."
-            )
-            return
-        }
-
-        // Locate data node
-        const dataNodes = FlowQueries.getDataNodes(currentNodes)
-        if (!dataNodes || dataNodes.length !== 1) {
-            // No data node or more than one data node -- can't add LLM
-            sendNotification(
-                NotificationType.warning,
-                "Cannot add confabulator LLM node",
-                `There must be exactly one data node in the experiment but there are ${dataNodes?.length}`
-            )
-            return
-        }
-
-        // Confabulator node goes after data node
-        const dataNode = dataNodes[0]
-
-        // Create a unique ID
-        const confabulatorNodeID = crypto.randomUUID()
-
-        // Create new node
-        const confabulatorNode = {
-            id: confabulatorNodeID,
-            type: "confabulator_node",
-            data: {
-                NodeID: confabulatorNodeID,
-                ParentNodeState: structuredClone({params: CONFABULATOR_NODE_PARAMS}),
-                SetParentNodeState: (state) => ParentNodeSetStateHandler(state, confabulatorNodeID),
-                DeleteNode: (id) => deleteNodeById(id),
-                GetElementIndex: (id) => getElementIndex(id),
-                ParameterSet: CONFABULATOR_NODE_PARAMS,
-                NodeTitle: "Confabulator LLM",
-                idExtension,
-                readOnlyNode: readOnlyFlow,
-            },
-            position: {
-                x: dataNode.position.x + 250,
-                y: dataNode.position.y,
-            },
-        }
-
-        smartAddNode(confabulatorNode, dataNode, currentNodes, currentEdges)
     }
 
     function addElementUuid(elementType: string, elementId: string) {
@@ -1553,137 +1273,6 @@ export default function Flow(props: FlowProps) {
     }, [])
     const onEdgesChange = useCallback((changes) => setEdges((es) => applyEdgeChanges(changes, es)), [])
 
-    /**
-     * @param shortId
-     * @param itemDescription
-     * @param itemName
-     */
-    function getLlmMenuItem(shortId: string, itemDescription: string, itemName: string) {
-        return (
-            <div
-                id={`${shortId}-div`}
-                style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}
-            >
-                {itemName}
-                <Tooltip
-                    id={`${shortId}-tooltip`}
-                    title={itemDescription}
-                >
-                    <InfoSignIcon id={`${shortId}-info-icon`} />
-                </Tooltip>
-            </div>
-        )
-    }
-
-    const dataTagFieldHasNaN = (dataTagFields) =>
-        dataTagFields && Object.keys(dataTagFields)?.some((field) => dataTagFields[field].has_nan)
-
-    const dataTagFieldHasCategoricalValue = (dataTagFields) =>
-        dataTagFields &&
-        Object.keys(dataTagFields)?.some((field) => dataTagFields[field].valued === DataTagFieldValued.CATEGORICAL)
-
-    function getLLmsDropDownMenu() {
-        return (
-            <Dropdown id="add-llm-dropdown">
-                <Dropdown.Toggle
-                    className="w-100"
-                    variant="success"
-                    id="dropdown-basic"
-                    size="sm"
-                >
-                    Add LLM
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu
-                    id="llm-dropdown-menu"
-                    className={`w-100 ${loadingDataTags && "pt-3"}`}
-                    style={{cursor: "pointer"}}
-                >
-                    <Skeleton // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        className="llm-dropdown-loading-skeleton"
-                        active
-                        paragraph={false}
-                        loading={loadingDataTags}
-                    >
-                        <Dropdown.Item
-                            id="add-activation-llm-btn"
-                            as="div"
-                            onClick={() => addActivationLlm(nodes, edges)}
-                        >
-                            {getLlmMenuItem(
-                                "activation",
-                                "Maps the intent of the prescriptor to front-end interactions and back-end and " +
-                                    "model API calls",
-                                "Activation"
-                            )}
-                        </Dropdown.Item>
-                    </Skeleton>
-                    <Skeleton // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        className="llm-dropdown-loading-skeleton"
-                        active
-                        paragraph={false}
-                        loading={loadingDataTags}
-                    >
-                        <Dropdown.Item
-                            id="add-analytics-llm-btn"
-                            as="div"
-                            onClick={() => addAnalyticsLlm(nodes, edges)}
-                        >
-                            {getLlmMenuItem(
-                                "analytics",
-                                "Helps data scientists analyze the data with smart, LLM-enabled queries",
-                                "Analytics"
-                            )}
-                        </Dropdown.Item>
-                    </Skeleton>
-                    <Skeleton // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        className="llm-dropdown-loading-skeleton"
-                        active
-                        paragraph={false}
-                        loading={loadingDataTags}
-                    >
-                        {dataTagFieldHasCategoricalValue(taggedDataList[0]?.LatestDataTag?.fields) ? (
-                            <Dropdown.Item
-                                id="add-category-reducer-llm-btn"
-                                as="div"
-                                onClick={() => addCategoryReducerLLM(nodes, edges)}
-                            >
-                                {getLlmMenuItem(
-                                    "category-reducer",
-                                    "Attempts to reduce the number of categories in categorical fields " +
-                                        "intelligently by using an LLM. For example, a field that contains " +
-                                        "categories 'carrot', 'onion', and 'pea' might be reduced to 'vegetable'",
-                                    "Category reducer"
-                                )}
-                            </Dropdown.Item>
-                        ) : null}
-                    </Skeleton>
-                    <Skeleton // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        className="llm-dropdown-loading-skeleton"
-                        active
-                        paragraph={false}
-                        loading={loadingDataTags}
-                    >
-                        {dataTagFieldHasNaN(taggedDataList[0]?.LatestDataTag?.fields) ? (
-                            <Dropdown.Item
-                                id="add-confabulator-llm-btn"
-                                as="div"
-                                onClick={() => addConfabulatorNode(nodes, edges)}
-                            >
-                                {getLlmMenuItem(
-                                    "confabulator",
-                                    "Confabulates (synthesizes) missing data using an LLM to provide " +
-                                        "reasonable values, based on the values in the rest of your data set",
-                                    "Confabulator"
-                                )}
-                            </Dropdown.Item>
-                        ) : null}
-                    </Skeleton>
-                </Dropdown.Menu>
-            </Dropdown>
-        )
-    }
-
     function getFlowButtons() {
         return (
             <div
@@ -1714,7 +1303,24 @@ export default function Flow(props: FlowProps) {
                 >
                     Add Prescriptor
                 </Button>
-                {getLLmsDropDownMenu()}
+                <LLMDropdownMenu // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    dropdownId="add-llm-dropdown__menu"
+                    deleteNodeById={deleteNodeById}
+                    getPrescriptorEdge={getPrescriptorEdge}
+                    getGeneralEdge={getGeneralEdge}
+                    setNodes={setNodes}
+                    setEdges={setEdges}
+                    setParentState={setParentState}
+                    addElementUuid={addElementUuid}
+                    ParentNodeSetStateHandler={ParentNodeSetStateHandler}
+                    nodes={nodes}
+                    getElementIndex={getElementIndex}
+                    idExtension={idExtension}
+                    readOnlyNode={readOnlyFlow}
+                    loadingDataTags={loadingDataTags}
+                    edges={edges}
+                    dataTagfields={taggedDataList[0]?.LatestDataTag?.fields}
+                />
             </div>
         )
     }

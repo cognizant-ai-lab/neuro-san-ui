@@ -1,13 +1,10 @@
-import {FC, useEffect, useState} from "react"
+import {FC, useEffect} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
 import "rc-slider/assets/index.css"
 import {getOutgoers, NodeProps, useEdges, useNodes} from "reactflow"
 
 import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from "./generic/configurableNode"
 import {NodeData, NodeType} from "./types"
-import {loadDataTag} from "../../../../controller/datatag/fetchdatataglist"
-import {DataTag} from "../../../../generated/metadata"
-import {useAuthentication} from "../../../../utils/authentication"
 import {NotificationType, sendNotification} from "../../../notification"
 import {EdgeType} from "../edges/types"
 import {FlowQueries} from "../flowqueries"
@@ -19,11 +16,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
     */
 
     const data: ConfigurableNodeData = props.data
-    const {idExtension = ""} = data
-
-    // Get the current user
-    const {data: session} = useAuthentication()
-    const currentUser: string = session?.user?.name || ""
+    const {idExtension = "", taggedData = null} = data
 
     // Unpack the data
     const {NodeID, ParentNodeState, SetParentNodeState, GetElementIndex, readOnlyNode} = data
@@ -48,31 +41,9 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
         classifier: fetchPredictors("classifier"),
     }
 
-    // Since predictors change
-    const [taggedData, setTaggedData] = useState<DataTag>(null)
-
     //Set the dropdown defaults here since the dropdown is created here
     const DEFAULT_CLASSIFIER_METRIC = Array.from(metrics.classifier.keys())[0]
     const DEFAULT_REGRESSOR_METRIC = Array.from(metrics.regressor.keys())[0]
-
-    // Fetch the Data Tag
-    useEffect(() => {
-        //TODO: If the data node has the data source and tag available we should not fetch it but use that.
-        //TODO: Reason: Data Tags can change, and we don't version them explicitly --
-        // this will be an easy way of doing that.
-        // If they were to change and we had to re-run a run it might fail
-        async function callSetTaggedData() {
-            if (data.SelectedDataSourceId) {
-                const dataTag = await loadDataTag(currentUser, data.SelectedDataSourceId)
-                if (dataTag) {
-                    const dataTagAsObject = DataTag.fromJSON(dataTag)
-                    setTaggedData(dataTagAsObject)
-                }
-            }
-        }
-
-        void callSetTaggedData()
-    }, [data.SelectedDataSourceId])
 
     // We need to take an intersection of what is in the state (for eg: Predictor Node Creation)
     // and what we can fetch for missing values and update the initial state - but do this only
@@ -157,7 +128,7 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
                 ...predictorParams,
             },
         })
-    }, [taggedData])
+    }, [])
 
     const onPredictorTypeChange = (predictorType: string) => {
         /*

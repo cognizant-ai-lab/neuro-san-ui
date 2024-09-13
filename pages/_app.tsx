@@ -14,6 +14,7 @@ import "tailwindcss/tailwind.css"
 
 import "../styles/updatenode.css"
 import "../styles/globals.css"
+import "../styles/llmDropdown.css"
 import "../styles/splashpage.css"
 import "../styles/styles.css"
 import "../styles/opportunityFinder.css"

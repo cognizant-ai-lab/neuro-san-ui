@@ -1,15 +1,12 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
 import {Tooltip} from "evergreen-ui"
-import {FC, useEffect, useState} from "react"
+import {FC, useEffect} from "react"
 import {Card} from "react-bootstrap"
 import {BsDatabaseGear} from "react-icons/bs"
 import {Handle, NodeProps, Position, Node as RFNode} from "reactflow"
 
-import loadDataTags from "../../../../controller/datatag/fetchdatataglist"
 import {DataSource, DataTag} from "../../../../generated/metadata"
 import {TaggedDataInfo} from "../../../../pages/projects/[projectID]/experiments/new"
-import {useAuthentication} from "../../../../utils/authentication"
-import {NotificationType, sendNotification} from "../../../notification"
 
 export interface DataSourceNodeData {
     // Project ID that this new experiment belongs to.
@@ -25,43 +22,17 @@ export interface DataSourceNodeData {
 
     // Flag to determine whether node is in read only state
     readOnlyNode?: boolean
+
+    // Tagged Data list for data source node
+    taggedDataList?: TaggedDataInfo[]
 }
 
 export type DataSourceNode = RFNode<DataSourceNodeData>
 
 const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
     const data = props.data
-    const {idExtension = "", readOnlyNode = false} = data
+    const {idExtension = "", readOnlyNode = false, taggedDataList = []} = data
     const projectId: number = data.ProjectID
-
-    const [taggedDataList, setTaggedDataList] = useState<TaggedDataInfo[]>([])
-
-    // Get the current user
-    const {data: session} = useAuthentication()
-    const currentUser: string = session.user.name
-
-    // Fetch the Data Sources and the Data Tags
-    useEffect(() => {
-        async function loadDataTagList() {
-            if (projectId != null) {
-                const taggedDataListTmp: TaggedDataInfo[] = await loadDataTags(currentUser, projectId)
-                if (taggedDataListTmp != null && taggedDataListTmp.length > 0) {
-                    setTaggedDataList(taggedDataListTmp)
-                } else {
-                    // This is an internal error. Shouldn't have been able to create a project and an experiment
-                    // without having data tags!
-                    sendNotification(
-                        NotificationType.error,
-                        "Failed to load Data tags",
-                        `Unable to load data tags for project ${projectId} due to an internal error. Your experiment ` +
-                            "may not behave as expected. Please report this to the development team"
-                    )
-                }
-            }
-        }
-
-        void loadDataTagList()
-    }, [projectId])
 
     // Set the Selected Data Source Id at initialization of data tags
     useEffect(() => {

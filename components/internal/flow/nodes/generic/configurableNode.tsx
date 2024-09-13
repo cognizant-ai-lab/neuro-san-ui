@@ -10,7 +10,7 @@ import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "rea
 import CAOButtons from "./CAOButtons"
 import NodeConfigPanel from "./NodeConfigPanel"
 import {ConfigurableNodeState, NodeParams, NodeTabs} from "./types"
-import {DataTagField} from "../../../../../generated/metadata"
+import {DataTag, DataTagField} from "../../../../../generated/metadata"
 
 // Define an interface for the structure of the node
 export interface ConfigurableNodeData {
@@ -50,6 +50,9 @@ export interface ConfigurableNodeData {
 
     // Disables deleting of flow node.
     readonly readOnlyNode: boolean
+
+    // Data tag information
+    taggedData?: DataTag
 }
 
 export type ConfigurableNode = RFNode<ConfigurableNodeData>

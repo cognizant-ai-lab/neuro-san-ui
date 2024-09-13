@@ -10,9 +10,7 @@ import {GrSettingsOption} from "react-icons/gr"
 import {MdDelete} from "react-icons/md"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
-import {loadDataTag} from "../../../../controller/datatag/fetchdatataglist"
 import {DataTag} from "../../../../generated/metadata"
-import {useAuthentication} from "../../../../utils/authentication"
 import {NotificationType, sendNotification} from "../../../notification"
 
 // Define an interface for the structure
@@ -38,6 +36,9 @@ export interface PrescriptorNodeData {
 
     // Disables deleting of flow node.
     readonly readOnlyNode: boolean
+
+    // Data tag information
+    taggedData?: DataTag
 }
 
 // For RuleBased
@@ -55,9 +56,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     */
     const data = props.data
 
-    // Get the current user
-    const {data: session} = useAuthentication()
-    const currentUser: string = session.user.name
+    // unpack taggedData from props
+    const {taggedData = null} = data
 
     // Unpack the mapping
     const {NodeID, ParentPrescriptorState, SetParentPrescriptorState, DeleteNode, GetElementIndex, readOnlyNode} = data
@@ -77,9 +77,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             caoState: caoStateCopy,
         })
     }
-
-    // Since predictors change
-    const [taggedData, setTaggedData] = useState(null)
 
     // Allows the trash icon to change color when hovered over
     const [trashHover, setTrashHover] = useState(false)
@@ -118,22 +115,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             },
         })
     }
-
-    // Fetch the Data Tag
-    useEffect(() => {
-        //TODO: If the data node has the data source and tag available we should not fetch it but use that.
-        //TODO: Reason: Data Tags can change and we don"t version them explicitly - this will be an easy way of doing
-        // that. If they were to change and we had to re-run a run it might fail
-        async function callSetTaggedData() {
-            const dataTag = await loadDataTag(currentUser, data.SelectedDataSourceId)
-            if (dataTag) {
-                const dataTagAsObject = DataTag.fromJSON(dataTag)
-                setTaggedData(dataTagAsObject)
-            }
-        }
-
-        void callSetTaggedData()
-    }, [data.SelectedDataSourceId])
 
     useEffect(() => {
         if (taggedData) {
@@ -175,7 +156,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 caoState: CAOState,
             })
         }
-    }, [taggedData])
+    }, [])
 
     // We want to have a tabbed prescriptor configuration
     // and thus we build the following component
