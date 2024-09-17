@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
-import {cleanup, fireEvent, render, screen, waitForElementToBeRemoved} from "@testing-library/react"
+import {cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved} from "@testing-library/react"
 
 import {DEMO_USER} from "../../const"
 import * as listFetch from "../../controller/list/fetch"
@@ -10,6 +10,32 @@ import {AuthQuery} from "../../generated/auth"
 import ProjectsPage from "../../pages/projects"
 import {mockFetch} from "../testUtils"
 
+const MOCK_USER = "mock-user"
+
+const MOCK_PROJECT = {
+    created_at: "2024-08-20T00:21:52.539586Z",
+    updated_at: "2024-08-20T00:24:08.301003Z",
+    id: "1",
+    name: "mock project",
+    description: "mock project description",
+    hidden: false,
+    owner: MOCK_USER,
+    lastEditedBy: MOCK_USER,
+}
+
+const DEMO_PROJECT = {
+    created_at: "2024-08-23T10:38:59.676337Z",
+    updated_at: "2024-08-26T08:12:16.627869Z",
+    id: "2",
+    name: "demo project",
+    description: "demo project description",
+    hidden: false,
+    owner: DEMO_USER,
+    lastEditedBy: DEMO_USER,
+}
+
+const mockPush = jest.fn()
+
 // Mock dependencies
 jest.mock("next/router", () => ({
     useRouter() {
@@ -17,7 +43,7 @@ jest.mock("next/router", () => ({
             route: "/projects",
             pathname: "",
             asPath: "",
-            push: jest.fn(),
+            push: mockPush,
             events: {
                 on: jest.fn(),
                 off: jest.fn(),
@@ -30,7 +56,7 @@ jest.mock("next/router", () => ({
 
 jest.mock("next-auth/react", () => {
     return {
-        useSession: jest.fn(() => ({data: {user: {name: "mock-user"}}})),
+        useSession: jest.fn(() => ({data: {user: {name: MOCK_USER}}})),
     }
 })
 
@@ -89,14 +115,14 @@ jest.spyOn(listFetch, "fetchResourceList").mockImplementation(
                 role: "OWNER",
                 target: {
                     resourceType: "PROJECT",
-                    id: "1",
+                    id: Math.floor(Math.random() * 1000),
                 },
             },
             {
                 role: "OWNER",
                 target: {
                     resourceType: "PROJECT",
-                    id: "2",
+                    id: 2,
                 },
             },
         ] as unknown as Promise<AuthQuery[]>
@@ -105,29 +131,7 @@ jest.spyOn(listFetch, "fetchResourceList").mockImplementation(
 describe("Projects Page", () => {
     beforeEach(() => {
         jest.spyOn(projectFetch, "fetchProjects").mockImplementation(
-            () =>
-                [
-                    {
-                        created_at: "2024-08-20T00:21:52.539586Z",
-                        updated_at: "2024-08-20T00:24:08.301003Z",
-                        id: "1",
-                        name: "mock project",
-                        description: "mock project description",
-                        hidden: false,
-                        owner: "mock-user",
-                        lastEditedBy: "mock-user",
-                    },
-                    {
-                        created_at: "2024-08-23T10:38:59.676337Z",
-                        updated_at: "2024-08-26T08:12:16.627869Z",
-                        id: "2",
-                        name: "demo project",
-                        description: "demo project description",
-                        hidden: false,
-                        owner: DEMO_USER,
-                        lastEditedBy: DEMO_USER,
-                    },
-                ] as unknown as Promise<Projects>
+            () => [MOCK_PROJECT, DEMO_PROJECT] as unknown as Promise<Projects>
         )
     })
 
@@ -138,8 +142,9 @@ describe("Projects Page", () => {
     it("should display a project page with projects visible to user", async () => {
         render(<ProjectsPage />)
 
-        const mockProject = await screen.findByText("mock project description...")
-        const demoProject = await screen.findByText("demo project description...")
+        // UI truncates description and adds an ellipsis
+        const mockProject = await screen.findByText(`${MOCK_PROJECT.description}...`)
+        const demoProject = await screen.findByText(`${DEMO_PROJECT.description}...`)
 
         expect(mockProject).toBeInTheDocument()
         expect(demoProject).toBeInTheDocument()
@@ -169,7 +174,7 @@ describe("Projects Page", () => {
 
         expect(async () => {
             await waitForElementToBeRemoved(async () => {
-                await screen.findByText("mock project description...")
+                await screen.findByText(`${MOCK_PROJECT.description}...`)
             })
         }).not.toThrow()
     })
@@ -182,8 +187,8 @@ describe("Projects Page", () => {
 
     it("should be able to toggle view between personal or other projects", async () => {
         render(<ProjectsPage />)
-        const mockProject = await screen.findByText("mock project description...")
-        const demoProject = await screen.findByText("demo project description...")
+        const mockProject = await screen.findByText(`${MOCK_PROJECT.description}...`)
+        const demoProject = await screen.findByText(`${DEMO_PROJECT.description}...`)
 
         const myProjectsToggle = await screen.findByText("My projects")
         const demoProjectsToggle = await screen.findByText("Demo projects")
@@ -195,5 +200,32 @@ describe("Projects Page", () => {
         fireEvent.click(demoProjectsToggle)
         expect(mockProject).not.toBeInTheDocument()
         expect(screen.getByText("demo project description...")).toBeInTheDocument()
+    })
+
+    const clickPoints = [
+        {clientX: 0, clientY: 0},
+        {clientX: 50, clientY: 50},
+        {clientX: 100, clientY: 100},
+    ]
+
+    test.each(clickPoints)("should allow users to click at %s on the project card", async (clickPoint) => {
+        render(<ProjectsPage />)
+
+        // Ensure "all projects" is selected
+        const allProjectsToggle = await screen.findByText("All projects")
+        fireEvent.click(allProjectsToggle)
+
+        const mockProject = await screen.findByText(`${MOCK_PROJECT.description}...`)
+        expect(mockProject).toBeInTheDocument()
+
+        fireEvent.click(mockProject, clickPoint)
+
+        // assert that router.push was called
+        await waitFor(() => {
+            expect(mockPush).toHaveBeenCalledWith({
+                pathname: "/projects/[projectID]",
+                query: {projectID: MOCK_PROJECT.id},
+            })
+        })
     })
 })
