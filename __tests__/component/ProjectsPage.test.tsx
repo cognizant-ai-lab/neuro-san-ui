@@ -137,6 +137,7 @@ describe("Projects Page", () => {
 
     afterEach(() => {
         cleanup()
+        localStorage.clear()
     })
 
     it("should display a project page with projects visible to user", async () => {
@@ -210,10 +211,6 @@ describe("Projects Page", () => {
 
     test.each(clickPoints)("should allow users to click at %s on the project card", async (clickPoint) => {
         render(<ProjectsPage />)
-
-        // Ensure "all projects" is selected
-        const allProjectsToggle = await screen.findByText("All projects")
-        fireEvent.click(allProjectsToggle)
 
         const mockProject = await screen.findByText(`${MOCK_PROJECT.description}...`)
         expect(mockProject).toBeInTheDocument()
