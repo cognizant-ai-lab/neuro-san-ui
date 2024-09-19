@@ -150,7 +150,7 @@ export default function Flow(props: FlowProps) {
                             idExtension,
                             readOnlyNode: readOnlyFlow,
                             SelfStateUpdateHandler: DataNodeStateUpdateHandler,
-                            taggedDataList: [...taggedDataList],
+                            taggedDataList,
                         }
                         break
                     case "predictornode":
@@ -161,8 +161,8 @@ export default function Flow(props: FlowProps) {
                             DeleteNode: (nodeId) => deleteNodeById(nodeId),
                             GetElementIndex: (nodeId) => getElementIndex(nodeId),
                             readOnlyNode: readOnlyFlow,
-                            taggedData: selectedDataSource[0]?.LatestDataTag
-                                ? DataTag.fromJSON(selectedDataSource[0].LatestDataTag)
+                            taggedData: selectedDataSource?.LatestDataTag
+                                ? DataTag.fromJSON(selectedDataSource.LatestDataTag)
                                 : null,
                         }
                         break
@@ -174,8 +174,8 @@ export default function Flow(props: FlowProps) {
                             DeleteNode: (nodeId) => deleteNodeById(nodeId),
                             GetElementIndex: (nodeId) => getElementIndex(nodeId),
                             readOnlyNode: readOnlyFlow,
-                            taggedData: selectedDataSource[0]?.LatestDataTag
-                                ? DataTag.fromJSON(selectedDataSource[0].LatestDataTag)
+                            taggedData: selectedDataSource?.LatestDataTag
+                                ? DataTag.fromJSON(selectedDataSource.LatestDataTag)
                                 : null,
                         }
                         break
@@ -497,7 +497,7 @@ export default function Flow(props: FlowProps) {
                 SelfStateUpdateHandler: DataNodeStateUpdateHandler,
                 idExtension,
                 readOnlyNode: readOnlyFlow,
-                taggedDataList: [...taggedDataList],
+                taggedDataList,
             },
             position: {x: 500, y: 500},
         }
@@ -692,8 +692,8 @@ export default function Flow(props: FlowProps) {
                 GetElementIndex: (id) => getElementIndex(id),
                 idExtension,
                 readOnlyNode: readOnlyFlow,
-                taggedData: selectedDataSource[0]?.LatestDataTag
-                    ? DataTag.fromJSON(selectedDataSource[0].LatestDataTag)
+                taggedData: selectedDataSource?.LatestDataTag
+                    ? DataTag.fromJSON(selectedDataSource.LatestDataTag)
                     : null,
             },
             position: {
@@ -844,8 +844,8 @@ export default function Flow(props: FlowProps) {
                 GetElementIndex: (id) => getElementIndex(id),
                 idExtension,
                 readOnlyNode: readOnlyFlow,
-                taggedData: selectedDataSource[0]?.LatestDataTag
-                    ? DataTag.fromJSON(selectedDataSource[0].LatestDataTag)
+                taggedData: selectedDataSource?.LatestDataTag
+                    ? DataTag.fromJSON(selectedDataSource.LatestDataTag)
                     : null,
             },
             position: {
@@ -1310,7 +1310,7 @@ export default function Flow(props: FlowProps) {
                     readOnlyNode={readOnlyFlow}
                     loadingDataTags={loadingDataTags}
                     edges={edges}
-                    dataTagfields={selectedDataSource[0]?.LatestDataTag?.fields}
+                    dataTagfields={selectedDataSource?.LatestDataTag?.fields}
                 />
             </div>
         )

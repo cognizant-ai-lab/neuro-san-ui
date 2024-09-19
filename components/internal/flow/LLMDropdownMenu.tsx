@@ -396,7 +396,7 @@ const LLMDropdownMenu = ({
         Object.keys(dataTagFields)?.some((field) => dataTagFields[field].valued === DataTagFieldValued.CATEGORICAL)
 
     return (
-        <Dropdown id="add-llm-dropdown__menu">
+        <Dropdown id="add-llm-dropdown">
             <Dropdown.Toggle
                 className="w-100"
                 variant="success"

@@ -22,7 +22,7 @@ const shouldDisableOutcome = (outcome, predictorType, fields) =>
  */
 export const addDisabledPropertyToOutcomes = (
     parentNodeState: ConfigurableNodeState,
-    fields: DataTagField
+    fields: {[key: string]: DataTagField}
 ): Outcomes => {
     const result = {}
     for (const outcome in parentNodeState.caoState.outcome) {
@@ -38,5 +38,5 @@ export const addDisabledPropertyToOutcomes = (
     return result
 }
 
-export const getSelectedDataSource = (taggedDataList: TaggedDataInfo[], id: number): TaggedDataInfo[] =>
-    taggedDataList.filter((dataTmp) => Number(id) === Number(dataTmp.DataSource?.id))
+export const getSelectedDataSource = (taggedDataList: TaggedDataInfo[], id: number): TaggedDataInfo =>
+    taggedDataList.find((dataTmp) => Number(id) === Number(dataTmp.DataSource?.id))

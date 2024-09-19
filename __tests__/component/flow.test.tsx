@@ -62,7 +62,7 @@ const FLOW_WITH_PREDICTOR: (NodeType | EdgeType)[] = [
                         range: [1, 10],
                         discreteCategoricalValues: ["value1", "value2"],
                         hasNan: false,
-                        valued: DataTagFieldValued.CATEGORICAL,
+                        valued: DataTagFieldValued.CONTINUOUS,
                         mean: 5,
                         isOrdered: false,
                     },
@@ -163,7 +163,6 @@ jest.mock("../../controller/datatag/fetchdatataglist", () => {
                 },
             ]
         }),
-        loadDataTag: jest.fn(),
     }
 })
 

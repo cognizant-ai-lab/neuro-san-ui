@@ -44,7 +44,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
         if (taggedDataList.length > 0) {
             data.SelfStateUpdateHandler(taggedDataList[0].DataSource, taggedDataList[0].LatestDataTag)
         }
-    }, [])
+    }, [taggedDataList])
 
     // Create the Component structure
     return (
