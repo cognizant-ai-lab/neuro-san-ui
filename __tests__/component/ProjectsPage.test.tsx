@@ -209,9 +209,7 @@ describe("Projects Page", () => {
         {clientX: 100, clientY: 100},
     ]
 
-    // Temporarily disable these tests as they are causing random failures
-    // eslint-disable-next-line jest/no-disabled-tests
-    test.skip.each(clickPoints)("should allow users to click at %s on the project card", async (clickPoint) => {
+    test.each(clickPoints)("should allow users to click at %s on the project card", async (clickPoint) => {
         render(<ProjectsPage />)
 
         const mockProject = await screen.findByText(`${MOCK_PROJECT.description}...`)
