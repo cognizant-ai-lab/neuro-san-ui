@@ -26,7 +26,7 @@ describe("Add LLMDropdownMenu", () => {
         />
     )
 
-    it("shouldrender add llm drop down with all options", async () => {
+    it("should render add llm drop down with all options", async () => {
         const view = renderMockLLMDropdownMenu({
             isLoading: false,
             readOnly: false,

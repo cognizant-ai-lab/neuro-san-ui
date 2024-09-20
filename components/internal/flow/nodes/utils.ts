@@ -38,5 +38,6 @@ export const addDisabledPropertyToOutcomes = (
     return result
 }
 
+// TODO: Remove Number casting once BE sends id back as number in datatags call
 export const getSelectedDataSource = (taggedDataList: TaggedDataInfo[], id: number): TaggedDataInfo =>
     taggedDataList.find((dataTmp) => Number(id) === Number(dataTmp.DataSource?.id))
