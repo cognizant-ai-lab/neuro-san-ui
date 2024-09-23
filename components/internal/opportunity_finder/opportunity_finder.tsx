@@ -14,7 +14,7 @@ import {RiMenuSearchLine} from "react-icons/ri"
 import {TfiPencilAlt} from "react-icons/tfi"
 import ClipLoader from "react-spinners/ClipLoader"
 
-import {OF_INPUT} from "./ofInput"
+import {DAN_INPUT} from "./danInput"
 import {MaximumBlue} from "../../../const"
 import {getLogs, sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
@@ -23,6 +23,7 @@ import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFi
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
+import {OF_INPUT} from "./ofInput"
 
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
@@ -115,16 +116,30 @@ export function OpportunityFinder(): ReactElement {
                             (currentOutput) => `${currentOutput}\n\nError occurred: ${response.status}\n\n`
                         )
                     } else if (response.chatResponse) {
+                        clearInterval(intervalId)
+                        const experimentInfoRegx =
+                            // eslint-disable-next-line max-len
+                            /assistant: \{'project_id': '(?<projectId>\\d+)', 'experiment_id': '(?<experimentId>\\d+)'\}/u
+
+                        // check if response contains project info
+                        const regex = RegExp(experimentInfoRegx, "u")
+                        const matches = regex.exec(response.chatResponse)
+                        if (matches) {
+                            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n${response.chatResponse}\n\n`)
+
+                            const projectId = matches.groups.projectId
+                            const experimentId = matches.groups.experimentId
+                            console.log(`Project ID: ${projectId}, Experiment ID: ${experimentId}`)
+                            // window.open("/projects/2463/experiments/2526", "_blank").focus()
+                        }
+
                         setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n${response.chatResponse}\n\n`)
                     }
                 } finally {
-                    console.debug("clearing isAwaitingLlm")
                     setIsAwaitingLlm(false)
                 }
             }
         }, 5000)
-
-        // clearInterval(intervalId)
 
         // Cleanup function to clear the interval
         return () => clearInterval(intervalId)
@@ -262,10 +277,8 @@ export function OpportunityFinder(): ReactElement {
 
         // const orchestrationQuery =
         // `${previousResponse.current.ScopingAgent}\n${previousResponse.current.DataGenerator}`
-        const orchestrationQuery = OF_INPUT
-
         try {
-            const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
+            const response: ChatResponse = await sendChatQuery(abortController.signal, OF_INPUT, currentUser)
             console.debug("Orchestration response", response)
 
             if (response.status !== AgentStatus.CREATED) {
