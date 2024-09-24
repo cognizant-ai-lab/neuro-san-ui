@@ -41,6 +41,7 @@ df['delivery_time'] = 10 - (df['inventory_level'] / 150) + df['supply_disruption
 
 # Display the first few rows of the dataset
 print(df.head())
+df.to_csv("data_of01.csv", index=False)
 
 ### Explanation:
 - **Context Variables**: \`market_demand\`, \`supply_disruption\`, and \`raw_material_cost\` simulate the external and internal factors affecting supply chain decisions.

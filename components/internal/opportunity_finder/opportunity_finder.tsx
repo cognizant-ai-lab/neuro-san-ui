@@ -2,7 +2,8 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {Tooltip} from "antd"
+import {Alert, Tooltip} from "antd"
+import {capitalize} from "lodash"
 import {CSSProperties, FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsDatabaseAdd, BsStopBtn, BsTrash} from "react-icons/bs"
@@ -23,7 +24,8 @@ import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFi
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
-import {OF_INPUT} from "./ofInput"
+
+const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
 
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
@@ -43,6 +45,10 @@ export function OpportunityFinder(): ReactElement {
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
     const isAwaitingLlmRef = useRef(false)
+
+    // Track index of last log seen from agents
+    const [lastLogIndex, setLastLogIndex] = useState<number>(-1)
+    const lastLogIndexRef = useRef<number>(null)
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
     const chatHistory = useRef<BaseMessage[]>([])
@@ -88,6 +94,9 @@ export function OpportunityFinder(): ReactElement {
     // Session ID for orchestration
     const [sessionId, setSessionId] = useState<string>(null)
 
+    // For newly created project/experiment URL
+    const [projectUrl, setProjectUrl] = useState<string>(null)
+
     function clearInput() {
         setUserLlmChatInput("")
     }
@@ -95,6 +104,10 @@ export function OpportunityFinder(): ReactElement {
     useEffect(() => {
         isAwaitingLlmRef.current = isAwaitingLlm
     }, [isAwaitingLlm])
+
+    useEffect(() => {
+        lastLogIndexRef.current = lastLogIndex
+    }, [lastLogIndex])
 
     useEffect(() => {
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
@@ -109,31 +122,51 @@ export function OpportunityFinder(): ReactElement {
             if (sessionId && !isAwaitingLlmRef.current) {
                 try {
                     setIsAwaitingLlm(true)
-                    const response: LogsResponse = await getLogs(sessionId, controller.current.signal, currentUser)
+                    const response: LogsResponse = await getLogs(sessionId, controller?.current.signal, currentUser)
                     console.debug("Logs response", response)
+
+                    // Check for new logs
+                    if (response.logs && response.logs.length > 0 && response.logs.length > lastLogIndexRef.current) {
+                        // Get new logs
+                        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
+                        setLastLogIndex(response.logs.length - 1)
+
+                        for (const logLine of newLogs) {
+                            console.debug("Last line", logLine)
+
+                            // extract the part of the line only up to ">>>"
+                            const logLineSummary = logLine.split(">>>")[0]
+                            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+                            setUserLlmChatOutput((currentOutput) => `${currentOutput}• ${summarySentenceCase}\n\n`)
+                        }
+                    }
+
                     if (response.status !== AgentStatus.FOUND) {
                         setUserLlmChatOutput(
                             (currentOutput) => `${currentOutput}\n\nError occurred: ${response.status}\n\n`
                         )
                     } else if (response.chatResponse) {
-                        clearInterval(intervalId)
-                        const experimentInfoRegx =
-                            // eslint-disable-next-line max-len
-                            /assistant: \{'project_id': '(?<projectId>\\d+)', 'experiment_id': '(?<experimentId>\\d+)'\}/u
+                        console.debug("Chat response", response.chatResponse)
+                        const experimentInfoRegx = AGENT_RESULT_REGEX
 
                         // check if response contains project info
                         const regex = RegExp(experimentInfoRegx, "u")
                         const matches = regex.exec(response.chatResponse)
                         if (matches) {
-                            setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n${response.chatResponse}\n\n`)
+                            setUserLlmChatOutput(
+                                (currentOutput) => `${currentOutput}• Experiment generation complete.\n\n`
+                            )
+                            setIsAwaitingLlm(false)
+                            clearInterval(intervalId)
+                            console.debug("Matches", matches)
 
                             const projectId = matches.groups.projectId
                             const experimentId = matches.groups.experimentId
                             console.log(`Project ID: ${projectId}, Experiment ID: ${experimentId}`)
-                            // window.open("/projects/2463/experiments/2526", "_blank").focus()
-                        }
 
-                        setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n${response.chatResponse}\n\n`)
+                            const url = `/projects/${projectId}/experiments/${experimentId}`
+                            setProjectUrl(url)
+                        }
                     }
                 } finally {
                     setIsAwaitingLlm(false)
@@ -178,15 +211,19 @@ export function OpportunityFinder(): ReactElement {
             const abortController = new AbortController()
             controller.current = abortController
 
-            // Send the query to the server. Response will be streamed to our callback which updates the output
-            // display as tokens are received.
-            await sendOpportunityFinderRequest(
-                userQuery,
-                selectedAgent,
-                tokenReceivedHandler,
-                abortController.signal,
-                chatHistory.current
-            )
+            if (selectedAgent === "OrchestrationAgent") {
+                await handleOrchestration()
+            } else {
+                // Send the query to the server. Response will be streamed to our callback which updates the output
+                // display as tokens are received.
+                await sendOpportunityFinderRequest(
+                    userQuery,
+                    selectedAgent,
+                    tokenReceivedHandler,
+                    abortController.signal,
+                    chatHistory.current
+                )
+            }
 
             // Add a couple of blank lines after response
             setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\n`)
@@ -278,7 +315,7 @@ export function OpportunityFinder(): ReactElement {
         // const orchestrationQuery =
         // `${previousResponse.current.ScopingAgent}\n${previousResponse.current.DataGenerator}`
         try {
-            const response: ChatResponse = await sendChatQuery(abortController.signal, OF_INPUT, currentUser)
+            const response: ChatResponse = await sendChatQuery(abortController.signal, DAN_INPUT, currentUser)
             console.debug("Orchestration response", response)
 
             if (response.status !== AgentStatus.CREATED) {
@@ -290,8 +327,6 @@ export function OpportunityFinder(): ReactElement {
         } catch (e) {
             setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nError occurred: ${e}\n\n`)
         }
-
-        // window.open("/projects/2463/experiments/2526", "_blank").focus()
     }
 
     /**
@@ -370,9 +405,7 @@ export function OpportunityFinder(): ReactElement {
                 <div
                     id="opp-finder-agent-div"
                     style={{...getStyle(), cursor: "pointer"}}
-                    onClick={async () => {
-                        await handleOrchestration()
-                    }}
+                    onClick={() => setSelectedAgent("OrchestrationAgent")}
                     className={getClassName("OrchestrationAgent")}
                 >
                     <LuBrainCircuit
@@ -398,6 +431,29 @@ export function OpportunityFinder(): ReactElement {
                 onSubmit={handleUserQuery}
             >
                 {getAgentButtons()}
+                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                {projectUrl && (
+                    <Alert
+                        type="success"
+                        message={
+                            <>
+                                Your new project has been created. Click{" "}
+                                <a
+                                    id="new-project-link"
+                                    target="_blank"
+                                    href={projectUrl}
+                                    rel="noreferrer"
+                                >
+                                    here
+                                </a>{" "}
+                                to view it
+                            </>
+                        }
+                        style={{fontSize: "large", margin: "10px", marginTop: "20px", marginBottom: "20px"}}
+                        showIcon={true}
+                        closable={true}
+                    />
+                )}
                 <Form.Group id="llm-chat-group">
                     <div
                         id="llm-response-div"
