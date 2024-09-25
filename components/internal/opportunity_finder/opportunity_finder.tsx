@@ -28,7 +28,13 @@ import BlankLines from "../../blanklines"
 const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
 
 // Interval for polling the agents for logs
-const AGENT_POLL_INTERVAL_MS = 5000
+const AGENT_POLL_INTERVAL_MS = 5_000
+
+// Maximum duration for polling the agents for logs
+const MAX_POLLING_DURATION_SECS = 90
+
+// Maximum number of polling attempts for logs.
+const MAX_POLLING_ATTEMPTS = (MAX_POLLING_DURATION_SECS * 1_000) / AGENT_POLL_INTERVAL_MS
 
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
@@ -99,6 +105,9 @@ export function OpportunityFinder(): ReactElement {
     // For newly created project/experiment URL
     const [projectUrl, setProjectUrl] = useState<string>(null)
 
+    // To track number of polling attempts for logs so we know when to give up
+    const pollingAttempts = useRef(0)
+
     function clearInput() {
         setUserLlmChatInput("")
     }
@@ -118,56 +127,70 @@ export function OpportunityFinder(): ReactElement {
     useEffect(() => {
         function pollAgent() {
             const intervalId = setInterval(async () => {
-                if (!isAwaitingLlmRef.current) {
-                    try {
-                        setIsAwaitingLlm(true)
-                        const response: LogsResponse = await getLogs(sessionId, controller?.current.signal, currentUser)
-                        console.debug("Logs response", response)
+                if (isAwaitingLlmRef.current) {
+                    // Already a request in progress
+                    return
+                }
 
-                        // Check for new logs
-                        if (response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current) {
-                            // Get new logs
-                            const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
-                            lastLogIndexRef.current = response.logs.length - 1
+                pollingAttempts.current += 1
+                if (pollingAttempts.current > MAX_POLLING_ATTEMPTS) {
+                    // Too many polling attempts; give up
+                    tokenReceivedHandler("• Error occurred: polling for logs timed out\n\n")
+                    console.debug("Giving up on polling for logs")
+                    clearInterval(intervalId)
+                    setIsAwaitingLlm(false)
+                    return
+                }
 
-                            // Process new logs and display summaries to user
-                            for (const logLine of newLogs) {
-                                // extract the part of the line only up to ">>>"
-                                const logLineSummary = logLine.split(">>>")[0]
-                                const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
-                                tokenReceivedHandler(`• ${summarySentenceCase}\n\n`)
-                            }
+                try {
+                    setIsAwaitingLlm(true)
+
+                    const response: LogsResponse = await getLogs(sessionId, controller?.current.signal, currentUser)
+                    console.debug("Logs response", response)
+
+                    // Check for new logs
+                    if (response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current) {
+                        // Get new logs
+                        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
+                        lastLogIndexRef.current = response.logs.length - 1
+
+                        // Process new logs and display summaries to user
+                        for (const logLine of newLogs) {
+                            // extract the part of the line only up to ">>>"
+                            const logLineSummary = logLine.split(">>>")[0]
+                            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+                            tokenReceivedHandler(`• ${summarySentenceCase}\n\n`)
                         }
+                    }
 
-                        // Any status other than "FOUND" means something went wrong
-                        if (response.status !== AgentStatus.FOUND) {
-                            tokenReceivedHandler(
-                                `Error occurred: session ${sessionId} not found, status: ${response.status}\n\n`
-                            )
+                    // Any status other than "FOUND" means something went wrong
+                    if (response.status !== AgentStatus.FOUND) {
+                        tokenReceivedHandler(
+                            `Error occurred: session ${sessionId} not found, status: ${response.status}\n\n`
+                        )
+                        setIsAwaitingLlm(false)
+                        clearInterval(intervalId)
+                    } else if (response.chatResponse) {
+                        // Check for completion of orchestration
+                        console.debug("Chat response", response.chatResponse)
+
+                        // check if response contains project info
+                        const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
+                        if (matches) {
+                            // We found the agent completion message
+                            tokenReceivedHandler("• Experiment generation complete.\n\n")
                             setIsAwaitingLlm(false)
                             clearInterval(intervalId)
-                        } else if (response.chatResponse) {
-                            // Check for completion of orchestration
-                            console.debug("Chat response", response.chatResponse)
 
-                            // check if response contains project info
-                            const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
-                            if (matches) {
-                                // We found the agent completion message
-                                tokenReceivedHandler("• Experiment generation complete.\n\n")
-                                setIsAwaitingLlm(false)
-                                clearInterval(intervalId)
+                            const projectId = matches.groups.projectId
+                            const experimentId = matches.groups.experimentId
 
-                                const projectId = matches.groups.projectId
-                                const experimentId = matches.groups.experimentId
-
-                                const url = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
-                                setProjectUrl(url)
-                            }
+                            const url = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
+                            setProjectUrl(url)
                         }
-                    } finally {
-                        setIsAwaitingLlm(false)
                     }
+                } finally {
+                    setIsAwaitingLlm(false)
                 }
             }, AGENT_POLL_INTERVAL_MS)
 
