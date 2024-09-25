@@ -273,6 +273,43 @@ export default function Index(): ReactElement {
                             Cognizant Data Integration Toolkit
                         </a>
                     </div>
+                    <div
+                        id="help-links"
+                        className="more-links"
+                    >
+                        <HeaderLineFive id="additional-links-header">Content</HeaderLineFive>
+                        <div
+                            id="additional-links-divider"
+                            className="link-divider"
+                        />
+                        <a
+                            id="neuro-ai-for-clients-link"
+                            className="splash-link"
+                            href="https://youtu.be/oxiu_oaTMSg"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            For Clients
+                        </a>
+                        <a
+                            id="neuro-ai-use-case-link"
+                            className="splash-link"
+                            href="https://youtu.be/KkmRtmDudMk"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Use Case
+                        </a>
+                        <a
+                            id="neuro-ai-concepts-link"
+                            className="splash-link"
+                            href="https://youtu.be/_8g9Zfj08T8"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Concepts
+                        </a>
+                    </div>
                 </div>
             </footer>
         </div>
