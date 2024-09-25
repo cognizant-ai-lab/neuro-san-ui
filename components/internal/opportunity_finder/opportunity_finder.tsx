@@ -15,7 +15,6 @@ import {RiMenuSearchLine} from "react-icons/ri"
 import {TfiPencilAlt} from "react-icons/tfi"
 import ClipLoader from "react-spinners/ClipLoader"
 
-import {SONY_INPUT} from "./sony"
 import {MaximumBlue} from "../../../const"
 import {getLogs, sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
@@ -25,7 +24,11 @@ import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
 
+// Regex to extract project and experiment IDs from agent response
 const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
+
+// Interval for polling the agents for logs
+const AGENT_POLL_INTERVAL_MS = 5000
 
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
@@ -47,8 +50,7 @@ export function OpportunityFinder(): ReactElement {
     const isAwaitingLlmRef = useRef(false)
 
     // Track index of last log seen from agents
-    const [lastLogIndex, setLastLogIndex] = useState<number>(-1)
-    const lastLogIndexRef = useRef<number>(null)
+    const lastLogIndexRef = useRef<number>(-1)
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
     const chatHistory = useRef<BaseMessage[]>([])
@@ -106,70 +108,78 @@ export function OpportunityFinder(): ReactElement {
     }, [isAwaitingLlm])
 
     useEffect(() => {
-        lastLogIndexRef.current = lastLogIndex
-    }, [lastLogIndex])
-
-    useEffect(() => {
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => {
             inputAreaRef?.current?.focus()
         }, 1000)
     }, [])
 
+    // Poll the agent for logs when the Orchestration Agent is being used
     useEffect(() => {
-        const intervalId = setInterval(async () => {
-            if (sessionId && !isAwaitingLlmRef.current) {
-                try {
-                    setIsAwaitingLlm(true)
-                    const response: LogsResponse = await getLogs(sessionId, controller?.current.signal, currentUser)
-                    console.debug("Logs response", response)
+        function pollAgent() {
+            const intervalId = setInterval(async () => {
+                if (!isAwaitingLlmRef.current) {
+                    try {
+                        setIsAwaitingLlm(true)
+                        const response: LogsResponse = await getLogs(sessionId, controller?.current.signal, currentUser)
+                        console.debug("Logs response", response)
 
-                    // Check for new logs
-                    if (response.logs && response.logs.length > 0 && response.logs.length > lastLogIndexRef.current) {
-                        // Get new logs
-                        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
-                        setLastLogIndex(response.logs.length - 1)
+                        // Check for new logs
+                        if (response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current) {
+                            // Get new logs
+                            const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
+                            lastLogIndexRef.current = response.logs.length - 1
 
-                        for (const logLine of newLogs) {
-                            // extract the part of the line only up to ">>>"
-                            const logLineSummary = logLine.split(">>>")[0]
-                            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
-                            tokenReceivedHandler(`• ${summarySentenceCase}\n\n`)
+                            // Process new logs and display summaries to user
+                            for (const logLine of newLogs) {
+                                // extract the part of the line only up to ">>>"
+                                const logLineSummary = logLine.split(">>>")[0]
+                                const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+                                tokenReceivedHandler(`• ${summarySentenceCase}\n\n`)
+                            }
                         }
-                    }
 
-                    if (response.status !== AgentStatus.FOUND) {
-                        tokenReceivedHandler(
-                            `Error occurred: session ${sessionId} not found, status: ${response.status}\n\n`
-                        )
-                        setIsAwaitingLlm(false)
-                        clearInterval(intervalId)
-                    } else if (response.chatResponse) {
-                        console.debug("Chat response", response.chatResponse)
-
-                        // check if response contains project info
-                        const regex = RegExp(AGENT_RESULT_REGEX, "u")
-                        const matches = regex.exec(response.chatResponse)
-                        if (matches) {
-                            tokenReceivedHandler("• Experiment generation complete.\n\n")
+                        // Any status other than "FOUND" means something went wrong
+                        if (response.status !== AgentStatus.FOUND) {
+                            tokenReceivedHandler(
+                                `Error occurred: session ${sessionId} not found, status: ${response.status}\n\n`
+                            )
                             setIsAwaitingLlm(false)
                             clearInterval(intervalId)
+                        } else if (response.chatResponse) {
+                            // Check for completion of orchestration
+                            console.debug("Chat response", response.chatResponse)
 
-                            const projectId = matches.groups.projectId
-                            const experimentId = matches.groups.experimentId
+                            // check if response contains project info
+                            const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
+                            if (matches) {
+                                // We found the agent completion message
+                                tokenReceivedHandler("• Experiment generation complete.\n\n")
+                                setIsAwaitingLlm(false)
+                                clearInterval(intervalId)
 
-                            const url = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
-                            setProjectUrl(url)
+                                const projectId = matches.groups.projectId
+                                const experimentId = matches.groups.experimentId
+
+                                const url = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
+                                setProjectUrl(url)
+                            }
                         }
+                    } finally {
+                        setIsAwaitingLlm(false)
                     }
-                } finally {
-                    setIsAwaitingLlm(false)
                 }
-            }
-        }, 5000)
+            }, AGENT_POLL_INTERVAL_MS)
 
-        // Cleanup function to clear the interval
-        return () => clearInterval(intervalId)
+            // Cleanup function to clear the interval
+            return () => clearInterval(intervalId)
+        }
+
+        if (sessionId) {
+            return pollAgent()
+        } else {
+            return undefined
+        }
     }, [sessionId])
 
     /**
@@ -291,25 +301,23 @@ export function OpportunityFinder(): ReactElement {
         return `opp-finder-agent-div${selectedAgent === agentType ? " selected" : ""}`
     }
 
-    function getStyle(): CSSProperties {
+    function getAgentButtonStyle(isEnabled: boolean): CSSProperties {
         return {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            pointerEvents: isAwaitingLlm ? "none" : "auto",
-            opacity: isAwaitingLlm ? 0.5 : 1,
+            opacity: isEnabled ? 1 : 0.5,
         }
     }
 
     async function handleOrchestration() {
-        console.debug("previous response", previousResponse.current)
         const abortController = new AbortController()
         controller.current = abortController
 
-        // const orchestrationQuery = `${previousResponse.current.ScopingAgent}\n${previousResponse.current.DataGenerator}`
-        // console.debug("Orchestration query", orchestrationQuery)
+        const orchestrationQuery = previousResponse.current.DataGenerator
+        console.debug("Orchestration query", orchestrationQuery)
         try {
-            const response: ChatResponse = await sendChatQuery(abortController.signal, SONY_INPUT, currentUser)
+            const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
             console.debug("Orchestration response", response)
 
             if (response.status !== AgentStatus.CREATED) {
@@ -328,6 +336,8 @@ export function OpportunityFinder(): ReactElement {
      * @returns A div containing the agent buttons
      */
     function getAgentButtons() {
+        const enableOrchestration = previousResponse.current.DataGenerator !== null && !isAwaitingLlm
+
         return (
             <div
                 id="agent-icons-div"
@@ -344,8 +354,8 @@ export function OpportunityFinder(): ReactElement {
             >
                 <div
                     id="opp-finder-agent-div"
-                    style={getStyle()}
-                    onClick={() => setSelectedAgent("OpportunityFinder")}
+                    style={getAgentButtonStyle(!isAwaitingLlm)}
+                    onClick={() => !isAwaitingLlm && setSelectedAgent("OpportunityFinder")}
                     className={getClassName("OpportunityFinder")}
                 >
                     <RiMenuSearchLine
@@ -362,8 +372,8 @@ export function OpportunityFinder(): ReactElement {
                 />
                 <div
                     id="scoping-agent-div"
-                    style={getStyle()}
-                    onClick={() => setSelectedAgent("ScopingAgent")}
+                    style={getAgentButtonStyle(!isAwaitingLlm)}
+                    onClick={() => !isAwaitingLlm && setSelectedAgent("ScopingAgent")}
                     className={getClassName("ScopingAgent")}
                 >
                     <TfiPencilAlt
@@ -380,8 +390,8 @@ export function OpportunityFinder(): ReactElement {
                 />
                 <div
                     id="opp-finder-agent-div"
-                    style={getStyle()}
-                    onClick={() => setSelectedAgent("DataGenerator")}
+                    style={getAgentButtonStyle(!isAwaitingLlm)}
+                    onClick={() => !isAwaitingLlm && setSelectedAgent("DataGenerator")}
                     className={getClassName("DataGenerator")}
                 >
                     <BsDatabaseAdd
@@ -396,24 +406,30 @@ export function OpportunityFinder(): ReactElement {
                     size={100}
                     color="var(--bs-secondary)"
                 />
-                <div
-                    id="opp-finder-agent-div"
-                    style={{...getStyle(), cursor: "pointer"}}
-                    onClick={() => setSelectedAgent("OrchestrationAgent")}
-                    className={getClassName("OrchestrationAgent")}
+                <Tooltip
+                    id="orchestration-tooltip"
+                    title={enableOrchestration ? undefined : "Please complete the previous steps first"}
+                    style={getAgentButtonStyle(enableOrchestration)}
                 >
-                    <LuBrainCircuit
-                        id="db-agent-icon"
-                        size={100}
-                        style={{marginBottom: "10px"}}
-                    />
                     <div
-                        id="orchestration-agent-text"
-                        style={{textAlign: "center"}}
+                        id="orchestration-agent-div"
+                        style={{...getAgentButtonStyle(enableOrchestration)}}
+                        onClick={() => enableOrchestration && setSelectedAgent("OrchestrationAgent")}
+                        className={getClassName("OrchestrationAgent")}
                     >
-                        Orchestration
+                        <LuBrainCircuit
+                            id="db-agent-icon"
+                            size={100}
+                            style={{marginBottom: "10px"}}
+                        />
+                        <div
+                            id="orchestration-agent-text"
+                            style={{textAlign: "center"}}
+                        >
+                            Orchestration
+                        </div>
                     </div>
-                </div>
+                </Tooltip>
             </div>
         )
     }
@@ -425,8 +441,8 @@ export function OpportunityFinder(): ReactElement {
                 onSubmit={handleUserQuery}
             >
                 {getAgentButtons()}
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 {projectUrl && (
+                    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                     <Alert
                         type="success"
                         message={
