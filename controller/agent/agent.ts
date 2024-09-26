@@ -7,33 +7,53 @@ import {AgentChatRequest, AgentLogsRequest, AgentType} from "../../generated/met
 import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"
 
+// API path for the agent chat endpoint
 const CHAT_PATH = "api/v1/agent/chat"
+
+// API path for the agent logs endpoint
 const LOGS_PATH = "api/v1/agent/logs"
 
+/**
+ * Get logs for a given session. Intended to be polled periodically to get the logs (agent chat).
+ * @param sessionId The session ID to get logs for.
+ * @param signal The AbortSignal to use for the request. Used to cancel the request on user demand
+ * @param requestUser The user making the request
+ * @returns The current logs (all, not just latest) for the given session.
+ */
 export async function getLogs(sessionId: string, signal: AbortSignal, requestUser: string): Promise<LogsResponse> {
     const baseUrl = useEnvironmentStore.getState().backendApiUrl
     const fetchUrl = `${baseUrl}/${LOGS_PATH}`
+
+    // Create request
     const agentLogsRequest: AgentLogsRequest = AgentLogsRequest.fromPartial({
         user: {login: requestUser},
         request: LogsRequest.fromPartial({sessionId: sessionId}),
         targetAgent: AgentType.OPPORTUNITY_FINDER_PIPELINE,
     })
 
-    console.debug("logs request: ", agentLogsRequest)
-
+    // Convert to JSON (wire) format
     const requestJSON = AgentLogsRequest.toJSON(agentLogsRequest)
 
+    // Convert to k-v pairs as required by sendLlmRequest
     const requestRecord = Object.entries(requestJSON).reduce(
         (acc, [key, value]) => (value ? {...acc, [key]: value} : acc),
         {}
     )
 
     const result = await sendLlmRequest(null, signal, fetchUrl, requestRecord, null)
-    console.debug("result: ", result)
 
     return LogsResponse.fromJSON(result)
 }
 
+/**
+ * Send a chat query to the Agent LLM API. This opens a session with the agent network.
+ * @param signal The AbortSignal to use for the request. Used to cancel the request on user demand
+ * @param userInput The user input to send to the agent.
+ * In practice this "input" will actually be the output from one of the previous agents such as the data generator
+ * or scoping agent.
+ * @param requestUser The user making the request
+ * @returns The response from the agent network.
+ */
 export async function sendChatQuery(
     signal: AbortSignal,
     userInput: string,
@@ -41,20 +61,23 @@ export async function sendChatQuery(
 ): Promise<ChatResponse> {
     const baseUrl = useEnvironmentStore.getState().backendApiUrl
     const fetchUrl = `${baseUrl}/${CHAT_PATH}`
+
+    // Create request
     const agentChatRequest: AgentChatRequest = {
         user: {login: requestUser},
         request: ChatRequest.fromPartial({userInput: userInput}),
         targetAgent: AgentType.OPPORTUNITY_FINDER_PIPELINE,
     }
 
+    // Convert to JSON (wire) format
     const requestJSON = AgentChatRequest.toJSON(agentChatRequest)
 
+    // Convert to k-v pairs as required by sendLlmRequest
     const requestRecord = Object.entries(requestJSON).reduce(
         (acc, [key, value]) => (value ? {...acc, [key]: value} : acc),
         {}
     )
 
     const result = await sendLlmRequest(null, signal, fetchUrl, requestRecord, null)
-    console.debug("result: ", result)
     return ChatResponse.fromJSON(result)
 }

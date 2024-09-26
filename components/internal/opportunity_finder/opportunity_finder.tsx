@@ -66,7 +66,7 @@ export function OpportunityFinder(): ReactElement {
     const currentResponse = useRef<string>("")
 
     // Previous responses from the agents. Necessary to save this since currentResponse gets cleared each time, and
-    // when we call the experiment generator we need the scoping agent + data generator responses as input
+    // when we call the experiment generator we need the data generator responses as input
     const previousResponse = useRef<Record<OpportunityFinderRequestType, string | null>>({
         OpportunityFinder: null,
         ScopingAgent: null,
@@ -99,7 +99,8 @@ export function OpportunityFinder(): ReactElement {
     const {data: session} = useAuthentication()
     const currentUser: string = session.user.name
 
-    // Session ID for orchestration
+    // Session ID for orchestration. We also use this as an overall "orchestration is in process" flag. If we have a
+    // session ID, we are in the orchestration process.
     const sessionId = useRef<string>(null)
 
     // For newly created project/experiment URL
@@ -133,15 +134,17 @@ export function OpportunityFinder(): ReactElement {
         sessionId.current = null
     }
 
-    // Poll the agent for logs when the Orchestration Agent is being used
     useEffect(() => {
+        // Poll the agent for logs when the Orchestration Agent is being used
         function pollAgent() {
+            // Kick off the polling process
             const intervalId = setInterval(async () => {
                 if (isAwaitingLlmRef.current) {
                     // Already a request in progress
                     return
                 }
 
+                // Check for too many polling attempts
                 pollingAttempts.current += 1
                 if (pollingAttempts.current > MAX_POLLING_ATTEMPTS) {
                     // Too many polling attempts; give up
@@ -150,7 +153,9 @@ export function OpportunityFinder(): ReactElement {
                     return
                 }
 
+                // Poll the agent for logs
                 try {
+                    // Set "busy" flag
                     setIsAwaitingLlm(true)
 
                     const response: LogsResponse = await getLogs(
@@ -188,6 +193,7 @@ export function OpportunityFinder(): ReactElement {
                             tokenReceivedHandler("• Experiment generation complete.\n\n")
                             endOrchestration(intervalId)
 
+                            // Build the URl and set it in state so the notification will be displayed
                             const projectId = matches.groups.projectId
                             const experimentId = matches.groups.experimentId
 
@@ -343,15 +349,24 @@ export function OpportunityFinder(): ReactElement {
         }
     }
 
+    /**
+     * Handle the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
+     * session ID in a ref for later use.
+     *
+     * @returns Nothing, but sets the session ID for the orchestration process
+     */
     async function handleOrchestration() {
         const abortController = new AbortController()
         controller.current = abortController
 
+        // For now the input to Orchestration is nothing more than the most recent response from the data generator
         const orchestrationQuery = previousResponse.current.DataGenerator
         try {
+            // Send the initial chat query to the server.
             const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
 
-            if (response.status !== AgentStatus.CREATED) {
+            // We expect the response to have status CREATED and to contain the session ID
+            if (response.status !== AgentStatus.CREATED || !response.sessionId) {
                 setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nError occurred: ${response.status}\n\n`)
             } else {
                 sessionId.current = response.sessionId
