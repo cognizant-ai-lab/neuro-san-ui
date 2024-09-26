@@ -146,7 +146,6 @@ export function OpportunityFinder(): ReactElement {
                 if (pollingAttempts.current > MAX_POLLING_ATTEMPTS) {
                     // Too many polling attempts; give up
                     tokenReceivedHandler("• Error occurred: polling for logs timed out\n\n")
-                    console.debug("Giving up on polling for logs")
                     endOrchestration(intervalId)
                     return
                 }
@@ -159,7 +158,6 @@ export function OpportunityFinder(): ReactElement {
                         controller?.current.signal,
                         currentUser
                     )
-                    console.debug("Logs response", response)
 
                     // Check for new logs
                     if (response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current) {
@@ -183,10 +181,7 @@ export function OpportunityFinder(): ReactElement {
                         )
                         endOrchestration(intervalId)
                     } else if (response.chatResponse) {
-                        // Check for completion of orchestration
-                        console.debug("Chat response", response.chatResponse)
-
-                        // check if response contains project info
+                        // Check for completion of orchestration by checking if response contains project info
                         const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
                         if (matches) {
                             // We found the agent completion message
@@ -353,15 +348,12 @@ export function OpportunityFinder(): ReactElement {
         controller.current = abortController
 
         const orchestrationQuery = previousResponse.current.DataGenerator
-        console.debug("Orchestration query", orchestrationQuery)
         try {
-            const response: ChatResponse = await sendChatQuery(abortController.signal, SONY_INPUT, currentUser)
-            console.debug("Orchestration response", response)
+            const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
 
             if (response.status !== AgentStatus.CREATED) {
                 setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nError occurred: ${response.status}\n\n`)
             } else {
-                console.debug("Orchestration session ID", response.sessionId)
                 sessionId.current = response.sessionId
             }
         } catch (e) {
@@ -374,7 +366,7 @@ export function OpportunityFinder(): ReactElement {
      * @returns A div containing the agent buttons
      */
     function getAgentButtons() {
-        const enableOrchestration = true || (previousResponse.current.DataGenerator !== null && !awaitingResponse)
+        const enableOrchestration = previousResponse.current.DataGenerator !== null && !awaitingResponse
 
         return (
             <div
