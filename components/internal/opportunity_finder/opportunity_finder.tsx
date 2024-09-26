@@ -100,7 +100,7 @@ export function OpportunityFinder(): ReactElement {
     const currentUser: string = session.user.name
 
     // Session ID for orchestration
-    const [sessionId, setSessionId] = useState<string>(null)
+    const sessionId = useRef<string>(null)
 
     // For newly created project/experiment URL
     const [projectUrl, setProjectUrl] = useState<string>(null)
@@ -123,6 +123,16 @@ export function OpportunityFinder(): ReactElement {
         }, 1000)
     }, [])
 
+    /**
+     * End the orchestration process.
+     * @param intervalId The ID for the interval timer for polling
+     */
+    function endOrchestration(intervalId: number) {
+        clearInterval(intervalId)
+        setIsAwaitingLlm(false)
+        sessionId.current = null
+    }
+
     // Poll the agent for logs when the Orchestration Agent is being used
     useEffect(() => {
         function pollAgent() {
@@ -137,15 +147,18 @@ export function OpportunityFinder(): ReactElement {
                     // Too many polling attempts; give up
                     tokenReceivedHandler("• Error occurred: polling for logs timed out\n\n")
                     console.debug("Giving up on polling for logs")
-                    clearInterval(intervalId)
-                    setIsAwaitingLlm(false)
+                    endOrchestration(intervalId)
                     return
                 }
 
                 try {
                     setIsAwaitingLlm(true)
 
-                    const response: LogsResponse = await getLogs(sessionId, controller?.current.signal, currentUser)
+                    const response: LogsResponse = await getLogs(
+                        sessionId.current,
+                        controller?.current.signal,
+                        currentUser
+                    )
                     console.debug("Logs response", response)
 
                     // Check for new logs
@@ -166,10 +179,9 @@ export function OpportunityFinder(): ReactElement {
                     // Any status other than "FOUND" means something went wrong
                     if (response.status !== AgentStatus.FOUND) {
                         tokenReceivedHandler(
-                            `Error occurred: session ${sessionId} not found, status: ${response.status}\n\n`
+                            `Error occurred: session ${sessionId?.current} not found, status: ${response.status}\n\n`
                         )
-                        setIsAwaitingLlm(false)
-                        clearInterval(intervalId)
+                        endOrchestration(intervalId)
                     } else if (response.chatResponse) {
                         // Check for completion of orchestration
                         console.debug("Chat response", response.chatResponse)
@@ -179,8 +191,7 @@ export function OpportunityFinder(): ReactElement {
                         if (matches) {
                             // We found the agent completion message
                             tokenReceivedHandler("• Experiment generation complete.\n\n")
-                            setIsAwaitingLlm(false)
-                            clearInterval(intervalId)
+                            endOrchestration(intervalId)
 
                             const projectId = matches.groups.projectId
                             const experimentId = matches.groups.experimentId
@@ -192,18 +203,19 @@ export function OpportunityFinder(): ReactElement {
                 } finally {
                     setIsAwaitingLlm(false)
                 }
-            }, AGENT_POLL_INTERVAL_MS)
+            }, AGENT_POLL_INTERVAL_MS) as unknown as number
 
             // Cleanup function to clear the interval
             return () => clearInterval(intervalId)
         }
 
-        if (sessionId) {
+        if (sessionId.current) {
+            pollingAttempts.current = 0
             return pollAgent()
         } else {
             return undefined
         }
-    }, [sessionId])
+    }, [sessionId.current])
 
     /**
      * Handles a token received from the LLM via callback on the fetch request.
@@ -213,7 +225,7 @@ export function OpportunityFinder(): ReactElement {
         // Auto scroll as response is generated
         if (llmOutputTextAreaRef.current && autoScrollEnabled.current) {
             isProgrammaticScroll.current = true
-            llmOutputTextAreaRef.current.scrollTop = llmOutputTextAreaRef.current.scrollHeight
+            llmOutputTextAreaRef.current.scrollTop = llmOutputTextAreaRef.current.scrollHeight + 100
         }
         currentResponse.current += token
         setUserLlmChatOutput((currentOutput) => currentOutput + token)
@@ -301,19 +313,22 @@ export function OpportunityFinder(): ReactElement {
         }
     }
 
+    // Determine if awaiting response from any of the agents
+    const awaitingResponse = isAwaitingLlm || Boolean(sessionId.current)
+
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !userLlmChatInput || userLlmChatInput.length === 0 || hasOnlyWhitespace(userLlmChatInput)
 
     // Disable Send when request is in progress
-    const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
+    const shouldDisableSendButton = userInputEmpty || awaitingResponse
 
     // Disable Send when request is in progress
-    const shouldDisableRegenerateButton = !previousUserQuery || isAwaitingLlm
+    const shouldDisableRegenerateButton = !previousUserQuery || awaitingResponse
 
     // Width for the various buttons -- "regenerate", "stop" etc.
     const actionButtonWidth = 126
 
-    const disableClearChatButton = isAwaitingLlm || userLlmChatOutput.length === 0
+    const disableClearChatButton = awaitingResponse || userLlmChatOutput.length === 0
 
     /**
      * Get the class name for the agent button.
@@ -340,14 +355,14 @@ export function OpportunityFinder(): ReactElement {
         const orchestrationQuery = previousResponse.current.DataGenerator
         console.debug("Orchestration query", orchestrationQuery)
         try {
-            const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
+            const response: ChatResponse = await sendChatQuery(abortController.signal, SONY_INPUT, currentUser)
             console.debug("Orchestration response", response)
 
             if (response.status !== AgentStatus.CREATED) {
                 setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nError occurred: ${response.status}\n\n`)
             } else {
                 console.debug("Orchestration session ID", response.sessionId)
-                setSessionId(response.sessionId)
+                sessionId.current = response.sessionId
             }
         } catch (e) {
             setUserLlmChatOutput((currentOutput) => `${currentOutput}\n\nError occurred: ${e}\n\n`)
@@ -359,7 +374,7 @@ export function OpportunityFinder(): ReactElement {
      * @returns A div containing the agent buttons
      */
     function getAgentButtons() {
-        const enableOrchestration = previousResponse.current.DataGenerator !== null && !isAwaitingLlm
+        const enableOrchestration = true || (previousResponse.current.DataGenerator !== null && !awaitingResponse)
 
         return (
             <div
@@ -377,8 +392,8 @@ export function OpportunityFinder(): ReactElement {
             >
                 <div
                     id="opp-finder-agent-div"
-                    style={getAgentButtonStyle(!isAwaitingLlm)}
-                    onClick={() => !isAwaitingLlm && setSelectedAgent("OpportunityFinder")}
+                    style={getAgentButtonStyle(!awaitingResponse)}
+                    onClick={() => !awaitingResponse && setSelectedAgent("OpportunityFinder")}
                     className={getClassName("OpportunityFinder")}
                 >
                     <RiMenuSearchLine
@@ -395,8 +410,8 @@ export function OpportunityFinder(): ReactElement {
                 />
                 <div
                     id="scoping-agent-div"
-                    style={getAgentButtonStyle(!isAwaitingLlm)}
-                    onClick={() => !isAwaitingLlm && setSelectedAgent("ScopingAgent")}
+                    style={getAgentButtonStyle(!awaitingResponse)}
+                    onClick={() => !awaitingResponse && setSelectedAgent("ScopingAgent")}
                     className={getClassName("ScopingAgent")}
                 >
                     <TfiPencilAlt
@@ -413,8 +428,8 @@ export function OpportunityFinder(): ReactElement {
                 />
                 <div
                     id="opp-finder-agent-div"
-                    style={getAgentButtonStyle(!isAwaitingLlm)}
-                    onClick={() => !isAwaitingLlm && setSelectedAgent("DataGenerator")}
+                    style={getAgentButtonStyle(!awaitingResponse)}
+                    onClick={() => !awaitingResponse && setSelectedAgent("DataGenerator")}
                     className={getClassName("DataGenerator")}
                 >
                     <BsDatabaseAdd
@@ -559,7 +574,7 @@ export function OpportunityFinder(): ReactElement {
                                 borderColor: MaximumBlue,
                                 bottom: 10,
                                 color: "white",
-                                display: isAwaitingLlm ? "none" : "inline",
+                                display: awaitingResponse ? "none" : "inline",
                                 fontSize: "13.3px",
                                 opacity: disableClearChatButton ? "50%" : "70%",
                                 position: "absolute",
@@ -586,7 +601,7 @@ export function OpportunityFinder(): ReactElement {
                                 borderColor: MaximumBlue,
                                 bottom: 10,
                                 color: "white",
-                                display: isAwaitingLlm ? "inline" : "none",
+                                display: awaitingResponse ? "inline" : "none",
                                 fontSize: "13.3px",
                                 opacity: "70%",
                                 position: "absolute",
@@ -613,7 +628,7 @@ export function OpportunityFinder(): ReactElement {
                                 borderColor: MaximumBlue,
                                 bottom: 10,
                                 color: "white",
-                                display: isAwaitingLlm ? "none" : "inline",
+                                display: awaitingResponse ? "none" : "inline",
                                 fontSize: "13.3px",
                                 opacity: shouldDisableRegenerateButton ? "50%" : "70%",
                                 position: "absolute",
@@ -688,7 +703,7 @@ export function OpportunityFinder(): ReactElement {
                             id="send-div"
                             style={{display: "flex", width: "100px", justifyContent: "center"}}
                         >
-                            {isAwaitingLlm ? (
+                            {awaitingResponse ? (
                                 <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                     // ClipLoader does not have an id property
                                     color={MaximumBlue}

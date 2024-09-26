@@ -109,83 +109,79 @@ import pandas as pd
 import numpy as np
 import random
 
-# Define the number of rows
-num_rows = 2000
+# Define the possible values for each attribute
+development_timeline = ['EarlyStage', 'MidStage', 'LateStage', 'FinalStage']
+resource_allocation = ['Low', 'Medium', 'High']
+market_readiness = ['NotReady', 'PartiallyReady', 'FullyReady']
+game_genre = ['Action', 'Adventure', 'RPG', 'Sports', 'Simulation', 'Strategy', 'Puzzle', 'Horror']
+target_platform = ['PlayStation5', 'PlayStation4', 'PC', 'Multi-platform']
+competitor_release_dates = ['NoCompetitorRelease', 'CompetitorReleaseWithin1Month', 'CompetitorReleaseWithin3Months', 'CompetitorReleaseWithin6Months']
+user_feedback = ['VeryNegative', 'Negative', 'Neutral', 'Positive', 'VeryPositive']
+development_milestones = ['AdjustMilestones', 'KeepMilestones']
+resource_reallocation = ['IncreaseResources', 'DecreaseResources', 'MaintainResources']
+release_date = ['MoveUp', 'Delay', 'KeepSame']
+additional_features = ['AddFeatures', 'RemoveFeatures', 'KeepFeatures']
+marketing_campaign_intensity = ['Increase', 'Decrease', 'Maintain']
+quality_assurance_testing = ['IncreaseTesting', 'DecreaseTesting', 'MaintainTesting']
+game_quality = ['Poor', 'Fair', 'Good', 'VeryGood', 'Excellent']
+market_reception = ['VeryNegative', 'Negative', 'Neutral', 'Positive', 'VeryPositive']
 
-# Define the context attributes
-context_attributes = {
-    "Age": np.random.randint(18, 60, num_rows),
-    "Gender": np.random.choice(["Male", "Female", "Non-binary", "Prefer not to say"], num_rows),
-    "Location": np.random.choice(["USA", "Canada", "UK", "Germany", "France", "Japan", "Australia"], num_rows),
-    "IncomeLevel": np.random.choice(["Low", "Medium", "High"], num_rows),
-    "TotalAmountSpent": np.random.randint(0, 5000, num_rows),
-    "NumberOfPurchases": np.random.randint(0, 100, num_rows),
-    "TypesOfProductsPurchased": np.random.choice(["Games", "Consoles", "Accessories", "Subscriptions"], num_rows),
-    "FrequencyOfPurchases": np.random.choice(["Daily", "Weekly", "Monthly", "Yearly"], num_rows),
-    "TotalHoursPlayed": np.random.randint(0, 10000, num_rows),
-    "NumberOfGamesPlayed": np.random.randint(0, 200, num_rows),
-    "TypesOfGamesPlayed": np.random.choice(["Action", "Adventure", "RPG", "Sports", "Puzzle"], num_rows),
-    "AverageSessionLength": np.random.randint(0, 300, num_rows),
-    "InGameAchievements": np.random.randint(0, 1000, num_rows),
-    "NumberOfLoginsPerMonth": np.random.randint(0, 100, num_rows),
-    "ParticipationInEvents": np.random.choice(["Yes", "No"], num_rows),
-    "SocialInteractions": np.random.choice(["High", "Medium", "Low"], num_rows),
-    "MembershipDuration": np.random.randint(0, 60, num_rows),
-    "NumberOfRewardsRedeemed": np.random.randint(0, 50, num_rows),
-    "TypesOfRewardsRedeemed": np.random.choice(["Discounts", "Free Games", "Merchandise", "In-Game Items"], num_rows),
-    "PointsAccumulated": np.random.randint(0, 10000, num_rows),
-    "SatisfactionScore": np.random.randint(1, 100, num_rows),
-    "NumberOfComplaints": np.random.randint(0, 20, num_rows),
-    "TypesOfComplaints": np.random.choice(["Reward Availability", "Reward Value", "Program Usability"], num_rows),
-    "ResponseToPromotions": np.random.choice(["Positive", "Neutral", "Negative"], num_rows),
-    "ClickThroughRateOnEmails": np.random.uniform(0, 100, num_rows),
-    "ParticipationInSurveys": np.random.choice(["Yes", "No"], num_rows),
-    "NumberOfFollowers": np.random.randint(0, 10000, num_rows),
-    "NumberOfPosts": np.random.randint(0, 500, num_rows),
-    "EngagementRate": np.random.uniform(0, 100, num_rows),
-    "PrimaryDeviceUsed": np.random.choice(["PS4", "PS5", "PC", "Mobile"], num_rows),
-    "NumberOfDevicesLinked": np.random.randint(1, 5, num_rows),
-    "AverageDeviceUsageTime": np.random.randint(0, 24, num_rows),
-    "SubscriptionType": np.random.choice(["PS Plus", "PS Now", "None"], num_rows),
-    "SubscriptionDuration": np.random.randint(0, 60, num_rows),
-    "RenewalRate": np.random.uniform(0, 100, num_rows)
-}
+# Function to generate a single row of data
+def generate_row():
+    context = {
+        'DevelopmentTimeline': random.choice(development_timeline),
+        'ResourceAllocation': random.choice(resource_allocation),
+        'MarketReadiness': random.choice(market_readiness),
+        'DevelopmentTeamSize': random.randint(5, 100),
+        'Budget': random.randint(100000, 10000000),
+        'GameGenre': random.choice(game_genre),
+        'TargetPlatform': random.choice(target_platform),
+        'HistoricalPerformance': random.randint(10000, 1000000),
+        'CompetitorReleaseDates': random.choice(competitor_release_dates),
+        'UserFeedback': random.choice(user_feedback),
+        'MarketingSpend': random.randint(50000, 5000000)
+    }
+    
+    action = {
+        'DevelopmentMilestones': random.choice(development_milestones),
+        'ResourceReallocation': random.choice(resource_reallocation),
+        'ReleaseDate': random.choice(release_date),
+        'AdditionalFeatures': random.choice(additional_features),
+        'MarketingCampaignIntensity': random.choice(marketing_campaign_intensity),
+        'QualityAssuranceTesting': random.choice(quality_assurance_testing)
+    }
+    
+    # Outcome is influenced by context and action
+    if context['MarketReadiness'] == 'FullyReady' and action['ReleaseDate'] == 'KeepSame':
+        game_quality_outcome = 'Excellent'
+    else:
+        game_quality_outcome = random.choice(game_quality)
+    
+    if game_quality_outcome in ['VeryGood', 'Excellent']:
+        market_reception_outcome = 'VeryPositive'
+    else:
+        market_reception_outcome = random.choice(market_reception)
+    
+    outcome = {
+        'GameQuality': game_quality_outcome,
+        'DevelopmentCost': context['Budget'] + random.randint(-50000, 50000),
+        'MarketReception': market_reception_outcome
+    }
+    
+    return {**context, **action, **outcome}
 
-# Define the action attributes
-action_attributes = {
-    "TypesOfRewardsOffered": np.random.choice(["Discounts", "Free Games", "Merchandise", "In-Game Items", "Exclusive Content"], num_rows),
-    "FrequencyOfRewards": np.random.choice(["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"], num_rows),
-    "PointsToUSDConversion": np.random.uniform(0.01, 0.1, num_rows),
-    "PointsRequiredForRewards": np.random.randint(100, 10000, num_rows),
-    "PersonalizationOfRewards": np.random.choice(["High", "Medium", "Low"], num_rows),
-    "RewardNotificationMethods": np.random.choice(["Email", "SMS", "In-App Notification", "Social Media"], num_rows)
-}
+# Generate the data
+data = [generate_row() for _ in range(1500)]
 
-# Define the outcome attributes
-outcome_attributes = {
-    "NumberOfActiveUsers": np.random.randint(0, 1000000, num_rows),
-    "AverageSessionLengthOutcome": np.random.randint(0, 300, num_rows),
-    "FrequencyOfLoginsOutcome": np.random.randint(0, 100, num_rows),
-    "TotalRewardsRedeemedOutcome": np.random.randint(0, 10000, num_rows),
-    "RedemptionRate": np.random.uniform(0, 100, num_rows),
-    "TypesOfRewardsRedeemedOutcome": np.random.choice(["Discounts", "Free Games", "Merchandise", "In-Game Items"], num_rows),
-    "SatisfactionScoreOutcome": np.random.randint(1, 100, num_rows),
-    "NetPromoterScore": np.random.randint(-100, 100, num_rows),
-    "NumberOfPositiveReviews": np.random.randint(0, 1000, num_rows),
-    "TotalCostOfRewards": np.random.randint(0, 1000000, num_rows),
-    "CostPerUser": np.random.uniform(0, 100, num_rows),
-    "CostPerRedemption": np.random.uniform(0, 100, num_rows)
-}
-
-# Combine all attributes into a single DataFrame
-data = {**context_attributes, **action_attributes, **outcome_attributes}
+# Create a DataFrame
 df = pd.DataFrame(data)
 
-# Save the DataFrame to a CSV file
-df.to_csv("playstation_rewards_program_data.csv", index=False)
+# Save to CSV
+df.to_csv('game_development_and_release_scheduling.csv', index=False)
 
-print("Data generation complete. The file 'playstation_rewards_program_data.csv' has been saved.")
+print("Data generation complete. Saved to 'game_development_and_release_scheduling.csv'.")
 \`\`\`
 
-This script generates 2000 rows of data with realistic and reasonable values for the context, action, and outcome attributes related to the PlayStation Stars Rewards Program optimization. The data is then saved into a CSV file named \`playstation_rewards_program_data.csv\`. opportunity_finder.tsx:310:16
+This script generates 1500 rows of data with realistic and reasonable distributions for the attributes. The outcomes are influenced by the context and actions to ensure that there are patterns to learn when creating an ML model. The data is saved into a CSV file named \`game_development_and_release_scheduling.csv\`.
+
 `
