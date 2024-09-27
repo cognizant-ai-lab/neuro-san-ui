@@ -2,7 +2,7 @@
  * See class comment.
  */
 
-import {Alert, Modal, Tooltip} from "antd"
+import {Alert, Button, Modal, Tooltip} from "antd"
 import {camelCase, startCase} from "lodash"
 import {ChangeEvent, ReactNode, useEffect, useState} from "react"
 import {Col, Form, Row} from "react-bootstrap"
@@ -84,28 +84,62 @@ export default function SharingDialog({
         }
     }
 
-    const shouldDisableOkButton = !targetUser || targetUser.trim() === ""
+    // Not allowed to share with self
+    const isSharingWithSelf = targetUser === currentUser
+
+    // Have to specify a target user to share with
+    const targetUserSpecified = targetUser && targetUser.trim() !== ""
+    const enableOkButton = operationComplete || (targetUserSpecified && !isSharingWithSelf)
+
+    function getReasonOkButtonDisabled() {
+        if (isSharingWithSelf) {
+            return "Cannot share with yourself"
+        } else if (!targetUserSpecified) {
+            return "Please specify a user to share with"
+        } else {
+            return undefined
+        }
+    }
+
+    const reasonOkButtonDisabled = enableOkButton ? undefined : getReasonOkButtonDisabled()
+
+    const opacity = enableOkButton ? 1.0 : 0.5
 
     return (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <Modal
             title={title}
             open={visible}
-            onOk={operationComplete ? closeAndClear : handleOk}
-            onCancel={closeAndClear}
             centered={true}
             destroyOnClose={true}
             okText={operationComplete ? "Close" : "Ok"}
-            okButtonProps={{
-                id: "sharing-dialog-ok-button",
-                disabled: !operationComplete && shouldDisableOkButton,
-                loading: loading,
-                style: {opacity: shouldDisableOkButton && !operationComplete ? 0.5 : 1},
-            }}
-            cancelButtonProps={{
-                id: "sharing-dialog-cancel-button",
-                style: {display: operationComplete ? "none" : "inline-block"},
-            }}
+            footer={[
+                <Button
+                    id="sharing-dialog-cancel-button"
+                    key="cancel_button"
+                    onClick={closeAndClear}
+                    style={{display: operationComplete ? "none" : "inline-block"}}
+                >
+                    Cancel
+                </Button>,
+                <Tooltip
+                    id="ok_button_tooltip"
+                    key="ok_button_tooltip"
+                    title={reasonOkButtonDisabled}
+                >
+                    <Button
+                        id="sharing-dialog-ok-button"
+                        key="ok_button"
+                        type="primary"
+                        onClick={operationComplete ? closeAndClear : handleOk}
+                        disabled={!enableOkButton}
+                        loading={loading}
+                        style={{opacity: opacity}}
+                    >
+                        {operationComplete ? "Close" : "Ok"}
+                    </Button>
+                </Tooltip>,
+            ]}
         >
             <Form id="sharing-form">
                 <Form.Group
@@ -121,6 +155,7 @@ export default function SharingDialog({
                         <Form.Control
                             id="sharing-form-target-user"
                             placeholder="User to share with"
+                            type="text"
                             value={targetUser || ""}
                             onChange={handleInputChange}
                             disabled={operationComplete}

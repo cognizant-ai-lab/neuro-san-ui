@@ -2,6 +2,7 @@
  * Component tests for the project sharing dialog.
  */
 
+import {cleanup} from "@testing-library/react"
 // eslint-disable-next-line no-shadow
 import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 
@@ -23,7 +24,12 @@ const mockCurrentShares = [
 
 describe("Project sharing Component", () => {
     beforeEach(() => {
+        jest.clearAllMocks()
         ;(getShares as jest.Mock).mockResolvedValue(mockCurrentShares)
+    })
+
+    afterEach(() => {
+        cleanup()
     })
 
     test("renders the component correctly", async () => {
@@ -152,4 +158,93 @@ describe("Project sharing Component", () => {
             expect(screen.queryByText("user1 - Tourist")).not.toBeInTheDocument()
         })
     })
+
+    test("requires a user to share with", async () => {
+        render(
+            <SharingDialog
+                project={mockProject}
+                currentUser={mockCurrentUser}
+                closeModal={jest.fn()}
+                title="Share Project"
+                visible={true}
+            />
+        )
+
+        // Locate input for user to share with
+        const userToShareWith = await screen.findByPlaceholderText("User to share with")
+        expect(userToShareWith).toBeInTheDocument()
+        expect(userToShareWith).toBeEmptyDOMElement()
+
+        // Locate OK button and make sure it's disabled
+        const okButton = await screen.findByRole("button", {name: /Ok/u})
+        expect(okButton).toBeInTheDocument()
+        expect(okButton).toBeDisabled()
+
+        // Now input a user to share with and make sure button is enabled
+        fireEvent.change(userToShareWith, {target: {value: "newUser"}})
+        expect(okButton).toBeEnabled()
+    })
+
+    test("does not allow sharing with oneself", async () => {
+        render(
+            <SharingDialog
+                project={mockProject}
+                currentUser={mockCurrentUser}
+                closeModal={jest.fn()}
+                title="Share Project"
+                visible={true}
+            />
+        )
+
+        // Locate input for user to share with
+        const userToShareWith = await screen.findByPlaceholderText("User to share with")
+        expect(userToShareWith).toBeInTheDocument()
+        expect(userToShareWith).toBeEmptyDOMElement()
+
+        // Now input a user to share with and make sure button is enabled
+        fireEvent.change(userToShareWith, {target: {value: mockCurrentUser}})
+
+        // Locate OK button and click
+        const okButton = await screen.findByRole("button", {name: /Ok/u})
+        expect(okButton).toBeInTheDocument()
+        expect(okButton).toBeDisabled()
+
+        // Change the user to share with to not be same as current user
+        fireEvent.change(userToShareWith, {target: {value: "someOtherUser"}})
+
+        // OK button should now be enabled
+        expect(okButton).toBeEnabled()
+    })
 })
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ */
