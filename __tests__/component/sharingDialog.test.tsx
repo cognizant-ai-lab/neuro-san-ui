@@ -2,7 +2,6 @@
  * Component tests for the project sharing dialog.
  */
 
-import {cleanup} from "@testing-library/react"
 // eslint-disable-next-line no-shadow
 import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 
@@ -26,10 +25,6 @@ describe("Project sharing Component", () => {
     beforeEach(() => {
         jest.clearAllMocks()
         ;(getShares as jest.Mock).mockResolvedValue(mockCurrentShares)
-    })
-
-    afterEach(() => {
-        cleanup()
     })
 
     test("renders the component correctly", async () => {
