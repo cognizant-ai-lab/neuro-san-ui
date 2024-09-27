@@ -249,7 +249,7 @@ export default function SharingDialog({
                                                 id={`close-icon-${index}`}
                                                 style={{
                                                     marginRight: "10px",
-                                                    cursor: relation !== RoleType.OWNER ? "pointer" : "default",
+                                                    cursor: relation !== RoleType.OWNER ? "pointer" : "not-allowed",
                                                     transition: "color 0.3s ease",
                                                     color: "black",
                                                 }}
