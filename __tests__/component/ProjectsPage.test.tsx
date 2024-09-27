@@ -9,13 +9,12 @@ import {Projects} from "../../controller/projects/types"
 import {AuthQuery} from "../../generated/auth"
 import ProjectsPage from "../../pages/projects"
 import {mockFetch} from "../testUtils"
-
 const MOCK_USER = "mock-user"
 
 const MOCK_PROJECT = {
     created_at: "2024-08-20T00:21:52.539586Z",
     updated_at: "2024-08-20T00:24:08.301003Z",
-    id: "1",
+    id: Math.floor(Math.random() * 1000),
     name: "mock project",
     description: "mock project description",
     hidden: false,
@@ -26,7 +25,7 @@ const MOCK_PROJECT = {
 const DEMO_PROJECT = {
     created_at: "2024-08-23T10:38:59.676337Z",
     updated_at: "2024-08-26T08:12:16.627869Z",
-    id: "2",
+    id: Math.floor(Math.random() * 1000),
     name: "demo project",
     description: "demo project description",
     hidden: false,
@@ -107,6 +106,11 @@ jest.mock("next/link", () => {
     }
 })
 
+// Mock the getShares functions
+jest.mock("../../controller/authorize/share", () => ({
+    getShares: jest.fn(),
+}))
+
 window.fetch = mockFetch({})
 jest.spyOn(listFetch, "fetchResourceList").mockImplementation(
     () =>
@@ -115,14 +119,14 @@ jest.spyOn(listFetch, "fetchResourceList").mockImplementation(
                 role: "OWNER",
                 target: {
                     resourceType: "PROJECT",
-                    id: Math.floor(Math.random() * 1000),
+                    id: MOCK_PROJECT.id,
                 },
             },
             {
                 role: "OWNER",
                 target: {
                     resourceType: "PROJECT",
-                    id: 2,
+                    id: DEMO_PROJECT.id,
                 },
             },
         ] as unknown as Promise<AuthQuery[]>
@@ -130,6 +134,7 @@ jest.spyOn(listFetch, "fetchResourceList").mockImplementation(
 
 describe("Projects Page", () => {
     beforeEach(() => {
+        jest.clearAllMocks()
         jest.spyOn(projectFetch, "fetchProjects").mockImplementation(
             () => [MOCK_PROJECT, DEMO_PROJECT] as unknown as Promise<Projects>
         )
@@ -161,28 +166,32 @@ describe("Projects Page", () => {
 
     it("should be able to delete a project if user is the owner", async () => {
         render(<ProjectsPage />)
-        const deleteProjectBtn = await screen.findByTestId("project-1-delete-button")
+
+        jest.spyOn(console, "debug").mockImplementation()
+
+        const deleteProjectBtn = await screen.findByTestId(`project-${MOCK_PROJECT.id}-delete-button`)
         fireEvent.click(deleteProjectBtn)
 
         const deleteConfirm = await screen.findByText("Delete")
         fireEvent.click(deleteConfirm)
 
-        expect(async () => {
-            await waitForElementToBeRemoved(async () => {
-                await screen.findByText("Delete")
-            })
-        }).not.toThrow()
+        await waitForElementToBeRemoved(() => screen.queryByText("Delete"))
 
-        expect(async () => {
-            await waitForElementToBeRemoved(async () => {
-                await screen.findByText(`${MOCK_PROJECT.description}...`)
-            })
-        }).not.toThrow()
+        // Check if the second element exists before waiting for its removal
+        const descriptionElement = screen.queryByText(`${MOCK_PROJECT.description}...`)
+
+        if (descriptionElement) {
+            await waitForElementToBeRemoved(() => descriptionElement)
+        }
+
+        expect(console.debug).toHaveBeenCalledWith(
+            `Notification: Message: "Project "${MOCK_PROJECT.name}" deleted" Description: ""`
+        )
     })
 
     it("should show sharing icon if they are an owner", async () => {
         render(<ProjectsPage />)
-        const sharingIconFound = await screen.findByTestId("project-1-tooltip-share")
+        const sharingIconFound = await screen.findByTestId(`project-${MOCK_PROJECT.id}-tooltip-share`)
         expect(sharingIconFound).toBeInTheDocument()
     })
 
@@ -201,6 +210,26 @@ describe("Projects Page", () => {
         fireEvent.click(demoProjectsToggle)
         expect(mockProject).not.toBeInTheDocument()
         expect(screen.getByText("demo project description...")).toBeInTheDocument()
+    })
+
+    it("should display share dialog when sharing icon clicked", async () => {
+        const {container} = render(<ProjectsPage />)
+
+        let sharingIcon: Element
+        await waitFor(async () => {
+            sharingIcon = container.querySelector(`#project-${MOCK_PROJECT.id}-share`)
+            expect(sharingIcon).toBeInTheDocument()
+        })
+
+        fireEvent.click(sharingIcon)
+
+        const shareModalTitleElement = await screen.findByText(`Share project "${MOCK_PROJECT.name}"`)
+        expect(shareModalTitleElement).toBeInTheDocument()
+
+        // Clicking the share icon should not navigate to the project details screen!
+        await waitFor(() => {
+            expect(mockPush).not.toHaveBeenCalled()
+        })
     })
 
     const clickPoints = [
