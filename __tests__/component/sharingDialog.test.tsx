@@ -199,7 +199,7 @@ describe("Project sharing Component", () => {
         // Now input a user to share with and make sure button is enabled
         fireEvent.change(userToShareWith, {target: {value: mockCurrentUser}})
 
-        // Locate OK button and click
+        // Locate OK button and make sure it's disabled
         const okButton = await screen.findByRole("button", {name: /Ok/u})
         expect(okButton).toBeInTheDocument()
         expect(okButton).toBeDisabled()
@@ -244,36 +244,28 @@ describe("Project sharing Component", () => {
         fireEvent.click(removeUserShareButton)
         expect(await screen.findByText("Remove share")).toBeInTheDocument()
     })
+
+    test("Does not allow sharing again with the same user", async () => {
+        render(
+            <SharingDialog
+                project={mockProject}
+                currentUser={mockCurrentUser}
+                closeModal={jest.fn()}
+                title="Share Project"
+                visible={true}
+            />
+        )
+
+        // Locate input for user to share with
+        const userToShareWith = await screen.findByPlaceholderText("User to share with")
+        expect(userToShareWith).toBeInTheDocument()
+        expect(userToShareWith).toBeEmptyDOMElement()
+
+        // Enter the ID of a user we're already sharing with
+        fireEvent.change(userToShareWith, {target: {value: "user1"}})
+
+        const okButton = await screen.findByRole("button", {name: /Ok/u})
+        expect(okButton).toBeInTheDocument()
+        expect(okButton).toBeDisabled()
+    })
 })
-/*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- */

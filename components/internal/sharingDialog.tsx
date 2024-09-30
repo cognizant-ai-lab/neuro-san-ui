@@ -87,15 +87,20 @@ export default function SharingDialog({
     // Not allowed to share with self
     const isSharingWithSelf = targetUser === currentUser
 
+    // Can't share with a user already shared with
+    const alreadySharedWithUser = currentShares?.some(([user]) => user === targetUser)
+
     // Have to specify a target user to share with
     const targetUserSpecified = targetUser && targetUser.trim() !== ""
-    const enableOkButton = operationComplete || (targetUserSpecified && !isSharingWithSelf)
+    const enableOkButton = operationComplete || (targetUserSpecified && !isSharingWithSelf && !alreadySharedWithUser)
 
     function getReasonOkButtonDisabled() {
         if (isSharingWithSelf) {
             return "Cannot share with yourself"
         } else if (!targetUserSpecified) {
             return "Please specify a user to share with"
+        } else if (alreadySharedWithUser) {
+            return "Project already shared with this user"
         } else {
             return undefined
         }
