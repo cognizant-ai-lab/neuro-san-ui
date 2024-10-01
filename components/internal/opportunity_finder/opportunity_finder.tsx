@@ -31,7 +31,7 @@ const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'exp
 const AGENT_POLL_INTERVAL_MS = 5_000
 
 // Maximum duration for polling the agents for logs
-const MAX_POLLING_DURATION_SECS = 90
+const MAX_POLLING_DURATION_SECS = 120
 
 // Maximum number of polling attempts for logs.
 const MAX_POLLING_ATTEMPTS = (MAX_POLLING_DURATION_SECS * 1_000) / AGENT_POLL_INTERVAL_MS
@@ -68,6 +68,9 @@ export function OpportunityFinder(): ReactElement {
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
     const chatHistory = useRef<BaseMessage[]>([])
+
+    // Keep track of the most recent input to opportunity finder which we expect to be an organization name
+    const inputOrganization = useRef<string>(null)
 
     // To accumulate current response, which will be different than the contents of the output window if there is a
     // chat session
@@ -133,13 +136,15 @@ export function OpportunityFinder(): ReactElement {
     }, [])
 
     /**
-     * End the orchestration process.
+     * End the orchestration process. Resets state in preparation for next orchestration.
      * @param intervalId The ID for the interval timer for polling
      */
     function endOrchestration(intervalId: number) {
         clearInterval(intervalId)
         setIsAwaitingLlm(false)
         sessionId.current = null
+        lastLogIndexRef.current = -1
+        pollingAttempts.current = 0
     }
 
     useEffect(() => {
@@ -262,6 +267,11 @@ export function OpportunityFinder(): ReactElement {
             if (selectedAgent === "OrchestrationAgent") {
                 await handleOrchestration()
             } else {
+                // Record organization name if current agent is OpportunityFinder
+                if (selectedAgent === "OpportunityFinder") {
+                    inputOrganization.current = userQuery
+                }
+
                 // Send the query to the server. Response will be streamed to our callback which updates the output
                 // display as tokens are received.
                 await sendOpportunityFinderRequest(
@@ -367,8 +377,12 @@ export function OpportunityFinder(): ReactElement {
         const abortController = new AbortController()
         controller.current = abortController
 
-        // For now the input to Orchestration is nothing more than the most recent response from the data generator
-        const orchestrationQuery = previousResponse.current.DataGenerator
+        // The input to Orchestration is the organization name, if we have it, plus the Python code that generates
+        // the data.
+        const orchestrationQuery =
+            (inputOrganization.current ? `Organization in question: ${inputOrganization.current}\n` : "") +
+            previousResponse.current.DataGenerator
+
         try {
             // Send the initial chat query to the server.
             const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
@@ -479,7 +493,7 @@ export function OpportunityFinder(): ReactElement {
                             id="orchestration-agent-text"
                             style={{textAlign: "center"}}
                         >
-                            Orchestration
+                            Orchestrator
                         </div>
                     </div>
                 </Tooltip>
@@ -582,6 +596,7 @@ export function OpportunityFinder(): ReactElement {
                                 setUserLlmChatOutput("")
                                 chatHistory.current = []
                                 setPreviousUserQuery("")
+                                setProjectUrl(null)
                             }}
                             variant="secondary"
                             style={{
