@@ -27,6 +27,9 @@ import BlankLines from "../../blanklines"
 // Regex to extract project and experiment IDs from agent response
 const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
 
+// Regex to extract error and traceback from agent response
+const AGENT_ERROR_REGEX = /assistant:\s*\{\s*"error": "(?<error>[^"]+)",\s*"traceback":\s*"(?<traceback>[^"]+)"\}/u
+
 // Interval for polling the agents for logs
 const AGENT_POLL_INTERVAL_MS = 5_000
 
@@ -199,6 +202,18 @@ export function OpportunityFinder(): ReactElement {
                         )
                         endOrchestration(intervalId)
                     } else if (response.chatResponse) {
+                        // Check for error
+                        const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
+                        if (errorMatches) {
+                            // We found an error message
+                            tokenReceivedHandler(
+                                `Error occurred: ${errorMatches.groups.error}. ` +
+                                    `Traceback: ${errorMatches.groups.traceback}\n\n`
+                            )
+                            endOrchestration(intervalId)
+                            return
+                        }
+
                         // Check for completion of orchestration by checking if response contains project info
                         const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
                         if (matches) {
