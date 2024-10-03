@@ -11,7 +11,7 @@ import {BsDatabaseAdd, BsStopBtn, BsTrash} from "react-icons/bs"
 import {FaArrowRightLong} from "react-icons/fa6"
 import {FiRefreshCcw} from "react-icons/fi"
 import {LuBrainCircuit} from "react-icons/lu"
-import {MdOutlineWrapText} from "react-icons/md"
+import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 import {RiMenuSearchLine} from "react-icons/ri"
 import {TfiPencilAlt} from "react-icons/tfi"
 import ClipLoader from "react-spinners/ClipLoader"
@@ -102,11 +102,11 @@ export function OpportunityFinder(): ReactElement {
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
 
-    // Ref for tracking if we're autoscrolling. We stop autoscrolling if the user scrolls manually
-    const autoScrollEnabled = useRef<boolean>(true)
+    // For tracking if we're autoscrolling. A button allows the user to enable or disable autoscrolling.
+    const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
 
-    // Internal flag to let us know when we generated a scroll event programmatically
-    const isProgrammaticScroll = useRef<boolean>(false)
+    // ref for same
+    const autoScrollEnabledRef = useRef<boolean>(autoScrollEnabled)
 
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
@@ -136,9 +136,15 @@ export function OpportunityFinder(): ReactElement {
         setChatInput("")
     }
 
+    // Sync ref with state variable for use within timer etc.
     useEffect(() => {
         isAwaitingLlmRef.current = isAwaitingLlm
     }, [isAwaitingLlm])
+
+    // Sync ref with state variable for use within timer etc.
+    useEffect(() => {
+        autoScrollEnabledRef.current = autoScrollEnabled
+    }, [autoScrollEnabled])
 
     useEffect(() => {
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
@@ -303,20 +309,19 @@ export function OpportunityFinder(): ReactElement {
      */
     function updateOutput(node: ReactNode) {
         // Auto scroll as response is generated
-        if (chatOutputRef.current && autoScrollEnabled.current) {
-            isProgrammaticScroll.current = true
-            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight + 100
-        }
         currentResponse.current += node
         setChatOutput((currentOutput) => [...currentOutput, node])
+        if (autoScrollEnabledRef.current) {
+            // Use setTimeout to ensure that the scroll happens after the new content is rendered
+            setTimeout(() => {
+                chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
+            }, 0)
+        }
     }
 
     // Sends user query to backend.
     async function sendQuery(userQuery: string) {
         try {
-            // Enable autoscrolling by default
-            autoScrollEnabled.current = true
-
             // Record user query in chat history
             chatHistory.current = [...chatHistory.current, new HumanMessage(userQuery)]
 
@@ -602,8 +607,32 @@ export function OpportunityFinder(): ReactElement {
                         style={{height: "50vh", margin: "10px", position: "relative"}}
                     >
                         <Tooltip
+                            id="enable-autoscroll"
+                            title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
+                        >
+                            <Button
+                                id="autoscroll-button"
+                                style={{
+                                    position: "absolute",
+                                    right: 65,
+                                    top: 10,
+                                    zIndex: 99999,
+                                    background: autoScrollEnabled ? MaximumBlue : "darkgray",
+                                    borderColor: autoScrollEnabled ? MaximumBlue : "darkgray",
+                                    color: "white",
+                                }}
+                                onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+                            >
+                                <MdVerticalAlignBottom
+                                    id="autoscroll-icon"
+                                    size="15px"
+                                    style={{color: "white"}}
+                                />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip
                             id="wrap-tooltip"
-                            title="Wrap/unwrap text"
+                            title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
                         >
                             <Button
                                 id="wrap-button"
@@ -612,16 +641,16 @@ export function OpportunityFinder(): ReactElement {
                                     right: 10,
                                     top: 10,
                                     zIndex: 99999,
-                                    background: MaximumBlue,
-                                    borderColor: MaximumBlue,
+                                    background: shouldWrapOutput ? MaximumBlue : "darkgray",
+                                    borderColor: shouldWrapOutput ? MaximumBlue : "darkgray",
                                     color: "white",
                                 }}
+                                onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
                             >
                                 <MdOutlineWrapText
                                     id="wrap-icon"
                                     size="15px"
-                                    style={{color: "white", opacity: shouldWrapOutput ? "100%" : "50%"}}
-                                    onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
+                                    style={{color: "white"}}
                                 />
                             </Button>
                         </Tooltip>
@@ -645,18 +674,6 @@ export function OpportunityFinder(): ReactElement {
                                 paddingRight: "15px",
                             }}
                             tabIndex={-1}
-                            onScroll={
-                                // Disable autoscroll if user scrolls manually
-                                () => {
-                                    if (isProgrammaticScroll.current) {
-                                        isProgrammaticScroll.current = false
-                                        return
-                                    }
-
-                                    // Must be user initiated scroll, so disable autoscroll
-                                    autoScrollEnabled.current = false
-                                }
-                            }
                         >
                             {chatOutput || "(Agent output will appear here)"}
                         </div>
