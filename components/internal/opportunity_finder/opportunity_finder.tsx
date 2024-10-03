@@ -335,6 +335,7 @@ export function OpportunityFinder(): ReactElement {
             const abortController = new AbortController()
             controller.current = abortController
 
+            // If it's the orchestration process, we need to handle the query differently
             if (selectedAgent === "OrchestrationAgent") {
                 await handleOrchestration()
             } else {
@@ -571,6 +572,33 @@ export function OpportunityFinder(): ReactElement {
         )
     }
 
+    // Add a spinner if we're awaiting a response and there isn't one already
+    const currentOutput = [...chatOutput]
+    if (
+        awaitingResponse &&
+        !currentOutput.find((item) => typeof item === "object" && "id" in item && item.id === "awaitingOutputSpinner")
+    ) {
+        currentOutput.push([
+            <div
+                id="awaitingOutputContainer"
+                key="awaitingOutputContainer"
+                style={{display: "flex", alignItems: "center", fontFamily: "monospace", fontSize: "smaller"}}
+            >
+                <span
+                    id="working-span"
+                    style={{marginRight: "1rem"}}
+                >
+                    Working...
+                </span>
+                <ClipLoader
+                    id="awaitingOutputSpinner"
+                    key="awaitingOutputSpinner"
+                    size="1rem"
+                />
+            </div>,
+        ])
+    }
+
     return (
         <>
             <Form
@@ -675,7 +703,7 @@ export function OpportunityFinder(): ReactElement {
                             }}
                             tabIndex={-1}
                         >
-                            {chatOutput || "(Agent output will appear here)"}
+                            {(currentOutput && currentOutput.length > 0) || "(Agent output will appear here)"}
                         </div>
                         <Button
                             id="clear-chat-button"
