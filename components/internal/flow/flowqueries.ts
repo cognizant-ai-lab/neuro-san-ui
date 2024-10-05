@@ -6,6 +6,7 @@ import {DataSourceNode} from "./nodes/datasourcenode"
 import {ConfigurableNode} from "./nodes/generic/configurableNode"
 import {PrescriptorNode} from "./nodes/prescriptornode"
 import {NodeType} from "./nodes/types"
+import {FlowElementsType} from "./types"
 import {DataTagFieldCAOType} from "../../../generated/metadata"
 const debug = debugModule("flowqueries")
 
@@ -23,7 +24,7 @@ const LLM_NODES = [
  * Contains various methods for query items from the experiment flow
  */
 export class FlowQueries {
-    static getPredictorNodes(nodes: NodeType[]): ConfigurableNode[] {
+    static getPredictorNodes(nodes: FlowElementsType): ConfigurableNode[] {
         /*
         This function filters the predictor nodes
         from the graph and returns them
@@ -39,7 +40,7 @@ export class FlowQueries {
         return FlowQueries.getNodesByType(nodes, "predictornode").find((node) => node.id === nodeID) as ConfigurableNode
     }
 
-    static getPrescriptorNodes(nodes: NodeType[]): PrescriptorNode[] {
+    static getPrescriptorNodes(nodes: FlowElementsType): PrescriptorNode[] {
         /*
         This function filters the prescriptor nodes
         from the graph and returns them
@@ -47,7 +48,7 @@ export class FlowQueries {
         return FlowQueries.getNodesByType(nodes, "prescriptornode") as PrescriptorNode[]
     }
 
-    static getDataNodes(nodes: NodeType[]): DataSourceNode[] {
+    static getDataNodes(nodes: FlowElementsType): DataSourceNode[] {
         /*
         This function returns all nodes of type "data" from the graph
         */
@@ -216,7 +217,7 @@ export class FlowQueries {
      * @param type The type of node to find
      * @return An array of nodes of the given type or empty array if none found
      */
-    static getNodesByType(nodes: NodeType[], type: string): NodeType[] {
+    static getNodesByType(nodes: FlowElementsType, type: string): FlowElementsType {
         return nodes?.filter((node) => node.type === type)
     }
 
@@ -236,7 +237,7 @@ export class FlowQueries {
      * @return <code>true</code> if the graph contains a rule-based prescriptor, <code>false</code> otherwise
      * @note Assumes only one prescriptor per flow.
      */
-    static isRuleBased(flowTmp: NodeType[]) {
+    static isRuleBased(flowTmp: FlowElementsType) {
         const prescriptorNode = FlowQueries.getPrescriptorNodes(flowTmp)?.[0]
         const representation = prescriptorNode?.data.ParentPrescriptorState.LEAF.representation
         return representation === "RuleBased"

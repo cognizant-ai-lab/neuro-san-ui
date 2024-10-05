@@ -238,7 +238,7 @@ export default function Flow(props: FlowProps) {
      * @param deletedNodes List of nodes that have been deleted
      * @return Nothing, but updates the state of the <code>elementTypeToUuidList</code> variable
      */
-    function updateUuidList(deletedNodes: NodeType[]) {
+    function updateUuidList(deletedNodes: FlowElementsType) {
         // Make a copy
         const uuidListCopy = new Map(elementTypeToUuidList)
 
@@ -290,7 +290,7 @@ export default function Flow(props: FlowProps) {
         nodeToDelete: NodeType,
         currentNodes: NodeType[],
         currentEdges: EdgeType[],
-        additionalNodesToDelete: NodeType[] = []
+        additionalNodesToDelete: FlowElementsType = []
     ) {
         // Make a copy of the graph
         let nodesCopy: NodeType[] = currentNodes.slice()
@@ -1041,7 +1041,7 @@ export default function Flow(props: FlowProps) {
         if (numPredictorNodesLeft === 0) {
             nodesToDelete.push(...prescriptorNodes)
 
-            const activationNodes = FlowQueries.getNodesByType(currentNodes, "activation_node")
+            const activationNodes = FlowQueries.getNodesByType(currentNodes, "activation_node") as NodeType[]
             if (activationNodes?.length === 1) {
                 nodesToDelete.push(activationNodes[0])
             }

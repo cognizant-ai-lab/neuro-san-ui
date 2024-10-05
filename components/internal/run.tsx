@@ -18,6 +18,7 @@ import Flow from "./flow/flow"
 import {FlowQueries} from "./flow/flowqueries"
 import {PrescriptorNode} from "./flow/nodes/prescriptornode"
 import {NodeType} from "./flow/nodes/types"
+import {FlowElementsType} from "./flow/types"
 import {MaximumBlue} from "../../const"
 import {fetchProjects} from "../../controller/projects/fetch"
 import {Project, Projects} from "../../controller/projects/types"
@@ -73,7 +74,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [run, setRun] = useState(null)
     const [rules, setRules] = useState(null)
     const [artifactObj, setArtifactObj] = useState(null)
-    const [flow, setFlow] = useState<NodeType[]>(null)
+    const [flow, setFlow] = useState<FlowElementsType>(null)
 
     const [, setPrescriptors] = useLocalStorage("prescriptors", null)
 
@@ -148,7 +149,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         }
     }
 
-    function generateArtifactURL(flowTmp: NodeType[]) {
+    function generateArtifactURL(flowTmp: FlowElementsType) {
         const prescriptorNode = FlowQueries.getPrescriptorNodes(FlowQueries.getAllNodes(flowTmp) as NodeType[])[0]
         let rulesURL = null
         if (prescriptorNode) {
@@ -804,6 +805,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                         id="flow"
                         ProjectID={props.ProjectId}
                         Flow={flow}
+                        SetParentState={setFlow}
                         ElementsSelectable={false}
                         idExtension={props.idExtension}
                         projectPermissions={props.projectPermissions}
