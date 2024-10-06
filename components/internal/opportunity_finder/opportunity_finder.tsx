@@ -110,6 +110,37 @@ function getFormattedCurrentOutput(divStyle, highlighterTheme, currentOutput1) {
     )
 }
 
+function getFullResponse(
+    chatOutput: React.ReactNode[],
+    orchestrationInProgress: boolean,
+    currentResponse: React.ReactNode[],
+    divStyle: React.CSSProperties,
+    highlighterTheme
+) {
+    // dump all parameters to console
+    console.debug("chatOutput:", chatOutput)
+    console.debug("orchestrationInProgress:", orchestrationInProgress)
+    console.debug("currentResponse:", currentResponse)
+
+    return (
+        <div style={divStyle}>
+            {/*Previous aggregated chat output*/}
+            {chatOutput?.length > 0 && chatOutput}
+
+            {/*Current output*/}
+            {currentResponse?.length > 0
+                ? orchestrationInProgress
+                    ? currentResponse
+                    : getFormattedCurrentOutput(divStyle, highlighterTheme, currentResponse)
+                : null}
+
+            {(!chatOutput || chatOutput.length === 0) && (!currentResponse || currentResponse.length === 0)
+                ? "(Agent output will appear here)"
+                : null}
+        </div>
+    )
+}
+
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
  * an LLM to discover opportunities for a business, to scope them out, generate synthetic data, and even finally to
@@ -302,32 +333,31 @@ export function OpportunityFinder(): ReactElement {
 
                             const section = (
                                 <>
-                                    {logLineDetails || "No further details"}
-                                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                                    {/*<Collapse>*/}
-                                    {/*    <Panel*/}
-                                    {/*        id={`${summarySentenceCase}-panel`}*/}
-                                    {/*        header={summarySentenceCase}*/}
-                                    {/*        key={summarySentenceCase}*/}
-                                    {/*        style={{fontSize: "large"}}*/}
-                                    {/*    >*/}
-                                    {/*        <p id={`${summarySentenceCase}-details`}>*/}
-                                    {/*            {repairedJson ? (*/}
-                                    {/*                <SyntaxHighlighter*/}
-                                    {/*                    id="syntax-highlighter"*/}
-                                    {/*                    language="json"*/}
-                                    {/*                    style={style}*/}
-                                    {/*                    showLineNumbers={false}*/}
-                                    {/*                    wrapLines={true}*/}
-                                    {/*                >*/}
-                                    {/*                    {JSON.stringify(repairedJson, null, 2)}*/}
-                                    {/*                </SyntaxHighlighter>*/}
-                                    {/*            ) : (*/}
-                                    {/*                logLineDetails || "No further details"*/}
-                                    {/*            )}*/}
-                                    {/*        </p>*/}
-                                    {/*    </Panel>*/}
-                                    {/*</Collapse>*/}
+                                    {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                                    <Collapse>
+                                        <Panel
+                                            id={`${summarySentenceCase}-panel`}
+                                            header={summarySentenceCase}
+                                            key={summarySentenceCase}
+                                            style={{fontSize: "large"}}
+                                        >
+                                            <p id={`${summarySentenceCase}-details`}>
+                                                {repairedJson ? (
+                                                    <SyntaxHighlighter
+                                                        id="syntax-highlighter"
+                                                        language="json"
+                                                        style={highlighterTheme}
+                                                        showLineNumbers={false}
+                                                        wrapLines={true}
+                                                    >
+                                                        {JSON.stringify(repairedJson, null, 2)}
+                                                    </SyntaxHighlighter>
+                                                ) : (
+                                                    logLineDetails || "No further details"
+                                                )}
+                                            </p>
+                                        </Panel>
+                                    </Collapse>
                                     <br id={`${summarySentenceCase}-br`} />
                                 </>
                             )
@@ -431,7 +461,7 @@ export function OpportunityFinder(): ReactElement {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query
-            updateCurrentOutput(`#### Query\n${userQuery}\n#### Response\n`)
+            updateCurrentOutput(`##### Query\n${userQuery}\n##### Response\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
@@ -462,7 +492,12 @@ export function OpportunityFinder(): ReactElement {
             updateCurrentOutput("\n")
 
             // Add current output to aggregated output
-            setChatOutput([...chatOutput, ...currentResponseRef.current])
+            const formattedCurrentOutput = getFormattedCurrentOutput(
+                divStyle,
+                highlighterTheme,
+                currentResponseRef.current
+            )
+            setChatOutput([...chatOutput, formattedCurrentOutput])
 
             // Record bot answer in history.
             if (currentResponse && currentResponse.length > 0) {
@@ -483,7 +518,7 @@ export function OpportunityFinder(): ReactElement {
             setIsAwaitingLlm(false)
             clearInput()
             previousResponse.current[selectedAgent] = currentResponse
-
+            currentResponseRef.current = []
             setCurrentResponse([])
         }
     }
@@ -708,6 +743,10 @@ export function OpportunityFinder(): ReactElement {
     //     ])
     // }
 
+    console.debug("***************************************")
+    console.debug("Current response:", currentResponse)
+    console.debug("***************************************")
+
     // Render the component
     return (
         <>
@@ -842,20 +881,13 @@ export function OpportunityFinder(): ReactElement {
                             }}
                             tabIndex={-1}
                         >
-                            {/*Existing chat output*/}
-                            {chatOutput && chatOutput.length > 0
-                                ? getFormattedCurrentOutput(divStyle, highlighterTheme, chatOutput)
-                                : null}
-
-                            {/*Current output*/}
-                            {currentResponse && currentResponse.length > 0
-                                ? getFormattedCurrentOutput(divStyle, highlighterTheme, currentResponse)
-                                : null}
-
-                            {(!chatOutput || chatOutput.length === 0) &&
-                            (!currentResponse || currentResponse.length === 0)
-                                ? "(Agent output will appear here)"
-                                : null}
+                            {getFullResponse(
+                                chatOutput,
+                                orchestrationInProgress,
+                                currentResponse,
+                                divStyle,
+                                highlighterTheme
+                            )}
                         </div>
                         <Button
                             id="clear-chat-button"
