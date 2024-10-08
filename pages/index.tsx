@@ -4,7 +4,8 @@ import {useRouter} from "next/router"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {styled} from "styled-components"
 
-import {GENERIC_LOGO, LOGO} from "../const"
+import {ConfirmationModal} from "../components/confirmationModal"
+import {CONTACT_US_CONFIRMATION_DIALOG_TEXT, CONTACT_US_CONFIRMATION_DIALOG_TITLE, GENERIC_LOGO, LOGO} from "../const"
 import useFeaturesStore from "../state/features"
 import {getTitleBase} from "../utils/title"
 
@@ -72,6 +73,8 @@ export default function Index(): ReactElement {
     // Keeps track of which button the user is hovering over. Either a button id or null
     const [hoveredId, setHoveredId] = useState<string>(null)
 
+    const [emailDialogOpen, setEmailDialogOpen] = useState<boolean>(false)
+
     const handleMouseEnter = (event: ReactMouseEvent) => {
         setHoveredId((event.target as HTMLElement).id)
     }
@@ -104,6 +107,20 @@ export default function Index(): ReactElement {
 
     return (
         <div id="splash-page__container">
+            {emailDialogOpen ? (
+                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+                <ConfirmationModal
+                    title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}
+                    text={CONTACT_US_CONFIRMATION_DIALOG_TEXT}
+                    handleCancel={() => {
+                        setEmailDialogOpen(false)
+                    }}
+                    handleOk={() => {
+                        window.location.href = "mailto:NeuroAiSupport@cognizant.com"
+                        setEmailDialogOpen(false)
+                    }}
+                />
+            ) : null}
             <OuterContainer id="outer-container">
                 <Marginer id="marginer">
                     <Navbar id="nav-bar">
@@ -216,6 +233,16 @@ export default function Index(): ReactElement {
                             rel="noopener noreferrer"
                         >
                             About
+                        </a>
+                        <a
+                            id="contact-us-footer-link"
+                            className="splash-link"
+                            href={null}
+                            onClick={() => setEmailDialogOpen(true)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Contact Us
                         </a>
                     </div>
                     <div

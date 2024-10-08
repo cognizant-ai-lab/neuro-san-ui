@@ -46,3 +46,11 @@ export const EDIT_EXPERIMENT_DIALOG_TEXT =
     "no longer function, as they will be referencing the old experiment name for " +
     "accessing datasets and Python requirements files. It will be your responsibility " +
     "to update those notebooks if you wish to download and use them. Proceed anyway?"
+
+export const CONTACT_US_CONFIRMATION_DIALOG_TITLE = "Contact Us"
+
+export const CONTACT_US_CONFIRMATION_DIALOG_TEXT =
+    "Would you like to send the Cognizant Neuro AI support team an email? " +
+    "You will need to have an email client installed on your device in order " +
+    "to continue. If you don't have an email client, you can still contact us at " +
+    "NeuroAiSupport@cognizant.com using a web based email client."

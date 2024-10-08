@@ -7,10 +7,16 @@ import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
 import Breadcrumbs from "nextjs-breadcrumbs2"
-import {ReactElement} from "react"
+import {ReactElement, useState} from "react"
 import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
-import {MaximumBlue, UNILEAF_VERSION} from "../const"
+import {ConfirmationModal} from "./confirmationModal"
+import {
+    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
+    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
+    MaximumBlue,
+    UNILEAF_VERSION,
+} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useUserInfoStore from "../state/userInfo"
 import {smartSignOut, useAuthentication} from "../utils/authentication"
@@ -54,6 +60,8 @@ function Navbar(props: NavbarProps): ReactElement {
     const {auth0ClientId, auth0Domain} = useEnvironmentStore()
 
     const authenticationType = `(Authentication: ${currentUser ? "ALB" : "NextAuth"})`
+
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
     async function handleSignOut() {
         // Clear our state storage variables
@@ -154,8 +162,29 @@ function Navbar(props: NavbarProps): ReactElement {
                                     >
                                         {authenticationType}
                                     </Dropdown.Item>
+                                    <Dropdown.Item
+                                        href={null}
+                                        id="contact-us-help"
+                                        onClick={() => setEmailDialogOpen(true)}
+                                    >
+                                        Contact Us
+                                    </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
+                            {emailDialogOpen ? (
+                                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+                                <ConfirmationModal
+                                    title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}
+                                    text={CONTACT_US_CONFIRMATION_DIALOG_TEXT}
+                                    handleCancel={() => {
+                                        setEmailDialogOpen(false)
+                                    }}
+                                    handleOk={() => {
+                                        window.location.href = "mailto:NeuroAiSupport@cognizant.com"
+                                        setEmailDialogOpen(false)
+                                    }}
+                                />
+                            ) : null}
                             {userInfo && (
                                 <Dropdown
                                     id="user-dropdown"
