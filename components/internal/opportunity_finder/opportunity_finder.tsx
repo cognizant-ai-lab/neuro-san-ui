@@ -173,6 +173,12 @@ export function OpportunityFinder(): ReactElement {
         orchestrationAttemptNumber.current = null
     }
 
+    /**
+     * Retry the orchestration process. If we haven't exceeded the maximum number of retries, we'll try again.
+     * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
+     * @param retryMessage The message to display to the user when retrying
+     * @param failureMessage The message to display to the user when giving up
+     */
     function retry(retryMessage: string, failureMessage: string) {
         if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
             updateOutput(
