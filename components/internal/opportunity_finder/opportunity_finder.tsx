@@ -268,7 +268,7 @@ export function OpportunityFinder(): ReactElement {
      * @param retryMessage The message to display to the user when retrying
      * @param failureMessage The message to display to the user when giving up
      */
-    const retry = (retryMessage: string, failureMessage: string) => {
+    const retry = async (retryMessage: string, failureMessage: string) => {
         if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
             updateOutput(
                 <>
@@ -283,7 +283,7 @@ export function OpportunityFinder(): ReactElement {
 
             // try again
             endOrchestration()
-            void initiateOrchestration(true)
+            await initiateOrchestration(true)
         } else {
             updateOutput(
                 <>
@@ -342,7 +342,7 @@ export function OpportunityFinder(): ReactElement {
                     // Any status other than "FOUND" means something went wrong
                     if (response.status !== AgentStatus.FOUND) {
                         const baseMessage = "Error occurred: session not found."
-                        retry(
+                        await retry(
                             `${baseMessage} Retrying...`,
                             `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
                         )
@@ -398,6 +398,7 @@ export function OpportunityFinder(): ReactElement {
                                             style={{fontSize: "large"}}
                                         >
                                             <p id={`${summarySentenceCase}-details`}>
+                                                {/*If we managed to parse it as JSON, pretty print it*/}
                                                 {repairedJson ? (
                                                     <SyntaxHighlighter
                                                         id="syntax-highlighter"
@@ -424,7 +425,7 @@ export function OpportunityFinder(): ReactElement {
                         const isTimeout = lastLogTime.current && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
                         if (isTimeout) {
                             const baseMessage = "Error occurred: exceeded wait time for agent response."
-                            retry(
+                            await retry(
                                 `${baseMessage} Retrying...`,
                                 `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
                             )
@@ -439,7 +440,7 @@ export function OpportunityFinder(): ReactElement {
                             const baseMessage =
                                 `Error occurred: ${errorMatches.groups.error}. ` +
                                 `Traceback: ${errorMatches.groups.traceback}`
-                            retry(
+                            await retry(
                                 `${baseMessage} Retrying...`,
                                 `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
                             )
@@ -662,7 +663,6 @@ export function OpportunityFinder(): ReactElement {
      * @returns Nothing, but sets the session ID for the orchestration process
      */
     async function initiateOrchestration(isRetry: boolean) {
-
         // Reset project URL
         projectUrl.current = null
 
