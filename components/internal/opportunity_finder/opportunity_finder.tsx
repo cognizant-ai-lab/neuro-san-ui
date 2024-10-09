@@ -175,6 +175,13 @@ export function OpportunityFinder(): ReactElement {
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
     }, [])
 
+    // Auto scroll chat output window when new content is added
+    useEffect(() => {
+        if (autoScrollEnabledRef.current && chatOutputRef?.current) {
+            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
+        }
+    }, [chatOutput])
+
     const getFormattedMarkdown = (nodesToFormat: string[]) => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
@@ -507,12 +514,6 @@ export function OpportunityFinder(): ReactElement {
         // Auto scroll as response is generated
         currentResponse.current += node
         setChatOutput((currentOutput) => [...currentOutput, node])
-        if (autoScrollEnabledRef.current) {
-            // Use setTimeout to ensure that the scroll happens after the new content is rendered
-            setTimeout(() => {
-                chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
-            }, 0)
-        }
     }
 
     function resetState() {
@@ -605,7 +606,7 @@ export function OpportunityFinder(): ReactElement {
                     showIcon={true}
                     closable={false}
                     message="Request cancelled."
-                    style={{marginBottom: "1rem"}}
+                    style={{marginTop: "1rem", marginBottom: "1rem"}}
                 />
             )
         } finally {
