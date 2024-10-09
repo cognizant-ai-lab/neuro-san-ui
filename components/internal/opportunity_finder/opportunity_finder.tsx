@@ -60,6 +60,16 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
 // Delimiter for separating logs from agents
 const LOGS_DELIMITER = ">>>"
 
+// Standard properties for inline alerts
+const INLINE_ALERT_PROPERTIES = {
+    style: {
+        fontSize: "large",
+        marginBottom: "1rem",
+    },
+    showIcon: true,
+    closable: false,
+}
+
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
  * an LLM to discover opportunities for a business, to scope them out, generate synthetic data, and even finally to
@@ -253,18 +263,6 @@ export function OpportunityFinder(): ReactElement {
     }
 
     /**
-     * End the orchestration process. Resets state in preparation for next orchestration.
-     */
-    const endOrchestration = () => {
-        clearInterval(logPollingIntervalId.current)
-        setIsAwaitingLlm(false)
-        sessionId.current = null
-        lastLogIndexRef.current = -1
-        lastLogTime.current = null
-        orchestrationAttemptNumber.current = null
-    }
-
-    /**
      * Retry the orchestration process. If we haven't exceeded the maximum number of retries, we'll try again.
      * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
      * @param retryMessage The message to display to the user when retrying
@@ -276,28 +274,24 @@ export function OpportunityFinder(): ReactElement {
                 <>
                     {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                     <Alert
+                        {...INLINE_ALERT_PROPERTIES}
                         type="warning"
                         description={retryMessage}
-                        showIcon={true}
-                        closable={false}
-                        style={{fontSize: "large", marginBottom: "1rem"}}
                     />
                 </>
             )
 
             // try again
             endOrchestration()
-            void initiateOrchestration()
+            void initiateOrchestration(true)
         } else {
             updateOutput(
                 <>
                     {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                     <Alert
+                        {...INLINE_ALERT_PROPERTIES}
                         type="error"
                         description={failureMessage}
-                        showIcon={true}
-                        closable={false}
-                        style={{fontSize: "large", marginBottom: "1rem"}}
                     />
                 </>
             )
@@ -393,7 +387,7 @@ export function OpportunityFinder(): ReactElement {
                                 repairedJson = null
                             }
 
-                            const section = (
+                            updateOutput(
                                 <>
                                     {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                                     <Collapse>
@@ -423,8 +417,6 @@ export function OpportunityFinder(): ReactElement {
                                     <br id={`${summarySentenceCase}-br`} />
                                 </>
                             )
-
-                            updateOutput(section)
                         }
                     } else {
                         // No new logs, check if it's been too long since last log
@@ -516,7 +508,21 @@ export function OpportunityFinder(): ReactElement {
         setChatOutput((currentOutput) => [...currentOutput, node])
     }
 
-    function resetState() {
+    /**
+     * End the orchestration process. Resets state in preparation for next orchestration.
+     */
+    const endOrchestration = () => {
+        clearInterval(logPollingIntervalId.current)
+        setIsAwaitingLlm(false)
+        sessionId.current = null
+        lastLogIndexRef.current = -1
+        lastLogTime.current = null
+    }
+
+    /**
+     * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
+     */
+    const resetState = () => {
         // Reset state, whatever happened during request
         setIsAwaitingLlm(false)
         setChatInput("")
@@ -543,7 +549,7 @@ export function OpportunityFinder(): ReactElement {
 
             // If it's the orchestration process, we need to handle the query differently
             if (selectedAgent === "OrchestrationAgent") {
-                await initiateOrchestration()
+                await initiateOrchestration(false)
             } else {
                 // Record organization name if current agent is OpportunityFinder. This is risky as the user may
                 // have had a back-and-forth with the OpportunityFinder agent, but we'll assume that the last
@@ -579,9 +585,8 @@ export function OpportunityFinder(): ReactElement {
                     updateOutput(
                         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                         <Alert
+                            {...INLINE_ALERT_PROPERTIES}
                             type="error"
-                            showIcon={true}
-                            closable={false}
                             message={`Error occurred: ${error}`}
                         />
                     )
@@ -602,11 +607,9 @@ export function OpportunityFinder(): ReactElement {
             updateOutput(
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                 <Alert
+                    {...INLINE_ALERT_PROPERTIES}
                     type="warning"
-                    showIcon={true}
-                    closable={false}
                     message="Request cancelled."
-                    style={{marginTop: "1rem", marginBottom: "1rem"}}
                 />
             )
         } finally {
@@ -658,12 +661,18 @@ export function OpportunityFinder(): ReactElement {
      *
      * @returns Nothing, but sets the session ID for the orchestration process
      */
-    async function initiateOrchestration() {
+    async function initiateOrchestration(isRetry: boolean) {
+
         // Reset project URL
         projectUrl.current = null
 
-        // Reset attempt number
-        orchestrationAttemptNumber.current += 1
+        if (isRetry) {
+            // Increment attempt number
+            orchestrationAttemptNumber.current += 1
+        } else {
+            // Reset attempt number
+            orchestrationAttemptNumber.current = 1
+        }
 
         // Set up the abort controller
         const abortController = new AbortController()
@@ -675,7 +684,25 @@ export function OpportunityFinder(): ReactElement {
             (inputOrganization.current ? `Organization in question: ${inputOrganization.current}\n` : "") +
             previousResponse.current.DataGenerator
 
+        updateOutput(
+            <>
+                {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                <Collapse style={{marginBottom: "1rem"}}>
+                    <Panel
+                        id="initiating-orchestration-panel"
+                        header="Contacting orchestration agents..."
+                        key="initiating-orchestration-panel"
+                        style={{fontSize: "large"}}
+                    >
+                        <p id="initiating-orchestration-details">{`Query: ${orchestrationQuery}`}</p>
+                    </Panel>
+                </Collapse>
+            </>
+        )
+
         try {
+            setIsAwaitingLlm(true)
+
             // Send the initial chat query to the server.
             const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
 
@@ -684,9 +711,8 @@ export function OpportunityFinder(): ReactElement {
                 updateOutput(
                     // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                     <Alert
+                        {...INLINE_ALERT_PROPERTIES}
                         type="error"
-                        showIcon={true}
-                        closable={false}
                         message={`Error occurred: session not created. Status: ${response.status}`}
                     />
                 )
@@ -699,13 +725,14 @@ export function OpportunityFinder(): ReactElement {
             updateOutput(
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                 <Alert
+                    {...INLINE_ALERT_PROPERTIES}
                     type="error"
-                    showIcon={true}
-                    closable={false}
-                    message={`Internal Error occurred: session not created. Exception: ${e}`}
+                    message={`Internal Error occurred while interacting with agents. Exception: ${e}`}
                 />
             )
             endOrchestration()
+        } finally {
+            setIsAwaitingLlm(false)
         }
     }
 
