@@ -152,10 +152,6 @@ export function OpportunityFinder(): ReactElement {
     // Orchestration retry count. Bootstrap with 0; we increment this each time we retry the orchestration process.
     const orchestrationAttemptNumber = useRef<number>(0)
 
-    function clearInput() {
-        setChatInput("")
-    }
-
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
         isAwaitingLlmRef.current = isAwaitingLlm
@@ -171,6 +167,49 @@ export function OpportunityFinder(): ReactElement {
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
     }, [])
 
+    function getFormattedMarkdown(nodesToFormat: string[]) {
+        return (
+            <ReactMarkdown
+                rehypePlugins={[rehypeRaw, rehypeSlug]}
+                components={{
+                    code(props) {
+                        const {children, className, ...rest} = props
+                        const match = /language-(?<language>\w+)/u.exec(className || "")
+                        return match ? (
+                            <SyntaxHighlighter
+                                PreTag="div"
+                                language={match.groups.language}
+                                style={highlighterTheme}
+                            >
+                                {String(children).replace(/\n$/u, "")}
+                            </SyntaxHighlighter>
+                        ) : (
+                            <code
+                                {...rest}
+                                className={className}
+                            >
+                                {children}
+                            </code>
+                        )
+                    },
+                    a({...props}) {
+                        return (
+                            <a
+                                {...props}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {props.children}
+                            </a>
+                        )
+                    },
+                }}
+            >
+                {nodesToFormat.join("")}
+            </ReactMarkdown>
+        )
+    }
+
     function formatOutput(nodesList: ReactNode[]): ReactNode[] {
         const formattedOutput: ReactNode[] = []
         let currentTextNodes: string[] = []
@@ -179,47 +218,7 @@ export function OpportunityFinder(): ReactElement {
                 currentTextNodes.push(node)
             } else {
                 if (currentTextNodes.length > 0) {
-                    formattedOutput.push(
-                        <ReactMarkdown
-                            key={formattedOutput.length}
-                            rehypePlugins={[rehypeRaw, rehypeSlug]}
-                            components={{
-                                code(props) {
-                                    const {children, className, ...rest} = props
-                                    const match = /language-(?<language>\w+)/u.exec(className || "")
-                                    return match ? (
-                                        <SyntaxHighlighter
-                                            PreTag="div"
-                                            language={match.groups.language}
-                                            style={highlighterTheme}
-                                        >
-                                            {String(children).replace(/\n$/u, "")}
-                                        </SyntaxHighlighter>
-                                    ) : (
-                                        <code
-                                            {...rest}
-                                            className={className}
-                                        >
-                                            {children}
-                                        </code>
-                                    )
-                                },
-                                a({...props}) {
-                                    return (
-                                        <a
-                                            {...props}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            {props.children}
-                                        </a>
-                                    )
-                                },
-                            }}
-                        >
-                            {currentTextNodes.join("")}
-                        </ReactMarkdown>
-                    )
+                    formattedOutput.push(getFormattedMarkdown(currentTextNodes))
                     currentTextNodes = []
                 }
                 formattedOutput.push(node)
@@ -228,122 +227,11 @@ export function OpportunityFinder(): ReactElement {
 
         // Process any remaining text nodes
         if (currentTextNodes.length > 0) {
-            formattedOutput.push(
-                <ReactMarkdown
-                    key={formattedOutput.length}
-                    rehypePlugins={[rehypeRaw, rehypeSlug]}
-                    components={{
-                        code(props) {
-                            const {children, className, ...rest} = props
-                            const match = /language-(?<language>\w+)/u.exec(className || "")
-                            return match ? (
-                                <SyntaxHighlighter
-                                    PreTag="div"
-                                    language={match.groups.language}
-                                    style={highlighterTheme}
-                                >
-                                    {String(children).replace(/\n$/u, "")}
-                                </SyntaxHighlighter>
-                            ) : (
-                                <code
-                                    {...rest}
-                                    className={className}
-                                >
-                                    {children}
-                                </code>
-                            )
-                        },
-                        a({...props}) {
-                            return (
-                                <a
-                                    {...props}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {props.children}
-                                </a>
-                            )
-                        },
-                    }}
-                >
-                    {currentTextNodes.join("")}
-                </ReactMarkdown>
-            )
+            formattedOutput.push(getFormattedMarkdown(currentTextNodes))
         }
 
         return formattedOutput
     }
-
-    // function nodesToString(nodesList) {
-    //     return nodesList.filter((node) => typeof node === "string").join("")
-    // }
-
-    // function getFormattedCurrentOutput(outputToFormat) {
-    //     return (
-    //         <div style={{...divStyle}}>
-    //             <ReactMarkdown
-    //                 rehypePlugins={[rehypeRaw, rehypeSlug]}
-    //                 components={{
-    //                     code(props) {
-    //                         const {children, className, ...rest} = props
-    //                         const match = /language-(?<language>\w+)/u.exec(className || "")
-    //                         return match ? (
-    //                             <SyntaxHighlighter
-    //                                 PreTag="div"
-    //                                 language={match.groups.language}
-    //                                 style={highlighterTheme}
-    //                             >
-    //                                 {String(children).replace(/\n$/u, "")}
-    //                             </SyntaxHighlighter>
-    //                         ) : (
-    //                             <code
-    //                                 {...rest}
-    //                                 className={className}
-    //                             >
-    //                                 {children}
-    //                             </code>
-    //                         )
-    //                     },
-    //                     // links in new tab
-    //                     a({...props}) {
-    //                         return (
-    //                             <a
-    //                                 {...props}
-    //                                 target="_blank"
-    //                                 rel="noopener noreferrer"
-    //                             >
-    //                                 {props.children}
-    //                             </a>
-    //                         )
-    //                     },
-    //                 }}
-    //             >
-    //                 {nodesToString(outputToFormat)}
-    //             </ReactMarkdown>
-    //         </div>
-    //     )
-    // }
-
-    // function getFullResponse() {
-    //     // dump all parameters to console
-    //     // console.debug("chatOutput:", chatOutput)
-    //     // console.debug("orchestrationInProgress:", orchestrationInProgress)
-    //     // console.debug("currentResponse:", currentResponse)
-    //
-    //     return (
-    //         <div style={divStyle}>
-    //             {/* Previous aggregated chat output. Already formatted as markdown. */}
-    //             {chatOutput?.length > 0 && chatOutput}
-    //
-    //             {/*Current output*/}
-    //             {currentResponse?.length > 0 && currentResponse}
-    //
-    //             {(!chatOutput || chatOutput.length === 0) && (!currentResponse || currentResponse.length === 0)
-    //                 ? "(Agent output will appear here)"
-    //                 : null}
-    //         </div>
-    //     )
-    // }
 
     /**
      * End the orchestration process. Resets state in preparation for next orchestration.
@@ -615,7 +503,7 @@ export function OpportunityFinder(): ReactElement {
     function resetState() {
         // Reset state, whatever happened during request
         setIsAwaitingLlm(false)
-        clearInput()
+        setChatInput("")
 
         previousResponse.current[selectedAgent] = currentResponse.current
         currentResponse.current = ""
@@ -709,14 +597,6 @@ export function OpportunityFinder(): ReactElement {
 
     // Disable Clear Chat button if there is no chat history or if we are awaiting a response
     const disableClearChatButton = awaitingResponse || chatOutput.length === 0
-
-    // Define styles based on state
-    const divStyle: CSSProperties = {
-        whiteSpace: shouldWrapOutput ? "normal" : "nowrap",
-        overflow: shouldWrapOutput ? "visible" : "hidden",
-        textOverflow: shouldWrapOutput ? "clip" : "ellipsis",
-        overflowX: shouldWrapOutput ? "visible" : "auto",
-    }
 
     /**
      * Get the class name for the agent button.
@@ -1158,7 +1038,7 @@ export function OpportunityFinder(): ReactElement {
                         <Button
                             id="clear-input-button"
                             onClick={() => {
-                                clearInput()
+                                setChatInput("")
                             }}
                             style={{
                                 backgroundColor: "transparent",
