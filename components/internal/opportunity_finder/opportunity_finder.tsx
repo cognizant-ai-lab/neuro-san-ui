@@ -152,6 +152,14 @@ export function OpportunityFinder(): ReactElement {
     // Orchestration retry count. Bootstrap with 0; we increment this each time we retry the orchestration process.
     const orchestrationAttemptNumber = useRef<number>(0)
 
+    // Define styles based on user options (wrap setting)
+    const divStyle: CSSProperties = {
+        whiteSpace: shouldWrapOutput ? "normal" : "nowrap",
+        overflow: shouldWrapOutput ? "visible" : "hidden",
+        textOverflow: shouldWrapOutput ? "clip" : "ellipsis",
+        overflowX: shouldWrapOutput ? "visible" : "auto",
+    }
+
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
         isAwaitingLlmRef.current = isAwaitingLlm
@@ -843,7 +851,7 @@ export function OpportunityFinder(): ReactElement {
             <Form.Group id="llm-chat-group">
                 <div
                     id="llm-response-div"
-                    style={{height: "50vh", margin: "10px", position: "relative"}}
+                    style={{...divStyle, height: "50vh", margin: "10px", position: "relative"}}
                 >
                     <Tooltip
                         id="enable-autoscroll"
