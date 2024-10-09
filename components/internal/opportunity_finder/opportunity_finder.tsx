@@ -94,14 +94,11 @@ export function OpportunityFinder(): ReactElement {
 
     // To accumulate current response, which will be different than the contents of the output window if there is a
     // chat session
-    const [currentResponse, setCurrentResponse] = useState<ReactNode[]>([])
-
-    // corresponding ref to allow us to access the current response in the timer
-    const currentResponseRef = useRef<ReactNode[]>(currentResponse)
+    const currentResponse = useRef<string>("")
 
     // Previous responses from the agents. Necessary to save this since currentResponse gets cleared each time, and
     // when we call the experiment generator we need the data generator responses as input
-    const previousResponse = useRef<Record<OpportunityFinderRequestType, ReactNode[] | null>>({
+    const previousResponse = useRef<Record<OpportunityFinderRequestType, string | null>>({
         OpportunityFinder: null,
         ScopingAgent: null,
         DataGenerator: null,
@@ -169,11 +166,6 @@ export function OpportunityFinder(): ReactElement {
         autoScrollEnabledRef.current = autoScrollEnabled
     }, [autoScrollEnabled])
 
-    // sync response ref
-    useEffect(() => {
-        currentResponseRef.current = currentResponse
-    }, [currentResponse])
-
     useEffect(() => {
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
@@ -183,76 +175,72 @@ export function OpportunityFinder(): ReactElement {
         return nodesList.filter((node) => typeof node === "string").join("")
     }
 
-    function getFormattedCurrentOutput(outputToFormat) {
-        return (
-            <div style={{...divStyle}}>
-                <ReactMarkdown
-                    rehypePlugins={[rehypeRaw, rehypeSlug]}
-                    components={{
-                        code(props) {
-                            const {children, className, ...rest} = props
-                            const match = /language-(?<language>\w+)/u.exec(className || "")
-                            return match ? (
-                                <SyntaxHighlighter
-                                    PreTag="div"
-                                    language={match.groups.language}
-                                    style={highlighterTheme}
-                                >
-                                    {String(children).replace(/\n$/u, "")}
-                                </SyntaxHighlighter>
-                            ) : (
-                                <code
-                                    {...rest}
-                                    className={className}
-                                >
-                                    {children}
-                                </code>
-                            )
-                        },
-                        // links in new tab
-                        a({...props}) {
-                            return (
-                                <a
-                                    {...props}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {props.children}
-                                </a>
-                            )
-                        },
-                    }}
-                >
-                    {nodesToString(outputToFormat)}
-                </ReactMarkdown>
-            </div>
-        )
-    }
+    // function getFormattedCurrentOutput(outputToFormat) {
+    //     return (
+    //         <div style={{...divStyle}}>
+    //             <ReactMarkdown
+    //                 rehypePlugins={[rehypeRaw, rehypeSlug]}
+    //                 components={{
+    //                     code(props) {
+    //                         const {children, className, ...rest} = props
+    //                         const match = /language-(?<language>\w+)/u.exec(className || "")
+    //                         return match ? (
+    //                             <SyntaxHighlighter
+    //                                 PreTag="div"
+    //                                 language={match.groups.language}
+    //                                 style={highlighterTheme}
+    //                             >
+    //                                 {String(children).replace(/\n$/u, "")}
+    //                             </SyntaxHighlighter>
+    //                         ) : (
+    //                             <code
+    //                                 {...rest}
+    //                                 className={className}
+    //                             >
+    //                                 {children}
+    //                             </code>
+    //                         )
+    //                     },
+    //                     // links in new tab
+    //                     a({...props}) {
+    //                         return (
+    //                             <a
+    //                                 {...props}
+    //                                 target="_blank"
+    //                                 rel="noopener noreferrer"
+    //                             >
+    //                                 {props.children}
+    //                             </a>
+    //                         )
+    //                     },
+    //                 }}
+    //             >
+    //                 {nodesToString(outputToFormat)}
+    //             </ReactMarkdown>
+    //         </div>
+    //     )
+    // }
 
-    function getFullResponse() {
-        // dump all parameters to console
-        // console.debug("chatOutput:", chatOutput)
-        // console.debug("orchestrationInProgress:", orchestrationInProgress)
-        // console.debug("currentResponse:", currentResponse)
-
-        return (
-            <div style={divStyle}>
-                {/* Previous aggregated chat output. Already formatted as markdown. */}
-                {chatOutput?.length > 0 && chatOutput}
-
-                {/*Current output*/}
-                {currentResponse?.length > 0
-                    ? orchestrationInProgress
-                        ? currentResponse
-                        : getFormattedCurrentOutput(currentResponse)
-                    : null}
-
-                {(!chatOutput || chatOutput.length === 0) && (!currentResponse || currentResponse.length === 0)
-                    ? "(Agent output will appear here)"
-                    : null}
-            </div>
-        )
-    }
+    // function getFullResponse() {
+    //     // dump all parameters to console
+    //     // console.debug("chatOutput:", chatOutput)
+    //     // console.debug("orchestrationInProgress:", orchestrationInProgress)
+    //     // console.debug("currentResponse:", currentResponse)
+    //
+    //     return (
+    //         <div style={divStyle}>
+    //             {/* Previous aggregated chat output. Already formatted as markdown. */}
+    //             {chatOutput?.length > 0 && chatOutput}
+    //
+    //             {/*Current output*/}
+    //             {currentResponse?.length > 0 && currentResponse}
+    //
+    //             {(!chatOutput || chatOutput.length === 0) && (!currentResponse || currentResponse.length === 0)
+    //                 ? "(Agent output will appear here)"
+    //                 : null}
+    //         </div>
+    //     )
+    // }
 
     /**
      * End the orchestration process. Resets state in preparation for next orchestration.
@@ -274,7 +262,7 @@ export function OpportunityFinder(): ReactElement {
      */
     function retry(retryMessage: string, failureMessage: string) {
         if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
-            updateCurrentOutput(
+            updateOutput(
                 <>
                     {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                     <Alert
@@ -288,9 +276,10 @@ export function OpportunityFinder(): ReactElement {
             )
 
             // try again
+            endOrchestration()
             void initiateOrchestration()
         } else {
-            updateCurrentOutput(
+            updateOutput(
                 <>
                     {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                     <Alert
@@ -422,7 +411,7 @@ export function OpportunityFinder(): ReactElement {
                                 </>
                             )
 
-                            updateCurrentOutput(section)
+                            updateOutput(section)
                         }
                     } else {
                         // No new logs, check if it's been too long since last log
@@ -464,7 +453,7 @@ export function OpportunityFinder(): ReactElement {
                             projectUrl.current = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
 
                             // We found the agent completion message
-                            updateCurrentOutput(
+                            updateOutput(
                                 <>
                                     {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                                     <Collapse>
@@ -508,12 +497,10 @@ export function OpportunityFinder(): ReactElement {
      * Handles adding content to the output window.
      * @param node A ReactNode to add to the output window -- text, spinner, etc.
      */
-    function updateCurrentOutput(node: ReactNode) {
-        console.debug("Adding to output:'", node, "' type: ", typeof node)
-
-        setCurrentResponse((tmpCurrentResponse) => [...tmpCurrentResponse, node])
-
+    function updateOutput(node: ReactNode) {
         // Auto scroll as response is generated
+        currentResponse.current += node
+        setChatOutput((currentOutput) => [...currentOutput, node])
         if (autoScrollEnabledRef.current) {
             // Use setTimeout to ensure that the scroll happens after the new content is rendered
             setTimeout(() => {
@@ -527,9 +514,8 @@ export function OpportunityFinder(): ReactElement {
         setIsAwaitingLlm(false)
         clearInput()
 
-        previousResponse.current[selectedAgent] = currentResponse
-        currentResponseRef.current = []
-        setCurrentResponse([])
+        previousResponse.current[selectedAgent] = currentResponse.current
+        currentResponse.current = ""
     }
 
     // Sends user query to backend.
@@ -543,7 +529,7 @@ export function OpportunityFinder(): ReactElement {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query. Precede with a horizontal rule if there is already content.
-            updateCurrentOutput(`${chatOutput?.length > 0 ? "---\n" : ""}##### Query\n${userQuery}\n##### Response\n`)
+            updateOutput(`${chatOutput?.length > 0 ? "---\n" : ""}##### Query\n${userQuery}\n##### Response\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
@@ -564,29 +550,25 @@ export function OpportunityFinder(): ReactElement {
                 await sendOpportunityFinderRequest(
                     userQuery,
                     selectedAgent,
-                    updateCurrentOutput,
+                    updateOutput,
                     abortController.signal,
                     chatHistory.current
                 )
             }
 
             // Add a blank line after response
-            updateCurrentOutput("\n")
-
-            // Add current output to aggregated output
-            const formattedCurrentOutput = getFormattedCurrentOutput(currentResponseRef.current)
-            setChatOutput([...chatOutput, formattedCurrentOutput])
+            updateOutput("\n")
 
             // Record bot answer in history.
-            if (currentResponse && currentResponse.length > 0) {
-                chatHistory.current = [...chatHistory.current, new AIMessage(nodesToString(currentResponse))]
+            if (currentResponse?.current?.length > 0) {
+                chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
             }
         } catch (error) {
             if (error instanceof Error && error.name === "AbortError") {
-                updateCurrentOutput("\n\nRequest cancelled.\n\n")
+                updateOutput("\n\nRequest cancelled.\n\n")
             } else {
                 // Add error to output
-                updateCurrentOutput(`\n\nError occurred: ${error}\n\n`)
+                updateOutput(`\n\nError occurred: ${error}\n\n`)
 
                 // log error to console
                 console.error(error)
@@ -680,13 +662,13 @@ export function OpportunityFinder(): ReactElement {
 
             // We expect the response to have status CREATED and to contain the session ID
             if (response.status !== AgentStatus.CREATED || !response.sessionId) {
-                updateCurrentOutput(`\n\nError occurred: ${response.status}\n\n`)
+                updateOutput(`\n\nError occurred: ${response.status}\n\n`)
                 endOrchestration()
             } else {
                 sessionId.current = response.sessionId
             }
         } catch (e) {
-            updateCurrentOutput(`\n\nError occurred: ${e}\n\n`)
+            updateOutput(`\n\nError occurred: ${e}\n\n`)
             endOrchestration()
         }
     }
@@ -696,7 +678,7 @@ export function OpportunityFinder(): ReactElement {
      * @returns A div containing the agent buttons
      */
     function getAgentButtons() {
-        const enableOrchestration = previousResponse.current.DataGenerator?.length > 0 && !awaitingResponse
+        const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
 
         return (
             <div
@@ -795,7 +777,7 @@ export function OpportunityFinder(): ReactElement {
     }
 
     // Add a spinner if we're awaiting a response and there isn't one already
-    // const currentOutputWithSpinner = [...currentResponse]
+    const currentOutput = [...chatOutput]
     // if (
     //     awaitingResponse &&
     //     !currentOutput.find((item) => typeof item === "object" && "id" in item
@@ -947,7 +929,7 @@ export function OpportunityFinder(): ReactElement {
                         }}
                         tabIndex={-1}
                     >
-                        {getFullResponse()}
+                        {currentOutput && currentOutput.length > 0 ? currentOutput : "(Agent output will appear here)"}
                     </div>
                     <Button
                         id="clear-chat-button"
