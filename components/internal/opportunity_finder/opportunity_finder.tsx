@@ -31,7 +31,6 @@ import {AgentStatus, ChatResponse, LogsResponse} from "../../../generated/agent"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import BlankLines from "../../blanklines"
 
 const {Panel} = Collapse
 
@@ -44,11 +43,11 @@ const AGENT_ERROR_REGEX = /assistant:\s*\{\s*"error": "(?<error>[^"]+)",\s*"trac
 // Interval for polling the agents for logs
 const AGENT_POLL_INTERVAL_MS = 5_000
 
-// Maximum duration for polling the agents for logs
-const MAX_POLLING_DURATION_SECS = 120
+// Maximum inactivity time since last agent response before we give up
+const MAX_AGENT_INACTIVITY_SECS = 2 * 60
 
-// Maximum number of polling attempts for logs.
-const MAX_POLLING_ATTEMPTS = (MAX_POLLING_DURATION_SECS * 1_000) / AGENT_POLL_INTERVAL_MS
+// How many times to retry the entire orchestration process
+const MAX_ORCHESTRATION_ATTEMPTS = 3
 
 // Input text placeholders for each agent type
 const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
@@ -57,6 +56,9 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
     DataGenerator: "Generate 1500 rows",
     OrchestrationAgent: "Generate the experiment",
 }
+
+// Delimiter for separating logs from agents
+const LOGS_DELIMITER = ">>>"
 
 /**
  * This is the main module for the opportunity finder. It implements a page that allows the user to interact with
@@ -80,7 +82,8 @@ export function OpportunityFinder(): ReactElement {
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
     const isAwaitingLlmRef = useRef(false)
 
-    // Track index of last log seen from agents
+    // Track index of last log seen from agents. This is like a "cursor" into the array of logs that keeps track
+    // of the last log we've seen.
     const lastLogIndexRef = useRef<number>(-1)
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
@@ -136,10 +139,10 @@ export function OpportunityFinder(): ReactElement {
     const sessionId = useRef<string>(null)
 
     // For newly created project/experiment URL
-    const [projectUrl, setProjectUrl] = useState<string>(null)
+    const projectUrl = useRef<string>(null)
 
-    // To track number of polling attempts for logs so we know when to give up
-    const pollingAttempts = useRef(0)
+    // To track time of last new logs from agents
+    const lastLogTime = useRef<number | null>(null)
 
     // ID for log polling interval timer
     const logPollingIntervalId = useRef<number | null>(null)
@@ -148,6 +151,9 @@ export function OpportunityFinder(): ReactElement {
     const highlighterTheme = HLJS_THEMES.includes(selectedTheme)
         ? hljsStyles[selectedTheme]
         : prismStyles[selectedTheme]
+
+    // Orchestration retry count. Bootstrap with 0; we increment this each time we retry the orchestration process.
+    const orchestrationAttemptNumber = useRef<number>(0)
 
     function clearInput() {
         setChatInput("")
@@ -256,8 +262,64 @@ export function OpportunityFinder(): ReactElement {
         setIsAwaitingLlm(false)
         sessionId.current = null
         lastLogIndexRef.current = -1
-        pollingAttempts.current = 0
+        lastLogTime.current = null
+        orchestrationAttemptNumber.current = null
     }
+
+    /**
+     * Retry the orchestration process. If we haven't exceeded the maximum number of retries, we'll try again.
+     * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
+     * @param retryMessage The message to display to the user when retrying
+     * @param failureMessage The message to display to the user when giving up
+     */
+    function retry(retryMessage: string, failureMessage: string) {
+        if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
+            updateCurrentOutput(
+                <>
+                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                    <Alert
+                        type="warning"
+                        description={retryMessage}
+                        showIcon={true}
+                        closable={false}
+                        style={{fontSize: "large", marginBottom: "1rem"}}
+                    />
+                </>
+            )
+
+            // try again
+            void initiateOrchestration()
+        } else {
+            updateCurrentOutput(
+                <>
+                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                    <Alert
+                        type="error"
+                        description={failureMessage}
+                        showIcon={true}
+                        closable={false}
+                        style={{fontSize: "large", marginBottom: "1rem"}}
+                    />
+                </>
+            )
+            endOrchestration()
+        }
+    }
+
+    const experimentGeneratedMessage = () => (
+        <>
+            Your new experiment has been generated. Click{" "}
+            <a
+                id="new-project-link"
+                target="_blank"
+                href={projectUrl.current}
+                rel="noreferrer"
+            >
+                here
+            </a>{" "}
+            to view it.
+        </>
+    )
 
     useEffect(() => {
         // Poll the agent for logs when the Orchestration Agent is being used
@@ -266,23 +328,6 @@ export function OpportunityFinder(): ReactElement {
             logPollingIntervalId.current = setInterval(async () => {
                 if (isAwaitingLlmRef.current) {
                     // Already a request in progress
-                    return
-                }
-
-                // Check for too many polling attempts
-                pollingAttempts.current += 1
-                if (pollingAttempts.current > MAX_POLLING_ATTEMPTS) {
-                    // Too many polling attempts; give up
-                    updateCurrentOutput(
-                        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                        <Alert
-                            type="error"
-                            showIcon={true}
-                            message="Error occurred: polling for logs timed out"
-                            style={{fontSize: "large"}}
-                        />
-                    )
-                    endOrchestration()
                     return
                 }
 
@@ -297,16 +342,34 @@ export function OpportunityFinder(): ReactElement {
                         currentUser
                     )
 
+                    // Check status from agents
+                    // Any status other than "FOUND" means something went wrong
+                    if (response.status !== AgentStatus.FOUND) {
+                        const baseMessage = "Error occurred: session not found."
+                        retry(
+                            `${baseMessage} Retrying...`,
+                            `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
+                        )
+
+                        return
+                    }
+
                     // Check for new logs
-                    if (response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current) {
+                    const hasNewLogs = response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current + 1
+                    if (hasNewLogs) {
                         // Get new logs
                         const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
+
+                        // Update last log time
+                        lastLogTime.current = Date.now()
+
+                        // Update last log index
                         lastLogIndexRef.current = response.logs.length - 1
 
                         // Process new logs and display summaries to user
                         for (const logLine of newLogs) {
-                            // extract the part of the line only up to ">>>"
-                            const logLineElements = logLine.split(">>>")
+                            // extract the part of the line only up to LOGS_DELIMITER
+                            const logLineElements = logLine.split(LOGS_DELIMITER)
 
                             const logLineSummary = logLineElements[0]
                             const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
@@ -361,32 +424,45 @@ export function OpportunityFinder(): ReactElement {
 
                             updateCurrentOutput(section)
                         }
+                    } else {
+                        // No new logs, check if it's been too long since last log
+                        const timeSinceLastLog = Date.now() - lastLogTime.current
+                        const isTimeout = lastLogTime.current && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
+                        if (isTimeout) {
+                            const baseMessage = "Error occurred: exceeded wait time for agent response."
+                            retry(
+                                `${baseMessage} Retrying...`,
+                                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
+                            )
+                            return
+                        }
                     }
 
-                    // Any status other than "FOUND" means something went wrong
-                    if (response.status !== AgentStatus.FOUND) {
-                        updateCurrentOutput(
-                            `Error occurred: session ${sessionId?.current} not found, status: ${response.status}\n\n`
-                        )
-
-                        endOrchestration()
-                    } else if (response.chatResponse) {
+                    if (response.chatResponse) {
                         // Check for error
                         const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
                         if (errorMatches) {
-                            // We found an error message
-                            updateCurrentOutput(
+                            const baseMessage =
                                 `Error occurred: ${errorMatches.groups.error}. ` +
-                                    `Traceback: ${errorMatches.groups.traceback}\n\n`
+                                `Traceback: ${errorMatches.groups.traceback}`
+                            retry(
+                                `${baseMessage} Retrying...`,
+                                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
                             )
 
-                            endOrchestration()
                             return
                         }
 
                         // Check for completion of orchestration by checking if response contains project info
                         const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
+
                         if (matches) {
+                            // Build the URl and set it in state so the notification will be displayed
+                            const projectId = matches.groups.projectId
+                            const experimentId = matches.groups.experimentId
+
+                            projectUrl.current = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
+
                             // We found the agent completion message
                             updateCurrentOutput(
                                 <>
@@ -398,20 +474,15 @@ export function OpportunityFinder(): ReactElement {
                                             key="Experiment generation complete"
                                             style={{fontSize: "large"}}
                                         >
-                                            <p id="experiment-generation-complete-details">No further details</p>
+                                            <p id="experiment-generation-complete-details">
+                                                {experimentGeneratedMessage()}
+                                            </p>
                                         </Panel>
                                     </Collapse>
                                     <br id="experiment-generation-complete-br" />
                                 </>
                             )
                             endOrchestration()
-
-                            // Build the URl and set it in state so the notification will be displayed
-                            const projectId = matches.groups.projectId
-                            const experimentId = matches.groups.experimentId
-
-                            const url = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
-                            setProjectUrl(url)
                         }
                     }
                 } finally {
@@ -424,7 +495,9 @@ export function OpportunityFinder(): ReactElement {
         }
 
         if (sessionId.current) {
-            pollingAttempts.current = 0
+            // We have a session ID, so we're in the orchestration process. Start polling the agents for logs.
+            // Set last log time to now() to have something to compare to when we start polling for logs
+            lastLogTime.current = Date.now()
             return pollAgent()
         } else {
             return undefined
@@ -454,7 +527,6 @@ export function OpportunityFinder(): ReactElement {
         setIsAwaitingLlm(false)
         clearInput()
 
-        console.debug(`setting previous response for ${selectedAgent} to ${currentResponseRef.current}`)
         previousResponse.current[selectedAgent] = currentResponse
         currentResponseRef.current = []
         setCurrentResponse([])
@@ -478,7 +550,7 @@ export function OpportunityFinder(): ReactElement {
 
             // If it's the orchestration process, we need to handle the query differently
             if (selectedAgent === "OrchestrationAgent") {
-                await handleOrchestration()
+                await initiateOrchestration()
             } else {
                 // Record organization name if current agent is OpportunityFinder. This is risky as the user may
                 // have had a back-and-forth with the OpportunityFinder agent, but we'll assume that the last
@@ -580,12 +652,19 @@ export function OpportunityFinder(): ReactElement {
     }
 
     /**
-     * Handle the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
+     * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
      *
      * @returns Nothing, but sets the session ID for the orchestration process
      */
-    async function handleOrchestration() {
+    async function initiateOrchestration() {
+        // Reset project URL
+        projectUrl.current = null
+
+        // Reset attempt number
+        orchestrationAttemptNumber.current += 1
+
+        // Set up the abort controller
         const abortController = new AbortController()
         controller.current = abortController
 
@@ -786,24 +865,11 @@ export function OpportunityFinder(): ReactElement {
                     />
                 </div>
             </Form.Group>
-            {projectUrl && (
+            {projectUrl.current && (
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                 <Alert
                     type="success"
-                    message={
-                        <>
-                            Your new experiment has been generated. Click{" "}
-                            <a
-                                id="new-project-link"
-                                target="_blank"
-                                href={projectUrl}
-                                rel="noreferrer"
-                            >
-                                here
-                            </a>{" "}
-                            to view it
-                        </>
-                    }
+                    message={experimentGeneratedMessage()}
                     style={{fontSize: "large", margin: "10px", marginTop: "20px", marginBottom: "20px"}}
                     showIcon={true}
                     closable={true}
@@ -889,7 +955,7 @@ export function OpportunityFinder(): ReactElement {
                             setChatOutput([])
                             chatHistory.current = []
                             setPreviousUserQuery("")
-                            setProjectUrl(null)
+                            projectUrl.current = null
                         }}
                         variant="secondary"
                         style={{
