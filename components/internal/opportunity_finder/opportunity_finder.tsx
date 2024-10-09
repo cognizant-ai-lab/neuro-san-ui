@@ -193,11 +193,11 @@ export function OpportunityFinder(): ReactElement {
     }, [chatOutput])
 
     /**
-     * Get the formatted markdown for a given list of string nodes.
-     * @param nodesToFormat The list of string nodes to format.
+     * Get the formatted output for a given string. The string is assumed to be in markdown format.
+     * @param stringToFormat The string to format.
      * @returns The formatted markdown.
      */
-    const getFormattedMarkdown: (nodesToFormat: string[]) => JSX.Element = (nodesToFormat: string[]) => (
+    const getFormattedMarkdown = (stringToFormat: string): JSX.Element => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
             rehypePlugins={[rehypeRaw, rehypeSlug]}
@@ -231,7 +231,7 @@ export function OpportunityFinder(): ReactElement {
                         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                         <a
                             {...props}
-                            id={`link-${props.href}`}
+                            id="reference-link"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -241,15 +241,15 @@ export function OpportunityFinder(): ReactElement {
                 },
             }}
         >
-            {nodesToFormat.join("")}
+            {stringToFormat}
         </ReactMarkdown>
     )
 
     /**
      * Format the output to ensure that text nodes are formatted as markdown but other nodes are passed along as-is
      * @param nodesList The list of nodes to format
-     * @returns The formatted output. Text nodes will be aggregated and wrapped in a markdown component, while other
-     * nodes will be passed along as-is.
+     * @returns The formatted output. Consecutive string nodes will be aggregated and wrapped in a markdown component,
+     * while other nodes will be passed along as-is.
      */
     const formatOutput = (nodesList: ReactNode[]): ReactNode[] => {
         const formattedOutput: ReactNode[] = []
@@ -259,7 +259,7 @@ export function OpportunityFinder(): ReactElement {
                 currentTextNodes.push(node)
             } else {
                 if (currentTextNodes.length > 0) {
-                    formattedOutput.push(getFormattedMarkdown(currentTextNodes))
+                    formattedOutput.push(getFormattedMarkdown(currentTextNodes.join("")))
                     currentTextNodes = []
                 }
 
@@ -270,7 +270,7 @@ export function OpportunityFinder(): ReactElement {
 
         // Process any remaining text nodes
         if (currentTextNodes.length > 0) {
-            formattedOutput.push(getFormattedMarkdown(currentTextNodes))
+            formattedOutput.push(getFormattedMarkdown(currentTextNodes.join("")))
         }
 
         return formattedOutput
@@ -562,7 +562,7 @@ export function OpportunityFinder(): ReactElement {
             setIsAwaitingLlm(true)
 
             // Always start output by echoing user query. Precede with a horizontal rule if there is already content.
-            updateOutput(`${chatOutput?.length > 0 ? "---\n" : ""}##### Query\n${userQuery}\n##### Response\n`)
+            updateOutput(`${chatOutput?.length > 0 ? "\n---\n" : ""}##### Query\n${userQuery}\n##### Response\n`)
 
             const abortController = new AbortController()
             controller.current = abortController
