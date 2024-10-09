@@ -192,7 +192,12 @@ export function OpportunityFinder(): ReactElement {
         }
     }, [chatOutput])
 
-    const getFormattedMarkdown = (nodesToFormat: string[]) => (
+    /**
+     * Get the formatted markdown for a given list of string nodes.
+     * @param nodesToFormat The list of string nodes to format.
+     * @returns The formatted markdown.
+     */
+    const getFormattedMarkdown: (nodesToFormat: string[]) => JSX.Element = (nodesToFormat: string[]) => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
             rehypePlugins={[rehypeRaw, rehypeSlug]}
@@ -220,6 +225,7 @@ export function OpportunityFinder(): ReactElement {
                         </code>
                     )
                 },
+                // Handle links specially since we want them to open in a new tab
                 a({...props}) {
                     return (
                         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
@@ -239,6 +245,12 @@ export function OpportunityFinder(): ReactElement {
         </ReactMarkdown>
     )
 
+    /**
+     * Format the output to ensure that text nodes are formatted as markdown but other nodes are passed along as-is
+     * @param nodesList The list of nodes to format
+     * @returns The formatted output. Text nodes will be aggregated and wrapped in a markdown component, while other
+     * nodes will be passed along as-is.
+     */
     const formatOutput = (nodesList: ReactNode[]): ReactNode[] => {
         const formattedOutput: ReactNode[] = []
         let currentTextNodes: string[] = []
@@ -250,6 +262,8 @@ export function OpportunityFinder(): ReactElement {
                     formattedOutput.push(getFormattedMarkdown(currentTextNodes))
                     currentTextNodes = []
                 }
+
+                // Not a string node. Add the node as-is
                 formattedOutput.push(node)
             }
         }
@@ -267,8 +281,12 @@ export function OpportunityFinder(): ReactElement {
      * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
      * @param retryMessage The message to display to the user when retrying
      * @param failureMessage The message to display to the user when giving up
+     * @returns Nothing, but updates the output window and ends the orchestration process if we've exceeded the maximum
      */
-    const retry = async (retryMessage: string, failureMessage: string) => {
+    const retry: (retryMessage: string, failureMessage: string) => Promise<void> = async (
+        retryMessage: string,
+        failureMessage: string
+    ) => {
         if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
             updateOutput(
                 <>
@@ -302,7 +320,7 @@ export function OpportunityFinder(): ReactElement {
     /**
      * Generate the message to display to the user when the experiment has been generated.
      */
-    const experimentGeneratedMessage = () => (
+    const experimentGeneratedMessage: () => JSX.Element = () => (
         <>
             Your new experiment has been generated. Click{" "}
             <a
@@ -502,6 +520,7 @@ export function OpportunityFinder(): ReactElement {
     /**
      * Handles adding content to the output window.
      * @param node A ReactNode to add to the output window -- text, spinner, etc.
+     * @returns Nothing, but updates the output window with the new content
      */
     function updateOutput(node: ReactNode) {
         // Auto scroll as response is generated
@@ -660,6 +679,7 @@ export function OpportunityFinder(): ReactElement {
      * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
      *
+     * @param isRetry Whether this is a retry of the orchestration process or the first attempt initiated by user
      * @returns Nothing, but sets the session ID for the orchestration process
      */
     async function initiateOrchestration(isRetry: boolean) {
