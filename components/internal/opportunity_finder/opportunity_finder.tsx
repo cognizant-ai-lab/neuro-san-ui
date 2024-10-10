@@ -634,7 +634,6 @@ export function OpportunityFinder(): ReactElement {
             )
         } finally {
             resetState()
-            orchestrationAttemptNumber.current = 0
             endOrchestration()
         }
     }
@@ -925,14 +924,7 @@ export function OpportunityFinder(): ReactElement {
                         title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
                     >
                         <Button
-(??)                            id="clear-chat-button"
-(??)                            onClick={() => {
-(??)                                setChatOutput([])
-(??)                                chatHistory.current = []
-(??)                                setPreviousUserQuery("")
-(??)                                setProjectUrl(null)
-(??)                            }}
-(??)                            variant="secondary"
+                            id="autoscroll-button"
                             style={{
                                 position: "absolute",
                                 right: 65,
