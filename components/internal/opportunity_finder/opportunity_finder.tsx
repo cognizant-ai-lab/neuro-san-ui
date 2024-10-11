@@ -7,13 +7,9 @@ import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
 import {CSSProperties, FormEvent, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
-import {BsDatabaseAdd, BsStopBtn, BsTrash} from "react-icons/bs"
-import {FaArrowRightLong} from "react-icons/fa6"
+import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
-import {LuBrainCircuit} from "react-icons/lu"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
-import {RiMenuSearchLine} from "react-icons/ri"
-import {TfiPencilAlt} from "react-icons/tfi"
 import ReactMarkdown from "react-markdown"
 import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
@@ -23,6 +19,7 @@ import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 
+import {AgentButtons} from "./Agentbuttons"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {MaximumBlue} from "../../../const"
 import {getLogs, sendChatQuery} from "../../../controller/agent/agent"
@@ -152,7 +149,7 @@ export function OpportunityFinder(): ReactElement {
     const lastLogTime = useRef<number | null>(null)
 
     // ID for log polling interval timer
-    const logPollingIntervalId = useRef<number | null>(null)
+    const logPollingIntervalId = useRef<ReturnType<typeof setInterval> | null>(null)
 
     // dynamic import syntax highlighter style based on selected theme
     const highlighterTheme = HLJS_THEMES.includes(selectedTheme)
@@ -334,183 +331,197 @@ export function OpportunityFinder(): ReactElement {
         </>
     )
 
-    useEffect(() => {
-        // Poll the agent for logs when the Orchestration Agent is being used
-        function pollAgent() {
-            // Kick off the polling process
-            logPollingIntervalId.current = setInterval(async () => {
-                if (isAwaitingLlmRef.current) {
-                    // Already a request in progress
+    async function processChatResponse(response) {
+        // Check for error
+        const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
+        if (errorMatches) {
+            // eslint-disable-next-line max-len
+            const baseMessage = `Error occurred: ${errorMatches.groups.error}. Traceback: ${errorMatches.groups.traceback}`
+            await retry(
+                `${baseMessage} Retrying...`,
+                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
+            )
+
+            return
+        }
+
+        // Check for completion of orchestration by checking if response contains project info
+        const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
+
+        if (matches) {
+            // Build the URl and set it in state so the notification will be displayed
+            const projectId = matches.groups.projectId
+            const experimentId = matches.groups.experimentId
+
+            projectUrl.current = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
+
+            // We found the agent completion message
+            updateOutput(
+                <>
+                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                    <Collapse>
+                        <Panel
+                            id="experiment-generation-complete-panel"
+                            header="Experiment generation complete"
+                            key="Experiment generation complete"
+                            style={{fontSize: "large"}}
+                        >
+                            <p id="experiment-generation-complete-details">{experimentGeneratedMessage()}</p>
+                        </Panel>
+                    </Collapse>
+                    <br id="experiment-generation-complete-br" />
+                </>
+            )
+            endOrchestration()
+        }
+    }
+
+    function processNewLogs(response) {
+        // Get new logs
+        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
+
+        // Update last log time
+        lastLogTime.current = Date.now()
+
+        // Update last log index
+        lastLogIndexRef.current = response.logs.length - 1
+
+        // Process new logs and display summaries to user
+        for (const logLine of newLogs) {
+            // extract the part of the line only up to LOGS_DELIMITER
+            const logLineElements = logLine.split(LOGS_DELIMITER)
+
+            const logLineSummary = logLineElements[0]
+            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+
+            const logLineDetails = logLineElements[1]
+
+            let repairedJson: string | object = null
+
+            try {
+                // Attempt to parse as JSON
+
+                // First, repair it
+                repairedJson = jsonrepair(logLineDetails)
+
+                // Now try to parse it
+                repairedJson = JSON.parse(repairedJson)
+            } catch (e) {
+                // Not valid JSON
+                repairedJson = null
+            }
+
+            updateOutput(
+                <>
+                    {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                    <Collapse>
+                        <Panel
+                            id={`${summarySentenceCase}-panel`}
+                            header={summarySentenceCase}
+                            key={summarySentenceCase}
+                            style={{fontSize: "large"}}
+                        >
+                            <p id={`${summarySentenceCase}-details`}>
+                                {/*If we managed to parse it as JSON, pretty print it*/}
+                                {repairedJson ? (
+                                    <SyntaxHighlighter
+                                        id="syntax-highlighter"
+                                        language="json"
+                                        style={highlighterTheme}
+                                        showLineNumbers={false}
+                                        wrapLines={true}
+                                    >
+                                        {JSON.stringify(repairedJson, null, 2)}
+                                    </SyntaxHighlighter>
+                                ) : (
+                                    logLineDetails || "No further details"
+                                )}
+                            </p>
+                        </Panel>
+                    </Collapse>
+                    <br id={`${summarySentenceCase}-br`} />
+                </>
+            )
+        }
+    }
+
+    async function checkAgentTimeout() {
+        // No new logs, check if it's been too long since last log
+        const timeSinceLastLog = Date.now() - lastLogTime.current
+        const isTimeout = lastLogTime.current && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
+        if (isTimeout) {
+            const baseMessage = "Error occurred: exceeded wait time for agent response."
+            await retry(
+                `${baseMessage} Retrying...`,
+                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
+            )
+        }
+
+        return isTimeout
+    }
+
+    function pollAgent() {
+        return async () => {
+            if (isAwaitingLlmRef.current) {
+                // Already a request in progress
+                return
+            }
+
+            // Poll the agent for logs
+            try {
+                // Set "busy" flag
+                setIsAwaitingLlm(true)
+
+                const response: LogsResponse = await getLogs(
+                    sessionId.current,
+                    controller?.current?.signal,
+                    currentUser
+                )
+
+                // Check status from agents
+                // Any status other than "FOUND" means something went wrong
+                if (response.status !== AgentStatus.FOUND) {
+                    const baseMessage = "Error occurred: session not found."
+                    await retry(
+                        `${baseMessage} Retrying...`,
+                        `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
+                    )
+
                     return
                 }
 
-                // Poll the agent for logs
-                try {
-                    // Set "busy" flag
-                    setIsAwaitingLlm(true)
-
-                    const response: LogsResponse = await getLogs(
-                        sessionId.current,
-                        controller?.current?.signal,
-                        currentUser
-                    )
-
-                    // Check status from agents
-                    // Any status other than "FOUND" means something went wrong
-                    if (response.status !== AgentStatus.FOUND) {
-                        const baseMessage = "Error occurred: session not found."
-                        await retry(
-                            `${baseMessage} Retrying...`,
-                            `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                        )
-
+                // Check for new logs
+                const hasNewLogs = response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current + 1
+                if (hasNewLogs) {
+                    processNewLogs(response)
+                } else {
+                    const timedOut = await checkAgentTimeout()
+                    if (timedOut) {
                         return
                     }
-
-                    // Check for new logs
-                    const hasNewLogs = response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current + 1
-                    if (hasNewLogs) {
-                        // Get new logs
-                        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
-
-                        // Update last log time
-                        lastLogTime.current = Date.now()
-
-                        // Update last log index
-                        lastLogIndexRef.current = response.logs.length - 1
-
-                        // Process new logs and display summaries to user
-                        for (const logLine of newLogs) {
-                            // extract the part of the line only up to LOGS_DELIMITER
-                            const logLineElements = logLine.split(LOGS_DELIMITER)
-
-                            const logLineSummary = logLineElements[0]
-                            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
-
-                            const logLineDetails = logLineElements[1]
-
-                            let repairedJson: string | object = null
-
-                            try {
-                                // Attempt to parse as JSON
-
-                                // First, repair it
-                                repairedJson = jsonrepair(logLineDetails)
-
-                                // Now try to parse it
-                                repairedJson = JSON.parse(repairedJson)
-                            } catch (e) {
-                                // Not valid JSON
-                                repairedJson = null
-                            }
-
-                            updateOutput(
-                                <>
-                                    {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                                    <Collapse>
-                                        <Panel
-                                            id={`${summarySentenceCase}-panel`}
-                                            header={summarySentenceCase}
-                                            key={summarySentenceCase}
-                                            style={{fontSize: "large"}}
-                                        >
-                                            <p id={`${summarySentenceCase}-details`}>
-                                                {/*If we managed to parse it as JSON, pretty print it*/}
-                                                {repairedJson ? (
-                                                    <SyntaxHighlighter
-                                                        id="syntax-highlighter"
-                                                        language="json"
-                                                        style={highlighterTheme}
-                                                        showLineNumbers={false}
-                                                        wrapLines={true}
-                                                    >
-                                                        {JSON.stringify(repairedJson, null, 2)}
-                                                    </SyntaxHighlighter>
-                                                ) : (
-                                                    logLineDetails || "No further details"
-                                                )}
-                                            </p>
-                                        </Panel>
-                                    </Collapse>
-                                    <br id={`${summarySentenceCase}-br`} />
-                                </>
-                            )
-                        }
-                    } else {
-                        // No new logs, check if it's been too long since last log
-                        const timeSinceLastLog = Date.now() - lastLogTime.current
-                        const isTimeout = lastLogTime.current && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
-                        if (isTimeout) {
-                            const baseMessage = "Error occurred: exceeded wait time for agent response."
-                            await retry(
-                                `${baseMessage} Retrying...`,
-                                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                            )
-                            return
-                        }
-                    }
-
-                    if (response.chatResponse) {
-                        // Check for error
-                        const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
-                        if (errorMatches) {
-                            const baseMessage =
-                                `Error occurred: ${errorMatches.groups.error}. ` +
-                                `Traceback: ${errorMatches.groups.traceback}`
-                            await retry(
-                                `${baseMessage} Retrying...`,
-                                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                            )
-
-                            return
-                        }
-
-                        // Check for completion of orchestration by checking if response contains project info
-                        const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
-
-                        if (matches) {
-                            // Build the URl and set it in state so the notification will be displayed
-                            const projectId = matches.groups.projectId
-                            const experimentId = matches.groups.experimentId
-
-                            projectUrl.current = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
-
-                            // We found the agent completion message
-                            updateOutput(
-                                <>
-                                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                                    <Collapse>
-                                        <Panel
-                                            id="experiment-generation-complete-panel"
-                                            header="Experiment generation complete"
-                                            key="Experiment generation complete"
-                                            style={{fontSize: "large"}}
-                                        >
-                                            <p id="experiment-generation-complete-details">
-                                                {experimentGeneratedMessage()}
-                                            </p>
-                                        </Panel>
-                                    </Collapse>
-                                    <br id="experiment-generation-complete-br" />
-                                </>
-                            )
-                            endOrchestration()
-                        }
-                    }
-                } finally {
-                    setIsAwaitingLlm(false)
                 }
-            }, AGENT_POLL_INTERVAL_MS) as unknown as number
 
-            // Cleanup function to clear the interval
-            return () => clearInterval(logPollingIntervalId.current)
+                if (response.chatResponse) {
+                    await processChatResponse(response)
+                }
+            } finally {
+                setIsAwaitingLlm(false)
+            }
         }
+    }
 
+    // Poll the agent for logs when the Orchestration Agent is being used
+    useEffect(() => {
         if (sessionId.current) {
             // We have a session ID, so we're in the orchestration process. Start polling the agents for logs.
             // Set last log time to now() to have something to compare to when we start polling for logs
             lastLogTime.current = Date.now()
-            return pollAgent()
+
+            // Kick off the polling process
+            logPollingIntervalId.current = setInterval(pollAgent(), AGENT_POLL_INTERVAL_MS)
+
+            // Cleanup function to clear the interval
+            return () => clearInterval(logPollingIntervalId.current)
         } else {
             return undefined
         }
@@ -657,24 +668,6 @@ export function OpportunityFinder(): ReactElement {
     const disableClearChatButton = awaitingResponse || chatOutput.length === 0
 
     /**
-     * Get the class name for the agent button.
-     * @param agentType The agent type, eg. "OpportunityFinder"
-     * @returns The class name for the agent button
-     */
-    function getClassName(agentType: OpportunityFinderRequestType) {
-        return `opp-finder-agent-div${selectedAgent === agentType ? " selected" : ""}`
-    }
-
-    function getAgentButtonStyle(isEnabled: boolean): CSSProperties {
-        return {
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            opacity: isEnabled ? 1 : 0.5,
-        }
-    }
-
-    /**
      * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
      *
@@ -755,108 +748,7 @@ export function OpportunityFinder(): ReactElement {
         }
     }
 
-    /**
-     * Generate the agent buttons
-     * @returns A div containing the agent buttons
-     */
-    function getAgentButtons() {
-        const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
-
-        return (
-            <div
-                id="agent-icons-div"
-                style={{
-                    display: "flex",
-                    justifyContent: "space-evenly",
-                    alignItems: "center",
-                    height: "100%",
-                    marginTop: "2rem",
-                    marginBottom: "2rem",
-                    marginLeft: "6rem",
-                    marginRight: "6rem",
-                }}
-            >
-                <div
-                    id="opp-finder-agent-div"
-                    style={getAgentButtonStyle(!awaitingResponse)}
-                    onClick={() => !awaitingResponse && setSelectedAgent("OpportunityFinder")}
-                    className={getClassName("OpportunityFinder")}
-                >
-                    <RiMenuSearchLine
-                        id="opp-finder-agent-icon"
-                        size={100}
-                        style={{marginBottom: "10px"}}
-                    />
-                    Opportunity Finder
-                </div>
-                <FaArrowRightLong
-                    id="arrow1"
-                    size={100}
-                    color="var(--bs-secondary)"
-                />
-                <div
-                    id="scoping-agent-div"
-                    style={getAgentButtonStyle(!awaitingResponse)}
-                    onClick={() => !awaitingResponse && setSelectedAgent("ScopingAgent")}
-                    className={getClassName("ScopingAgent")}
-                >
-                    <TfiPencilAlt
-                        id="scoping-agent-icon"
-                        size={100}
-                        style={{marginBottom: "10px"}}
-                    />
-                    Scoping Agent
-                </div>
-                <FaArrowRightLong
-                    id="arrow2"
-                    size={100}
-                    color="var(--bs-secondary)"
-                />
-                <div
-                    id="opp-finder-agent-div"
-                    style={getAgentButtonStyle(!awaitingResponse)}
-                    onClick={() => !awaitingResponse && setSelectedAgent("DataGenerator")}
-                    className={getClassName("DataGenerator")}
-                >
-                    <BsDatabaseAdd
-                        id="db-agent-icon"
-                        size={100}
-                        style={{marginBottom: "10px"}}
-                    />
-                    Data Generator
-                </div>
-                <FaArrowRightLong
-                    id="arrow3"
-                    size={100}
-                    color="var(--bs-secondary)"
-                />
-                <Tooltip
-                    id="orchestration-tooltip"
-                    title={enableOrchestration ? undefined : "Please complete the previous steps first"}
-                    style={getAgentButtonStyle(enableOrchestration)}
-                >
-                    <div
-                        id="orchestration-agent-div"
-                        style={{...getAgentButtonStyle(enableOrchestration)}}
-                        onClick={() => enableOrchestration && setSelectedAgent("OrchestrationAgent")}
-                        className={getClassName("OrchestrationAgent")}
-                    >
-                        <LuBrainCircuit
-                            id="db-agent-icon"
-                            size={100}
-                            style={{marginBottom: "10px"}}
-                        />
-                        <div
-                            id="orchestration-agent-text"
-                            style={{textAlign: "center"}}
-                        >
-                            Orchestrator
-                        </div>
-                    </div>
-                </Tooltip>
-            </div>
-        )
-    }
+    const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
 
     // Render the component
     return (
@@ -869,7 +761,13 @@ export function OpportunityFinder(): ReactElement {
             }}
             style={{marginBottom: "6rem"}}
         >
-            {getAgentButtons()}
+            <AgentButtons
+                id="opp-finder-agent-buttons"
+                enableOrchestration={enableOrchestration}
+                awaitingResponse={awaitingResponse}
+                selectedAgent={selectedAgent}
+                setSelectedAgent={setSelectedAgent}
+            />
             <Form.Group
                 id="select-theme-group"
                 style={{margin: "10px", position: "relative"}}
