@@ -3,8 +3,6 @@
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {Alert, Collapse, Tooltip} from "antd"
-import {jsonrepair} from "jsonrepair"
-import {capitalize} from "lodash"
 import {CSSProperties, FormEvent, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
@@ -12,37 +10,27 @@ import {FiRefreshCcw} from "react-icons/fi"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
-import SyntaxHighlighter from "react-syntax-highlighter"
 import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 
 import {AgentButtons} from "./Agentbuttons"
+import {pollForLogs} from "./AgentChatHandling"
+import {experimentGeneratedMessage} from "./common"
+import {INLINE_ALERT_PROPERTIES} from "./const"
 import {formatOutput} from "./OutputFormatting"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {MaximumBlue} from "../../../const"
-import {getLogs, sendChatQuery} from "../../../controller/agent/agent"
+import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
-import {AgentStatus, ChatResponse, LogsResponse} from "../../../generated/agent"
+import {AgentStatus, ChatResponse} from "../../../generated/agent"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 
 const {Panel} = Collapse
 
-// Regex to extract project and experiment IDs from agent response
-const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
-
-// Regex to extract error and traceback from agent response
-const AGENT_ERROR_REGEX = /assistant:\s*\{\s*"error": "(?<error>[^"]+)",\s*"traceback":\s*"(?<traceback>[^"]+)"\}/u
-
 // Interval for polling the agents for logs
 const AGENT_POLL_INTERVAL_MS = 5_000
-
-// Maximum inactivity time since last agent response before we give up
-const MAX_AGENT_INACTIVITY_SECS = 2 * 60
-
-// How many times to retry the entire orchestration process
-const MAX_ORCHESTRATION_ATTEMPTS = 3
 
 // Input text placeholders for each agent type
 const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
@@ -50,19 +38,6 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
     ScopingAgent: "Scope the selected item",
     DataGenerator: "Generate 1500 rows",
     OrchestrationAgent: "Generate the experiment",
-}
-
-// Delimiter for separating logs from agents
-const LOGS_DELIMITER = ">>>"
-
-// Standard properties for inline alerts
-const INLINE_ALERT_PROPERTIES = {
-    style: {
-        fontSize: "large",
-        marginBottom: "1rem",
-    },
-    showIcon: true,
-    closable: false,
 }
 
 /**
@@ -187,242 +162,23 @@ export function OpportunityFinder(): ReactElement {
         }
     }, [chatOutput])
 
-    /**
-     * Retry the orchestration process. If we haven't exceeded the maximum number of retries, we'll try again.
-     * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
-     * @param retryMessage The message to display to the user when retrying
-     * @param failureMessage The message to display to the user when giving up
-     * @returns Nothing, but updates the output window and ends the orchestration process if we've exceeded the maximum
-     */
-    const retry: (retryMessage: string, failureMessage: string) => Promise<void> = async (
-        retryMessage: string,
-        failureMessage: string
-    ) => {
-        if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
-            updateOutput(
-                <>
-                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <Alert
-                        {...INLINE_ALERT_PROPERTIES}
-                        type="warning"
-                        description={retryMessage}
-                    />
-                </>
-            )
-
-            // try again
-            endOrchestration()
-            await initiateOrchestration(true)
-        } else {
-            updateOutput(
-                <>
-                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <Alert
-                        {...INLINE_ALERT_PROPERTIES}
-                        type="error"
-                        description={failureMessage}
-                    />
-                </>
-            )
-            endOrchestration()
-        }
-    }
-
-    /**
-     * Generate the message to display to the user when the experiment has been generated.
-     */
-    const experimentGeneratedMessage: () => JSX.Element = () => (
-        <>
-            Your new experiment has been generated. Click{" "}
-            <a
-                id="new-project-link"
-                target="_blank"
-                href={projectUrl.current}
-                rel="noreferrer"
-            >
-                here
-            </a>{" "}
-            to view it.
-        </>
-    )
-
-    async function processChatResponse(response) {
-        // Check for error
-        const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
-        if (errorMatches) {
-            // eslint-disable-next-line max-len
-            const baseMessage = `Error occurred: ${errorMatches.groups.error}. Traceback: ${errorMatches.groups.traceback}`
-            await retry(
-                `${baseMessage} Retrying...`,
-                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-            )
-
-            return
-        }
-
-        // Check for completion of orchestration by checking if response contains project info
-        const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
-
-        if (matches) {
-            // Build the URl and set it in state so the notification will be displayed
-            const projectId = matches.groups.projectId
-            const experimentId = matches.groups.experimentId
-
-            projectUrl.current = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
-
-            // We found the agent completion message
-            updateOutput(
-                <>
-                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <Collapse>
-                        <Panel
-                            id="experiment-generation-complete-panel"
-                            header="Experiment generation complete"
-                            key="Experiment generation complete"
-                            style={{fontSize: "large"}}
-                        >
-                            <p id="experiment-generation-complete-details">{experimentGeneratedMessage()}</p>
-                        </Panel>
-                    </Collapse>
-                    <br id="experiment-generation-complete-br" />
-                </>
-            )
-            endOrchestration()
-        }
-    }
-
-    function processNewLogs(response: LogsResponse) {
-        // Get new logs
-        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
-
-        // Update last log time
-        lastLogTime.current = Date.now()
-
-        // Update last log index
-        lastLogIndexRef.current = response.logs.length - 1
-
-        // Process new logs and display summaries to user
-        for (const logLine of newLogs) {
-            // extract the part of the line only up to LOGS_DELIMITER
-            const logLineElements = logLine.split(LOGS_DELIMITER)
-
-            const logLineSummary = logLineElements[0]
-            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
-
-            const logLineDetails = logLineElements[1]
-
-            let repairedJson: string | object = null
-
-            try {
-                // Attempt to parse as JSON
-
-                // First, repair it
-                repairedJson = jsonrepair(logLineDetails)
-
-                // Now try to parse it
-                repairedJson = JSON.parse(repairedJson)
-            } catch (e) {
-                // Not valid JSON
-                repairedJson = null
-            }
-
-            updateOutput(
-                <>
-                    {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <Collapse>
-                        <Panel
-                            id={`${summarySentenceCase}-panel`}
-                            header={summarySentenceCase}
-                            key={summarySentenceCase}
-                            style={{fontSize: "large"}}
-                        >
-                            <p id={`${summarySentenceCase}-details`}>
-                                {/*If we managed to parse it as JSON, pretty print it*/}
-                                {repairedJson ? (
-                                    <SyntaxHighlighter
-                                        id="syntax-highlighter"
-                                        language="json"
-                                        style={highlighterTheme}
-                                        showLineNumbers={false}
-                                        wrapLines={true}
-                                    >
-                                        {JSON.stringify(repairedJson, null, 2)}
-                                    </SyntaxHighlighter>
-                                ) : (
-                                    logLineDetails || "No further details"
-                                )}
-                            </p>
-                        </Panel>
-                    </Collapse>
-                    <br id={`${summarySentenceCase}-br`} />
-                </>
-            )
-        }
-    }
-
-    async function checkAgentTimeout() {
-        // No new logs, check if it's been too long since last log
-        const timeSinceLastLog = Date.now() - lastLogTime.current
-        const isTimeout = lastLogTime.current && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
-        if (isTimeout) {
-            const baseMessage = "Error occurred: exceeded wait time for agent response."
-            await retry(
-                `${baseMessage} Retrying...`,
-                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-            )
-        }
-
-        return isTimeout
-    }
-
-    function pollAgent() {
-        return async () => {
-            if (isAwaitingLlmRef.current) {
-                // Already a request in progress
-                return
-            }
-
-            // Poll the agent for logs
-            try {
-                // Set "busy" flag
-                setIsAwaitingLlm(true)
-
-                const response: LogsResponse = await getLogs(
-                    sessionId.current,
-                    controller?.current?.signal,
-                    currentUser
-                )
-
-                // Check status from agents
-                // Any status other than "FOUND" means something went wrong
-                if (response.status !== AgentStatus.FOUND) {
-                    const baseMessage = "Error occurred: session not found."
-                    await retry(
-                        `${baseMessage} Retrying...`,
-                        `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                    )
-
-                    return
-                }
-
-                // Check for new logs
-                const hasNewLogs = response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current + 1
-                if (hasNewLogs) {
-                    processNewLogs(response)
-                } else {
-                    const timedOut = await checkAgentTimeout()
-                    if (timedOut) {
-                        return
-                    }
-                }
-
-                if (response.chatResponse) {
-                    await processChatResponse(response)
-                }
-            } finally {
-                setIsAwaitingLlm(false)
-            }
-        }
+    async function pollAgent() {
+        await pollForLogs(
+            sessionId.current,
+            currentUser,
+            isAwaitingLlmRef.current,
+            setIsAwaitingLlm,
+            controller.current?.signal,
+            orchestrationAttemptNumber.current,
+            updateOutput,
+            lastLogIndexRef.current,
+            (index) => (lastLogIndexRef.current = index),
+            lastLogTime.current,
+            (url) => (projectUrl.current = url),
+            (time) => (lastLogTime.current = time),
+            endOrchestration,
+            initiateOrchestration
+        )
     }
 
     // Poll the agent for logs when the Orchestration Agent is being used
@@ -433,7 +189,7 @@ export function OpportunityFinder(): ReactElement {
             lastLogTime.current = Date.now()
 
             // Kick off the polling process
-            logPollingIntervalId.current = setInterval(pollAgent(), AGENT_POLL_INTERVAL_MS)
+            logPollingIntervalId.current = setInterval(pollAgent, AGENT_POLL_INTERVAL_MS)
 
             // Cleanup function to clear the interval
             return () => clearInterval(logPollingIntervalId.current)
@@ -720,7 +476,7 @@ export function OpportunityFinder(): ReactElement {
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                 <Alert
                     type="success"
-                    message={experimentGeneratedMessage()}
+                    message={experimentGeneratedMessage(projectUrl.current)}
                     style={{fontSize: "large", margin: "10px", marginTop: "20px", marginBottom: "20px"}}
                     showIcon={true}
                     closable={true}
