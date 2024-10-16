@@ -164,20 +164,27 @@ export function OpportunityFinder(): ReactElement {
 
     async function pollAgent() {
         await pollForLogs(
-            sessionId.current,
             currentUser,
-            isAwaitingLlmRef.current,
-            setIsAwaitingLlm,
-            controller.current?.signal,
-            orchestrationAttemptNumber.current,
-            updateOutput,
-            lastLogIndexRef.current,
-            (index) => (lastLogIndexRef.current = index),
-            lastLogTime.current,
+            sessionId.current,
+            {
+                lastLogIndex: lastLogIndexRef.current,
+                setLastLogIndex: (index) => (lastLogIndexRef.current = index),
+                lastLogTime: lastLogTime.current,
+                setLastLogTime: (time) => (lastLogTime.current = time),
+            },
+            {
+                orchestrationAttemptNumber: orchestrationAttemptNumber.current,
+                initiateOrchestration,
+                endOrchestration,
+            },
+            {
+                isAwaitingLlm: isAwaitingLlmRef.current,
+                setIsAwaitingLlm,
+                signal: controller.current?.signal,
+            },
             (url) => (projectUrl.current = url),
-            (time) => (lastLogTime.current = time),
-            endOrchestration,
-            initiateOrchestration
+            updateOutput,
+            highlighterTheme
         )
     }
 
@@ -192,7 +199,12 @@ export function OpportunityFinder(): ReactElement {
             logPollingIntervalId.current = setInterval(pollAgent, AGENT_POLL_INTERVAL_MS)
 
             // Cleanup function to clear the interval
-            return () => clearInterval(logPollingIntervalId.current)
+            return () => {
+                if (logPollingIntervalId.current) {
+                    clearInterval(logPollingIntervalId.current)
+                    logPollingIntervalId.current = null
+                }
+            }
         } else {
             return undefined
         }

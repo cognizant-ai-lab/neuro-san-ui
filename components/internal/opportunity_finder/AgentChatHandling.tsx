@@ -1,7 +1,7 @@
 import {Alert, Collapse} from "antd"
 import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
-import {ReactNode} from "react"
+import {CSSProperties, ReactNode} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {experimentGeneratedMessage} from "./common"
@@ -26,26 +26,41 @@ const LOGS_DELIMITER = ">>>"
 // Maximum inactivity time since last agent response before we give up
 const MAX_AGENT_INACTIVITY_SECS = 2 * 60
 
+interface LogHandling {
+    lastLogIndex: number
+    setLastLogIndex: (newIndex: number) => void
+    lastLogTime: number
+    setLastLogTime: (newTime: number) => void
+}
+
+interface Orchestrationhandling {
+    orchestrationAttemptNumber: number
+    initiateOrchestration
+    endOrchestration
+}
+
+interface LlmInteraction {
+    isAwaitingLlm: boolean
+    setIsAwaitingLlm: (newVal: boolean) => void
+    signal: AbortSignal
+}
+
 /**
  * Retry the orchestration process. If we haven't exceeded the maximum number of retries, we'll try again.
  * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
  * @param retryMessage The message to display to the user when retrying
  * @param failureMessage The message to display to the user when giving up
- * @param orchestrationAttemptNumber The current orchestration attempt number, 1-based.
- * @param updateOutput
- * @param endOrchestration
- * @param initiateOrchestration
+ * @param orchestrationHandling Items related to the orchestration process
+ * @param updateOutput Function to update the output window
  * @returns Nothing, but updates the output window and ends the orchestration process if we've exceeded the maximum
  */
-const retry = async (
+export const retry = async (
     retryMessage: string,
     failureMessage: string,
-    orchestrationAttemptNumber: number,
-    updateOutput: (newOutput: ReactNode) => void,
-    endOrchestration: () => void,
-    initiateOrchestration: (isRetry: boolean) => Promise<void>
+    orchestrationHandling: Orchestrationhandling,
+    updateOutput: (newOutput: ReactNode) => void
 ): Promise<void> => {
-    if (orchestrationAttemptNumber < MAX_ORCHESTRATION_ATTEMPTS) {
+    if (orchestrationHandling.orchestrationAttemptNumber < MAX_ORCHESTRATION_ATTEMPTS) {
         updateOutput(
             <>
                 {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
@@ -58,8 +73,8 @@ const retry = async (
         )
 
         // try again
-        endOrchestration()
-        await initiateOrchestration(true)
+        orchestrationHandling.endOrchestration()
+        await orchestrationHandling.initiateOrchestration(true)
     } else {
         updateOutput(
             <>
@@ -71,17 +86,11 @@ const retry = async (
                 />
             </>
         )
-        endOrchestration()
+        orchestrationHandling.endOrchestration()
     }
 }
 
-export async function checkAgentTimeout(
-    lastLogTime,
-    orchestrationAttemptNumber,
-    updateOutput,
-    endOrchestration,
-    initiateOrchestration
-) {
+export async function checkAgentTimeout(lastLogTime, orchestrationHandling, updateOutput) {
     // No new logs, check if it's been too long since last log
     const timeSinceLastLog = Date.now() - lastLogTime
     const isTimeout = lastLogTime && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
@@ -90,10 +99,8 @@ export async function checkAgentTimeout(
         await retry(
             `${baseMessage} Retrying...`,
             `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-            orchestrationAttemptNumber,
-            updateOutput,
-            endOrchestration,
-            initiateOrchestration
+            orchestrationHandling,
+            updateOutput
         )
     }
 
@@ -102,11 +109,9 @@ export async function checkAgentTimeout(
 
 async function processChatResponse(
     response,
-    orchestrationAttemptNumber,
-    updateOutput,
+    orchestrationHandling,
     setProjectUrl: (url: string) => void,
-    endOrchestration,
-    initiateOrchestration
+    updateOutput
 ) {
     // Check for error
     const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
@@ -115,10 +120,8 @@ async function processChatResponse(
         await retry(
             `${baseMessage} Retrying...`,
             `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-            orchestrationAttemptNumber,
-            updateOutput,
-            endOrchestration,
-            initiateOrchestration
+            orchestrationHandling,
+            updateOutput
         )
 
         return
@@ -152,26 +155,24 @@ async function processChatResponse(
                 <br id="experiment-generation-complete-br" />
             </>
         )
-        endOrchestration()
+        orchestrationHandling.endOrchestration()
     }
 }
 
-function processNewLogs(
+export const processNewLogs = (
     response: LogsResponse,
-    lastLogIndex,
-    setLastLogIndex,
-    setLastLogTime,
+    logHandling: LogHandling,
     updateOutput,
-    highlighterTheme
-) {
+    highlighterTheme: {[p: string]: CSSProperties}
+) => {
     // Get new logs
-    const newLogs = response.logs.slice(lastLogIndex + 1)
+    const newLogs = response.logs.slice(logHandling.lastLogIndex + 1)
 
     // Update last log time
-    setLastLogTime(Date.now())
+    logHandling.setLastLogTime(Date.now())
 
     // Update last log index
-    setLastLogIndex(response.logs.length - 1)
+    logHandling.setLastLogIndex(response.logs.length - 1)
 
     // Process new logs and display summaries to user
     for (const logLine of newLogs) {
@@ -233,22 +234,16 @@ function processNewLogs(
 }
 
 export async function pollForLogs(
-    sessionId: string,
     currentUser: string,
-    isAwaitingLlm: boolean,
-    setIsAwaitingLlm: (newVal: boolean) => void,
-    signal: AbortSignal,
-    orchestrationAttemptNumber: number,
-    updateOutput: (newOutput: ReactNode) => void,
-    lastLogIndex: number,
-    setLastLogIndex: (newIndex: number) => void,
-    lastLogTime: number,
+    sessionId: string,
+    logHandling: LogHandling,
+    orchestrationHandling: Orchestrationhandling,
+    llmInteraction: LlmInteraction,
     setProjectUrl: (url: string) => void,
-    setLastLogTime: (newTime: number) => void,
-    endOrchestration,
-    initiateOrchestration
+    updateOutput: (newOutput: React.ReactNode) => void,
+    highlighterTheme: {[p: string]: React.CSSProperties}
 ) {
-    if (isAwaitingLlm) {
+    if (llmInteraction.isAwaitingLlm) {
         // Already a request in progress
         return
     }
@@ -256,9 +251,9 @@ export async function pollForLogs(
     // Poll the agent for logs
     try {
         // Set "busy" flag
-        setIsAwaitingLlm(true)
+        llmInteraction.setIsAwaitingLlm(true)
 
-        const response: LogsResponse = await getLogs(sessionId, signal, currentUser)
+        const response: LogsResponse = await getLogs(sessionId, llmInteraction.signal, currentUser)
 
         // Check status from agents
         // Any status other than "FOUND" means something went wrong
@@ -267,43 +262,28 @@ export async function pollForLogs(
             await retry(
                 `${baseMessage} Retrying...`,
                 `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-                orchestrationAttemptNumber,
-                updateOutput,
-                endOrchestration,
-                initiateOrchestration
+                orchestrationHandling,
+                updateOutput
             )
 
             return
         }
 
         // Check for new logs
-        const hasNewLogs = response?.logs?.length > 0 && response.logs.length > lastLogIndex + 1
+        const hasNewLogs = response?.logs?.length > 0 && response.logs.length > logHandling.lastLogIndex + 1
         if (hasNewLogs) {
-            processNewLogs(response, lastLogIndex, setLastLogIndex, setLastLogTime, updateOutput, "github")
+            processNewLogs(response, logHandling, updateOutput, highlighterTheme)
         } else {
-            const timedOut = await checkAgentTimeout(
-                lastLogTime,
-                orchestrationAttemptNumber,
-                updateOutput,
-                endOrchestration,
-                initiateOrchestration
-            )
+            const timedOut = await checkAgentTimeout(logHandling.lastLogTime, orchestrationHandling, updateOutput)
             if (timedOut) {
                 return
             }
         }
 
         if (response.chatResponse) {
-            await processChatResponse(
-                response,
-                orchestrationAttemptNumber,
-                updateOutput,
-                setProjectUrl,
-                endOrchestration,
-                initiateOrchestration
-            )
+            await processChatResponse(response, orchestrationHandling, setProjectUrl, updateOutput)
         }
     } finally {
-        setIsAwaitingLlm(false)
+        llmInteraction.setIsAwaitingLlm(false)
     }
 }
