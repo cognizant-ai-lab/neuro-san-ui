@@ -17,7 +17,7 @@ import {AgentButtons} from "./Agentbuttons"
 import {pollForLogs} from "./AgentChatHandling"
 import {experimentGeneratedMessage} from "./common"
 import {INLINE_ALERT_PROPERTIES} from "./const"
-import {formatOutput} from "./OutputFormatting"
+import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {MaximumBlue} from "../../../const"
 import {sendChatQuery} from "../../../controller/agent/agent"
@@ -116,7 +116,7 @@ export function OpportunityFinder(): ReactElement {
     const sessionId = useRef<string>(null)
 
     // For newly created project/experiment URL
-    const projectUrl = useRef<string>(null)
+    const projectUrl = useRef<URL | null>(null)
 
     // To track time of last new logs from agents
     const lastLogTime = useRef<number | null>(null)
@@ -566,9 +566,15 @@ export function OpportunityFinder(): ReactElement {
                         }}
                         tabIndex={-1}
                     >
-                        {chatOutput && chatOutput.length > 0
-                            ? formatOutput(chatOutput, highlighterTheme)
-                            : "(Agent output will appear here)"}
+                        {chatOutput && chatOutput.length > 0 ? (
+                            <FormattedMarkdown
+                                id="formatted-markdown"
+                                nodesList={chatOutput}
+                                style={highlighterTheme}
+                            />
+                        ) : (
+                            "(Agent output will appear here)"
+                        )}
                         {awaitingResponse && (
                             <div
                                 id="awaitingOutputContainer"
