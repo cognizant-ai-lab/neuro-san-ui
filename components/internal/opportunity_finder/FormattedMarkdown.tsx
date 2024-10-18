@@ -4,6 +4,8 @@ import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighte
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 
+import {hashString} from "../../../utils/text"
+
 /**
  * The props for the FormattedMarkdown component.
  */
@@ -40,6 +42,7 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
     const getFormattedMarkdown = (stringToFormat: string): JSX.Element => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
+            key={hashString(stringToFormat)}
             rehypePlugins={[rehypeRaw, rehypeSlug]}
             components={{
                 code(codeProps) {
