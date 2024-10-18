@@ -194,8 +194,9 @@ export function checkValidity(flow: NodeType[]): boolean {
                 validFlow = false
                 sendNotification(
                     NotificationType.warning,
-                    "Some columns have NaN values which must be filled in prior to training. Please add a " +
-                        "confabulator LLM node to continue or uncheck the following fields below:",
+                    "Some columns have NaN values which must be filled in prior to training. " +
+                        "Please uncheck the following fields below from your predictor and prescriptor " +
+                        "input/outcome (recommended) or add a confabulator LLM node to start training.",
                     `Fields with NaNs: ${commaListFromArray(columnsWithNaNs)}`
                 )
             }
@@ -209,8 +210,9 @@ export function checkValidity(flow: NodeType[]): boolean {
                 sendNotification(
                     NotificationType.warning,
                     `Some columns have Categorical values with greater than 
-                    ${MAX_ALLOWED_CATEGORIES} categories. Please add a category reducer LLM node or
-                    remove the fields with too many categories below from your data source to continue`,
+                    ${MAX_ALLOWED_CATEGORIES} categories. Please uncheck the fields below from
+                    your predictor and prescriptor node input/outcome (recommended) or add a
+                    category reducer LLM node to start training.`,
                     `Fields with too many categories: ${commaListFromArray(columnsWithTooManyCategories)}`
                 )
             }
