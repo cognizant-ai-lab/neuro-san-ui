@@ -63,7 +63,7 @@ PINECONE_API_KEY=<redacted>
 PINECONE_INDEX=prod
 PINECONE_ENVIRONMENT=us-east-1-aws
 
-SUPPORT_EMAIL_ADDRESS=test@cognizant.com
+SUPPORT_EMAIL_ADDRESS=test@example.com
 
 # Next item is if you want to use Bing search in Opportunity Finder
 BingApiKey=<redacted>
