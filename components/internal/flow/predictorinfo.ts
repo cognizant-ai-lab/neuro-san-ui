@@ -75,9 +75,9 @@ const SUPPORTED_REGRESSION_MODELS: PredictorParams = {
         criterion: {
             default_value: "mse",
             description: `The function to measure the quality of a split. 
-                           Supported criteria are mse for the mean squared error, 
+                           Supported criteria are "mse" for the mean squared error, 
                            which is equal to variance reduction as feature selection 
-                           criterion, and mae for the mean absolute error.`,
+                           criterion, and "mae" for the mean absolute error.`,
             type: BaseParameterType.ENUM,
             enum: SupportedRegressionCriterion,
         },
@@ -395,9 +395,9 @@ const SUPPORTED_CLASSIFICATION_MODELS: PredictorParams = {
         criterion: {
             default_value: "gini",
             description: `The function to measure the quality of a split. 
-                           Supported criteria are mse for the mean squared error, 
-                           which is equal to variance reduction as feature selection 
-                           criterion, and mae for the mean absolute error.`,
+                           Supported criteria are "gini" for the Gini impurity and
+                           both "log_loss" and "entropy" for the Shannon information
+                           gain.`,
             type: BaseParameterType.ENUM,
             enum: SupportedClassificationCriterion,
         },
