@@ -66,6 +66,11 @@ const nextConfig = {
                 hostname: "**avatars.githubusercontent.com",
                 port: "",
             },
+            {
+                protocol: "https",
+                hostname: "**graph.microsoft.com",
+                port: "",
+            },
         ],
     },
 
