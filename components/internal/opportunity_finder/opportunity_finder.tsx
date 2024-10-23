@@ -1125,7 +1125,7 @@ export function OpportunityFinder(): ReactElement {
                             style={{
                                 fontSize: "90%",
                                 height: "47px",
-                                marginLeft: "7px",
+                                marginLeft: "10px",
                             }}
                             onChange={(event) => {
                                 setChatInput(event.target.value)
