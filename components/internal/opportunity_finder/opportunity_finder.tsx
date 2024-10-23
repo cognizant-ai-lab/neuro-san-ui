@@ -878,7 +878,7 @@ export function OpportunityFinder(): ReactElement {
             {getAgentButtons()}
             <Form.Group
                 id="select-theme-group"
-                style={{margin: "10px", position: "relative"}}
+                style={{fontSize: "18px", margin: "10px", position: "relative"}}
             >
                 <Form.Label
                     id="select-theme-label"
