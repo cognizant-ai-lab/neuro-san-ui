@@ -22,10 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     res.status(httpStatus.OK).json(userInfo)
 }
 
-function fetchUserInfoFromALB(req) {
+// Expected header from ALB
+const AWS_OIDC_HEADER = "x-amzn-oidc-data"
+
+function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
     debug("Headers:", req.headers)
 
-    const oidcDataHeader = req.headers["x-amzn-oidc-data"] as string
+    const oidcDataHeader = req.headers[AWS_OIDC_HEADER] as string
 
     if (!oidcDataHeader) {
         debug("OIDC header not found")
@@ -37,14 +40,14 @@ function fetchUserInfoFromALB(req) {
     // We expect the OIDC data header to be two parts, separated by a period
     if (!oidcDataHeader.includes(".")) {
         debug("OIDC header does not contain a period")
-        return null
+        return {oidcHeaderFound: false}
     }
 
     // Split the header into two parts
     const jwtHeaders = oidcDataHeader.split(".")
     if (!jwtHeaders || jwtHeaders.length !== EXPECTED_NUMBER_OF_JWT_HEADERS) {
         debug("OIDC header is not in the expected format", jwtHeaders)
-        return null
+        return {oidcHeaderFound: false}
     }
 
     // now base64 decode jwtheader

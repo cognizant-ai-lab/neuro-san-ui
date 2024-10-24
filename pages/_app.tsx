@@ -53,7 +53,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     } = useEnvironmentStore()
 
     // access user info store
-    const {currentUser, setCurrentUser, picture, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
+    const {currentUser, setCurrentUser, picture, setPicture, setOidcProvider} = useUserInfoStore()
 
     const {query, isReady, pathname} = useRouter()
 
