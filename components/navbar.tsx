@@ -13,6 +13,7 @@ import {ConfirmationModal} from "./confirmationModal"
 import {
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
+    DEFAULT_USER_IMAGE,
     MaximumBlue,
     UNILEAF_VERSION,
 } from "../const"
@@ -67,7 +68,7 @@ function Navbar(props: NavbarProps): ReactElement {
         setCurrentUser(undefined)
         setPicture(undefined)
 
-        await smartSignOut(currentUser, auth0Domain, auth0ClientId)
+        await smartSignOut(currentUser, auth0Domain, auth0ClientId, oidcProvider)
     }
 
     return (
@@ -193,7 +194,7 @@ function Navbar(props: NavbarProps): ReactElement {
                                     >
                                         <NextImage
                                             id="user-image"
-                                            src={userInfo.image || "https://www.gravatar.com/avatar/?d=mp"}
+                                            src={userInfo.image || DEFAULT_USER_IMAGE}
                                             width={30}
                                             height={30}
                                             title={userName}

@@ -2,7 +2,7 @@ import debugModule from "debug"
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-import {UserInfoResponse} from "./types"
+import {OidcProvider, UserInfoResponse} from "./types"
 
 const debug = debugModule("userInfo")
 
@@ -61,8 +61,10 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
 
     // Determine the OIDC provider
     let picture: string = null
-    let oidcProvider: string
+    let oidcProvider: OidcProvider = null
     let username: string = null
+
+    // Look for "well-known" fields in the OIDC headers to figure out if we're using Github or AD
     if (userInfo.nickname) {
         oidcProvider = "Github"
         picture = userInfo.picture
@@ -70,9 +72,11 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
     } else if (userInfo.email) {
         oidcProvider = "AD"
         username = userInfo.email
+
+        // We don't have a picture for AD users yet. Requires investigation.
     }
 
-    // Optionally, pass the headers to the page component as props
+    // Return the OIDC provider and user info to the UI
     return {
         username,
         picture,

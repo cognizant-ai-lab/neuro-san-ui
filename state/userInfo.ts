@@ -1,5 +1,7 @@
 import {create} from "zustand"
 
+import {OidcProvider} from "../pages/api/userInfo/types"
+
 /**
  * Zustand state store for "feature flags" like, "generic branding".
  */
@@ -10,8 +12,8 @@ interface UserInfoStore {
     picture: string | undefined
     setPicture: (picture: string) => void
 
-    oidcProvider: string | undefined
-    setOidcProvider: (oidcProvider: string) => void
+    oidcProvider: OidcProvider | undefined
+    setOidcProvider: (oidcProvider: OidcProvider) => void
 }
 
 /**
@@ -22,7 +24,7 @@ const useUserInfoStore = create<UserInfoStore>((set) => ({
     setCurrentUser: (username: string) => set(() => ({currentUser: username})),
 
     oidcProvider: undefined,
-    setOidcProvider: (oidcProvider: string) => set(() => ({oidcProvider: oidcProvider})),
+    setOidcProvider: (oidcProvider: OidcProvider) => set(() => ({oidcProvider: oidcProvider})),
 
     picture: undefined,
     setPicture: (picture: string) => set(() => ({picture: picture})),

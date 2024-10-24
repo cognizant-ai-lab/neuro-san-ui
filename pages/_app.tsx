@@ -162,7 +162,8 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 setPicture(response.picture)
                 setOidcProvider(response.oidcProvider)
             } else {
-                // Indicate that we didn't get the user info from the ALB
+                // Indicate that we didn't get the user info from the ALB. Assume we're using NextAuth instead.
+                setOidcProvider("NextAuth")
                 setCurrentUser(null)
                 setPicture(null)
             }

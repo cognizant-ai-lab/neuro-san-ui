@@ -4,7 +4,7 @@ import ChatBot from "react-simple-chatbot"
 import {ThemeProvider} from "styled-components"
 
 import {CustomStep} from "./custom_step"
-import {chatbotTheme} from "../../../const"
+import {chatbotTheme, DEFAULT_USER_IMAGE} from "../../../const"
 import useFeaturesStore from "../../../state/features"
 import {hasOnlyWhitespace} from "../../../utils/text"
 
@@ -101,7 +101,7 @@ const NeuroAIChatbot = (props: {id: string; userAvatar: string; pageContext: str
                 floating={true}
                 headerTitle={isGeneric ? "Autopilot AI assistant" : "Cognizant Neuro™ AI Assistant"}
                 placeholder="What is a prescriptor?"
-                userAvatar={props.userAvatar || "https://www.gravatar.com/avatar/?d=mp"}
+                userAvatar={props.userAvatar || DEFAULT_USER_IMAGE}
                 botAvatar={isGeneric ? "/robot.png" : "/cognizantfavicon.ico"}
                 steps={chatbotSteps}
                 width="400px"
