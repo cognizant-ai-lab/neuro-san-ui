@@ -68,7 +68,7 @@ const nextConfig = {
             },
             {
                 protocol: "https",
-                hostname: "**graph.microsoft.com",
+                hostname: "**gravatar.com",
                 port: "",
             },
         ],

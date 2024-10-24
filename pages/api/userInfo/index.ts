@@ -56,10 +56,24 @@ function fetchUserInfoFromALB(req) {
 
     debug("User Info:", userInfo)
 
+    // Determine the OIDC provider
+    let picture: string = null
+    let oidcProvider: string
+    let username: string = null
+    if (userInfo.nickname) {
+        oidcProvider = "Github"
+        picture = userInfo.picture
+        username = userInfo.nickname
+    } else if (userInfo.email) {
+        oidcProvider = "AD"
+        username = userInfo.email
+    }
+
     // Optionally, pass the headers to the page component as props
     return {
-        username: userInfo.nickname,
-        picture: userInfo.picture,
+        username,
+        picture,
         oidcHeaderFound: true,
+        oidcProvider,
     }
 }

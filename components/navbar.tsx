@@ -53,12 +53,12 @@ function Navbar(props: NavbarProps): ReactElement {
     const userName = userInfo.name
 
     // Access user info store
-    const {currentUser, setCurrentUser, setPicture} = useUserInfoStore()
+    const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 
     // Access environment info
     const {auth0ClientId, auth0Domain, supportEmailAddress} = useEnvironmentStore()
 
-    const authenticationType = `(Authentication: ${currentUser ? "ALB" : "NextAuth"})`
+    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
 
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
@@ -156,13 +156,6 @@ function Navbar(props: NavbarProps): ReactElement {
                                     </Dropdown.Item>
                                     <Dropdown.Item
                                         href={null}
-                                        id="authentication-type-menu-item"
-                                        as="div"
-                                    >
-                                        {authenticationType}
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                        href={null}
                                         id="contact-us-help"
                                         onClick={() => setEmailDialogOpen(true)}
                                     >
@@ -198,47 +191,59 @@ function Navbar(props: NavbarProps): ReactElement {
                                             background: MaximumBlue,
                                         }}
                                     >
-                                        {session?.user?.image && (
-                                            <NextImage
-                                                id="user-image"
-                                                src={userInfo.image}
-                                                width="30"
-                                                height="30"
-                                                title={userName}
-                                                alt="User image"
-                                            />
-                                        )}
+                                        <NextImage
+                                            id="user-image"
+                                            src={userInfo.image || "https://www.gravatar.com/avatar/?d=mp"}
+                                            width="30"
+                                            height="30"
+                                            title={userName}
+                                            alt=""
+                                        />
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu
                                         id="user-menu"
-                                        style={{backgroundColor: "ghostwhite"}}
+                                        style={{backgroundColor: "ghostwhite", position: "absolute", right: "0"}}
                                     >
                                         <Dropdown.Item
                                             id="user-signed-in-as"
                                             target="_blank"
-                                            style={{pointerEvents: "none"}}
+                                            style={{pointerEvents: "none", fontWeight: "bold"}}
                                         >
-                                            Signed in as:
+                                            Signed in as
                                         </Dropdown.Item>
                                         <Dropdown.Item
                                             id="user-name"
                                             target="_blank"
                                             style={{
                                                 pointerEvents: "none",
-                                                fontWeight: "bold",
+                                                whiteSpace: "normal",
+                                                wordWrap: "break-word",
+                                                fontSize: "smaller",
                                             }}
                                         >
                                             {userName}
                                         </Dropdown.Item>
-                                        <Dropdown.Divider
-                                            id="user-divider"
+                                        <Dropdown.Item
+                                            id="auth-type-title"
+                                            target="_blank"
+                                            style={{pointerEvents: "none", fontWeight: "bold"}}
+                                        >
+                                            Authentication
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            id="authentication-type-menu-item"
+                                            target="_blank"
                                             style={{
                                                 pointerEvents: "none",
+                                                fontSize: "smaller",
                                             }}
-                                        />
+                                        >
+                                            {authenticationType}
+                                        </Dropdown.Item>
                                         <Dropdown.Item
                                             id="user-sign-out"
                                             target="_blank"
+                                            style={{fontWeight: "bold"}}
                                             onClick={handleSignOut}
                                         >
                                             Sign out

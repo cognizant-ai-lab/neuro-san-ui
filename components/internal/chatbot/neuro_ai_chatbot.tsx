@@ -101,7 +101,7 @@ const NeuroAIChatbot = (props: {id: string; userAvatar: string; pageContext: str
                 floating={true}
                 headerTitle={isGeneric ? "Autopilot AI assistant" : "Cognizant Neuro™ AI Assistant"}
                 placeholder="What is a prescriptor?"
-                userAvatar={props.userAvatar}
+                userAvatar={props.userAvatar || "https://www.gravatar.com/avatar/?d=mp"}
                 botAvatar={isGeneric ? "/robot.png" : "/cognizantfavicon.ico"}
                 steps={chatbotSteps}
                 width="400px"

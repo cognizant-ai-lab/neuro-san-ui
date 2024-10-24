@@ -9,6 +9,9 @@ interface UserInfoStore {
 
     picture: string | undefined
     setPicture: (picture: string) => void
+
+    oidcProvider: string | undefined
+    setOidcProvider: (oidcProvider: string) => void
 }
 
 /**
@@ -17,6 +20,9 @@ interface UserInfoStore {
 const useUserInfoStore = create<UserInfoStore>((set) => ({
     currentUser: undefined,
     setCurrentUser: (username: string) => set(() => ({currentUser: username})),
+
+    oidcProvider: undefined,
+    setOidcProvider: (oidcProvider: string) => set(() => ({oidcProvider: oidcProvider})),
 
     picture: undefined,
     setPicture: (picture: string) => set(() => ({picture: picture})),
