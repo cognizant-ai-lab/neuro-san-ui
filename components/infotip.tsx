@@ -27,7 +27,7 @@ export function InfoTip(props: InfoTipParams): React.ReactElement {
     const supId = `${props.id}-info-bubble-sup`
     const iconId = `${props.id}-info-bubble-icon`
     const size = props.size || 10
-    const color = props.color || "blue"
+    const color = props.color || "#002261"
 
     return (
         <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids

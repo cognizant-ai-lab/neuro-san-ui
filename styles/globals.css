@@ -221,13 +221,13 @@ h2 {
 
 .h3,
 h3 {
-    font-size: calc(1.36rem + 1.32vw);
+    font-size: 2rem;
 }
 
-@media (min-width: 1200px) {
+@media (max-width: 1200px) {
     .h3,
     h3 {
-        font-size: 2.35rem;
+        font-size: 1.5rem;
     }
 }
 
