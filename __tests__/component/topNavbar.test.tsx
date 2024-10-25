@@ -41,6 +41,22 @@ jest.mock("../../state/environment", () => ({
 }))
 
 describe("navbar", () => {
+    const windowLocation = window.location
+    beforeEach(() => {
+        // https://www.joshmcarthur.com/til/2022/01/19/assert-windowlocation-properties-with-jest.html
+        Object.defineProperty(window, "location", {
+            value: new URL(window.location.href),
+            configurable: true,
+        })
+    })
+
+    afterEach(() => {
+        Object.defineProperty(window, "location", {
+            value: windowLocation,
+            configurable: true,
+        })
+    })
+
     it("should open a confirmation dialog when the contact us link is clicked", () => {
         render(
             <Navbar
@@ -60,11 +76,6 @@ describe("navbar", () => {
     })
 
     it("should redirect to email client when confirmation is clicked", async () => {
-        // https://www.joshmcarthur.com/til/2022/01/19/assert-windowlocation-properties-with-jest.html
-        Object.defineProperty(window, "location", {
-            value: new URL("http://example.com"),
-            configurable: true,
-        })
         render(
             <Navbar
                 id="mock-id"

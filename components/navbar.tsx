@@ -2,14 +2,13 @@
  * Main navigation bar that appears at the top of each page
  */
 
-import {startCase} from "lodash"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import Breadcrumbs from "nextjs-breadcrumbs2"
 import {ReactElement, useState} from "react"
 import {Navbar as BootstrapNavbar, Container, Dropdown, Nav, NavItem, NavLink, Row} from "react-bootstrap"
 
+import NeuroAIBreadcrumbs from "./breadcrumbs"
 import {ConfirmationModal} from "./confirmationModal"
 import {
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
@@ -253,11 +252,8 @@ function Navbar(props: NavbarProps): ReactElement {
             </Row>
             {withBreadcrumbs && (
                 <Row id="nav-bar-breadcrumbs-row">
-                    <Breadcrumbs // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        // Breadcrumbs lacks an id attribute
-                        useDefaultStyle
+                    <NeuroAIBreadcrumbs // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         rootLabel="Home"
-                        transformLabel={(label) => startCase(label)}
                     />
                 </Row>
             )}
