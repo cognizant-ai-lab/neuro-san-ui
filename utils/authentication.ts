@@ -8,7 +8,7 @@ import useUserInfoStore from "../state/userInfo"
 /**
  * The Azure AD tenant ID.
  */
-const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
+export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
 
 /**
  * Hook for abstracting away the authentication provider. We are migrating to ALB-based authentication, instead of it
