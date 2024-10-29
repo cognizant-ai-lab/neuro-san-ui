@@ -37,7 +37,7 @@ interface LlmInteraction {
     signal: AbortSignal
 }
 
-export async function checkAgentTimeout(
+async function checkAgentTimeout(
     lastLogTime: number,
     orchestrationHandling: OrchestrationHandling,
     updateOutput: (node: ReactNode) => void
