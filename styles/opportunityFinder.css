@@ -8,7 +8,7 @@
 }
 
 .opp-finder-agent-div.selected {
-    background: linear-gradient(to bottom, #cad1d7, #f0f0f0);
+    background-color: #d4f1f4;
     border-color: var(--bs-primary);
 }
 
