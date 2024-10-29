@@ -54,3 +54,8 @@ export const CONTACT_US_CONFIRMATION_DIALOG_TEXT =
     "You will need to have an email client installed on your device in order " +
     "to continue. If you don't have an email client, you can still contact us at " +
     "NeuroAiSupport@cognizant.com using a web based email client."
+
+/**
+ * The default user image to use when the user does not have a profile picture.
+ */
+export const DEFAULT_USER_IMAGE = "https://www.gravatar.com/avatar/?d=mp"

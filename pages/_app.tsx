@@ -53,7 +53,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     } = useEnvironmentStore()
 
     // access user info store
-    const {currentUser, setCurrentUser, picture, setPicture} = useUserInfoStore()
+    const {currentUser, setCurrentUser, picture, setPicture, setOidcProvider} = useUserInfoStore()
 
     const {query, isReady, pathname} = useRouter()
 
@@ -160,8 +160,10 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 // Save user info from ALB
                 setCurrentUser(response.username)
                 setPicture(response.picture)
+                setOidcProvider(response.oidcProvider)
             } else {
-                // Indicate that we didn't get the user info from the ALB
+                // Indicate that we didn't get the user info from the ALB. Assume we're using NextAuth instead.
+                setOidcProvider("NextAuth")
                 setCurrentUser(null)
                 setPicture(null)
             }
@@ -200,12 +202,12 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
      */
     function getAppContainer() {
         // Haven't figured out whether we have ALB headers yet
-        if (picture === undefined || !backendApiUrl) {
+        if (currentUser === undefined || !backendApiUrl) {
             debug("Rendering loading spinner")
             return getLoadingSpinner()
         }
 
-        if (picture != null) {
+        if (currentUser != null) {
             // We got the ALB headers
             debug("Rendering ALB authentication case")
 
