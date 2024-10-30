@@ -1,6 +1,5 @@
 import {styled} from "@mui/material"
 import {Tooltip} from "antd"
-import {CSSProperties} from "react"
 import {BsDatabaseAdd} from "react-icons/bs"
 import {FaArrowRightLong} from "react-icons/fa6"
 import {LuBrainCircuit} from "react-icons/lu"
@@ -22,7 +21,7 @@ interface AgentButtonsProps {
 
 // #region: Constants
 // Icon sizes
-const AGENT_ICON_SIZE = 60
+const AGENT_ICON_SIZE = 65
 const ARROW_SIZE = 65
 // #endregion: Constants
 
@@ -30,7 +29,7 @@ const ARROW_SIZE = 65
 const AgentIconDiv = styled("div")({
     alignItems: "center",
     display: "flex",
-    fontSize: "0.85rem",
+    fontSize: "0.9rem",
     height: "100%",
     justifyContent: "space-evenly",
     marginTop: "2rem",
@@ -48,28 +47,18 @@ const AgentDiv = styled("div")(({ enabled, selected }) => ({
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
-    minHeight: "150px",
+    minHeight: "157px",
     opacity: enabled ? 1 : 0.5,
     padding: "10px",
+    textAlign: "center",
     transition: "all 0.3s ease",
-    width: "170px",
+    width: "180px",
 
     '&:hover': {
         borderColor: MaximumBlue,
     },
 }))
 // #endregion: Styled Components
-
-/*
-function getAgentButtonStyle(isEnabled: boolean): CSSProperties {
-    return {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        opacity: isEnabled ? 1 : 0.5,
-    }
-}
-*/
 
 /**
  * Generate the agent buttons for the Opportunity Finder agents.
@@ -84,7 +73,7 @@ export const AgentButtons: React.FC<AgentButtonsProps> = ({ awaitingResponse, en
             selected={selectedAgent === "OpportunityFinder"}
         >
             <RiMenuSearchLine
-                className="mb-3"
+                className="mt-2 mb-2.5"
                 id="opp-finder-agent-icon"
                 size={AGENT_ICON_SIZE}
             />
@@ -102,7 +91,7 @@ export const AgentButtons: React.FC<AgentButtonsProps> = ({ awaitingResponse, en
             selected={selectedAgent === "ScopingAgent"}
         >
             <TfiPencilAlt
-                className="mb-3"
+                className="mt-2 mb-2.5"
                 id="scoping-agent-icon"
                 size={AGENT_ICON_SIZE}
             />
@@ -120,7 +109,7 @@ export const AgentButtons: React.FC<AgentButtonsProps> = ({ awaitingResponse, en
             selected={selectedAgent === "DataGenerator"}
         >
             <BsDatabaseAdd
-                className="mb-3"
+                className="mt-2 mb-2.5"
                 id="db-agent-icon"
                 size={AGENT_ICON_SIZE}
             />
@@ -134,7 +123,6 @@ export const AgentButtons: React.FC<AgentButtonsProps> = ({ awaitingResponse, en
         <Tooltip
             id="orchestration-tooltip"
             title={enableOrchestration ? undefined : "Please complete the previous steps first"}
-            // style={getAgentButtonStyle(enableOrchestration)}
         >
             <AgentDiv
                 enabled={enableOrchestration}
@@ -143,7 +131,7 @@ export const AgentButtons: React.FC<AgentButtonsProps> = ({ awaitingResponse, en
                 selected={selectedAgent === "OrchestrationAgent"}
             >
                 <LuBrainCircuit
-                    className="mb-3"
+                    className="mt-2 mb-2.5"
                     id="db-agent-icon"
                     size={AGENT_ICON_SIZE}
                 />

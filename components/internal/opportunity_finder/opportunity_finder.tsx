@@ -490,7 +490,7 @@ export function OpportunityFinder(): ReactElement {
             />
             <Form.Group
                 id="select-theme-group"
-                style={{fontSize: "18px", margin: "10px", position: "relative"}}
+                style={{fontSize: "0.9rem", margin: "10px", position: "relative"}}
             >
                 <Form.Label
                     id="select-theme-label"
