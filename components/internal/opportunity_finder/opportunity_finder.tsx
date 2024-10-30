@@ -262,7 +262,7 @@ export function OpportunityFinder(): ReactElement {
     const getUserImageAndUserQuery = (userQuery: string): ReactElement => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <div className="mb-4">
-            { /* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */ }
+            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
             <div className="inline-flex">
                 <NextImage
                     id="user-image"
@@ -274,7 +274,7 @@ export function OpportunityFinder(): ReactElement {
                     unoptimized={true}
                 />
             </div>
-            { /* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */ }
+            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
             <UserQuery>{userQuery}</UserQuery>
         </div>
     )

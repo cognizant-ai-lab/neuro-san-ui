@@ -38,7 +38,7 @@ const AgentIconDiv = styled("div")({
     marginRight: "6rem",
 })
 
-const AgentDiv = styled("div")(({ enabled, selected }) => ({
+const AgentDiv = styled("div")(({enabled, selected}) => ({
     alignItems: "center",
     backgroundColor: selected ? "#d4f1f4" : null,
     border: "1px solid #cad1d7",
@@ -54,7 +54,7 @@ const AgentDiv = styled("div")(({ enabled, selected }) => ({
     transition: "all 0.3s ease",
     width: "180px",
 
-    '&:hover': {
+    "&:hover": {
         borderColor: MaximumBlue,
     },
 }))
@@ -64,8 +64,14 @@ const AgentDiv = styled("div")(({ enabled, selected }) => ({
  * Generate the agent buttons for the Opportunity Finder agents.
  * @returns A div containing the agent buttons
  */
-export const AgentButtons: React.FC<AgentButtonsProps> = ({ awaitingResponse, enableOrchestration, id, selectedAgent, setSelectedAgent }) => (
-    <AgentIconDiv id={id || "agent-buttons"} >
+export const AgentButtons: React.FC<AgentButtonsProps> = ({
+    awaitingResponse,
+    enableOrchestration,
+    id,
+    selectedAgent,
+    setSelectedAgent,
+}) => (
+    <AgentIconDiv id={id || "agent-buttons"}>
         <AgentDiv
             enabled={!awaitingResponse}
             id="opp-finder-agent-div"
