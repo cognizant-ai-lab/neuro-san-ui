@@ -4,32 +4,27 @@
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {styled} from "@mui/material"
 import {Alert, Collapse, Tooltip} from "antd"
-import {jsonrepair} from "jsonrepair"
-import {capitalize} from "lodash"
 import NextImage from "next/image"
 import {CSSProperties, FormEvent, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
-import {BsDatabaseAdd, BsStopBtn, BsTrash} from "react-icons/bs"
-import {FaArrowRightLong} from "react-icons/fa6"
+import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
-import {LuBrainCircuit} from "react-icons/lu"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
-import {RiMenuSearchLine} from "react-icons/ri"
-import {TfiPencilAlt} from "react-icons/tfi"
-import ReactMarkdown from "react-markdown"
 import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
-import SyntaxHighlighter from "react-syntax-highlighter"
 import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
-import rehypeRaw from "rehype-raw"
-import rehypeSlug from "rehype-slug"
 
+import {AgentButtons} from "./Agentbuttons"
+import {pollForLogs} from "./AgentChatHandling"
+import {experimentGeneratedMessage} from "./common"
+import {INLINE_ALERT_PROPERTIES} from "./const"
+import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {DEFAULT_USER_IMAGE, MaximumBlue} from "../../../const"
-import {getLogs, sendChatQuery} from "../../../controller/agent/agent"
+import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
-import {AgentStatus, ChatResponse, LogsResponse} from "../../../generated/agent"
+import {AgentStatus, ChatResponse} from "../../../generated/agent"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
@@ -37,20 +32,8 @@ import {hasOnlyWhitespace} from "../../../utils/text"
 const {Panel} = Collapse
 
 // #region: Constants
-// Regex to extract project and experiment IDs from agent response
-const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
-
-// Regex to extract error and traceback from agent response
-const AGENT_ERROR_REGEX = /assistant:\s*\{\s*"error": "(?<error>[^"]+)",\s*"traceback":\s*"(?<traceback>[^"]+)"\}/u
-
 // Interval for polling the agents for logs
 const AGENT_POLL_INTERVAL_MS = 5_000
-
-// Maximum inactivity time since last agent response before we give up
-const MAX_AGENT_INACTIVITY_SECS = 2 * 60
-
-// How many times to retry the entire orchestration process
-const MAX_ORCHESTRATION_ATTEMPTS = 3
 
 // Input text placeholders for each agent type
 const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
@@ -59,40 +42,16 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
     DataGenerator: "Generate 1500 rows",
     OrchestrationAgent: "Generate the experiment",
 }
-
-// Delimiter for separating logs from agents
-const LOGS_DELIMITER = ">>>"
-
-// Standard properties for inline alerts
-const INLINE_ALERT_PROPERTIES = {
-    style: {
-        fontSize: "large",
-        marginBottom: "1rem",
-    },
-    showIcon: true,
-    closable: false,
-}
-
-// Icon sizes
-const AGENT_ICON_SIZE = 60
-const ARROW_SIZE = 65
 // #endregion: Constants
 
 // #region: Styled Components
-const AgentIconDiv = styled("div")({
-    alignItems: "center",
-    display: "flex",
-    fontSize: "0.85rem",
-    height: "100%",
-    justifyContent: "space-evenly",
-    marginTop: "2rem",
-    marginBottom: "2rem",
-    marginLeft: "6rem",
-    marginRight: "6rem",
-})
-
-const AgentDiv = styled("div")({
-    cursor: "pointer",
+const UserQuery = styled("div")({
+    display: "inline-flex",
+    borderRadius: "10px",
+    backgroundColor: "#fff",
+    padding: "10px",
+    marginLeft: "10px",
+    verticalAlign: "bottom",
 })
 // #endregion: Styled Components
 
@@ -172,13 +131,13 @@ export function OpportunityFinder(): ReactElement {
     const sessionId = useRef<string>(null)
 
     // For newly created project/experiment URL
-    const projectUrl = useRef<string>(null)
+    const projectUrl = useRef<URL | null>(null)
 
     // To track time of last new logs from agents
     const lastLogTime = useRef<number | null>(null)
 
     // ID for log polling interval timer
-    const logPollingIntervalId = useRef<number | null>(null)
+    const logPollingIntervalId = useRef<ReturnType<typeof setInterval> | null>(null)
 
     // dynamic import syntax highlighter style based on selected theme
     const highlighterTheme = HLJS_THEMES.includes(selectedTheme)
@@ -218,325 +177,49 @@ export function OpportunityFinder(): ReactElement {
         }
     }, [chatOutput])
 
-    /**
-     * Get the formatted output for a given string. The string is assumed to be in markdown format.
-     * @param stringToFormat The string to format.
-     * @returns The formatted markdown.
-     */
-    const getFormattedMarkdown = (stringToFormat: string): JSX.Element => (
-        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        <ReactMarkdown
-            rehypePlugins={[rehypeRaw, rehypeSlug]}
-            components={{
-                code(props) {
-                    const {children, className, ...rest} = props
-                    const match = /language-(?<language>\w+)/u.exec(className || "")
-                    return match ? (
-                        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                        <SyntaxHighlighter
-                            id={`syntax-highlighter-${match.groups.language}`}
-                            PreTag="div"
-                            language={match.groups.language}
-                            style={highlighterTheme}
-                        >
-                            {String(children).replace(/\n$/u, "")}
-                        </SyntaxHighlighter>
-                    ) : (
-                        <code
-                            id={`code-${className}`}
-                            {...rest}
-                            className={className}
-                        >
-                            {children}
-                        </code>
-                    )
-                },
-                // Handle links specially since we want them to open in a new tab
-                a({...props}) {
-                    return (
-                        <a
-                            {...props}
-                            id="reference-link"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {props.children}
-                        </a>
-                    )
-                },
-            }}
-        >
-            {stringToFormat}
-        </ReactMarkdown>
-    )
-
-    /**
-     * Format the output to ensure that text nodes are formatted as markdown but other nodes are passed along as-is
-     * @param nodesList The list of nodes to format
-     * @returns The formatted output. Consecutive string nodes will be aggregated and wrapped in a markdown component,
-     * while other nodes will be passed along as-is.
-     */
-    const formatOutput = (nodesList: ReactNode[]): ReactNode[] => {
-        const formattedOutput: ReactNode[] = []
-        let currentTextNodes: string[] = []
-        for (const node of nodesList) {
-            if (typeof node === "string") {
-                currentTextNodes.push(node)
-            } else {
-                if (currentTextNodes.length > 0) {
-                    formattedOutput.push(getFormattedMarkdown(currentTextNodes.join("")))
-                    currentTextNodes = []
-                }
-
-                // Not a string node. Add the node as-is
-                formattedOutput.push(node)
-            }
-        }
-
-        // Process any remaining text nodes
-        if (currentTextNodes.length > 0) {
-            formattedOutput.push(getFormattedMarkdown(currentTextNodes.join("")))
-        }
-
-        return formattedOutput
+    async function pollAgent() {
+        await pollForLogs(
+            currentUser,
+            sessionId.current,
+            {
+                lastLogIndex: lastLogIndexRef.current,
+                setLastLogIndex: (index) => (lastLogIndexRef.current = index),
+                lastLogTime: lastLogTime.current,
+                setLastLogTime: (time) => (lastLogTime.current = time),
+            },
+            {
+                orchestrationAttemptNumber: orchestrationAttemptNumber.current,
+                initiateOrchestration,
+                endOrchestration,
+            },
+            {
+                isAwaitingLlm: isAwaitingLlmRef.current,
+                setIsAwaitingLlm,
+                signal: controller.current?.signal,
+            },
+            (url) => (projectUrl.current = url),
+            updateOutput,
+            highlighterTheme
+        )
     }
 
-    /**
-     * Retry the orchestration process. If we haven't exceeded the maximum number of retries, we'll try again.
-     * Issue an appropriate warning or error to the user depending on whether we're retrying or giving up.
-     * @param retryMessage The message to display to the user when retrying
-     * @param failureMessage The message to display to the user when giving up
-     * @returns Nothing, but updates the output window and ends the orchestration process if we've exceeded the maximum
-     */
-    const retry: (retryMessage: string, failureMessage: string) => Promise<void> = async (
-        retryMessage: string,
-        failureMessage: string
-    ) => {
-        if (orchestrationAttemptNumber.current < MAX_ORCHESTRATION_ATTEMPTS) {
-            updateOutput(
-                <>
-                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <Alert
-                        {...INLINE_ALERT_PROPERTIES}
-                        type="warning"
-                        description={retryMessage}
-                    />
-                </>
-            )
-
-            // try again
-            endOrchestration()
-            await initiateOrchestration(true)
-        } else {
-            updateOutput(
-                <>
-                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <Alert
-                        {...INLINE_ALERT_PROPERTIES}
-                        type="error"
-                        description={failureMessage}
-                    />
-                </>
-            )
-            endOrchestration()
-        }
-    }
-
-    /**
-     * Generate the message to display to the user when the experiment has been generated.
-     */
-    const experimentGeneratedMessage: () => JSX.Element = () => (
-        <>
-            Your new experiment has been generated. Click{" "}
-            <a
-                id="new-project-link"
-                target="_blank"
-                href={projectUrl.current}
-                rel="noreferrer"
-            >
-                here
-            </a>{" "}
-            to view it.
-        </>
-    )
-
+    // Poll the agent for logs when the Orchestration Agent is being used
     useEffect(() => {
-        // Poll the agent for logs when the Orchestration Agent is being used
-        function pollAgent() {
-            // Kick off the polling process
-            logPollingIntervalId.current = setInterval(async () => {
-                if (isAwaitingLlmRef.current) {
-                    // Already a request in progress
-                    return
-                }
-
-                // Poll the agent for logs
-                try {
-                    // Set "busy" flag
-                    setIsAwaitingLlm(true)
-
-                    const response: LogsResponse = await getLogs(
-                        sessionId.current,
-                        controller?.current?.signal,
-                        currentUser
-                    )
-
-                    // Check status from agents
-                    // Any status other than "FOUND" means something went wrong
-                    if (response.status !== AgentStatus.FOUND) {
-                        const baseMessage = "Error occurred: session not found."
-                        await retry(
-                            `${baseMessage} Retrying...`,
-                            `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                        )
-
-                        return
-                    }
-
-                    // Check for new logs
-                    const hasNewLogs = response?.logs?.length > 0 && response.logs.length > lastLogIndexRef.current + 1
-                    if (hasNewLogs) {
-                        // Get new logs
-                        const newLogs = response.logs.slice(lastLogIndexRef.current + 1)
-
-                        // Update last log time
-                        lastLogTime.current = Date.now()
-
-                        // Update last log index
-                        lastLogIndexRef.current = response.logs.length - 1
-
-                        // Process new logs and display summaries to user
-                        for (const logLine of newLogs) {
-                            // extract the part of the line only up to LOGS_DELIMITER
-                            const logLineElements = logLine.split(LOGS_DELIMITER)
-
-                            const logLineSummary = logLineElements[0]
-                            const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
-
-                            const logLineDetails = logLineElements[1]
-
-                            let repairedJson: string | object = null
-
-                            try {
-                                // Attempt to parse as JSON
-
-                                // First, repair it
-                                repairedJson = jsonrepair(logLineDetails)
-
-                                // Now try to parse it
-                                repairedJson = JSON.parse(repairedJson)
-                            } catch (e) {
-                                // Not valid JSON
-                                repairedJson = null
-                            }
-
-                            updateOutput(
-                                <>
-                                    {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                                    <Collapse>
-                                        <Panel
-                                            id={`${summarySentenceCase}-panel`}
-                                            header={summarySentenceCase}
-                                            key={summarySentenceCase}
-                                            style={{fontSize: "large"}}
-                                        >
-                                            <p id={`${summarySentenceCase}-details`}>
-                                                {/*If we managed to parse it as JSON, pretty print it*/}
-                                                {repairedJson ? (
-                                                    <SyntaxHighlighter
-                                                        id="syntax-highlighter"
-                                                        language="json"
-                                                        style={highlighterTheme}
-                                                        showLineNumbers={false}
-                                                        wrapLines={true}
-                                                    >
-                                                        {JSON.stringify(repairedJson, null, 2)}
-                                                    </SyntaxHighlighter>
-                                                ) : (
-                                                    logLineDetails || "No further details"
-                                                )}
-                                            </p>
-                                        </Panel>
-                                    </Collapse>
-                                    <br id={`${summarySentenceCase}-br`} />
-                                </>
-                            )
-                        }
-                    } else {
-                        // No new logs, check if it's been too long since last log
-                        const timeSinceLastLog = Date.now() - lastLogTime.current
-                        const isTimeout = lastLogTime.current && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
-                        if (isTimeout) {
-                            const baseMessage = "Error occurred: exceeded wait time for agent response."
-                            await retry(
-                                `${baseMessage} Retrying...`,
-                                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                            )
-                            return
-                        }
-                    }
-
-                    if (response.chatResponse) {
-                        // Check for error
-                        const errorMatches = AGENT_ERROR_REGEX.exec(response.chatResponse)
-                        if (errorMatches) {
-                            const baseMessage =
-                                `Error occurred: ${errorMatches.groups.error}. ` +
-                                `Traceback: ${errorMatches.groups.traceback}`
-                            await retry(
-                                `${baseMessage} Retrying...`,
-                                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`
-                            )
-
-                            return
-                        }
-
-                        // Check for completion of orchestration by checking if response contains project info
-                        const matches = AGENT_RESULT_REGEX.exec(response.chatResponse)
-
-                        if (matches) {
-                            // Build the URl and set it in state so the notification will be displayed
-                            const projectId = matches.groups.projectId
-                            const experimentId = matches.groups.experimentId
-
-                            projectUrl.current = `/projects/${projectId}/experiments/${experimentId}/?generated=true`
-
-                            // We found the agent completion message
-                            updateOutput(
-                                <>
-                                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                                    <Collapse>
-                                        <Panel
-                                            id="experiment-generation-complete-panel"
-                                            header="Experiment generation complete"
-                                            key="Experiment generation complete"
-                                            style={{fontSize: "large"}}
-                                        >
-                                            <p id="experiment-generation-complete-details">
-                                                {experimentGeneratedMessage()}
-                                            </p>
-                                        </Panel>
-                                    </Collapse>
-                                    <br id="experiment-generation-complete-br" />
-                                </>
-                            )
-                            endOrchestration()
-                        }
-                    }
-                } finally {
-                    setIsAwaitingLlm(false)
-                }
-            }, AGENT_POLL_INTERVAL_MS) as unknown as number
-
-            // Cleanup function to clear the interval
-            return () => clearInterval(logPollingIntervalId.current)
-        }
-
         if (sessionId.current) {
             // We have a session ID, so we're in the orchestration process. Start polling the agents for logs.
             // Set last log time to now() to have something to compare to when we start polling for logs
             lastLogTime.current = Date.now()
-            return pollAgent()
+
+            // Kick off the polling process
+            logPollingIntervalId.current = setInterval(pollAgent, AGENT_POLL_INTERVAL_MS)
+
+            // Cleanup function to clear the interval
+            return () => {
+                if (logPollingIntervalId.current) {
+                    clearInterval(logPollingIntervalId.current)
+                    logPollingIntervalId.current = null
+                }
+            }
         } else {
             return undefined
         }
@@ -576,9 +259,10 @@ export function OpportunityFinder(): ReactElement {
         currentResponse.current = ""
     }
 
-    const renderUserImageAndQuery = (userQuery: string): ReactElement => {
-        const UserImage = (
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+    const getUserImageAndUserQuery = (userQuery: string): ReactElement => (
+        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+        <div className="mb-4">
+            { /* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */ }
             <div className="inline-flex">
                 <NextImage
                     id="user-image"
@@ -590,23 +274,10 @@ export function OpportunityFinder(): ReactElement {
                     unoptimized={true}
                 />
             </div>
-        )
-
-        const UserQuery = (
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-            <div className="user-query">{userQuery}</div>
-        )
-
-        const UserImageAndQuery = (
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-            <div className="mb-4">
-                {UserImage}
-                {UserQuery}
-            </div>
-        )
-
-        return UserImageAndQuery
-    }
+            { /* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */ }
+            <UserQuery>{userQuery}</UserQuery>
+        </div>
+    )
 
     // Sends user query to backend.
     async function sendQuery(userQuery: string) {
@@ -620,7 +291,7 @@ export function OpportunityFinder(): ReactElement {
 
             // Always start output by echoing user query. Precede with a horizontal rule if there is already content.
             updateOutput(`${chatOutput?.length > 0 ? "\n---\n" : ""}##### Query\n`)
-            updateOutput(renderUserImageAndQuery(userQuery))
+            updateOutput(getUserImageAndUserQuery(userQuery))
             updateOutput("\n\n##### Response\n")
 
             const abortController = new AbortController()
@@ -717,24 +388,6 @@ export function OpportunityFinder(): ReactElement {
     const disableClearChatButton = awaitingResponse || chatOutput.length === 0
 
     /**
-     * Get the class name for the agent button.
-     * @param agentType The agent type, eg. "OpportunityFinder"
-     * @returns The class name for the agent button
-     */
-    function getClassName(agentType: OpportunityFinderRequestType) {
-        return `opp-finder-agent-div${selectedAgent === agentType ? " selected" : ""}`
-    }
-
-    function getAgentButtonStyle(isEnabled: boolean): CSSProperties {
-        return {
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            opacity: isEnabled ? 1 : 0.5,
-        }
-    }
-
-    /**
      * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
      *
@@ -815,96 +468,7 @@ export function OpportunityFinder(): ReactElement {
         }
     }
 
-    /**
-     * Generate the agent buttons
-     * @returns A div containing the agent buttons
-     */
-    function getAgentButtons() {
-        const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
-
-        return (
-            <AgentIconDiv id="agent-icons-div">
-                <AgentDiv
-                    id="opp-finder-agent-div"
-                    style={getAgentButtonStyle(!awaitingResponse)}
-                    onClick={() => !awaitingResponse && setSelectedAgent("OpportunityFinder")}
-                    className={getClassName("OpportunityFinder")}
-                >
-                    <RiMenuSearchLine
-                        className="agent-icon"
-                        id="opp-finder-agent-icon"
-                        size={AGENT_ICON_SIZE}
-                    />
-                    Opportunity Finder
-                </AgentDiv>
-                <FaArrowRightLong
-                    id="arrow1"
-                    size={ARROW_SIZE}
-                    color="var(--bs-primary)"
-                />
-                <AgentDiv
-                    id="scoping-agent-div"
-                    style={getAgentButtonStyle(!awaitingResponse)}
-                    onClick={() => !awaitingResponse && setSelectedAgent("ScopingAgent")}
-                    className={getClassName("ScopingAgent")}
-                >
-                    <TfiPencilAlt
-                        className="agent-icon"
-                        id="scoping-agent-icon"
-                        size={AGENT_ICON_SIZE}
-                    />
-                    Scoping Agent
-                </AgentDiv>
-                <FaArrowRightLong
-                    id="arrow2"
-                    size={ARROW_SIZE}
-                    color="var(--bs-primary)"
-                />
-                <AgentDiv
-                    id="opp-finder-agent-div"
-                    style={getAgentButtonStyle(!awaitingResponse)}
-                    onClick={() => !awaitingResponse && setSelectedAgent("DataGenerator")}
-                    className={getClassName("DataGenerator")}
-                >
-                    <BsDatabaseAdd
-                        className="agent-icon"
-                        id="db-agent-icon"
-                        size={AGENT_ICON_SIZE}
-                    />
-                    Data Generator
-                </AgentDiv>
-                <FaArrowRightLong
-                    id="arrow3"
-                    size={ARROW_SIZE}
-                    color="var(--bs-primary)"
-                />
-                <Tooltip
-                    id="orchestration-tooltip"
-                    title={enableOrchestration ? undefined : "Please complete the previous steps first"}
-                    style={getAgentButtonStyle(enableOrchestration)}
-                >
-                    <div
-                        id="orchestration-agent-div"
-                        style={{...getAgentButtonStyle(enableOrchestration)}}
-                        onClick={() => enableOrchestration && setSelectedAgent("OrchestrationAgent")}
-                        className={getClassName("OrchestrationAgent")}
-                    >
-                        <LuBrainCircuit
-                            id="db-agent-icon"
-                            size={AGENT_ICON_SIZE}
-                            style={{marginBottom: "10px"}}
-                        />
-                        <div
-                            id="orchestration-agent-text"
-                            style={{textAlign: "center"}}
-                        >
-                            Orchestrator
-                        </div>
-                    </div>
-                </Tooltip>
-            </AgentIconDiv>
-        )
-    }
+    const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
 
     // Render the component
     return (
@@ -917,7 +481,13 @@ export function OpportunityFinder(): ReactElement {
             }}
             style={{marginBottom: "6rem", paddingBottom: "15px"}}
         >
-            {getAgentButtons()}
+            <AgentButtons
+                id="opp-finder-agent-buttons"
+                enableOrchestration={enableOrchestration}
+                awaitingResponse={awaitingResponse}
+                selectedAgent={selectedAgent}
+                setSelectedAgent={setSelectedAgent}
+            />
             <Form.Group
                 id="select-theme-group"
                 style={{fontSize: "18px", margin: "10px", position: "relative"}}
@@ -955,7 +525,7 @@ export function OpportunityFinder(): ReactElement {
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                 <Alert
                     type="success"
-                    message={experimentGeneratedMessage()}
+                    message={experimentGeneratedMessage(projectUrl.current)}
                     style={{fontSize: "large", margin: "10px", marginTop: "20px", marginBottom: "20px"}}
                     showIcon={true}
                     closable={true}
@@ -1033,9 +603,15 @@ export function OpportunityFinder(): ReactElement {
                         }}
                         tabIndex={-1}
                     >
-                        {chatOutput && chatOutput.length > 0
-                            ? formatOutput(chatOutput)
-                            : "(Agent output will appear here)"}
+                        {chatOutput && chatOutput.length > 0 ? (
+                            <FormattedMarkdown
+                                id="formatted-markdown"
+                                nodesList={chatOutput}
+                                style={highlighterTheme}
+                            />
+                        ) : (
+                            "(Agent output will appear here)"
+                        )}
                         {awaitingResponse && (
                             <div
                                 id="awaitingOutputContainer"

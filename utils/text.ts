@@ -2,6 +2,8 @@
  * For text processing utility functions
  */
 
+import {createHash} from "crypto"
+
 /**
  * Tests if input contains only whitespace (meaning, not a valid query)
  *
@@ -12,7 +14,6 @@ export function hasOnlyWhitespace(input: string) {
     return input?.trim().length === 0
 }
 
-/* eslint-disable max-len */
 /**
  * Extracts the ID from a model ID
  *
@@ -22,10 +23,10 @@ export function hasOnlyWhitespace(input: string) {
 
  * @example
  * ```
- * removeLast("prescriptor-67fb86d3-9047-4ce0-0d42-4e3d3b0f715e-83_28", "prescriptor") = "67fb86d3-9047-4ce0-0d42-4e3d3b0f715e"
+ * removeLast("prescriptor-67fb86d3-9047-4ce0-0d42-4e3d3b0f715e-83_28", "prescriptor")
+ *  = "67fb86d3-9047-4ce0-0d42-4e3d3b0f715e"
  * ```
  */
-/* eslint-enable max-len */
 export function extractId(modelId: string, modelType: "prescriptor" | "rio"): string {
     if (!modelId || !modelType || !modelId.includes(modelType)) {
         return ""
@@ -37,4 +38,17 @@ export function extractId(modelId: string, modelType: "prescriptor" | "rio"): st
         .split("-")     // split by hyphens
         .slice(0, -1)   // remove the last element
         .join("-") // join with hyphens
+}
+
+/**
+ * Hashes a string using MD5. For example: for generating keys for React nodes from a longer string identifer.
+ *
+ * @param input String to be hashed
+ * @returns Hashed string
+ */
+export const hashString = (input: string): string => {
+    // prettier-ignore
+    return createHash("md5")
+        .update(input)
+        .digest("hex")
 }

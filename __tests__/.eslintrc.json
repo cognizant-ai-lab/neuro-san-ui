@@ -2,7 +2,7 @@
 
 {
     "plugins": ["jest-dom", "testing-library"],
-    "extends": ["plugin:jest-dom/recommended", "plugin:testing-library/react"],
+    "extends": ["../.eslintrc.json", "plugin:jest-dom/recommended", "plugin:testing-library/react"],
     "rules": {
         "enforce-ids-in-jsx/missing-ids": "off",
         "testing-library/await-async-queries": "error",
@@ -13,6 +13,10 @@
 
         // Sorry testing-library: these are too useful to disable.
         "testing-library/no-node-access": "off",
-        "testing-library/no-container": "off"
+        "testing-library/no-container": "off",
+
+        // Don't care about these rules in tests
+        "react/no-array-index-key": "off",
+        "react/display-name": "off"
     }
 }

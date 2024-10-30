@@ -94,4 +94,5 @@ jest.mock("next/config", () => () => ({
 // See: https://github.com/jsdom/jsdom/issues/3363
 global.structuredClone = (val) => JSON.parse(JSON.stringify(val))
 
+// Make tests fail if any output is sent to the console
 failOnConsole({shouldFailOnAssert: true, shouldFailOnDebug: true})
