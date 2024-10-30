@@ -2,7 +2,7 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import { styled } from "@mui/material"
+import {styled} from "@mui/material"
 import {Alert, Collapse, Tooltip} from "antd"
 import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
@@ -164,10 +164,7 @@ export function OpportunityFinder(): ReactElement {
 
     // For access to logged in session and current user name
     const {
-        user: {
-            image: userImage,
-            name: currentUser,
-        },
+        user: {image: userImage, name: currentUser},
     } = useAuthentication().data
 
     // Session ID for orchestration. We also use this as an overall "orchestration is in process" flag. If we have a
@@ -597,14 +594,12 @@ export function OpportunityFinder(): ReactElement {
 
         const UserQuery = (
             // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-            <div className="user-query">
-                {userQuery}
-            </div>
+            <div className="user-query">{userQuery}</div>
         )
 
         const UserImageAndQuery = (
             // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-            <div className='mb-4'>
+            <div className="mb-4">
                 {UserImage}
                 {UserQuery}
             </div>
@@ -828,9 +823,7 @@ export function OpportunityFinder(): ReactElement {
         const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
 
         return (
-            <AgentIconDiv
-                id="agent-icons-div"
-            >
+            <AgentIconDiv id="agent-icons-div">
                 <AgentDiv
                     id="opp-finder-agent-div"
                     style={getAgentButtonStyle(!awaitingResponse)}

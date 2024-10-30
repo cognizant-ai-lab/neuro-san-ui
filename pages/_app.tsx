@@ -266,9 +266,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
 
                     <Container id="body-container">
                         {getAppContainer()}
-                        <div
-                            id="fixed-pos-div"
-                        >
+                        <div id="fixed-pos-div">
                             <NeuroAIChatbot
                                 id="chatbot"
                                 userAvatar={picture || undefined}

@@ -1,7 +1,7 @@
 import {Tooltip} from "antd"
 import {InfoSignIcon} from "evergreen-ui"
 
-import {MaximumBlue} from "../const";
+import {MaximumBlue} from "../const"
 
 interface InfoTipParams {
     // Prefix to be used for nested component IDs
