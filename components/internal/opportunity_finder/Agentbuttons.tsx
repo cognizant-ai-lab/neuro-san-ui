@@ -70,6 +70,7 @@ export const AgentButtons: React.FC<AgentButtonsProps> = ({
     selectedAgent,
     setSelectedAgent,
 }) => (
+    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
     <AgentIconDiv id={id || "agent-buttons"}>
         <AgentDiv
             enabled={!awaitingResponse}
