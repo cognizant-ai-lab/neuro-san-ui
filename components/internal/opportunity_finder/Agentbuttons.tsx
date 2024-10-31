@@ -21,7 +21,7 @@ interface AgentButtonsProps {
 
 // #region: Constants
 // Icon sizes
-const AGENT_ICON_SIZE = 65
+const AGENT_ICON_SIZE = 70
 const ARROW_SIZE = 65
 // #endregion: Constants
 
