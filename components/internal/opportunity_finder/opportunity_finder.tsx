@@ -562,7 +562,8 @@ export function OpportunityFinder(): ReactElement {
                     { isDataGenerator && (
                         <Tooltip
                             id="enable-code-json-theme-dropdown"
-                            title={codeJsonThemeEnabled ? "Customize code/JSON theme enabled" : "Customize code/JSON theme disabled"}
+                            title={codeJsonThemeEnabled ?
+                                "Customize code/JSON theme enabled" : "Customize code/JSON theme disabled"}
                         >
                             <LLMChatGroupConfigBtn
                                 enabled={codeJsonThemeEnabled}
