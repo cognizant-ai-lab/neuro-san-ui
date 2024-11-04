@@ -46,9 +46,10 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
 
 // #region: Styled Components
 const UserQueryContainer = styled("div")({
-    display: "inline-flex",
-    borderRadius: "8px",
     backgroundColor: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.15)",
+    display: "inline-flex",
     padding: "10px",
     verticalAlign: "bottom",
 })
@@ -279,7 +280,7 @@ export function OpportunityFinder(): ReactElement {
 
     const getUserImageAndUserQuery = (userQuery: string): ReactElement => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        <div className="mb-4">
+        <div className="mb-3">
             {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
             <UserQueryContainer>
                 <NextImage
