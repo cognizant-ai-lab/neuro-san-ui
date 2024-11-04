@@ -126,7 +126,7 @@ export function OpportunityFinder(): ReactElement {
     const controller = useRef<AbortController>(null)
 
     // A button allows the user to enable or disable the "Code/JSON theme" dropdown.
-    const [codeJsonThemeEnabled, setCodeJsonThemeEnabled] = useState<boolean>(false)
+    const [codeJsonThemeEnabled, setCodeJsonThemeEnabled] = useState<boolean>(true)
 
     // For tracking if we're autoscrolling. A button allows the user to enable or disable autoscrolling.
     const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
