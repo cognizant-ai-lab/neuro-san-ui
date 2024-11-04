@@ -50,7 +50,6 @@ const UserQueryContainer = styled("div")({
     borderRadius: "8px",
     backgroundColor: "#fff",
     padding: "10px",
-    marginLeft: "10px",
     verticalAlign: "bottom",
 })
 
