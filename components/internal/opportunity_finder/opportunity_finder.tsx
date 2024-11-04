@@ -287,7 +287,12 @@ export function OpportunityFinder(): ReactElement {
                     alt=""
                     unoptimized={true}
                 />
-                <span id="user-query" className="ml-2.5 mt-0.5">{userQuery}</span>
+                <span
+                    id="user-query"
+                    className="ml-2.5 mt-0.5"
+                >
+                    {userQuery}
+                </span>
             </UserQueryContainer>
         </div>
     )
