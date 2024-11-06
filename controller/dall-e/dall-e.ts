@@ -10,7 +10,7 @@ export async function sendDalleQuery(userQuery: string) {
             Accept: "application/json",
             "Content-Type": "application/json",
         },
-        body: userQuery,
+        body: JSON.stringify({ userQuery: userQuery.replaceAll('\n', '') }),
     })
 
     // Check if the request was successful
