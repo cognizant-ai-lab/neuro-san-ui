@@ -28,6 +28,7 @@ import {AgentStatus, ChatResponse} from "../../../generated/agent"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
+import {getTitleBase} from "../../../utils/title"
 
 const {Panel} = Collapse
 
@@ -180,6 +181,8 @@ export function OpportunityFinder(): ReactElement {
     }, [autoScrollEnabled])
 
     useEffect(() => {
+        document.title = `${getTitleBase()} | Opportunity Finder`
+
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
     }, [])

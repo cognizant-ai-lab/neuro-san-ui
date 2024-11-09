@@ -106,7 +106,7 @@
         "autoprefixer": "10.4.17",
         "depcheck": "1.4.7",
         "eslint": "8.56.0",
-        "eslint-config-next": "14.0.4",
+        "eslint-config-next": "14.2.10",
         "eslint-config-prettier": "9.1.0",
         "eslint-formatter-summary": "1.1.0",
         "eslint-import-resolver-typescript": "3.6.1",
