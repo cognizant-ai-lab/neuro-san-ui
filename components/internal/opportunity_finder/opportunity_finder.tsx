@@ -32,6 +32,13 @@ import {getTitleBase} from "../../../utils/title"
 
 const {Panel} = Collapse
 
+// #region: Types
+type LLMChatGroupConfigBtnProps = {
+    enabled: boolean
+    posRight: number
+}
+// #endregion: Types
+
 // #region: Constants
 // Interval for polling the agents for logs
 const AGENT_POLL_INTERVAL_MS = 5_000
@@ -54,13 +61,15 @@ const UserQueryContainer = styled("div")({
     padding: "10px",
 })
 
-const LLMChatGroupConfigBtn = styled(Button)(({enabled, posRight}) => ({
+const LLMChatGroupConfigBtn = styled(Button, {
+    shouldForwardProp: (prop) => prop !== "enabled" && prop !== "posRight",
+})<LLMChatGroupConfigBtnProps>(({enabled, posRight}) => ({
     position: "absolute",
     right: posRight || null,
     top: 10,
     zIndex: 99999,
-    background: enabled ? MaximumBlue : "darkgray",
-    borderColor: enabled ? MaximumBlue : "darkgray",
+    background: `${enabled ? MaximumBlue : "darkgray"} !important`,
+    borderColor: `${enabled ? MaximumBlue : "darkgray"} !important`,
     color: "white",
 }))
 // #endregion: Styled Components
@@ -570,7 +579,7 @@ export function OpportunityFinder(): ReactElement {
                         >
                             <LLMChatGroupConfigBtn
                                 enabled={codeJsonThemeEnabled}
-                                id="autoscroll-button"
+                                id="autoscroll-code-json-theme"
                                 onClick={() => setCodeJsonThemeEnabled(!codeJsonThemeEnabled)}
                                 posRight={120}
                             >
