@@ -68,8 +68,8 @@ const LLMChatGroupConfigBtn = styled(Button, {
     right: posRight || null,
     top: 10,
     zIndex: 99999,
-    background: enabled ? MaximumBlue : "darkgray",
-    borderColor: enabled ? MaximumBlue : "darkgray",
+    background: `${enabled ? MaximumBlue : "darkgray"} !important`,
+    borderColor: `${enabled ? MaximumBlue : "darkgray"} !important`,
     color: "white",
 }))
 // #endregion: Styled Components
