@@ -36,11 +36,11 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({onClose, isOpen, 
             const {
                 response: {imageURL},
             } = await sendDalleQuery(userQuery)
-            setIsLoading(false)
             setMockupURL(imageURL)
+            setIsLoading(false)
         } catch (error) {
             // log error to console
-            // TODO: Check that error handling is working
+            // TODO: Check that error handling is working and surface error to user
             console.error(error)
             setIsLoading(false)
         }
