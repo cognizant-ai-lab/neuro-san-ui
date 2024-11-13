@@ -66,7 +66,6 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({onClose, isOpen, 
                     mockupURL && (
                         <NextImage
                             alt="UI Mockup Image from Dall-e"
-                            className={!mockupURL ? "hidden" : null}
                             height={500}
                             id="ui-mockup"
                             src={mockupURL}
