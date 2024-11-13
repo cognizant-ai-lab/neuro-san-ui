@@ -54,7 +54,9 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({onClose, isOpen, 
             sx={{display: "flex", flexDirection: "column", minHeight: "400px", minWidth: "500px"}}
             title="User Interface"
         >
-            <Box sx={{alignItems: "center", display: "flex", flexGrow: "1"}}>
+            <Box // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                sx={{alignItems: "center", display: "flex", flexGrow: "1"}}
+            >
                 {isLoading ? (
                     <CircularProgress
                         id="ui-mockup-loader"
@@ -71,7 +73,9 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({onClose, isOpen, 
                     />
                 )}
             </Box>
-            <Box sx={{alignSelf: "flex-end", width: "100%"}}>
+            <Box // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                sx={{alignSelf: "flex-end", width: "100%"}}
+            >
                 <Button
                     id="ui-mockup-btn"
                     onClick={sendUserQueryToDalle}

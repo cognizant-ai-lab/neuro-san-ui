@@ -4,8 +4,9 @@ import {render, screen} from "@testing-library/react"
 
 import {UIMockupGenerator} from "../../components/internal/uiMockupGenerator/UIMockupGenerator"
 
-jest.mock('next/image', () => ({
+jest.mock("next/image", () => ({
     __esModule: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     default: (props: any) => {
         return <img {...props} />
     },

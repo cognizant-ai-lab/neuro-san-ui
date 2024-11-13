@@ -36,6 +36,11 @@ export const MUIDialog: React.FC<DialogProps> = ({children, id, onClose, isOpen,
         >
             <CloseIcon id={`${id}-close-icon`} />
         </IconButton>
-        <DialogContent id={`${id}-content`} sx={sx}>{children}</DialogContent>
+        <DialogContent
+            id={`${id}-content`}
+            sx={sx}
+        >
+            {children}
+        </DialogContent>
     </Dialog>
 )

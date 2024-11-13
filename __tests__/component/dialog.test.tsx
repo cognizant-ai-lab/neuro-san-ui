@@ -35,7 +35,7 @@ describe("Dialog", () => {
             </MUIDialog>
         )
 
-        expect(screen.queryByText("Dialog Test")).toBeNull()
-        expect(screen.queryByText("Dialog Body")).toBeNull()
+        expect(screen.queryByText("Dialog Test")).not.toBeInTheDocument()
+        expect(screen.queryByText("Dialog Body")).not.toBeInTheDocument()
     })
 })
