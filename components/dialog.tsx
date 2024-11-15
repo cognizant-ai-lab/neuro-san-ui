@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton"
 // #region: Types
 interface DialogProps {
     children: React.ReactNode
+    className?: string
     id: string
     isOpen: boolean
     onClose: () => void
@@ -16,11 +17,12 @@ interface DialogProps {
 }
 // #endregion: Types
 
-export const MUIDialog: React.FC<DialogProps> = ({children, id, onClose, isOpen, sx, title}) => (
+export const MUIDialog: React.FC<DialogProps> = ({children, className, id, onClose, isOpen, sx, title}) => (
     <Dialog
         id={id}
         onClose={onClose}
         open={isOpen}
+        className={className}
     >
         <DialogTitle id={`${id}-title`}>{title}</DialogTitle>
         <IconButton
