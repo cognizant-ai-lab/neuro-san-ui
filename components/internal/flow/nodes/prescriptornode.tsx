@@ -1,18 +1,18 @@
-import { Card as BlueprintCard, Elevation } from "@blueprintjs/core"
-import { Tooltip as AntdTooltip, Modal } from "antd"
-import { Tabs, Tab } from '@mui/material'
-import NodePopper from '../../../nodepopper'
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {Tab, Tabs} from "@mui/material"
+import {Tooltip as AntdTooltip, Modal} from "antd"
 import Slider from "rc-slider"
-import { FC, MouseEvent as ReactMouseEvent, useEffect, useState } from "react"
-import { Card, Col, Container, Row } from "react-bootstrap"
-import { AiFillDelete } from "react-icons/ai"
-import { BiPlusMedical } from "react-icons/bi"
-import { GrSettingsOption } from "react-icons/gr"
-import { MdDelete } from "react-icons/md"
-import { Handle, Position as HandlePosition, NodeProps, Node as RFNode } from "reactflow"
+import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
+import {Card, Col, Container, Row} from "react-bootstrap"
+import {AiFillDelete} from "react-icons/ai"
+import {BiPlusMedical} from "react-icons/bi"
+import {GrSettingsOption} from "react-icons/gr"
+import {MdDelete} from "react-icons/md"
+import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
-import { DataTag } from "../../../../generated/metadata"
-import { NotificationType, sendNotification } from "../../../notification"
+import {DataTag} from "../../../../generated/metadata"
+import NodePopper from "../../../nodepopper"
+import {NotificationType, sendNotification} from "../../../notification"
 
 // Define an interface for the structure
 // of the nodes
@@ -58,18 +58,18 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     const data = props.data
 
     // unpack taggedData from props
-    const { taggedData = null } = data
+    const {taggedData = null} = data
 
     // Unpack the mapping
-    const { NodeID, ParentPrescriptorState, SetParentPrescriptorState, DeleteNode, GetElementIndex, readOnlyNode } = data
+    const {NodeID, ParentPrescriptorState, SetParentPrescriptorState, DeleteNode, GetElementIndex, readOnlyNode} = data
 
     const flowIndex = GetElementIndex(NodeID) + 1
     const flowPrefix = `prescriptor-${flowIndex}`
 
     const updateCAOState = (event, espType: string) => {
         // eslint-disable-next-line no-shadow
-        const { name, checked } = event.target
-        const caoStateCopy = { ...ParentPrescriptorState.caoState }
+        const {name, checked} = event.target
+        const caoStateCopy = {...ParentPrescriptorState.caoState}
 
         caoStateCopy[espType][name] = checked
 
@@ -139,7 +139,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 })
             }
 
-            const initializedState = { ...ParentPrescriptorState }
+            const initializedState = {...ParentPrescriptorState}
             initializedState.caoState = CAOState
 
             if (ParentPrescriptorState.network.hidden_layers[0].layer_params.units === 0) {
@@ -236,14 +236,14 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         >
             <h6
                 id={`${flowPrefix}-hidden-layer-${idx}-headline`}
-                style={{ display: "inline" }}
+                style={{display: "inline"}}
             >
                 Hidden Layer {idx + 1}{" "}
             </h6>
             {!readOnlyNode && (
                 <button
                     id={`${flowPrefix}-hidden-layer-${idx}-button`}
-                    style={{ width: "1rem" }}
+                    style={{width: "1rem"}}
                     className="mb-2"
                     type="button"
                     onClick={(event) => {
@@ -251,7 +251,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         if (ParentPrescriptorState.network.hidden_layers.length === 1) {
                             sendNotification(NotificationType.warning, "Last remaining hidden layer cannot be deleted")
                         } else {
-                            const stateCopy = { ...ParentPrescriptorState }
+                            const stateCopy = {...ParentPrescriptorState}
                             stateCopy.network.hidden_layers.splice(idx, 1)
                             SetParentPrescriptorState(stateCopy)
                         }
@@ -287,7 +287,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         value={hiddenLayer.layer_params.units}
                         disabled={readOnlyNode}
                         onChange={(event) => {
-                            const modifiedHiddenLayerState = { ...ParentPrescriptorState }
+                            const modifiedHiddenLayerState = {...ParentPrescriptorState}
                             modifiedHiddenLayerState.network.hidden_layers[idx].layer_params.units = parseInt(
                                 event.target.value
                             )
@@ -308,7 +308,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         value={hiddenLayer.layer_params.activation}
                         disabled={readOnlyNode}
                         onChange={(event) => {
-                            const modifiedHiddenLayerState = { ...ParentPrescriptorState }
+                            const modifiedHiddenLayerState = {...ParentPrescriptorState}
                             modifiedHiddenLayerState.network.hidden_layers[idx].layer_params.activation =
                                 event.target.value
                             SetParentPrescriptorState(modifiedHiddenLayerState)
@@ -341,7 +341,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         checked={hiddenLayer.layer_params.use_bias}
                         disabled={readOnlyNode}
                         onChange={(event) => {
-                            const modifiedHiddenLayerState = { ...ParentPrescriptorState }
+                            const modifiedHiddenLayerState = {...ParentPrescriptorState}
                             modifiedHiddenLayerState.network.hidden_layers[idx].layer_params.use_bias =
                                 event.target.checked
                             SetParentPrescriptorState(modifiedHiddenLayerState)
@@ -382,8 +382,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         value={Number(representationConfig.max_exponent)}
                         disabled={readOnlyNode}
                         marks={{
-                            0: { label: "0" },
-                            9: { label: "9", style: { color: "#53565A" } }, // To prevent end mark from being "grayed out"
+                            0: {label: "0"},
+                            9: {label: "9", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
                         }}
                         handleRender={(node) => {
                             return (
@@ -396,7 +396,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             )
                         }}
                         onChange={(event) => {
-                            const modifiedRulesState = { ...ParentPrescriptorState }
+                            const modifiedRulesState = {...ParentPrescriptorState}
                             modifiedRulesState.representation_config.max_exponent = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
@@ -425,8 +425,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         value={Number(representationConfig.number_of_building_block_conditions)}
                         disabled={readOnlyNode}
                         marks={{
-                            1: { label: "1" },
-                            9: { label: "9", style: { color: "#53565A" } }, // To prevent end mark from being "grayed out"
+                            1: {label: "1"},
+                            9: {label: "9", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
                         }}
                         handleRender={(node) => {
                             return (
@@ -439,7 +439,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             )
                         }}
                         onChange={(event) => {
-                            const modifiedRulesState = { ...ParentPrescriptorState }
+                            const modifiedRulesState = {...ParentPrescriptorState}
                             modifiedRulesState.representation_config.number_of_building_block_conditions = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
@@ -468,8 +468,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         value={Number(representationConfig.number_of_building_block_rules)}
                         disabled={readOnlyNode}
                         marks={{
-                            1: { label: "1" },
-                            99: { label: "99", style: { color: "#53565A" } }, // To prevent end mark from being "grayed out"
+                            1: {label: "1"},
+                            99: {label: "99", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
                         }}
                         handleRender={(node) => {
                             return (
@@ -482,7 +482,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             )
                         }}
                         onChange={(event) => {
-                            const modifiedRulesState = { ...ParentPrescriptorState }
+                            const modifiedRulesState = {...ParentPrescriptorState}
                             modifiedRulesState.representation_config.number_of_building_block_rules = event
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
@@ -554,7 +554,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                 className="float-right"
                                 id={`${flowPrefix}-nn-weights-button`}
                                 onClick={() => {
-                                    const stateCopy = { ...ParentPrescriptorState }
+                                    const stateCopy = {...ParentPrescriptorState}
                                     stateCopy.network.hidden_layers.push({
                                         layer_name: `hidden-${ParentPrescriptorState.network.hidden_layers.length}`,
                                         layer_type: "dense",
@@ -579,7 +579,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         </Card.Body>
     )
 
-    const inputFieldWidth = { width: "32ch" }
+    const inputFieldWidth = {width: "32ch"}
 
     // Create the configuration Panel
     const evolutionConfigurationPanel = (
@@ -951,12 +951,12 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             id={flowPrefix}
             interactive={true}
             elevation={Elevation.TWO}
-            style={{ padding: 0, width: "10rem", height: "4rem" }}
+            style={{padding: 0, width: "10rem", height: "4rem"}}
         >
             <Card
                 id={`${flowPrefix}-card-1`}
                 border="warning"
-                style={{ height: "100%" }}
+                style={{height: "100%"}}
                 onScroll={(event) => {
                     event.stopPropagation()
                 }}
@@ -980,17 +980,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             event.stopPropagation()
                         }}
                     >
-                        <NodePopper
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             buttonProps={{
-                                id:`${flowPrefix}-gr-settings-button`,
-                                className:"mt-1",
-                                style:{height: 0},
-                                btnContent:<GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />
+                                id: `${flowPrefix}-gr-settings-button`,
+                                className: "mt-1",
+                                style: {height: 0},
+                                btnContent: <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />,
                             }}
                             popperProps={{
-                                id:`${flowPrefix}-gr-settings-popper`,
-                                className:"rounded-sm shadow-2xl",
-                                style: {backgroundColor: "ghostwhite"}
+                                id: `${flowPrefix}-gr-settings-popper`,
+                                className: "rounded-sm shadow-2xl",
+                                style: {backgroundColor: "ghostwhite"},
                             }}
                         >
                             <>
@@ -1001,7 +1001,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                     sx={{
                                         marginBottom: "16px",
                                         flexBasis: "240px",
-                                        marginRight: "24px"
+                                        marginRight: "24px",
                                     }}
                                 >
                                     {tabs.map((tab) => (
@@ -1018,17 +1018,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                 {selectedIndex === 2 && objectiveConfigurationPanel}
                             </>
                         </NodePopper>
-                        <NodePopper
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             buttonProps={{
                                 btnContent: "C",
                                 id: `${flowPrefix}-context-button`,
                                 className: "absolute top-5 -left-4",
-                                style: { height: 0 },
+                                style: {height: 0},
                             }}
                             popperProps={{
-                                id:`${flowPrefix}-context-popper`,
+                                id: `${flowPrefix}-context-popper`,
                                 placement: "left",
-                                className:"rounded-sm shadow-2xl",
+                                className: "rounded-sm shadow-2xl",
                             }}
                         >
                             <Card
@@ -1068,17 +1068,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                 ))}
                             </Card>
                         </NodePopper>
-                        <NodePopper
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             buttonProps={{
-                                id:`${flowPrefix}-action-button`,
-                                className:"absolute top-5 -right-4",
-                                style:{height: 0},
-                                btnContent: "A"
+                                id: `${flowPrefix}-action-button`,
+                                className: "absolute top-5 -right-4",
+                                style: {height: 0},
+                                btnContent: "A",
                             }}
                             popperProps={{
-                                id:`${flowPrefix}-action-popper`,
+                                id: `${flowPrefix}-action-popper`,
                                 placement: "right",
-                                className:"rounded-sm shadow-2xl",
+                                className: "rounded-sm shadow-2xl",
                             }}
                         >
                             <Card
@@ -1123,7 +1123,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     <div
                         id={`${flowPrefix}-delete-div`}
                         className="px-1 my-1"
-                        style={{ position: "absolute", bottom: "0px", right: "1px" }}
+                        style={{position: "absolute", bottom: "0px", right: "1px"}}
                     >
                         <button
                             id={`${flowPrefix}-delete-button`}

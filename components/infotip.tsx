@@ -1,5 +1,5 @@
-import Tooltip from '@mui/material/Tooltip';
-import InfoIcon from '@mui/icons-material/Info';
+import InfoIcon from "@mui/icons-material/Info"
+import Tooltip from "@mui/material/Tooltip"
 
 import {MaximumBlue} from "../const"
 
@@ -46,7 +46,6 @@ export function InfoTip(props: InfoTipParams): React.ReactElement {
                         id={iconId}
                         style={{marginTop: "6px"}}
                     />
-
                 </sup>
             </div>
         </Tooltip>

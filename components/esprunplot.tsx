@@ -1,5 +1,5 @@
+import {TableBody, TableCell, TableHead, TableRow} from "@mui/material"
 import ReactEcharts from "echarts-for-react"
-import {TableBody, TableCell, TableHead, TableRow} from '@mui/material'
 import {FiAlertCircle} from "react-icons/fi"
 
 import NewBar from "./newbar"
@@ -90,7 +90,12 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                     style={{height: "100%"}}
                     key={`${nodeID}-${objective}`}
                 >
-                    <TableCell style={{width: "33%"}} id={objectiveMetricGraphLabelId}>{objective}</TableCell>
+                    <TableCell
+                        style={{width: "33%"}}
+                        id={objectiveMetricGraphLabelId}
+                    >
+                        {objective}
+                    </TableCell>
                     <TableCell id={`graph-${objectiveMetricGraphLabelId}`}>
                         <div
                             id={`graph-div-${objectiveMetricGraphLabelId}`}
@@ -110,7 +115,10 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
         nodePlots.push(
             <div id={`node-id-div-${nodeID}`}>
                 <p id={`node-id-name-${nodeID}`}>Node ID: {nodeID}</p>
-                <TableBody style={{display: "table", width:"100%"}} id={`node-id-body-${nodeID}`}>
+                <TableBody
+                    style={{display: "table", width: "100%"}}
+                    id={`node-id-body-${nodeID}`}
+                >
                     <TableHead id={`node-id-headers-${nodeID}`}>
                         <TableCell id={`node-id-objective-${nodeID}`}>Objective</TableCell>
                         <TableCell id={`node-id-plot-${nodeID}`}>Plot</TableCell>
@@ -133,7 +141,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
             />
             <br id="prescriptor-plot-br" />
             {nodePlots && nodePlots.length > 0 ? (
-                    nodePlots
+                nodePlots
             ) : (
                 <>
                     <span

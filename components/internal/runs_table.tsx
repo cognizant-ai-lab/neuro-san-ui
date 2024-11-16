@@ -2,8 +2,8 @@
  * Runs table module
  */
 
+import Tooltip from "@mui/material/Tooltip"
 import {Tooltip as AntdTooltip, Modal} from "antd"
-import Tooltip from '@mui/material/Tooltip';
 import debounce from "lodash/debounce"
 import {
     ReactElement,

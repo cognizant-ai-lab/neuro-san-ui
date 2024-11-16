@@ -1,6 +1,6 @@
+import InfoIcon from "@mui/icons-material/Info"
+import Tooltip from "@mui/material/Tooltip"
 import {Tooltip as AntdTooltip} from "antd"
-import Tooltip from '@mui/material/Tooltip';
-import InfoIcon from '@mui/icons-material/Info';
 import Slider from "rc-slider"
 import {Dispatch, SetStateAction} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
@@ -357,7 +357,7 @@ const NodeConfigPanel = ({
                             >
                                 <InfoIcon
                                     id={`${flowPrefix}-${param}-tooltip-info-sign-icon${idExtension}`}
-                                    sx={{width:'21px', height: '21px'}}
+                                    sx={{width: "21px", height: "21px"}}
                                 />
                             </Tooltip>
                         </div>

@@ -1,5 +1,5 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import Tooltip from '@mui/material/Tooltip';
+import Tooltip from "@mui/material/Tooltip"
 import {FC, useEffect} from "react"
 import {Card} from "react-bootstrap"
 import {BsDatabaseGear} from "react-icons/bs"

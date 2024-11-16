@@ -1,8 +1,8 @@
 import {Tooltip} from "antd"
-import NodePopper from '../../../../nodepopper'
 import {useEffect, useState} from "react"
 import {Card} from "react-bootstrap"
 
+import NodePopper from "../../../../nodepopper"
 import {addDisabledPropertyToOutcomes, Outcomes} from "../utils"
 
 // Renders the C A O call to action buttons on the flow node.
@@ -49,17 +49,17 @@ const CAOButtons = (props) => {
 
     return (
         <>
-            <NodePopper
+            <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    id:`${flowPrefix}-context-button${idExtension}`,
-                    className:"absolute top-2 -left-4",
-                    style:{height: 0},
-                    btnContent: "C"
+                    id: `${flowPrefix}-context-button${idExtension}`,
+                    className: "absolute top-2 -left-4",
+                    style: {height: 0},
+                    btnContent: "C",
                 }}
                 popperProps={{
-                    id:`${flowPrefix}-context-popper${idExtension}`,
-                    className:"rounded-sm shadow-2xl",
-                    placement:"left"
+                    id: `${flowPrefix}-context-popper${idExtension}`,
+                    className: "rounded-sm shadow-2xl",
+                    placement: "left",
                 }}
             >
                 <Card
@@ -98,18 +98,17 @@ const CAOButtons = (props) => {
                     ))}
                 </Card>
             </NodePopper>
-            <NodePopper
+            <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    id:`${flowPrefix}-actions-button${idExtension}`,
-                    className:"absolute bottom-6 -left-4",
-                    style:{height: 0},
-                    btnContent: "A"
-
+                    id: `${flowPrefix}-actions-button${idExtension}`,
+                    className: "absolute bottom-6 -left-4",
+                    style: {height: 0},
+                    btnContent: "A",
                 }}
                 popperProps={{
-                    id:`${flowPrefix}-actions-popper${idExtension}`,
-                    className:"rounded-sm shadow-2xl",
-                    placement:'left'
+                    id: `${flowPrefix}-actions-popper${idExtension}`,
+                    className: "rounded-sm shadow-2xl",
+                    placement: "left",
                 }}
             >
                 <Card
@@ -149,17 +148,17 @@ const CAOButtons = (props) => {
                     ))}
                 </Card>
             </NodePopper>
-            <NodePopper
+            <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    id:`${flowPrefix}-outcomes-button${idExtension}`,
-                    className:"absolute top-5 -right-4",
-                    style:{height: 0},
-                    btnContent: "O"
+                    id: `${flowPrefix}-outcomes-button${idExtension}`,
+                    className: "absolute top-5 -right-4",
+                    style: {height: 0},
+                    btnContent: "O",
                 }}
                 popperProps={{
-                    id:`${flowPrefix}-outcomes-popper${idExtension}`,
-                    className:"rounded-sm shadow-2xl",
-                    placement:"right"
+                    id: `${flowPrefix}-outcomes-popper${idExtension}`,
+                    className: "rounded-sm shadow-2xl",
+                    placement: "right",
                 }}
             >
                 <Card

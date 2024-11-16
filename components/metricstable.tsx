@@ -1,6 +1,6 @@
-import {TableBody, TableCell, TableHead, TableRow} from '@mui/material'
-import Tooltip from '@mui/material/Tooltip';
-import InfoIcon from '@mui/icons-material/Info';
+import InfoIcon from "@mui/icons-material/Info"
+import {TableBody, TableCell, TableHead, TableRow} from "@mui/material"
+import Tooltip from "@mui/material/Tooltip"
 import {FaArrowDown, FaArrowUp} from "react-icons/fa"
 import {FiAlertCircle} from "react-icons/fi"
 
@@ -87,9 +87,7 @@ export default function MetricsTable(props: MetricstableProps) {
                 >
                     <TableCell id={`${metricPrefix}-name`}>{metricName}</TableCell>
                     <TableCell id={`${metricPrefix}-uncorrected-value`}>{unCorrectedValue}</TableCell>
-                    {rioMetrics && (
-                        <TableCell id={`${metricPrefix}-rio-metric`}>{rioMetrics[metricName]}</TableCell>
-                    )}
+                    {rioMetrics && <TableCell id={`${metricPrefix}-rio-metric`}>{rioMetrics[metricName]}</TableCell>}
                     {rioMetrics && (
                         <TableCell id={`${metricPrefix}-rio-improvement`}>
                             {getRioImprovement(rioMetrics, metrics, metricName, nodeID)}
@@ -108,7 +106,10 @@ export default function MetricsTable(props: MetricstableProps) {
                     Predictor with Objectives: {predictorRunData[nodeID].objectives}
                 </h4>
                 <p id={`${predictorMetricsId}-node-id`}>Node ID: {nodeID}</p>
-                <TableBody style={{display: 'table', width:'100%'}} id={`${predictorMetricsId}-table-body`}>
+                <TableBody
+                    style={{display: "table", width: "100%"}}
+                    id={`${predictorMetricsId}-table-body`}
+                >
                     <TableHead id={`${predictorMetricsId}-table-headers`}>
                         <TableCell id={`${predictorMetricsId}-metric`}>
                             <b id={`${predictorMetricsId}-metric-header`}>Metric</b>
@@ -163,7 +164,7 @@ export default function MetricsTable(props: MetricstableProps) {
                                         >
                                             <InfoIcon
                                                 id={`${predictorMetricsId}-tooltip-info-sign-icon`}
-                                                sx={{color:"var(--bs-primary)", width: "15px", height: "15px"}}
+                                                sx={{color: "var(--bs-primary)", width: "15px", height: "15px"}}
                                             />
                                         </div>
                                     </Tooltip>

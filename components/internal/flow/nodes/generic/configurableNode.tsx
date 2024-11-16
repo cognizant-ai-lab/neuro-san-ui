@@ -1,18 +1,17 @@
-import { Card as BlueprintCard, Elevation } from "@blueprintjs/core"
-import { Modal } from "antd"
-import { Tabs, Tab } from '@mui/material'
-import { Dispatch, FC, MouseEvent as ReactMouseEvent, SetStateAction, useEffect, useState } from "react"
-import { Card, Collapse } from "react-bootstrap"
-import { AiFillDelete } from "react-icons/ai"
-import { GrSettingsOption } from "react-icons/gr"
-import { Handle, Position as HandlePosition, NodeProps, Node as RFNode } from "reactflow"
+import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {Tab, Tabs} from "@mui/material"
+import {Modal} from "antd"
+import {Dispatch, FC, MouseEvent as ReactMouseEvent, SetStateAction, useEffect, useState} from "react"
+import {Card, Collapse} from "react-bootstrap"
+import {AiFillDelete} from "react-icons/ai"
+import {GrSettingsOption} from "react-icons/gr"
+import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
 import CAOButtons from "./CAOButtons"
 import NodeConfigPanel from "./NodeConfigPanel"
-import { ConfigurableNodeState, NodeParams, NodeTabs } from "./types"
-import { DataTag, DataTagField } from "../../../../../generated/metadata"
-import NodePopper from '../../../../nodepopper'
-
+import {ConfigurableNodeState, NodeParams, NodeTabs} from "./types"
+import {DataTag, DataTagField} from "../../../../../generated/metadata"
+import NodePopper from "../../../../nodepopper"
 
 // Define an interface for the structure of the node
 export interface ConfigurableNodeData {
@@ -48,7 +47,7 @@ export interface ConfigurableNodeData {
     enableCAOActions?: boolean
 
     // Data tag fields that can be passed to predictor nodes for CAO formatting
-    dataSourceFields?: { [key: string]: DataTagField }
+    dataSourceFields?: {[key: string]: DataTagField}
 
     // Disables deleting of flow node.
     readonly readOnlyNode: boolean
@@ -76,7 +75,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     // Unpack props
     const data = props.data
 
-    const { idExtension = "" } = data
+    const {idExtension = ""} = data
 
     // Unpack the data
     const {
@@ -143,7 +142,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
     }
 
     useEffect(() => {
-        const nodeState = { ...ParentNodeState }
+        const nodeState = {...ParentNodeState}
         nodeState &&
             Object.keys(nodeState.params).forEach((key) => {
                 if (nodeState.params[key].value == null) {
@@ -191,7 +190,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
 
     const multiTabComponent = (tabComponentsData) => {
         const tabComponents = tabComponentsData.map((componentData) => {
-            const { tabComponentProps, component } = componentData
+            const {tabComponentProps, component} = componentData
 
             if (component) return component
             return (
@@ -215,21 +214,20 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                 <Tabs
                     id={`${flowPrefix}-settings-tablist${idExtension}`}
                     sx={{
-                        marginBottom:"16px",
-                        flexBasis:"240px",
-                        marginRight:"24px",
+                        marginBottom: "16px",
+                        flexBasis: "240px",
+                        marginRight: "24px",
                     }}
                     value={selectedIndex}
                     onChange={(_, val) => setSelectedIndex(val)}
                 >
-                    {tabs?.map(({ title }, index) => (
+                    {tabs?.map(({title}) => (
                         <Tab
                             id={`${flowPrefix}-settings-${title}${idExtension}`}
                             key={title}
                             aria-controls={`panel-${title}`}
                             label={title}
-                        >
-                        </Tab>
+                        />
                     ))}
                 </Tabs>
                 {tabComponents[selectedIndex]}
@@ -243,12 +241,12 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
             id={`${flowPrefix}${idExtension}`}
             interactive={true}
             elevation={Elevation.TWO}
-            style={{ padding: 0, width: "10rem", height: "4rem" }}
+            style={{padding: 0, width: "10rem", height: "4rem"}}
         >
             <Card
                 id={`${flowPrefix}-card-1${idExtension}`}
                 border="warning"
-                style={{ height: "100%" }}
+                style={{height: "100%"}}
             >
                 <Card.Body
                     id={`${flowPrefix}-card-2${idExtension}`}
@@ -266,22 +264,26 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                             event.stopPropagation()
                         }}
                     >
-                        <NodePopper
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             buttonProps={{
                                 id: `${flowPrefix}-show-config-button${idExtension}`,
                                 className: "mt-1",
-                                style: { height: 0 },
-                                btnContent: <GrSettingsOption id={`${flowPrefix}-show-config-button-settings-option${idExtension}`} />
+                                style: {height: 0},
+                                btnContent: (
+                                    <GrSettingsOption
+                                        id={`${flowPrefix}-show-config-button-settings-option${idExtension}`}
+                                    />
+                                ),
                             }}
                             popperProps={{
                                 id: `${flowPrefix}-show-config-popper${idExtension}`,
                                 className: "rounded-sm shadow-2xl",
-                                style:{
+                                style: {
                                     backgroundColor: "ghostwhite",
                                     paddingBottom: "12px",
                                     overflowY: "scroll",
                                     margin: 0,
-                                }
+                                },
                             }}
                         >
                             {tabs?.length ? (
@@ -346,8 +348,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                         </div>
                                     </Collapse>
                                 </Card.Body>
-                            )
-                            }
+                            )}
                         </NodePopper>
                         {enableCAOActions ? (
                             // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
@@ -366,7 +367,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     <div
                         id={`${flowPrefix}-delete-button-div${idExtension}`}
                         className="px-1 my-1"
-                        style={{ position: "absolute", bottom: "0px", right: "1px" }}
+                        style={{position: "absolute", bottom: "0px", right: "1px"}}
                     >
                         <button
                             id={`${flowPrefix}-delete-button${idExtension}`}

@@ -1,5 +1,5 @@
-import {TableBody, TableCell, TableHead, TableRow, Tooltip} from '@mui/material'
-import InfoIcon from '@mui/icons-material/Info';
+import InfoIcon from "@mui/icons-material/Info"
+import {TableBody, TableCell, TableRow, Tooltip} from "@mui/material"
 import {ReactElement, useState} from "react"
 import {Col, Container, Row} from "react-bootstrap"
 import {FiAlertCircle} from "react-icons/fi"
@@ -170,7 +170,7 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
             >
                 <TableBody
                     id="plot-table-body"
-                    style={{display: 'table', width: '100%'}}
+                    style={{display: "table", width: "100%"}}
                 >
                     <TableBody id="plot-table-cells">{cells}</TableBody>
                 </TableBody>

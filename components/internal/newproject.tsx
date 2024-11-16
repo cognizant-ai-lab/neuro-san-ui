@@ -1,8 +1,8 @@
+import InfoIcon from "@mui/icons-material/Info"
 import {Button, Checkbox, Collapse, Modal, Radio, RadioChangeEvent, Space, Tooltip} from "antd"
 import {CheckboxChangeEvent} from "antd/es/checkbox"
 // eslint-disable-next-line import/no-named-as-default
 import Debug from "debug"
-import InfoIcon from '@mui/icons-material/Info';
 import httpStatus from "http-status"
 import {NextRouter, useRouter} from "next/router"
 import prettyBytes from "pretty-bytes"

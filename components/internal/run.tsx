@@ -1,5 +1,5 @@
+import InfoIcon from "@mui/icons-material/Info"
 import {Radio, RadioChangeEvent, Space, Tooltip} from "antd"
-import InfoIcon from '@mui/icons-material/Info';
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
 import {useEffect, useState} from "react"
@@ -715,7 +715,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                     >
                                                         <InfoIcon
                                                             id="raw-info-icon"
-                                                            sx={{height: "21px", width:"21px"}}
+                                                            sx={{height: "21px", width: "21px"}}
                                                         />
                                                     </Tooltip>
                                                 </div>
@@ -740,7 +740,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                         format."
                                                     >
                                                         <InfoIcon
-                                                            id="raw-info-icon" 
+                                                            id="raw-info-icon"
                                                             sx={{height: "21px", width: "21px"}}
                                                         />
                                                     </Tooltip>

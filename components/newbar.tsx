@@ -1,4 +1,4 @@
-import Tooltip from '@mui/material/Tooltip';
+import Tooltip from "@mui/material/Tooltip"
 import Link, {LinkProps} from "next/link"
 import {ReactElement, useState} from "react"
 import {AiFillEdit} from "react-icons/ai"
@@ -136,11 +136,7 @@ export default function NewBar(props: NavbarProps) {
                             size="14"
                         />
                     </button>
-                    <div
-                        id="info-tip"
-                    >
-                        {props.InfoTip}
-                    </div>
+                    <div id="info-tip">{props.InfoTip}</div>
                 </h3>
             )
         }
@@ -151,11 +147,7 @@ export default function NewBar(props: NavbarProps) {
                 id={`${idPrefix}-title`}
             >
                 {props.Title}
-                <div
-                    id="info-tip"
-                >
-                    {props.InfoTip}
-                </div>
+                <div id="info-tip">{props.InfoTip}</div>
             </h3>
         )
     }
