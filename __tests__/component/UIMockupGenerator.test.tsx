@@ -37,7 +37,7 @@ describe("UIMockupGenerator", () => {
         expect(screen.queryByAltText(/UI Mockup Image from Dall-e.*?/iu)).not.toBeInTheDocument()
     })
 
-    it("should render image on click of Generate button", async () => {
+    it("should render mockup image on click of Generate button", async () => {
         const user = userEvent.setup()
         const oldFetch = window.fetch
         window.fetch = mockFetch({response: {imageURL: "1234"}})
