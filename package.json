@@ -137,7 +137,8 @@
         "braces": "3.0.3",
         "ws": "8.17.1",
         "micromatch": "4.0.8",
-        "unset-value": "2.0.1"
+        "unset-value": "2.0.1",
+        "cross-spawn": "7.0.5"
     },
     "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
 }
