@@ -1,4 +1,5 @@
-import {InfoSignIcon, Table, Tooltip} from "evergreen-ui"
+import InfoIcon from "@mui/icons-material/Info"
+import {TableBody, TableCell, TableRow, Tooltip} from "@mui/material"
 import {ReactElement, useState} from "react"
 import {Col, Container, Row} from "react-bootstrap"
 import {FiAlertCircle} from "react-icons/fi"
@@ -93,12 +94,12 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
         const cells = []
 
         cells.push(
-            <Table.Row
+            <TableRow
                 id={`pareto-plot-row=${idx}`}
                 style={{height: "100%"}}
                 key={`${nodeID}-pareto`}
             >
-                <Table.TextCell
+                <TableCell
                     id={`pareto-plot-text-cell-${idx}`}
                     key={nodeID}
                     style={{paddingLeft: 0}}
@@ -158,8 +159,8 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                             />
                         )}
                     </div>
-                </Table.TextCell>
-            </Table.Row>
+                </TableCell>
+            </TableRow>
         )
 
         nodePlots.push(
@@ -167,9 +168,12 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                 id="plot-table"
                 key="plot-table"
             >
-                <Table.Body id="plot-table-body">
-                    <Table.Body id="plot-table-cells">{cells}</Table.Body>
-                </Table.Body>
+                <TableBody
+                    id="plot-table-body"
+                    style={{display: "table", width: "100%"}}
+                >
+                    <TableBody id="plot-table-cells">{cells}</TableBody>
+                </TableBody>
             </div>
         )
     })
@@ -205,7 +209,7 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                             <h4 id="plot-type-h4">Plot type:</h4>
                             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // Tooltip does not have an id property
-                                content={
+                                title={
                                     "Some plot types may not be available, depending on the number of outcomes " +
                                     "in your experiment"
                                 }
@@ -214,10 +218,9 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                                     id="plot-info-bubble"
                                     className="ps-1"
                                 >
-                                    <InfoSignIcon
+                                    <InfoIcon
                                         id="plot-info-bubble-icon"
-                                        color="blue"
-                                        size={10}
+                                        sx={{color: "blue", width: "15px", height: "15px"}}
                                     />
                                 </div>
                             </Tooltip>

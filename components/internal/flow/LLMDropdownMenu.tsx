@@ -1,5 +1,5 @@
+import InfoIcon from "@mui/icons-material/Info"
 import {Skeleton, Tooltip} from "antd"
-import {InfoSignIcon} from "evergreen-ui"
 import {Dispatch, SetStateAction} from "react"
 import {Dropdown} from "react-bootstrap"
 import {getOutgoers} from "reactflow"
@@ -147,7 +147,10 @@ const LLMDropdownMenu = ({
                 id={`${shortId}-tooltip`}
                 title={itemDescription}
             >
-                <InfoSignIcon id={`${shortId}-info-icon`} />
+                <InfoIcon
+                    id={`${shortId}-info-icon`}
+                    sx={{width: "21px", height: "21px"}}
+                />
             </Tooltip>
         </div>
     )

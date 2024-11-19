@@ -16,6 +16,7 @@ import "../styles/updatenode.css"
 import "../styles/globals.css"
 import "../styles/llmDropdown.css"
 import "../styles/splashpage.css"
+import "../styles/rundialog.css"
 
 import debugModule from "debug"
 import Head from "next/head"

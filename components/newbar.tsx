@@ -1,4 +1,4 @@
-import {Tooltip} from "evergreen-ui"
+import Tooltip from "@mui/material/Tooltip"
 import Link, {LinkProps} from "next/link"
 import {ReactElement, useState} from "react"
 import {AiFillEdit} from "react-icons/ai"
@@ -73,8 +73,8 @@ export default function NewBar(props: NavbarProps) {
                 style={{marginLeft: "auto"}}
             >
                 <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    showDelay={1}
-                    content="Share this project"
+                    enterDelay={1000}
+                    title="Share this project"
                 >
                     <span
                         id="project-tooltip-share"
@@ -136,12 +136,7 @@ export default function NewBar(props: NavbarProps) {
                             size="14"
                         />
                     </button>
-                    <div
-                        id="info-tip"
-                        style={{marginTop: 20}}
-                    >
-                        {props.InfoTip}
-                    </div>
+                    <div id="info-tip">{props.InfoTip}</div>
                 </h3>
             )
         }
@@ -152,12 +147,7 @@ export default function NewBar(props: NavbarProps) {
                 id={`${idPrefix}-title`}
             >
                 {props.Title}
-                <div
-                    id="info-tip"
-                    style={{marginTop: 20}}
-                >
-                    {props.InfoTip}
-                </div>
+                <div id="info-tip">{props.InfoTip}</div>
             </h3>
         )
     }

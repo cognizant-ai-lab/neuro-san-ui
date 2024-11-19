@@ -1,5 +1,5 @@
-import {Tooltip} from "antd"
-import {InfoSignIcon} from "evergreen-ui"
+import InfoIcon from "@mui/icons-material/Info"
+import Tooltip from "@mui/material/Tooltip"
 
 import {MaximumBlue} from "../const"
 
@@ -28,7 +28,7 @@ export function InfoTip(props: InfoTipParams): React.ReactElement {
     const divId = `${props.id}-info-bubble`
     const supId = `${props.id}-info-bubble-sup`
     const iconId = `${props.id}-info-bubble-icon`
-    const size = props.size || 10
+    const size = props.size || 15
     const color = props.color || MaximumBlue
 
     return (
@@ -41,10 +41,10 @@ export function InfoTip(props: InfoTipParams): React.ReactElement {
                 className="ps-1"
             >
                 <sup id={supId}>
-                    <InfoSignIcon
+                    <InfoIcon
+                        sx={{color, fontSize: size}}
                         id={iconId}
-                        color={color}
-                        size={size}
+                        style={{marginTop: "6px"}}
                     />
                 </sup>
             </div>

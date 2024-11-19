@@ -1,5 +1,6 @@
+import InfoIcon from "@mui/icons-material/Info"
+import Tooltip from "@mui/material/Tooltip"
 import {Tooltip as AntdTooltip} from "antd"
-import {InfoSignIcon, Tooltip} from "evergreen-ui"
 import Slider from "rc-slider"
 import {Dispatch, SetStateAction} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
@@ -352,9 +353,12 @@ const NodeConfigPanel = ({
                         >
                             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                                content={defaultParams?.[param].description}
+                                title={defaultParams?.[param].description}
                             >
-                                <InfoSignIcon id={`${flowPrefix}-${param}-tooltip-info-sign-icon${idExtension}`} />
+                                <InfoIcon
+                                    id={`${flowPrefix}-${param}-tooltip-info-sign-icon${idExtension}`}
+                                    sx={{width: "21px", height: "21px"}}
+                                />
                             </Tooltip>
                         </div>
                     </div>

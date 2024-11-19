@@ -1,5 +1,5 @@
+import InfoIcon from "@mui/icons-material/Info"
 import {Radio, RadioChangeEvent, Space, Tooltip} from "antd"
-import {InfoSignIcon} from "evergreen-ui"
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
 import {useEffect, useState} from "react"
@@ -713,7 +713,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                         title="View rules exactly as they were generated during the
                                                         evolutionary search."
                                                     >
-                                                        <InfoSignIcon id="raw-info-icon" />
+                                                        <InfoIcon
+                                                            id="raw-info-icon"
+                                                            sx={{height: "21px", width: "21px"}}
+                                                        />
                                                     </Tooltip>
                                                 </div>
                                                 <div
@@ -736,7 +739,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
                                                         (large language model) to express them in a more human-readable
                                                         format."
                                                     >
-                                                        <InfoSignIcon id="raw-info-icon" />
+                                                        <InfoIcon
+                                                            id="raw-info-icon"
+                                                            sx={{height: "21px", width: "21px"}}
+                                                        />
                                                     </Tooltip>
                                                 </div>
                                             </Space>

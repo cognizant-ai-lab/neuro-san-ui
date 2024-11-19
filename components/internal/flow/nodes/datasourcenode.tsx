@@ -1,5 +1,5 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {Tooltip} from "evergreen-ui"
+import Tooltip from "@mui/material/Tooltip"
 import {FC, useEffect} from "react"
 import {Card} from "react-bootstrap"
 import {BsDatabaseGear} from "react-icons/bs"
@@ -66,8 +66,8 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                         style={{position: "absolute", top: "5px", right: "10px"}}
                     >
                         <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            showDelay={1}
-                            content="Analyze your data with the help of an LLM"
+                            enterDelay={1000}
+                            title="Analyze your data with the help of an LLM"
                         >
                             <a
                                 id="analytics-link"

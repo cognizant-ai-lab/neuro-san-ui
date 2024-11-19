@@ -1,0 +1,4 @@
+.echarts-for-react canvas,
+.echarts-for-react > div:first-child {
+    width: 100% !important;
+}

@@ -1,6 +1,6 @@
 import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
+import {Tab, Tabs} from "@mui/material"
 import {Tooltip as AntdTooltip, Modal} from "antd"
-import {Text as EvergreenText, Popover, Position, Tab, Tablist} from "evergreen-ui"
 import Slider from "rc-slider"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {Card, Col, Container, Row} from "react-bootstrap"
@@ -11,6 +11,7 @@ import {MdDelete} from "react-icons/md"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
 import {DataTag} from "../../../../generated/metadata"
+import NodePopper from "../../../nodepopper"
 import {NotificationType, sendNotification} from "../../../notification"
 
 // Define an interface for the structure
@@ -967,163 +968,155 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     id={`${flowPrefix}-card-2`}
                     className="flex justify-center content-center"
                 >
-                    <EvergreenText
+                    <span
                         id={`${flowPrefix}-text`}
-                        className="mr-2"
+                        className="mr-2 text-xs"
                     >
                         {ParentPrescriptorState.selectedPredictor || "Prescriptor"}
-                    </EvergreenText>
+                    </span>
                     <div
                         id={`${flowPrefix}-settings-div`}
                         onMouseDown={(event) => {
                             event.stopPropagation()
                         }}
                     >
-                        <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Popover does not have an id property when compiling
-                            content={
-                                <>
-                                    <Tablist
-                                        id={`${flowPrefix}-settings-tablist`}
-                                        marginBottom={16}
-                                        flexBasis={240}
-                                        marginRight={24}
-                                    >
-                                        {tabs.map((tab, index) => (
-                                            <Tab
-                                                id={`${flowPrefix}-settings-${tab}`}
-                                                key={tab}
-                                                onSelect={() => setSelectedIndex(index)}
-                                                isSelected={index === selectedIndex}
-                                                aria-controls={`panel-${tab}`}
-                                            >
-                                                {tab}
-                                            </Tab>
-                                        ))}
-                                    </Tablist>
-                                    {selectedIndex === 0 && prescriptorRepresentationPanel}
-                                    {selectedIndex === 1 && evolutionConfigurationPanel}
-                                    {selectedIndex === 2 && objectiveConfigurationPanel}
-                                </>
-                            }
-                            statelessProps={{
-                                backgroundColor: "ghostwhite",
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            buttonProps={{
+                                id: `${flowPrefix}-gr-settings-button`,
+                                className: "mt-1",
+                                style: {height: 0},
+                                btnContent: <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />,
+                            }}
+                            popperProps={{
+                                id: `${flowPrefix}-gr-settings-popper`,
+                                className: "rounded-sm shadow-2xl",
+                                style: {backgroundColor: "ghostwhite"},
                             }}
                         >
-                            <div
-                                id={`${flowPrefix}-gr-settings-div`}
-                                className="flex"
-                            >
-                                <button
-                                    type="button"
-                                    id={`${flowPrefix}-gr-settings-button`}
-                                    className="mt-1"
-                                    style={{height: 0}}
+                            <>
+                                <Tabs
+                                    id={`${flowPrefix}-settings-tablist`}
+                                    value={selectedIndex}
+                                    onChange={(_, val) => setSelectedIndex(val)}
+                                    sx={{
+                                        marginBottom: "16px",
+                                        flexBasis: "240px",
+                                        marginRight: "24px",
+                                    }}
                                 >
-                                    <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />
-                                </button>
-                            </div>
-                        </Popover>
-                        <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Popover does not have an id property when compiling
-                            position={Position.LEFT}
-                            content={
-                                <Card.Body
-                                    id={`${flowPrefix}-context-card`}
-                                    className="overflow-y-auto h-40 text-xs"
-                                >
-                                    <EvergreenText
-                                        id={`${flowPrefix}-context-text`}
-                                        className="mb-2"
-                                    >
-                                        Context
-                                    </EvergreenText>
-                                    {Object.keys(ParentPrescriptorState.caoState.context).map((element) => (
-                                        <div
-                                            id={`${flowPrefix}-context-div`}
-                                            key={element}
-                                            className="grid grid-cols-2 gap-4 mb-2"
-                                        >
-                                            <label
-                                                id={`${flowPrefix}-context-label-${element}`}
-                                                className="capitalize"
-                                            >
-                                                {" "}
-                                                {element}{" "}
-                                            </label>
-                                            <input
-                                                id={`${flowPrefix}-context-input-${element}`}
-                                                name={element}
-                                                type="checkbox"
-                                                defaultChecked={true}
-                                                disabled={readOnlyNode}
-                                                checked={ParentPrescriptorState.caoState.context[element]}
-                                                onChange={(event) => updateCAOState(event, "context")}
-                                            />
-                                        </div>
+                                    {tabs.map((tab) => (
+                                        <Tab
+                                            id={`${flowPrefix}-settings-${tab}`}
+                                            key={tab}
+                                            label={tab}
+                                            aria-controls={`panel-${tab}`}
+                                        />
                                     ))}
-                                </Card.Body>
-                            }
+                                </Tabs>
+                                {selectedIndex === 0 && prescriptorRepresentationPanel}
+                                {selectedIndex === 1 && evolutionConfigurationPanel}
+                                {selectedIndex === 2 && objectiveConfigurationPanel}
+                            </>
+                        </NodePopper>
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            buttonProps={{
+                                btnContent: "C",
+                                id: `${flowPrefix}-context-button`,
+                                className: "absolute top-5 -left-4",
+                                style: {height: 0},
+                            }}
+                            popperProps={{
+                                id: `${flowPrefix}-context-popper`,
+                                placement: "left",
+                                className: "rounded-sm shadow-2xl",
+                            }}
                         >
-                            <button
-                                type="button"
-                                id={`${flowPrefix}-context-button`}
-                                className="absolute top-5 -left-4"
-                                style={{height: 0}}
+                            <Card
+                                id={`${flowPrefix}-context-card`}
+                                border="warning"
+                                className="overflow-y-auto h-40 text-xs"
                             >
-                                C
-                            </button>
-                        </Popover>
-                        <Popover // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Popover does not have an id property when compiling
-                            position={Position.RIGHT}
-                            content={
-                                <Card.Body
-                                    id={`${flowPrefix}-actions-card`}
-                                    className="overflow-y-auto h-40 text-xs"
+                                <span
+                                    id={`${flowPrefix}-context-text`}
+                                    className="mb-2"
                                 >
-                                    <EvergreenText
-                                        id={`${flowPrefix}-actions-text`}
-                                        className="mb-2"
+                                    Context
+                                </span>
+                                {Object.keys(ParentPrescriptorState.caoState.context).map((element) => (
+                                    <div
+                                        id={`${flowPrefix}-context-div`}
+                                        key={element}
+                                        className="grid grid-cols-2 gap-4 mb-2"
                                     >
-                                        Actions
-                                    </EvergreenText>
-                                    {Object.keys(ParentPrescriptorState.caoState.action).map((element) => (
-                                        <div
-                                            id={`${flowPrefix}-actions-div-${element}`}
-                                            key={element}
-                                            className="grid grid-cols-2 gap-4 mb-2"
+                                        <label
+                                            id={`${flowPrefix}-context-label-${element}`}
+                                            className="capitalize"
                                         >
-                                            <label
-                                                id={`${flowPrefix}-actions-label-${element}`}
-                                                className="capitalize"
-                                            >
-                                                {" "}
-                                                {element}{" "}
-                                            </label>
-                                            <input
-                                                id={`${flowPrefix}-actions-input-${element}`}
-                                                name={element}
-                                                type="checkbox"
-                                                defaultChecked={true}
-                                                disabled={readOnlyNode}
-                                                checked={ParentPrescriptorState.caoState.action[element]}
-                                                onChange={(event) => updateCAOState(event, "action")}
-                                            />
-                                        </div>
-                                    ))}
-                                </Card.Body>
-                            }
+                                            {" "}
+                                            {element}{" "}
+                                        </label>
+                                        <input
+                                            id={`${flowPrefix}-context-input-${element}`}
+                                            name={element}
+                                            type="checkbox"
+                                            defaultChecked={true}
+                                            disabled={readOnlyNode}
+                                            checked={ParentPrescriptorState.caoState.context[element]}
+                                            onChange={(event) => updateCAOState(event, "context")}
+                                        />
+                                    </div>
+                                ))}
+                            </Card>
+                        </NodePopper>
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            buttonProps={{
+                                id: `${flowPrefix}-action-button`,
+                                className: "absolute top-5 -right-4",
+                                style: {height: 0},
+                                btnContent: "A",
+                            }}
+                            popperProps={{
+                                id: `${flowPrefix}-action-popper`,
+                                placement: "right",
+                                className: "rounded-sm shadow-2xl",
+                            }}
                         >
-                            <button
-                                type="button"
-                                id={`${flowPrefix}-action-button`}
-                                className="absolute top-5 -right-4"
-                                style={{height: 0}}
+                            <Card
+                                id={`${flowPrefix}-actions-card`}
+                                className="overflow-y-auto h-40 text-xs"
                             >
-                                A
-                            </button>
-                        </Popover>
+                                <span
+                                    id={`${flowPrefix}-actions-text`}
+                                    className="mb-2"
+                                >
+                                    Actions
+                                </span>
+                                {Object.keys(ParentPrescriptorState.caoState.action).map((element) => (
+                                    <div
+                                        id={`${flowPrefix}-actions-div-${element}`}
+                                        key={element}
+                                        className="grid grid-cols-2 gap-4 mb-2"
+                                    >
+                                        <label
+                                            id={`${flowPrefix}-actions-label-${element}`}
+                                            className="capitalize"
+                                        >
+                                            {" "}
+                                            {element}{" "}
+                                        </label>
+                                        <input
+                                            id={`${flowPrefix}-actions-input-${element}`}
+                                            name={element}
+                                            type="checkbox"
+                                            defaultChecked={true}
+                                            disabled={readOnlyNode}
+                                            checked={ParentPrescriptorState.caoState.action[element]}
+                                            onChange={(event) => updateCAOState(event, "action")}
+                                        />
+                                    </div>
+                                ))}
+                            </Card>
+                        </NodePopper>
                     </div>
                 </Card.Body>
                 {!readOnlyNode ? (

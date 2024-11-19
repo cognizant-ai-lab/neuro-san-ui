@@ -2,8 +2,8 @@
  * Runs table module
  */
 
+import Tooltip from "@mui/material/Tooltip"
 import {Tooltip as AntdTooltip, Modal} from "antd"
-import {Position, Tooltip} from "evergreen-ui"
 import debounce from "lodash/debounce"
 import {
     ReactElement,
@@ -623,9 +623,9 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 ) : (
                     /* 2/6/23 DEF - Tooltip does not have an id property when compiling */
                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        content="Run not complete"
-                        position={Position.BOTTOM_LEFT}
-                        statelessProps={{className: "opacity-50"}}
+                        title="Run not complete"
+                        placement="bottom-start"
+                        className="opacity-50"
                     >
                         {runButton}
                     </Tooltip>
@@ -687,7 +687,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     function getDeleteRunButton(runId: string, run: Run, idx: number) {
         return (
             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                content="Delete Run"
+                title="Delete Run"
             >
                 <button
                     id={`delete-training-run-${runId}-button`}
@@ -716,7 +716,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     function getTerminateRunButton(runId: string, run: Run, idx: number) {
         return (
             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                content="Terminate Run"
+                title="Terminate Run"
             >
                 <button
                     id={`terminate-training-run-${runId}-button`}

@@ -1,4 +1,6 @@
-import {InfoSignIcon, Position, Table, Tooltip} from "evergreen-ui"
+import InfoIcon from "@mui/icons-material/Info"
+import {TableBody, TableCell, TableHead, TableRow} from "@mui/material"
+import Tooltip from "@mui/material/Tooltip"
 import {FaArrowDown, FaArrowUp} from "react-icons/fa"
 import {FiAlertCircle} from "react-icons/fi"
 
@@ -79,21 +81,19 @@ export default function MetricsTable(props: MetricstableProps) {
             const metricPrefix = `${predictorMetricsId}-${metricName}`
 
             return (
-                <Table.Row
+                <TableRow
                     id={`${metricPrefix}-row`}
                     key={`${nodeID}-${metricName}`}
                 >
-                    <Table.TextCell id={`${metricPrefix}-name`}>{metricName}</Table.TextCell>
-                    <Table.TextCell id={`${metricPrefix}-uncorrected-value`}>{unCorrectedValue}</Table.TextCell>
+                    <TableCell id={`${metricPrefix}-name`}>{metricName}</TableCell>
+                    <TableCell id={`${metricPrefix}-uncorrected-value`}>{unCorrectedValue}</TableCell>
+                    {rioMetrics && <TableCell id={`${metricPrefix}-rio-metric`}>{rioMetrics[metricName]}</TableCell>}
                     {rioMetrics && (
-                        <Table.TextCell id={`${metricPrefix}-rio-metric`}>{rioMetrics[metricName]}</Table.TextCell>
-                    )}
-                    {rioMetrics && (
-                        <Table.TextCell id={`${metricPrefix}-rio-improvement`}>
+                        <TableCell id={`${metricPrefix}-rio-improvement`}>
                             {getRioImprovement(rioMetrics, metrics, metricName, nodeID)}
-                        </Table.TextCell>
+                        </TableCell>
                     )}
-                </Table.Row>
+                </TableRow>
             )
         })
 
@@ -106,42 +106,44 @@ export default function MetricsTable(props: MetricstableProps) {
                     Predictor with Objectives: {predictorRunData[nodeID].objectives}
                 </h4>
                 <p id={`${predictorMetricsId}-node-id`}>Node ID: {nodeID}</p>
-                <Table.Body id={`${predictorMetricsId}-table-body`}>
-                    <Table.Head id={`${predictorMetricsId}-table-headers`}>
-                        <Table.TextCell id={`${predictorMetricsId}-metric`}>
+                <TableBody
+                    style={{display: "table", width: "100%"}}
+                    id={`${predictorMetricsId}-table-body`}
+                >
+                    <TableHead id={`${predictorMetricsId}-table-headers`}>
+                        <TableCell id={`${predictorMetricsId}-metric`}>
                             <b id={`${predictorMetricsId}-metric-header`}>Metric</b>
-                        </Table.TextCell>
-                        <Table.TextCell id={`${predictorMetricsId}-value`}>
+                        </TableCell>
+                        <TableCell id={`${predictorMetricsId}-value`}>
                             <b id={`${predictorMetricsId}-value-header`}>Value</b>
-                        </Table.TextCell>
+                        </TableCell>
                         {rioMetrics && (
-                            <Table.TextCell id={`${predictorMetricsId}-rio`}>
+                            <TableCell id={`${predictorMetricsId}-rio`}>
                                 <div
                                     id={`${predictorMetricsId}-rio-improvement-div`}
                                     style={{display: "flex"}}
                                 >
                                     <b id={`${predictorMetricsId}-rio-header`}>Uncertainty Model Mean</b>
                                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                        content="Mean corrected prediction from the uncertainty model"
-                                        statelessProps={{className: "opacity-75"}}
-                                        position={Position.TOP_RIGHT}
+                                        title="Mean corrected prediction from the uncertainty model"
+                                        className="opacity-75"
+                                        placement="top-end"
                                     >
                                         <div
                                             id={`${predictorMetricsId}-rio-tooltip-info-sign-div`}
                                             className="ps-1"
                                         >
-                                            <InfoSignIcon
+                                            <InfoIcon
                                                 id={`${predictorMetricsId}-tooltip-info-sign-icon`}
-                                                color="var(--bs-primary)"
-                                                size={10}
+                                                sx={{color: "var(--bs-primary)", width: "15px", height: "15px"}}
                                             />
                                         </div>
                                     </Tooltip>
                                 </div>
-                            </Table.TextCell>
+                            </TableCell>
                         )}
                         {rioMetrics && (
-                            <Table.TextCell id={`${predictorMetricsId}-rio-improvement`}>
+                            <TableCell id={`${predictorMetricsId}-rio-improvement`}>
                                 <div
                                     id={`${predictorMetricsId}-rio-improvement-div`}
                                     style={{display: "flex"}}
@@ -152,27 +154,26 @@ export default function MetricsTable(props: MetricstableProps) {
                                     {/* 2/6/23 DEF - Tooltip does not have an id property when compiling */}
                                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                         /* eslint-disable-next-line max-len */
-                                        content="Improvement of uncertainty model enhanced predictor metric over original predictor metric, as a percentage"
-                                        statelessProps={{className: "opacity-75"}}
-                                        position={Position.TOP_RIGHT}
+                                        title="Improvement of uncertainty model enhanced predictor metric over original predictor metric, as a percentage"
+                                        className="opacity-75"
+                                        placement="top-end"
                                     >
                                         <div
                                             id={`${predictorMetricsId}-rio-percent-tooltip-info-sign-div`}
                                             className="ps-1"
                                         >
-                                            <InfoSignIcon
+                                            <InfoIcon
                                                 id={`${predictorMetricsId}-tooltip-info-sign-icon`}
-                                                color="var(--bs-primary)"
-                                                size={10}
+                                                sx={{color: "var(--bs-primary)", width: "15px", height: "15px"}}
                                             />
                                         </div>
                                     </Tooltip>
                                 </div>
-                            </Table.TextCell>
+                            </TableCell>
                         )}
-                    </Table.Head>
-                    <Table.Body id={`${predictorMetricsId}-metrics-table-cells`}>{cells}</Table.Body>
-                </Table.Body>
+                    </TableHead>
+                    <TableBody id={`${predictorMetricsId}-metrics-table-cells`}>{cells}</TableBody>
+                </TableBody>
             </div>
         )
     })

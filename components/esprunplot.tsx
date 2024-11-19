@@ -1,5 +1,5 @@
+import {TableBody, TableCell, TableHead, TableRow} from "@mui/material"
 import ReactEcharts from "echarts-for-react"
-import {Table} from "evergreen-ui"
 import {FiAlertCircle} from "react-icons/fi"
 
 import NewBar from "./newbar"
@@ -59,6 +59,7 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                 legend: {
                     right: "0%",
                     top: "0%",
+                    padding: [0, 8],
                     selectedMode: false,
                     animation: false,
                     orient: "vertical",
@@ -84,13 +85,18 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
             }
 
             cells.push(
-                <Table.Row
+                <TableRow
                     id={`objective-row-${objectiveMetricGraphLabelId}`}
                     style={{height: "100%"}}
                     key={`${nodeID}-${objective}`}
                 >
-                    <Table.TextCell id={objectiveMetricGraphLabelId}>{objective}</Table.TextCell>
-                    <Table.TextCell id={`graph-${objectiveMetricGraphLabelId}`}>
+                    <TableCell
+                        style={{width: "33%"}}
+                        id={objectiveMetricGraphLabelId}
+                    >
+                        {objective}
+                    </TableCell>
+                    <TableCell id={`graph-${objectiveMetricGraphLabelId}`}>
                         <div
                             id={`graph-div-${objectiveMetricGraphLabelId}`}
                             style={{height: "35rem", width: "100%"}}
@@ -101,21 +107,24 @@ export default function ESPRunPlot(props: EspRunPlotProps) {
                                 option={options}
                             />
                         </div>
-                    </Table.TextCell>
-                </Table.Row>
+                    </TableCell>
+                </TableRow>
             )
         })
 
         nodePlots.push(
             <div id={`node-id-div-${nodeID}`}>
                 <p id={`node-id-name-${nodeID}`}>Node ID: {nodeID}</p>
-                <Table.Body id={`node-id-body-${nodeID}`}>
-                    <Table.Head id={`node-id-headers-${nodeID}`}>
-                        <Table.TextCell id={`node-id-objective-${nodeID}`}>Objective</Table.TextCell>
-                        <Table.TextCell id={`node-id-plot-${nodeID}`}>Plot</Table.TextCell>
-                    </Table.Head>
-                    <Table.Body id={`node-id-${nodeID}-cells`}>{cells}</Table.Body>
-                </Table.Body>
+                <TableBody
+                    style={{display: "table", width: "100%"}}
+                    id={`node-id-body-${nodeID}`}
+                >
+                    <TableHead id={`node-id-headers-${nodeID}`}>
+                        <TableCell id={`node-id-objective-${nodeID}`}>Objective</TableCell>
+                        <TableCell id={`node-id-plot-${nodeID}`}>Plot</TableCell>
+                    </TableHead>
+                    <TableBody id={`node-id-${nodeID}-cells`}>{cells}</TableBody>
+                </TableBody>
             </div>
         )
     })

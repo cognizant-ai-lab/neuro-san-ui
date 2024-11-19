@@ -21,17 +21,28 @@ jest.mock("next/image", () => ({
 }))
 
 describe("UIMockupGenerator", () => {
+    const actionFields = ["Test 1", "Test 2", "Test 3"]
+    const contextFields = ["Test 1", "Test 2", "Test 3"]
+    const isOpen = true
     const onClose = jest.fn()
-    const userQuery = "Test user query"
+    const outcomeFields = ["Test 1", "Test 2", "Test 3"]
+    const projectDescription = "Project description"
+    const projectName = "Project name"
+
+    const UIMockupGeneratorComponent = (
+        <UIMockupGenerator
+            actionFields={actionFields}
+            contextFields={contextFields}
+            isOpen={isOpen}
+            onClose={onClose}
+            outcomeFields={outcomeFields}
+            projectDescription={projectDescription}
+            projectName={projectName}
+        />
+    )
 
     it("should initially render component with Generate button but no mockup image", async () => {
-        render(
-            <UIMockupGenerator
-                isOpen={true}
-                onClose={onClose}
-                userQuery={userQuery}
-            />
-        )
+        render(UIMockupGeneratorComponent)
 
         expect(screen.getByText("Generate")).toBeInTheDocument()
         expect(screen.queryByAltText(/UI Mockup Image from Dall-e.*?/iu)).not.toBeInTheDocument()
@@ -42,13 +53,7 @@ describe("UIMockupGenerator", () => {
         const oldFetch = window.fetch
         window.fetch = mockFetch({response: {imageURL: "1234"}})
 
-        render(
-            <UIMockupGenerator
-                isOpen={true}
-                onClose={onClose}
-                userQuery={userQuery}
-            />
-        )
+        render(UIMockupGeneratorComponent)
 
         await user.click(screen.getByText("Generate"))
         expect(await screen.findByAltText(/UI Mockup Image from Dall-e.*?/iu)).toBeInTheDocument()

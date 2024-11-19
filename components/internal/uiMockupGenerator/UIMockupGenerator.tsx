@@ -12,18 +12,38 @@ import {MUIDialog} from "../../dialog"
 
 // #region: Types
 interface UIMockupGeneratorProps {
-    onClose: () => void
+    actionFields: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
+    contextFields: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
     isOpen: boolean
-    userQuery: string
+    onClose: () => void
+    outcomeFields: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
+    projectDescription: string
+    projectName: string
 }
 // #endregion: Types
 
-export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({onClose, isOpen, userQuery}) => {
+export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
+    actionFields,
+    contextFields,
+    isOpen,
+    onClose,
+    outcomeFields,
+    projectDescription,
+    projectName,
+}) => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [mockupURL, setMockupURL] = useState<string>("")
 
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
+
+    const userQuery = `
+        Project name: ${projectName}.
+        Project description: ${projectDescription}.
+        Action fields: ${actionFields.join(", ")}.
+        Context fields: ${contextFields.join(", ")}.
+        Outcome fields: ${outcomeFields.join(", ")}.
+    `
 
     // Sends query to backend to send to Dall-e via Langchain.
     async function sendUserQueryToDalle() {
@@ -37,11 +57,11 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({onClose, isOpen, 
                 response: {imageURL},
             } = await sendDalleQuery(userQuery)
             setMockupURL(imageURL)
-            setIsLoading(false)
         } catch (error) {
             // log error to console
             // TODO: Check that error handling is working and surface error to user
             console.error(error)
+        } finally {
             setIsLoading(false)
         }
     }
