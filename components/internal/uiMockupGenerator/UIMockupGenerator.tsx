@@ -79,6 +79,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                     <CircularProgress
                         id="ui-mockup-loader"
                         sx={{display: "flex", margin: "0 auto 60px auto"}}
+                        size={200}
                     />
                 ) : (
                     generatedCode && (
