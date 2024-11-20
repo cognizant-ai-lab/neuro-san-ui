@@ -4,7 +4,7 @@
  * @param userQuery The user's query.
  */
 export async function sendDalleQuery(userQuery: string) {
-    const res = await fetch("/api/gpt/dall-e", {
+    const res = await fetch("/api/gpt/code-ui", {
         method: "POST",
         headers: {
             Accept: "application/json",

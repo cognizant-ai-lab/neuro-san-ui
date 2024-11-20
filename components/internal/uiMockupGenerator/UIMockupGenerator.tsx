@@ -8,6 +8,7 @@ import {Button} from "react-bootstrap"
 
 import {MaximumBlue} from "../../../const"
 import {sendDalleQuery} from "../../../controller/dall-e/dall-e"
+import {CodeUiResponse} from "../../../pages/api/gpt/code-ui/types"
 import {MUIDialog} from "../../dialog"
 
 // #region: Types
@@ -32,7 +33,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
     projectName,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [mockupURL, setMockupURL] = useState<string>("")
+    const [generatedCode, setGeneratedCode] = useState<string>("")
 
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
@@ -50,13 +51,10 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
         setIsLoading(true)
 
         try {
-            const abortController = new AbortController()
-            controller.current = abortController
+            controller.current = new AbortController()
 
-            const {
-                response: {imageURL},
-            } = await sendDalleQuery(userQuery)
-            setMockupURL(imageURL)
+            const response: CodeUiResponse = await sendDalleQuery(userQuery)
+            setGeneratedCode(response.response.generatedCode)
         } catch (error) {
             // log error to console
             // TODO: Check that error handling is working and surface error to user
@@ -71,7 +69,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
             id="ui-mockup-dialog"
             isOpen={isOpen}
             onClose={onClose}
-            sx={{display: "flex", flexDirection: "column", minHeight: "400px", minWidth: "500px"}}
+            sx={{display: "flex", flexDirection: "column", minWidth: "2000px", minHeight: "800px"}}
             title="User Interface"
         >
             <Box // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -83,14 +81,27 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                         sx={{display: "flex", margin: "0 auto 60px auto"}}
                     />
                 ) : (
-                    mockupURL && (
-                        <NextImage
-                            alt="UI Mockup Image from Dall-e"
-                            height={500}
-                            id="ui-mockup"
-                            src={mockupURL}
-                            width={1000}
-                        />
+                    generatedCode && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                width: "100%",
+                                height: "100%",
+                                overflow: "auto",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    width: "100%",
+                                }}
+                                dangerouslySetInnerHTML={{__html: generatedCode}}
+                            />
+                        </Box>
                     )
                 )}
             </Box>

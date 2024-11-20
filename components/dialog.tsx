@@ -23,6 +23,15 @@ export const MUIDialog: React.FC<DialogProps> = ({children, className, id, onClo
         onClose={onClose}
         open={isOpen}
         className={className}
+        PaperProps={{
+            sx: {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "100%",
+                minWidth: "100%",
+            },
+        }}
     >
         <DialogTitle id={`${id}-title`}>{title}</DialogTitle>
         <IconButton
