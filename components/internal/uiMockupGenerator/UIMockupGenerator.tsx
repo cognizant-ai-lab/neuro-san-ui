@@ -2,7 +2,6 @@ import Box from "@mui/material/Box"
 // TODO: Switch to MUI button, thing is the react-bootstrap button matches all the other buttons
 //import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
-import NextImage from "next/image"
 import {FC, useRef, useState} from "react"
 import {Button} from "react-bootstrap"
 
@@ -83,6 +82,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                     />
                 ) : (
                     generatedCode && (
+                        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                         <Box
                             sx={{
                                 display: "flex",
@@ -94,12 +94,16 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                             }}
                         >
                             <div
+                                id="generated-code"
                                 style={{
                                     display: "flex",
                                     justifyContent: "center",
                                     alignItems: "center",
                                     width: "100%",
                                 }}
+                                // The warning is valid -- the LLM could in theory generate dangerous code. Need to
+                                // think through how to mitigate this.
+                                // eslint-disable-next-line react/no-danger
                                 dangerouslySetInnerHTML={{__html: generatedCode}}
                             />
                         </Box>
