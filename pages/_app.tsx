@@ -8,10 +8,6 @@ import "reactflow/dist/style.css"
 import "react-bootstrap-typeahead/css/Typeahead.css"
 import "react-bootstrap-typeahead/css/Typeahead.bs5.css"
 
-// Tailwind is a dev dependency but this file is a "production" source. Weird situation, so disable the rule
-// eslint-disable-next-line import/no-extraneous-dependencies
-import "tailwindcss/tailwind.css"
-
 import "../styles/updatenode.css"
 import "../styles/globals.css"
 import "../styles/llmDropdown.css"
