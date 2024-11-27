@@ -301,7 +301,7 @@ export default function Index(): ReactElement {
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            Cognizant Data Integration Toolkit
+                            Cognizant Data And Intelligence Toolkit
                         </a>
                     </div>
                 </div>
