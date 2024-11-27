@@ -98,9 +98,9 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                         size={200}
                     />
                 ) : generatedCode ? (
-                    <div
+                    <Box
                         id="generated-code"
-                        style={{
+                        sx={{
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
@@ -112,25 +112,43 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                         dangerouslySetInnerHTML={{__html: generatedCode}}
                     />
                 ) : (
-                    <Typography
-                        id="ui-mockup-placeholder"
-                        sx={{
-                            color: "var(--bs-primary)",
-                            fontFamily: "var(--bs-font-sans-serif)",
-                            fontSize: "75px",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "100%",
-                            height: "100%",
-                            textAlign: "center",
-                        }}
-                    >
-                        Click &quot;Generate&quot; to render a sample user interface.
-                    </Typography>
+                    <Box id="ui-mockup-placeholder-container">
+                        <Box
+                            id="ui-mockup-background-image"
+                            sx={{
+                                width: "80vw",
+                                height: "75vh",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                backgroundImage: "url('/ui_background.png')",
+                                backgroundSize: "100% 100%", // Stretch the image to fit the box
+                                backgroundPosition: "center",
+                                opacity: 0.2,
+                            }}
+                        />
+                        <Typography
+                            id="ui-mockup-placeholder"
+                            sx={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                color: "var(--bs-primary)",
+                                fontFamily: "var(--bs-font-sans-serif)",
+                                fontSize: "50px",
+                                textAlign: "center",
+                                padding: "10px",
+                                borderRadius: "10px",
+                            }}
+                        >
+                            Click &quot;Generate&quot; to render a sample user interface.
+                        </Typography>
+                    </Box>
                 )}
             </Box>
-            <Box // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <Box
+                id="ui-mockup-btn-container"
                 sx={{alignSelf: "flex-end", width: "100%"}}
             >
                 <Button
@@ -143,6 +161,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                         marginTop: "1rem",
                         width: "100%",
                     }}
+                    disabled={isLoading}
                 >
                     Generate
                 </Button>
