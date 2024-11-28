@@ -122,7 +122,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                             height: "80vh",
                             border: "none",
                         }}
-                        sandbox="allow-scripts"
+                        sandbox=""
                     />
                 ) : (
                     <Box id="ui-mockup-placeholder-container">
