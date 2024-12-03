@@ -13,13 +13,22 @@ interface DialogProps {
     id: string
     isOpen: boolean
     onClose: () => void
-    sx?: SxProps
+    contentProps?: SxProps
     paperProps?: SxProps
     title?: string
 }
 // #endregion: Types
 
-export const MUIDialog: FC<DialogProps> = ({children, className, id, onClose, isOpen, sx, paperProps, title}) => (
+export const MUIDialog: FC<DialogProps> = ({
+    children,
+    className,
+    id,
+    onClose,
+    isOpen,
+    contentProps,
+    paperProps,
+    title,
+}) => (
     <Dialog
         id={id}
         onClose={onClose}
@@ -27,7 +36,12 @@ export const MUIDialog: FC<DialogProps> = ({children, className, id, onClose, is
         className={className}
         PaperProps={paperProps}
     >
-        <DialogTitle id={`${id}-title`}>{title}</DialogTitle>
+        <DialogTitle
+            id={`${id}-title`}
+            sx={{textAlign: "center"}}
+        >
+            {title}
+        </DialogTitle>
         <IconButton
             aria-label="close"
             id={`${id}-close-icon-btn`}
@@ -43,7 +57,7 @@ export const MUIDialog: FC<DialogProps> = ({children, className, id, onClose, is
         </IconButton>
         <DialogContent
             id={`${id}-content`}
-            sx={sx}
+            sx={contentProps}
         >
             {children}
         </DialogContent>

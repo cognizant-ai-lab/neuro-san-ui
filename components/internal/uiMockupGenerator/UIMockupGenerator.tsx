@@ -1,12 +1,11 @@
 import {Typography} from "@mui/material"
 import Box from "@mui/material/Box"
+import CircularProgress from "@mui/material/CircularProgress"
+import {FC, useState} from "react"
 // TODO: Switch to MUI button, thing is the react-bootstrap button matches all the other buttons
 //import Button from "@mui/material/Button"
-import CircularProgress from "@mui/material/CircularProgress"
-import {FC, useRef, useState} from "react"
 import {Button} from "react-bootstrap"
 
-import {MaximumBlue} from "../../../const"
 import {sendCodeUIQuery} from "../../../controller/code-ui/code-ui"
 import {CodeUiResponse} from "../../../pages/api/gpt/code-ui/types"
 import {MUIDialog} from "../../dialog"
@@ -24,6 +23,17 @@ interface UIMockupGeneratorProps {
 }
 // #endregion: Types
 
+/**
+ * Component that generates a mockup of a user interface based on the provided fields. It uses an LLM to generate
+ * static HTML which is then rendered in a sandboxed iframe.
+ * @param actionFields Action fields from the DMS page
+ * @param contextFields Context fields from the DMS page
+ * @param isOpen Whether the dialog is open
+ * @param onClose Function to close the dialog
+ * @param outcomeFields Outcome fields from the DMS page
+ * @param projectDescription Description of the project the user is working on
+ * @param projectName Name of the project the user is working on
+ */
 export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
     actionFields,
     contextFields,
@@ -35,9 +45,6 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
 }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [generatedCode, setGeneratedCode] = useState<string>("")
-
-    // Controller for cancelling fetch request
-    const controller = useRef<AbortController>(null)
 
     const codeGenerationQuery = `
         Project name: ${projectName}.
@@ -52,8 +59,6 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
         setIsLoading(true)
 
         try {
-            controller.current = new AbortController()
-
             const response: CodeUiResponse = await sendCodeUIQuery(codeGenerationQuery)
             setGeneratedCode(response.response.generatedCode)
         } catch (error) {
@@ -75,23 +80,91 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
         }
     }
 
-    return (
-        <MUIDialog
-            id="ui-mockup-dialog"
-            isOpen={isOpen}
-            onClose={onClose}
-            sx={{display: "flex", flexDirection: "column", minWidth: "2000px", minHeight: "800px"}}
-            paperProps={{
-                sx: {
+    function getGeneratedCodeIFrame() {
+        return (
+            <iframe
+                id="generated-code"
+                srcDoc={generatedCode}
+                style={{
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
-                    minHeight: "100%",
-                    minWidth: "100%",
-                },
-            }}
-            title={`Sample user interface for "${projectName}"`}
-        >
+                    alignItems: "center",
+                    width: "100%",
+                    height: "80vh",
+                    border: "none",
+                }}
+                sandbox=""
+            />
+        )
+    }
+
+    function getPlaceholder() {
+        return (
+            <Box id="ui-mockup-placeholder-container">
+                <Box
+                    id="ui-mockup-background-image"
+                    sx={{
+                        alignItems: "center",
+                        backgroundImage: "url('/ui_background.png')",
+                        backgroundPosition: "center",
+                        backgroundSize: "100% 100%",
+                        display: "flex",
+                        height: "75vh",
+                        justifyContent: "center",
+                        opacity: 0.4,
+                        width: "80vw",
+                    }}
+                />
+                <Typography
+                    id="ui-mockup-placeholder"
+                    sx={{
+                        color: "var(--bs-primary)",
+                        fontFamily: "var(--bs-font-sans-serif)",
+                        fontSize: "50px",
+                        padding: "10px",
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        backgroundColor: "rgba(255, 255, 255, 0.75)",
+                    }}
+                >
+                    Click &quot;Generate&quot; to render a sample user interface.
+                </Typography>
+            </Box>
+        )
+    }
+
+    function getGenerateButton() {
+        return (
+            <Box
+                id="ui-mockup-btn-container"
+                sx={{alignSelf: "flex-end", width: "100%"}}
+            >
+                <Button
+                    id="ui-mockup-btn"
+                    onClick={sendUserQueryToLlm}
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        background: "var(--bs-primary)",
+                        borderColor: "var(--bs-primary)",
+                        margin: "0 auto",
+                        marginTop: "2rem",
+                        marginBottom: "1rem",
+                        width: "90%",
+                    }}
+                    disabled={isLoading}
+                >
+                    Generate
+                </Button>
+            </Box>
+        )
+    }
+
+    function getDialogContent() {
+        return (
             <Box
                 id="ui-mockup-container"
                 sx={{
@@ -111,73 +184,33 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                         size={200}
                     />
                 ) : generatedCode ? (
-                    <iframe
-                        id="generated-code"
-                        srcDoc={generatedCode}
-                        style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "100%",
-                            height: "80vh",
-                            border: "none",
-                        }}
-                        sandbox=""
-                    />
+                    getGeneratedCodeIFrame()
                 ) : (
-                    <Box id="ui-mockup-placeholder-container">
-                        <Box
-                            id="ui-mockup-background-image"
-                            sx={{
-                                alignItems: "center",
-                                backgroundImage: "url('/ui_background.png')",
-                                backgroundPosition: "center",
-                                backgroundSize: "100% 100%",
-                                display: "flex",
-                                height: "75vh",
-                                justifyContent: "center",
-                                opacity: 0.4,
-                                width: "80vw",
-                            }}
-                        />
-                        <Typography
-                            id="ui-mockup-placeholder"
-                            sx={{
-                                color: "var(--bs-primary)",
-                                fontFamily: "var(--bs-font-sans-serif)",
-                                fontSize: "50px",
-                                padding: "10px",
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transform: "translate(-50%, -50%)",
-                                backgroundColor: "rgba(255, 255, 255, 0.75)",
-                            }}
-                        >
-                            Click &quot;Generate&quot; to render a sample user interface.
-                        </Typography>
-                    </Box>
+                    getPlaceholder()
                 )}
             </Box>
-            <Box
-                id="ui-mockup-btn-container"
-                sx={{alignSelf: "flex-end", width: "100%"}}
-            >
-                <Button
-                    id="ui-mockup-btn"
-                    onClick={sendUserQueryToLlm}
-                    style={{
-                        background: MaximumBlue,
-                        borderColor: MaximumBlue,
-                        marginBottom: "1rem",
-                        marginTop: "1rem",
-                        width: "100%",
-                    }}
-                    disabled={isLoading}
-                >
-                    Generate
-                </Button>
-            </Box>
+        )
+    }
+
+    return (
+        <MUIDialog
+            id="ui-mockup-dialog"
+            isOpen={isOpen}
+            onClose={onClose}
+            contentProps={{display: "flex", flexDirection: "column", minWidth: "2000px", minHeight: "800px"}}
+            paperProps={{
+                sx: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: "90%",
+                    minWidth: "90%",
+                },
+            }}
+            title={`Sample user interface for "${projectName}"`}
+        >
+            {getDialogContent()}
+            {getGenerateButton()}
         </MUIDialog>
     )
 }
