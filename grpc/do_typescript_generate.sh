@@ -1,21 +1,64 @@
 #!/usr/bin/env bash
 
-# This script generates gRPC stubs for Typescript from the definitions in the ./proto directory.
+# This script generates gRPC stubs for Typescript from the definitions in the ./proto directory. The script needs
+# to be run when initially setting up a dev environment, and any time there are changes to the protobuf definitions.
+#
 # Pre-requisites:
 # 1) Install the protoc compiler
 # 2) Install the ts-proto plugin https://github.com/stephenh/ts-proto/
-#
-# Note: The Dockerfile should take care of installing the pre-requisites.
+# 3) Get a Personal Access Token from Github and set it in the LEAF_PRIVATE_SOURCE_CREDENTIALS environment variable.
+# This token must have at least read access to the leaf-ai/neuro-san repository.
 #
 # This script must be run from the nextfront directory, which is in line with the Docker build which runs from the
 # nextfront directory.
+#
+# The agent (neuro-san) protobuf files reside in a separate Github repository. This script retrieves those and saves
+# them to an appropriate location where the protoc compiler can find them.
+
+# See https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html for what these do
+set -o errexit
+set -o errtrace
+set -o nounset
+set -o pipefail
+
+# Check if Github PAT is present
+if [ -z "${LEAF_PRIVATE_SOURCE_CREDENTIALS:-}" ]; then
+  echo "Error: LEAF_PRIVATE_SOURCE_CREDENTIALS environment variable must be set to a Github access token."
+  exit 1
+fi
 
 # Define directories
 GENERATED_DIR=./generated
 PROTOS_DIR=./proto
+NEURO_SAN_PROTO_DIR="${PROTOS_DIR}/neuro-san"
+
+# Define agent protocol version to use
+NEURO_SAN_BRANCH="0.1.9"
+
+# Create directories if necessary
+mkdir -p "${PROTOS_DIR}/internal" "$NEURO_SAN_PROTO_DIR" "${GENERATED_DIR}"
+
+# Copy main project proto files to the protos directory. Some day they will be in a separate repo.
+cp -r ../proto/* "${PROTOS_DIR}/"
+
+# Retrieve neuro-san proto file
+echo "Retrieving neuro-san proto files..."
+# Define the target local directory and file path
+LOCAL_PATH="$NEURO_SAN_PROTO_DIR/neuro_san/api/grpc"
+
+# Create the directory structure
+mkdir -p "$LOCAL_PATH"
+
+# Get the agent.proto file from the neuro-san repository. Initially just this one file.
+curl --header "Authorization: token $LEAF_PRIVATE_SOURCE_CREDENTIALS" \
+  --header "Accept: application/vnd.github.raw+json" \
+  --output "$LOCAL_PATH/agent.proto" \
+  --location \
+  --show-error \
+  --silent \
+  "https://api.github.com/repos/leaf-ai/neuro-san/contents/neuro_san/api/grpc/agent.proto?ref=${NEURO_SAN_BRANCH}"
 
 # Hack: google proto files expect to be in a certain hardcoded location, so we copy them there
-mkdir -p "${PROTOS_DIR}/internal"
 cp -r "node_modules/protobufjs/google" "${PROTOS_DIR}/internal"
 
 # More copying of files to work around Google hard-coded paths
@@ -31,13 +74,11 @@ cp -R "${PROTOS_DIR}/${GRPC_ECOSYSTEM_PATH}/${OPENAPIV2}" "${PROTOS_DIR}"
 # Ordering matters w/rt where generated file is output
 PROTO_PATH="--proto_path=${GENERATED_DIR} \
             --proto_path=${PROTOS_DIR} \
+            --proto_path=${PROTOS_DIR}/neuro-san \
             --proto_path=./node_modules/protobufjs"
 
 echo "PROTO_PATH=${PROTO_PATH}"
 echo "Generating gRPC code in ${GENERATED_DIR}..."
-
-# Create the generated directory if it doesn't exist already
-mkdir -p "${GENERATED_DIR}"
 
 # Clean existing
 rm -rf "${GENERATED_DIR:?}"/*

@@ -7,7 +7,7 @@ import SyntaxHighlighter from "react-syntax-highlighter"
 import {experimentGeneratedMessage, OrchestrationHandling, retry} from "./common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
 import {getLogs} from "../../../controller/agent/agent"
-import {AgentStatus, LogsResponse} from "../../../generated/unileaf_agent"
+import {AgentStatus, LogsResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import useEnvironmentStore from "../../../state/environment"
 
 const {Panel} = Collapse
