@@ -37,6 +37,9 @@ RUN apt-get update && \
     apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests \
       protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1
 
+# tmp debug hack
+RUN cat /run/secrets/github_pat
+
 # Deal with github pat in order to clone neuro-san repo
 # which is part of the do_typescript_generate script called below
 RUN --mount=type=secret,id=github_pat \
