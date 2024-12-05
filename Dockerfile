@@ -27,7 +27,6 @@ ENV NODE_ENV production
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/proto ./proto
 COPY . .
 
 # Extract build version
