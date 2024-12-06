@@ -17,6 +17,7 @@ ENV NODE_ENV production
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 WORKDIR /app
 COPY package.json yarn.lock ./
+COPY proto ./proto
 RUN yarn install --production --silent --prefer-offline --frozen-lockfile --non-interactive
 
 # Rebuild the source code only when needed
@@ -26,6 +27,7 @@ ENV NODE_ENV production
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/proto ./proto
 COPY . .
 
 # Extract build version
@@ -35,7 +37,8 @@ ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 # Install protobuf compiler and lib
 RUN apt-get update && \
     apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests \
-      protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1
+      protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1 ca-certificates \
+      curl=7.74.0-1.3+deb11u14
 
 # Deal with github pat in order to clone neuro-san repo
 # which is part of the do_typescript_generate script called below
