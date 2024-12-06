@@ -5,9 +5,10 @@ import {fireEvent, render, screen} from "@testing-library/react"
 import NodePopper from "../../components/nodepopper"
 
 describe("Node Popper", () => {
+    const mockBtnClick = jest.fn()
     const renderMockNodePopper = () => (
         <NodePopper
-            buttonProps={{btnContent: "mockBtnContent", id: "btnId"}}
+            buttonProps={{btnContent: "mockBtnContent", id: "btnId", onClick: mockBtnClick}}
             popperProps={{id: "popperId"}}
         >
             <div>Mock Popper </div>
@@ -27,6 +28,8 @@ describe("Node Popper", () => {
         const addLLMButton = await screen.findByText("mockBtnContent")
 
         fireEvent.click(addLLMButton)
+
+        expect(mockBtnClick).toHaveBeenCalled()
         expect(screen.getByText("Mock Popper")).toBeInTheDocument()
     })
 

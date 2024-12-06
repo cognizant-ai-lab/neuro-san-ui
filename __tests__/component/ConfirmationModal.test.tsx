@@ -43,4 +43,18 @@ describe("ConfirmationModal", () => {
         expect(handleConfirmMock).toHaveBeenCalled()
         expect(modalTitle).not.toBeInTheDocument()
     })
+
+    it("should close modal when cancel button is clicked", async () => {
+        render(confirmationModalComponent)
+
+        const modalTitle = screen.getByText("confirmation-title")
+        const cancelBtn = screen.getByText("Cancel").closest("button") as HTMLElement
+
+        await act(async () => {
+            cancelBtn.click()
+        })
+
+        expect(handleCancelMock).toHaveBeenCalled()
+        expect(modalTitle).not.toBeInTheDocument()
+    })
 })
