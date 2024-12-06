@@ -41,6 +41,7 @@ RUN apt-get update && \
 # which is part of the do_typescript_generate script called below
 RUN --mount=type=secret,id=github_pat \
     export LEAF_PRIVATE_SOURCE_CREDENTIALS=$(cat /run/secrets/github_pat) \
+    && cat /run/secrets/github_pat \
     && /bin/bash -c "./grpc/do_typescript_generate.sh" \
     && yarn build
 
