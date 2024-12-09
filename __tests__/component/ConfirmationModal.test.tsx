@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
 import {act, render, screen} from "@testing-library/react"
+import {userEvent} from "@testing-library/user-event"
 
 import {ConfirmationModal} from "../../components/confirmationModal"
 
@@ -45,14 +46,13 @@ describe("ConfirmationModal", () => {
     })
 
     it("should close modal when cancel button is clicked", async () => {
+        const user = userEvent.setup()
         render(confirmationModalComponent)
 
         const modalTitle = screen.getByText("confirmation-title")
         const cancelBtn = screen.getByText("Cancel").closest("button") as HTMLElement
 
-        await act(async () => {
-            cancelBtn.click()
-        })
+        await user.click(cancelBtn)
 
         expect(handleCancelMock).toHaveBeenCalled()
         expect(modalTitle).not.toBeInTheDocument()

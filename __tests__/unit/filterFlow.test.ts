@@ -1,10 +1,7 @@
-import {cloneDeep} from "lodash"
-
-import {Experiment} from "../../controller/experiments/types"
-import {filterExtraFlowProps} from "../../controller/experiments/update"
+import {filterExtraFlowProps} from "../../controller/filterFlow"
 
 describe("filterExtraFlowProps", () => {
-    const mockFlow = [
+    const MOCK_FLOW = JSON.stringify([
         {
             data: {
                 taggedDataList: [],
@@ -49,45 +46,47 @@ describe("filterExtraFlowProps", () => {
             },
             animated: true,
         },
-    ]
-    it("should remove un-needed flow props", () => {
-        const experiment = {flow: JSON.stringify(cloneDeep(mockFlow))} as unknown as Experiment
-        filterExtraFlowProps(experiment)
+    ])
 
-        expect(experiment.flow).toEqual([
-            {
-                data: {
-                    SelectedDataSourceId: "123",
-                    ParentNodeState: {
-                        params: {
-                            mockParam: {
-                                value: "3",
+    it("should remove un-needed flow props", () => {
+        const result = filterExtraFlowProps(MOCK_FLOW)
+
+        expect(result).toEqual(
+            JSON.stringify([
+                {
+                    data: {
+                        SelectedDataSourceId: "123",
+                        ParentNodeState: {
+                            params: {
+                                mockParam: {
+                                    value: "3",
+                                },
                             },
                         },
                     },
                 },
-            },
-            {
-                data: {
-                    ParentNodeState: {
-                        params: {
+                {
+                    data: {
+                        ParentNodeState: {
+                            params: {
+                                mockParam: {
+                                    default_value: "3",
+                                },
+                            },
+                        },
+                    },
+                    type: "prescriptornode",
+                },
+                {
+                    data: {
+                        ParameterSet: {
                             mockParam: {
                                 default_value: "3",
                             },
                         },
                     },
                 },
-                type: "prescriptornode",
-            },
-            {
-                data: {
-                    ParameterSet: {
-                        mockParam: {
-                            default_value: "3",
-                        },
-                    },
-                },
-            },
-        ])
+            ])
+        )
     })
 })
