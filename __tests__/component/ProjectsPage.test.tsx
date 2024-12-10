@@ -5,12 +5,12 @@ import {cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved} 
 import {DEMO_USER} from "../../const"
 import * as listFetch from "../../controller/list/fetch"
 import * as projectFetch from "../../controller/projects/fetch"
-import {Projects} from "../../controller/projects/types"
-import {AuthQuery} from "../../generated/auth"
+import {ResourceType, RoleType} from "../../generated/auth"
 import ProjectsPage from "../../pages/projects"
 import useEnvironmentStore from "../../state/environment"
 import {useLocalStorage} from "../../utils/use_local_storage"
 import {mockFetch} from "../testUtils"
+
 const MOCK_USER = "mock-user"
 
 const MOCK_PROJECT = {
@@ -30,6 +30,17 @@ const DEMO_PROJECT = {
     id: MOCK_PROJECT.id + 1, // make sure order is predictable
     name: "demo project",
     description: "demo project description",
+    hidden: false,
+    owner: DEMO_USER,
+    lastEditedBy: DEMO_USER,
+}
+
+const LONG_NAME_PROJECT = {
+    created_at: "2024-08-23T10:38:59.676337Z",
+    updated_at: "2024-08-26T08:12:16.627869Z",
+    id: Math.floor(Math.random() * 1000),
+    name: "long project name".repeat(100),
+    description: "long project description".repeat(100),
     hidden: false,
     owner: DEMO_USER,
     lastEditedBy: DEMO_USER,
@@ -114,24 +125,23 @@ jest.mock("../../controller/authorize/share", () => ({
 }))
 
 window.fetch = mockFetch({})
-jest.spyOn(listFetch, "fetchResourceList").mockImplementation(
-    () =>
-        [
-            {
-                role: "OWNER",
-                target: {
-                    resourceType: "PROJECT",
-                    id: MOCK_PROJECT.id,
-                },
+jest.spyOn(listFetch, "fetchResourceList").mockImplementation(() =>
+    Promise.resolve([
+        {
+            role: RoleType.OWNER,
+            target: {
+                resourceType: ResourceType.PROJECT,
+                id: MOCK_PROJECT.id,
             },
-            {
-                role: "OWNER",
-                target: {
-                    resourceType: "PROJECT",
-                    id: DEMO_PROJECT.id,
-                },
+        },
+        {
+            role: RoleType.OWNER,
+            target: {
+                resourceType: ResourceType.PROJECT,
+                id: DEMO_PROJECT.id,
             },
-        ] as unknown as Promise<AuthQuery[]>
+        },
+    ])
 )
 
 jest.mock("../../utils/use_local_storage", () => ({
@@ -149,8 +159,8 @@ describe("Projects Page", () => {
 
     beforeEach(() => {
         jest.clearAllMocks()
-        jest.spyOn(projectFetch, "fetchProjects").mockImplementation(
-            () => [MOCK_PROJECT, DEMO_PROJECT] as unknown as Promise<Projects>
+        jest.spyOn(projectFetch, "fetchProjects").mockImplementation(() =>
+            Promise.resolve([MOCK_PROJECT, DEMO_PROJECT, LONG_NAME_PROJECT])
         )
     })
 
@@ -162,7 +172,7 @@ describe("Projects Page", () => {
     it("should display a project page with projects visible to user", async () => {
         render(<ProjectsPage />)
 
-        // UI truncates description and adds an ellipsis
+        // UI displays the project descriptions
         const mockProject = await screen.findByText(MOCK_PROJECT.description)
         const demoProject = await screen.findByText(DEMO_PROJECT.description)
 
@@ -170,8 +180,24 @@ describe("Projects Page", () => {
         expect(demoProject).toBeInTheDocument()
     })
 
+    it("Should truncate long descriptions", async () => {
+        render(<ProjectsPage />)
+
+        // UI truncates description and adds an ellipsis.
+        const longProject = await screen.findByText((_content, element) => {
+            return element.textContent?.startsWith(LONG_NAME_PROJECT.description)
+        })
+
+        expect(longProject).toBeInTheDocument()
+
+        // Make sure the description is truncated or at least has an ellipsis style
+        // Note: can't test this properly since RTL doesn't render ellipsis styles
+        // See: https://github.com/testing-library/react-testing-library/issues/751
+        expect(longProject).toHaveStyle("text-overflow: ellipsis")
+    })
+
     it("should show error page if project list returns falsy", async () => {
-        jest.spyOn(projectFetch, "fetchProjects").mockReturnValue(null as unknown as Promise<Projects>)
+        jest.spyOn(projectFetch, "fetchProjects").mockReturnValue(Promise.resolve(null))
         render(<ProjectsPage />)
 
         const errorText = await screen.findByText("Unable to retrieve projects")
