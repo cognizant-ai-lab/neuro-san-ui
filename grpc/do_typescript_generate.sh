@@ -6,7 +6,7 @@
 # Pre-requisites:
 # 1) Install the protoc compiler
 # 2) Install the ts-proto plugin https://github.com/stephenh/ts-proto/
-# 3) Get a Personal Access Token from Github and set it in the LEAF_PRIVATE_SOURCE_CREDENTIALS environment variable.
+# 3) Get a Personal Access Token from Github and set it in the LEAF_SOURCE_CREDENTIALS environment variable.
 # This token must have at least read access to the leaf-ai/neuro-san repository.
 #
 # This script must be run from the nextfront directory, which is in line with the Docker build which runs from the
@@ -22,8 +22,8 @@ set -o nounset
 set -o pipefail
 
 # Check if Github PAT is present
-if [ -z "${LEAF_PRIVATE_SOURCE_CREDENTIALS:-}" ]; then
-  echo "Error: LEAF_PRIVATE_SOURCE_CREDENTIALS environment variable must be set to a Github access token."
+if [ -z "${LEAF_SOURCE_CREDENTIALS:-}" ]; then
+  echo "Error: LEAF_SOURCE_CREDENTIALS environment variable must be set to a Github access token."
   exit 1
 fi
 
@@ -54,11 +54,11 @@ LOCAL_PATH="$NEURO_SAN_PROTO_DIR/neuro_san/api/grpc"
 mkdir -p "$LOCAL_PATH"
 
 echo "******* check the pat *********
-echo $LEAF_PRIVATE_SOURCE_CREDENTIALS
+echo $LEAF_SOURCE_CREDENTIALS
 echo "******* end pat check *********
 
 # Get the agent.proto file from the neuro-san repository. Initially just this one file.
-curl --header "Authorization: token $LEAF_PRIVATE_SOURCE_CREDENTIALS" \
+curl --header "Authorization: token $LEAF_SOURCE_CREDENTIALS" \
   --header "Accept: application/vnd.github.raw+json" \
   --output "$LOCAL_PATH/agent.proto" \
   --location \

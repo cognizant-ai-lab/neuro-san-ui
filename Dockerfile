@@ -42,8 +42,8 @@ RUN apt-get update && \
 
 # Deal with github pat in order to clone neuro-san repo
 # which is part of the do_typescript_generate script called below
-RUN --mount=type=secret,id=LEAF_PRIVATE_SOURCE_CREDENTIALS \
-    export LEAF_PRIVATE_SOURCE_CREDENTIALS=$(cat /run/secrets/LEAF_PRIVATE_SOURCE_CREDENTIALS) \
+RUN --mount=type=secret,id=LEAF_SOURCE_CREDENTIALS \
+    export LEAF_SOURCE_CREDENTIALS=$(cat /run/secrets/LEAF_SOURCE_CREDENTIALS) \
     && /bin/bash -c "./grpc/do_typescript_generate.sh" \
     && yarn build
 
