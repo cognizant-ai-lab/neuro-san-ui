@@ -1,8 +1,9 @@
+import {FormControl, MenuItem} from "@mui/material"
+import Select from "@mui/material/Select"
 import {Slider} from "antd"
 import {useEffect, useState} from "react"
 import {Button} from "react-bootstrap"
 import {FiPlay, FiStopCircle} from "react-icons/fi"
-import Select from "react-select"
 
 import {MaximumBlue} from "../../const"
 
@@ -76,7 +77,7 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
     ]
 
     // Current playback speed. Default to 1.0x
-    const [playbackSpeed, setPlaybackSpeed] = useState(playbackSpeedOptions[3])
+    const [playbackSpeed, setPlaybackSpeed] = useState(playbackSpeedOptions[3].value)
 
     // No setup but returning a teardown function that clears the timer if it hadn't
     // been cleaned up.
@@ -140,7 +141,7 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                             // Just divide by the current scaling value to get how long we should pause between
                             // frames. For example, if we would normally pause 100ms, and playback speed is 2x,
                             // divide: 100ms / 2.0 = 50ms and that's how long we wait, resulting in 2x speed playback.
-                            const adjustedFrameDelay = frameDelayMs / parseFloat(playbackSpeed.value)
+                            const adjustedFrameDelay = frameDelayMs / parseFloat(playbackSpeed)
                             const interval = setInterval(() => {
                                 setSelectedGen((generationNumber) => {
                                     if (generationNumber === numberOfGenerations) {
@@ -157,14 +158,30 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                 >
                     {playing ? <FiStopCircle id="generation-play-stop" /> : <FiPlay id="generation-play-play" />}
                 </Button>
-                <Select
-                    id="select-playback-speed"
-                    isDisabled={playing}
-                    styles={{control: (styles) => ({...styles, width: "100px", height: "100%", margin: "0 25px"})}}
-                    options={playbackSpeedOptions}
-                    value={playbackSpeed}
-                    onChange={(newOption) => setPlaybackSpeed(newOption)}
-                />
+                <FormControl
+                    style={{alignItems: "self-end"}}
+                    id="select-playback-speed-form-control"
+                >
+                    <Select
+                        id="select-playback-speed"
+                        disabled={playing}
+                        style={{width: "100px", height: "100%", margin: "0 25px"}}
+                        value={playbackSpeed}
+                        onChange={(event) => {
+                            setPlaybackSpeed(event.target.value)
+                        }}
+                    >
+                        {playbackSpeedOptions.map((item) => (
+                            <MenuItem
+                                id={`select-playback-speed-${item.value}`}
+                                key={item.value}
+                                value={item.value}
+                            >
+                                {item.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
                 <Slider
                     id="selected-generation-slider"
                     defaultValue={numberOfGenerations}

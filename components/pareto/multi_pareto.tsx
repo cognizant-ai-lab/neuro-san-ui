@@ -1,9 +1,9 @@
 import InfoIcon from "@mui/icons-material/Info"
-import {TableBody, TableCell, TableRow, Tooltip} from "@mui/material"
+import {FormControl, MenuItem, TableBody, TableCell, TableRow, Tooltip} from "@mui/material"
+import Select from "@mui/material/Select"
 import {ReactElement, useState} from "react"
 import {Col, Container, Row} from "react-bootstrap"
 import {FiAlertCircle} from "react-icons/fi"
-import Select from "react-select"
 
 import {ParallelCoordsPlot} from "./parallel_coords_plot"
 import {ParetoPlot2D} from "./pareto_plot_2d"
@@ -70,21 +70,31 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
         defaultPlot = 0
     }
 
-    const [selectedChartType, setSelectedChartType] = useState(options[defaultPlot])
+    const [selectedChartType, setSelectedChartType] = useState(options[defaultPlot].value)
 
     // Create selection list for Pareto plot types
     const paretoChartSelect = (
-        <Select
-            id="pareto-chart-type-select"
-            inputId="pareto-chart-type-select"
-            instanceId="pareto-chart-type-select"
-            options={options}
-            value={selectedChartType}
-            isOptionDisabled={(option) => option.isDisabled}
-            onChange={(option) =>
-                setSelectedChartType({label: option.label, value: option.value, isDisabled: option.isDisabled})
-            }
-        />
+        <FormControl
+            style={{width: "100%"}}
+            id="pareto-chart-type-select-form-control"
+        >
+            <Select
+                id="pareto-chart-type-select"
+                value={selectedChartType}
+                onChange={(event) => setSelectedChartType(event.target.value)}
+            >
+                {options.map((item) => (
+                    <MenuItem
+                        disabled={item.isDisabled}
+                        id={`pareto-chart-type-select-${item.value}`}
+                        key={item.value}
+                        value={item.value}
+                    >
+                        {item.label}
+                    </MenuItem>
+                ))}
+            </Select>
+        </FormControl>
     )
 
     const nodePlots = []
@@ -113,7 +123,7 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                         {/* Choose type of plot component based on user selection */}
 
                         {/* Parallel coordinates */}
-                        {selectedChartType.value === "parallel" && (
+                        {selectedChartType === "parallel" && (
                             <ParallelCoordsPlot
                                 id="parallel-coords-table"
                                 Pareto={props.Pareto}
@@ -124,7 +134,7 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                         )}
 
                         {/* 2D pareto */}
-                        {selectedChartType.value === "2d_pareto" && (
+                        {selectedChartType === "2d_pareto" && (
                             <ParetoPlot2D
                                 id="pareto-plot-table"
                                 Pareto={props.Pareto}
@@ -135,21 +145,21 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                         )}
 
                         {/* 3D types */}
-                        {(selectedChartType.value === "surface" ||
-                            selectedChartType.value === "line3D" ||
-                            selectedChartType.value === "scatter3D") && (
+                        {(selectedChartType === "surface" ||
+                            selectedChartType === "line3D" ||
+                            selectedChartType === "scatter3D") && (
                             <ParetoPlot3D
                                 id="surface-plot-3d-table"
                                 Pareto={props.Pareto}
                                 NodeToCIDMap={props.NodeToCIDMap}
                                 PrescriptorNodeToCIDMapUpdater={props.PrescriptorNodeToCIDMapUpdater}
                                 ObjectivesCount={props.ObjectivesCount}
-                                PlotSubtype={selectedChartType.value}
+                                PlotSubtype={selectedChartType}
                             />
                         )}
 
                         {/* Radar plot */}
-                        {selectedChartType.value === "radar" && (
+                        {selectedChartType === "radar" && (
                             <RadarPlot
                                 id="radar-plot-3d-table"
                                 Pareto={props.Pareto}

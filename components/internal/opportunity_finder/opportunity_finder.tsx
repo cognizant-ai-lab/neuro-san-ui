@@ -2,7 +2,8 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {styled} from "@mui/material"
+import {FormControl, MenuItem, styled} from "@mui/material"
+import Select from "@mui/material/Select"
 import {Alert, Collapse, Tooltip} from "antd"
 import NextImage from "next/image"
 import {CSSProperties, FormEvent, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
@@ -10,7 +11,6 @@ import {Button, Form, InputGroup} from "react-bootstrap"
 import {BsStopBtn, BsTrash} from "react-icons/bs"
 import {FiRefreshCcw} from "react-icons/fi"
 import {MdCode, MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
-import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
 import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
@@ -417,6 +417,17 @@ export function OpportunityFinder(): ReactElement {
     // Disable Clear Chat button if there is no chat history or if we are awaiting a response
     const disableClearChatButton = awaitingResponse || chatOutput.length === 0
 
+    const STYNTAX_THEMES = [
+        {
+            label: "HLJS Themes",
+            options: HLJS_THEMES,
+        },
+        {
+            label: "Prism Themes",
+            options: PRISM_THEMES,
+        },
+    ]
+
     /**
      * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
@@ -529,28 +540,47 @@ export function OpportunityFinder(): ReactElement {
                     >
                         Code/JSON theme:
                     </Form.Label>
-                    <Select
-                        id="syntax-highlighter-select"
-                        value={{label: selectedTheme, value: selectedTheme}}
-                        styles={{
-                            container: (provided) => ({
-                                ...provided,
+                    <FormControl
+                        id="syntax-highlighter-select-form-control"
+                        style={{display: "block"}}
+                    >
+                        <Select
+                            id="syntax-highlighter-select"
+                            value={selectedTheme}
+                            style={{
                                 maxWidth: "350px",
                                 marginBottom: "1rem",
-                            }),
-                        }}
-                        onChange={(option) => setSelectedTheme(option.value)}
-                        options={[
-                            {
-                                label: "HLJS Themes",
-                                options: HLJS_THEMES.map((theme) => ({label: theme, value: theme})),
-                            },
-                            {
-                                label: "Prism Themes",
-                                options: PRISM_THEMES.map((theme) => ({label: theme, value: theme})),
-                            },
-                        ]}
-                    />
+                            }}
+                            onChange={(event) => setSelectedTheme(event.target.value)}
+                        >
+                            {STYNTAX_THEMES.map((theme) =>
+                                Object.keys(theme).map((themeKey) => {
+                                    if (themeKey === "label") {
+                                        return (
+                                            <MenuItem
+                                                id={`syntax-highlighter-select-${theme.label}`}
+                                                key={theme.label}
+                                                disabled
+                                                value=""
+                                            >
+                                                {theme.label}
+                                            </MenuItem>
+                                        )
+                                    } else {
+                                        return theme[themeKey].map((syntaxTheme) => (
+                                            <MenuItem
+                                                id={`syntax-highlighter-select-${syntaxTheme}`}
+                                                key={syntaxTheme}
+                                                value={syntaxTheme}
+                                            >
+                                                {syntaxTheme}
+                                            </MenuItem>
+                                        ))
+                                    }
+                                })
+                            )}
+                        </Select>
+                    </FormControl>
                 </Form.Group>
             )}
             {projectUrl.current && (
