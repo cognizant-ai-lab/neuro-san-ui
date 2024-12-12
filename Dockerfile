@@ -40,8 +40,6 @@ RUN apt-get update && \
       protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1 ca-certificates \
       curl=7.74.0-1.3+deb11u14
 
-RUN update-ca-certificates -v
-
 # Deal with github pat in order to clone neuro-san repo
 # which is part of the do_typescript_generate script called below
 RUN --mount=type=secret,id=LEAF_SOURCE_CREDENTIALS \
