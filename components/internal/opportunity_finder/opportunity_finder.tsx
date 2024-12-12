@@ -73,7 +73,10 @@ const LLMChatGroupConfigBtn = styled(Button, {
     zIndex: 99999,
     background: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
     borderColor: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
+    borderRadius: "var(--bs-border-radius)",
     color: "white",
+    width: "30px",
+    height: "30px",
 }))
 
 const CommandButton = styled(Button, {
@@ -587,11 +590,7 @@ export function OpportunityFinder(): ReactElement {
                     {isDataGenerator && (
                         <Tooltip
                             id="enable-code-json-theme-dropdown"
-                            title={
-                                codeJsonThemeEnabled
-                                    ? "Customize code/JSON theme enabled"
-                                    : "Customize code/JSON theme disabled"
-                            }
+                            title={`Customize code/JSON theme ${codeJsonThemeEnabled ? "enabled" : "disabled"}`}
                         >
                             <LLMChatGroupConfigBtn
                                 enabled={codeJsonThemeEnabled}
