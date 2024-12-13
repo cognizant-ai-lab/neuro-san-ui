@@ -159,13 +159,13 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                     {playing ? <FiStopCircle id="generation-play-stop" /> : <FiPlay id="generation-play-play" />}
                 </Button>
                 <FormControl
-                    style={{alignItems: "self-end"}}
+                    sx={{alignItems: "self-end"}}
                     id="select-playback-speed-form-control"
                 >
                     <Select
                         id="select-playback-speed"
                         disabled={playing}
-                        style={{width: "100px", height: "100%", margin: "0 25px"}}
+                        sx={{width: "100px", height: "100%", margin: "0 25px"}}
                         value={playbackSpeed}
                         onChange={(event) => {
                             setPlaybackSpeed(event.target.value)

@@ -75,7 +75,7 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
     // Create selection list for Pareto plot types
     const paretoChartSelect = (
         <FormControl
-            style={{width: "100%"}}
+            sx={{width: "100%"}}
             id="pareto-chart-type-select-form-control"
         >
             <Select

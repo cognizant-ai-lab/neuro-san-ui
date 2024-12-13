@@ -542,12 +542,12 @@ export function OpportunityFinder(): ReactElement {
                     </Form.Label>
                     <FormControl
                         id="syntax-highlighter-select-form-control"
-                        style={{display: "block"}}
+                        sx={{display: "block"}}
                     >
                         <Select
                             id="syntax-highlighter-select"
                             value={selectedTheme}
-                            style={{
+                            sx={{
                                 width: "350px",
                                 marginBottom: "1rem",
                             }}

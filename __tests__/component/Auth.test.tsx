@@ -1,7 +1,6 @@
 import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
 import {render, screen} from "@testing-library/react"
-import {mocked} from "jest-mock"
 import {SessionContextValue, useSession} from "next-auth/react"
 
 import {Auth} from "../../components/auth"
@@ -13,7 +12,7 @@ jest.mock("next-auth/react", () => {
     }
 })
 
-const mockedUseSession = mocked(useSession)
+const mockedUseSession = jest.mocked(useSession)
 describe("Auth Component", () => {
     const renderMockAuth = () => (
         <Auth>
