@@ -3,8 +3,7 @@
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {DeleteOutline, Loop} from "@mui/icons-material"
-import {Box, Button, FormGroup, FormLabel, Input, styled} from "@mui/material"
-import {FormControl, MenuItem, styled} from "@mui/material"
+import {Box, Button, FormControl, FormGroup, FormLabel, Input, MenuItem, styled} from "@mui/material"
 import Select from "@mui/material/Select"
 import {Alert, Collapse, Tooltip} from "antd"
 import NextImage from "next/image"
@@ -442,7 +441,7 @@ export function OpportunityFinder(): ReactElement {
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !awaitingResponse && chatOutput.length > 0
 
-    const STYNTAX_THEMES = [
+    const SYNTAX_THEMES = [
         {
             label: "HLJS Themes",
             options: HLJS_THEMES,
@@ -559,7 +558,7 @@ export function OpportunityFinder(): ReactElement {
                         style={{marginRight: "1rem", marginBottom: "0.5rem"}}
                     >
                         Code/JSON theme:
-                    </Form.Label>
+                    </FormLabel>
                     <FormControl
                         id="syntax-highlighter-select-form-control"
                         sx={{display: "block"}}
@@ -572,15 +571,17 @@ export function OpportunityFinder(): ReactElement {
                                 marginBottom: "1rem",
                             }}
                             MenuProps={{
-                                PaperProps: {
-                                    style: {
-                                        maxHeight: "350px",
+                                slotProps: {
+                                    paper: {
+                                        style: {
+                                            maxHeight: "350px",
+                                        },
                                     },
                                 },
                             }}
                             onChange={(event) => setSelectedTheme(event.target.value)}
                         >
-                            {STYNTAX_THEMES.map((theme) =>
+                            {SYNTAX_THEMES.map((theme) =>
                                 Object.keys(theme).map((themeKey) => {
                                     if (themeKey === "label") {
                                         return (
@@ -608,7 +609,7 @@ export function OpportunityFinder(): ReactElement {
                             )}
                         </Select>
                     </FormControl>
-                </Form.Group>
+                </FormGroup>
             )}
             {projectUrl.current && (
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
