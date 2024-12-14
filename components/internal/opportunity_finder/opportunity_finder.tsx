@@ -4,12 +4,13 @@
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {DeleteOutline, Loop} from "@mui/icons-material"
 import {Box, Button, FormGroup, FormLabel, Input, styled} from "@mui/material"
+import {FormControl, MenuItem, styled} from "@mui/material"
+import Select from "@mui/material/Select"
 import {Alert, Collapse, Tooltip} from "antd"
 import NextImage from "next/image"
 import {CSSProperties, ReactElement, MouseEvent as ReactMouseEvent, ReactNode, useEffect, useRef, useState} from "react"
 import {BsStopBtn} from "react-icons/bs"
 import {MdCode, MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
-import Select from "react-select"
 import ClipLoader from "react-spinners/ClipLoader"
 import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
@@ -441,6 +442,17 @@ export function OpportunityFinder(): ReactElement {
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !awaitingResponse && chatOutput.length > 0
 
+    const STYNTAX_THEMES = [
+        {
+            label: "HLJS Themes",
+            options: HLJS_THEMES,
+        },
+        {
+            label: "Prism Themes",
+            options: PRISM_THEMES,
+        },
+    ]
+
     /**
      * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
@@ -547,30 +559,56 @@ export function OpportunityFinder(): ReactElement {
                         style={{marginRight: "1rem", marginBottom: "0.5rem"}}
                     >
                         Code/JSON theme:
-                    </FormLabel>
-                    <Select
-                        id="syntax-highlighter-select"
-                        value={{label: selectedTheme, value: selectedTheme}}
-                        styles={{
-                            container: (provided) => ({
-                                ...provided,
-                                maxWidth: "350px",
+                    </Form.Label>
+                    <FormControl
+                        id="syntax-highlighter-select-form-control"
+                        sx={{display: "block"}}
+                    >
+                        <Select
+                            id="syntax-highlighter-select"
+                            value={selectedTheme}
+                            sx={{
+                                width: "350px",
                                 marginBottom: "1rem",
-                            }),
-                        }}
-                        onChange={(option) => setSelectedTheme(option.value)}
-                        options={[
-                            {
-                                label: "HLJS Themes",
-                                options: HLJS_THEMES.map((theme) => ({label: theme, value: theme})),
-                            },
-                            {
-                                label: "Prism Themes",
-                                options: PRISM_THEMES.map((theme) => ({label: theme, value: theme})),
-                            },
-                        ]}
-                    />
-                </FormGroup>
+                            }}
+                            MenuProps={{
+                                PaperProps: {
+                                    style: {
+                                        maxHeight: "350px",
+                                    },
+                                },
+                            }}
+                            onChange={(event) => setSelectedTheme(event.target.value)}
+                        >
+                            {STYNTAX_THEMES.map((theme) =>
+                                Object.keys(theme).map((themeKey) => {
+                                    if (themeKey === "label") {
+                                        return (
+                                            <MenuItem // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                                id={`syntax-highlighter-select-${theme.label}`}
+                                                key={theme.label}
+                                                disabled
+                                                value=""
+                                            >
+                                                {theme.label}
+                                            </MenuItem>
+                                        )
+                                    } else {
+                                        return theme[themeKey].map((syntaxTheme) => (
+                                            <MenuItem
+                                                id={`syntax-highlighter-select-${syntaxTheme}`}
+                                                key={syntaxTheme}
+                                                value={syntaxTheme}
+                                            >
+                                                {syntaxTheme}
+                                            </MenuItem>
+                                        ))
+                                    }
+                                })
+                            )}
+                        </Select>
+                    </FormControl>
+                </Form.Group>
             )}
             {projectUrl.current && (
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids

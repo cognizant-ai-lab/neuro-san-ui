@@ -819,7 +819,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         await deleteRun(selectedDeleteIdx, selectedDeleteRun)
                         closeAndResetDeleteRunModal()
                     }}
-                    id={`terminate-confirm-${selectedDeleteRunName}-dialog`}
+                    id={`delete-confirm-${selectedDeleteRunName}-dialog`}
                     okBtnLabel="Delete"
                     title={
                         <span id={`delete-confirm-${selectedDeleteRunName}-title`}>
