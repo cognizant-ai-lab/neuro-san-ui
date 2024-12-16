@@ -3,7 +3,7 @@
  */
 
 import {AgentChatRequest, AgentLogsRequest, AgentType} from "../../generated/metadata"
-import {ChatRequest, ChatResponse, LogsRequest, LogsResponse} from "../../generated/unileaf_agent"
+import {ChatRequest, ChatResponse, LogsRequest, LogsResponse} from "../../generated/neuro_san/api/grpc/agent"
 import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"
 

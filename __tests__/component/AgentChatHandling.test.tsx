@@ -8,7 +8,7 @@ import {
 } from "../../components/internal/opportunity_finder/AgentChatHandling"
 import {retry} from "../../components/internal/opportunity_finder/common"
 import {getLogs} from "../../controller/agent/agent"
-import {AgentStatus, LogsResponse} from "../../generated/unileaf_agent"
+import {AgentStatus, LogsResponse} from "../../generated/neuro_san/api/grpc/agent"
 
 const mockSyntaxHighlighter = jest.fn(({children}) => <div>{children}</div>)
 

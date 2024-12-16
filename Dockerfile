@@ -37,17 +37,21 @@ ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 # Install protobuf compiler and lib
 RUN apt-get update && \
     apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests \
-      protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1
+      protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1 ca-certificates=20210119 \
+      curl=7.74.0-1.3+deb11u14
 
-# Generate probotobuf files and run yarn
-RUN /bin/bash -c "./grpc/do_typescript_generate.sh" \
+# Deal with github pat in order to clone neuro-san repo
+# which is part of the do_typescript_generate script called below
+RUN --mount=type=secret,id="LEAF_SOURCE_CREDENTIALS" \
+    SECRET_CREDS="$(cat /run/secrets/LEAF_SOURCE_CREDENTIALS)" \
+    && export LEAF_SOURCE_CREDENTIALS="$SECRET_CREDS" \
+    && /bin/bash -c "./grpc/do_typescript_generate.sh" \
     && yarn build
 
 # Production image, copy all the files and run next
 FROM gcr.io/distroless/nodejs:$NODEJS_VERSION AS runner
 
 WORKDIR /app
-
 ENV NODE_ENV production
 
 # You only need to copy next.config.js if you are NOT using the default configuration
