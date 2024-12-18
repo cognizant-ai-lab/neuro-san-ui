@@ -1,7 +1,9 @@
 import InfoIcon from "@mui/icons-material/Info"
+import Button from "@mui/material/Button"
+import Checkbox from "@mui/material/Checkbox"
+import FormControlLabel from "@mui/material/FormControlLabel"
 import Tooltip from "@mui/material/Tooltip"
-import {Button, Checkbox, Collapse, Radio, RadioChangeEvent, Space} from "antd"
-import {CheckboxChangeEvent} from "antd/es/checkbox"
+import {Collapse, Radio, RadioChangeEvent, Space} from "antd"
 // eslint-disable-next-line import/no-named-as-default
 import Debug from "debug"
 import httpStatus from "http-status"
@@ -106,23 +108,26 @@ export default function NewProject(props: NewProps) {
                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         title={getCreateProjectButtonTooltip()}
-                        placement="left-start"
                     >
-                        <Button
-                            id="create-project-or-data-profile-button"
-                            type="primary"
-                            htmlType="submit"
-                            className="w-full mt-2 mb-2"
-                            disabled={!enabledDataTagSection}
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                color: "white",
-                                opacity: enabledDataTagSection ? OPAQUE : SEMI_OPAQUE,
-                            }}
-                        >
-                            {`${4 + startIndexOffset}. ${isNewProject ? "Create project" : "Create data profile"}`}
-                        </Button>
+                        <span id="create_project_span">
+                            <Button
+                                id="create-project-or-data-profile-button"
+                                type="submit"
+                                disabled={!enabledDataTagSection}
+                                fullWidth={true}
+                                sx={{
+                                    backgroundColor: "var(--bs-primary) !important",
+                                    border: "solid 1px var(--bs-primary)",
+                                    borderRadius: "var(--bs-border-radius)",
+                                    color: "white !important",
+                                    fontSize: "0.9em",
+                                    marginTop: "0.5em",
+                                    opacity: enabledDataTagSection ? OPAQUE : SEMI_OPAQUE,
+                                }}
+                            >
+                                {`${4 + startIndexOffset}. ${isNewProject ? "Create project" : "Create data profile"}`}
+                            </Button>
+                        </span>
                     </Tooltip>
                 }
                 key="4"
@@ -357,19 +362,19 @@ export default function NewProject(props: NewProps) {
                     >
                         <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             // 2/6/23 DEF - Tooltip does not have an id property when compiling
-                            title={getCreatButtonTooltip()}
+                            title={getCreateButtonTooltip()}
                         >
                             <Button
                                 id="create-data-source-button"
                                 className="my-4"
                                 style={{
-                                    background: MaximumBlue,
-                                    borderColor: MaximumBlue,
+                                    background: "var(--bs-primary)",
+                                    borderColor: "var(--bs-primary)",
                                     color: "white",
-                                    opacity: getCreatButtonTooltip() === null ? OPAQUE : SEMI_OPAQUE,
+                                    opacity: getCreateButtonTooltip() === null ? OPAQUE : SEMI_OPAQUE,
                                 }}
                                 onClick={async () => generateDataProfile(getS3Key())}
-                                disabled={getCreatButtonTooltip() !== null}
+                                disabled={getCreateButtonTooltip() !== null}
                             >
                                 Create
                             </Button>
@@ -485,18 +490,27 @@ export default function NewProject(props: NewProps) {
                         </label>
                     ) : (
                         <>
-                            <Checkbox
-                                id="agree_checkbox"
-                                checked={fileUploadAcknowledged}
-                                onChange={(e: CheckboxChangeEvent) => {
-                                    setFileUploadAcknowledged(e.target.checked)
-                                }}
-                            >
-                                <strong id="warning">
-                                    I confirm that the file I am about to upload does NOT contain sensitive customer
-                                    data or personally identifiable information (PII).
-                                </strong>
-                            </Checkbox>
+                            <FormControlLabel // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                label={
+                                    // MUI will not accept the `sx` prop on this element
+                                    <strong
+                                        id="warning"
+                                        style={{fontSize: "0.75em"}}
+                                    >
+                                        I confirm that the file I am about to upload does NOT contain sensitive customer
+                                        data or personally identifiable information (PII).
+                                    </strong>
+                                }
+                                control={
+                                    <Checkbox
+                                        id="agree_checkbox"
+                                        checked={fileUploadAcknowledged}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                            setFileUploadAcknowledged(e.target.checked)
+                                        }}
+                                    />
+                                }
+                            />
                             <BlankLines // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 numLines={2}
                             />
@@ -508,8 +522,8 @@ export default function NewProject(props: NewProps) {
                                     id="upload-file-button"
                                     disabled={uploadButtonTooltip !== null}
                                     style={{
-                                        background: MaximumBlue,
-                                        borderColor: MaximumBlue,
+                                        background: "var(--bs-primary)",
+                                        borderColor: "var(--bs-primary)",
                                         color: "white",
                                         opacity: uploadButtonTooltip ? SEMI_OPAQUE : OPAQUE,
                                     }}
@@ -908,7 +922,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
     }
 
     // Tell user why button is disabled
-    function getCreatButtonTooltip() {
+    function getCreateButtonTooltip() {
         if (isUploading) {
             return "Please wait until upload is complete"
         } else if (isUsingS3Source && !inputFields.s3Key) {
