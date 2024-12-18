@@ -8,7 +8,7 @@ import {MUIDialog} from "../../components/dialog"
 describe("Dialog", () => {
     const onClose = jest.fn()
 
-    it("should render Dialog title and body when open", async () => {
+    it("should render Dialog title, close button, and body when open", async () => {
         render(
             <MUIDialog
                 id="dialog-test"
@@ -72,8 +72,25 @@ describe("Dialog", () => {
             </MUIDialog>
         )
 
-        const closeBtn = await screen.findByTestId("dialog-test-close-icon")
-        await user.click(closeBtn)
+        const closeIcon = await screen.findByTestId("dialog-test-close-icon")
+        await user.click(closeIcon)
         expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    it("should not show close icon when closeable=false", async () => {
+        render(
+            <MUIDialog
+                closeable={false}
+                id="dialog-test"
+                isOpen={true}
+                onClose={onClose}
+                title="Dialog Test"
+            >
+                Dialog Body
+            </MUIDialog>
+        )
+
+        const closeIcon = screen.queryByTestId("dialog-test-close-icon")
+        expect(closeIcon).not.toBeInTheDocument()
     })
 })

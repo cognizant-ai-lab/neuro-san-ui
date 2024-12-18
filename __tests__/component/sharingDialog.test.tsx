@@ -4,6 +4,7 @@
 
 // eslint-disable-next-line no-shadow
 import {fireEvent, render, screen, waitFor} from "@testing-library/react"
+import {userEvent} from "@testing-library/user-event"
 
 import SharingDialog from "../../components/internal/sharingDialog"
 import {getShares, share} from "../../controller/authorize/share"
@@ -22,6 +23,8 @@ const mockCurrentShares = [
 ]
 
 describe("Project sharing Component", () => {
+    const shareWithGithubUserTooltipText = "Please share with a user's GitHub username, not their email address."
+
     beforeEach(() => {
         jest.clearAllMocks()
         ;(getShares as jest.Mock).mockResolvedValue(mockCurrentShares)
@@ -267,5 +270,25 @@ describe("Project sharing Component", () => {
         const okButton = await screen.findByRole("button", {name: /Ok/u})
         expect(okButton).toBeInTheDocument()
         expect(okButton).toBeDisabled()
+    })
+
+    it("should render github user sharing info icon and tooltip", async () => {
+        render(
+            <SharingDialog
+                project={mockProject}
+                currentUser={mockCurrentUser}
+                closeModal={jest.fn()}
+                title="Share Project"
+                visible={true}
+            />
+        )
+
+        expect(screen.queryByText(shareWithGithubUserTooltipText)).not.toBeInTheDocument()
+
+        const infoIcon = screen.queryByTestId(`sharing-dialog-share-with-info-icon-${mockProject?.id}`)
+        await userEvent.hover(infoIcon)
+        await waitFor(() => {
+            expect(screen.getByText(shareWithGithubUserTooltipText)).toBeInTheDocument()
+        })
     })
 })

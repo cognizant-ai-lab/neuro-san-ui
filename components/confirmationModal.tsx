@@ -21,6 +21,7 @@ const StyledOKButton = styled(StyledButton)(({disabled}) => ({
 // #region: Types
 interface ConfirmationModalProps {
     cancelBtnLabel?: string
+    closeable?: boolean
     content: ReactNode
     handleCancel?: () => void
     handleOk?: () => void
@@ -33,6 +34,7 @@ interface ConfirmationModalProps {
 
 export const ConfirmationModal: FC<ConfirmationModalProps> = ({
     cancelBtnLabel,
+    closeable = true,
     content = "",
     handleCancel = null,
     handleOk = null,
@@ -67,7 +69,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
 
     const Footer: JSX.Element = (
         <>
-            {handleCancel && (
+            {handleCancel && ( // If there is no handleCancel passed, Cancel button will not be rendered
                 <StyledButton
                     // This ID needs to be dynamic because there can be several instances of this on the page
                     id={`${id}-confirm-cancel-btn`}
@@ -94,6 +96,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
 
     return (
         <MUIDialog
+            closeable={closeable}
             contentSx={{fontSize: "0.8rem", minWidth: "600px", paddingTop: "0"}}
             footer={Footer}
             id={`${id}-confirm-main`}

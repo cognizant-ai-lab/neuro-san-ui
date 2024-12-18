@@ -1,4 +1,5 @@
-import {Alert, Button, Input, Modal, Space} from "antd"
+import Button from "@mui/material/Button"
+import {Alert, Input, Space} from "antd"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd"
 import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
@@ -7,6 +8,7 @@ import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai"
 import {reasonToHumanReadable} from "../../../controller/datasources/conversion"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued, Profile} from "../../../generated/metadata"
 import {empty, jsonStringifyInOrder} from "../../../utils/objects"
+import {ConfirmationModal} from "../../confirmationModal"
 import NeuroAIChatbot from "../chatbot/neuro_ai_chatbot"
 
 interface ProfileTableProps {
@@ -485,9 +487,7 @@ export default function ProfileTable(props: ProfileTableProps) {
         )
     }
 
-    const saveHandler = (e: ReactMouseEvent<HTMLElement>) => {
-        e.preventDefault()
-
+    const saveHandler = () => {
         const profileCopy = {...profile}
 
         if (profileCopy.dataTag.fields) {
@@ -502,62 +502,109 @@ export default function ProfileTable(props: ProfileTableProps) {
         setConfirmationModalStatus(false)
     }
 
-    const confirmationModal = (
-        <Modal // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            title="Unsaved Changes"
-            open={confirmationModalStatus}
-            destroyOnClose={true}
-            closable={false}
-            onOk={saveHandler}
-            okButtonProps={{
-                id: "confirm-categorical-values-ok-button",
-            }}
-            okType="default"
-            onCancel={() => {
+    const renderConfirmationModal = () => (
+        <ConfirmationModal
+            cancelBtnLabel="Leave without saving"
+            closeable={false}
+            content={
+                <p id="confirm-changes-text">
+                    You are about to exit without saving. Changes will be lost. Do you want to save your changes before
+                    leaving?
+                </p>
+            }
+            handleCancel={() => {
                 setConfirmationModalStatus(false)
             }}
-            footer={[
-                <Button
-                    id="confirm-cancel-btn"
-                    key="confirm-cancel"
-                    onClick={() => setConfirmationModalStatus(false)}
-                >
-                    Leave without saving
-                </Button>,
-                <Button
-                    id="confirm-save-btn"
-                    key="confirm-save"
-                    type="primary"
-                    onClick={saveHandler}
-                >
-                    Save changes
-                </Button>,
-            ]}
-            maskClosable={false}
-            cancelButtonProps={{
-                id: "confirm-categorical-values-cancel-button",
+            handleOk={() => {
+                saveHandler()
             }}
-        >
-            <p id="confirm-changes-text">
-                You are about to exit without saving. Changes will be lost. Do you want to save your changes before
-                leaving?
-            </p>
-        </Modal>
+            id="confirm-categorical-values-dialog"
+            maskCloseable={false}
+            okBtnLabel="Save changes"
+            title="Unsaved Changes"
+        />
     )
 
-    const editCategoryValuesModal = (
-        <Modal // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            // 2/6/23 DEF - Modal doesn't have an id property when compiling
-            title="Edit categorical values"
-            open={showFieldEditor}
-            destroyOnClose={true}
-            closable={false}
-            onOk={saveHandler}
-            okButtonProps={{
-                id: "edit-categorical-values-ok-button",
-            }}
-            okType="default"
-            onCancel={() => {
+    const editCategoryValuesModalContent = (
+        <Container id="field-container">
+            <Row id="field-being-edited-row">
+                <label id="field-being-edited">Field: {fieldBeingEditedName}</label>
+            </Row>
+            <Row
+                id="field-editor-drag-msg-row"
+                className="pt-3"
+            >
+                (drag to re-order)
+            </Row>
+            <p id="values-separator" />
+            <Row id="values-droppable-row">
+                {/* Drag-drop list of values */}
+                {
+                    <Droppable // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                        // 2/6/23 DEF - Droppable doesn't have an id property when compiling
+                        droppableId="values"
+                    >
+                        {(provided) => (
+                            <Container id="values-droppable-container">
+                                <ListGroup
+                                    as="ol"
+                                    id="values-droppable-listgroup"
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                >
+                                    {
+                                        profile && fieldBeingEditedName
+                                            ? currentCategoryValues.map((val, index) => {
+                                                  return renderCategoryDragList(val, index)
+                                              })
+                                            : [] // empty list by default
+                                    }
+                                </ListGroup>
+                                {provided.placeholder}
+                            </Container>
+                        )}
+                    </Droppable>
+                }
+            </Row>
+            <Row
+                id="add-category-value-label-row"
+                className="pt-4"
+            >
+                <label id="add-category-label">Add category value:</label>
+            </Row>
+            <Row
+                id="add-category-value-row"
+                className="pt-1"
+            >
+                <Space.Compact id="category-values-group">
+                    <Input
+                        id="add-category-value-input"
+                        style={{width: "calc(100% - 200px)"}}
+                        placeholder="Enter value"
+                        onChange={(event) => {
+                            setNewItem(event.target.value)
+                        }}
+                    />
+                    <Button
+                        id="add-category-value-button"
+                        onClick={() => {
+                            setCurrentCategoryValues([...currentCategoryValues, newItem])
+                        }}
+                        disabled={!newItem || currentCategoryValues.includes(newItem)}
+                    >
+                        Add
+                    </Button>
+                </Space.Compact>
+            </Row>
+        </Container>
+    )
+
+    const renderEditCategoryValuesModal = () => (
+        <ConfirmationModal
+            cancelBtnLabel="Leave without saving"
+            closeable={false}
+            content={editCategoryValuesModalContent}
+            handleCancel={() => {
                 if (jsonStringifyInOrder(categoryOrder) !== jsonStringifyInOrder(currentCategoryValues)) {
                     setConfirmationModalStatus(true)
                     setShowFieldEditor(false)
@@ -566,84 +613,14 @@ export default function ProfileTable(props: ProfileTableProps) {
                 setShowFieldEditor(false)
                 setFieldBeingEditedName(undefined)
             }}
-            maskClosable={false}
-            cancelButtonProps={{
-                id: "edit-categorical-values-cancel-button",
+            handleOk={() => {
+                saveHandler()
             }}
-        >
-            <Container id="field-container">
-                <Row id="field-being-edited-row">
-                    <label id="field-being-edited">Field: {fieldBeingEditedName}</label>
-                </Row>
-                <Row
-                    id="field-editor-drag-msg-row"
-                    className="pt-3"
-                >
-                    (drag to re-order)
-                </Row>
-                <p id="values-separator" />
-                <Row id="values-droppable-row">
-                    {/* Drag-drop list of values */}
-                    {
-                        <Droppable // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            // 2/6/23 DEF - Droppable doesn't have an id property when compiling
-                            droppableId="values"
-                        >
-                            {(provided) => (
-                                <Container id="values-droppable-container">
-                                    <ListGroup
-                                        as="ol"
-                                        id="values-droppable-listgroup"
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                    >
-                                        {
-                                            profile && fieldBeingEditedName
-                                                ? currentCategoryValues.map((val, index) => {
-                                                      return renderCategoryDragList(val, index)
-                                                  })
-                                                : [] // empty list by default
-                                        }
-                                    </ListGroup>
-                                    {provided.placeholder}
-                                </Container>
-                            )}
-                        </Droppable>
-                    }
-                </Row>
-                <Row
-                    id="add-category-value-label-row"
-                    className="pt-4"
-                >
-                    <label id="add-category-label">Add category value:</label>
-                </Row>
-                <Row
-                    id="add-category-value-row"
-                    className="pt-1"
-                >
-                    <Space.Compact id="category-values-group">
-                        <Input
-                            id="add-category-value-input"
-                            style={{width: "calc(100% - 200px)"}}
-                            placeholder="Enter value"
-                            onChange={(event) => {
-                                setNewItem(event.target.value)
-                            }}
-                        />
-                        <Button
-                            id="add-category-value-button"
-                            type="primary"
-                            onClick={() => {
-                                setCurrentCategoryValues([...currentCategoryValues, newItem])
-                            }}
-                            disabled={!newItem || currentCategoryValues.includes(newItem)}
-                        >
-                            Add
-                        </Button>
-                    </Space.Compact>
-                </Row>
-            </Container>
-        </Modal>
+            id="edit-categorical-values-dialog"
+            maskCloseable={false}
+            okBtnLabel="Save changes"
+            title="Edit categorical values"
+        />
     )
 
     useEffect(() => {
@@ -698,8 +675,8 @@ export default function ProfileTable(props: ProfileTableProps) {
                 id={propsId}
                 className="flex flex-col"
             >
-                {editCategoryValuesModal}
-                {confirmationModal}
+                {showFieldEditor && renderEditCategoryValuesModal()}
+                {confirmationModalStatus && renderConfirmationModal()}
                 <div
                     id="profile-table-div"
                     className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8"

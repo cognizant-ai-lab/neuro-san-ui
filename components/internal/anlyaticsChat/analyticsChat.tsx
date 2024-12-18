@@ -2,7 +2,7 @@
  * This is the module for the "AI decision assistant".
  */
 import {ChatMessage as LangchainChatMessage} from "@langchain/core/messages"
-import {Modal, Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
 import {omit} from "lodash"
 import {FormEvent, ReactElement, useEffect, useRef, useState} from "react"
 import {Button, Form, InputGroup} from "react-bootstrap"
@@ -19,6 +19,7 @@ import {ChatMessage as AnalyticsChatMessage, ChatMessageChatMessageType} from ".
 import {DataSource} from "../../../generated/metadata"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import BlankLines from "../../blanklines"
+import {ConfirmationModal} from "../../confirmationModal"
 import {NotificationType, sendNotification} from "../../notification"
 
 interface AnalyticsChatProps {
@@ -282,24 +283,15 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                 id="plot-div"
                 style={{position: "absolute", top: "50%", left: "50%"}}
             >
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                <Modal
-                    open={showPlot && imageData?.length > 0}
-                    destroyOnClose={true}
-                    closable={true}
-                    onOk={() => setShowPlot(false)}
-                    onCancel={() => setShowPlot(false)}
-                    okButtonProps={{
-                        id: "confirmation-modal-ok-btn",
-                    }}
-                    okType="primary"
-                    maskClosable={true}
-                    width="50%"
-                    zIndex={99999}
-                    cancelButtonProps={{style: {display: "none"}}}
-                >
-                    {imageData && getImage()}
-                </Modal>
+                {showPlot && imageData?.length > 0 && (
+                    <ConfirmationModal
+                        content={imageData && getImage()}
+                        handleOk={() => setShowPlot(false)}
+                        id="show-plot-confirmation-dialog"
+                        okBtnLabel="Save changes"
+                        title="Edit categorical values"
+                    />
+                )}
             </div>
             <Form
                 id="user-query-form"

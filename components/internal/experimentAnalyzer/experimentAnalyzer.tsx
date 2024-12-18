@@ -1,4 +1,5 @@
-import {Drawer, Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
+import {Drawer} from "antd"
 import {cloneDeep} from "lodash"
 import {useEffect, useRef, useState} from "react"
 import {MdOutlineSaveAlt} from "react-icons/md"

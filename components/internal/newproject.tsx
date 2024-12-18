@@ -1,5 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info"
-import {Button, Checkbox, Collapse, Radio, RadioChangeEvent, Space, Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
+import {Button, Checkbox, Collapse, Radio, RadioChangeEvent, Space} from "antd"
 import {CheckboxChangeEvent} from "antd/es/checkbox"
 // eslint-disable-next-line import/no-named-as-default
 import Debug from "debug"
@@ -105,7 +106,7 @@ export default function NewProject(props: NewProps) {
                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         title={getCreateProjectButtonTooltip()}
-                        placement="leftTop"
+                        placement="left-start"
                     >
                         <Button
                             id="create-project-or-data-profile-button"
@@ -137,7 +138,7 @@ export default function NewProject(props: NewProps) {
                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - Tooltip does not have an id property when compiling
                         title={enabledDataTagSection ? "" : "Please create your data source first"}
-                        placement="leftTop"
+                        placement="left-start"
                     >
                         <span id="tag-your-data-header">{`${3 + startIndexOffset}. Tag your Data`}</span>
                     </Tooltip>
@@ -158,7 +159,7 @@ export default function NewProject(props: NewProps) {
                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - Tooltip does not have an id property
                         title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
-                        placement="leftTop"
+                        placement="left-start"
                     >
                         <span id="create-your-data-source-header">
                             {`${2 + startIndexOffset}. Create your data source`}

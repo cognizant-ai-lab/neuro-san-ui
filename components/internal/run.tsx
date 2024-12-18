@@ -1,5 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info"
-import {Radio, RadioChangeEvent, Space, Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
+import {Radio, RadioChangeEvent, Space} from "antd"
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
 import {useEffect, useState} from "react"

@@ -1,5 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info"
-import {Skeleton, Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
+import {Skeleton} from "antd"
 import {Dispatch, SetStateAction} from "react"
 import {Dropdown} from "react-bootstrap"
 import {getOutgoers} from "reactflow"

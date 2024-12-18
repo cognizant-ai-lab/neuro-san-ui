@@ -1,5 +1,5 @@
 import {styled} from "@mui/material"
-import {Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
 import {BsDatabaseAdd} from "react-icons/bs"
 import {FaArrowRightLong} from "react-icons/fa6"
 import {LuBrainCircuit} from "react-icons/lu"

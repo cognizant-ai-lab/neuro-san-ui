@@ -9,7 +9,7 @@ describe("ConfirmationModal", () => {
     const handleCancelMock = jest.fn()
     const handleConfirmMock = jest.fn()
 
-    const confirmationModalComponent = (
+    const defaultConfirmationModalComponent = (
         <ConfirmationModal
             content="confirmation-text"
             handleCancel={handleCancelMock}
@@ -19,8 +19,17 @@ describe("ConfirmationModal", () => {
         />
     )
 
-    it("should render a confirmation modal", async () => {
-        render(confirmationModalComponent)
+    const confirmationModalComponentWithoutCancel = (
+        <ConfirmationModal
+            content="confirmation-text"
+            handleOk={handleConfirmMock}
+            id="test-confirmation-modal"
+            title="confirmation-title"
+        />
+    )
+
+    it("should render a confirmation modal with all elements", async () => {
+        render(defaultConfirmationModalComponent)
 
         const modalTitle = screen.getByText("confirmation-title")
         const modalText = screen.getByText("confirmation-text")
@@ -33,9 +42,16 @@ describe("ConfirmationModal", () => {
         expect(confirmBtn).toBeInTheDocument()
     })
 
+    it("should not render Cancel button if handleCancel is not passed", async () => {
+        render(confirmationModalComponentWithoutCancel)
+
+        const cancelBtn = screen.queryByText("Cancel")
+        expect(cancelBtn).not.toBeInTheDocument()
+    })
+
     it("should close modal when Cancel button is clicked", async () => {
         const user = userEvent.setup()
-        render(confirmationModalComponent)
+        render(defaultConfirmationModalComponent)
 
         const modalText = screen.getByText("confirmation-text")
         const cancelBtn = screen.getByText("Cancel").closest("button") as HTMLElement
@@ -49,7 +65,7 @@ describe("ConfirmationModal", () => {
 
     it("should close modal when Confirm button is clicked", async () => {
         const user = userEvent.setup()
-        render(confirmationModalComponent)
+        render(defaultConfirmationModalComponent)
 
         const modalText = screen.getByText("confirmation-text")
         const confirmBtn = screen.getByText("Confirm").closest("button") as HTMLElement

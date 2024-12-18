@@ -1,6 +1,7 @@
 import InfoIcon from "@mui/icons-material/Info"
-import {FormControl, MenuItem, TableBody, TableCell, TableRow, Tooltip} from "@mui/material"
+import {FormControl, MenuItem, TableBody, TableCell, TableRow} from "@mui/material"
 import Select from "@mui/material/Select"
+import Tooltip from "@mui/material/Tooltip"
 import {ReactElement, useState} from "react"
 import {Col, Container, Row} from "react-bootstrap"
 import {FiAlertCircle} from "react-icons/fi"

@@ -22,6 +22,7 @@ const StyledDialogTitle = styled(DialogTitle)({
 interface DialogProps {
     children: ReactNode
     className?: string
+    closeable?: boolean
     contentSx?: SxProps
     footer?: JSX.Element
     id: string
@@ -35,6 +36,7 @@ interface DialogProps {
 export const MUIDialog: FC<DialogProps> = ({
     children,
     className,
+    closeable = true,
     contentSx,
     footer,
     id,
@@ -51,21 +53,23 @@ export const MUIDialog: FC<DialogProps> = ({
         PaperProps={paperProps}
     >
         <StyledDialogTitle id={`${id}-title`}>{title}</StyledDialogTitle>
-        <IconButton
-            aria-label="close"
-            id={`${id}-close-icon-btn`}
-            onClick={onClose}
-            sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-            }}
-        >
-            <CloseIcon
-                data-testid={`${id}-close-icon`}
-                id={`${id}-close-icon`}
-            />
-        </IconButton>
+        {closeable && (
+            <IconButton
+                aria-label="close"
+                id={`${id}-close-icon-btn`}
+                onClick={onClose}
+                sx={{
+                    position: "absolute",
+                    right: 8,
+                    top: 8,
+                }}
+            >
+                <CloseIcon
+                    data-testid={`${id}-close-icon`}
+                    id={`${id}-close-icon`}
+                />
+            </IconButton>
+        )}
         <DialogContent
             id={`${id}-content`}
             sx={contentSx}

@@ -1,4 +1,4 @@
-import {Tooltip} from "antd"
+import Tooltip from "@mui/material/Tooltip"
 import {useEffect, useState} from "react"
 import {Card} from "react-bootstrap"
 

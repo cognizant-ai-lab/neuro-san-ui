@@ -3,6 +3,7 @@
  */
 
 import CloseIcon from "@mui/icons-material/Close"
+import InfoIcon from "@mui/icons-material/Info"
 import {styled} from "@mui/material"
 import Alert from "@mui/material/Alert"
 import Box from "@mui/material/Box"
@@ -193,8 +194,24 @@ export default function SharingDialog({
                                 onChange={handleInputChange}
                                 disabled={operationComplete}
                                 ref={(input) => input?.focus()}
-                                style={{fontSize: "0.8rem"}}
+                                style={{display: "inline-block", fontSize: "0.8rem", width: "95%"}}
                             />
+                            <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                id={`sharing-dialog-share-with-tooltip-${project?.id}`}
+                                title="Please share with a user's GitHub username, not their email address."
+                            >
+                                <InfoIcon // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                    data-testid={`sharing-dialog-share-with-info-icon-${project?.id}`}
+                                    id={`sharing-dialog-share-with-info-icon-${project?.id}`}
+                                    sx={{
+                                        bottom: "2px",
+                                        color: "var(--bs-primary)",
+                                        fontSize: 15,
+                                        left: "8.5px",
+                                        position: "relative",
+                                    }}
+                                />
+                            </Tooltip>
                         </Col>
                         <Col
                             id="sharing-form-col-role"
