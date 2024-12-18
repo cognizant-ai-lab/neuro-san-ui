@@ -81,20 +81,16 @@ export const processChatResponse = async (
                 orchestrationHandling,
                 updateOutput
             )
+
+            return
         } catch (e) {
-            // We couldn't parse the error block. Display a generic error message to the user
-            const baseMessage =
+            // We couldn't parse the error block. Could be a false positive -- occurrence of ```json but it's not an
+            // error, so log a warning and continue.
+            console.warn(
                 "Error occurred and was unable to parse error block. " +
-                `Error block: "${errorMatches.groups.errorBlock}, parsing error: ${e}".`
-            await retry(
-                `${baseMessage} Retrying...`,
-                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-                orchestrationHandling,
-                updateOutput
+                    `Error block: "${errorMatches.groups.errorBlock}, parsing error: ${e}".`
             )
         }
-
-        return
     }
 
     // Check for completion of orchestration by checking if response contains project info

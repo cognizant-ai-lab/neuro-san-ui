@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-shadow
 import {render, screen} from "@testing-library/react"
 
-import {FormattedMarkdown} from "../../components/internal/opportunity_finder/FormattedMarkdown"
+import {FormattedMarkdown} from "../../../../components/internal/opportunity_finder/FormattedMarkdown"
 
 // Have to mock these up due to https://github.com/remarkjs/react-markdown/issues/635
 // And we can't even fix it using `transformIgnorePatterns` due to https://github.com/vercel/next.js/issues/35634

@@ -5,10 +5,10 @@ import {
     pollForLogs,
     processChatResponse,
     processNewLogs,
-} from "../../components/internal/opportunity_finder/AgentChatHandling"
-import {retry} from "../../components/internal/opportunity_finder/common"
-import {getLogs} from "../../controller/agent/agent"
-import {AgentStatus, LogsResponse} from "../../generated/neuro_san/api/grpc/agent"
+} from "../../../../components/internal/opportunity_finder/AgentChatHandling"
+import {retry} from "../../../../components/internal/opportunity_finder/common"
+import {getLogs} from "../../../../controller/agent/agent"
+import {AgentStatus, LogsResponse} from "../../../../generated/neuro_san/api/grpc/agent"
 
 const mockSyntaxHighlighter = jest.fn(({children}) => <div>{children}</div>)
 
@@ -21,15 +21,15 @@ jest.mock("react-syntax-highlighter", () => {
     }
 })
 
-jest.mock("../../controller/agent/agent", () => ({
+jest.mock("../../../../controller/agent/agent", () => ({
     __esModule: true,
-    ...jest.requireActual("../../controller/agent/agent"),
+    ...jest.requireActual("../../../../controller/agent/agent"),
     getLogs: jest.fn(),
 }))
 
-jest.mock("../../components/internal/opportunity_finder/common", () => ({
+jest.mock("../../../../components/internal/opportunity_finder/common", () => ({
     __esModule: true,
-    ...jest.requireActual("../../components/internal/opportunity_finder/common"),
+    ...jest.requireActual("../../../../components/internal/opportunity_finder/common"),
     retry: jest.fn(),
 }))
 
@@ -183,6 +183,10 @@ describe("pollForLogs", () => {
 })
 
 describe("processChatResponse", () => {
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
     it("Should detect and handle an error block in the chatResponse", async () => {
         // This is how errors come back from the agents, complete with ```json, newlines and whitespace. Our regex
         // should be able to detect this and call retry with the error message.
@@ -198,5 +202,17 @@ describe("processChatResponse", () => {
             null,
             null
         )
+    })
+
+    it("Should ignore error blocks that cannot be parsed", async () => {
+        // Feed it an invalid JSON error block -- escapes shouldn't be there but often are added by LLM.
+        // Also the Agents sometimes return JSON that isn't an error block at all. This tests both cases.
+        const invalidJSON = '\\"Foo\\": \\"bar\\"'
+        const chatResponse = `user: generate an error\nassistant: \`\`\`json\n{${invalidJSON}}\n\`\`\`\n`
+
+        jest.spyOn(console, "warn").mockImplementation()
+        await processChatResponse(chatResponse, null, null, null)
+        expect(retry).not.toHaveBeenCalled()
+        expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("unable to parse error block"))
     })
 })

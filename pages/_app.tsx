@@ -14,6 +14,7 @@ import "../styles/llmDropdown.css"
 import "../styles/splashpage.css"
 import "../styles/rundialog.css"
 
+import {CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
 import Head from "next/head"
 import {useRouter} from "next/router"
@@ -31,6 +32,7 @@ import {GENERIC_LOGO, LOGO, MaximumBlue} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"
 import useUserInfoStore from "../state/userInfo"
+import {APP_THEME} from "../theme"
 
 const debug = debugModule("app")
 
@@ -196,7 +198,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
      *
      * @returns The outer container of the app
      */
-    function getAppContainer() {
+    function getAppComponent() {
         // Haven't figured out whether we have ALB headers yet
         if (currentUser === undefined || !backendApiUrl) {
             debug("Rendering loading spinner")
@@ -247,31 +249,36 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
         )
     } else {
         body = (
-            // Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
-            // unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be removed
-            // when we fully switch to ALB auth.
-            <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                session={session}
-            >
-                <ErrorBoundary id="error_boundary">
-                    <Navbar
-                        id="nav-bar"
-                        Logo={isGeneric ? GENERIC_LOGO : LOGO}
-                        WithBreadcrumbs={Component.withBreadcrumbs ?? true}
-                    />
+            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+            <ThemeProvider theme={APP_THEME}>
+                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                <CssBaseline />
+                {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
+                unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
+                removed when we fully switch to ALB auth.*/}
+                <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    session={session}
+                >
+                    <ErrorBoundary id="error_boundary">
+                        <Navbar
+                            id="nav-bar"
+                            Logo={isGeneric ? GENERIC_LOGO : LOGO}
+                            WithBreadcrumbs={Component.withBreadcrumbs ?? true}
+                        />
 
-                    <Container id="body-container">
-                        {getAppContainer()}
-                        <div id="fixed-pos-div">
-                            <NeuroAIChatbot
-                                id="chatbot"
-                                userAvatar={picture || undefined}
-                                pageContext={Component.pageContext || ""}
-                            />
-                        </div>
-                    </Container>
-                </ErrorBoundary>
-            </SessionProvider>
+                        <Container id="body-container">
+                            {getAppComponent()}
+                            <div id="fixed-pos-div">
+                                <NeuroAIChatbot
+                                    id="chatbot"
+                                    userAvatar={picture || undefined}
+                                    pageContext={Component.pageContext || ""}
+                                />
+                            </div>
+                        </Container>
+                    </ErrorBoundary>
+                </SessionProvider>
+            </ThemeProvider>
         )
     }
 

@@ -2,7 +2,7 @@
 Unit tests for the "file" utility module
  */
 
-import {getFileName, toSafeFilename} from "../../utils/file"
+import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 
 describe("toSafeFilename", () => {
     it("should replace non-alphanumeric characters with underscores", () => {
@@ -66,5 +66,13 @@ describe("getFileName", () => {
 
     it("should return the file name when the path contains only one forward slash", () => {
         expect(getFileName("C:/myfile.txt")).toBe("myfile.txt")
+    })
+})
+
+describe("splitFileName", () => {
+    it("Should split a filename correctly", () => {
+        expect(splitFilename("foo.csv")).toEqual({name: "foo", ext: "csv"})
+        expect(splitFilename("foo")).toEqual({name: "foo", ext: ""})
+        expect(splitFilename("foo.bar.baz")).toEqual({name: "foo.bar", ext: "baz"})
     })
 })

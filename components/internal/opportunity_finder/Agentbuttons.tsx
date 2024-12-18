@@ -40,7 +40,7 @@ const AgentIconDiv = styled("div")({
 const AgentDiv = styled("div")(({enabled, selected}) => ({
     alignItems: "center",
     backgroundColor: selected ? SecondaryBlue : null,
-    border: "1px solid #cad1d7",
+    border: "4px solid #cad1d7",
     borderColor: selected ? MaximumBlue : null,
     borderRadius: "30px",
     cursor: "pointer",

@@ -2,15 +2,13 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {FormControl, MenuItem, styled} from "@mui/material"
+import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
+import {Box, Button, FormControl, FormGroup, FormLabel, Input, MenuItem, styled} from "@mui/material"
 import Select from "@mui/material/Select"
 import Tooltip from "@mui/material/Tooltip"
 import {Alert, Collapse} from "antd"
 import NextImage from "next/image"
-import {CSSProperties, FormEvent, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
-import {Button, Form, InputGroup} from "react-bootstrap"
-import {BsStopBtn, BsTrash} from "react-icons/bs"
-import {FiRefreshCcw} from "react-icons/fi"
+import {CSSProperties, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {MdCode, MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 import ClipLoader from "react-spinners/ClipLoader"
 import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
@@ -22,7 +20,7 @@ import {experimentGeneratedMessage} from "./common"
 import {INLINE_ALERT_PROPERTIES} from "./const"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
-import {DEFAULT_USER_IMAGE, MaximumBlue, SecondaryBlue} from "../../../const"
+import {DEFAULT_USER_IMAGE, SecondaryBlue} from "../../../const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/opportunity_finder"
 import {AgentStatus, ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
@@ -35,8 +33,9 @@ const {Panel} = Collapse
 
 // #region: Types
 type LLMChatGroupConfigBtnProps = {
-    enabled: boolean
-    posRight: number
+    enabled?: boolean
+    posRight?: number
+    posBottom?: number
 }
 // #endregion: Types
 
@@ -69,9 +68,32 @@ const LLMChatGroupConfigBtn = styled(Button, {
     right: posRight || null,
     top: 10,
     zIndex: 99999,
-    background: `${enabled ? MaximumBlue : "darkgray"} !important`,
-    borderColor: `${enabled ? MaximumBlue : "darkgray"} !important`,
+    background: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
+    borderColor: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
+    borderRadius: "var(--bs-border-radius)",
     color: "white",
+    width: "30px",
+    height: "30px",
+}))
+
+const CommandButton = styled(Button, {
+    shouldForwardProp: (prop) => prop !== "posRight" && prop !== "posBottom",
+})<LLMChatGroupConfigBtnProps>(({disabled, posRight, posBottom}) => ({
+    background: "var(--bs-primary) !important",
+    borderColor: "var(--bs-primary) !important",
+    borderRadius: "var(--bs-border-radius)",
+    bottom: posBottom || null,
+    color: "white !important",
+    display: "inline",
+    fontSize: "15px",
+    fontWeight: "500",
+    right: posRight || null,
+    lineHeight: "38px",
+    padding: "2px",
+    width: 126,
+    zIndex: 99999,
+    opacity: disabled ? "50%" : "70%",
+    cursor: disabled ? "pointer" : "default",
 }))
 // #endregion: Styled Components
 
@@ -288,7 +310,7 @@ export function OpportunityFinder(): ReactElement {
 
     const getUserImageAndUserQuery = (userQuery: string): ReactElement => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        <div className="mb-3">
+        <div style={{marginBottom: "1rem"}}>
             {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
             <UserQueryContainer>
                 <NextImage
@@ -302,7 +324,7 @@ export function OpportunityFinder(): ReactElement {
                 />
                 <span
                     id="user-query"
-                    className="ml-2.5 mt-0.5"
+                    style={{marginLeft: "0.625rem", marginTop: "0.125rem"}}
                 >
                     {userQuery}
                 </span>
@@ -406,19 +428,16 @@ export function OpportunityFinder(): ReactElement {
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
 
-    // Disable Send when request is in progress
-    const shouldDisableSendButton = userInputEmpty || awaitingResponse
+    // Enable Send button when there is user input and not awaiting a response
+    const shouldEnableSendButton = !userInputEmpty && !awaitingResponse
 
-    // Disable Send when request is in progress
-    const shouldDisableRegenerateButton = !previousUserQuery || awaitingResponse
+    // Enable regenerate button when there is a previous query to resent, and we're not awaiting a response
+    const shouldEnableRegenerateButton = previousUserQuery && !awaitingResponse
 
-    // Width for the various buttons -- "regenerate", "stop" etc.
-    const actionButtonWidth = 126
+    // Enable Clear Chat button if not awaiting response and there is chat output to clear
+    const enableClearChatButton = !awaitingResponse && chatOutput.length > 0
 
-    // Disable Clear Chat button if there is no chat history or if we are awaiting a response
-    const disableClearChatButton = awaitingResponse || chatOutput.length === 0
-
-    const STYNTAX_THEMES = [
+    const SYNTAX_THEMES = [
         {
             label: "HLJS Themes",
             options: HLJS_THEMES,
@@ -514,14 +533,9 @@ export function OpportunityFinder(): ReactElement {
 
     // Render the component
     return (
-        <Form
+        <Box
             id="user-query-form"
-            onSubmit={async function (event: FormEvent<HTMLFormElement>) {
-                // Prevent submitting form
-                event.preventDefault()
-                await sendQuery(chatInput)
-            }}
-            style={{marginBottom: "6rem", paddingBottom: "15px"}}
+            sx={{marginBottom: "6rem", paddingBottom: "15px"}}
         >
             <AgentButtons
                 id="opp-finder-agent-buttons"
@@ -531,16 +545,16 @@ export function OpportunityFinder(): ReactElement {
                 setSelectedAgent={setSelectedAgent}
             />
             {isDataGenerator && codeJsonThemeEnabled && (
-                <Form.Group
+                <FormGroup
                     id="select-theme-group"
-                    style={{fontSize: "0.9rem", margin: "10px", position: "relative"}}
+                    sx={{fontSize: "0.9rem", margin: "10px", position: "relative"}}
                 >
-                    <Form.Label
+                    <FormLabel
                         id="select-theme-label"
                         style={{marginRight: "1rem", marginBottom: "0.5rem"}}
                     >
                         Code/JSON theme:
-                    </Form.Label>
+                    </FormLabel>
                     <FormControl
                         id="syntax-highlighter-select-form-control"
                         sx={{display: "block"}}
@@ -553,15 +567,17 @@ export function OpportunityFinder(): ReactElement {
                                 marginBottom: "1rem",
                             }}
                             MenuProps={{
-                                PaperProps: {
-                                    style: {
-                                        maxHeight: "350px",
+                                slotProps: {
+                                    paper: {
+                                        style: {
+                                            maxHeight: "350px",
+                                        },
                                     },
                                 },
                             }}
                             onChange={(event) => setSelectedTheme(event.target.value)}
                         >
-                            {STYNTAX_THEMES.map((theme) =>
+                            {SYNTAX_THEMES.map((theme) =>
                                 Object.keys(theme).map((themeKey) => {
                                     if (themeKey === "label") {
                                         return (
@@ -589,7 +605,7 @@ export function OpportunityFinder(): ReactElement {
                             )}
                         </Select>
                     </FormControl>
-                </Form.Group>
+                </FormGroup>
             )}
             {projectUrl.current && (
                 // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
@@ -601,25 +617,21 @@ export function OpportunityFinder(): ReactElement {
                     closable={true}
                 />
             )}
-            <Form.Group id="llm-chat-group">
-                <div
+            <Box id="llm-chat-group">
+                <Box
                     id="llm-response-div"
-                    style={{...divStyle, height: "50vh", margin: "10px", position: "relative"}}
+                    sx={{...divStyle, height: "50vh", margin: "10px", position: "relative"}}
                 >
                     {isDataGenerator && (
                         <Tooltip
                             id="enable-code-json-theme-dropdown"
-                            title={
-                                codeJsonThemeEnabled
-                                    ? "Customize code/JSON theme enabled"
-                                    : "Customize code/JSON theme disabled"
-                            }
+                            title={`Customize code/JSON theme ${codeJsonThemeEnabled ? "enabled" : "disabled"}`}
                         >
                             <LLMChatGroupConfigBtn
                                 enabled={codeJsonThemeEnabled}
                                 id="autoscroll-code-json-theme"
                                 onClick={() => setCodeJsonThemeEnabled(!codeJsonThemeEnabled)}
-                                posRight={120}
+                                posRight={150}
                             >
                                 <MdCode
                                     id="code-icon"
@@ -637,7 +649,7 @@ export function OpportunityFinder(): ReactElement {
                             enabled={autoScrollEnabled}
                             id="autoscroll-button"
                             onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
-                            posRight={65}
+                            posRight={80}
                         >
                             <MdVerticalAlignBottom
                                 id="autoscroll-icon"
@@ -663,10 +675,10 @@ export function OpportunityFinder(): ReactElement {
                             />
                         </LLMChatGroupConfigBtn>
                     </Tooltip>
-                    <div
+                    <Box
                         id="llm-responses"
                         ref={chatOutputRef}
-                        style={{
+                        sx={{
                             backgroundColor: SecondaryBlue,
                             borderWidth: "1px",
                             borderRadius: "0.5rem",
@@ -691,9 +703,9 @@ export function OpportunityFinder(): ReactElement {
                             "(Agent output will appear here)"
                         )}
                         {awaitingResponse && (
-                            <div
+                            <Box
                                 id="awaitingOutputContainer"
-                                style={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                                sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
                             >
                                 <span
                                     id="working-span"
@@ -705,175 +717,143 @@ export function OpportunityFinder(): ReactElement {
                                     id="awaitingOutputSpinner"
                                     size="1rem"
                                 />
-                            </div>
+                            </Box>
                         )}
-                    </div>
-                    <Button
-                        id="clear-chat-button"
-                        onClick={() => {
-                            setChatOutput([])
-                            chatHistory.current = []
-                            setPreviousUserQuery("")
-                            projectUrl.current = null
-                        }}
-                        variant="secondary"
-                        style={{
-                            background: MaximumBlue,
-                            borderColor: MaximumBlue,
-                            bottom: 10,
-                            color: "white",
-                            display: awaitingResponse ? "none" : "inline",
-                            fontSize: "13.3px",
-                            opacity: disableClearChatButton ? "50%" : "70%",
-                            position: "absolute",
-                            right: 145,
-                            width: actionButtonWidth,
-                            zIndex: 99999,
-                        }}
-                        disabled={disableClearChatButton}
-                    >
-                        <BsTrash
-                            id="stop-button-icon"
-                            size={15}
-                            className="mr-2"
-                            style={{display: "inline"}}
-                        />
-                        Clear chat
-                    </Button>
-                    <Button
-                        id="stop-output-button"
-                        onClick={() => handleStop()}
-                        variant="secondary"
-                        style={{
-                            background: MaximumBlue,
-                            borderColor: MaximumBlue,
-                            bottom: 10,
-                            color: "white",
-                            display: awaitingResponse ? "inline" : "none",
-                            fontSize: "13.3px",
-                            opacity: "70%",
-                            position: "absolute",
-                            right: 10,
-                            width: actionButtonWidth,
-                            zIndex: 99999,
-                        }}
-                    >
-                        <BsStopBtn
-                            id="stop-button-icon"
-                            size={15}
-                            className="mr-2"
-                            style={{display: "inline"}}
-                        />
-                        Stop
-                    </Button>
-                    <Button
-                        id="regenerate-output-button"
-                        onClick={async (event) => {
-                            event.preventDefault()
-                            await sendQuery(previousUserQuery)
-                        }}
-                        disabled={shouldDisableRegenerateButton}
-                        variant="secondary"
-                        style={{
-                            background: MaximumBlue,
-                            borderColor: MaximumBlue,
-                            bottom: 10,
-                            color: "white",
-                            display: awaitingResponse ? "none" : "inline",
-                            fontSize: "13.3px",
-                            opacity: shouldDisableRegenerateButton ? "50%" : "70%",
-                            position: "absolute",
-                            right: 10,
-                            width: actionButtonWidth,
-                            zIndex: 99999,
-                        }}
-                    >
-                        <FiRefreshCcw
-                            id="generate-icon"
-                            size={15}
-                            className="mr-2"
-                            style={{display: "inline"}}
-                        />
-                        Regenerate
-                    </Button>
-                </div>
-                <div
-                    id="agent-select-div"
-                    style={{
-                        fontSize: "90%",
-                        marginTop: "15px",
-                        marginBottom: "15px",
-                        paddingLeft: "10px",
-                        paddingRight: "10px",
-                    }}
-                />
-                <div
-                    id="user-input-div"
-                    style={{display: "flex"}}
-                >
-                    <InputGroup id="user-input-group">
-                        <Form.Control
-                            id="user-input"
-                            as="textarea"
-                            type="text"
-                            placeholder={AGENT_PLACEHOLDERS[selectedAgent]}
-                            ref={chatInputRef}
-                            style={{
-                                fontSize: "90%",
-                                height: "47px",
-                                marginLeft: "10px",
-                            }}
-                            onChange={(event) => {
-                                setChatInput(event.target.value)
-                            }}
-                            value={chatInput}
-                        />
-                        <Button
-                            id="clear-input-button"
+                    </Box>
+
+                    {/*Clear Chat button*/}
+                    {!awaitingResponse && (
+                        <CommandButton
+                            id="clear-chat-button"
                             onClick={() => {
-                                setChatInput("")
+                                setChatOutput([])
+                                chatHistory.current = []
+                                setPreviousUserQuery("")
+                                projectUrl.current = null
                             }}
-                            style={{
-                                backgroundColor: "transparent",
-                                color: "var(--bs-primary)",
-                                border: "none",
-                                fontWeight: 550,
-                                left: "calc(100% - 45px)",
-                                lineHeight: "35px",
-                                opacity: userInputEmpty ? "25%" : "100%",
+                            disabled={!enableClearChatButton}
+                            posRight={145}
+                            posBottom={10}
+                            sx={{
                                 position: "absolute",
-                                width: "10px",
-                                zIndex: 99999,
                             }}
-                            disabled={userInputEmpty}
-                            tabIndex={-1}
                         >
-                            X
-                        </Button>
-                    </InputGroup>
-                    <div
-                        id="send-div"
-                        style={{display: "flex", width: "100px", justifyContent: "center"}}
+                            <DeleteOutline
+                                id="stop-button-icon"
+                                sx={{marginRight: "0.25rem", display: "inline"}}
+                            />
+                            Clear Chat
+                        </CommandButton>
+                    )}
+
+                    {/*Stop Button*/}
+                    {awaitingResponse && (
+                        <CommandButton
+                            id="stop-output-button"
+                            onClick={() => handleStop()}
+                            posRight={10}
+                            posBottom={10}
+                            disabled={!awaitingResponse}
+                            sx={{
+                                position: "absolute",
+                            }}
+                        >
+                            <StopCircle
+                                id="stop-button-icon"
+                                sx={{display: "inline", marginRight: "0.5rem"}}
+                            />
+                            Stop
+                        </CommandButton>
+                    )}
+
+                    {/*Regenerate Button*/}
+                    {!awaitingResponse && (
+                        <CommandButton
+                            id="regenerate-output-button"
+                            onClick={async (event) => {
+                                event.preventDefault()
+                                await sendQuery(previousUserQuery)
+                            }}
+                            posRight={10}
+                            posBottom={10}
+                            disabled={!shouldEnableRegenerateButton}
+                            sx={{
+                                position: "absolute",
+                            }}
+                        >
+                            <Loop
+                                id="generate-icon"
+                                sx={{display: "inline", marginRight: "0.25rem"}}
+                            />
+                            Regenerate
+                        </CommandButton>
+                    )}
+                </Box>
+                <Box
+                    id="user-input-div"
+                    style={{...divStyle, display: "flex", margin: "10px", alignItems: "center", position: "relative"}}
+                >
+                    <Input
+                        id="user-input"
+                        placeholder={AGENT_PLACEHOLDERS[selectedAgent]}
+                        ref={chatInputRef}
+                        sx={{
+                            display: "flex",
+                            flexGrow: 1,
+                            marginRight: "10px",
+                            borderWidth: "1px",
+                            borderColor: "var(--bs-border-color)",
+                            borderRadius: "0.5rem",
+                            fontSize: "smaller",
+                            paddingBottom: "7.5px",
+                            paddingTop: "7.5px",
+                            paddingLeft: "15px",
+                            paddingRight: "15px",
+                        }}
+                        onChange={(event) => {
+                            setChatInput(event.target.value)
+                        }}
+                        value={chatInput}
+                    />
+                    <Button
+                        id="clear-input-button"
+                        onClick={() => {
+                            setChatInput("")
+                        }}
+                        style={{
+                            backgroundColor: "transparent",
+                            color: "var(--bs-primary)",
+                            border: "none",
+                            fontWeight: 550,
+                            left: "calc(100% - 180px)",
+                            lineHeight: "35px",
+                            opacity: userInputEmpty ? "25%" : "100%",
+                            position: "absolute",
+                            zIndex: 99999,
+                        }}
+                        disabled={userInputEmpty}
+                        tabIndex={-1}
                     >
-                        <Button
-                            id="submit-query-button"
-                            variant="primary"
-                            type="submit"
-                            disabled={shouldDisableSendButton}
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                color: "white",
-                                opacity: shouldDisableSendButton ? "50%" : "100%",
-                                marginLeft: "10px",
-                                marginRight: "10px",
-                            }}
-                        >
-                            Send
-                        </Button>
-                    </div>
-                </div>
-            </Form.Group>
-        </Form>
+                        X
+                    </Button>
+
+                    {/*Send Button*/}
+                    <CommandButton
+                        id="submit-query-button"
+                        type="submit"
+                        posBottom={0}
+                        disabled={!shouldEnableSendButton}
+                        sx={{
+                            opacity: shouldEnableSendButton ? "100%" : "50%",
+                        }}
+                        onClick={async () => {
+                            await sendQuery(chatInput)
+                        }}
+                    >
+                        Send
+                    </CommandButton>
+                </Box>
+            </Box>
+        </Box>
     )
 }
