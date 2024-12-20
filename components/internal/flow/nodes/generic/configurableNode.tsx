@@ -1,7 +1,5 @@
-import {Card as BlueprintCard, Elevation} from "@blueprintjs/core"
-import {Tab, Tabs} from "@mui/material"
+import {Card, CardContent, Collapse, Tab, Tabs} from "@mui/material"
 import {Dispatch, FC, MouseEvent as ReactMouseEvent, SetStateAction, useEffect, useState} from "react"
-import {Card, Collapse} from "react-bootstrap"
 import {AiFillDelete} from "react-icons/ai"
 import {GrSettingsOption} from "react-icons/gr"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
@@ -206,64 +204,100 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
         )
     }
 
-    // Create the outer Card
+    // Return the "Card" for the node
     return (
         <>
-            <BlueprintCard
+            <Card
                 id={`${flowPrefix}${idExtension}`}
-                interactive={true}
-                elevation={Elevation.TWO}
-                style={{padding: 0, width: "10rem", height: "4rem"}}
+                sx={{padding: 0, width: "10rem", height: "4rem"}}
             >
-                <Card
-                    id={`${flowPrefix}-card-1${idExtension}`}
-                    border="warning"
-                    style={{height: "100%"}}
+                <CardContent
+                    id={`${flowPrefix}-card-2${idExtension}`}
+                    className="flex justify-center content-center"
                 >
-                    <Card.Body
-                        id={`${flowPrefix}-card-2${idExtension}`}
-                        className="flex justify-center content-center"
+                    <span
+                        id={`${flowPrefix}-text${idExtension}`}
+                        className="mr-2 text-xs"
                     >
-                        <span
-                            id={`${flowPrefix}-text${idExtension}`}
-                            className="mr-2 text-xs"
-                        >
-                            {NodeTitle}
-                        </span>
-                        <div
-                            id={`${flowPrefix}-popover-div${idExtension}`}
-                            onMouseDown={(event) => {
-                                event.stopPropagation()
+                        {NodeTitle}
+                    </span>
+                    <div
+                        id={`${flowPrefix}-popover-div${idExtension}`}
+                        onMouseDown={(event) => {
+                            event.stopPropagation()
+                        }}
+                    >
+                        <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                            buttonProps={{
+                                id: `${flowPrefix}-show-config-button${idExtension}`,
+                                className: "mt-1",
+                                style: {height: 0},
+                                btnContent: (
+                                    <GrSettingsOption
+                                        id={`${flowPrefix}-show-config-button-settings-option${idExtension}`}
+                                    />
+                                ),
+                            }}
+                            popperProps={{
+                                id: `${flowPrefix}-show-config-popper${idExtension}`,
+                                className: "rounded-sm shadow-2xl",
+                                style: {
+                                    backgroundColor: "var(--bs-white)",
+                                    paddingBottom: "12px",
+                                    overflowY: "scroll",
+                                    margin: 0,
+                                    borderColor: "var(--bs-primary)",
+                                    border: "4px solid var(--bs-border-color)",
+                                    borderRadius: "0.5rem",
+                                },
                             }}
                         >
-                            <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                buttonProps={{
-                                    id: `${flowPrefix}-show-config-button${idExtension}`,
-                                    className: "mt-1",
-                                    style: {height: 0},
-                                    btnContent: (
-                                        <GrSettingsOption
-                                            id={`${flowPrefix}-show-config-button-settings-option${idExtension}`}
-                                        />
-                                    ),
-                                }}
-                                popperProps={{
-                                    id: `${flowPrefix}-show-config-popper${idExtension}`,
-                                    className: "rounded-sm shadow-2xl",
-                                    style: {
-                                        backgroundColor: "ghostwhite",
-                                        paddingBottom: "12px",
-                                        overflowY: "scroll",
-                                        margin: 0,
-                                    },
-                                }}
-                            >
-                                {tabs?.length ? (
-                                    multiTabComponent(tabs)
-                                ) : (
-                                    <Card.Body
-                                        id={`${flowPrefix}-config${idExtension}`}
-                                        className="h-45 text-xs"
+                            {tabs?.length ? (
+                                multiTabComponent(tabs)
+                            ) : (
+                                <CardContent
+                                    id={`${flowPrefix}-config${idExtension}`}
+                                    className="h-45 text-xs"
+                                >
+                                    <div
+                                        id={`${flowPrefix}-basic-settings-div${idExtension}`}
+                                        className="mt-3"
+                                    >
+                                        {getInputComponent(
+                                            Object.keys(ParameterSet)
+                                                .filter((key) => !ParameterSet?.[key].isAdvanced)
+                                                .reduce((res, key) => {
+                                                    res[key] = ParameterSet[key]
+                                                    return res
+                                                }, {})
+                                        )}
+                                    </div>
+                                    <div
+                                        id={`${flowPrefix}-advanced-settings-label-div${idExtension}`}
+                                        className="mt-4 mb-2 pl-4"
+                                    >
+                                        <span id={`${flowPrefix}-advanced-settings-text${idExtension}`}>
+                                            <b id={`${flowPrefix}-advanced-settings-label${idExtension}`}>
+                                                Advanced settings
+                                            </b>{" "}
+                                            (most users should not change these)
+                                        </span>
+                                    </div>
+                                    <button
+                                        id={`${flowPrefix}-show-advanced-settings-button${idExtension}`}
+                                        onClick={handleShowAdvanced}
+                                        className="pl-4"
+                                    >
+                                        {showAdvanced ? (
+                                            <u id={`${flowPrefix}-show-advanced-settings${idExtension}`}>Hide</u>
+                                        ) : (
+                                            <u id={`${flowPrefix}-hide-advanced-settings${idExtension}`}>Show</u>
+                                        )}
+                                    </button>
+                                    <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                        // 2/6/23 DEF - Collapse does not have an id property when compiling
+                                        in={showAdvanced}
+                                        timeout={5}
                                     >
                                         <div
                                             id={`${flowPrefix}-basic-settings-div${idExtension}`}
@@ -271,96 +305,55 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                         >
                                             {getInputComponent(
                                                 Object.keys(ParameterSet)
-                                                    .filter((key) => !ParameterSet?.[key].isAdvanced)
+                                                    .filter((key) => ParameterSet?.[key].isAdvanced)
                                                     .reduce((res, key) => {
                                                         res[key] = ParameterSet[key]
                                                         return res
                                                     }, {})
                                             )}
                                         </div>
-                                        <div
-                                            id={`${flowPrefix}-advanced-settings-label-div${idExtension}`}
-                                            className="mt-4 mb-2 pl-4"
-                                        >
-                                            <span id={`${flowPrefix}-advanced-settings-text${idExtension}`}>
-                                                <b id={`${flowPrefix}-advanced-settings-label${idExtension}`}>
-                                                    Advanced settings
-                                                </b>{" "}
-                                                (most users should not change these)
-                                            </span>
-                                        </div>
-                                        <button
-                                            id={`${flowPrefix}-show-advanced-settings-button${idExtension}`}
-                                            onClick={handleShowAdvanced}
-                                            className="pl-4"
-                                        >
-                                            {showAdvanced ? (
-                                                <u id={`${flowPrefix}-show-advanced-settings${idExtension}`}>Hide</u>
-                                            ) : (
-                                                <u id={`${flowPrefix}-hide-advanced-settings${idExtension}`}>Show</u>
-                                            )}
-                                        </button>
-                                        <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                            // 2/6/23 DEF - Collapse does not have an id property when compiling
-                                            in={showAdvanced}
-                                            timeout={5}
-                                        >
-                                            <div
-                                                id={`${flowPrefix}-basic-settings-div${idExtension}`}
-                                                className="mt-3"
-                                            >
-                                                {getInputComponent(
-                                                    Object.keys(ParameterSet)
-                                                        .filter((key) => ParameterSet?.[key].isAdvanced)
-                                                        .reduce((res, key) => {
-                                                            res[key] = ParameterSet[key]
-                                                            return res
-                                                        }, {})
-                                                )}
-                                            </div>
-                                        </Collapse>
-                                    </Card.Body>
-                                )}
-                            </NodePopper>
-                            {enableCAOActions ? (
-                                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                                <CAOButtons
-                                    ParentNodeState={ParentNodeState}
-                                    SetParentNodeState={SetParentNodeState}
-                                    flowPrefix={flowPrefix}
-                                    idExtension={idExtension}
-                                    fields={dataSourceFields}
-                                    readOnlyNode={readOnlyNode}
-                                />
-                            ) : null}
-                        </div>
-                    </Card.Body>
-                    {!readOnlyNode ? (
-                        <div
-                            id={`${flowPrefix}-delete-button-div${idExtension}`}
-                            className="px-1 my-1"
-                            style={{position: "absolute", bottom: "0px", right: "1px"}}
+                                    </Collapse>
+                                </CardContent>
+                            )}
+                        </NodePopper>
+                        {enableCAOActions ? (
+                            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+                            <CAOButtons
+                                ParentNodeState={ParentNodeState}
+                                SetParentNodeState={SetParentNodeState}
+                                flowPrefix={flowPrefix}
+                                idExtension={idExtension}
+                                fields={dataSourceFields}
+                                readOnlyNode={readOnlyNode}
+                            />
+                        ) : null}
+                    </div>
+                </CardContent>
+                {!readOnlyNode ? (
+                    <div
+                        id={`${flowPrefix}-delete-button-div${idExtension}`}
+                        className="px-1 my-1"
+                        style={{position: "absolute", bottom: "0px", right: "1px"}}
+                    >
+                        <button
+                            id={`${flowPrefix}-delete-button${idExtension}`}
+                            type="button"
+                            onClick={(event: ReactMouseEvent<HTMLElement>) => {
+                                if (!showDeleteModal) {
+                                    handleDelete(event)
+                                }
+                            }}
                         >
-                            <button
-                                id={`${flowPrefix}-delete-button${idExtension}`}
-                                type="button"
-                                onClick={(event: ReactMouseEvent<HTMLElement>) => {
-                                    if (!showDeleteModal) {
-                                        handleDelete(event)
-                                    }
-                                }}
-                            >
-                                <AiFillDelete
-                                    id={`${flowPrefix}-delete-button-fill${idExtension}`}
-                                    size="15"
-                                    color={trashColor}
-                                    onMouseEnter={() => setTrashHover(true)}
-                                    onMouseLeave={() => setTrashHover(false)}
-                                />
-                            </button>
-                        </div>
-                    ) : null}
-                </Card>
+                            <AiFillDelete
+                                id={`${flowPrefix}-delete-button-fill${idExtension}`}
+                                size="15"
+                                color={trashColor}
+                                onMouseEnter={() => setTrashHover(true)}
+                                onMouseLeave={() => setTrashHover(false)}
+                            />
+                        </button>
+                    </div>
+                ) : null}
                 <Handle
                     id={`${flowPrefix}-source-handle${idExtension}`}
                     type="source"
@@ -371,7 +364,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     type="target"
                     position={HandlePosition.Left}
                 />
-            </BlueprintCard>
+            </Card>
             {showDeleteModal && (
                 <ConfirmationModal
                     cancelBtnLabel="Keep"
