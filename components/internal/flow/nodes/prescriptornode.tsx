@@ -1033,7 +1033,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                                     disabled={readOnlyNode}
                                                     checked={ParentPrescriptorState.caoState.context[element]}
                                                     onChange={(event) => updateCAOState(event, "context")}
-                                                    size={"small"}
+                                                    size="small"
                                                     sx={{padding: "2px"}}
                                                 />
                                             }
