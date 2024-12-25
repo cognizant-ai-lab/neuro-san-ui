@@ -10,10 +10,14 @@ import {GrSettingsOption} from "react-icons/gr"
 import {MdDelete} from "react-icons/md"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
-import {DataTag} from "../../../../generated/metadata"
+import {DataTag, DataTagFieldCAOType} from "../../../../generated/metadata"
 import {ConfirmationModal} from "../../../confirmationModal"
 import NodePopper from "../../../nodepopper"
 import {NotificationType, sendNotification} from "../../../notification"
+
+// #region Constants
+const ACTIVATION_FUNCTIONS = ["tanh", "relu", "linear", "sigmoid", "softmax", "elu", "selu"]
+// #endregion
 
 // Define an interface for the structure
 // of the nodes
@@ -204,11 +208,11 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     // 2. rules
 
     // Create the Neural Network Hidden layer utility
-    const activationFunctions = ["tanh", "relu", "linear", "sigmoid", "softmax", "elu", "selu"]
-    const createNeuralNetworkLayer = (hiddenLayer, idx) => (
+
+    const neuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) => (
         <div
             id={`${flowPrefix}-hidden-layer-${idx}`}
-            key={`${NodeID}-hiddenlayer-${idx}`}
+            key={`${NodeID}-hiddenlayer-${crypto.randomUUID()}`}
         >
             <h6
                 id={`${flowPrefix}-hidden-layer-${idx}-headline`}
@@ -219,8 +223,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             {!readOnlyNode && (
                 <button
                     id={`${flowPrefix}-hidden-layer-${idx}-button`}
-                    style={{width: "1rem"}}
-                    className="mb-2"
+                    style={{width: "1rem", marginBottom: "0.5rem"}}
                     type="button"
                     onClick={(event) => {
                         event.stopPropagation()
@@ -290,7 +293,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             SetParentPrescriptorState(modifiedHiddenLayerState)
                         }}
                     >
-                        {activationFunctions.map((activationFn) => (
+                        {ACTIVATION_FUNCTIONS.map((activationFn) => (
                             <option
                                 id={`${flowPrefix}-hidden-layer-${idx}-activation-${activationFn}`}
                                 key={`hidden-layer-activation-${activationFn}`}
@@ -326,10 +329,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
             </div>
         </div>
-    )
-    const neuralNetworkConfiguration = ParentPrescriptorState.network.hidden_layers.map((hiddenLayer, idx) =>
-        createNeuralNetworkLayer(hiddenLayer, idx)
-    )
+    ))
 
     const createRulesConfig = (representationConfig) => (
         <Container
@@ -338,7 +338,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         >
             <Row
                 id={`${flowPrefix}-max-exponent`}
-                className="mx-2 my-8"
+                style={{margin: "2rem 0.5rem"}}
             >
                 <Col
                     id={`${flowPrefix}-max-exponent-label`}
@@ -381,13 +381,13 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             </Row>
             <Row
                 id={`${flowPrefix}-number-of-building-block-conditions`}
-                className="mx-2 my-8"
+                style={{margin: "2rem 0.5rem"}}
             >
                 <Col
                     id={`${flowPrefix}-number-of-building-block-conditions-label`}
                     md={5}
                 >
-                    # Building Block Conditions:
+                    Building Block Conditions:
                 </Col>
                 <Col
                     id={`${flowPrefix}-number-of-building-block-conditions-slider`}
@@ -424,20 +424,19 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             </Row>
             <Row
                 id={`${flowPrefix}-number-of-building-block-rules`}
-                className="mx-2 my-8"
+                style={{margin: "2rem 0.5rem"}}
             >
                 <Col
                     id={`${flowPrefix}-number-of-building-block-rules-label`}
                     md={5}
                 >
-                    # Building Block Rules:
+                    Building Block Rules:
                 </Col>
                 <Col
                     id={`${flowPrefix}-number-of-building-block-rules-slider`}
                     md={4}
                 >
                     <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        // 2/6/23 DEF - Slider does not have an id property when compiling
                         step={1}
                         min={1}
                         max={99}
@@ -926,8 +925,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
                     id: `${flowPrefix}-gr-settings-button`,
-                    className: "mt-1",
-                    style: {height: 0},
+                    style: {height: 0, marginTop: "0.25rem"},
                     btnContent: <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />,
                 }}
                 popperProps={{
@@ -939,6 +937,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         margin: 0,
                         border: "4px solid var(--bs-border-color)",
                         borderRadius: "0.5rem",
+                        backgroundColor: "var(--bs-white)",
                     },
                 }}
             >
@@ -970,13 +969,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         )
     }
 
-    function getContextPopup() {
+    function getFieldsPopup(caoType: DataTagFieldCAOType, position: {left: string} | {right: string}) {
+        const fields =
+            caoType === DataTagFieldCAOType.CONTEXT
+                ? ParentPrescriptorState.caoState.context
+                : ParentPrescriptorState.caoState.action
         return (
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    btnContent: "C",
+                    btnContent: caoType === DataTagFieldCAOType.CONTEXT ? "C" : "A",
                     id: `${flowPrefix}-context-button`,
-                    style: {height: 0, position: "absolute", top: "1.25rem", left: "-1rem"},
+                    style: {height: 0, position: "absolute", top: "1.25rem", ...position},
                 }}
                 popperProps={{
                     id: `${flowPrefix}-context-popper`,
@@ -995,12 +998,12 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 >
                     <CardHeader
                         id="context-card-header"
-                        title="Context"
+                        title={caoType === DataTagFieldCAOType.CONTEXT ? "Context" : "Actions"}
                         sx={{paddingBottom: 0, margin: 0}}
                         titleTypographyProps={{fontSize: "0.8rem", fontWeight: "bold"}}
                     />
                     <CardContent id={`${flowPrefix}-context-card-content`}>
-                        {Object.keys(ParentPrescriptorState.caoState.context).map((element) => (
+                        {Object.keys(fields).map((element) => (
                             <FormControlLabel
                                 id={`${flowPrefix}-context-input-${element}-label`}
                                 key={element}
@@ -1009,7 +1012,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                         id={`${flowPrefix}-context-input-${element}`}
                                         name={element}
                                         disabled={readOnlyNode}
-                                        checked={ParentPrescriptorState.caoState.context[element]}
+                                        checked={fields[element]}
                                         onChange={(event) => updateCAOState(event, "context")}
                                         size="small"
                                         sx={{padding: "2px"}}
@@ -1035,60 +1038,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             />
                         ))}
                     </CardContent>
-                </Card>
-            </NodePopper>
-        )
-    }
-
-    function getActionPopup() {
-        return (
-            <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                buttonProps={{
-                    id: `${flowPrefix}-action-button`,
-                    className: "absolute top-5 -right-4",
-                    style: {height: 0},
-                    btnContent: "A",
-                }}
-                popperProps={{
-                    id: `${flowPrefix}-action-popper`,
-                    placement: "right",
-                    className: "rounded-sm shadow-2xl",
-                }}
-            >
-                <Card
-                    id={`${flowPrefix}-actions-card`}
-                    className="overflow-y-auto h-40 text-xs"
-                >
-                    <span
-                        id={`${flowPrefix}-actions-text`}
-                        className="mb-2"
-                    >
-                        Actions
-                    </span>
-                    {Object.keys(ParentPrescriptorState.caoState.action).map((element) => (
-                        <div
-                            id={`${flowPrefix}-actions-div-${element}`}
-                            key={element}
-                            className="grid grid-cols-2 gap-4 mb-2"
-                        >
-                            <label
-                                id={`${flowPrefix}-actions-label-${element}`}
-                                className="capitalize"
-                            >
-                                {" "}
-                                {element}{" "}
-                            </label>
-                            <input
-                                id={`${flowPrefix}-actions-input-${element}`}
-                                name={element}
-                                type="checkbox"
-                                defaultChecked={true}
-                                disabled={readOnlyNode}
-                                checked={ParentPrescriptorState.caoState.action[element]}
-                                onChange={(event) => updateCAOState(event, "action")}
-                            />
-                        </div>
-                    ))}
                 </Card>
             </NodePopper>
         )
@@ -1166,8 +1115,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     }}
                 >
                     {getConfigPopup()}
-                    {getContextPopup()}
-                    {getActionPopup()}
+                    {getFieldsPopup(DataTagFieldCAOType.CONTEXT, {left: "-1rem"})}
+                    {getFieldsPopup(DataTagFieldCAOType.ACTION, {right: "-1rem"})}
                 </div>
             </CardContent>
         )
