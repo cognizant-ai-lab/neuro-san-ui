@@ -1107,8 +1107,9 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 <span
                     id={`${flowPrefix}-text`}
                     className="mr-2 text-xs"
+                    style={{color: "var(--bs-primary)"}}
                 >
-                    {ParentPrescriptorState.selectedPredictor || "Prescriptor"}
+                    Prescriptor
                 </span>
                 <div
                     id={`${flowPrefix}-settings-div`}

@@ -218,6 +218,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     <span
                         id={`${flowPrefix}-text${idExtension}`}
                         className="mr-2 text-xs"
+                        style={{color: "var(--bs-primary)"}}
                     >
                         {NodeTitle}
                     </span>

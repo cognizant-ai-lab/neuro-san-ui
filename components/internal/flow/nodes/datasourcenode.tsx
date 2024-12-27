@@ -52,7 +52,7 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
             style={{
                 padding: 0,
                 width: "8rem",
-                height: "6rem",
+                height: "4.5rem",
                 boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.15)",
             }}
         >
@@ -60,11 +60,14 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                 id={`data-source-header${idExtension}`}
                 title="Data Source"
                 titleTypographyProps={{
-                    sx: {fontSize: "20px", color: "var(--bs-primary)"},
+                    sx: {fontSize: "15px", color: "var(--bs-primary)"},
                 }}
-                sx={{backgroundColor: "rgba(33, 37, 41, 0.03)"}}
+                sx={{backgroundColor: "rgba(33, 37, 41, 0.03)", paddingTop: "5px", paddingBottom: "4px"}}
             />
-            <CardContent id={`data-source-body${idExtension}`}>
+            <CardContent
+                id={`data-source-body${idExtension}`}
+                sx={{paddingTop: "8px", marginBottom: 0}}
+            >
                 <div
                     id="analytics-div"
                     style={{position: "absolute", top: "5px", right: "10px"}}
