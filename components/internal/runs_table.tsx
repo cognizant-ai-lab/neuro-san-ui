@@ -2,7 +2,7 @@
  * Runs table module
  */
 
-import {Box, Table, TableBody, TableCell, TableHead, TableRow, Tooltip} from "@mui/material"
+import {Box, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid2"
 import {
@@ -450,7 +450,12 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 {runNameRow}
 
                 <TableCell id={`run-created-at-${runId}`}>
-                    <span id={`run-created-at-${runId}-text`}>{toFriendlyDateTime(run.created_at)}</span>
+                    <span
+                        id={`run-created-at-${runId}-text`}
+                        style={{fontWeight: "bold"}}
+                    >
+                        {toFriendlyDateTime(run.created_at)}
+                    </span>
                 </TableCell>
 
                 <TableCell id={`run-updated-at-${runId}`}>{toFriendlyDateTime(run.updated_at)}</TableCell>
@@ -584,18 +589,21 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         tableHeaders.push("Actions")
     }
 
-    // Create Table header elements
-    const tableHeaderElements: ReactElement[] = []
-    tableHeaders.forEach((header) => {
-        tableHeaderElements.push(
-            <TableHead
-                id={`header-${header}`}
-                key={crypto.randomUUID()}
+    // Create Table header
+    const tableHeader = tableHeaders.map((header) => (
+        <TableCell
+            id={`header-${header}`}
+            key={crypto.randomUUID()}
+            sx={{textAlign: "center"}}
+        >
+            <Typography
+                id={`header-${header}-text`}
+                sx={{fontSize: "0.75rem", fontWeight: "bold"}}
             >
                 {header}
-            </TableHead>
-        )
-    })
+            </Typography>
+        </TableCell>
+    ))
 
     /**
      * Returns the button the user can click to delete an existing, completed (or errored) run.
@@ -696,24 +704,31 @@ export default function RunsTable(props: RunTableProps): ReactElement {
             <Box
                 id="run-table-box"
                 sx={{
-                    alignItems: "center",
-                    borderBottom: 1,
-                    borderColor: "var(--bs-border-color)",
-                    borderRadius: "16px",
-                    boxShadow: 1,
+                    // borderBottom: 1,
+                    // borderColor: "var(--bs-border-color)",
+                    // borderRadius: "16px",
+                    // boxShadow: 1,
                     display: "flex",
                     flexDirection: "column",
-                    minWidth: "100%",
-                    marginTop: 0,
-                    mx: {sm: -6, lg: -8},
-                    overflowX: "auto",
-                    px: {sm: 6, lg: 8},
-                    py: 2,
+                    // minWidth: "100%",
+                    // marginTop: 0,
+                    // mx: {sm: -6, lg: -8},
+                    // overflowX: "auto",
+                    // px: {sm: 6, lg: 8},
+                    // py: 2,
+                    marginTop: "32px",
+                    width: "100%",
                 }}
             >
-                <Table id="run-table">
+                <Table
+                    id="run-table"
+                    sx={{
+                        width: "100%",
+                        marginTop: "32px",
+                    }}
+                >
                     <TableHead id="run-table-head">
-                        <tr id="run-table-header-elements">{tableHeaderElements}</tr>
+                        <TableRow id="run-table-header-elements">{tableHeader}</TableRow>
                     </TableHead>
                     <TableBody id="run-table-body">{runRows}</TableBody>
                 </Table>
