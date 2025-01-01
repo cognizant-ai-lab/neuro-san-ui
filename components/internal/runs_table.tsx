@@ -2,7 +2,7 @@
  * Runs table module
  */
 
-import {Box, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography} from "@mui/material"
+import {Box, styled, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid2"
 import {
@@ -53,6 +53,11 @@ interface RunTableProps {
     readonly setSelectedRunName: (runName: string) => void
     readonly setRuns: (runs: Runs) => void
 }
+
+const RunsTableCell = styled(TableCell)({
+    textAlign: "center",
+    borderBottom: "1px solid var(--bs-gray-light)",
+})
 
 export default function RunsTable(props: RunTableProps): ReactElement {
     // State for runs that are being deleted.
@@ -231,8 +236,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                     style={{display: "flex"}}
                 >
                     Aborted
-                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                    <InfoTip
+                    <InfoTip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         info="Run aborted by user request"
                         id={props.experimentId.toString()}
                     />
@@ -251,7 +255,6 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                     id="run-status"
                     style={{
                         display: "flex",
-                        justifyContent: "center",
                     }}
                 >
                     {phase}
@@ -413,7 +416,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     function getRunNameRowEditing(run: Run, idx: number) {
         const runId = run.id
         return (
-            <TableCell id={`update-run-name-${runId}`}>
+            <RunsTableCell id={`update-run-name-${runId}`}>
                 <input
                     type="text"
                     id={`update-run-name-${runId}-input`}
@@ -429,7 +432,70 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         }
                     }}
                 />
-            </TableCell>
+            </RunsTableCell>
+        )
+    }
+
+    function getDownloadsSelector(
+        runId: string,
+        anyArtifactsAvailable: boolean,
+        run: Run,
+        availableArtifacts: Record<string, string>
+    ) {
+        return (
+            <div
+                id={`download-artifacts-div-${runId}`}
+                style={{display: "flex"}}
+            >
+                <select
+                    id={`download-artifact-select-${runId}`}
+                    disabled={!anyArtifactsAvailable}
+                    style={{
+                        fontSize: 15,
+                        opacity: anyArtifactsAvailable ? "100%" : "50%",
+                        width: "180px",
+                    }}
+                    value={run.id in selectedArtifacts ? selectedArtifacts[run.id] : DEFAULT_DOWNLOAD_ARTIFACT}
+                    onChange={(event) => {
+                        setSelectedArtifacts({
+                            ...selectedArtifacts,
+                            [run.id]: event.target.value,
+                        })
+                    }}
+                >
+                    {downloadableArtifacts.map((option) => {
+                        const id = `download-option-${option.value}-${runId}`
+                        const available: boolean = isArtifactAvailable(option.value, availableArtifacts)
+                        return (
+                            <option
+                                id={id}
+                                key={option.value}
+                                value={option.value}
+                                disabled={!available}
+                            >
+                                {option.label}
+                            </option>
+                        )
+                    })}
+                </select>
+
+                <FiDownload
+                    id={`download-artifacts-${runId}-download`}
+                    size={25}
+                    style={{marginLeft: "12px", marginTop: "4px", cursor: "pointer"}}
+                    onClick={async () =>
+                        downloadArtifact(
+                            run,
+                            selectedArtifacts[run.id] || DEFAULT_DOWNLOAD_ARTIFACT,
+                            getArtifactFriendlyName(selectedArtifacts[run.id]),
+                            availableArtifacts,
+                            props.projectName,
+                            props.projectId,
+                            props.experiment
+                        )
+                    }
+                />
+            </div>
         )
     }
 
@@ -446,25 +512,27 @@ export default function RunsTable(props: RunTableProps): ReactElement {
             <TableRow
                 id={`run-row-${idx}`}
                 key={run.id}
+                sx={{
+                    // Highlight alternate rows for legibility
+                    backgroundColor: idx % 2 === 0 ? "var(--bs-white)" : "var(--bs-gray-lighter)",
+                }}
             >
                 {runNameRow}
 
-                <TableCell id={`run-created-at-${runId}`}>
-                    <span
-                        id={`run-created-at-${runId}-text`}
-                        style={{fontWeight: "bold"}}
-                    >
-                        {toFriendlyDateTime(run.created_at)}
-                    </span>
-                </TableCell>
+                <RunsTableCell
+                    id={`run-created-at-${runId}`}
+                    sx={{textAlign: "center", fontWeight: "bold", borderBottom: "1px solid var(--bs-gray-light)"}}
+                >
+                    {toFriendlyDateTime(run.created_at)}
+                </RunsTableCell>
 
-                <TableCell id={`run-updated-at-${runId}`}>{toFriendlyDateTime(run.updated_at)}</TableCell>
+                <RunsTableCell id={`run-updated-at-${runId}`}>{toFriendlyDateTime(run.updated_at)}</RunsTableCell>
 
-                <TableCell id={`run-launched-by-${runId}`}>{run.launchedBy}</TableCell>
+                <RunsTableCell id={`run-launched-by-${runId}`}>{run.launchedBy}</RunsTableCell>
 
                 <TableCell id={`run-status-${runId}`}>{getStatus(run)}</TableCell>
 
-                <TableCell id={`download-artifacts-${runId}`}>
+                <RunsTableCell id={`download-artifacts-${runId}`}>
                     {runsBeingDeleted.includes(idx) ? (
                         <CircularProgress
                             id={`delete-run-${runId}-download-loading`}
@@ -473,70 +541,22 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                     ) : (
                         run.completed &&
                         run.output_artifacts &&
-                        JSON.parse(run.output_artifacts).experiment && (
-                            <div
-                                id={`download-artifacts-div-${runId}`}
-                                style={{display: "flex"}}
-                            >
-                                <select
-                                    id={`download-artifact-select-${runId}`}
-                                    disabled={!anyArtifactsAvailable}
-                                    style={{
-                                        fontSize: 15,
-                                        opacity: anyArtifactsAvailable ? "100%" : "50%",
-                                        width: "180px",
-                                    }}
-                                    value={
-                                        run.id in selectedArtifacts
-                                            ? selectedArtifacts[run.id]
-                                            : DEFAULT_DOWNLOAD_ARTIFACT
-                                    }
-                                    onChange={(event) => {
-                                        setSelectedArtifacts({
-                                            ...selectedArtifacts,
-                                            [run.id]: event.target.value,
-                                        })
-                                    }}
-                                >
-                                    {downloadableArtifacts.map((option) => {
-                                        const id = `download-option-${option.value}-${runId}`
-                                        const available: boolean = isArtifactAvailable(option.value, availableArtifacts)
-                                        return (
-                                            <option
-                                                id={id}
-                                                key={option.value}
-                                                value={option.value}
-                                                disabled={!available}
-                                            >
-                                                {option.label}
-                                            </option>
-                                        )
-                                    })}
-                                </select>
-
-                                <FiDownload
-                                    id={`download-artifacts-${runId}-download`}
-                                    size={25}
-                                    style={{marginLeft: "12px", marginTop: "4px", cursor: "pointer"}}
-                                    onClick={async () =>
-                                        downloadArtifact(
-                                            run,
-                                            selectedArtifacts[run.id] || DEFAULT_DOWNLOAD_ARTIFACT,
-                                            getArtifactFriendlyName(selectedArtifacts[run.id]),
-                                            availableArtifacts,
-                                            props.projectName,
-                                            props.projectId,
-                                            props.experiment
-                                        )
-                                    }
-                                />
-                            </div>
-                        )
+                        JSON.parse(run.output_artifacts).experiment &&
+                        getDownloadsSelector(runId, anyArtifactsAvailable, run, availableArtifacts)
                     )}
-                </TableCell>
+                </RunsTableCell>
 
                 {props.projectPermissions?.delete ? (
-                    <TableCell id={`delete-training-run-${runId}`}>{getActionsColumn(idx, runId, run)}</TableCell>
+                    <TableCell
+                        id={`delete-training-run-${runId}`}
+                        sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        {getActionsColumn(idx, runId, run)}
+                    </TableCell>
                 ) : null}
             </TableRow>
         )
@@ -544,12 +564,19 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     function getRunNameColumn(run: Run, runButton: JSX.Element) {
         return (
-            <TableCell id="run-name-column">
+            <TableCell
+                id="run-name-column"
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                }}
+            >
                 {run.completed ? (
                     runButton
                 ) : (
-                    /* 2/6/23 DEF - Tooltip does not have an id property when compiling */
-                    <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    <Tooltip
+                        id="run-not-complete-tooltip"
                         title="Run not complete"
                         placement="bottom-start"
                         className="opacity-50"
@@ -563,6 +590,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     function createRunRows() {
         const runRows = []
+        // For each row, the way we render it depends on whether the user is currently editing the name of the run.
         if (props.runs && props.runs.length !== 0 && props.editingLoading.length !== 0) {
             props.runs.forEach((run, idx) => {
                 let runNameColumn: JSX.Element
@@ -594,7 +622,10 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         <TableCell
             id={`header-${header}`}
             key={crypto.randomUUID()}
-            sx={{textAlign: "center"}}
+            sx={{
+                textAlign: "center",
+                borderBottom: "1px solid var(--bs-black)",
+            }}
         >
             <Typography
                 id={`header-${header}-text`}
@@ -699,23 +730,62 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
     const runRows = createRunRows()
 
-    return (
-        <>
+    function getTerminateConfirmation() {
+        return (
+            <ConfirmationModal
+                cancelBtnLabel="Do not terminate"
+                content={
+                    <span id={`terminate-confirm-${selectedTerminateRunName}-message`}>
+                        This cannot be undone. All existing training progress will be lost.
+                    </span>
+                }
+                handleCancel={() => {
+                    closeAndResetTerminateRunModal()
+                }}
+                handleOk={async () => {
+                    await abortRun(selectedTerminateIdx, selectedTerminateRun)
+                    closeAndResetTerminateRunModal()
+                }}
+                id={`terminate-confirm-${selectedTerminateRunName}-dialog`}
+                okBtnLabel="Terminate"
+                title={
+                    <span id={`terminate-confirm-${selectedTerminateRunName}-title`}>
+                        Terminate in-progress training run &quot;{selectedTerminateRunName}&quot;?
+                    </span>
+                }
+            />
+        )
+    }
+
+    function getDeleteConfirmation() {
+        return (
+            <ConfirmationModal
+                cancelBtnLabel="Keep"
+                content={<span id={`delete-confirm-${selectedDeleteRunName}-message`}>This cannot be undone.</span>}
+                handleCancel={() => {
+                    closeAndResetDeleteRunModal()
+                }}
+                handleOk={async () => {
+                    await deleteRun(selectedDeleteIdx, selectedDeleteRun)
+                    closeAndResetDeleteRunModal()
+                }}
+                id={`delete-confirm-${selectedDeleteRunName}-dialog`}
+                okBtnLabel="Delete"
+                title={
+                    <span id={`delete-confirm-${selectedDeleteRunName}-title`}>
+                        Delete training run &quot;{selectedDeleteRunName}&quot;?
+                    </span>
+                }
+            />
+        )
+    }
+
+    function getTable() {
+        return (
             <Box
                 id="run-table-box"
                 sx={{
-                    // borderBottom: 1,
-                    // borderColor: "var(--bs-border-color)",
-                    // borderRadius: "16px",
-                    // boxShadow: 1,
                     display: "flex",
-                    flexDirection: "column",
-                    // minWidth: "100%",
-                    // marginTop: 0,
-                    // mx: {sm: -6, lg: -8},
-                    // overflowX: "auto",
-                    // px: {sm: 6, lg: 8},
-                    // py: 2,
                     marginTop: "32px",
                     width: "100%",
                 }}
@@ -723,60 +793,33 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 <Table
                     id="run-table"
                     sx={{
-                        width: "100%",
-                        marginTop: "32px",
+                        boxShadow: 10,
                     }}
                 >
-                    <TableHead id="run-table-head">
+                    <TableHead
+                        id="run-table-head"
+                        sx={{
+                            "& th:first-of-type": {
+                                borderTopLeftRadius: "1rem",
+                            },
+                            "& th:last-of-type": {
+                                borderTopRightRadius: "1rem",
+                            },
+                        }}
+                    >
                         <TableRow id="run-table-header-elements">{tableHeader}</TableRow>
                     </TableHead>
                     <TableBody id="run-table-body">{runRows}</TableBody>
                 </Table>
             </Box>
-            {terminateRunModalOpen && (
-                <ConfirmationModal
-                    cancelBtnLabel="Do not terminate"
-                    content={
-                        <span id={`terminate-confirm-${selectedTerminateRunName}-message`}>
-                            This cannot be undone. All existing training progress will be lost.
-                        </span>
-                    }
-                    handleCancel={() => {
-                        closeAndResetTerminateRunModal()
-                    }}
-                    handleOk={async () => {
-                        await abortRun(selectedTerminateIdx, selectedTerminateRun)
-                        closeAndResetTerminateRunModal()
-                    }}
-                    id={`terminate-confirm-${selectedTerminateRunName}-dialog`}
-                    okBtnLabel="Terminate"
-                    title={
-                        <span id={`terminate-confirm-${selectedTerminateRunName}-title`}>
-                            Terminate in-progress training run &quot;{selectedTerminateRunName}&quot;?
-                        </span>
-                    }
-                />
-            )}
-            {deleteRunModalOpen && (
-                <ConfirmationModal
-                    cancelBtnLabel="Keep"
-                    content={<span id={`delete-confirm-${selectedDeleteRunName}-message`}>This cannot be undone.</span>}
-                    handleCancel={() => {
-                        closeAndResetDeleteRunModal()
-                    }}
-                    handleOk={async () => {
-                        await deleteRun(selectedDeleteIdx, selectedDeleteRun)
-                        closeAndResetDeleteRunModal()
-                    }}
-                    id={`delete-confirm-${selectedDeleteRunName}-dialog`}
-                    okBtnLabel="Delete"
-                    title={
-                        <span id={`delete-confirm-${selectedDeleteRunName}-title`}>
-                            Delete training run &quot;{selectedDeleteRunName}&quot;?
-                        </span>
-                    }
-                />
-            )}
+        )
+    }
+
+    return (
+        <>
+            {getTable()}
+            {terminateRunModalOpen && getTerminateConfirmation()}
+            {deleteRunModalOpen && getDeleteConfirmation()}
         </>
     )
 }

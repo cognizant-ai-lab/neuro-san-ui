@@ -1,7 +1,6 @@
 import InfoIcon from "@mui/icons-material/Info"
 import Tooltip from "@mui/material/Tooltip"
-
-import {MaximumBlue} from "../const"
+import {ReactElement} from "react"
 
 interface InfoTipParams {
     // Prefix to be used for nested component IDs
@@ -22,14 +21,14 @@ interface InfoTipParams {
  * to achieve this.
  *
  * @param props {@see InfoTipParams}
- * @return an antd Tooltip with the requested text that wraps a react-icons InfoSignIcon
+ * @return A Tooltip with the requested text that wraps an InfoIcon
  */
-export function InfoTip(props: InfoTipParams): React.ReactElement {
+export function InfoTip(props: InfoTipParams): ReactElement {
     const divId = `${props.id}-info-bubble`
     const supId = `${props.id}-info-bubble-sup`
     const iconId = `${props.id}-info-bubble-icon`
     const size = props.size || 15
-    const color = props.color || MaximumBlue
+    const color = props.color || "var(--bs-primary)"
 
     return (
         <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
