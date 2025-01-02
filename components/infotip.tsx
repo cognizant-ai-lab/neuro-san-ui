@@ -29,10 +29,11 @@ export function InfoTip(props: InfoTipParams): ReactElement {
     const iconId = `${props.id}-info-bubble-icon`
     const size = props.size || 15
     const color = props.color || "var(--bs-primary)"
+    const id = `${props.id}-info-bubble-tooltip`
 
     return (
         <Tooltip
-            id={`${props.id}-info-bubble-tooltip`}
+            id={id}
             title={props.info}
         >
             <div

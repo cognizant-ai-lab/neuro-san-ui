@@ -74,7 +74,7 @@ const CustomTableHead = styled(TableHead)(() => ({
     "& .MuiTableCell-root": {
         fontWeight: "bold",
         backgroundColor: "var(--bs-secondary)",
-        borderBottom: "4px solid black",
+        borderBottom: "3px solid black",
         color: "var(--bs-white)",
 
         "&:first-of-type": {
