@@ -41,7 +41,7 @@ describe("Add LLMDropdownMenu", () => {
 
         render(view)
 
-        const addLLMButton = await screen.findByText("Add LLM")
+        const addLLMButton = await screen.findByText("Add LLM ▼")
 
         fireEvent.click(addLLMButton)
         await waitFor(() => {
@@ -61,7 +61,7 @@ describe("Add LLMDropdownMenu", () => {
 
         render(view)
 
-        const addLLMButton = await screen.findByText("Add LLM")
+        const addLLMButton = await screen.findByText("Add LLM ▼")
 
         fireEvent.click(addLLMButton)
         await waitFor(() => {
@@ -81,7 +81,7 @@ describe("Add LLMDropdownMenu", () => {
 
         render(view)
 
-        const addLLMButton = await screen.findByText("Add LLM")
+        const addLLMButton = await screen.findByText("Add LLM ▼")
 
         fireEvent.click(addLLMButton)
         await waitFor(() => {
