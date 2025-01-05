@@ -1,9 +1,10 @@
 import {Card, CardContent, CardHeader, FormControlLabel, Tab, Tabs, Typography} from "@mui/material"
 import Checkbox from "@mui/material/Checkbox"
+import Container from "@mui/material/Container"
+import Grid from "@mui/material/Grid2"
 import Tooltip from "@mui/material/Tooltip"
 import Slider from "rc-slider"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
-import {Col, Container, Row} from "react-bootstrap"
 import {AiFillDelete} from "react-icons/ai"
 import {BiPlusMedical} from "react-icons/bi"
 import {GrSettingsOption} from "react-icons/gr"
@@ -338,20 +339,12 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             id={`${flowPrefix}-rules-config`}
             key={`${NodeID}-rules-config`}
         >
-            <Row
+            <Grid
                 id={`${flowPrefix}-max-exponent`}
                 style={{margin: "2rem 0.5rem"}}
             >
-                <Col
-                    id={`${flowPrefix}-max-exponent-label`}
-                    md={5}
-                >
-                    Max Exponent:
-                </Col>
-                <Col
-                    id={`${flowPrefix}-max-exponent-slider`}
-                    md={4}
-                >
+                <Grid id={`${flowPrefix}-max-exponent-label`}>Max Exponent:</Grid>
+                <Grid id={`${flowPrefix}-max-exponent-slider`}>
                     <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - Slider does not have an id property when compiling
                         step={1}
@@ -379,22 +372,14 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     />
-                </Col>
-            </Row>
-            <Row
+                </Grid>
+            </Grid>
+            <Grid
                 id={`${flowPrefix}-number-of-building-block-conditions`}
                 style={{margin: "2rem 0.5rem"}}
             >
-                <Col
-                    id={`${flowPrefix}-number-of-building-block-conditions-label`}
-                    md={5}
-                >
-                    Building Block Conditions:
-                </Col>
-                <Col
-                    id={`${flowPrefix}-number-of-building-block-conditions-slider`}
-                    md={4}
-                >
+                <Grid id={`${flowPrefix}-number-of-building-block-conditions-label`}>Building Block Conditions:</Grid>
+                <Grid id={`${flowPrefix}-number-of-building-block-conditions-slider`}>
                     <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         // 2/6/23 DEF - Slider does not have an id property when compiling
                         step={1}
@@ -422,22 +407,14 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     />
-                </Col>
-            </Row>
-            <Row
+                </Grid>
+            </Grid>
+            <Grid
                 id={`${flowPrefix}-number-of-building-block-rules`}
                 style={{margin: "2rem 0.5rem"}}
             >
-                <Col
-                    id={`${flowPrefix}-number-of-building-block-rules-label`}
-                    md={5}
-                >
-                    Building Block Rules:
-                </Col>
-                <Col
-                    id={`${flowPrefix}-number-of-building-block-rules-slider`}
-                    md={4}
-                >
+                <Grid id={`${flowPrefix}-number-of-building-block-rules-label`}>Building Block Rules:</Grid>
+                <Grid id={`${flowPrefix}-number-of-building-block-rules-slider`}>
                     <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         step={1}
                         min={1}
@@ -464,8 +441,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     />
-                </Col>
-            </Row>
+                </Grid>
+            </Grid>
         </Container>
     )
 
