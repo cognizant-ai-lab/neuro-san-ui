@@ -1,9 +1,11 @@
-import InfoIcon from "@mui/icons-material/Info"
-import {FormControl, MenuItem, TableBody, TableCell, TableRow} from "@mui/material"
+import FormControl from "@mui/material/FormControl"
+import Grid from "@mui/material/Grid2"
+import MenuItem from "@mui/material/MenuItem"
 import Select from "@mui/material/Select"
-import Tooltip from "@mui/material/Tooltip"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableRow from "@mui/material/TableRow"
 import {ReactElement, useState} from "react"
-import {Col, Container, Row} from "react-bootstrap"
 import {FiAlertCircle} from "react-icons/fi"
 
 import {ParallelCoordsPlot} from "./parallel_coords_plot"
@@ -11,6 +13,7 @@ import {ParetoPlot2D} from "./pareto_plot_2d"
 import {ParetoPlot3D} from "./pareto_plot_3d"
 import {RadarPlot} from "./radar_plot"
 import {ParetoPlotProps} from "./types"
+import {InfoTip} from "../infotip"
 import NewBar from "../newbar"
 
 /**
@@ -208,50 +211,38 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
             />
             <br id="pareto-plot-br" />
             {nodePlots.length ? (
-                <Container
-                    fluid
+                <Grid
                     id="pareto-plot-container"
+                    container={true}
+                    spacing={2}
                 >
-                    <Row id="plot-type-row">
-                        <Col
-                            id="tooltip-column"
-                            style={{display: "flex"}}
-                        >
-                            <h4 id="plot-type-h4">Plot type:</h4>
-                            <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // Tooltip does not have an id property
-                                title={
-                                    "Some plot types may not be available, depending on the number of outcomes " +
-                                    "in your experiment"
-                                }
-                            >
-                                <div
-                                    id="plot-info-bubble"
-                                    className="ps-1"
-                                >
-                                    <InfoIcon
-                                        id="plot-info-bubble-icon"
-                                        sx={{color: "blue", width: "15px", height: "15px"}}
-                                    />
-                                </div>
-                            </Tooltip>
-                        </Col>
-                    </Row>
-                    <Row id="select-chart-row">
-                        <Col
-                            id="select-chart-col"
-                            style={{marginTop: "16px"}}
-                        >
-                            {paretoChartSelect}
-                        </Col>
-                    </Row>
-                    <Row
-                        id="pareto-plot-row"
-                        style={{marginTop: "16px"}}
+                    <Grid
+                        id="plot-type-row"
+                        size={12}
+                        sx={{display: "flex"}}
                     >
-                        <Col id="pareto-plots-col">{nodePlots}</Col>
-                    </Row>
-                </Container>
+                        <h4 id="plot-type-h4">Plot type:</h4>
+                        <InfoTip
+                            id={`${propsId}-plot-info`}
+                            info={
+                                "Some plot types may not be available, depending on the number " +
+                                "of outcomes in your experiment"
+                            }
+                        />
+                    </Grid>
+                    <Grid
+                        id="select-chart-row"
+                        size={12}
+                    >
+                        {paretoChartSelect}
+                    </Grid>
+                    <Grid
+                        id="pareto-plot-row"
+                        size={12}
+                    >
+                        <Grid id="pareto-plots-col">{nodePlots}</Grid>
+                    </Grid>
+                </Grid>
             ) : (
                 <>
                     <span
