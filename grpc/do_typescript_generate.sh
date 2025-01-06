@@ -54,7 +54,7 @@ LOCAL_PATH="$NEURO_SAN_PROTO_DIR/neuro_san/api/grpc"
 # Create the directory structure
 mkdir -p "$LOCAL_PATH"
 
-NEURO_SAN_PROTOS=$(cat "${PROTO_MANIFEST}" | grep -v "^#" | grep neuro_san | awk -F"/" '{print $4}')
+NEURO_SAN_PROTOS=$("${PROTO_MANIFEST}" grep -v "^#" | grep neuro_san | awk -F"/" '{print $4}')
 
 # Get any necessary proto files from the neuro-san repository.
 for ONE_PROTO in ${NEURO_SAN_PROTOS}
