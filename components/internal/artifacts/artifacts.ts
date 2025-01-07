@@ -235,7 +235,10 @@ export async function downloadArtifact(
     downloadFile(decodedString, downloadFileName)
 
     // Show notification at top center as in Firefox "downloads popup" hides it on the right
-    sendNotification(NotificationType.success, `${artifactFriendlyName} downloaded as ${downloadFileName}`, "", "top")
+    sendNotification(NotificationType.success, `${artifactFriendlyName} downloaded as ${downloadFileName}`, "", {
+        vertical: "top",
+        horizontal: "center",
+    })
 }
 
 /**

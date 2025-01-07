@@ -13,6 +13,7 @@ import debugModule from "debug"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
+import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect} from "react"
 import {Container} from "react-bootstrap"
 import ClipLoader from "react-spinners/ClipLoader"
@@ -22,6 +23,7 @@ import {Auth} from "../components/auth"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
+import {Snackbar} from "../components/Snackbar"
 import {GENERIC_LOGO, LOGO, MaximumBlue} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"
@@ -294,6 +296,14 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                 />
             </Head>
             {body}
+            <SnackbarProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                Components={{
+                    info: Snackbar,
+                    success: Snackbar,
+                    warning: Snackbar,
+                    error: Snackbar,
+                }}
+            />
         </div>
     )
 }

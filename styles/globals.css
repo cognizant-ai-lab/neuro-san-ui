@@ -12,6 +12,7 @@
     --link-hover-color: var(--bs-primary);
     --bs-red: #b81f2d;
     --bs-yellow: #e9c71d;
+    --bs-orange: #ff9800; /* Not in the original file from brand team */
     --bs-green: #2db81f;
     --bs-black: var(--bs-primary);
     --bs-pink: #f221b8;
@@ -33,7 +34,7 @@
     --bs-accent3-dark: #06c7cc;
     --bs-success: var(--bs-green);
     --bs-info: var(--bs-accent3-medium);
-    --bs-warning: var(--bs-yellow);
+    --bs-warning: var(--bs-orange);
     --bs-danger: var(--bs-red);
     --bs-light: var(--bs-white);
     --bs-font-sans-serif: "Gellix", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans",

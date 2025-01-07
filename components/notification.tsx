@@ -1,7 +1,5 @@
-import {notification} from "antd"
-import {NotificationPlacement} from "antd/es/notification/interface"
+import {enqueueSnackbar, SnackbarOrigin, /*SnackbarOrigin, */ VariantType} from "notistack"
 import {renderToString} from "react-dom/server"
-import {AiOutlineClose} from "react-icons/ai"
 
 // no-shadow doesn't do well with enums. Search their github issues if you're curious.
 // eslint-disable-next-line no-shadow
@@ -13,24 +11,27 @@ export enum NotificationType {
 }
 
 // Display warning and error notification popups for this many seconds
-const ERROR_WARNING_NOTIFICATION_DURATION_SECS = 15
+const ERROR_WARNING_NOTIFICATION_DURATION_MS = 15000
 
 // Display info notification popups for this many seconds
-const SUCCESS_NOTIFICATION_DURATION_SECS = 5
+const SUCCESS_NOTIFICATION_DURATION_MS = 5000
 
 /**
  * Convenience method to allow sending notifications to user with a one-liner.
  * Simply wraps @Notification function
- * @param nt Indicates whether it's error, warning, info etc.
+ * @param variantType Indicates whether it's error, warning, info etc.
  * @param message Brief summary of the notification
  * @param description More complete description of the notification
  * @param placement Where to show notification. Defaults to top-right.
  */
 export function sendNotification(
-    nt: NotificationType,
+    variantType: NotificationType,
     message: string,
     description: string | JSX.Element = "",
-    placement: NotificationPlacement = "topRight"
+    placement: SnackbarOrigin = {
+        vertical: "top",
+        horizontal: "right",
+    }
 ): void {
     // Log a copy to the console for troubleshooting
     const descriptionAsString = typeof description === "string" ? description : renderToString(description)
@@ -38,29 +39,27 @@ export function sendNotification(
 
     // Show error and warnings for longer
     let duration: number
-    switch (nt) {
+    switch (variantType) {
         case NotificationType.info:
         case NotificationType.success:
-            duration = SUCCESS_NOTIFICATION_DURATION_SECS
+            duration = SUCCESS_NOTIFICATION_DURATION_MS
             break
         case NotificationType.warning:
         case NotificationType.error:
         default:
-            duration = ERROR_WARNING_NOTIFICATION_DURATION_SECS
+            duration = ERROR_WARNING_NOTIFICATION_DURATION_MS
             break
     }
 
     // Use some minor customization to be able to inject ids for testing
-    const spanId = `notification-message-${NotificationType[nt]}`
+    const spanId = `notification-message-${variantType}`
     const messageSpan = <span id={spanId}>{message}</span>
-    const closeIcon = <AiOutlineClose id="notification-close-icon" />
 
-    // Send the notification with antd
-    notification[NotificationType[nt]]({
-        message: messageSpan,
-        description: description,
-        duration: duration,
-        closeIcon: closeIcon,
-        placement: placement,
+    enqueueSnackbar(messageSpan, {
+        anchorOrigin: placement,
+        autoHideDuration: duration,
+        // @ts-expect-error - Could "declare module" to fix this
+        description,
+        variant: NotificationType[variantType] as VariantType,
     })
 }

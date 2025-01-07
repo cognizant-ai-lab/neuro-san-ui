@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
-import {cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved} from "@testing-library/react"
+import {fireEvent, render, screen, waitFor, waitForElementToBeRemoved} from "@testing-library/react"
+import {SnackbarProvider} from "notistack"
 
 import {DEMO_USER} from "../../const"
 import * as listFetch from "../../controller/list/fetch"
@@ -150,6 +151,13 @@ jest.mock("../../utils/use_local_storage", () => ({
     }),
 }))
 
+const renderProjectsPage = () =>
+    render(
+        <SnackbarProvider>
+            <ProjectsPage />
+        </SnackbarProvider>
+    )
+
 describe("Projects Page", () => {
     beforeAll(() => {
         // Enable the authorize API for testing. The "fetchResourceList" function, called by the authorize API logic,
@@ -165,12 +173,11 @@ describe("Projects Page", () => {
     })
 
     afterEach(() => {
-        cleanup()
         localStorage.clear()
     })
 
     it("should display a project page with projects visible to user", async () => {
-        render(<ProjectsPage />)
+        renderProjectsPage()
 
         // UI displays the project descriptions
         const mockProject = await screen.findByText(MOCK_PROJECT.description)
@@ -181,7 +188,7 @@ describe("Projects Page", () => {
     })
 
     it("Should truncate long descriptions", async () => {
-        render(<ProjectsPage />)
+        renderProjectsPage()
 
         // UI truncates description and adds an ellipsis.
         const longProject = await screen.findByText((_content, element) => {
@@ -198,7 +205,7 @@ describe("Projects Page", () => {
 
     it("should show error page if project list returns falsy", async () => {
         jest.spyOn(projectFetch, "fetchProjects").mockReturnValue(Promise.resolve(null))
-        render(<ProjectsPage />)
+        renderProjectsPage()
 
         const errorText = await screen.findByText("Unable to retrieve projects")
         expect(errorText).toBeInTheDocument()
@@ -230,13 +237,13 @@ describe("Projects Page", () => {
     })
 
     it("should show sharing icon if they are an owner", async () => {
-        render(<ProjectsPage />)
+        renderProjectsPage()
         const sharingIconFound = await screen.findByTestId(`project-${MOCK_PROJECT.id}-tooltip-share`)
         expect(sharingIconFound).toBeInTheDocument()
     })
 
     it("should be able to toggle view between personal or other projects", async () => {
-        render(<ProjectsPage />)
+        renderProjectsPage()
         const mockProject = await screen.findByText(MOCK_PROJECT.description)
         const demoProject = await screen.findByText(DEMO_PROJECT.description)
 
@@ -253,7 +260,7 @@ describe("Projects Page", () => {
     })
 
     it("should display share dialog when sharing icon clicked", async () => {
-        const {container} = render(<ProjectsPage />)
+        const {container} = renderProjectsPage()
 
         let sharingIcon: Element
         await waitFor(async () => {
@@ -279,7 +286,7 @@ describe("Projects Page", () => {
     ]
 
     test.each(clickPoints)("should allow users to click at %s on the project card", async (clickPoint) => {
-        render(<ProjectsPage />)
+        renderProjectsPage()
 
         const mockProject = await screen.findByText(MOCK_PROJECT.description)
         expect(mockProject).toBeInTheDocument()
@@ -302,7 +309,7 @@ describe("Projects Page", () => {
         // We get antd errors in the console. We're migrating away from antd so we don't care about these
         jest.spyOn(console, "error").mockImplementation()
 
-        render(<ProjectsPage />)
+        renderProjectsPage()
 
         // Sanity check
         const mockProject = await screen.findByText(MOCK_PROJECT.name)
