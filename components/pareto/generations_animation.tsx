@@ -1,12 +1,10 @@
+import {Button} from "@mui/material"
 import FormControl from "@mui/material/FormControl"
 import MenuItem from "@mui/material/MenuItem"
 import Select from "@mui/material/Select"
 import Slider from "@mui/material/Slider"
 import {useEffect, useState} from "react"
-import {Button} from "react-bootstrap"
 import {FiPlay, FiStopCircle} from "react-icons/fi"
-
-import {MaximumBlue} from "../../const"
 
 /**
  * Params for the GenerationsAnimation component.
@@ -22,7 +20,7 @@ interface GenerationsAnimationParams {
     NumberOfGenerations: number
 
     // Function to updated selected generation in the parent when user clicks
-    SetSelectedGen: (number) => void
+    SetSelectedGen: (gen: number | ((prevGen: number) => number)) => void
 
     // Currently selected generation
     SelectedGen: number
@@ -34,7 +32,7 @@ interface GenerationsAnimationParams {
     FrameDelayMs?: number
 
     // Function to update currently playing state
-    SetPlaying: (boolean) => void
+    SetPlaying: (playing: boolean) => void
 
     // Current playing state
     Playing: boolean
@@ -53,9 +51,9 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
     const numberOfGenerations: number = props.NumberOfGenerations
     const selectedGen: number = props.SelectedGen
 
-    const setSelectedGen: (number) => void = props.SetSelectedGen
+    const setSelectedGen: (gen: number | ((prevGen: number) => number)) => void = props.SetSelectedGen
 
-    const setPlaying: (boolean) => void = props.SetPlaying
+    const setPlaying: (playing: boolean) => void = props.SetPlaying
     const playing = props.Playing
 
     const showAllGenerations = props?.ShowAllGenerations ?? true
@@ -123,9 +121,12 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
             >
                 <Button
                     id="generation-play-button"
-                    style={{background: MaximumBlue, borderColor: MaximumBlue}}
-                    type="button"
-                    className="mr-4"
+                    sx={{
+                        background: "var(--bs-primary) !important",
+                        borderColor: "var(--bs-primary) !important",
+                        borderRadius: "10px",
+                        marginRight: "1rem",
+                    }}
                     onClick={() => {
                         // If the animation is not playing start the animation by using
                         // a setInterval that updates the states every frameDelayMs milliseconds
@@ -163,7 +164,19 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                         }
                     }}
                 >
-                    {playing ? <FiStopCircle id="generation-play-stop" /> : <FiPlay id="generation-play-play" />}
+                    {playing ? (
+                        <FiStopCircle
+                            id="generation-play-stop"
+                            style={{color: "white"}}
+                            size={25}
+                        />
+                    ) : (
+                        <FiPlay
+                            id="generation-play-play"
+                            style={{color: "white"}}
+                            size={25}
+                        />
+                    )}
                 </Button>
                 <FormControl
                     sx={{alignItems: "self-end"}}
@@ -198,7 +211,9 @@ export function GenerationsAnimation(props: GenerationsAnimationParams) {
                     value={selectedGen}
                     disabled={playing}
                     onChange={(_event: Event, newValue: number | number[]) => {
-                        setSelectedGen(newValue)
+                        // We can safely cast to number here because we know it's a single value. Only range sliders
+                        // would return an array, which is not what we have here.
+                        setSelectedGen(newValue as number)
                     }}
                     sx={{
                         marginRight: "1.5rem",

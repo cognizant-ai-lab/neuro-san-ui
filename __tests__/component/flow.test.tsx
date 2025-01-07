@@ -1,12 +1,12 @@
 import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
-import {act, render, screen, waitFor} from "@testing-library/react"
+import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import user from "@testing-library/user-event"
 import {Position} from "reactflow"
 
 import {EdgeType} from "../../components/internal/flow/edges/types"
 import Flow from "../../components/internal/flow/flow"
-import {NodeType} from "../../components/internal/flow/nodes/types"
+import NodeTypes, {NodeType} from "../../components/internal/flow/nodes/types"
 import {NotificationType, sendNotification} from "../../components/notification"
 import loadDataTags from "../../controller/datatag/fetchdatataglist"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued} from "../../generated/metadata"
@@ -166,26 +166,97 @@ jest.mock("../../controller/datatag/fetchdatataglist", () => {
     }
 })
 
-function createFlow(
-    elementsSelectable: boolean = true,
-    setParentState: jest.Mock = jest.fn(),
-    initialFlow: (NodeType | EdgeType)[] = [],
-    projectPermissions: AuthorizationInfo = {id: testProjectId, update: true, delete: true}
-) {
-    return (
-        <Flow
-            id="test-flow"
-            ProjectID={testProjectId}
-            SetParentState={setParentState}
-            Flow={initialFlow}
-            ElementsSelectable={elementsSelectable}
-            projectPermissions={projectPermissions}
-        />
-    )
-}
+// For detecting MUI buttons
+const MUI_BUTTON_CLASS = "MuiButton-root"
 
 describe("Flow Test", () => {
     let setParentState: jest.Mock
+
+    function createFlow(
+        elementsSelectable: boolean = true,
+        initialFlow: (NodeType | EdgeType)[] = [],
+        projectPermissions: AuthorizationInfo = {id: testProjectId, update: true, delete: true}
+    ) {
+        return (
+            <Flow
+                id="test-flow"
+                ProjectID={testProjectId}
+                SetParentState={setParentState}
+                Flow={initialFlow}
+                ElementsSelectable={elementsSelectable}
+                projectPermissions={projectPermissions}
+            />
+        )
+    }
+
+    async function clickToAddNode(
+        expectedNodesAfterAdd: string[],
+        expectedNewNodeClassName: string,
+        addNodeButton: HTMLElement,
+        newNodeType: keyof typeof NodeTypes
+    ) {
+        setParentState.mockReset()
+
+        // Click the button to add the node
+        fireEvent.click(addNodeButton)
+
+        // Should be no popup warnings or errors
+        expect(sendNotification).not.toHaveBeenCalled()
+
+        await waitFor(() => {
+            expect(loadDataTags).toHaveBeenCalled()
+        })
+
+        // Make sure setParentState() was called to add the new node
+        const calls = setParentState.mock.calls
+        expect(calls.length).toBeGreaterThan(0)
+
+        // Find the call that added the node. `setParentState` gets called a bunch of times so we have to search for
+        // any call that attempted to add the new node type.
+        const nodeAddCall = calls.find((call) =>
+            call.some((nodeList) => nodeList.some((node) => node.type === newNodeType))
+        )?.[0]
+
+        expect(nodeAddCall).toBeTruthy()
+
+        // Make sure call to setParentState() has the correct elements
+        const elementTypes = nodeAddCall.map((call) => call.type)
+        expect(elementTypes).toHaveLength(expectedNodesAfterAdd.length)
+        expect(new Set(elementTypes)).toStrictEqual(new Set(expectedNodesAfterAdd))
+
+        // Fake re-rendering the flow with the new node. Here we are acting as the container for the Flow,
+        // so it's on us to "remember" the state of the flow and pass it back in when we re-render.
+        // Clean up the old flow rendering
+        cleanup()
+
+        // Render the modified flow
+        const flowWithNewNode = createFlow(true, nodeAddCall)
+        const {container: newContainer} = render(flowWithNewNode)
+
+        // Make sure new node was rendered
+        await waitFor(() => {
+            const nodes = newContainer.getElementsByClassName(expectedNewNodeClassName)
+            expect(nodes.length).toBe(1)
+        })
+    }
+
+    async function addPrescriptorNode() {
+        const flow = createFlow(true, FLOW_WITH_PREDICTOR)
+        render(flow)
+
+        expect(await screen.findByText(testDataSourceName)).toBeInTheDocument()
+
+        // Get the add node button
+        const addNodeButton = screen.getByText("Add Prescriptor")
+        expect(addNodeButton).toBeInTheDocument()
+
+        await clickToAddNode(
+            ["datanode", "predictornode", "predictoredge", "prescriptornode", "prescriptoredge"],
+            "react-flow__node-prescriptornode",
+            addNodeButton,
+            "prescriptornode"
+        )
+    }
 
     beforeEach(() => {
         setParentState = jest.fn()
@@ -203,7 +274,7 @@ describe("Flow Test", () => {
     })
 
     it("Generates a single data node for empty flow", async () => {
-        render(createFlow(true, setParentState))
+        render(createFlow(true))
 
         // Should be no popup warnings or errors
         expect(sendNotification).not.toHaveBeenCalled()
@@ -230,7 +301,7 @@ describe("Flow Test", () => {
         })
 
         // Look for buttons
-        const buttons = container.getElementsByClassName("btn")
+        const buttons = container.getElementsByClassName(MUI_BUTTON_CLASS)
 
         // Should be no buttons since we're in read-only mode
         expect(buttons.length).toBe(0)
@@ -244,13 +315,15 @@ describe("Flow Test", () => {
         })
 
         // Look for buttons
-        const buttons = container.getElementsByClassName("btn")
+        const buttons = container.getElementsByClassName(MUI_BUTTON_CLASS)
 
         // Should be four buttons
         expect(buttons.length).toBe(4)
 
         const titles = new Set([...buttons].map((button) => button.textContent))
-        expect(titles).toStrictEqual(new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM"]))
+        expect(titles).toStrictEqual(
+            new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM ▼"])
+        )
     })
 
     it("Shows extra button for all users", async () => {
@@ -261,20 +334,22 @@ describe("Flow Test", () => {
         })
 
         // Look for buttons
-        const buttons = container.getElementsByClassName("btn")
+        const buttons = container.getElementsByClassName(MUI_BUTTON_CLASS)
 
         // Should be four buttons for all users
         expect(buttons.length).toBe(4)
 
         const titles = new Set([...buttons].map((button) => button.textContent))
-        expect(titles).toStrictEqual(new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM"]))
+        expect(titles).toStrictEqual(
+            new Set(["Add Predictor", "Add Uncertainty Model", "Add Prescriptor", "Add LLM ▼"])
+        )
 
         // Make sure LLM options shown
         expect(container.querySelector("#add-llm-dropdown")).not.toBeNull()
     })
 
     it("Refuses to add a prescriptor node if there is no predictor node", async () => {
-        render(createFlow(true, setParentState))
+        render(createFlow(true))
 
         await waitFor(() => {
             expect(screen.getByText("Data Source")).toBeInTheDocument()
@@ -294,7 +369,7 @@ describe("Flow Test", () => {
     })
 
     it("Refuses to add an uncertainty node if there is no predictor node", async () => {
-        render(createFlow(true, setParentState))
+        render(createFlow(true))
 
         await waitFor(() => {
             expect(screen.getByText("Data Source")).toBeInTheDocument()
@@ -317,11 +392,11 @@ describe("Flow Test", () => {
     })
 
     it("Refuses to add an activation node if there's no prescriptor node", async () => {
-        render(createFlow(true, setParentState, []))
+        render(createFlow(true, []))
 
         let addLLmButton: Element
         await waitFor(() => {
-            addLLmButton = screen.getByText("Add LLM")
+            addLLmButton = screen.getByText("Add LLM ▼")
             expect(addLLmButton).toBeInTheDocument()
         })
 
@@ -344,7 +419,7 @@ describe("Flow Test", () => {
     })
 
     it("Adds a predictor node when the add predictor button is clicked", async () => {
-        const flow = createFlow(true, setParentState)
+        const flow = createFlow(true)
 
         render(flow)
 
@@ -390,72 +465,70 @@ describe("Flow Test", () => {
 
         // Fake re-rendering the flow with the new predictor node. Here we are acting as the container for the Flow,
         // so it's on us to "remember" the state of the flow and pass it back in when we re-render.
-        render(createFlow(true, setParentState, callWithThreeElements))
+        render(createFlow(true, callWithThreeElements))
 
         await waitFor(() => {
             expect(screen.getByText("Predictor")).toBeInTheDocument()
         })
     })
 
+    // eslint-disable-next-line jest/expect-expect
     it("Adds a prescriptor node when the add prescriptor button is clicked", async () => {
-        const mockLoadDataTags = loadDataTags as jest.Mock
-        const dataTags = [
-            {
-                DataSource: {id: "test-data-source-id", name: testDataSourceName},
-                LatestDataTag: "test tag",
-            },
-        ]
-        mockLoadDataTags.mockImplementation(() => {
-            return dataTags
-        })
+        await addPrescriptorNode()
+    })
 
-        const flow = createFlow(true, setParentState, FLOW_WITH_PREDICTOR)
+    it("Adds an Analytics node when the add Analytics node button is clicked", async () => {
+        const flow = createFlow(true)
+        render(flow)
 
-        const {container} = render(flow)
+        // Get the add LLM button
+        const llmMenuButton = screen.getByText("Add LLM ▼")
+        expect(llmMenuButton).toBeInTheDocument()
 
-        await waitFor(() => {
-            expect(screen.getByText(testDataSourceName)).toBeInTheDocument()
-        })
+        // click it
+        fireEvent.click(llmMenuButton)
 
-        // Get the add prescriptor button
-        const addPrescriptorButton = screen.getByText("Add Prescriptor")
-        expect(addPrescriptorButton).toBeInTheDocument()
+        // Get the add Analytics node button
+        const addAnalyticsButton = screen.getByText("Analytics")
+        expect(addAnalyticsButton).toBeInTheDocument()
 
-        // Without this act() an ugly warning is issued by React. React testing library is supposed to auto wrap things
-        // in act() but it doesn't seem to be working here.
-        act(() => {
-            addPrescriptorButton.click()
-        })
-
-        expect(sendNotification).not.toHaveBeenCalled()
-
-        await waitFor(() => {
-            expect(loadDataTags).toHaveBeenCalled()
-        })
-        const calls = setParentState.mock.calls
-        expect(calls.length).toBeGreaterThan(0)
-
-        // Find call that added prescriptor
-        const callWithPrescriptor = calls.find((call) => call[0].length === 5)?.[0]
-        expect(callWithPrescriptor).toBeTruthy()
-
-        // Make sure call to setParentState() has the correct elements
-        const elementTypes = callWithPrescriptor.map((call) => call.type)
-        expect(elementTypes).toHaveLength(5)
-        expect(new Set(elementTypes)).toStrictEqual(
-            new Set(["datanode", "predictornode", "predictoredge", "prescriptornode", "prescriptoredge"])
+        await clickToAddNode(
+            ["datanode", "predictoredge", "analytics_node"],
+            "react-flow__node-analytics_node",
+            addAnalyticsButton,
+            "analytics_node"
         )
+    })
 
-        // Fake re-rendering the flow with the new prescriptor node. Here we are acting as the container for the Flow,
-        // so it's on us to "remember" the state of the flow and pass it back in when we re-render.
-        const flowWithPrescriptor = createFlow(true, setParentState, callWithPrescriptor)
-        render(flowWithPrescriptor)
+    it("Adds an Activation node when the add Activation node button is clicked", async () => {
+        // Need to add a Prescriptor first since the Activation node wants to connect to it
+        await addPrescriptorNode()
 
-        // Make sure prescriptor node was rendered
-        await waitFor(() => {
-            const presc = container.getElementsByClassName("react-flow__node-prescriptornode")
-            expect(presc.length).toBe(1)
-        })
+        // Get the add LLM button
+        const llmMenuButton = screen.getByText("Add LLM ▼")
+        expect(llmMenuButton).toBeInTheDocument()
+
+        // click it
+        fireEvent.click(llmMenuButton)
+
+        // Get the add Activation node button
+        const addAnalyticsButton = screen.getByText("Activation")
+        expect(addAnalyticsButton).toBeInTheDocument()
+
+        await clickToAddNode(
+            [
+                "datanode",
+                "predictornode",
+                "prescriptornode",
+                "activation_node",
+                "predictoredge",
+                "prescriptoredge",
+                "predictoredge",
+            ],
+            "react-flow__node-activation_node",
+            addAnalyticsButton,
+            "activation_node"
+        )
     })
 
     it("should show un-authorized message if insufficient authorization is passed to flow", async () => {
@@ -470,7 +543,7 @@ describe("Flow Test", () => {
             return dataTags
         })
 
-        const flow = createFlow(true, setParentState, FLOW_WITH_PREDICTOR, {
+        const flow = createFlow(true, FLOW_WITH_PREDICTOR, {
             id: testProjectId,
             update: false,
             delete: false,

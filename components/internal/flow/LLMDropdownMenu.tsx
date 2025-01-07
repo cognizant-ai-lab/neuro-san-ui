@@ -1,7 +1,8 @@
 import InfoIcon from "@mui/icons-material/Info"
+import {Box, Button, Menu} from "@mui/material"
+import MenuItem from "@mui/material/MenuItem"
 import Tooltip from "@mui/material/Tooltip"
-import {Dispatch, SetStateAction} from "react"
-import {Dropdown} from "react-bootstrap"
+import {Dispatch, MouseEvent as ReactMouseEvent, SetStateAction, useState} from "react"
 import {getOutgoers} from "reactflow"
 
 import {PredictorEdge} from "./edges/predictoredge"
@@ -53,6 +54,12 @@ const LLMDropdownMenu = ({
     edges,
     dataTagfields,
 }: LLMDropDownPropsType) => {
+    // For setting the position of the MUI popup menu for the LLMs
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+
+    // For determining if the menu is open. If anchorEl is not null, the menu is open.
+    const menuOpen = anchorEl != null
+
     /**
      * Adds any node after the specified node, and rewires the graph accordingly.
      *
@@ -138,17 +145,19 @@ const LLMDropdownMenu = ({
     const getLlmMenuItem = (shortId: string, itemDescription: string, itemName: string) => (
         <div
             id={`${shortId}-div`}
-            style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}
+            style={{display: "flex"}}
         >
             {itemName}
             <Tooltip
                 id={`${shortId}-tooltip`}
                 title={itemDescription}
             >
-                <InfoIcon
-                    id={`${shortId}-info-icon`}
-                    sx={{width: "21px", height: "21px"}}
-                />
+                <span id={`${shortId}-icon-span`}>
+                    <InfoIcon
+                        id={`${shortId}-info-icon`}
+                        sx={{width: "0.75rem", height: "0.75rem", marginLeft: "0.5rem"}}
+                    />
+                </span>
             </Tooltip>
         </div>
     )
@@ -395,37 +404,50 @@ const LLMDropdownMenu = ({
     const dataTagFieldHasCategoricalValue = (dataTagFields) =>
         dataTagFields &&
         Object.keys(dataTagFields)?.some((field) => dataTagFields[field].valued === DataTagFieldValued.CATEGORICAL)
+    const handleClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget)
+    }
+    const handleClose = () => {
+        setAnchorEl(null)
+    }
 
     return (
-        <Dropdown id="add-llm-dropdown">
-            <Dropdown.Toggle
-                variant="success"
+        <Box id="add-llm-dropdown">
+            <Button
                 id="dropdown-basic"
-                size="sm"
-                style={{width: "100%"}}
+                sx={{color: "white", width: "100%", height: "1.75rem"}}
+                onClick={handleClick}
             >
-                Add LLM
-            </Dropdown.Toggle>
+                Add LLM ▼
+            </Button>
 
-            <Dropdown.Menu
+            <Menu
                 id="llm-dropdown-menu"
-                style={{cursor: "pointer", width: "100%"}}
+                anchorEl={anchorEl}
+                open={menuOpen}
+                onClose={handleClose}
+                slotProps={{
+                    paper: {
+                        style: {
+                            width: anchorEl?.clientWidth,
+                        },
+                    },
+                }}
             >
-                <Dropdown.Item
+                <MenuItem
                     id="add-activation-llm-btn"
-                    as="div"
+                    value="activation"
                     onClick={() => addActivationLlm(nodes, edges)}
                 >
                     {getLlmMenuItem(
                         "activation",
-                        "Maps the intent of the prescriptor to front-end interactions and back-end and " +
-                            "model API calls",
+                        "Maps the intent of the prescriptor to front-end interactions and back-end and model API calls",
                         "Activation"
                     )}
-                </Dropdown.Item>
-                <Dropdown.Item
+                </MenuItem>
+                <MenuItem
                     id="add-analytics-llm-btn"
-                    as="div"
+                    value="analytics"
                     onClick={() => addAnalyticsLlm(nodes, edges)}
                 >
                     {getLlmMenuItem(
@@ -433,38 +455,38 @@ const LLMDropdownMenu = ({
                         "Helps data scientists analyze the data with smart, LLM-enabled queries",
                         "Analytics"
                     )}
-                </Dropdown.Item>
-                {dataTagFieldHasCategoricalValue(dataTagfields) ? (
-                    <Dropdown.Item
+                </MenuItem>
+                {dataTagFieldHasCategoricalValue(dataTagfields) && (
+                    <MenuItem
                         id="add-category-reducer-llm-btn"
-                        as="div"
+                        value="category-reducer"
                         onClick={() => addCategoryReducerLLM(nodes, edges)}
                     >
                         {getLlmMenuItem(
                             "category-reducer",
-                            "Attempts to reduce the number of categories in categorical fields " +
-                                "intelligently by using an LLM. For example, a field that contains " +
-                                "categories 'carrot', 'onion', and 'pea' might be reduced to 'vegetable'",
+                            "Attempts to reduce the number of categories in categorical fields intelligently by " +
+                                "using an LLM. For example, a field that contains categories 'carrot', " +
+                                "'onion', and 'pea' might be reduced to 'vegetable'",
                             "Category reducer"
                         )}
-                    </Dropdown.Item>
-                ) : null}
-                {dataTagFieldHasNaN(dataTagfields) ? (
-                    <Dropdown.Item
+                    </MenuItem>
+                )}
+                {dataTagFieldHasNaN(dataTagfields) && (
+                    <MenuItem
                         id="add-confabulator-llm-btn"
-                        as="div"
+                        value="confabulator"
                         onClick={() => addConfabulatorNode(nodes, edges)}
                     >
                         {getLlmMenuItem(
                             "confabulator",
-                            "Confabulates (synthesizes) missing data using an LLM to provide " +
-                                "reasonable values, based on the values in the rest of your data set",
+                            "Confabulates (synthesizes) missing data using an LLM to provide reasonable values, " +
+                                "based on the values in the rest of your data set",
                             "Confabulator"
                         )}
-                    </Dropdown.Item>
-                ) : null}
-            </Dropdown.Menu>
-        </Dropdown>
+                    </MenuItem>
+                )}
+            </Menu>
+        </Box>
     )
 }
 

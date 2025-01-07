@@ -1,9 +1,9 @@
+import {Box, Button} from "@mui/material"
 import Tooltip from "@mui/material/Tooltip"
 import {Alert} from "antd"
 import dagre from "dagre"
 import debugModule from "debug"
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
-import {Button, Container} from "react-bootstrap"
 import {SlMagicWand} from "react-icons/sl"
 // eslint-disable-next-line import/no-named-as-default
 import ReactFlow, {
@@ -1264,25 +1264,22 @@ export default function Flow(props: FlowProps) {
             >
                 <Button
                     id="add_predictor_btn"
-                    size="sm"
                     onClick={() => addPredictorNode(nodes, edges)}
-                    type="button"
+                    sx={{color: "white", height: "1.75rem"}}
                 >
                     Add Predictor
                 </Button>
                 <Button
                     id="add_uncertainty_model_btn"
-                    size="sm"
                     onClick={() => addUncertaintyModelNodes()}
-                    type="button"
+                    sx={{color: "white", height: "1.75rem"}}
                 >
                     Add Uncertainty Model
                 </Button>
                 <Button
                     id="add_prescriptor_btn"
-                    size="sm"
                     onClick={() => addPrescriptorNode()}
-                    type="button"
+                    sx={{color: "white", height: "1.75rem"}}
                 >
                     Add Prescriptor
                 </Button>
@@ -1375,12 +1372,10 @@ export default function Flow(props: FlowProps) {
         )
     }
 
-    const propsId = props.id
-
     return (
-        <Container
-            id={propsId}
-            className="mt-5"
+        <Box // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            id={props.id}
+            sx={{marginTop: "3rem", width: "100%", height: "100%"}}
         >
             {/* Only render buttons if ElementsSelectable is true and readOnly is, meaning Flow is editable */}
             {elementsSelectable && !readOnlyFlow && getFlowButtons()}
@@ -1403,6 +1398,6 @@ export default function Flow(props: FlowProps) {
 
             {/*Get the flow diagram itself*/}
             {getFlow()}
-        </Container>
+        </Box>
     )
 }

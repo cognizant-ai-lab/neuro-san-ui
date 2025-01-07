@@ -79,7 +79,7 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
     const [playing, setPlaying] = useState(false)
 
     // Generation for which we are displaying data. Default to last generation.
-    const [selectedGen, setSelectedGen] = useState(numberOfGenerations)
+    const [selectedGen, setSelectedGen] = useState<number>(numberOfGenerations)
 
     // For hidden notifications
     const [notifications, setNotifications] = useState<[string, string][]>([])
@@ -234,7 +234,7 @@ export function EchartParetoPlot(props: EchartPlotProps): JSX.Element {
                 id={id}
                 NumberOfGenerations={numberOfGenerations}
                 Plot={plot}
-                SetSelectedGen={(gen: number) => setSelectedGen(gen)}
+                SetSelectedGen={(gen: number | ((prevGen: number) => number)) => setSelectedGen(gen)}
                 SelectedGen={selectedGen}
                 ShowAllGenerations={showAllGenerations}
                 FrameDelayMs={frameDelayMs}
