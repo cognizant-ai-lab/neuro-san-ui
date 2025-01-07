@@ -34,7 +34,7 @@ NEURO_SAN_PROTO_DIR="${PROTOS_DIR}/neuro-san"
 PROTO_MANIFEST="${PROTOS_DIR}/mdserver_proto.txt"
 
 # Define agent protocol version to use
-NEURO_SAN_VERSION="0.2.0"
+NEURO_SAN_VERSION="0.2.2"
 
 # Create directories if necessary
 mkdir -p "${PROTOS_DIR}/internal" "$NEURO_SAN_PROTO_DIR" "${GENERATED_DIR}"
