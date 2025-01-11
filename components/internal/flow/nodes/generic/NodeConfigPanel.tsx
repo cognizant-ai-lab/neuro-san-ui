@@ -2,9 +2,8 @@ import InfoIcon from "@mui/icons-material/Info"
 import CardContent from "@mui/material/CardContent"
 import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid2"
+import Slider from "@mui/material/Slider"
 import Tooltip from "@mui/material/Tooltip"
-import "rc-slider/assets/index.css"
-import Slider from "rc-slider"
 import {Dispatch, SetStateAction} from "react"
 
 import {BaseParameterType, ConfigurableNodeState, NodeParams} from "./types"
@@ -83,87 +82,67 @@ const NodeConfigPanel = ({
         setParentNodeState({...parentNodeState, params: paramsCopy})
     }
 
-    const onTrainSliderChange = (newValue) => {
-        const newTestSliderValue = 100 - newValue
+    const onTrainSliderChange = (_event: Event, newValue: number | number[]) => {
+        const newTestSliderValue = 100 - (newValue as number)
         setParentNodeState({
             ...parentNodeState,
             testSliderValue: newTestSliderValue,
-            trainSliderValue: newValue,
+            trainSliderValue: newValue as number,
         })
     }
 
-    const onTestSliderChange = (newValue) => {
-        const newTrainSliderValue = 100 - newValue
+    const onTestSliderChange = (_event: Event, newValue: number | number[]) => {
+        const newTrainSliderValue = 100 - (newValue as number)
         setParentNodeState({
             ...parentNodeState,
-            testSliderValue: newValue,
+            testSliderValue: newValue as number,
             trainSliderValue: newTrainSliderValue,
         })
     }
 
-    const marks = {
-        0: {label: "0%"},
-        100: {label: "100%", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
-    }
+    const marks = [
+        {value: 0, label: "0%"},
+        {value: 100, label: "100%"},
+    ]
 
     const sliderComponent = inputTypes.has("sliders") && (
         <CardContent id={`${flowPrefix}-data-split-configuration-panel${idExtension}`}>
             <Container id={`${flowPrefix}-data-split-config${idExtension}`}>
-                {parentNodeState.trainSliderValue && (
+                {parentNodeState.trainSliderValue != null && (
                     <Grid
                         id={`${flowPrefix}-train${idExtension}`}
                         className="mx-2 my-8"
                     >
                         <Grid id={`${flowPrefix}-train-label${idExtension}`}>Train:</Grid>
                         <Grid id={`${flowPrefix}-train-slider${idExtension}`}>
-                            <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // 2/6/23 DEF - Slider does not have an id property when compiling
-                                onChange={(event) => onTrainSliderChange(event)}
+                            <Slider
+                                onChange={onTrainSliderChange}
                                 min={0}
                                 max={100}
                                 value={parentNodeState.trainSliderValue}
                                 marks={marks}
                                 disabled={readOnlyNode}
-                                handleRender={(node) => {
-                                    return (
-                                        <Tooltip
-                                            id={`${flowPrefix}-train-slider-tooltip${idExtension}`}
-                                            title={`${parentNodeState.trainSliderValue}%`}
-                                        >
-                                            {node}
-                                        </Tooltip>
-                                    )
-                                }}
+                                valueLabelDisplay="auto"
                             />
                         </Grid>
                     </Grid>
                 )}
 
-                {parentNodeState.testSliderValue && (
+                {parentNodeState.testSliderValue != null && (
                     <Grid
                         id={`${flowPrefix}-test${idExtension}`}
                         className="mx-2 my-8"
                     >
                         <Grid id={`${flowPrefix}-test-label${idExtension}`}>Test:</Grid>
                         <Grid id={`${flowPrefix}-test-slider${idExtension}`}>
-                            <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                // 2/6/23 DEF - Slider does not have an id property when compiling
-                                onChange={(event) => onTestSliderChange(event)}
+                            <Slider
+                                onChange={onTestSliderChange}
                                 min={0}
                                 max={100}
                                 value={parentNodeState.testSliderValue}
-                                marks={marks}
+                                marks={true}
                                 disabled={readOnlyNode}
-                                handleRender={(node) => {
-                                    return (
-                                        <Tooltip
-                                            id={`${flowPrefix}-test-slider-tooltip${idExtension}`}
-                                            title={`${parentNodeState.testSliderValue}%`}
-                                        >
-                                            {node}
-                                        </Tooltip>
-                                    )
-                                }}
+                                valueLabelDisplay="auto"
                             />
                         </Grid>
                     </Grid>

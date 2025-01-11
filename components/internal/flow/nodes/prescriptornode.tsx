@@ -2,8 +2,7 @@ import {Card, CardContent, CardHeader, FormControlLabel, Tab, Tabs, Typography} 
 import Checkbox from "@mui/material/Checkbox"
 import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid2"
-import Tooltip from "@mui/material/Tooltip"
-import Slider from "rc-slider"
+import Slider from "@mui/material/Slider"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {AiFillDelete} from "react-icons/ai"
 import {BiPlusMedical} from "react-icons/bi"
@@ -345,30 +344,20 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             >
                 <Grid id={`${flowPrefix}-max-exponent-label`}>Max Exponent:</Grid>
                 <Grid id={`${flowPrefix}-max-exponent-slider`}>
-                    <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        // 2/6/23 DEF - Slider does not have an id property when compiling
+                    <Slider
                         step={1}
                         min={0}
                         max={9}
                         value={Number(representationConfig.max_exponent)}
                         disabled={readOnlyNode}
-                        marks={{
-                            0: {label: "0"},
-                            9: {label: "9", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
-                        }}
-                        handleRender={(node) => {
-                            return (
-                                <Tooltip
-                                    id={`${flowPrefix}-max-exponent-tooltip`}
-                                    title={`${representationConfig.max_exponent}`}
-                                >
-                                    {node}
-                                </Tooltip>
-                            )
-                        }}
-                        onChange={(event) => {
+                        marks={[
+                            {value: 0, label: "0"},
+                            {value: 9, label: "9"},
+                        ]}
+                        valueLabelDisplay="auto"
+                        onChange={(_event, newValue) => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.max_exponent = event
+                            modifiedRulesState.representation_config.max_exponent = newValue
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     />
@@ -380,30 +369,20 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             >
                 <Grid id={`${flowPrefix}-number-of-building-block-conditions-label`}>Building Block Conditions:</Grid>
                 <Grid id={`${flowPrefix}-number-of-building-block-conditions-slider`}>
-                    <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        // 2/6/23 DEF - Slider does not have an id property when compiling
+                    <Slider
                         step={1}
                         min={1}
                         max={9}
                         value={Number(representationConfig.number_of_building_block_conditions)}
                         disabled={readOnlyNode}
-                        marks={{
-                            1: {label: "1"},
-                            9: {label: "9", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
-                        }}
-                        handleRender={(node) => {
-                            return (
-                                <Tooltip
-                                    id={`${flowPrefix}-number-of-building-block-conditions-tooltip`}
-                                    title={`${representationConfig.number_of_building_block_conditions}`}
-                                >
-                                    {node}
-                                </Tooltip>
-                            )
-                        }}
-                        onChange={(event) => {
+                        marks={[
+                            {value: 1, label: "1"},
+                            {value: 9, label: "9"},
+                        ]}
+                        valueLabelDisplay="auto"
+                        onChange={(_event, newValue) => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.number_of_building_block_conditions = event
+                            modifiedRulesState.representation_config.number_of_building_block_conditions = newValue
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     />
@@ -415,29 +394,20 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             >
                 <Grid id={`${flowPrefix}-number-of-building-block-rules-label`}>Building Block Rules:</Grid>
                 <Grid id={`${flowPrefix}-number-of-building-block-rules-slider`}>
-                    <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    <Slider
                         step={1}
                         min={1}
                         max={99}
                         value={Number(representationConfig.number_of_building_block_rules)}
                         disabled={readOnlyNode}
-                        marks={{
-                            1: {label: "1"},
-                            99: {label: "99", style: {color: "#53565A"}}, // To prevent end mark from being "grayed out"
-                        }}
-                        handleRender={(node) => {
-                            return (
-                                <Tooltip
-                                    id={`${flowPrefix}-number-of-building-block-rules-tooltip`}
-                                    title={`${representationConfig.number_of_building_block_rules}`}
-                                >
-                                    {node}
-                                </Tooltip>
-                            )
-                        }}
-                        onChange={(event) => {
+                        marks={[
+                            {value: 1, label: "1"},
+                            {value: 99, label: "99"},
+                        ]}
+                        valueLabelDisplay="auto"
+                        onChange={(_event, newValue) => {
                             const modifiedRulesState = {...ParentPrescriptorState}
-                            modifiedRulesState.representation_config.number_of_building_block_rules = event
+                            modifiedRulesState.representation_config.number_of_building_block_rules = newValue
                             SetParentPrescriptorState(modifiedRulesState)
                         }}
                     />
