@@ -345,6 +345,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 <Grid id={`${flowPrefix}-max-exponent-label`}>Max Exponent:</Grid>
                 <Grid id={`${flowPrefix}-max-exponent-slider`}>
                     <Slider
+                        id={`${flowPrefix}-max-exponent-slider-input`}
                         step={1}
                         min={0}
                         max={9}
@@ -370,6 +371,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 <Grid id={`${flowPrefix}-number-of-building-block-conditions-label`}>Building Block Conditions:</Grid>
                 <Grid id={`${flowPrefix}-number-of-building-block-conditions-slider`}>
                     <Slider
+                        id={`${flowPrefix}-number-of-building-block-conditions-slider-input`}
                         step={1}
                         min={1}
                         max={9}
@@ -395,6 +397,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 <Grid id={`${flowPrefix}-number-of-building-block-rules-label`}>Building Block Rules:</Grid>
                 <Grid id={`${flowPrefix}-number-of-building-block-rules-slider`}>
                     <Slider
+                        id={`${flowPrefix}-number-of-building-block-rules-slider-input`}
                         step={1}
                         min={1}
                         max={99}

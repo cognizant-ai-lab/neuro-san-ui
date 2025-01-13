@@ -116,6 +116,7 @@ const NodeConfigPanel = ({
                         <Grid id={`${flowPrefix}-train-label${idExtension}`}>Train:</Grid>
                         <Grid id={`${flowPrefix}-train-slider${idExtension}`}>
                             <Slider
+                                id={`${flowPrefix}-train-slider-component${idExtension}`}
                                 onChange={onTrainSliderChange}
                                 min={0}
                                 max={100}
@@ -136,6 +137,7 @@ const NodeConfigPanel = ({
                         <Grid id={`${flowPrefix}-test-label${idExtension}`}>Test:</Grid>
                         <Grid id={`${flowPrefix}-test-slider${idExtension}`}>
                             <Slider
+                                id={`${flowPrefix}-test-slider-component${idExtension}`}
                                 onChange={onTestSliderChange}
                                 min={0}
                                 max={100}
