@@ -1,6 +1,7 @@
+import CardContent from "@mui/material/CardContent"
+import Container from "@mui/material/Container"
+import Grid from "@mui/material/Grid2"
 import {FC, useEffect} from "react"
-import {Card, Col, Container, Row} from "react-bootstrap"
-import "rc-slider/assets/index.css"
 import {getOutgoers, NodeProps, useEdges, useNodes} from "reactflow"
 
 import ConfigurableNodeComponent, {ConfigurableNode, ConfigurableNodeData} from "./generic/configurableNode"
@@ -199,22 +200,16 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
 
     // Create the selection Panel
     const predictorSelectionPanel = (
-        <Card.Body id={`${flowPrefix}-predictor-selection-panel${idExtension}`}>
+        <CardContent id={`${flowPrefix}-predictor-selection-panel${idExtension}`}>
             <Container
                 id={`${flowPrefix}-config-container${idExtension}`}
                 style={{fontSize: "smaller"}}
             >
-                <Row id={`${flowPrefix}-predictor-type-row${idExtension}`}>
-                    <Col
-                        id={`${flowPrefix}-predictor-type-label${idExtension}`}
-                        md={4}
-                    >
+                <Grid id={`${flowPrefix}-predictor-type-row${idExtension}`}>
+                    <Grid id={`${flowPrefix}-predictor-type-label${idExtension}`}>
                         <label id={`${flowPrefix}-type-label${idExtension}`}>Type: </label>
-                    </Col>
-                    <Col
-                        id={`${flowPrefix}-predictor-type-value${idExtension}`}
-                        md={8}
-                    >
+                    </Grid>
+                    <Grid id={`${flowPrefix}-predictor-type-value${idExtension}`}>
                         <select
                             id={`${flowPrefix}-type-select${idExtension}`}
                             name={`${NodeID}-predictorType`}
@@ -251,22 +246,16 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
                                 Evolution (Coming Soon)
                             </option>
                         </select>
-                    </Col>
-                </Row>
-                <Row
+                    </Grid>
+                </Grid>
+                <Grid
                     id={`${flowPrefix}-predictor-sel-row${idExtension}`}
                     style={{marginTop: "12px"}}
                 >
-                    <Col
-                        id={`${flowPrefix}-predictor-name-label${idExtension}`}
-                        md={4}
-                    >
+                    <Grid id={`${flowPrefix}-predictor-name-label${idExtension}`}>
                         <label id={`${flowPrefix}-predictor-label${idExtension}`}>Predictor: </label>
-                    </Col>
-                    <Col
-                        id={`${flowPrefix}-predictor-name-value${idExtension}`}
-                        md={8}
-                    >
+                    </Grid>
+                    <Grid id={`${flowPrefix}-predictor-name-value${idExtension}`}>
                         <select
                             id={`${flowPrefix}-predictor-select${idExtension}`}
                             name={`${NodeID}-predictor${idExtension}`}
@@ -288,22 +277,16 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
                                     </option>
                                 ))}
                         </select>
-                    </Col>
-                </Row>
-                <Row
+                    </Grid>
+                </Grid>
+                <Grid
                     id={`${flowPrefix}-metric-row${idExtension}`}
                     style={{marginTop: "12px"}}
                 >
-                    <Col
-                        id={`${flowPrefix}-metric-col${idExtension}`}
-                        md={4}
-                    >
+                    <Grid id={`${flowPrefix}-metric-col${idExtension}`}>
                         <label id={`${flowPrefix}-metric-label${idExtension}`}>Metric: </label>
-                    </Col>
-                    <Col
-                        id={`${flowPrefix}-metric-col${idExtension}`}
-                        md={8}
-                    >
+                    </Grid>
+                    <Grid id={`${flowPrefix}-metric-col${idExtension}`}>
                         <select
                             id={`${flowPrefix}-metric-select${idExtension}`}
                             name={`${NodeID}-metric`}
@@ -326,10 +309,10 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
                                 )
                             )}
                         </select>
-                    </Col>
-                </Row>
+                    </Grid>
+                </Grid>
             </Container>
-        </Card.Body>
+        </CardContent>
     )
 
     // Determine the SelectedPredictor and defaultParams each time the configuration panel is

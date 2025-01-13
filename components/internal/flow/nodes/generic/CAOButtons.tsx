@@ -1,6 +1,6 @@
+import Card from "@mui/material/Card"
 import Tooltip from "@mui/material/Tooltip"
 import {useEffect, useState} from "react"
-import {Card} from "react-bootstrap"
 
 import NodePopper from "../../../../nodepopper"
 import {addDisabledPropertyToOutcomes, Outcomes} from "../utils"

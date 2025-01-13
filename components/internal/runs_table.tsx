@@ -394,7 +394,8 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         container
                         sx={{
                             width: runTitle?.length > 25 ? "25ch" : "100%",
-                            paddingRight: 0,
+                            display: "flex",
+                            justifyContent: "center",
                         }}
                     >
                         <Tooltip

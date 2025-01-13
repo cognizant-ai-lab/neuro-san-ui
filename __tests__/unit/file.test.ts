@@ -2,7 +2,7 @@
 Unit tests for the "file" utility module
  */
 
-import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
+import {downloadFile, getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 
 describe("toSafeFilename", () => {
     it("should replace non-alphanumeric characters with underscores", () => {
@@ -74,5 +74,31 @@ describe("splitFileName", () => {
         expect(splitFilename("foo.csv")).toEqual({name: "foo", ext: "csv"})
         expect(splitFilename("foo")).toEqual({name: "foo", ext: ""})
         expect(splitFilename("foo.bar.baz")).toEqual({name: "foo.bar", ext: "baz"})
+    })
+})
+
+describe("downloadFile", () => {
+    it("should create a download link with the correct filename and content", () => {
+        const oldCreateObjectURL = global.URL.createObjectURL
+        const testUrl = "http://example.com/test_object_url"
+        global.URL.createObjectURL = jest.fn(() => testUrl)
+
+        const appendChildSpy = jest.spyOn(global.document.body, "appendChild")
+
+        const fileName = "hello.txt"
+        downloadFile("Hello, world!", fileName)
+
+        expect(appendChildSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                download: fileName,
+                href: testUrl,
+            })
+        )
+
+        // undo spy
+        appendChildSpy.mockRestore()
+
+        // restore the original URL.createObjectURL
+        global.URL.createObjectURL = oldCreateObjectURL
     })
 })

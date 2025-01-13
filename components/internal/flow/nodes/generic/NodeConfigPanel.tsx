@@ -1,8 +1,11 @@
 import InfoIcon from "@mui/icons-material/Info"
+import CardContent from "@mui/material/CardContent"
+import Container from "@mui/material/Container"
+import Grid from "@mui/material/Grid2"
 import Tooltip from "@mui/material/Tooltip"
+import "rc-slider/assets/index.css"
 import Slider from "rc-slider"
 import {Dispatch, SetStateAction} from "react"
-import {Card, Col, Container, Row} from "react-bootstrap"
 
 import {BaseParameterType, ConfigurableNodeState, NodeParams} from "./types"
 import ConfigNumeric from "../../confignumeric"
@@ -104,24 +107,15 @@ const NodeConfigPanel = ({
     }
 
     const sliderComponent = inputTypes.has("sliders") && (
-        <Card.Body id={`${flowPrefix}-data-split-configuration-panel${idExtension}`}>
+        <CardContent id={`${flowPrefix}-data-split-configuration-panel${idExtension}`}>
             <Container id={`${flowPrefix}-data-split-config${idExtension}`}>
                 {parentNodeState.trainSliderValue && (
-                    <Row
+                    <Grid
                         id={`${flowPrefix}-train${idExtension}`}
                         className="mx-2 my-8"
                     >
-                        <Col
-                            id={`${flowPrefix}-train-label${idExtension}`}
-                            md={2}
-                            className="mr-4"
-                        >
-                            Train:
-                        </Col>
-                        <Col
-                            id={`${flowPrefix}-train-slider${idExtension}`}
-                            md={9}
-                        >
+                        <Grid id={`${flowPrefix}-train-label${idExtension}`}>Train:</Grid>
+                        <Grid id={`${flowPrefix}-train-slider${idExtension}`}>
                             <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Slider does not have an id property when compiling
                                 onChange={(event) => onTrainSliderChange(event)}
@@ -141,26 +135,17 @@ const NodeConfigPanel = ({
                                     )
                                 }}
                             />
-                        </Col>
-                    </Row>
+                        </Grid>
+                    </Grid>
                 )}
 
                 {parentNodeState.testSliderValue && (
-                    <Row
+                    <Grid
                         id={`${flowPrefix}-test${idExtension}`}
                         className="mx-2 my-8"
                     >
-                        <Col
-                            id={`${flowPrefix}-test-label${idExtension}`}
-                            md={2}
-                            className="mr-4"
-                        >
-                            Test:
-                        </Col>
-                        <Col
-                            id={`${flowPrefix}-test-slider${idExtension}`}
-                            md={9}
-                        >
+                        <Grid id={`${flowPrefix}-test-label${idExtension}`}>Test:</Grid>
+                        <Grid id={`${flowPrefix}-test-slider${idExtension}`}>
                             <Slider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Slider does not have an id property when compiling
                                 onChange={(event) => onTestSliderChange(event)}
@@ -180,22 +165,17 @@ const NodeConfigPanel = ({
                                     )
                                 }}
                             />
-                        </Col>
-                    </Row>
+                        </Grid>
+                    </Grid>
                 )}
 
                 {Object.keys(parentNodeState).includes("rngSeedValue") && (
-                    <Row
+                    <Grid
                         id={`${flowPrefix}-split-rng-seed${idExtension}`}
                         className="mx-2 my-8"
                     >
-                        <Col
-                            id={`${flowPrefix}-split-rng-seed-label${idExtension}`}
-                            md="auto"
-                        >
-                            RNG seed:
-                        </Col>
-                        <Col id={`${flowPrefix}-split-rng-seed-column${idExtension}`}>
+                        <Grid id={`${flowPrefix}-split-rng-seed-label${idExtension}`}>RNG seed:</Grid>
+                        <Grid id={`${flowPrefix}-split-rng-seed-column${idExtension}`}>
                             <input
                                 id={`${flowPrefix}-split-rng-seed-input${idExtension}`}
                                 type="number"
@@ -210,18 +190,18 @@ const NodeConfigPanel = ({
                                 }}
                                 className="input-field w-50"
                             />
-                        </Col>
-                    </Row>
+                        </Grid>
+                    </Grid>
                 )}
             </Container>
-        </Card.Body>
+        </CardContent>
     )
 
     const hasParams =
         parentNodeState.params && Object.keys(parentNodeState.params).length && Object.keys(defaultParams).length
 
     const inputsComponent = inputTypes.has("inputs") && (
-        <Card.Body
+        <CardContent
             className={`overflow-y-scroll ${customStyles?.inputsCardHeight || "h-40"} text-xs pl-4 pr-4`}
             id={id}
         >
@@ -365,7 +345,7 @@ const NodeConfigPanel = ({
             ) : (
                 <p id="no-config-params">No config settings available for this predictor type.</p>
             )}
-        </Card.Body>
+        </CardContent>
     )
 
     return (

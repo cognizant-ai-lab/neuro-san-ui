@@ -1,15 +1,32 @@
-import {Typography} from "@mui/material"
+import {styled, Typography} from "@mui/material"
 import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
 import {FC, useState} from "react"
-// TODO: Switch to MUI button, thing is the react-bootstrap button matches all the other buttons
-//import Button from "@mui/material/Button"
-import {Button} from "react-bootstrap"
 
 import {sendCodeUIQuery} from "../../../controller/code-ui/code-ui"
 import {CodeUiResponse} from "../../../pages/api/gpt/code-ui/types"
 import {MUIDialog} from "../../dialog"
 import {NotificationType, sendNotification} from "../../notification"
+
+// #region: Styles
+
+// This is identical to InferenceButton in DMS but not much point extracting to a common style as we are going to
+// revisit the styling of all these buttons. See UN-2742
+const StyledButton = styled(Button)(({disabled}) => ({
+    background: "var(--bs-primary)",
+    borderColor: "var(--bs-primary)",
+    width: "100%",
+    color: "white !important",
+    lineHeight: "37.5px",
+    paddingTop: "10px",
+    paddingBottom: "10px",
+    borderRadius: "15px",
+    fontSize: "25px",
+    fontWeight: 400,
+    opacity: disabled ? 0.5 : 1,
+}))
+// #endregion: Styles
 
 // #region: Types
 interface UIMockupGeneratorProps {
@@ -141,7 +158,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                 id="ui-mockup-btn-container"
                 sx={{alignSelf: "flex-end", width: "100%"}}
             >
-                <Button
+                <StyledButton
                     id="ui-mockup-btn"
                     onClick={sendUserQueryToLlm}
                     style={{
@@ -158,7 +175,7 @@ export const UIMockupGenerator: FC<UIMockupGeneratorProps> = ({
                     disabled={isLoading}
                 >
                     Generate
-                </Button>
+                </StyledButton>
             </Box>
         )
     }
