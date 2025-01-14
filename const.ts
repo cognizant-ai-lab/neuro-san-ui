@@ -3,7 +3,6 @@ import getConfig from "next/config"
 // Define the Base Colors
 export const MaximumBlue: string = "#000048"
 export const SecondaryBlue: string = "#F5FCFD"
-export const Apple: string = "#26EFE9"
 const {publicRuntimeConfig} = getConfig()
 
 // Name to use for application
