@@ -43,7 +43,7 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
     const [userLlmChatOutput, setUserLlmChatOutput] = useState<string>("")
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
-    const [isAwaitingLlm, setIsAwaitingLlm] = useState(true)
+    const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
     // User input
     const [userInput, setUserInput] = useState<string>("")
