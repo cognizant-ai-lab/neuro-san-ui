@@ -2166,13 +2166,6 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-bootstrap-typeahead@5.1.13":
-  version "5.1.13"
-  resolved "https://registry.yarnpkg.com/@types/react-bootstrap-typeahead/-/react-bootstrap-typeahead-5.1.13.tgz#654fb322eb7058db1bb9dba1683ad5011d813f9c"
-  integrity sha512-0J7yHqLpWAwQgruNnqp6U1yR+mt3aba8l9U2SPUVkTPtDN5Gv008bDj5znekvSzL2no0EwNWG/KYcy/ja87C1w==
-  dependencies:
-    "@types/react" "*"
-
 "@types/react-dom@18.2.18", "@types/react-dom@^18.0.0":
   version "18.2.18"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.2.18.tgz#16946e6cd43971256d874bc3d0a72074bb8571dd"
