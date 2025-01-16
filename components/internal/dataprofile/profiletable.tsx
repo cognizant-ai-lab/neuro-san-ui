@@ -1,14 +1,19 @@
+import DeleteOutline from "@mui/icons-material/DeleteOutline"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid2"
 import Input from "@mui/material/Input"
 import List from "@mui/material/List"
 import ListItem from "@mui/material/ListItem"
-import {Alert, Space} from "antd"
+import ListItemButton from "@mui/material/ListItemButton"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import ListItemText from "@mui/material/ListItemText"
+import TextField from "@mui/material/TextField"
+import Tooltip from "@mui/material/Tooltip"
+import {Alert} from "antd"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd"
-import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai"
+import {AiFillEdit, AiFillWarning} from "react-icons/ai"
 
 import {reasonToHumanReadable} from "../../../controller/datasources/conversion"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued, Profile} from "../../../generated/metadata"
@@ -432,7 +437,7 @@ export default function ProfileTable(props: ProfileTableProps) {
         setCurrentCategoryValues(tmpValues)
     }
 
-    const renderCategoryDragList = (val, index) => {
+    const renderCategoryDragList = (val: string, index: number) => {
         return (
             <Draggable // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 // 2/6/23 DEF - Draggable doesn't have an id
@@ -442,48 +447,51 @@ export default function ProfileTable(props: ProfileTableProps) {
                 index={index}
             >
                 {(providedInner, snapshot) => {
-                    const opacity = snapshot.isDragging ? "opacity-50" : "opacity-100"
+                    const opacity = snapshot.isDragging ? "50%" : "100%"
                     return (
                         <Grid
                             id={`${val}-row`}
-                            className={`my-1 ${opacity}`}
+                            sx={{opacity: opacity}}
                             ref={providedInner.innerRef}
                             {...providedInner.draggableProps}
                             {...providedInner.dragHandleProps}
+                            size={12}
                         >
-                            <Grid
-                                id={`${val}-value-column`}
-                                className="mx-0 px-1"
-                            >
+                            {dataSetCategories[fieldBeingEditedName]?.has(val) ? null : (
                                 <ListItem
                                     id={`${val}-value`}
-                                    className="values"
+                                    disablePadding={true}
+                                    sx={{border: "1px solid lightgray", borderRadius: "4px", marginBottom: "12px"}}
                                 >
-                                    <div id={`${val}`}>{val}</div>
-                                </ListItem>
-                            </Grid>
-                            <Grid
-                                id={`${val}-delete-value-column`}
-                                className="d-flex vertical-align-middle mx-0 px-1"
-                            >
-                                {dataSetCategories[fieldBeingEditedName]?.has(val) ? null : (
-                                    <button
-                                        id={`${val}-delete-value`}
-                                        onClick={() => {
-                                            deleteValue(val)
-                                        }}
-                                    >
-                                        <AiFillDelete
-                                            id={`${val}-delete-value-fill`}
-                                            size="14"
-                                            style={{
-                                                cursor: "pointer",
-                                            }}
-                                            className="hover:text-red-700"
+                                    <ListItemButton id={`${val}-value-button`}>
+                                        <ListItemIcon id={`${val}-delete-value-fill`}>
+                                            <Tooltip
+                                                id={`${val}-delete-value-tooltip`}
+                                                title="Delete this value"
+                                                arrow
+                                            >
+                                                <DeleteOutline
+                                                    id={`${val}-delete-value`}
+                                                    sx={{
+                                                        color: "var(--bs-primary)",
+                                                        fontSize: "1rem",
+                                                        "&:hover": {
+                                                            color: "var(--bs-red)",
+                                                        },
+                                                    }}
+                                                    onClick={() => {
+                                                        deleteValue(val)
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            id={val}
+                                            primary={val}
                                         />
-                                    </button>
-                                )}
-                            </Grid>
+                                    </ListItemButton>
+                                </ListItem>
+                            )}
                         </Grid>
                     )
                 }}
@@ -530,18 +538,24 @@ export default function ProfileTable(props: ProfileTableProps) {
     )
 
     const editCategoryValuesModalContent = (
-        <Container id="field-container">
+        <Grid
+            id="field-container"
+            container={true}
+        >
             <Grid id="field-being-edited-row">
-                <label id="field-being-edited">Field: {fieldBeingEditedName}</label>
+                <label id="field-being-edited">Field: {fieldBeingEditedName} </label>
             </Grid>
             <Grid
-                id="field-editor-drag-msg-row"
-                className="pt-3"
+                id="field-editor-drag-msg-row "
+                size={12}
             >
                 (drag to re-order)
             </Grid>
-            <p id="values-separator" />
-            <Grid id="values-droppable-row">
+            <Grid
+                id="values-droppable-row"
+                size={12}
+                sx={{marginTop: "1rem"}}
+            >
                 {/* Drag-drop list of values */}
                 {
                     <Droppable // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -549,10 +563,11 @@ export default function ProfileTable(props: ProfileTableProps) {
                         droppableId="values"
                     >
                         {(provided) => (
-                            <Container id="values-droppable-container">
+                            <Grid id="values-droppable-container">
                                 <List
                                     id="values-droppable-listgroup"
                                     ref={provided.innerRef}
+                                    sx={{marginTop: "8px"}}
                                     {...provided.droppableProps}
                                 >
                                     {
@@ -564,42 +579,40 @@ export default function ProfileTable(props: ProfileTableProps) {
                                     }
                                 </List>
                                 {provided.placeholder}
-                            </Container>
+                            </Grid>
                         )}
                     </Droppable>
                 }
             </Grid>
             <Grid
-                id="add-category-value-label-row"
-                className="pt-4"
-            >
-                <label id="add-category-label">Add category value:</label>
-            </Grid>
-            <Grid
                 id="add-category-value-row"
-                className="pt-1"
+                size={12}
+                sx={{marginTop: "1rem"}}
             >
-                <Space.Compact id="category-values-group">
-                    <Input
-                        id="add-category-value-input"
-                        style={{width: "calc(100% - 200px)"}}
-                        placeholder="Enter value"
-                        onChange={(event) => {
-                            setNewItem(event.target.value)
-                        }}
-                    />
-                    <Button
-                        id="add-category-value-button"
-                        onClick={() => {
-                            setCurrentCategoryValues([...currentCategoryValues, newItem])
-                        }}
-                        disabled={!newItem || currentCategoryValues.includes(newItem)}
-                    >
-                        Add
-                    </Button>
-                </Space.Compact>
+                <TextField
+                    id="add-category-value-input"
+                    placeholder="Enter value"
+                    label="New category Value"
+                    onChange={(event) => {
+                        setNewItem(event.target.value)
+                    }}
+                    slotProps={{
+                        inputLabel: {
+                            shrink: true,
+                        },
+                    }}
+                />
+                <Button
+                    id="add-category-value-button"
+                    onClick={() => {
+                        setCurrentCategoryValues([...currentCategoryValues, newItem])
+                    }}
+                    disabled={!newItem || currentCategoryValues.includes(newItem)}
+                >
+                    Add
+                </Button>
             </Grid>
-        </Container>
+        </Grid>
     )
 
     const renderEditCategoryValuesModal = () => (
@@ -681,20 +694,20 @@ export default function ProfileTable(props: ProfileTableProps) {
                 {showFieldEditor && renderEditCategoryValuesModal()}
                 {confirmationModalStatus && renderConfirmationModal()}
                 <Box
-                    id="profile-table-container"
+                    id="profile-table-div"
                     sx={{
                         alignItems: "center",
-                        borderBottom: 1,
+                        borderBottomWidth: 1,
                         borderColor: "gray.200",
                         borderRadius: 1,
                         boxShadow: 1,
                         display: "inline-block",
                         minWidth: "100%",
-                        mx: {sm: 6, lg: 8},
-                        my: 2,
+                        marginX: {sm: 6, lg: 8},
+                        marginY: 2,
                         overflow: "hidden",
                         overflowX: "auto",
-                        py: 2,
+                        paddingY: 2,
                     }}
                 >
                     <table
