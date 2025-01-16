@@ -255,10 +255,9 @@ export function DMSChat(props: {
                             id="clear-chat-button"
                             onClick={() => {
                                 chatHistory.current = []
+                                currentResponse.current = ""
                                 setPreviousUserQuery("")
                                 setUserLlmChatOutput("")
-                                chatHistory.current = []
-                                currentResponse.current = ""
                             }}
                             disabled={!enableClearChatButton}
                             posRight={155}
@@ -324,6 +323,7 @@ export function DMSChat(props: {
                         type="text"
                         placeholder="What are the prescribed actions?"
                         inputRef={inputAreaRef}
+                        multiline={true}
                         sx={{
                             fontSize: "90%",
                             width: "100%",
