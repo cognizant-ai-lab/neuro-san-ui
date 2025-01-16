@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid2"
 import Tab from "@mui/material/Tab"
@@ -20,6 +19,7 @@ import {FlowQueries} from "./flow/flowqueries"
 import {PrescriptorNode} from "./flow/nodes/prescriptornode"
 import {NodeType} from "./flow/nodes/types"
 import {FlowElementsType} from "./flow/types"
+import {InferenceButton} from "./InferenceButton"
 import {fetchProjects} from "../../controller/projects/fetch"
 import {Project, Projects} from "../../controller/projects/types"
 import {fetchLlmRules} from "../../controller/rules/rules"
@@ -564,7 +564,7 @@ export default function RunPage(props: RunProps): ReactElement {
                     query: {...router.query, DataSourceId: dataSourceId},
                 }}
                 style={{
-                    color: "white",
+                    color: "var(--bs-white)",
                 }}
                 target="_blank"
             >
@@ -598,17 +598,12 @@ export default function RunPage(props: RunProps): ReactElement {
                     cursor: shouldEnableDMS() ? "pointer" : "not-allowed",
                 }}
             >
-                <Button
+                <InferenceButton
                     id="dms-button"
-                    style={{
-                        background: "var(--color-primary)",
-                        borderColor: "var(--color-primary)",
-                        width: "100%",
-                    }}
                     disabled={!shouldEnableDMS()}
                 >
                     {getDMSButton()}
-                </Button>
+                </InferenceButton>
             </div>
         )
     }
