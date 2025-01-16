@@ -21,7 +21,6 @@ import {NotificationType, sendNotification} from "../notification"
 const StyledButton = styled(Button)({
     fontSize: "0.8em",
     padding: "0px 7px",
-    textTransform: "none",
 })
 
 const StyledOKButton = styled(StyledButton)(({disabled}) => ({

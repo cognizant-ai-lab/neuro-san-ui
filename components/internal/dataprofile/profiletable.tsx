@@ -591,8 +591,8 @@ export default function ProfileTable(props: ProfileTableProps) {
             >
                 <TextField
                     id="add-category-value-input"
-                    placeholder="Enter value"
-                    label="New category Value"
+                    placeholder="My new category"
+                    label="New category"
                     onChange={(event) => {
                         setNewItem(event.target.value)
                     }}
@@ -601,6 +601,14 @@ export default function ProfileTable(props: ProfileTableProps) {
                             shrink: true,
                         },
                     }}
+                    sx={{
+                        "& .MuiInputBase-root": {
+                            height: "2.5rem", // Adjust the height as needed
+                        },
+                        // "& .MuiInputLabel-root": {
+                        //     lineHeight: "2.5rem", // Adjust the line height to match the input height
+                        // },
+                    }}
                 />
                 <Button
                     id="add-category-value-button"
@@ -608,6 +616,14 @@ export default function ProfileTable(props: ProfileTableProps) {
                         setCurrentCategoryValues([...currentCategoryValues, newItem])
                     }}
                     disabled={!newItem || currentCategoryValues.includes(newItem)}
+                    variant="outlined"
+                    sx={{
+                        height: "2.5rem",
+                        backgroundColor: "var(--bs-primary) !important",
+                        color: "var(--bs-white)",
+                        marginLeft: "1rem",
+                        borderRadius: "var(--bs-border-radius)",
+                    }}
                 >
                     Add
                 </Button>
