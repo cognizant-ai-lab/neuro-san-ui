@@ -617,7 +617,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                     sx={{
                         height: "2.5rem",
                         backgroundColor: "var(--bs-primary) !important",
-                        color: "var(--bs-white)",
+                        color: "var(--bs-white) !important",
                         marginLeft: "1rem",
                         borderRadius: "var(--bs-border-radius)",
                     }}
