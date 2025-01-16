@@ -265,7 +265,7 @@ export function DMSChat(props: {
                             }}
                         >
                             <DeleteOutline
-                                id="stop-button-icon"
+                                id="clear-chat-icon"
                                 sx={{marginRight: "0.25rem", display: "inline"}}
                             />
                             Clear Chat
@@ -276,7 +276,7 @@ export function DMSChat(props: {
                         <LlmChatButton
                             id="stop-output-button"
                             onClick={() => handleStop()}
-                            posRight={10}
+                            posRight={20}
                             posBottom={20}
                             sx={{
                                 position: "absolute",
