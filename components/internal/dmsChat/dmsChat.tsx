@@ -193,7 +193,10 @@ export function DMSChat(props: {
             width="35%"
             destroyOnClose={true}
         >
-            <Box id="user-query-form">
+            <Box
+                id="user-query-form"
+                sx={{height: "90vh"}}
+            >
                 <Box
                     id="llm-response-div"
                     sx={{
@@ -225,7 +228,7 @@ export function DMSChat(props: {
                         }}
                         inputRef={llmOutputTextAreaRef}
                         multiline
-                        placeholder="(Analytics Chat output will appear here)"
+                        placeholder="(DMS Chat output will appear here)"
                         sx={{
                             backgroundColor: "ghostwhite",
                             fontFamily: "monospace",
@@ -314,7 +317,7 @@ export function DMSChat(props: {
 
                 <Box
                     id="user-input-div"
-                    style={{display: "flex", marginBottom: "20rem", padding: "10px"}}
+                    style={{display: "flex", padding: "10px"}}
                 >
                     <TextField
                         id="user-input"
@@ -325,7 +328,6 @@ export function DMSChat(props: {
                             fontSize: "90%",
                             width: "100%",
                             height: "100%",
-                            marginTop: "1rem",
                         }}
                         onChange={(event) => {
                             setUserInput(event.target.value)
@@ -370,7 +372,6 @@ export function DMSChat(props: {
                             display: "flex",
                             width: "100px",
                             justifyContent: "center",
-                            marginTop: "1rem",
                             marginLeft: "1rem",
                         }}
                     >
