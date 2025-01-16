@@ -1,16 +1,13 @@
-import InfoIcon from "@mui/icons-material/Info"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
-import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid2"
 import Tab from "@mui/material/Tab"
 import Tabs from "@mui/material/Tabs"
-import Tooltip from "@mui/material/Tooltip"
 import {Radio, RadioChangeEvent, Space} from "antd"
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
-import {useEffect, useState} from "react"
+import {ReactElement, ReactNode, SyntheticEvent, useEffect, useState} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
@@ -36,6 +33,7 @@ import {empty} from "../../utils/objects"
 import {consolidateFlow} from "../../utils/transformation"
 import {useLocalStorage} from "../../utils/use_local_storage"
 import ESPRunPlot from "../esprunplot"
+import {InfoTip} from "../infotip"
 import MetricsTable from "../metricstable"
 import NewBar from "../newbar"
 import {NotificationType, sendNotification} from "../notification"
@@ -43,22 +41,21 @@ import {PageLoader} from "../pageLoader"
 import {MultiPareto} from "../pareto/multi_pareto"
 
 interface TabPanelProps {
-    children?: React.ReactNode
+    id: string
+    children?: ReactNode
     index: number
     value: number
 }
 
 function CustomTabPanel(myProps: TabPanelProps) {
-    const {children, value, index, ...other} = myProps
-
+    const {children, value, index, id} = myProps
     return (
         <div
             role="tabpanel"
             hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            {...other}
+            id={id}
         >
-            {value === index && <Box>{children}</Box>}
+            {value === index && <Box id={`tab-panel-box-${id}-${index}`}>{children}</Box>}
         </div>
     )
 }
@@ -82,7 +79,13 @@ interface RunProps {
     projectPermissions?: AuthorizationInfo
 }
 
-export default function RunPage(props: RunProps): React.ReactElement {
+/**
+ * RunPage is the page for a single training run of your experiment. The page shows the original flow and metrics.
+ * @param props See RunProps
+ */
+// CustomPanel is the other component in this file and it's only used by this module for now
+// eslint-disable-next-line react/no-multi-comp
+export default function RunPage(props: RunProps): ReactElement {
     // Get the router hook
     const router: NextRouter = useRouter()
 
@@ -107,7 +110,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     const [rulesInterpretationLoading, setRulesInterpretationLoading] = useState(false)
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [project, setProject] = useState<Project>(null)
-    const [selectedTab, setSelectedTab] = useState(0)
+    const [selectedTab, setSelectedTab] = useState<number>(0)
 
     const [runLoading, setRunLoading] = useState<boolean>(false)
 
@@ -245,7 +248,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     const consolidatedFlow = consolidateFlow(flowTmp)
                     setFlow(consolidatedFlow)
                     setRun(runTmp)
-                    if (runTmp !== null && consolidatedFlow !== null) {
+                    if (consolidatedFlow !== null) {
                         constructMetrics(runTmp.metrics, consolidatedFlow)
                     }
                     cacheRun(runTmp)
@@ -578,6 +581,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                 key="plot-data-div"
             >
                 <CircularProgress
+                    id="plot-data-clip-loader"
                     key="plot-data-clip-loader"
                     sx={{color: "var(--bs-primary)"}}
                     size={50}
@@ -609,7 +613,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
         )
     }
 
-    function getRawRulesDiv() {
+    function getRawRulesSection() {
         return (
             <div
                 id="rules-div"
@@ -620,7 +624,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     backgroundColor: "whitesmoke",
                     overflowY: "scroll",
                     display: "block",
-                    borderColor: "red",
                 }}
             >
                 <SyntaxHighlighter
@@ -638,6 +641,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
     function getInsightsPanel() {
         return (
             <CustomTabPanel
+                id="insights-panel"
                 value={selectedTab}
                 index={1}
             >
@@ -648,6 +652,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     {insightsLoading ? (
                         <>
                             <CircularProgress
+                                id="insights-loader"
                                 sx={{color: "var(--bs-primary)"}}
                                 size={50}
                             />
@@ -664,7 +669,6 @@ export default function RunPage(props: RunProps): React.ReactElement {
                             >
                                 {insights}
                             </ReactMarkdown>
-                            <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
                         </div>
                     )}
                 </div>
@@ -675,118 +679,145 @@ export default function RunPage(props: RunProps): React.ReactElement {
     function getDetailsPanel() {
         return (
             <CustomTabPanel
+                id="details-panel"
                 value={selectedTab}
                 index={0}
             >
-                <Container id="rules-decoded-container">
+                <Grid
+                    id="rules-decoded-Grid"
+                    style={{marginTop: 10}}
+                    container={true}
+                >
                     <Grid
-                        id="rules-decoded-Grid"
-                        style={{marginTop: 10}}
+                        id="rules-decoded-column"
+                        size={10}
                     >
-                        <Grid id="rules-decoded-column">
-                            {selectedRulesFormat === "raw" ? (
-                                getRawRulesDiv()
-                            ) : rulesInterpretationLoading ? (
-                                <>
-                                    <CircularProgress
-                                        sx={{color: "var(--bs-primary)"}}
-                                        size={50}
-                                    />
-                                    Accessing LLM...
-                                </>
-                            ) : (
-                                <div id="markdown-div">
-                                    <ReactMarkdown // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    // ReactMarkdown doesn"t have (or need) an id property.
-                                    // The items it generates each have their own referenceable id.
-                                    >
-                                        {interpretedRules}
-                                    </ReactMarkdown>
-                                    <h5 id="powered-by">Powered by OpenAI™ GPT-3.5™ technology</h5>
-                                </div>
-                            )}
-                        </Grid>
-                        <Grid id="radio-column">
-                            <Radio.Group
-                                id="radio-group"
-                                value={selectedRulesFormat}
-                                onChange={(e: RadioChangeEvent) => {
-                                    setSelectedRulesFormat(e.target.value)
-                                }}
-                            >
-                                <Space
-                                    id="radio-space"
-                                    direction="vertical"
-                                    size="middle"
+                        {selectedRulesFormat === "raw" ? (
+                            getRawRulesSection()
+                        ) : rulesInterpretationLoading ? (
+                            <>
+                                <CircularProgress
+                                    id="rules-interpreted-loader"
+                                    sx={{color: "var(--bs-primary)"}}
+                                    size={50}
+                                />
+                                Accessing LLM...
+                            </>
+                        ) : (
+                            <div id="markdown-div">
+                                <ReactMarkdown // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                                // ReactMarkdown doesn"t have (or need) an id property.
+                                // The items it generates each have their own referenceable id.
                                 >
-                                    <div
-                                        id="radio-raw-help"
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Radio
-                                            id="radio-raw"
-                                            value="raw"
-                                        >
-                                            Raw
-                                        </Radio>
-                                        <Tooltip
-                                            id="raw-tooltip"
-                                            title="View rules exactly as they were generated during the
-                                                        evolutionary search."
-                                        >
-                                            <InfoIcon
-                                                id="raw-info-icon"
-                                                sx={{height: "21px", width: "21px"}}
-                                            />
-                                        </Tooltip>
-                                    </div>
-                                    <div
-                                        id="radio-raw-help"
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Radio
-                                            id="radio-interpreted"
-                                            value="interpreted"
-                                        >
-                                            Interpreted
-                                        </Radio>
-                                        <Tooltip
-                                            id="raw-tooltip"
-                                            title="View rules as interpreted by using an LLM
-                                                        (large language model) to express them in a more human-readable
-                                                        format."
-                                        >
-                                            <InfoIcon
-                                                id="raw-info-icon"
-                                                sx={{height: "21px", width: "21px"}}
-                                            />
-                                        </Tooltip>
-                                    </div>
-                                </Space>
-                            </Radio.Group>
-                        </Grid>
+                                    {interpretedRules}
+                                </ReactMarkdown>
+                            </div>
+                        )}
                     </Grid>
-                </Container>
+                    <Grid
+                        id="radio-column"
+                        size={1}
+                        sx={{
+                            marginLeft: "1rem",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                        }}
+                    >
+                        <Radio.Group
+                            id="radio-group"
+                            value={selectedRulesFormat}
+                            onChange={(e: RadioChangeEvent) => {
+                                setSelectedRulesFormat(e.target.value)
+                            }}
+                        >
+                            <Space
+                                id="radio-space"
+                                direction="vertical"
+                                size="middle"
+                            >
+                                <div
+                                    id="radio-raw-help"
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Radio
+                                        id="radio-raw"
+                                        value="raw"
+                                    >
+                                        Raw
+                                    </Radio>
+                                    <InfoTip
+                                        id="raw-tooltip"
+                                        info={
+                                            "View rules exactly as they were generated during the " +
+                                            "evolutionary search."
+                                        }
+                                    />
+                                </div>
+                                <div
+                                    id="radio-raw-help"
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Radio
+                                        id="radio-interpreted"
+                                        value="interpreted"
+                                    >
+                                        Interpreted
+                                    </Radio>
+                                    <InfoTip
+                                        id="interpreted-tooltip"
+                                        info={
+                                            "View rules as interpreted by an LLM. (large language model) " +
+                                            "to express them in a more human-readable format."
+                                        }
+                                    />
+                                </div>
+                            </Space>
+                        </Radio.Group>
+                    </Grid>
+                </Grid>
             </CustomTabPanel>
         )
     }
 
-    function getRulesTabs() {
+    function handleTabChange(_event: SyntheticEvent, newTabIndex: number) {
+        setSelectedTab(newTabIndex)
+    }
+
+    function getRulesSection() {
         return (
-            <Tabs
-                id="rules-tabs"
-                value={selectedTab}
-                onChange={(_e, newTabIndex: number) => setSelectedTab(newTabIndex)}
+            <Box
+                id="rules-section"
+                sx={{width: "100%"}}
             >
-                <Box sx={{borderBottom: 1, borderColor: "divider"}}>
+                <Tabs
+                    id="rules-tabs"
+                    value={selectedTab}
+                    onChange={handleTabChange}
+                    sx={{
+                        "& .MuiTabs-flexContainer": {
+                            justifyContent: "space-around",
+                            border: "1px solid lightgray",
+                            borderRadius: "4px 4px 0 0",
+                        },
+                        "& .MuiTab-root": {
+                            flex: 1,
+                            textAlign: "center",
+                            marginRight: "2px",
+                        },
+                        "& .Mui-selected": {
+                            borderBottom: "none",
+                        },
+                    }}
+                >
                     <Tab
                         id="rules-decoded-tab"
                         label="Details"
@@ -795,10 +826,10 @@ export default function RunPage(props: RunProps): React.ReactElement {
                         id="insights-tab"
                         label="Insights"
                     />
-                </Box>
+                </Tabs>
                 {getDetailsPanel()}
                 {getInsightsPanel()}
-            </Tabs>
+            </Box>
         )
     }
 
@@ -816,7 +847,7 @@ export default function RunPage(props: RunProps): React.ReactElement {
                     Title="Rules"
                     DisplayNewLink={false}
                 />
-                {getRulesTabs()}
+                {getRulesSection()}
             </Box>
         )
     }
