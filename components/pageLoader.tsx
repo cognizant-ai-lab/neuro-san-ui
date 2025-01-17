@@ -1,6 +1,4 @@
-import ClipLoader from "react-spinners/ClipLoader"
-
-import {MaximumBlue} from "../const"
+import {CircularProgress} from "@mui/material"
 
 export const PageLoader = ({id}) => (
     <div
@@ -8,9 +6,11 @@ export const PageLoader = ({id}) => (
         className="absolute top-50 start-0 right-0 text-center"
     >
         <h3 id={`${id}-loader__message`}>Loading... Please wait</h3>
-        <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            color={MaximumBlue}
-            loading={true}
+        <CircularProgress
+            id={`${id}-loader__spinner`}
+            sx={{
+                color: "var(--bs-primary)",
+            }}
             size="100px"
         />
     </div>

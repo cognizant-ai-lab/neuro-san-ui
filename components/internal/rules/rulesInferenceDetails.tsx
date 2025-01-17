@@ -1,10 +1,7 @@
-// Main function.
-import ClipLoader from "react-spinners/ClipLoader"
-// Has to be export default for NextJS so tell ts-prune to ignore
+import {CircularProgress} from "@mui/material"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
 
-import {MaximumBlue} from "../../../const"
 import {InfoTip} from "../../infotip"
 
 export function RulesInferenceDetails(props: {
@@ -119,9 +116,11 @@ export function RulesInferenceDetails(props: {
                 {props.isAccessingLlm ? (
                     <div id="accessing-llm-div">
                         Accessing LLM...
-                        <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                            color={MaximumBlue}
-                            loading={true}
+                        <CircularProgress
+                            id="llm-spinner"
+                            sx={{
+                                color: "var(--bs-primary)",
+                            }}
                             size={18}
                         />
                     </div>

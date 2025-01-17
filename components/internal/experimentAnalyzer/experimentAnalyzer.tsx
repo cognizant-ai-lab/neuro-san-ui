@@ -1,14 +1,14 @@
+import CircularProgress from "@mui/material/CircularProgress"
 import Tooltip from "@mui/material/Tooltip"
 import {Drawer} from "antd"
 import {cloneDeep} from "lodash"
 import {useEffect, useRef, useState} from "react"
 import {MdOutlineSaveAlt} from "react-icons/md"
 import ReactMarkdown from "react-markdown"
-import ClipLoader from "react-spinners/ClipLoader"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 
-import {MAX_ALLOWED_CATEGORIES, MaximumBlue} from "../../../const"
+import {MAX_ALLOWED_CATEGORIES} from "../../../const"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
 import {DataTag, DataTagFieldValued} from "../../../generated/metadata"
 import {toSafeFilename} from "../../../utils/file"
@@ -188,10 +188,11 @@ export function ExperimentAnalyzer(props: {
                     </div>
                 </>
             ) : (
-                <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    // 2/6/23 DEF - ClipLoader does not have an id property when compiling
-                    color={MaximumBlue}
-                    loading={true}
+                <CircularProgress
+                    id="experiment-analysis-spinner"
+                    sx={{
+                        color: "var(--bs-primary)",
+                    }}
                     size={50}
                 />
             )}

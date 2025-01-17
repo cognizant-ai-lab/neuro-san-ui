@@ -3,14 +3,13 @@
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
-import {Box, Button, FormControl, FormGroup, FormLabel, Input, MenuItem, styled} from "@mui/material"
+import {Box, Button, CircularProgress, FormControl, FormGroup, FormLabel, Input, MenuItem, styled} from "@mui/material"
 import Select from "@mui/material/Select"
 import Tooltip from "@mui/material/Tooltip"
 import {Collapse} from "antd"
 import NextImage from "next/image"
 import {CSSProperties, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {MdCode, MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
-import ClipLoader from "react-spinners/ClipLoader"
 import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 
@@ -678,8 +677,11 @@ export function OpportunityFinder(): ReactElement {
                                 >
                                     Working...
                                 </span>
-                                <ClipLoader
+                                <CircularProgress
                                     id="awaitingOutputSpinner"
+                                    sx={{
+                                        color: "var(--bs-primary)",
+                                    }}
                                     size="1rem"
                                 />
                             </Box>

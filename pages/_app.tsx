@@ -8,13 +8,13 @@ import "../styles/splashpage.css"
 import "../styles/rundialog.css"
 
 import {Container, CssBaseline, ThemeProvider} from "@mui/material"
+import CircularProgress from "@mui/material/CircularProgress"
 import debugModule from "debug"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect} from "react"
-import ClipLoader from "react-spinners/ClipLoader"
 
 import {UserInfoResponse} from "./api/userInfo/types"
 import {Auth} from "../components/auth"
@@ -22,7 +22,7 @@ import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {Snackbar} from "../components/Snackbar"
-import {GENERIC_LOGO, LOGO, MaximumBlue} from "../const"
+import {GENERIC_LOGO, LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"
 import useUserInfoStore from "../state/userInfo"
@@ -169,9 +169,9 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     function getLoadingSpinner() {
         return (
             <h3 id="loading-header">
-                <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    color={MaximumBlue}
-                    loading={true}
+                <CircularProgress
+                    id="main-page-loading-spinner"
+                    sx={{color: "var(--bs-primary)"}}
                     size={35}
                 />
                 <span
