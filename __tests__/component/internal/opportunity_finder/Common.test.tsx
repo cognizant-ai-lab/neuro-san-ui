@@ -1,7 +1,6 @@
-import {Alert} from "antd"
-
 import {retry} from "../../../../components/internal/opportunity_finder/common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "../../../../components/internal/opportunity_finder/const"
+import {MUIAlert} from "../../../../components/MUIAlert"
 
 describe("Common component tests", () => {
     const retryMessage = "Test retry message"
@@ -22,16 +21,12 @@ describe("Common component tests", () => {
 
         expect(updateOutput).toHaveBeenCalledTimes(1)
         expect(updateOutput).toHaveBeenCalledWith(
-            expect.objectContaining({
-                props: expect.objectContaining({
-                    children: expect.objectContaining({
-                        type: Alert,
-                        props: expect.objectContaining({
-                            message: failureMessage,
-                        }),
-                    }),
-                }),
-            })
+            <MUIAlert
+                id="failure-message-alert"
+                severity="error"
+            >
+                {failureMessage}
+            </MUIAlert>
         )
     })
 
@@ -46,16 +41,12 @@ describe("Common component tests", () => {
 
         expect(updateOutput).toHaveBeenCalledTimes(1)
         expect(updateOutput).toHaveBeenCalledWith(
-            expect.objectContaining({
-                props: expect.objectContaining({
-                    children: expect.objectContaining({
-                        type: Alert,
-                        props: expect.objectContaining({
-                            message: retryMessage,
-                        }),
-                    }),
-                }),
-            })
+            <MUIAlert
+                id="retry-message-alert"
+                severity="warning"
+            >
+                {retryMessage}
+            </MUIAlert>
         )
     })
 })

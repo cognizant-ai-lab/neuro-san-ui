@@ -6,7 +6,7 @@ import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
 import {Box, Button, FormControl, FormGroup, FormLabel, Input, MenuItem, styled} from "@mui/material"
 import Select from "@mui/material/Select"
 import Tooltip from "@mui/material/Tooltip"
-import {Alert, Collapse} from "antd"
+import {Collapse} from "antd"
 import NextImage from "next/image"
 import {CSSProperties, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {MdCode, MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
@@ -17,7 +17,6 @@ import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 import {AgentButtons} from "./Agentbuttons"
 import {pollForLogs} from "./AgentChatHandling"
 import {experimentGeneratedMessage} from "./common"
-import {INLINE_ALERT_PROPERTIES} from "./const"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {DEFAULT_USER_IMAGE, SecondaryBlue} from "../../../const"
@@ -28,6 +27,7 @@ import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFi
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getTitleBase} from "../../../utils/title"
+import {MUIAlert} from "../../MUIAlert"
 import {LlmChatButton} from "../LlmChatButton"
 import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
 
@@ -347,12 +347,12 @@ export function OpportunityFinder(): ReactElement {
                 // AbortErrors are handled elsewhere
                 if (!isAbortError) {
                     updateOutput(
-                        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                        <Alert
-                            {...INLINE_ALERT_PROPERTIES}
-                            type="error"
-                            message={`Error occurred: ${error}`}
-                        />
+                        <MUIAlert
+                            id="opp-finder-error-occurred-alert"
+                            severity="error"
+                        >
+                            {`Error occurred: ${error}`}
+                        </MUIAlert>
                     )
 
                     // log error to console
@@ -369,12 +369,12 @@ export function OpportunityFinder(): ReactElement {
             controller?.current?.abort()
             controller.current = null
             updateOutput(
-                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                <Alert
-                    {...INLINE_ALERT_PROPERTIES}
-                    type="warning"
-                    message="Request cancelled."
-                />
+                <MUIAlert
+                    id="opp-finder-error-occurred-alert"
+                    severity="warning"
+                >
+                    Request cancelled.
+                </MUIAlert>
             )
         } finally {
             resetState()
@@ -463,12 +463,12 @@ export function OpportunityFinder(): ReactElement {
             // We expect the response to have status CREATED and to contain the session ID
             if (response.status !== AgentStatus.CREATED || !response.sessionId) {
                 updateOutput(
-                    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                    <Alert
-                        {...INLINE_ALERT_PROPERTIES}
-                        type="error"
-                        message={`Error occurred: session not created. Status: ${response.status}`}
-                    />
+                    <MUIAlert
+                        id="opp-finder-error-occurred-session-not-created-alert"
+                        severity="error"
+                    >
+                        {`Error occurred: session not created. Status: ${response.status}`}
+                    </MUIAlert>
                 )
 
                 endOrchestration()
@@ -477,12 +477,12 @@ export function OpportunityFinder(): ReactElement {
             }
         } catch (e) {
             updateOutput(
-                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                <Alert
-                    {...INLINE_ALERT_PROPERTIES}
-                    type="error"
-                    message={`Internal Error occurred while interacting with agents. Exception: ${e}`}
-                />
+                <MUIAlert
+                    id="opp-finder-error-occurred-while-interacting-with-agents-alert"
+                    severity="error"
+                >
+                    {`Internal Error occurred while interacting with agents. Exception: ${e}`}
+                </MUIAlert>
             )
             endOrchestration()
         } finally {
@@ -569,14 +569,18 @@ export function OpportunityFinder(): ReactElement {
                 </FormGroup>
             )}
             {projectUrl.current && (
-                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                <Alert
-                    type="success"
-                    message={experimentGeneratedMessage(projectUrl.current)}
-                    style={{fontSize: "large", margin: "10px", marginTop: "20px", marginBottom: "20px"}}
-                    showIcon={true}
-                    closable={true}
-                />
+                <MUIAlert
+                    closeable={true}
+                    id="opp-finder-experiment-generated-alert"
+                    severity="success"
+                    sx={{
+                        marginLeft: "0.5rem",
+                        marginRight: "0.5rem",
+                        marginTop: "1rem",
+                    }}
+                >
+                    {experimentGeneratedMessage(projectUrl.current)}
+                </MUIAlert>
             )}
             <Box id="llm-chat-group">
                 <Box

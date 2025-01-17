@@ -3,7 +3,7 @@ import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import {FC, ReactNode, useState} from "react"
 
-import {MUIDialog} from "./dialog"
+import {MUIDialog} from "./MUIDialog"
 import {MaximumBlue} from "../const"
 
 // #region: Styled Components

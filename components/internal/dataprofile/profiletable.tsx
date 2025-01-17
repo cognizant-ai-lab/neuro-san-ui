@@ -10,7 +10,6 @@ import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
-import {Alert} from "antd"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd"
 import {AiFillEdit, AiFillWarning} from "react-icons/ai"
@@ -19,6 +18,7 @@ import {reasonToHumanReadable} from "../../../controller/datasources/conversion"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued, Profile} from "../../../generated/metadata"
 import {empty, jsonStringifyInOrder} from "../../../utils/objects"
 import {ConfirmationModal} from "../../confirmationModal"
+import {MUIAlert} from "../../MUIAlert"
 import NeuroAIChatbot from "../chatbot/neuro_ai_chatbot"
 
 interface ProfileTableProps {
@@ -686,19 +686,13 @@ export default function ProfileTable(props: ProfileTableProps) {
             }}
         >
             {!updatePermission ? (
-                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                <Alert
-                    type="error"
-                    message={
-                        <span
-                            id="no-permission-message"
-                            style={{fontSize: "x-large", color: "inherit"}}
-                        >
-                            🔒 You do not have the required permissions to make changes to this project.
-                        </span>
-                    }
-                    showIcon={true}
-                />
+                <MUIAlert
+                    id="no-permission-message"
+                    severity="error"
+                    sx={{marginBottom: 0}}
+                >
+                    🔒 You do not have the required permissions to make changes to this project.
+                </MUIAlert>
             ) : null}
             <Box
                 id={propsId}

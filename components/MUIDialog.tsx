@@ -19,7 +19,7 @@ const StyledDialogTitle = styled(DialogTitle)({
 // #endregion: Styled Components
 
 // #region: Types
-interface DialogProps {
+interface MUIDialogProps {
     children: ReactNode
     className?: string
     closeable?: boolean
@@ -33,7 +33,7 @@ interface DialogProps {
 }
 // #endregion: Types
 
-export const MUIDialog: FC<DialogProps> = ({
+export const MUIDialog: FC<MUIDialogProps> = ({
     children,
     className,
     closeable = true,
