@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom"
 // eslint-disable-next-line no-shadow
 import {fireEvent, render, screen, waitFor, waitForElementToBeRemoved} from "@testing-library/react"
 import {SnackbarProvider} from "notistack"

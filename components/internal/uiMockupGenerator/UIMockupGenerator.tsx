@@ -6,7 +6,7 @@ import {FC, useState} from "react"
 
 import {sendCodeUIQuery} from "../../../controller/code-ui/code-ui"
 import {CodeUiResponse} from "../../../pages/api/gpt/code-ui/types"
-import {MUIDialog} from "../../dialog"
+import {MUIDialog} from "../../MUIDialog"
 import {NotificationType, sendNotification} from "../../notification"
 
 // #region: Styles

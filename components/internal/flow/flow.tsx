@@ -1,6 +1,5 @@
 import {Box, Button} from "@mui/material"
 import Tooltip from "@mui/material/Tooltip"
-import {Alert} from "antd"
 import dagre from "dagre"
 import debugModule from "debug"
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
@@ -42,6 +41,7 @@ import {TaggedDataInfo} from "../../../pages/projects/[projectID]/experiments/ne
 import {useAuthentication} from "../../../utils/authentication"
 import {AuthorizationInfo} from "../../../utils/authorization"
 import {useStateWithCallback} from "../../../utils/react_utils"
+import {MUIAlert} from "../../MUIAlert"
 import {NotificationType, sendNotification} from "../../notification"
 
 const debug = debugModule("flow")
@@ -1380,20 +1380,13 @@ export default function Flow(props: FlowProps) {
             {/* Only render buttons if ElementsSelectable is true and readOnly is, meaning Flow is editable */}
             {elementsSelectable && !readOnlyFlow && getFlowButtons()}
             {readOnlyFlow ? (
-                // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                <Alert
-                    type="error"
-                    message={
-                        <span
-                            id="no-permissions-alert"
-                            style={{fontSize: "x-large", color: "inherit"}}
-                        >
-                            🔒 You do not have the required permissions to make changes to this experiment.
-                        </span>
-                    }
-                    showIcon={true}
-                    style={{marginBottom: "1rem"}}
-                />
+                <MUIAlert
+                    id="no-permission-message"
+                    severity="error"
+                    sx={{marginBottom: 0}}
+                >
+                    🔒 You do not have the required permissions to make changes to this experiment.
+                </MUIAlert>
             ) : null}
 
             {/*Get the flow diagram itself*/}

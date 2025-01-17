@@ -1,7 +1,7 @@
-import {Alert} from "antd"
 import {ReactNode} from "react"
 
-import {INLINE_ALERT_PROPERTIES, MAX_ORCHESTRATION_ATTEMPTS} from "./const"
+import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
+import {MUIAlert} from "../../MUIAlert"
 
 /**
  * Items related to the orchestration process.
@@ -47,14 +47,12 @@ export const retry = async (
 ): Promise<void> => {
     if (orchestrationHandling.orchestrationAttemptNumber < MAX_ORCHESTRATION_ATTEMPTS) {
         updateOutput(
-            <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                <Alert
-                    {...INLINE_ALERT_PROPERTIES}
-                    type="warning"
-                    message={retryMessage}
-                />
-            </>
+            <MUIAlert
+                id="retry-message-alert"
+                severity="warning"
+            >
+                {retryMessage}
+            </MUIAlert>
         )
 
         // try again
@@ -62,14 +60,12 @@ export const retry = async (
         await orchestrationHandling.initiateOrchestration(true)
     } else {
         updateOutput(
-            <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                <Alert
-                    {...INLINE_ALERT_PROPERTIES}
-                    type="error"
-                    message={failureMessage}
-                />
-            </>
+            <MUIAlert
+                id="failure-message-alert"
+                severity="error"
+            >
+                {failureMessage}
+            </MUIAlert>
         )
         orchestrationHandling.endOrchestration()
     }

@@ -4,7 +4,7 @@
 
 import CloseIcon from "@mui/icons-material/Close"
 import InfoIcon from "@mui/icons-material/Info"
-import {Alert, Box, Button, Checkbox, FormControlLabel, Input, Select, styled, Tooltip, Typography} from "@mui/material"
+import {Box, Button, Checkbox, FormControlLabel, Input, Select, styled, Tooltip, Typography} from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import {camelCase, startCase} from "lodash"
 import {ChangeEvent, ReactNode, useEffect, useState} from "react"
@@ -14,7 +14,8 @@ import {getShares, share} from "../../controller/authorize/share"
 import {Project} from "../../controller/projects/types"
 import {RoleType} from "../../generated/auth"
 import {ConfirmationModal} from "../confirmationModal"
-import {MUIDialog} from "../dialog"
+import {MUIAlert} from "../MUIAlert"
+import {MUIDialog} from "../MUIDialog"
 import {NotificationType, sendNotification} from "../notification"
 
 // #region: Styled Components
@@ -372,13 +373,13 @@ export default function SharingDialog({
                     </Grid>
                 </Grid>
                 {operationComplete ? (
-                    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                    <Alert
+                    <MUIAlert
+                        id="project-shared-with-alert"
                         severity="success"
-                        style={{marginTop: "20px"}}
+                        sx={{marginTop: "1rem"}}
                     >
                         {`Project shared with "${targetUser}"`}
-                    </Alert>
+                    </MUIAlert>
                 ) : null}
             </MUIDialog>
             {removeShareDialogOpen ? (

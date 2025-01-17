@@ -1,5 +1,4 @@
-import "@testing-library/jest-dom"
-// eslint-disable-next-line no-shadow
+// eslint-disable-next-line no-shadow, testing-library/no-manual-cleanup
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import user from "@testing-library/user-event"
 import {Position} from "reactflow"
@@ -551,8 +550,8 @@ describe("Flow Test", () => {
 
         const {container} = render(flow)
         await waitFor(() => {
-            const alertSpan = container.querySelector("#no-permissions-alert")
-            expect(alertSpan).toHaveTextContent(
+            const alertComponent = container.querySelector("#no-permission-message")
+            expect(alertComponent).toHaveTextContent(
                 "You do not have the required permissions to make changes to this experiment."
             )
         })
