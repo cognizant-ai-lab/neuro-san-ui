@@ -17,11 +17,10 @@
         "start": "next start",
         "about:unit_test": "echo 'Runs the front-end unit __tests__ using `jest`'",
         "unit_test": "jest '__tests__/unit' '__tests__/component' --config ./jest_unit.config.ts",
-        "about:component_test": "echo 'Runs the front-end component-based tests using `jest` and `react-testing-library`'",
         "about:integration_test": "echo 'Runs the front-end unit tests using `jest`'",
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
         "about:check-format": "Runs prettier to check if the code is formatted correctly",
-        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ../build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run component_test ; yarn run depcheck",
+        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ../build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
         "check-format": "prettier --check .",
         "generate": "cp -r ../proto . && ./grpc/do_typescript_generate.sh"
     },
