@@ -1,22 +1,27 @@
 /**
- * This is the module for the "AI decision assistant".
+ * This is the module for the "DMS Chat assistant".
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
+import {Loop} from "@mui/icons-material"
+import ClearIcon from "@mui/icons-material/Clear"
+import DeleteOutline from "@mui/icons-material/DeleteOutline"
+import StopCircle from "@mui/icons-material/StopCircle"
+import Box from "@mui/material/Box"
+import CircularProgress from "@mui/material/CircularProgress"
+import IconButton from "@mui/material/IconButton"
+import InputAdornment from "@mui/material/InputAdornment"
+import TextField from "@mui/material/TextField"
 import {Drawer} from "antd"
-import {ChangeEvent, FormEvent, ReactElement, useRef, useState} from "react"
-import {Button, Form, InputGroup} from "react-bootstrap"
-import {BsStopBtn, BsTrash} from "react-icons/bs"
-import {FiRefreshCcw} from "react-icons/fi"
-import ClipLoader from "react-spinners/ClipLoader"
+import {ReactElement, useRef, useState} from "react"
 
-import {MaximumBlue} from "../../../const"
 import {StringToStringOrNumber} from "../../../controller/base_types"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 import {Run} from "../../../controller/run/types"
 import {hasOnlyWhitespace} from "../../../utils/text"
+import {LlmChatButton} from "../LlmChatButton"
 
 /**
- * AI assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
+ * Chat assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
  * (via the backend) with full context about the current DMS page, in a question-and-answer chat format.
  */
 export function DMSChat(props: {
@@ -29,9 +34,6 @@ export function DMSChat(props: {
     projectName?: string
     projectDescription?: string
 }): ReactElement {
-    // User LLM chat input
-    const [userLlmChatInput, setUserLlmChatInput] = useState<string>("")
-
     // Previous user query (for "regenerate" feature)
     const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
 
@@ -40,6 +42,9 @@ export function DMSChat(props: {
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
+
+    // User input
+    const [userInput, setUserInput] = useState<string>("")
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
     const chatHistory = useRef<BaseMessage[]>([])
@@ -55,8 +60,9 @@ export function DMSChat(props: {
 
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
+
     function clearInput() {
-        setUserLlmChatInput("")
+        setUserInput("")
     }
     /**
      * Handles a token received from the LLM via callback on the fetch request.
@@ -154,43 +160,6 @@ export function DMSChat(props: {
             currentResponse.current = ""
         }
     }
-
-    /**
-     * Handler for user query.
-     *
-     * @param event The event containing the user query
-     */
-    async function handleUserQuery(event: FormEvent<HTMLFormElement>) {
-        // Prevent submitting form
-        event.preventDefault()
-
-        await sendQuery(userLlmChatInput)
-    }
-
-    const handleInputAreaChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        // Check if enter key was pressed. Seems a bit of a cheesy way to do it but couldn't find a better way in
-        // this event handler, given what is passed as the Event.
-        const isEnter = "inputType" in event.nativeEvent && event.nativeEvent.inputType === "insertLineBreak"
-
-        // Enter key is handled by KeyUp handler, so ignore it here
-        if (!isEnter) {
-            const inputText = event.target.value
-            setUserLlmChatInput(inputText)
-        }
-    }
-
-    async function handleInputAreaKeyUp(event) {
-        // If shift enter pressed, just add a newline. Otherwise, if enter pressed, send query.
-        if (event.key === "Enter") {
-            if (event.shiftKey) {
-                setUserLlmChatInput(`${userLlmChatInput}\n`)
-            } else if (!hasOnlyWhitespace(userLlmChatInput)) {
-                event.preventDefault()
-                await sendQuery(userLlmChatInput)
-            }
-        }
-    }
-
     function handleStop() {
         try {
             controller?.current?.abort()
@@ -203,18 +172,16 @@ export function DMSChat(props: {
     }
 
     // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = !userLlmChatInput || userLlmChatInput.length === 0 || hasOnlyWhitespace(userLlmChatInput)
+    const userInputEmpty = !userInput || userInput.length === 0 || hasOnlyWhitespace(userInput)
 
     // Disable Send when request is in progress
     const shouldDisableSendButton = userInputEmpty || isAwaitingLlm
 
-    // Disable Send when request is in progress
-    const shouldDisableRegenerateButton = !previousUserQuery || isAwaitingLlm
+    // Enable regenerate button when there is a previous query to resent, and we're not awaiting a response
+    const shouldEnableRegenerateButton = previousUserQuery && !isAwaitingLlm
 
-    // Width for the various buttons -- "regenerate", "stop" etc.
-    const actionButtonWidth = 126
-
-    const disableClearChatButton = isAwaitingLlm || userLlmChatOutput.length === 0
+    // Enable Clear Chat button if not awaiting response and there is chat output to clear
+    const enableClearChatButton = !isAwaitingLlm && userLlmChatOutput.length > 0
 
     return (
         <Drawer // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -226,193 +193,209 @@ export function DMSChat(props: {
             width="35%"
             destroyOnClose={true}
         >
-            <Form
+            <Box
                 id="user-query-form"
-                onSubmit={handleUserQuery}
+                sx={{height: "90vh"}}
             >
-                <Form.Group id="llm-chat-group">
-                    <div
-                        id="llm-response-div"
-                        style={{width: "97%", height: "80vh", margin: "10px", display: "flow", position: "relative"}}
-                    >
-                        <Form.Control
-                            id="llm-responses"
-                            readOnly={true}
-                            ref={llmOutputTextAreaRef}
-                            as="textarea"
-                            placeholder="(DMS Chat output will appear here)"
-                            style={{
-                                background: "ghostwhite",
-                                borderColor: MaximumBlue,
-                                fontFamily: "monospace",
-                                fontSize: "smaller",
-                                height: "100%",
-                                resize: "none",
-                                whiteSpace: "pre-wrap",
-                            }}
-                            value={userLlmChatOutput}
-                        />
-                        <Button
+                <Box
+                    id="llm-response-div"
+                    sx={{
+                        height: "80vh",
+                        position: "relative",
+                        border: "none !important",
+                        padding: "10px",
+                    }}
+                    tabIndex={-1}
+                >
+                    <TextField
+                        id="llm-responses"
+                        tabIndex={-1}
+                        slotProps={{
+                            input: {
+                                readOnly: true,
+                                disableUnderline: true,
+                                sx: {
+                                    borderColor: "var(--bs-primary)",
+                                    borderRadius: "var(--bs-border-radius)",
+                                    borderStyle: "solid !important",
+                                    borderWidth: "1px",
+                                    height: "100%",
+                                    width: "100%",
+                                    alignItems: "flex-start",
+                                    overflowY: "scroll",
+                                },
+                            },
+                        }}
+                        inputRef={llmOutputTextAreaRef}
+                        multiline
+                        placeholder="(DMS Chat output will appear here)"
+                        sx={{
+                            backgroundColor: "ghostwhite",
+                            fontFamily: "monospace",
+                            fontSize: "smaller",
+                            height: "100%",
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                                "& fieldset": {
+                                    border: "none",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    border: "none",
+                                },
+                                "&:hover fieldset": {
+                                    border: "none",
+                                },
+                            },
+                        }}
+                        value={userLlmChatOutput}
+                    />
+                    {/*Clear Chat button*/}
+                    {!isAwaitingLlm && (
+                        <LlmChatButton
                             id="clear-chat-button"
                             onClick={() => {
-                                setUserLlmChatOutput("")
                                 chatHistory.current = []
+                                currentResponse.current = ""
                                 setPreviousUserQuery("")
+                                setUserLlmChatOutput("")
                             }}
-                            variant="secondary"
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                bottom: 10,
-                                color: "white",
-                                display: isAwaitingLlm ? "none" : "inline",
-                                fontSize: "95%",
-                                opacity: disableClearChatButton ? "50%" : "70%",
+                            disabled={!enableClearChatButton}
+                            posRight={155}
+                            posBottom={20}
+                            sx={{
                                 position: "absolute",
-                                right: 145,
-                                width: actionButtonWidth,
-                                zIndex: 99999,
                             }}
-                            disabled={disableClearChatButton}
                         >
-                            <BsTrash
-                                id="stop-button-icon"
-                                size={15}
-                                className="mr-2"
-                                style={{display: "inline"}}
+                            <DeleteOutline
+                                id="clear-chat-icon"
+                                sx={{marginRight: "0.25rem", display: "inline"}}
                             />
-                            Clear chat
-                        </Button>
-                        <Button
+                            Clear Chat
+                        </LlmChatButton>
+                    )}
+                    {/*Stop Button*/}
+                    {isAwaitingLlm && (
+                        <LlmChatButton
                             id="stop-output-button"
                             onClick={() => handleStop()}
-                            variant="secondary"
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                bottom: 10,
-                                color: "white",
-                                display: isAwaitingLlm ? "inline" : "none",
-                                fontSize: "95%",
-                                opacity: "70%",
+                            posRight={20}
+                            posBottom={20}
+                            sx={{
                                 position: "absolute",
-                                right: 10,
-                                width: actionButtonWidth,
-                                zIndex: 99999,
                             }}
                         >
-                            <BsStopBtn
+                            <StopCircle
                                 id="stop-button-icon"
-                                size={15}
-                                className="mr-2"
-                                style={{display: "inline"}}
+                                sx={{display: "inline", marginRight: "0.5rem"}}
                             />
                             Stop
-                        </Button>
-                        <Button
+                        </LlmChatButton>
+                    )}
+                    {/*Regenerate Button*/}
+                    {!isAwaitingLlm && (
+                        <LlmChatButton
                             id="regenerate-output-button"
-                            onClick={() => sendQuery(previousUserQuery)}
-                            disabled={shouldDisableRegenerateButton}
-                            variant="secondary"
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                bottom: 10,
-                                color: "white",
-                                display: isAwaitingLlm ? "none" : "inline",
-                                fontSize: "95%",
-                                opacity: shouldDisableRegenerateButton ? "50%" : "70%",
+                            onClick={async () => {
+                                await sendQuery(previousUserQuery)
+                            }}
+                            posRight={20}
+                            posBottom={20}
+                            disabled={!shouldEnableRegenerateButton}
+                            sx={{
                                 position: "absolute",
-                                right: 10,
-                                width: actionButtonWidth,
-                                zIndex: 99999,
                             }}
                         >
-                            <FiRefreshCcw
+                            <Loop
                                 id="generate-icon"
-                                size={15}
-                                className="mr-2"
-                                style={{display: "inline"}}
+                                sx={{marginRight: "0.25rem", display: "inline"}}
                             />
                             Regenerate
-                        </Button>
-                    </div>
+                        </LlmChatButton>
+                    )}
+                </Box>
+
+                <Box
+                    id="user-input-div"
+                    style={{display: "flex", padding: "10px"}}
+                >
+                    <TextField
+                        id="user-input"
+                        type="text"
+                        placeholder="What are the prescribed actions?"
+                        inputRef={inputAreaRef}
+                        multiline={true}
+                        sx={{
+                            fontSize: "90%",
+                            width: "100%",
+                            height: "100%",
+                        }}
+                        onChange={(event) => {
+                            setUserInput(event.target.value)
+                        }}
+                        value={userInput}
+                        slotProps={{
+                            input: {
+                                sx: {
+                                    borderColor: "var(--bs-primary)",
+                                    borderRadius: "var(--bs-border-radius)",
+                                    borderWidth: "1px",
+                                },
+                                endAdornment: (
+                                    <InputAdornment
+                                        id="clear-input-adornment"
+                                        position="end"
+                                        disableTypography={true}
+                                    >
+                                        <IconButton
+                                            id="clear-input-button"
+                                            onClick={() => {
+                                                clearInput()
+                                            }}
+                                            sx={{
+                                                color: "var(--bs-primary)",
+                                                opacity: userInputEmpty ? "25%" : "100%",
+                                            }}
+                                            disabled={userInputEmpty}
+                                            tabIndex={-1}
+                                            edge="end"
+                                        >
+                                            <ClearIcon id="clear-input-icon" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                    />
                     <div
-                        id="user-input-div"
-                        style={{display: "flex"}}
+                        id="send-div"
+                        style={{
+                            display: "flex",
+                            width: "100px",
+                            justifyContent: "center",
+                            marginLeft: "1rem",
+                        }}
                     >
-                        <InputGroup id="user-input-group">
-                            <Form.Control
-                                as="textarea"
-                                id="user-input"
-                                onChange={handleInputAreaChange}
-                                onKeyUp={handleInputAreaKeyUp}
-                                placeholder="What are the current prescribed actions?"
-                                ref={inputAreaRef}
-                                style={{
-                                    fontSize: "90%",
-                                    marginLeft: "7px",
-                                }}
-                                rows={3}
-                                value={userLlmChatInput}
+                        {isAwaitingLlm ? (
+                            <CircularProgress
+                                id="send-query-spinner"
+                                size={45}
+                                sx={{color: "var(--bs-primary)"}}
                             />
-                            <Button
-                                id="clear-input-button"
-                                onClick={() => {
-                                    clearInput()
+                        ) : (
+                            <LlmChatButton
+                                id="submit-query-button"
+                                disabled={shouldDisableSendButton}
+                                onClick={async () => {
+                                    await sendQuery(userInput)
                                 }}
-                                style={{
-                                    backgroundColor: "transparent",
-                                    color: "var(--bs-primary)",
-                                    border: "none",
-                                    fontWeight: 550,
-                                    left: "calc(100% - 45px)",
-                                    top: 10,
-                                    lineHeight: "35px",
-                                    opacity: userInputEmpty ? "25%" : "100%",
-                                    position: "absolute",
-                                    width: "10px",
-                                    zIndex: 99999,
-                                }}
-                                disabled={userInputEmpty}
-                                tabIndex={-1}
+                                sx={{opacity: shouldDisableSendButton ? "50%" : "100%"}}
                             >
-                                X
-                            </Button>
-                        </InputGroup>
-                        <Button
-                            id="submit-query-button"
-                            variant="primary"
-                            type="submit"
-                            disabled={shouldDisableSendButton}
-                            style={{
-                                background: MaximumBlue,
-                                borderColor: MaximumBlue,
-                                color: "white",
-                                opacity: shouldDisableSendButton ? "50%" : "100%",
-                                marginLeft: "10px",
-                                marginRight: "10px",
-                            }}
-                        >
-                            <div
-                                id="send-button-div"
-                                style={{width: "4ch", lineHeight: 1.5}}
-                            >
-                                {isAwaitingLlm ? (
-                                    <ClipLoader // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                        // ClipLoader does not have an id property
-                                        color={MaximumBlue}
-                                        loading={true}
-                                        size={20}
-                                    />
-                                ) : (
-                                    "Send"
-                                )}
-                            </div>
-                        </Button>
+                                Send
+                            </LlmChatButton>
+                        )}
                     </div>
-                </Form.Group>
-            </Form>
+                </Box>
+            </Box>
         </Drawer>
     )
 }

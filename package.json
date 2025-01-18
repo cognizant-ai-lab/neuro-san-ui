@@ -90,7 +90,6 @@
         "@types/prop-types": "15.7.11",
         "@types/react": "18.2.0",
         "@types/react-beautiful-dnd": "13.1.8",
-        "@types/react-bootstrap-typeahead": "5.1.13",
         "@types/react-dom": "18.2.18",
         "@types/react-syntax-highlighter": "15.5.11",
         "@types/styled-components": "5.1.34",

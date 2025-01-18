@@ -28,16 +28,10 @@ import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getTitleBase} from "../../../utils/title"
 import {MUIAlert} from "../../MUIAlert"
+import {LlmChatButton} from "../LlmChatButton"
+import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
 
 const {Panel} = Collapse
-
-// #region: Types
-type LLMChatGroupConfigBtnProps = {
-    enabled?: boolean
-    posRight?: number
-    posBottom?: number
-}
-// #endregion: Types
 
 // #region: Constants
 // Interval for polling the agents for logs
@@ -53,6 +47,7 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
 // #endregion: Constants
 
 // #region: Styled Components
+
 const UserQueryContainer = styled("div")({
     backgroundColor: "#FFF",
     borderRadius: "8px",
@@ -61,40 +56,6 @@ const UserQueryContainer = styled("div")({
     padding: "10px",
 })
 
-const LLMChatGroupConfigBtn = styled(Button, {
-    shouldForwardProp: (prop) => prop !== "enabled" && prop !== "posRight",
-})<LLMChatGroupConfigBtnProps>(({enabled, posRight}) => ({
-    position: "absolute",
-    right: posRight || null,
-    top: 10,
-    zIndex: 99999,
-    background: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
-    borderColor: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
-    borderRadius: "var(--bs-border-radius)",
-    color: "white",
-    width: "30px",
-    height: "30px",
-}))
-
-const CommandButton = styled(Button, {
-    shouldForwardProp: (prop) => prop !== "posRight" && prop !== "posBottom",
-})<LLMChatGroupConfigBtnProps>(({disabled, posRight, posBottom}) => ({
-    background: "var(--bs-primary) !important",
-    borderColor: "var(--bs-primary) !important",
-    borderRadius: "var(--bs-border-radius)",
-    bottom: posBottom || null,
-    color: "white !important",
-    display: "inline",
-    fontSize: "15px",
-    fontWeight: "500",
-    right: posRight || null,
-    lineHeight: "38px",
-    padding: "2px",
-    width: 126,
-    zIndex: 99999,
-    opacity: disabled ? "50%" : "70%",
-    cursor: disabled ? "pointer" : "default",
-}))
 // #endregion: Styled Components
 
 /**
@@ -631,7 +592,7 @@ export function OpportunityFinder(): ReactElement {
                             id="enable-code-json-theme-dropdown"
                             title={`Customize code/JSON theme ${codeJsonThemeEnabled ? "enabled" : "disabled"}`}
                         >
-                            <LLMChatGroupConfigBtn
+                            <LlmChatOptionsButton
                                 enabled={codeJsonThemeEnabled}
                                 id="autoscroll-code-json-theme"
                                 onClick={() => setCodeJsonThemeEnabled(!codeJsonThemeEnabled)}
@@ -642,14 +603,14 @@ export function OpportunityFinder(): ReactElement {
                                     size="15px"
                                     style={{color: "white"}}
                                 />
-                            </LLMChatGroupConfigBtn>
+                            </LlmChatOptionsButton>
                         </Tooltip>
                     )}
                     <Tooltip
                         id="enable-autoscroll"
                         title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
                     >
-                        <LLMChatGroupConfigBtn
+                        <LlmChatOptionsButton
                             enabled={autoScrollEnabled}
                             id="autoscroll-button"
                             onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
@@ -660,13 +621,13 @@ export function OpportunityFinder(): ReactElement {
                                 size="15px"
                                 style={{color: "white"}}
                             />
-                        </LLMChatGroupConfigBtn>
+                        </LlmChatOptionsButton>
                     </Tooltip>
                     <Tooltip
                         id="wrap-tooltip"
                         title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
                     >
-                        <LLMChatGroupConfigBtn
+                        <LlmChatOptionsButton
                             enabled={shouldWrapOutput}
                             id="wrap-button"
                             onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
@@ -677,7 +638,7 @@ export function OpportunityFinder(): ReactElement {
                                 size="15px"
                                 style={{color: "white"}}
                             />
-                        </LLMChatGroupConfigBtn>
+                        </LlmChatOptionsButton>
                     </Tooltip>
                     <Box
                         id="llm-responses"
@@ -727,7 +688,7 @@ export function OpportunityFinder(): ReactElement {
 
                     {/*Clear Chat button*/}
                     {!awaitingResponse && (
-                        <CommandButton
+                        <LlmChatButton
                             id="clear-chat-button"
                             onClick={() => {
                                 setChatOutput([])
@@ -747,12 +708,12 @@ export function OpportunityFinder(): ReactElement {
                                 sx={{marginRight: "0.25rem", display: "inline"}}
                             />
                             Clear Chat
-                        </CommandButton>
+                        </LlmChatButton>
                     )}
 
                     {/*Stop Button*/}
                     {awaitingResponse && (
-                        <CommandButton
+                        <LlmChatButton
                             id="stop-output-button"
                             onClick={() => handleStop()}
                             posRight={10}
@@ -767,12 +728,12 @@ export function OpportunityFinder(): ReactElement {
                                 sx={{display: "inline", marginRight: "0.5rem"}}
                             />
                             Stop
-                        </CommandButton>
+                        </LlmChatButton>
                     )}
 
                     {/*Regenerate Button*/}
                     {!awaitingResponse && (
-                        <CommandButton
+                        <LlmChatButton
                             id="regenerate-output-button"
                             onClick={async (event) => {
                                 event.preventDefault()
@@ -790,7 +751,7 @@ export function OpportunityFinder(): ReactElement {
                                 sx={{display: "inline", marginRight: "0.25rem"}}
                             />
                             Regenerate
-                        </CommandButton>
+                        </LlmChatButton>
                     )}
                 </Box>
                 <Box
@@ -842,7 +803,7 @@ export function OpportunityFinder(): ReactElement {
                     </Button>
 
                     {/*Send Button*/}
-                    <CommandButton
+                    <LlmChatButton
                         id="submit-query-button"
                         type="submit"
                         posBottom={0}
@@ -855,7 +816,7 @@ export function OpportunityFinder(): ReactElement {
                         }}
                     >
                         Send
-                    </CommandButton>
+                    </LlmChatButton>
                 </Box>
             </Box>
         </Box>

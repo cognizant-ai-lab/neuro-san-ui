@@ -1,9 +1,18 @@
+import DeleteOutline from "@mui/icons-material/DeleteOutline"
+import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import {Input, Space} from "antd"
+import Grid from "@mui/material/Grid2"
+import Input from "@mui/material/Input"
+import List from "@mui/material/List"
+import ListItem from "@mui/material/ListItem"
+import ListItemButton from "@mui/material/ListItemButton"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import ListItemText from "@mui/material/ListItemText"
+import TextField from "@mui/material/TextField"
+import Tooltip from "@mui/material/Tooltip"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd"
-import {Col, Container, Form, ListGroup, Row} from "react-bootstrap"
-import {AiFillDelete, AiFillEdit, AiFillWarning} from "react-icons/ai"
+import {AiFillEdit, AiFillWarning} from "react-icons/ai"
 
 import {reasonToHumanReadable} from "../../../controller/datasources/conversion"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued, Profile} from "../../../generated/metadata"
@@ -17,7 +26,7 @@ interface ProfileTableProps {
     Profile: Profile
     ProfileUpdateHandler: (value: Profile) => void
 
-    // enable/disble saving of profile
+    // enable/disable saving of profile
     readonly updatePermission?: boolean
 }
 
@@ -94,7 +103,7 @@ export default function ProfileTable(props: ProfileTableProps) {
         <tr
             id={field}
             key={field}
-            style={{backgroundColor: caoColorCoding[fields[field].espType]}}
+            style={{backgroundColor: caoColorCoding[fields[field].espType], height: "1rem", padding: 0, margin: 0}}
         >
             {/*Field name*/}
             <td
@@ -288,11 +297,11 @@ export default function ProfileTable(props: ProfileTableProps) {
                 className={tableCellClassName}
             >
                 {isContinuous(field) ? (
-                    <Form.Group id={`${field}-min-range-data`}>
-                        <Form.Control
+                    <Box id={`${field}-min-range-data`}>
+                        <Input
                             id={`${field}-min-range-control`}
                             className="m-0 p-0 mx-auto"
-                            style={{width: "16ch"}}
+                            sx={{width: "16ch", backgroundColor: "var(--bs-white)"}}
                             name={`${field}-min-range`}
                             type="number"
                             value={fields[field].range[0]}
@@ -303,7 +312,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                                 setProfile(profileCopy)
                             }}
                         />
-                    </Form.Group>
+                    </Box>
                 ) : (
                     "N/A"
                 )}
@@ -315,11 +324,11 @@ export default function ProfileTable(props: ProfileTableProps) {
                 className={tableCellClassName}
             >
                 {isContinuous(field) ? (
-                    <Form.Group id={`${field}-max-range-group`}>
-                        <Form.Control
+                    <Box id={`${field}-max-range-group`}>
+                        <Input
                             id={`${field}-max-range-control`}
                             className="m-0 p-0 mx-auto"
-                            style={{width: "16ch"}}
+                            sx={{width: "16ch", backgroundColor: "var(--bs-white)"}}
                             name={`${field}-max-range`}
                             type="number"
                             value={fields[field].range[1]}
@@ -330,7 +339,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                                 setProfile(profileCopy)
                             }}
                         />
-                    </Form.Group>
+                    </Box>
                 ) : (
                     "N/A"
                 )}
@@ -428,7 +437,7 @@ export default function ProfileTable(props: ProfileTableProps) {
         setCurrentCategoryValues(tmpValues)
     }
 
-    const renderCategoryDragList = (val, index) => {
+    const renderCategoryDragList = (val: string, index: number) => {
         return (
             <Draggable // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 // 2/6/23 DEF - Draggable doesn't have an id
@@ -438,50 +447,52 @@ export default function ProfileTable(props: ProfileTableProps) {
                 index={index}
             >
                 {(providedInner, snapshot) => {
-                    const opacity = snapshot.isDragging ? "opacity-50" : "opacity-100"
+                    const opacity = snapshot.isDragging ? "50%" : "100%"
                     return (
-                        <Row
+                        <Grid
                             id={`${val}-row`}
-                            className={`my-1 ${opacity}`}
+                            sx={{opacity: opacity}}
                             ref={providedInner.innerRef}
                             {...providedInner.draggableProps}
                             {...providedInner.dragHandleProps}
+                            size={12}
                         >
-                            <Col
-                                id={`${val}-value-column`}
-                                className="mx-0 px-1"
-                            >
-                                <ListGroup.Item
+                            {dataSetCategories[fieldBeingEditedName]?.has(val) ? null : (
+                                <ListItem
                                     id={`${val}-value`}
-                                    as="li"
-                                    className="values"
+                                    disablePadding={true}
+                                    sx={{border: "1px solid lightgray", borderRadius: "4px", marginBottom: "12px"}}
                                 >
-                                    <div id={`${val}`}>{val}</div>
-                                </ListGroup.Item>
-                            </Col>
-                            <Col
-                                id={`${val}-delete-value-column`}
-                                className="d-flex vertical-align-middle mx-0 px-1"
-                            >
-                                {dataSetCategories[fieldBeingEditedName]?.has(val) ? null : (
-                                    <button
-                                        id={`${val}-delete-value`}
-                                        onClick={() => {
-                                            deleteValue(val)
-                                        }}
-                                    >
-                                        <AiFillDelete
-                                            id={`${val}-delete-value-fill`}
-                                            size="14"
-                                            style={{
-                                                cursor: "pointer",
-                                            }}
-                                            className="hover:text-red-700"
+                                    <ListItemButton id={`${val}-value-button`}>
+                                        <ListItemIcon id={`${val}-delete-value-fill`}>
+                                            <Tooltip
+                                                id={`${val}-delete-value-tooltip`}
+                                                title="Delete this value"
+                                                arrow
+                                            >
+                                                <DeleteOutline
+                                                    id={`${val}-delete-value`}
+                                                    sx={{
+                                                        color: "var(--bs-primary)",
+                                                        fontSize: "1rem",
+                                                        "&:hover": {
+                                                            color: "var(--bs-red)",
+                                                        },
+                                                    }}
+                                                    onClick={() => {
+                                                        deleteValue(val)
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            id={val}
+                                            primary={val}
                                         />
-                                    </button>
-                                )}
-                            </Col>
-                        </Row>
+                                    </ListItemButton>
+                                </ListItem>
+                            )}
+                        </Grid>
                     )
                 }}
             </Draggable>
@@ -527,18 +538,24 @@ export default function ProfileTable(props: ProfileTableProps) {
     )
 
     const editCategoryValuesModalContent = (
-        <Container id="field-container">
-            <Row id="field-being-edited-row">
-                <label id="field-being-edited">Field: {fieldBeingEditedName}</label>
-            </Row>
-            <Row
-                id="field-editor-drag-msg-row"
-                className="pt-3"
+        <Grid
+            id="field-container"
+            container={true}
+        >
+            <Grid id="field-being-edited-row">
+                <label id="field-being-edited">Field: {fieldBeingEditedName} </label>
+            </Grid>
+            <Grid
+                id="field-editor-drag-msg-row "
+                size={12}
             >
                 (drag to re-order)
-            </Row>
-            <p id="values-separator" />
-            <Row id="values-droppable-row">
+            </Grid>
+            <Grid
+                id="values-droppable-row"
+                size={12}
+                sx={{marginTop: "1rem"}}
+            >
                 {/* Drag-drop list of values */}
                 {
                     <Droppable // eslint-disable-line enforce-ids-in-jsx/missing-ids
@@ -546,11 +563,11 @@ export default function ProfileTable(props: ProfileTableProps) {
                         droppableId="values"
                     >
                         {(provided) => (
-                            <Container id="values-droppable-container">
-                                <ListGroup
-                                    as="ol"
+                            <Grid id="values-droppable-container">
+                                <List
                                     id="values-droppable-listgroup"
                                     ref={provided.innerRef}
+                                    sx={{marginTop: "8px"}}
                                     {...provided.droppableProps}
                                 >
                                     {
@@ -560,44 +577,55 @@ export default function ProfileTable(props: ProfileTableProps) {
                                               })
                                             : [] // empty list by default
                                     }
-                                </ListGroup>
+                                </List>
                                 {provided.placeholder}
-                            </Container>
+                            </Grid>
                         )}
                     </Droppable>
                 }
-            </Row>
-            <Row
-                id="add-category-value-label-row"
-                className="pt-4"
-            >
-                <label id="add-category-label">Add category value:</label>
-            </Row>
-            <Row
+            </Grid>
+            <Grid
                 id="add-category-value-row"
-                className="pt-1"
+                size={12}
+                sx={{marginTop: "1rem"}}
             >
-                <Space.Compact id="category-values-group">
-                    <Input
-                        id="add-category-value-input"
-                        style={{width: "calc(100% - 200px)"}}
-                        placeholder="Enter value"
-                        onChange={(event) => {
-                            setNewItem(event.target.value)
-                        }}
-                    />
-                    <Button
-                        id="add-category-value-button"
-                        onClick={() => {
-                            setCurrentCategoryValues([...currentCategoryValues, newItem])
-                        }}
-                        disabled={!newItem || currentCategoryValues.includes(newItem)}
-                    >
-                        Add
-                    </Button>
-                </Space.Compact>
-            </Row>
-        </Container>
+                <TextField
+                    id="add-category-value-input"
+                    placeholder="My new category"
+                    label="New category"
+                    onChange={(event) => {
+                        setNewItem(event.target.value)
+                    }}
+                    slotProps={{
+                        inputLabel: {
+                            shrink: true,
+                        },
+                    }}
+                    sx={{
+                        "& .MuiInputBase-root": {
+                            height: "2.5rem",
+                        },
+                    }}
+                />
+                <Button
+                    id="add-category-value-button"
+                    onClick={() => {
+                        setCurrentCategoryValues([...currentCategoryValues, newItem])
+                    }}
+                    disabled={!newItem || currentCategoryValues.includes(newItem)}
+                    variant="outlined"
+                    sx={{
+                        height: "2.5rem",
+                        backgroundColor: "var(--bs-primary) !important",
+                        color: "var(--bs-white) !important",
+                        marginLeft: "1rem",
+                        borderRadius: "var(--bs-border-radius)",
+                    }}
+                >
+                    Add
+                </Button>
+            </Grid>
+        </Grid>
     )
 
     const renderEditCategoryValuesModal = () => (
@@ -666,45 +694,48 @@ export default function ProfileTable(props: ProfileTableProps) {
                     🔒 You do not have the required permissions to make changes to this project.
                 </MUIAlert>
             ) : null}
-            <div
+            <Box
                 id={propsId}
-                className="flex flex-col"
+                sx={{display: "flex", flexDirection: "column"}}
             >
                 {showFieldEditor && renderEditCategoryValuesModal()}
                 {confirmationModalStatus && renderConfirmationModal()}
-                <div
+                <Box
                     id="profile-table-div"
-                    className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8"
+                    sx={{
+                        alignItems: "center",
+                        borderBottomWidth: 1,
+                        borderColor: "gray.200",
+                        borderRadius: 1,
+                        boxShadow: 1,
+                        display: "inline-block",
+                        minWidth: "100%",
+                        marginX: {sm: 6, lg: 8},
+                        marginY: 2,
+                        overflow: "hidden",
+                        overflowX: "auto",
+                        paddingY: 2,
+                    }}
                 >
-                    <div
-                        id="profile-table-div-3"
-                        className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
+                    <table
+                        id="profile-table"
+                        className="min-w-full divide-y divide-gray-200"
                     >
-                        <div
-                            id="profile-table-div-4"
-                            className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg"
+                        <thead
+                            id="profile-table-header"
+                            className="bg-gray-50"
                         >
-                            <table
-                                id="profile-table"
-                                className="min-w-full divide-y divide-gray-200"
-                            >
-                                <thead
-                                    id="profile-table-header"
-                                    className="bg-gray-50"
-                                >
-                                    <tr id="profile-table-header-elements">{tableHeaderElements}</tr>
-                                </thead>
-                                <tbody
-                                    id="profile-table-all-rows"
-                                    className="bg-white divide-y divide-gray-200"
-                                >
-                                    {allRows}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            <tr id="profile-table-header-elements">{tableHeaderElements}</tr>
+                        </thead>
+                        <tbody
+                            id="profile-table-all-rows"
+                            className="bg-white divide-y divide-gray-200"
+                        >
+                            {allRows}
+                        </tbody>
+                    </table>
+                </Box>
+            </Box>
             <NeuroAIChatbot
                 id="chatbot"
                 userAvatar={undefined}
