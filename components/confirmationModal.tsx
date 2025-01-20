@@ -4,7 +4,6 @@ import Button from "@mui/material/Button"
 import {FC, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"
-import {MaximumBlue} from "../const"
 
 // #region: Styled Components
 const StyledButton = styled(Button)({
@@ -13,7 +12,7 @@ const StyledButton = styled(Button)({
 })
 
 const StyledOKButton = styled(StyledButton)(({disabled}) => ({
-    backgroundColor: disabled ? "rgba(0, 0, 0, 0.12) !important" : `${MaximumBlue} !important`,
+    backgroundColor: disabled ? "rgba(0, 0, 0, 0.12) !important" : "var(--bs-primary) !important",
 }))
 // #endregion: Styled Components
 

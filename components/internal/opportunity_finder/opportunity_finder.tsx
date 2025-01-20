@@ -18,7 +18,7 @@ import {pollForLogs} from "./AgentChatHandling"
 import {experimentGeneratedMessage} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
-import {DEFAULT_USER_IMAGE, SecondaryBlue} from "../../../const"
+import {DEFAULT_USER_IMAGE} from "../../../const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/fetch"
 import {AgentStatus, ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
@@ -643,7 +643,7 @@ export function OpportunityFinder(): ReactElement {
                         id="llm-responses"
                         ref={chatOutputRef}
                         sx={{
-                            backgroundColor: SecondaryBlue,
+                            backgroundColor: "var(--bs-secondary-blue)",
                             borderWidth: "1px",
                             borderRadius: "0.5rem",
                             fontSize: "smaller",

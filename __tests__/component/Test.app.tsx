@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-shadow
 import {render, screen} from "@testing-library/react"
 
+import {LOGO} from "../../const"
 import LEAF from "../../pages/_app"
 import {mockFetch} from "../testUtils"
 
@@ -52,7 +53,7 @@ describe("Main App Component", () => {
             />
         )
 
-        expect(screen.getByText("Neuro AI 2.3: Multi-Agent Edition")).toBeInTheDocument()
+        expect(screen.getByText(LOGO)).toBeInTheDocument()
 
         window.fetch = oldFetch
     })

@@ -9,7 +9,6 @@ import Grid from "@mui/material/Grid2"
 import {camelCase, startCase} from "lodash"
 import {ChangeEvent, ReactNode, useEffect, useState} from "react"
 
-import {MaximumBlue} from "../../const"
 import {getShares, share} from "../../controller/authorize/share"
 import {Project} from "../../controller/projects/types"
 import {RoleType} from "../../generated/auth"
@@ -25,7 +24,7 @@ const StyledButton = styled(Button)({
 })
 
 const StyledOKButton = styled(StyledButton)(({disabled}) => ({
-    backgroundColor: disabled ? "rgba(0, 0, 0, 0.12) !important" : `${MaximumBlue} !important`,
+    backgroundColor: disabled ? "rgba(0, 0, 0, 0.12) !important" : "var(--bs-primary) !important",
     marginBottom: "2px",
     paddingBottom: "1px",
 }))

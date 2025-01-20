@@ -5,6 +5,7 @@ import failOnConsole from "jest-fail-on-console"
 import {webcrypto} from "node:crypto"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
+import {createElement} from "react"
 /*
 This next part is a hack to get around "ReferenceError: TextEncoder is not defined" errors when running Jest.
 See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-is-not-defined-in-jest
@@ -128,6 +129,32 @@ window.matchMedia =
             },
         }
     }
+
+/* Have to mock these up due to https://github.com/remarkjs/react-markdown/issues/635
+ Summary from that ticket:
+ "As part of the the version 7 release, the react-markdown is packaged as standard ESM. Despite ESM being standard
+ for JavaScript, some tools, including Jest and Electron require some configuration to use ESM."
+ And we can't even fix it using `transformIgnorePatterns` due to https:github.com/vercel/next.js/issues/35634 */
+/* eslint-disable react/display-name, react/no-multi-comp */
+jest.mock(
+    "react-markdown",
+    () =>
+        ({children}) =>
+            createElement("div", null, children)
+)
+jest.mock(
+    "rehype-raw",
+    () =>
+        ({children}) =>
+            createElement("div", null, children)
+)
+jest.mock(
+    "rehype-slug",
+    () =>
+        ({children}) =>
+            createElement("div", null, children)
+)
+/* eslint-enable react/display-name, react/no-multi-comp */
 
 // Make tests fail if any output is sent to the console
 failOnConsole({shouldFailOnAssert: true, shouldFailOnDebug: true})

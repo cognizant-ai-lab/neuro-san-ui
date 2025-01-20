@@ -24,7 +24,6 @@ import {
     getDownloadableArtifacts,
     isArtifactAvailable,
 } from "./artifacts/artifacts"
-import {MaximumBlue} from "../../const"
 import {Experiment} from "../../controller/experiments/types"
 import {fetchRuns} from "../../controller/run/fetch"
 import {Run, Runs} from "../../controller/run/types"
@@ -293,7 +292,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                     <button
                         id="download-file"
                         style={{
-                            color: MaximumBlue,
+                            color: "var(--bs-primary)",
                             textDecoration: "underline",
                             marginLeft: "3px",
                         }}
@@ -406,7 +405,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                                 <button
                                     id={`run-button-${runId}`}
                                     style={{
-                                        color: run.completed ? MaximumBlue : "gray",
+                                        color: run.completed ? "var(--bs-primary)" : "gray",
                                         pointerEvents: run.completed ? "auto" : "none",
                                         textOverflow: "ellipsis",
                                         whiteSpace: "nowrap",

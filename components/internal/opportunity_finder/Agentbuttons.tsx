@@ -6,7 +6,6 @@ import {LuBrainCircuit} from "react-icons/lu"
 import {RiMenuSearchLine} from "react-icons/ri"
 import {TfiPencilAlt} from "react-icons/tfi"
 
-import {MaximumBlue, SecondaryBlue} from "../../../const"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 
 // #region: Types
@@ -39,9 +38,9 @@ const AgentIconDiv = styled("div")({
 
 const AgentDiv = styled("div")(({enabled, selected}) => ({
     alignItems: "center",
-    backgroundColor: selected ? SecondaryBlue : null,
+    backgroundColor: selected ? "var(--bs-secondary-blue)" : null,
     border: "4px solid #cad1d7",
-    borderColor: selected ? MaximumBlue : null,
+    borderColor: selected ? "var(--bs-primary)" : null,
     borderRadius: "30px",
     cursor: "pointer",
     display: "flex",
@@ -54,7 +53,7 @@ const AgentDiv = styled("div")(({enabled, selected}) => ({
     width: "190px",
 
     "&:hover": {
-        borderColor: MaximumBlue,
+        borderColor: "var(--bs-primary)",
     },
 }))
 // #endregion: Styled Components

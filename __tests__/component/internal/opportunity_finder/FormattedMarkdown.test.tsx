@@ -3,13 +3,6 @@ import {render, screen} from "@testing-library/react"
 
 import {FormattedMarkdown} from "../../../../components/internal/opportunity_finder/FormattedMarkdown"
 
-// Have to mock these up due to https://github.com/remarkjs/react-markdown/issues/635
-// And we can't even fix it using `transformIgnorePatterns` due to https://github.com/vercel/next.js/issues/35634
-// None of the "solutions" in those tickets worked for me.
-/* eslint-disable react/no-multi-comp */
-jest.mock("react-markdown", () => ({children}) => <div>{children}</div>)
-jest.mock("rehype-raw", () => ({children}) => <div>{children}</div>)
-jest.mock("rehype-slug", () => ({children}) => <div>{children}</div>)
 /* eslint-enable react/no-multi-comp */
 
 describe("FormattedMarkdown component tests", () => {
