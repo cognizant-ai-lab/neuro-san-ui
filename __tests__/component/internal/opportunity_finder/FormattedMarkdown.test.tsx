@@ -3,8 +3,6 @@ import {render, screen} from "@testing-library/react"
 
 import {FormattedMarkdown} from "../../../../components/internal/opportunity_finder/FormattedMarkdown"
 
-/* eslint-enable react/no-multi-comp */
-
 describe("FormattedMarkdown component tests", () => {
     // eslint-disable-next-line jest/expect-expect
     it("Renders markdown correctly", async () => {
