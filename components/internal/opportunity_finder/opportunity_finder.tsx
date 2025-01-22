@@ -761,6 +761,7 @@ export function OpportunityFinder(): ReactElement {
                     style={{...divStyle, display: "flex", margin: "10px", alignItems: "center", position: "relative"}}
                 >
                     <Input
+                        autoComplete="off"
                         id="user-input"
                         placeholder={AGENT_PLACEHOLDERS[selectedAgent]}
                         ref={chatInputRef}
