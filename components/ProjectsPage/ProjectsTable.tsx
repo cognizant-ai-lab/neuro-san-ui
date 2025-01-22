@@ -35,22 +35,6 @@ interface ProjectsTableProps {
     ) => void
 }
 
-// const CustomTableHead = styled(TableHead)(() => ({
-//     "& .MuiTableCell-root": {
-//         fontWeight: "bold",
-//         backgroundColor: "var(--bs-secondary)",
-//         borderBottom: "3px solid black",
-//         color: "var(--bs-white)",
-//
-//         "&:first-of-type": {
-//             borderTopLeftRadius: "0.5rem",
-//         },
-//         "&:last-of-type": {
-//             borderTopRightRadius: "0.5rem",
-//         },
-//     },
-// }))
-
 /**
  * Get the table of projects for the "List" view
  *
@@ -344,36 +328,66 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                             <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 id={`project-${project.id}-id`}
                                 align="left"
+                                sx={{
+                                    backgroundColor:
+                                        preferences?.sorting?.columnKey === "id" ? "var(--bs-gray-lightest)" : null,
+                                }}
                             >
                                 {project.id}
                             </TableCell>
                             <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 id={`project-${project.id}-name`}
                                 align="left"
+                                sx={{
+                                    backgroundColor:
+                                        preferences?.sorting?.columnKey === "name" ? "var(--bs-gray-lightest)" : null,
+                                }}
                             >
                                 {project.name}
                             </TableCell>
                             <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 id={`project-${project.id}-owner`}
                                 align="left"
+                                sx={{
+                                    backgroundColor:
+                                        preferences?.sorting?.columnKey === "owner" ? "var(--bs-gray-lightest)" : null,
+                                }}
                             >
                                 {project.owner}
                             </TableCell>
                             <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 id={`project-${project.id}-created-at`}
                                 align="left"
+                                sx={{
+                                    backgroundColor:
+                                        preferences?.sorting?.columnKey === "created_at"
+                                            ? "var(--bs-gray-lightest)"
+                                            : null,
+                                }}
                             >
                                 {project.created_at}
                             </TableCell>
                             <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 id={`project-${project.id}-last-edited-by`}
                                 align="left"
+                                sx={{
+                                    backgroundColor:
+                                        preferences?.sorting?.columnKey === "lastEditedBy"
+                                            ? "var(--bs-gray-lightest)"
+                                            : null,
+                                }}
                             >
                                 {project.lastEditedBy}
                             </TableCell>
                             <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 id={`project-${project.id}-updated-at`}
                                 align="left"
+                                sx={{
+                                    backgroundColor:
+                                        preferences?.sorting?.columnKey === "updated_at"
+                                            ? "var(--bs-gray-lightest)"
+                                            : null,
+                                }}
                             >
                                 {project.updated_at}
                             </TableCell>
