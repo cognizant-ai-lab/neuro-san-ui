@@ -235,6 +235,120 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
         }
     }
 
+    function getTableHeaderCell(headCell: HeadCell, index: number): ReactElement<typeof Tooltip> {
+        return (
+            <Tooltip title={`Click to sort ${sorting?.sortOrder === "asc" ? "descending" : "ascending"}`}>
+                <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    id={`${headCell.title}-header`}
+                    key={headCell.title}
+                    align="center"
+                    sortDirection={sorting?.columnKey === headCell.dataIndex ? sorting?.sortOrder : false}
+                    sx={{
+                        color: "var(--bs-white)",
+                        backgroundColor: "var(--bs-secondary)",
+                        fontSize: "14px",
+                        position: "relative",
+                        paddingTop: "14px",
+                        paddingBottom: "14px",
+                        lineHeight: "1.0",
+                        borderTopLeftRadius: index === 0 ? "var(--bs-border-radius)" : 0,
+                        borderTopRightRadius: index === HEAD_CELLS.length - 1 ? "var(--bs-border-radius)" : 0,
+                        // This next part adds the cutesy separator bar between column headers
+                        "&:not(:last-child)::after": {
+                            content: '""',
+                            position: "absolute",
+                            right: 0,
+                            top: "30%",
+                            height: "40%",
+                            width: "1px",
+                            backgroundColor: "white",
+                        },
+                    }}
+                    onClick={(event) =>
+                        (!headCell.sortable || headCell.sortable) && handleHeaderClick(event, headCell.dataIndex)
+                    }
+                >
+                    <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+                        <Box
+                            component="span"
+                            sx={{
+                                textAlign: "left",
+                                flexGrow: 1,
+                            }}
+                        >
+                            {headCell.title}
+                        </Box>
+                        <Box sx={{display: "flex", alignItems: "center"}}>
+                            <Box>
+                                <TableSortLabel
+                                    active={sorting?.columnKey === headCell.dataIndex}
+                                    direction={sorting.columnKey === headCell.dataIndex ? sorting.sortOrder : "asc"}
+                                    sx={{
+                                        color: "var(--bs-white)",
+                                        fontSize: "14px",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        "&.Mui-active": {
+                                            color: "var(--bs-white)",
+                                        },
+                                    }}
+                                    IconComponent={() =>
+                                        (headCell?.sortable == null || headCell?.sortable) && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <ArrowDropUpIcon
+                                                    sx={{
+                                                        color:
+                                                            sorting.columnKey === headCell.dataIndex &&
+                                                            sorting.sortOrder === "asc"
+                                                                ? "white"
+                                                                : "var(--bs-gray-medium-dark)",
+                                                        fontSize: "large",
+                                                        marginBottom: "-5px",
+                                                    }}
+                                                />
+                                                <ArrowDropDownIcon
+                                                    sx={{
+                                                        color:
+                                                            sorting.columnKey === headCell.dataIndex &&
+                                                            sorting.sortOrder === "desc"
+                                                                ? "white"
+                                                                : "var(--bs-gray-medium-dark)",
+                                                        fontSize: "large",
+                                                        marginTop: "-5px",
+                                                    }}
+                                                />
+                                            </Box>
+                                        )
+                                    }
+                                />
+                            </Box>
+                            {headCell?.filterable && (
+                                <SearchIcon
+                                    sx={{
+                                        display: "flex",
+                                        fontSize: "1rem",
+                                        color:
+                                            headCell.dataIndex === filtering.columnKey && filtering.filterText
+                                                ? "var(--bs-red)"
+                                                : "var(--bs-gray-medium-dark)",
+                                    }}
+                                    onClick={(event) => handleClick(event, headCell.dataIndex)}
+                                />
+                            )}
+                        </Box>
+                    </Box>
+                </TableCell>
+            </Tooltip>
+        )
+    }
+
     function getTableHead() {
         return (
             <TableHead>
@@ -246,125 +360,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                         },
                     }}
                 >
-                    {HEAD_CELLS.map((headCell, index) => {
-                        return (
-                            <Tooltip
-                                title={`Click to sort ${sorting?.sortOrder === "asc" ? "descending" : "ascending"}`}
-                            >
-                                <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                    id={`${headCell.title}-header`}
-                                    key={headCell.title}
-                                    align="center"
-                                    sortDirection={
-                                        sorting?.columnKey === headCell.dataIndex ? sorting?.sortOrder : false
-                                    }
-                                    sx={{
-                                        color: "var(--bs-white)",
-                                        backgroundColor: "var(--bs-secondary)",
-                                        fontSize: "14px",
-                                        position: "relative",
-                                        paddingTop: "14px",
-                                        paddingBottom: "14px",
-                                        lineHeight: "1.0",
-                                        borderTopLeftRadius: index === 0 ? "var(--bs-border-radius)" : 0,
-                                        borderTopRightRadius:
-                                            index === HEAD_CELLS.length - 1 ? "var(--bs-border-radius)" : 0,
-                                        // This next part adds the cutesy separator bar between column headers
-                                        "&:not(:last-child)::after": {
-                                            content: '""',
-                                            position: "absolute",
-                                            right: 0,
-                                            top: "30%",
-                                            height: "40%",
-                                            width: "1px",
-                                            backgroundColor: "white",
-                                        },
-                                    }}
-                                    onClick={(event) =>
-                                        (!headCell.sortable || headCell.sortable) &&
-                                        handleHeaderClick(event, headCell.dataIndex)
-                                    }
-                                >
-                                    <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-                                        <Box
-                                            component="span"
-                                            sx={{
-                                                textAlign: "left",
-                                                flexGrow: 1,
-                                            }}
-                                        >
-                                            {headCell.title}
-                                        </Box>
-                                        <Box sx={{display: "flex", alignItems: "center"}}>
-                                            <TableSortLabel
-                                                active={sorting?.columnKey === headCell.dataIndex}
-                                                direction={
-                                                    sorting.columnKey === headCell.dataIndex ? sorting.sortOrder : "asc"
-                                                }
-                                                sx={{
-                                                    color: "var(--bs-white)",
-                                                    fontSize: "14px",
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    "&.Mui-active": {
-                                                        color: "var(--bs-white)",
-                                                    },
-                                                }}
-                                                IconComponent={() =>
-                                                    (headCell?.sortable == null || headCell?.sortable) && (
-                                                        <Box
-                                                            component="span"
-                                                            sx={{
-                                                                display: "flex",
-                                                                flexDirection: "column",
-                                                                alignItems: "center",
-                                                            }}
-                                                        >
-                                                            <ArrowDropUpIcon
-                                                                sx={{
-                                                                    color:
-                                                                        sorting.columnKey === headCell.dataIndex &&
-                                                                        sorting.sortOrder === "asc"
-                                                                            ? "white"
-                                                                            : "var(--bs-gray-medium-dark)",
-                                                                    fontSize: "large",
-                                                                    marginBottom: "-5px",
-                                                                }}
-                                                            />
-                                                            <ArrowDropDownIcon
-                                                                sx={{
-                                                                    color:
-                                                                        sorting.columnKey === headCell.dataIndex &&
-                                                                        sorting.sortOrder === "desc"
-                                                                            ? "white"
-                                                                            : "var(--bs-gray-medium-dark)",
-                                                                    fontSize: "large",
-                                                                    marginTop: "-5px",
-                                                                }}
-                                                            />
-                                                        </Box>
-                                                    )
-                                                }
-                                            />
-                                            {headCell?.filterable && (
-                                                <SearchIcon
-                                                    sx={{
-                                                        display: "flex",
-                                                        fontSize: "1rem",
-                                                        color:
-                                                            headCell.dataIndex === filtering.columnKey
-                                                                ? "var(--bs-red)"
-                                                                : "var(--bs-gray-medium-dark)",
-                                                    }}
-                                                    onClick={(event) => handleClick(event, headCell.dataIndex)}
-                                                />
-                                            )}
-                                        </Box>
-                                    </Box>
-                                </TableCell>
-                            </Tooltip>
-                        )
-                    })}
+                    {HEAD_CELLS.map((headCell, index) => getTableHeaderCell(headCell, index))}
                 </TableRow>
             </TableHead>
         )
