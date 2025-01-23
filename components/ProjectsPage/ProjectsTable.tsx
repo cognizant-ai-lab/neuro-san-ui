@@ -5,11 +5,12 @@ import Table from "@mui/material/Table"
 import TableBody from "@mui/material/TableBody"
 import TableCell from "@mui/material/TableCell"
 import TableHead from "@mui/material/TableHead"
+import TablePagination from "@mui/material/TablePagination"
 import TableRow from "@mui/material/TableRow"
 import TableSortLabel from "@mui/material/TableSortLabel"
 import Tooltip from "@mui/material/Tooltip"
 import {NextRouter} from "next/router"
-import {ReactElement, MouseEvent as ReactMouseEvent, useMemo, useState} from "react"
+import {ChangeEvent, ReactElement, MouseEvent as ReactMouseEvent, useMemo, useState} from "react"
 
 import {DisplayOption, FilterSpecification, ProjectPagePreferences, ShowAsOption, SortSpecification} from "./types"
 import {Project} from "../../controller/projects/types"
@@ -45,12 +46,15 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
     const {id, projectList, preferences, setPreferences, router, getAllowedActions, getSharingIcon, getDeleteIcon} =
         props
 
-    // Sorting state
     // For sorting -- column and order
     const [sorting, setSorting] = useState<SortSpecification>({
         columnKey: preferences?.sorting?.columnKey || "updated_at",
         sortOrder: preferences?.sorting?.sortOrder || "desc",
     })
+
+    // For pagination
+    const [rowsPerPage, setRowsPerPage] = useState<number>(preferences?.itemsPerPage || 15)
+    const [page, setPage] = useState<number>(0)
 
     // Sort the project list based on the column and order
     const sortedData = useMemo(
@@ -95,7 +99,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
     // Apply the filter if there is one. We only start filtering at 2 characters+
     const lowerCaseFilterText = preferences?.filterSpecification?.filterText?.toLocaleLowerCase()
-    const filteredSortedData =
+    const filteredSortedData = (
         preferences?.filterSpecification?.columnKey && preferences?.filterSpecification?.filterText
             ? sortedData.filter(
                   (datum) =>
@@ -105,6 +109,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                           .includes(lowerCaseFilterText)
               )
             : sortedData
+    ).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
     const handleHeaderClick = (_event: ReactMouseEvent<unknown>, clickedHeaderId: string) => {
         if (clickedHeaderId !== sorting.columnKey) {
@@ -296,13 +301,10 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
         )
     }
 
-    function getTableRow(
-        project: Project,
-        columnKey: string,
-        allowSharing: boolean,
-        allowDelete: boolean,
-        idx: number
-    ) {
+    function getTableRow(project: Project, idx: number) {
+        const {allowDelete, allowSharing} = getAllowedActions(project)
+        const columnKey = sorting?.columnKey
+
         return (
             <TableRow
                 hover={true}
@@ -379,9 +381,8 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                 </TableCell>
                 <TableCell // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     id={`project-${project.id}-actions`}
-                    align="left"
                 >
-                    <div // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    <Box // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         id={`project-${project.id}-actions-div`}
                         style={{
                             display: "flex",
@@ -390,8 +391,10 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                         }}
                     >
                         {allowSharing ? getSharingIcon(project) : null}
-                        {allowDelete ? getDeleteIcon(project, idx) : null}
-                    </div>
+                        {allowDelete ? (
+                            <Box sx={{marginLeft: "0.5rem", display: "flex"}}>{getDeleteIcon(project, idx)}</Box>
+                        ) : null}
+                    </Box>
                 </TableCell>
             </TableRow>
         )
@@ -407,25 +410,67 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                 }}
             >
                 {filteredSortedData.map((project, idx) => {
-                    const {allowDelete, allowSharing} = getAllowedActions(project)
-                    const columnKey = sorting?.columnKey
-                    return getTableRow(project, columnKey, allowSharing, allowDelete, idx)
+                    return getTableRow(project, idx)
                 })}
             </TableBody>
         )
     }
 
+    function getTablePagination() {
+        const handleChangePage = (_event: unknown, newPage: number) => {
+            setPage(newPage)
+        }
+
+        const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
+            setRowsPerPage(parseInt(event.target.value, 10))
+            setPage(0)
+        }
+
+        return (
+            <TablePagination // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                id={`${id}-pagination`}
+                rowsPerPageOptions={[5, 10, 15, 20, 50, 100, {label: "All", value: -1}]}
+                component="div"
+                count={projectList.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                showFirstButton={true}
+                showLastButton={true}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                // Hack to make the pagination items line up. Maybe still some bootstrap classes lurking or
+                // interference from TW?
+                // Reference: https://github.com/mui/mui-x/issues/4076#issuecomment-1262736377
+                sx={{
+                    ".MuiTablePagination-displayedRows": {
+                        "margin-top": "1em",
+                        "margin-bottom": "1em",
+                    },
+                    ".MuiTablePagination-displayedRows, .MuiTablePagination-selectLabel": {
+                        "margin-top": "1em",
+                        "margin-bottom": "1em",
+                    },
+                }}
+            />
+        )
+    }
+
     return (
-        <Table
-            id={id}
-            sx={{
-                cursor: "pointer",
-                boxShadow: 10,
-            }}
-            size="medium"
-        >
-            {getTableHead()}
-            {getTableBody()}
-        </Table>
+        <Box id={id}>
+            {/* Show pagination at the top as well as bottom for long pages with lots of rows */}
+            {rowsPerPage >= 15 && getTablePagination()}
+            <Table
+                id={`${id}-table`}
+                sx={{
+                    cursor: "pointer",
+                    boxShadow: 10,
+                }}
+                size="medium"
+            >
+                {getTableHead()}
+                {getTableBody()}
+            </Table>
+            {getTablePagination()}
+        </Box>
     )
 }
