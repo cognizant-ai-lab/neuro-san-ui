@@ -17,8 +17,8 @@ export const enum DisplayOption {
  * Specification for sorting a column. Includes the column name and sort order (direction).
  */
 export interface SortSpecification {
-    columnKey: string
-    sortOrder: SortOrder
+    readonly columnKey: string
+    readonly sortOrder: SortOrder
 }
 
 /**
@@ -33,10 +33,10 @@ export interface FilterSpecification {
  * Preferences for the project page.
  */
 export interface ProjectPagePreferences {
-    readonly sorting: SortSpecification
-    readonly itemsPerPage: number
+    readonly rowsPerPage: number
     readonly showAsOption: ShowAsOption
     readonly displayOption: DisplayOption
+    readonly sortSpecification: SortSpecification
     readonly filterSpecification: FilterSpecification
 }
 

@@ -1,7 +1,11 @@
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp"
+import ClearIcon from "@mui/icons-material/Clear"
 import SearchIcon from "@mui/icons-material/Search"
 import Box from "@mui/material/Box"
+import IconButton from "@mui/material/IconButton"
+import InputAdornment from "@mui/material/InputAdornment"
+import Popover from "@mui/material/Popover"
 import Table from "@mui/material/Table"
 import TableBody from "@mui/material/TableBody"
 import TableCell from "@mui/material/TableCell"
@@ -9,12 +13,28 @@ import TableHead from "@mui/material/TableHead"
 import TablePagination from "@mui/material/TablePagination"
 import TableRow from "@mui/material/TableRow"
 import TableSortLabel from "@mui/material/TableSortLabel"
+import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import {NextRouter} from "next/router"
-import {ChangeEvent, ReactElement, MouseEvent as ReactMouseEvent, useMemo, useState} from "react"
+import {
+    ChangeEvent,
+    Dispatch,
+    ReactElement,
+    MouseEvent as ReactMouseEvent,
+    SetStateAction,
+    useMemo,
+    useState,
+} from "react"
 
-import {DisplayOption, FilterSpecification, ProjectPagePreferences, ShowAsOption, SortSpecification} from "./types"
+import {FilterSpecification, ProjectPagePreferences, SortSpecification} from "./types"
 import {Project} from "../../controller/projects/types"
+
+interface HeadCell {
+    dataIndex: string
+    title: string
+    sortable?: boolean
+    filterable?: boolean
+}
 
 interface ProjectsTableProps {
     readonly id: string
@@ -23,21 +43,52 @@ interface ProjectsTableProps {
     readonly getAllowedActions: (project: Project) => {allowDelete: boolean; allowSharing: boolean}
     readonly getSharingIcon: (project: Project) => ReactElement
     readonly getDeleteIcon: (project: Project, idx: number) => ReactElement
-    readonly preferences: ProjectPagePreferences
-    readonly filterText: string
-    readonly filterColumn: string
-
-    // setPreferences is a React state setter that takes either a value as input or a function argument
-    readonly setPreferences: (
-        value: (currentPreferences: ProjectPagePreferences) => {
-            sorting: {columnKey: string; sortOrder: string}
-            readonly itemsPerPage: number
-            readonly showAsOption: ShowAsOption
-            readonly displayOption: DisplayOption
-            readonly filterSpecification: FilterSpecification
-        }
-    ) => void
+    readonly filtering: FilterSpecification
+    readonly setFiltering: Dispatch<SetStateAction<FilterSpecification>>
+    readonly sorting: SortSpecification
+    readonly setSorting: Dispatch<SetStateAction<SortSpecification>>
+    readonly setPreferences: Dispatch<SetStateAction<ProjectPagePreferences>>
+    readonly page: number
+    readonly setPage: Dispatch<SetStateAction<number>>
+    readonly rowsPerPage: number
+    readonly setRowsPerPage: Dispatch<SetStateAction<number>>
 }
+
+// Define the columns for the table
+const HEAD_CELLS: HeadCell[] = [
+    {
+        title: "ID",
+        dataIndex: "id",
+    },
+    {
+        title: "Name",
+        dataIndex: "name",
+        filterable: true,
+    },
+    {
+        title: "Owner",
+        dataIndex: "owner",
+        filterable: true,
+    },
+    {
+        title: "Created at",
+        dataIndex: "created_at",
+    },
+    {
+        title: "Last edited by",
+        dataIndex: "lastEditedBy",
+        filterable: true,
+    },
+    {
+        title: "Updated at",
+        dataIndex: "updated_at",
+    },
+    {
+        title: "Actions",
+        dataIndex: "actions",
+        sortable: false,
+    },
+]
 
 /**
  * Get the table of projects for the "List" view
@@ -45,29 +96,54 @@ interface ProjectsTableProps {
  * @returns React element representing the project table
  */
 export default function ProjectsTable(props: ProjectsTableProps): ReactElement<ProjectsTableProps> {
-    // Extract props
+    // Extract all props
     const {
         id,
         projectList,
-        preferences,
-        setPreferences,
         router,
         getAllowedActions,
         getSharingIcon,
         getDeleteIcon,
-        filterColumn,
-        filterText,
+        filtering,
+        setFiltering,
+        sorting,
+        setSorting,
+        setPreferences,
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
     } = props
 
-    // For sorting -- column and order
-    const [sorting, setSorting] = useState<SortSpecification>({
-        columnKey: preferences?.sorting?.columnKey || "updated_at",
-        sortOrder: preferences?.sorting?.sortOrder || "desc",
-    })
+    // For handling Popover.
 
-    // For pagination
-    const [rowsPerPage, setRowsPerPage] = useState<number>(preferences?.itemsPerPage || 15)
-    const [page, setPage] = useState<number>(0)
+    // Anchor of element that wants the Popover
+    const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null)
+
+    const handleClick = (event: ReactMouseEvent<SVGSVGElement>, columnId: string) => {
+        event.stopPropagation()
+        setAnchorEl((current) => (!current ? event.currentTarget : null))
+
+        setFiltering((currentFiltering: FilterSpecification) => ({
+            ...currentFiltering,
+            columnKey: columnId,
+        }))
+
+        setPreferences((currentPreferences: ProjectPagePreferences) => ({
+            ...currentPreferences,
+            filterSpecification: {
+                ...currentPreferences.filterSpecification,
+                columnKey: columnId,
+            },
+        }))
+    }
+
+    const handleClose = () => {
+        setAnchorEl(null)
+    }
+
+    const isOpen = Boolean(anchorEl)
+    const popoverId = open ? "filter-column-popover" : undefined
 
     // Sort the project list based on the column and order
     const sortedData = useMemo(
@@ -87,7 +163,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
                     // HACK: since the backend sends us dates as strings, we have to encode knowledge about fields types
                     // here. For example, "updated_at": "5/26/2023, 1:07:24 PM". The only ways to know this is a date
-                    // would be to attempt to parse it as such (leading to false positives...) or use our intrinstic
+                    // would be to attempt to parse it as such (leading to false positives...) or use our intrinsic
                     // knowledge of which type each field name is.
                     switch (sorting.columnKey) {
                         case "name":
@@ -111,65 +187,16 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
     )
 
     // Apply the filter if there is one. We only start filtering at 2 characters+
-    const lowerCaseFilterText = filterText?.toLocaleLowerCase()
+    const lowerCaseFilterText = filtering.filterText?.toLocaleLowerCase()
     const filteredSortedData = (
-        filterColumn && filterText
+        filtering.columnKey && filtering.filterText
             ? sortedData.filter(
                   (datum) =>
-                      filterText.length < 2 || datum[filterColumn].toLocaleLowerCase().includes(lowerCaseFilterText)
+                      filtering.filterText.length < 2 ||
+                      datum[filtering.columnKey].toLocaleLowerCase().includes(lowerCaseFilterText)
               )
             : sortedData
     ).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-
-    // const getFilterDialog = (columnName) => (
-    //     <div
-    //         id="input-filter-div"
-    //         style={{padding: 8, display: "flex"}}
-    //     >
-    //         <Input
-    //             id="filter-input"
-    //             placeholder={`Search ${columnName}`}
-    //             value={filterText}
-    //             onChange={(e) => setFilterText(e.target.value ? e.target.value : "")}
-    //             style={{width: 188, marginBottom: 8, display: "block"}}
-    //             // onPressEnter={(e) => handleKeyPress(e, confirm)}
-    //             onBlur={() => {
-    //                 // save to preferences
-    //                 setPreferences((currentPreferences: ProjectPagePreferences) => ({
-    //                     ...currentPreferences,
-    //                     filterSpecification: {
-    //                         columnKey: columnName,
-    //                         filterText: filterText,
-    //                     },
-    //                 }))
-    //             }}
-    //         />
-    //         <Button
-    //             id="filter-clear-button"
-    //             style={{
-    //                 backgroundColor: "transparent",
-    //                 border: "none",
-    //                 position: "absolute",
-    //                 right: 0,
-    //                 opacity: filterText ? "100%" : "25%",
-    //                 cursor: filterText ? "pointer" : "default",
-    //             }}
-    //             onClick={() => {
-    //                 // Update preferences
-    //                 setPreferences((currentPreferences: ProjectPagePreferences) => ({
-    //                     ...currentPreferences,
-    //                     filterSpecification: {
-    //                         columnKey: "",
-    //                         filterText: "",
-    //                     },
-    //                 }))
-    //                 setFilterText("")
-    //             }}
-    //         >
-    //             X
-    //         </Button>
-    //     </div>
-    // )
 
     const handleHeaderClick = (_event: ReactMouseEvent<unknown>, clickedHeaderId: string) => {
         if (clickedHeaderId !== sorting.columnKey) {
@@ -182,7 +209,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
             // Record in persisted preferences
             setPreferences((currentPreferences: ProjectPagePreferences) => ({
                 ...currentPreferences,
-                sorting: {
+                sortSpecification: {
                     columnKey: clickedHeaderId,
                     sortOrder: "asc",
                 },
@@ -193,62 +220,20 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
             setSorting({
                 ...sorting,
+
                 sortOrder: newSortOrder,
             })
 
             // Record in persisted preferences
             setPreferences((currentPreferences: ProjectPagePreferences) => ({
                 ...currentPreferences,
-                sorting: {
+                sortSpecification: {
                     ...sorting,
                     sortOrder: newSortOrder,
                 },
             }))
         }
     }
-
-    interface HeadCell {
-        dataIndex: string
-        title: string
-        sortable?: boolean
-        filterable?: boolean
-    }
-
-    // Define the columns for the table
-    const headCells: HeadCell[] = [
-        {
-            title: "ID",
-            dataIndex: "id",
-        },
-        {
-            title: "Name",
-            dataIndex: "name",
-            filterable: true,
-        },
-        {
-            title: "Owner",
-            dataIndex: "owner",
-            filterable: true,
-        },
-        {
-            title: "Created at",
-            dataIndex: "created_at",
-        },
-        {
-            title: "Last edited by",
-            dataIndex: "lastEditedBy",
-            filterable: true,
-        },
-        {
-            title: "Updated at",
-            dataIndex: "updated_at",
-        },
-        {
-            title: "Actions",
-            dataIndex: "actions",
-            sortable: false,
-        },
-    ]
 
     function getTableHead() {
         return (
@@ -261,7 +246,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                         },
                     }}
                 >
-                    {headCells.map((headCell, index) => {
+                    {HEAD_CELLS.map((headCell, index) => {
                         return (
                             <Tooltip
                                 title={`Click to sort ${sorting?.sortOrder === "asc" ? "descending" : "ascending"}`}
@@ -283,7 +268,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                                         lineHeight: "1.0",
                                         borderTopLeftRadius: index === 0 ? "var(--bs-border-radius)" : 0,
                                         borderTopRightRadius:
-                                            index === headCells.length - 1 ? "var(--bs-border-radius)" : 0,
+                                            index === HEAD_CELLS.length - 1 ? "var(--bs-border-radius)" : 0,
                                         // This next part adds the cutesy separator bar between column headers
                                         "&:not(:last-child)::after": {
                                             content: '""',
@@ -366,9 +351,12 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                                                     sx={{
                                                         display: "flex",
                                                         fontSize: "1rem",
-                                                        color: "var(--bs-gray-medium-dark)",
+                                                        color:
+                                                            headCell.dataIndex === filtering.columnKey
+                                                                ? "var(--bs-red)"
+                                                                : "var(--bs-gray-medium-dark)",
                                                     }}
-                                                    onClick={() => console.debug(`Filtering by ${headCell.title}`)}
+                                                    onClick={(event) => handleClick(event, headCell.dataIndex)}
                                                 />
                                             )}
                                         </Box>
@@ -508,7 +496,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
             setPage(0)
             setPreferences((currentPreferences: ProjectPagePreferences) => ({
                 ...currentPreferences,
-                itemsPerPage: newItemsPerPageValue,
+                rowsPerPage: newItemsPerPageValue,
             }))
         }
 
@@ -541,6 +529,68 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
         )
     }
 
+    function getPopover() {
+        return (
+            <Popover
+                id={popoverId}
+                open={isOpen}
+                anchorEl={anchorEl}
+                onClose={handleClose}
+                anchorOrigin={{
+                    vertical: "top",
+                    horizontal: "left",
+                }}
+                sx={{padding: 0, margin: 0, minHeight: 0}}
+            >
+                <TextField
+                    autoFocus={true}
+                    value={filtering.filterText}
+                    label="Filter value"
+                    variant="outlined"
+                    sx={{
+                        width: "15rem",
+                        margin: "0.5rem",
+                    }}
+                    slotProps={{
+                        inputLabel: {
+                            shrink: true,
+                        },
+                        input: {
+                            sx: {borderRadius: "var(--bs-border-radius)", height: "2.5rem"},
+                            endAdornment: (
+                                <InputAdornment
+                                    id="clear-input-adornment"
+                                    position="end"
+                                >
+                                    <IconButton
+                                        id="clear-input-button"
+                                        onClick={() => {
+                                            setFiltering({columnKey: "", filterText: ""})
+                                        }}
+                                        size="large"
+                                        disabled={!filtering.filterText}
+                                        tabIndex={-1}
+                                        edge="end"
+                                    >
+                                        <ClearIcon
+                                            id="clear-input-icon"
+                                            sx={{
+                                                fontSize: "1rem",
+                                                color: "var(--bs-primary)",
+                                                opacity: filtering.filterText ? "100%" : "25%",
+                                            }}
+                                        />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        },
+                    }}
+                    onChange={(event) => setFiltering({...filtering, filterText: event.target.value})}
+                />
+            </Popover>
+        )
+    }
+
     return (
         <Box id={id}>
             {/* Show pagination at the top as well as bottom for long pages with lots of rows */}
@@ -555,6 +605,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                 }}
                 size="medium"
             >
+                {getPopover()}
                 {getTableHead()}
                 {getTableBody()}
             </Table>
