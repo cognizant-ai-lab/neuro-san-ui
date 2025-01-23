@@ -1,4 +1,3 @@
-/* eslint-disable enforce-ids-in-jsx/missing-ids */
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp"
 import ClearIcon from "@mui/icons-material/Clear"
@@ -17,17 +16,9 @@ import TableSortLabel from "@mui/material/TableSortLabel"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import {NextRouter} from "next/router"
-import {
-    ChangeEvent,
-    Dispatch,
-    ReactElement,
-    MouseEvent as ReactMouseEvent,
-    SetStateAction,
-    useMemo,
-    useState,
-} from "react"
+import {ChangeEvent, ReactElement, MouseEvent as ReactMouseEvent, useMemo, useState} from "react"
 
-import {FilterSpecification, ProjectPagePreferences, SortSpecification} from "./types"
+import {FilterSpecification, SortSpecification} from "./types"
 import {Project} from "../../controller/projects/types"
 
 interface HeadCell {
@@ -45,14 +36,13 @@ interface ProjectsTableProps {
     readonly getSharingIcon: (project: Project) => ReactElement
     readonly getDeleteIcon: (project: Project, idx: number) => ReactElement
     readonly filtering: FilterSpecification
-    readonly setFiltering: Dispatch<SetStateAction<FilterSpecification>>
+    readonly setFiltering: (filtering: FilterSpecification) => void
     readonly sorting: SortSpecification
-    readonly setSorting: Dispatch<SetStateAction<SortSpecification>>
-    readonly setPreferences: Dispatch<SetStateAction<ProjectPagePreferences>>
+    readonly setSorting: (sorting: SortSpecification) => void
     readonly page: number
-    readonly setPage: Dispatch<SetStateAction<number>>
+    readonly setPage: (page: number) => void
     readonly rowsPerPage: number
-    readonly setRowsPerPage: Dispatch<SetStateAction<number>>
+    readonly setRowsPerPage: (rowsPerPage: number) => void
 }
 
 // Define the columns for the table
@@ -109,7 +99,6 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
         setFiltering,
         sorting,
         setSorting,
-        setPreferences,
         page,
         setPage,
         rowsPerPage,
@@ -120,31 +109,6 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
     // Anchor of element that wants the Popover
     const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null)
-
-    const handleClick = (event: ReactMouseEvent<SVGSVGElement>, columnId: string) => {
-        event.stopPropagation()
-        setAnchorEl((current) => (!current ? event.currentTarget : null))
-
-        setFiltering((currentFiltering: FilterSpecification) => ({
-            ...currentFiltering,
-            columnKey: columnId,
-        }))
-
-        setPreferences((currentPreferences: ProjectPagePreferences) => ({
-            ...currentPreferences,
-            filterSpecification: {
-                ...currentPreferences.filterSpecification,
-                columnKey: columnId,
-            },
-        }))
-    }
-
-    const handleClose = () => {
-        setAnchorEl(null)
-    }
-
-    const isOpen = Boolean(anchorEl)
-    const popoverId = open ? "filter-column-popover" : undefined
 
     // Sort the project list based on the column and order
     const sortedData = useMemo(
@@ -189,15 +153,18 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
     // Apply the filter if there is one. We only start filtering at 2 characters+
     const lowerCaseFilterText = filtering.filterText?.toLocaleLowerCase()
-    const filteredSortedData = (
-        filtering.columnKey && filtering.filterText
-            ? sortedData.filter(
-                  (datum) =>
-                      filtering.filterText.length < 2 ||
-                      datum[filtering.columnKey].toLocaleLowerCase().includes(lowerCaseFilterText)
-              )
-            : sortedData
-    ).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    const filteredSortedData = useMemo(
+        () =>
+            (filtering.columnKey && filtering.filterText
+                ? sortedData.filter(
+                      (datum) =>
+                          filtering.filterText.length < 2 ||
+                          datum[filtering.columnKey].toLocaleLowerCase().includes(lowerCaseFilterText)
+                  )
+                : sortedData
+            ).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+        [sortedData, filtering, lowerCaseFilterText, page, rowsPerPage]
+    )
 
     const handleHeaderClick = (_event: ReactMouseEvent<unknown>, clickedHeaderId: string) => {
         if (clickedHeaderId !== sorting.columnKey) {
@@ -206,37 +173,28 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                 columnKey: clickedHeaderId,
                 sortOrder: "asc",
             })
-
-            // Record in persisted preferences
-            setPreferences((currentPreferences: ProjectPagePreferences) => ({
-                ...currentPreferences,
-                sortSpecification: {
-                    columnKey: clickedHeaderId,
-                    sortOrder: "asc",
-                },
-            }))
         } else {
             // Toggle sorting order for the same column
             const newSortOrder = sorting.sortOrder === "desc" ? "asc" : "desc"
 
             setSorting({
                 ...sorting,
-
                 sortOrder: newSortOrder,
             })
-
-            // Record in persisted preferences
-            setPreferences((currentPreferences: ProjectPagePreferences) => ({
-                ...currentPreferences,
-                sortSpecification: {
-                    ...sorting,
-                    sortOrder: newSortOrder,
-                },
-            }))
         }
     }
 
     function getTableHeaderCell(headCell: HeadCell, index: number): ReactElement<typeof Tooltip> {
+        const handleTableHeaderClick = (event: ReactMouseEvent<SVGSVGElement>, columnId: string) => {
+            event.stopPropagation()
+            setAnchorEl((current) => (!current ? event.currentTarget : null))
+
+            setFiltering({
+                ...filtering,
+                columnKey: columnId,
+            })
+        }
+
         return (
             <Tooltip
                 title={`Click to sort ${sorting?.sortOrder === "asc" ? "descending" : "ascending"}`}
@@ -343,7 +301,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
                                                 ? "var(--bs-red)"
                                                 : "var(--bs-gray-medium-dark)",
                                     }}
-                                    onClick={(event) => handleClick(event, headCell.dataIndex)}
+                                    onClick={(event) => handleTableHeaderClick(event, headCell.dataIndex)}
                                 />
                             )}
                         </Box>
@@ -494,10 +452,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
             const newItemsPerPageValue = parseInt(event.target.value, 10)
             setRowsPerPage(newItemsPerPageValue)
             setPage(0)
-            setPreferences((currentPreferences: ProjectPagePreferences) => ({
-                ...currentPreferences,
-                rowsPerPage: newItemsPerPageValue,
-            }))
+            setRowsPerPage(newItemsPerPageValue)
         }
 
         return (
@@ -529,13 +484,17 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
         )
     }
 
+    // Generates popup for editing column filter value
     function getPopover() {
+        const isOpen = Boolean(anchorEl)
         return (
             <Popover
-                id={popoverId}
+                id={isOpen ? "filter-column-popover" : undefined}
                 open={isOpen}
                 anchorEl={anchorEl}
-                onClose={handleClose}
+                onClose={() => {
+                    setAnchorEl(null)
+                }}
                 anchorOrigin={{
                     vertical: "top",
                     horizontal: "left",
