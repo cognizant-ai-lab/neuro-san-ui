@@ -328,10 +328,8 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
     function getTableHead() {
         return (
-            <TableHead // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                id={`${id}-table-head`}
-            >
-                <TableRow // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <TableHead id={`${id}-table-head`}>
+                <TableRow
                     id={`${id}-table-head-row`}
                     sx={{
                         "&:first-of-type": {
@@ -453,7 +451,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
 
     function getTableBody() {
         return (
-            <TableBody // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <TableBody
                 id={`${id}-table-body`}
                 sx={{
                     "& .MuiTableCell-root": {
@@ -481,7 +479,7 @@ export default function ProjectsTable(props: ProjectsTableProps): ReactElement<P
         }
 
         return (
-            <TablePagination // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <TablePagination
                 id={`${id}-pagination`}
                 rowsPerPageOptions={[5, 10, 15, 20, 50, 100, {label: "All", value: -1}]}
                 component="div"
