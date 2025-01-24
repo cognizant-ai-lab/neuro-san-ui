@@ -1,4 +1,3 @@
-import {Collapse} from "antd"
 import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
 import {CSSProperties, ReactNode} from "react"
@@ -9,8 +8,7 @@ import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
 import {getLogs} from "../../../controller/agent/agent"
 import {AgentStatus, LogsResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import useEnvironmentStore from "../../../state/environment"
-
-const {Panel} = Collapse
+import {MUIAccordion} from "../../MUIAccordion"
 
 // Regex to extract project and experiment IDs from agent response
 const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
@@ -115,17 +113,20 @@ export const processChatResponse = async (
         // Generate the "experiment complete" item in the agent dialog
         updateOutput(
             <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                <Collapse>
-                    <Panel
-                        id="experiment-generation-complete-panel"
-                        header="Experiment generation complete"
-                        key="Experiment generation complete"
-                        style={{fontSize: "large"}}
-                    >
-                        <p id="experiment-generation-complete-details">{experimentGeneratedMessage(projectUrl)}</p>
-                    </Panel>
-                </Collapse>
+                <MUIAccordion
+                    id="experiment-generation-complete-panel"
+                    items={[
+                        {
+                            title: "Experiment generation complete",
+                            content: (
+                                <p id="experiment-generation-complete-details">
+                                    {experimentGeneratedMessage(projectUrl)}
+                                </p>
+                            ),
+                        },
+                    ]}
+                    sx={{fontSize: "large"}}
+                />
                 <br id="experiment-generation-complete-br" />
             </>
         )
@@ -174,16 +175,12 @@ function processLogLine(logLine: string, highlighterTheme: {[p: string]: CSSProp
     }
 
     return (
-        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        <Collapse
-            style={{marginBottom: "1rem"}}
+        <MUIAccordion
+            id={`${summarySentenceCase}-panel`}
             items={[
                 {
-                    id: `${summarySentenceCase}-panel`,
-                    label: summarySentenceCase,
-                    key: summarySentenceCase,
-                    style: {fontSize: "large"},
-                    children: (
+                    title: summarySentenceCase,
+                    content: (
                         <div id={`${summarySentenceCase}-details`}>
                             {/* If we managed to parse it as JSON, pretty print it */}
                             {repairedJson ? (
@@ -203,6 +200,10 @@ function processLogLine(logLine: string, highlighterTheme: {[p: string]: CSSProp
                     ),
                 },
             ]}
+            sx={{
+                fontSize: "large",
+                marginBottom: "1rem",
+            }}
         />
     )
 }

@@ -295,8 +295,8 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                             <u id={`${flowPrefix}-hide-advanced-settings${idExtension}`}>Show</u>
                                         )}
                                     </button>
-                                    <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                                        // 2/6/23 DEF - Collapse does not have an id property when compiling
+                                    <Collapse
+                                        id={`${flowPrefix}-basic-settings-collapse${idExtension}`}
                                         in={showAdvanced}
                                         timeout={5}
                                     >

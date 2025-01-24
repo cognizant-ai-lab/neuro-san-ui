@@ -4,13 +4,8 @@
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
 import {Box, Button, CircularProgress, FormControl, FormGroup, FormLabel, Input, MenuItem, styled} from "@mui/material"
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Select from "@mui/material/Select"
 import Tooltip from "@mui/material/Tooltip"
-import Typography from '@mui/material/Typography';
 import NextImage from "next/image"
 import {CSSProperties, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
 import {MdCode, MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
@@ -30,6 +25,7 @@ import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFi
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getTitleBase} from "../../../utils/title"
+import {MUIAccordion} from "../../MUIAccordion"
 import {MUIAlert} from "../../MUIAlert"
 import {LlmChatButton} from "../LlmChatButton"
 import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
@@ -440,22 +436,16 @@ export function OpportunityFinder(): ReactElement {
             previousResponse.current.DataGenerator
 
         updateOutput(
-            <>
-                <Accordion id="initiating-orchestration-accordion" sx={{marginBottom: "1rem"}}>
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        aria-controls="initiating-orchestration-content"
-                        id="initiating-orchestration-accordion-summary"
-                    >
-                        <Typography component="span">Contacting orchestration agents...</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Typography id="initiating-orchestration-details">
-                            {`Query: ${orchestrationQuery}`}
-                        </Typography>
-                    </AccordionDetails>
-                </Accordion>
-            </>
+            <MUIAccordion
+                id="initiating-orchestration-accordion"
+                items={[
+                    {
+                        title: "Contacting orchestration agents...",
+                        content: `Query: ${orchestrationQuery}`,
+                    },
+                ]}
+                sx={{marginBottom: "1rem"}}
+            />
         )
 
         try {

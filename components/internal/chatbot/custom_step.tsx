@@ -1,8 +1,9 @@
 import {ChatMessage} from "@langchain/core/messages"
-import {Collapse} from "antd"
 import httpStatus from "http-status"
 import {Component} from "react"
 import {Loading} from "react-simple-chatbot"
+
+import {MUIAccordion} from "../../MUIAccordion"
 
 // Need to disable some ESlint rules for this module.
 // This is a legacy component and hopefully can be converted to Functional once the ticket mentioned in the class
@@ -32,15 +33,15 @@ const ExpandableSources: React.FC<{sourcesAsList: string}> = ({sourcesAsList}) =
             id="show-sources-div"
             style={{fontSize: "smaller", overflowWrap: "anywhere"}}
         >
-            <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            >
-                <Collapse.Panel // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    header="Show sources"
-                    key={1}
-                >
-                    {sourcesAsList ?? "No sources found"}
-                </Collapse.Panel>
-            </Collapse>
+            <MUIAccordion
+                id="initiating-orchestration-accordion"
+                items={[
+                    {
+                        title: "Show sources",
+                        content: sourcesAsList ?? "No sources found",
+                    },
+                ]}
+            />
         </div>
     )
 }

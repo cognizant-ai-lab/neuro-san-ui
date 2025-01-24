@@ -29,6 +29,7 @@ import {getFileName, splitFilename, toSafeFilename} from "../../utils/file"
 import {empty} from "../../utils/objects"
 import {ConfirmationModal} from "../confirmationModal"
 import {InfoTip} from "../infotip"
+import {MUIAccordion} from "../MUIAccordion"
 import {NotificationType, sendNotification} from "../notification"
 
 const debug = debugModule("newProject")
@@ -192,22 +193,22 @@ export default function NewProject(props: NewProps) {
                         >
                             {getFileUploadForm()}
                         </Radio>
-                        <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        // Collapse does not have an id property
-                        >
-                            <Panel
-                                key="advanced_data_source"
-                                id="advanced_data_source_panel"
-                                header="Advanced"
-                            >
-                                <Radio
-                                    id="s3-file-radio"
-                                    value={s3Option}
-                                >
-                                    {getS3DataForm()}
-                                </Radio>
-                            </Panel>
-                        </Collapse>
+                        <MUIAccordion
+                            id="advanced_data_source_panel"
+                            items={[
+                                {
+                                    title: "Advanced",
+                                    content: (
+                                        <Radio
+                                            id="s3-file-radio"
+                                            value={s3Option}
+                                        >
+                                            {getS3DataForm()}
+                                        </Radio>
+                                    ),
+                                },
+                            ]}
+                        />
                     </Space>
                 </Radio.Group>
             </Panel>
@@ -886,8 +887,10 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
     return (
         <>
             <Container id={propsId}>
+                {/* TODO: bit more complex, expand icon end, and accordion so only one open, and
+                    default open one */}
                 <Collapse // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    // 2/6/23 DEF - Collapse does not have an id property when compiling
+                    // id={`${propsId}-collapse`}
                     accordion
                     expandIconPosition="end"
                     defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
