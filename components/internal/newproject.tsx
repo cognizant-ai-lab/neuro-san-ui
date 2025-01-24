@@ -121,8 +121,7 @@ export default function NewProject(props: NewProps) {
                         }}
                         onClick={createDataSourceAndDataTag}
                     >
-                        {`${4 + startIndexOffset}. ${isNewProject
-                            ? "Create project" : "Create data profile"}`}
+                        {`${4 + startIndexOffset}. ${isNewProject ? "Create project" : "Create data profile"}`}
                     </Button>
                 </span>
             </Tooltip>
@@ -145,11 +144,7 @@ export default function NewProject(props: NewProps) {
                                 <span id="tag-your-data-header">{`${3 + startIndexOffset}. Tag your Data`}</span>
                             </Tooltip>
                         ),
-                        content: (
-                            <>
-                                {profileTable}
-                            </>
-                        ),
+                        content: <>{profileTable}</>,
                         disabled: !enabledDataTagSection,
                     },
                 ]}
@@ -167,7 +162,9 @@ export default function NewProject(props: NewProps) {
                         title: (
                             <Tooltip
                                 id="create-your-data-source-header-tooltip"
-                                title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
+                                title={
+                                    enabledDataSourceSection ? "" : "Please enter project name and description first"
+                                }
                                 placement="left-start"
                             >
                                 <span id="create-your-data-source-header">
@@ -227,11 +224,7 @@ export default function NewProject(props: NewProps) {
                 key={projectDetailsPanelKey}
                 items={[
                     {
-                        title: (
-                            <span id="project-details-header">
-                                1. Project Details
-                            </span>
-                        ),
+                        title: <span id="project-details-header">1. Project Details</span>,
                         content: (
                             <>
                                 <Box
@@ -269,7 +262,7 @@ export default function NewProject(props: NewProps) {
                                         name="description"
                                         label="Description"
                                         placeholder="What are you building?"
-                                        onChange={(event) => 
+                                        onChange={(event) =>
                                             setInputFields({...inputFields, description: event.target.value})
                                         }
                                         sx={{width: "100%"}}
@@ -284,7 +277,7 @@ export default function NewProject(props: NewProps) {
                                     />
                                 </Box>
                             </>
-                        )
+                        ),
                     },
                 ]}
             />

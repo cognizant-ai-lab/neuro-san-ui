@@ -76,7 +76,8 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
 }) => (
     <>
         {items.map(({title, content, disabled = false}, index) => (
-            <Accordion disabled={disabled}
+            <Accordion
+                disabled={disabled}
                 key={`${id}-${index}`} // eslint-disable-line react/no-array-index-key
                 id={`${id}-${index}`}
                 sx={sx}
