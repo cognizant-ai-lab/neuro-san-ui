@@ -81,5 +81,5 @@ export async function sendChatQuery(
     )
 
     const result = await sendLlmRequest(callback, signal, fetchUrl, requestRecord, null)
-    return ChatResponse.fromJSON(result)
+    return ChatResponse.fromPartial(result || {})
 }

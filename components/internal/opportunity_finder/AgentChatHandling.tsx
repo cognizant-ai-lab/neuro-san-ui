@@ -139,13 +139,17 @@ export const processChatResponse = async (
  * @returns An object containing the summary and details parts of the log line
  */
 function splitLogLine(logLine: string) {
-    const logLineElements = logLine.split(LOGS_DELIMITER)
+    if (logLine.includes(LOGS_DELIMITER)) {
+        const logLineElements = logLine.split(LOGS_DELIMITER)
 
-    const logLineSummary = logLineElements[0]
-    const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+        const logLineSummary = logLineElements[0]
+        const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
 
-    const logLineDetails = logLineElements[1]
-    return {summarySentenceCase, logLineDetails}
+        const logLineDetails = logLineElements[1]
+        return {summarySentenceCase, logLineDetails}
+    } else {
+        return {summarySentenceCase: "Agent", logLineDetails: logLine}
+    }
 }
 
 /**

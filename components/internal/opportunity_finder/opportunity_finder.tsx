@@ -14,7 +14,7 @@ import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 
 import {AgentButtons} from "./Agentbuttons"
-import {pollForLogs, processLogLine} from "./AgentChatHandling"
+import {processLogLine} from "./AgentChatHandling"
 import {BYTEDANCE_QUERY} from "./bytedance"
 import {experimentGeneratedMessage} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
@@ -22,7 +22,7 @@ import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {DEFAULT_USER_IMAGE} from "../../../const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/fetch"
-import {AgentStatus, ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
+import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
@@ -35,8 +35,6 @@ import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
 const {Panel} = Collapse
 
 // #region: Constants
-// Interval for polling the agents for logs
-const AGENT_POLL_INTERVAL_MS = 5_000
 
 // Input text placeholders for each agent type
 const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
@@ -188,54 +186,6 @@ export function OpportunityFinder(): ReactElement {
         }
     }, [chatOutput])
 
-    async function pollAgent() {
-        await pollForLogs(
-            currentUser,
-            sessionId.current,
-            {
-                lastLogIndex: lastLogIndexRef.current,
-                setLastLogIndex: (index) => (lastLogIndexRef.current = index),
-                lastLogTime: lastLogTime.current,
-                setLastLogTime: (time) => (lastLogTime.current = time),
-            },
-            {
-                orchestrationAttemptNumber: orchestrationAttemptNumber.current,
-                initiateOrchestration,
-                endOrchestration,
-            },
-            {
-                isAwaitingLlm: isAwaitingLlmRef.current,
-                setIsAwaitingLlm,
-                signal: controller.current?.signal,
-            },
-            (url) => (projectUrl.current = url),
-            updateOutput,
-            highlighterTheme
-        )
-    }
-
-    // Poll the agent for logs when the Orchestration Agent is being used
-    useEffect(() => {
-        if (sessionId.current) {
-            // We have a session ID, so we're in the orchestration process. Start polling the agents for logs.
-            // Set last log time to now() to have something to compare to when we start polling for logs
-            lastLogTime.current = Date.now()
-
-            // Kick off the polling process
-            logPollingIntervalId.current = setInterval(pollAgent, AGENT_POLL_INTERVAL_MS)
-
-            // Cleanup function to clear the interval
-            return () => {
-                if (logPollingIntervalId.current) {
-                    clearInterval(logPollingIntervalId.current)
-                    logPollingIntervalId.current = null
-                }
-            }
-        } else {
-            return undefined
-        }
-    }, [sessionId.current])
-
     /**
      * Handles adding content to the output window.
      * @param node A ReactNode to add to the output window -- text, spinner, etc.
@@ -341,25 +291,25 @@ export function OpportunityFinder(): ReactElement {
             if (currentResponse?.current?.length > 0) {
                 chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
             }
-            // } catch (error) {
-            //     const isAbortError = error instanceof Error && error.name === "AbortError"
-            //
-            //     if (error instanceof Error) {
-            //         // AbortErrors are handled elsewhere
-            //         if (!isAbortError) {
-            //             updateOutput(
-            //                 <MUIAlert
-            //                     id="opp-finder-error-occurred-alert"
-            //                     severity="error"
-            //                 >
-            //                     {`Error occurred: ${error}`}
-            //                 </MUIAlert>
-            //             )
-            //
-            //             // log error to console
-            //             console.error(error)
-            //         }
-            //     }
+        } catch (error) {
+            const isAbortError = error instanceof Error && error.name === "AbortError"
+
+            if (error instanceof Error) {
+                // AbortErrors are handled elsewhere
+                if (!isAbortError) {
+                    updateOutput(
+                        <MUIAlert
+                            id="opp-finder-error-occurred-alert"
+                            severity="error"
+                        >
+                            {`Error occurred: ${error}`}
+                        </MUIAlert>
+                    )
+
+                    // log error to console
+                    console.error(error)
+                }
+            }
         } finally {
             resetState()
         }
@@ -410,7 +360,7 @@ export function OpportunityFinder(): ReactElement {
         },
     ]
 
-    function handleStreamingChunk(chunk: string): void {
+    function handleStreamingReceived(chunk: string): void {
         console.debug(`Received chunk: ${chunk}`)
         let chatResponse: ChatResponse
         try {
@@ -424,19 +374,29 @@ export function OpportunityFinder(): ReactElement {
         const messageType: ChatMessageChatMessageType = chatMessage?.type
 
         // We only know how to handle AI messages
-        if (messageType !== ChatMessageChatMessageType.AI) {
+        if (messageType !== ChatMessageChatMessageType.AI && messageType !== ChatMessageChatMessageType.LEGACY_LOGS) {
+            console.debug(`Received message of type ${messageType}, ignoring`)
             return
         }
 
         // Check for termination
         let chatMessageJson = null
         try {
-            chatMessageJson = JSON.parse(chatMessage.text)
+            // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
+            const chatMessageCleaned = chatMessage.text.replace(/```json/gu, "").replace(/```/gu, "")
+
+            chatMessageJson = JSON.parse(chatMessageCleaned)
             if (chatMessageJson.project_id && chatMessageJson.experiment_id) {
+                console.debug("Received experiment generation complete message")
+
+                const baseUrl = window.location.origin
+
                 // Set the URL for displaying to the user
                 projectUrl.current = new URL(
+                    // want to keep it on a single line for readability
                     // eslint-disable-next-line max-len
-                    `/projects/${chatMessageJson.project_id}/experiments/${chatMessageJson.experiment_id}/?generated=true`
+                    `/projects/${chatMessageJson.project_id}/experiments/${chatMessageJson.experiment_id}/?generated=true`,
+                    baseUrl
                 )
 
                 // Generate the "experiment complete" item in the agent dialog
@@ -463,6 +423,7 @@ export function OpportunityFinder(): ReactElement {
             }
         } catch {
             // Not a JSON object, so we'll just continue on
+            console.debug("Received message is not experiment generation complete message: ", chatMessage.text)
         }
 
         if (chatMessage?.text) {
@@ -523,40 +484,25 @@ export function OpportunityFinder(): ReactElement {
         try {
             setIsAwaitingLlm(true)
 
+            console.debug(">>>>sending chat query to orchestration agent")
             // Send the initial chat query to the server.
             const response: ChatResponse = await sendChatQuery(
                 abortController.signal,
                 orchestrationQuery,
                 currentUser,
-                handleStreamingChunk
+                handleStreamingReceived
             )
-
-            // We expect the response to have status CREATED and to contain the session ID
-            if (response.status !== AgentStatus.CREATED || !response.sessionId) {
-                updateOutput(
-                    <MUIAlert
-                        id="opp-finder-error-occurred-session-not-created-alert"
-                        severity="error"
-                    >
-                        {`Error occurred: session not created. Status: ${response.status}`}
-                    </MUIAlert>
-                )
-
-                endOrchestration()
-            } else {
-                sessionId.current = response.sessionId
-            }
-            // } catch (e) {
-            //     updateOutput(
-            //         <MUIAlert
-            //             id="opp-finder-error-occurred-while-interacting-with-agents-alert"
-            //             severity="error"
-            //         >
-            //             {`Internal Error occurred while interacting with agents. Exception: ${e}`}
-            //         </MUIAlert>
-            //     )
-            //     endOrchestration()
-            //     throw e
+            console.debug(">>>>query returned, response:", response)
+        } catch (e) {
+            updateOutput(
+                <MUIAlert
+                    id="opp-finder-error-occurred-while-interacting-with-agents-alert"
+                    severity="error"
+                >
+                    {`Internal Error occurred while interacting with agents. Exception: ${e}`}
+                </MUIAlert>
+            )
+            endOrchestration()
         } finally {
             setIsAwaitingLlm(false)
         }
