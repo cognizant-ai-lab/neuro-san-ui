@@ -52,14 +52,19 @@ export function sendNotification(
     }
 
     // Use some minor customization to be able to inject ids for testing
-    const spanId = `notification-message-${variantType}`
-    const messageSpan = <span id={spanId}>{message}</span>
+    const messageForId = message
+        .replaceAll(" ", "-")
+        .replace(/[^a-zA-Z0-9 -]/gu, "")
+        .toLowerCase()
+    const baseId = `notification-message-${messageForId}-${NotificationType[variantType]}`
+    const messageSpan = <span id={`${baseId}-span`}>{message}</span>
 
     enqueueSnackbar(messageSpan, {
         anchorOrigin: placement,
         autoHideDuration: duration,
         // @ts-expect-error - Could "declare module" to fix this
         description,
+        key: baseId,
         variant: NotificationType[variantType] as VariantType,
     })
 }
