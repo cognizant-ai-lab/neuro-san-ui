@@ -1,12 +1,15 @@
 import Box from "@mui/material/Box"
 import CircularProgress from "@mui/material/CircularProgress"
+import FormControlLabel from "@mui/material/FormControlLabel"
 import Grid from "@mui/material/Grid2"
+import Radio from "@mui/material/Radio"
+import RadioGroup from "@mui/material/RadioGroup"
 import Tab from "@mui/material/Tab"
 import Tabs from "@mui/material/Tabs"
-import {Radio, RadioChangeEvent, Space} from "antd"
+import Typography from "@mui/material/Typography"
 import Link from "next/link"
 import {NextRouter, useRouter} from "next/router"
-import {ReactElement, ReactNode, SyntheticEvent, useEffect, useState} from "react"
+import {ChangeEvent as ReactChangeEvent, ReactElement, ReactNode, SyntheticEvent, useEffect, useState} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
@@ -713,70 +716,75 @@ export default function RunPage(props: RunProps): ReactElement {
                         id="radio-column"
                         size={1}
                         sx={{
-                            marginLeft: "1rem",
+                            marginLeft: "2rem",
                             display: "flex",
                             flexDirection: "column",
-                            alignItems: "center",
+                            // alignItems: "center",
                         }}
                     >
-                        <Radio.Group
+                        <RadioGroup
                             id="radio-group"
                             value={selectedRulesFormat}
-                            onChange={(e: RadioChangeEvent) => {
-                                setSelectedRulesFormat(e.target.value)
+                            onChange={(event: ReactChangeEvent<HTMLInputElement>) => {
+                                setSelectedRulesFormat(event.target.value)
                             }}
                         >
-                            <Space
-                                id="radio-space"
-                                direction="vertical"
-                                size="middle"
+                            <div
+                                id="radio-raw-help"
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}
                             >
-                                <div
-                                    id="radio-raw-help"
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <Radio
-                                        id="radio-raw"
-                                        value="raw"
-                                    >
-                                        Raw
-                                    </Radio>
-                                    <InfoTip
-                                        id="raw-tooltip"
-                                        info={
-                                            "View rules exactly as they were generated during the " +
-                                            "evolutionary search."
-                                        }
-                                    />
-                                </div>
-                                <div
-                                    id="radio-raw-help"
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <Radio
-                                        id="radio-interpreted"
-                                        value="interpreted"
-                                    >
-                                        Interpreted
-                                    </Radio>
-                                    <InfoTip
-                                        id="interpreted-tooltip"
-                                        info={
-                                            "View rules as interpreted by an LLM. (large language model) " +
-                                            "to express them in a more human-readable format."
-                                        }
-                                    />
-                                </div>
-                            </Space>
-                        </Radio.Group>
+                                <FormControlLabel
+                                    id="radio-raw-label"
+                                    value="raw"
+                                    control={<Radio id="radio-raw" />}
+                                    label={
+                                        <Typography
+                                            id="raw-label"
+                                            fontSize="0.8rem"
+                                        >
+                                            Raw
+                                        </Typography>
+                                    }
+                                />
+                                <InfoTip
+                                    id="raw-tooltip"
+                                    info="View rules exactly as they were generated during the evolutionary search."
+                                />
+                            </div>
+                            <div
+                                id="radio-raw-help"
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <FormControlLabel
+                                    id="radio-interpreted-label"
+                                    value="interpreted"
+                                    control={<Radio id="radio-interpreted" />}
+                                    label={
+                                        <Typography
+                                            id="interpreted-label"
+                                            fontSize="0.8rem"
+                                        >
+                                            Interpreted
+                                        </Typography>
+                                    }
+                                />
+                                <InfoTip
+                                    id="interpreted-tooltip"
+                                    info={
+                                        "View rules as interpreted by an LLM. (large language model) " +
+                                        "to express them in a more human-readable format."
+                                    }
+                                />
+                            </div>
+                        </RadioGroup>
                     </Grid>
                 </Grid>
             </CustomTabPanel>
