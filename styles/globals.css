@@ -303,20 +303,6 @@ body {
     font-family: "Gellix", sans-serif;
 }
 
-.ant-drawer-header {
-    background: var(--bs-primary) !important;
-}
-
-.ant-drawer-title,
-.ant-drawer-close {
-    color: var(--bs-white) !important;
-}
-
-.ant-drawer-body,
-.ant-drawer-body > .container {
-    padding: 0 !important;
-}
-
 .input-field {
     background-color: var(--bs-gray-lighter);
 }
@@ -325,60 +311,7 @@ body {
     width: 200px !important;
 }
 
-/* For antd tables */
-.ant-table-thead .ant-table-cell {
-    background-color: #2f78c4 !important;
-    color: white !important;
-}
 
-.antd-row-hover:hover {
-    cursor: pointer;
-}
-
-/* Fix for antd table column sorting icons. There are other rules in this stylesheet that are very general
-and apply to all SVGs, so we need to be more specific here.
- */
-.ant-table-column-sorter-up.active svg {
-    fill: white;
-}
-
-.ant-table-column-sorter-up svg {
-    fill: gray;
-}
-
-.ant-table-column-sorter-down.active svg {
-    fill: white;
-}
-
-.ant-table-column-sorter-down svg {
-    fill: gray;
-}
-
-/*
-Work-around for antd styling weirdness around Modal confirm buttons. Suddenly with new antd version the "OK" button
-in Modals was showing up as white on white, making it impossible to see.
-
-Possibly related to this: https://github.com/ant-design/ant-design/issues/40576
-
-Rather than using the complex wrapping-with-App and configurationProvider solutions suggested there, we override
-the style here to get what we want and expect.
-
-See UN-1180
- */
-.ant-btn-primary {
-    color: var(--bs-white) !important;
-    background-color: var(--bs-link-color) !important;
-}
-
-.ant-btn-primary:hover {
-    color: var(--bs-white) !important;
-    background-color: var(--bs-link-hover-color) !important;
-}
-
-.ant-drawer-body,
-.ant-drawer-body > .container {
-    padding: 0;
-}
 .border-black {
     border-color: var(--bs-gray-light) !important;
 }
@@ -432,27 +365,6 @@ h3 svg,
 button svg,
 span svg {
     color: var(--bs-secondary);
-}
-
-/* For antd alerts */
-div.ant-alert span svg {
-    color: inherit;
-}
-
-.bp4-card p {
-    color: var(--bs-primary) !important;
-}
-
-.bp4-card p:last-of-type {
-    margin: 0;
-}
-
-.bp4-card span svg {
-    color: var(--bs-secondary) !important;
-}
-.bp4-card button svg {
-    bottom: 1rem;
-    position: relative;
 }
 
 svg.react-flow__background #pattern-react-flow circle {

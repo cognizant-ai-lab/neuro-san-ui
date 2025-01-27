@@ -1,5 +1,3 @@
-import "antd/dist/reset.css"
-
 import "reactflow/dist/style.css"
 
 import "../styles/updatenode.css"
