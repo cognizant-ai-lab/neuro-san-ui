@@ -1,14 +1,9 @@
 // eslint-disable-next-line no-shadow
 import {fireEvent, render, screen} from "@testing-library/react"
 
-import {
-    pollForLogs,
-    processChatResponse,
-    processNewLogs,
-} from "../../../../components/internal/opportunity_finder/AgentChatHandling"
+import {processChatResponse, processNewLogs} from "../../../../components/internal/opportunity_finder/AgentChatHandling"
 import {retry} from "../../../../components/internal/opportunity_finder/common"
-import {getLogs} from "../../../../controller/agent/agent"
-import {AgentStatus, LogsResponse} from "../../../../generated/neuro_san/api/grpc/agent"
+import {LogsResponse} from "../../../../generated/neuro_san/api/grpc/agent"
 
 const mockSyntaxHighlighter = jest.fn(({children}) => <div>{children}</div>)
 
@@ -133,52 +128,6 @@ describe("processNewLogs", () => {
 
         const newOutputItems = processNewLogs(response, logHandling, {})
         expect(newOutputItems.length).toBe(0)
-    })
-})
-
-describe("pollForLogs", () => {
-    it("Should bail if LLM interaction is already in progress", async () => {
-        await pollForLogs(
-            null,
-            null,
-            null,
-            null,
-            {
-                isAwaitingLlm: true,
-                setIsAwaitingLlm: null,
-                signal: null,
-            },
-            null,
-            null,
-            null
-        )
-
-        expect(getLogs).not.toHaveBeenCalled()
-    })
-
-    it("Should call retry if agents return error", async () => {
-        const mockLogsResponse: LogsResponse = LogsResponse.fromPartial({
-            status: AgentStatus.NOT_FOUND,
-        })
-
-        ;(getLogs as jest.Mock).mockResolvedValue(mockLogsResponse)
-
-        await pollForLogs(
-            null,
-            null,
-            null,
-            null,
-            {
-                isAwaitingLlm: false,
-                setIsAwaitingLlm: jest.fn(),
-                signal: null,
-            },
-            null,
-            null,
-            null
-        )
-
-        expect(retry).toHaveBeenCalled()
     })
 })
 

@@ -6,8 +6,7 @@ import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {experimentGeneratedMessage, OrchestrationHandling, retry} from "./common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
-import {getLogs} from "../../../controller/agent/agent"
-import {AgentStatus, LogsResponse} from "../../../generated/neuro_san/api/grpc/agent"
+import {LogsResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import useEnvironmentStore from "../../../state/environment"
 
 const {Panel} = Collapse
@@ -21,41 +20,11 @@ const AGENT_ERROR_REGEX = /```json(?<errorBlock>[\s\S]*?)```/u
 // Delimiter for separating logs from agents
 const LOGS_DELIMITER = ">>>"
 
-// Maximum inactivity time since last agent response before we give up
-const MAX_AGENT_INACTIVITY_SECS = 2 * 60
-
 interface LogHandling {
     lastLogIndex: number
     setLastLogIndex: (newIndex: number) => void
     lastLogTime: number
     setLastLogTime: (newTime: number) => void
-}
-
-interface LlmInteraction {
-    isAwaitingLlm: boolean
-    setIsAwaitingLlm: (newVal: boolean) => void
-    signal: AbortSignal
-}
-
-async function checkAgentTimeout(
-    lastLogTime: number,
-    orchestrationHandling: OrchestrationHandling,
-    updateOutput: (node: ReactNode) => void
-) {
-    // No new logs, check if it's been too long since last log
-    const timeSinceLastLog = Date.now() - lastLogTime
-    const isTimeout = lastLogTime && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
-    if (isTimeout) {
-        const baseMessage = "Error occurred: exceeded wait time for agent response."
-        await retry(
-            `${baseMessage} Retrying...`,
-            `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-            orchestrationHandling,
-            updateOutput
-        )
-    }
-
-    return isTimeout
 }
 
 export const processChatResponse = async (
@@ -129,12 +98,13 @@ export const processChatResponse = async (
                 <br id="experiment-generation-complete-br" />
             </>
         )
-        orchestrationHandling.endOrchestration()
     }
 }
 
 /**
- * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator.
+ * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator. If the delimiter is not
+ * found, the entire log line is treated as the details part. This can happen when it's a "follow-on" message from
+ * an agent we've already heard from.
  * @param logLine The log line to split
  * @returns An object containing the summary and details parts of the log line
  */
@@ -241,60 +211,4 @@ export const processNewLogs = (
     }
 
     return newOutputItems
-}
-
-export const pollForLogs = async (
-    currentUser: string,
-    sessionId: string,
-    logHandling: LogHandling,
-    orchestrationHandling: OrchestrationHandling,
-    llmInteraction: LlmInteraction,
-    setProjectUrl: (url: URL) => void,
-    updateOutput: (node: ReactNode) => void,
-    highlighterTheme: {[p: string]: CSSProperties}
-) => {
-    if (llmInteraction.isAwaitingLlm) {
-        // Already a request in progress
-        return
-    }
-
-    // Poll the agent for logs
-    try {
-        // Set "busy" flag
-        llmInteraction.setIsAwaitingLlm(true)
-
-        const response: LogsResponse = await getLogs(sessionId, llmInteraction.signal, currentUser)
-
-        // Check status from agents
-        // Any status other than "FOUND" means something went wrong
-        if (response.status !== AgentStatus.FOUND) {
-            const baseMessage = "Error occurred: session not found."
-            await retry(
-                `${baseMessage} Retrying...`,
-                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-                orchestrationHandling,
-                updateOutput
-            )
-
-            return
-        }
-
-        // Check for new logs
-        const hasNewLogs = response?.logs?.length > 0 && response.logs.length > logHandling.lastLogIndex + 1
-        if (hasNewLogs) {
-            const newOutputItems = processNewLogs(response, logHandling, highlighterTheme)
-            updateOutput(newOutputItems)
-        } else {
-            const timedOut = await checkAgentTimeout(logHandling.lastLogTime, orchestrationHandling, updateOutput)
-            if (timedOut) {
-                return
-            }
-        }
-
-        if (response.chatResponse) {
-            await processChatResponse(response.chatResponse, orchestrationHandling, setProjectUrl, updateOutput)
-        }
-    } finally {
-        llmInteraction.setIsAwaitingLlm(false)
-    }
 }
