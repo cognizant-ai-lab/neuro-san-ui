@@ -323,9 +323,7 @@ export default function NewProject(props: NewProps) {
                         type="text"
                         label="Project Name"
                         placeholder="My project name"
-                        onChange={(event) =>
-                            setInputFields({...inputFields, projectName: event.target.value})
-                        }
+                        onChange={(event) => setInputFields({...inputFields, projectName: event.target.value})}
                         sx={{width: "100%"}}
                         slotProps={{
                             inputLabel: {
@@ -347,9 +345,7 @@ export default function NewProject(props: NewProps) {
                         name="description"
                         label="Description"
                         placeholder="What are you building?"
-                        onChange={(event) =>
-                            setInputFields({...inputFields, description: event.target.value})
-                        }
+                        onChange={(event) => setInputFields({...inputFields, description: event.target.value})}
                         sx={{width: "100%"}}
                         slotProps={{
                             inputLabel: {
@@ -362,7 +358,7 @@ export default function NewProject(props: NewProps) {
                     />
                 </Box>
             </>
-        )
+        ),
     })
 
     const getDataSourceItem = () => ({
@@ -370,14 +366,10 @@ export default function NewProject(props: NewProps) {
         title: (
             <Tooltip
                 id="create-your-data-source-header-tooltip"
-                title={
-                    enabledDataSourceSection ? "" : "Please enter project name and description first"
-                }
+                title={enabledDataSourceSection ? "" : "Please enter project name and description first"}
                 placement="left-start"
             >
-                <span id="create-your-data-source-header">
-                    {`${2 + startIndexOffset}. Create your data source`}
-                </span>
+                <span id="create-your-data-source-header">{`${2 + startIndexOffset}. Create your data source`}</span>
             </Tooltip>
         ),
         content: (
@@ -871,7 +863,10 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
     // defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
     return (
         <>
-            <Container id={propsId} sx={{marginBottom: "2rem"}}>
+            <Container
+                id={propsId}
+                sx={{marginBottom: "2rem"}}
+            >
                 <MUIAccordion
                     arrowPosition="right"
                     defaultExpandedPanelKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
@@ -881,7 +876,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
                     items={[
                         ...(isNewProject ? [getProjectDetailsItem()] : []),
                         getDataSourceItem(),
-                        getProfileTableItem()
+                        getProfileTableItem(),
                     ]}
                 />
                 {getCreateDataProfileButton()}

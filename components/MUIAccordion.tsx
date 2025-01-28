@@ -29,7 +29,8 @@ const AccordionSummary = styled((props: AccordionSummaryProps) => (
             <ArrowForwardIosSharpIcon
                 id="arrow-forward"
                 sx={{fontSize: "0.9rem"}}
-            />}
+            />
+        }
         {...props}
     />
 ))(({theme}) => ({
@@ -79,7 +80,7 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
     items,
     sx,
 }) => {
-    const [expanded, setExpanded] = useState<number | undefined>(defaultExpandedPanelKey);
+    const [expanded, setExpanded] = useState<number | undefined>(defaultExpandedPanelKey)
 
     const handleChange = (panelKey: number) => () => {
         expandOnlyOnePanel && panelKey && setExpanded(panelKey)
