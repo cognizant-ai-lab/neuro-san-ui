@@ -14,7 +14,7 @@ import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 
 import {AgentButtons} from "./Agentbuttons"
-import {processLogLine} from "./AgentChatHandling"
+import {handleStreamingReceived} from "./AgentChatHandling"
 import {BYTEDANCE_QUERY} from "./bytedance"
 import {experimentGeneratedMessage} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
@@ -23,7 +23,6 @@ import {DEFAULT_USER_IMAGE} from "../../../const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/fetch"
 import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
@@ -43,6 +42,18 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
     DataGenerator: "Generate 1500 rows",
     OrchestrationAgent: "Generate the experiment",
 }
+
+// Syntax themes for code and markdown syntax highlighter
+const SYNTAX_THEMES = [
+    {
+        label: "HLJS Themes",
+        options: HLJS_THEMES,
+    },
+    {
+        label: "Prism Themes",
+        options: PRISM_THEMES,
+    },
+]
 // #endregion: Constants
 
 // #region: Styled Components
@@ -321,89 +332,6 @@ export function OpportunityFinder(): ReactElement {
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    const SYNTAX_THEMES = [
-        {
-            label: "HLJS Themes",
-            options: HLJS_THEMES,
-        },
-        {
-            label: "Prism Themes",
-            options: PRISM_THEMES,
-        },
-    ]
-
-    function handleStreamingReceived(chunk: string): void {
-        console.debug(`Received chunk: ${chunk}`)
-        let chatResponse: ChatResponse
-        try {
-            chatResponse = JSON.parse(chunk).result
-        } catch (e) {
-            console.error(`Error parsing log line: ${e}`)
-            return
-        }
-        const chatMessage: ChatMessage = chatResponse.response
-
-        const messageType: ChatMessageChatMessageType = chatMessage?.type
-
-        // We only know how to handle AI messages
-        if (messageType !== ChatMessageChatMessageType.AI && messageType !== ChatMessageChatMessageType.LEGACY_LOGS) {
-            console.debug(`Received message of type ${messageType}, ignoring`)
-            return
-        }
-
-        // Check for termination
-        let chatMessageJson = null
-        try {
-            // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
-            const chatMessageCleaned = chatMessage.text.replace(/```json/gu, "").replace(/```/gu, "")
-
-            chatMessageJson = JSON.parse(chatMessageCleaned)
-            if (chatMessageJson.project_id && chatMessageJson.experiment_id) {
-                console.debug("Received experiment generation complete message")
-
-                const baseUrl = window.location.origin
-
-                // Set the URL for displaying to the user
-                projectUrl.current = new URL(
-                    // want to keep it on a single line for readability
-                    // eslint-disable-next-line max-len
-                    `/projects/${chatMessageJson.project_id}/experiments/${chatMessageJson.experiment_id}/?generated=true`,
-                    baseUrl
-                )
-
-                // Generate the "experiment complete" item in the agent dialog
-                updateOutput(
-                    <>
-                        {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                        <Collapse>
-                            <Panel
-                                id="experiment-generation-complete-panel"
-                                header="Experiment generation complete"
-                                key="Experiment generation complete"
-                                style={{fontSize: "large"}}
-                            >
-                                <p id="experiment-generation-complete-details">
-                                    {experimentGeneratedMessage(projectUrl.current)}
-                                </p>
-                            </Panel>
-                        </Collapse>
-                        <br id="experiment-generation-complete-br" />
-                    </>
-                )
-                setIsAwaitingLlm(false)
-                return
-            }
-        } catch {
-            // Not a JSON object, so we'll just continue on
-            console.debug("Received message is not experiment generation complete message: ", chatMessage.text)
-        }
-
-        if (chatMessage?.text) {
-            const newOutputItem = processLogLine(chatMessage.text, highlighterTheme)
-            updateOutput(newOutputItem)
-        }
-    }
-
     /**
      * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
      * session ID in a ref for later use.
@@ -461,7 +389,7 @@ export function OpportunityFinder(): ReactElement {
                 abortController.signal,
                 orchestrationQuery,
                 currentUser,
-                handleStreamingReceived
+                (chunk) => handleStreamingReceived(chunk, projectUrl, updateOutput, highlighterTheme, setIsAwaitingLlm)
             )
 
             console.debug("Orchestration response: ", response)
