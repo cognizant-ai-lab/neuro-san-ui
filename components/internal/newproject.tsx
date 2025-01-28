@@ -308,6 +308,7 @@ export default function NewProject(props: NewProps) {
     }
 
     const getProjectDetailsItem = () => ({
+        panelKey: projectDetailsPanelKey,
         title: <span id="project-details-header">1. Project Details</span>,
         content: (
             <>
@@ -365,6 +366,7 @@ export default function NewProject(props: NewProps) {
     })
 
     const getDataSourceItem = () => ({
+        panelKey: dataSourcePanelKey,
         title: (
             <Tooltip
                 id="create-your-data-source-header-tooltip"
@@ -420,6 +422,8 @@ export default function NewProject(props: NewProps) {
     })
 
     const getProfileTableItem = () => ({
+        disabled: !enabledDataTagSection,
+        panelKey: tagYourDataPanelKey,
         title: (
             <Tooltip
                 id="tag-your-data-header-tooltip"
@@ -430,7 +434,6 @@ export default function NewProject(props: NewProps) {
             </Tooltip>
         ),
         content: <>{profileTable}</>,
-        disabled: !enabledDataTagSection,
     })
 
     const getCreateDataProfileButton = () => (
@@ -868,9 +871,11 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
     // defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
     return (
         <>
-            <Container id={propsId}>
+            <Container id={propsId} sx={{marginBottom: "2rem"}}>
                 <MUIAccordion
                     arrowPosition="right"
+                    defaultExpandedPanelKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
+                    expandOnlyOnePanel={true}
                     id="project-details-panel"
                     key={projectDetailsPanelKey}
                     items={[

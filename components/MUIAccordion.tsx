@@ -4,14 +4,14 @@ import MuiAccordion, {AccordionProps} from "@mui/material/Accordion"
 import MuiAccordionDetails from "@mui/material/AccordionDetails"
 import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} from "@mui/material/AccordionSummary"
 import Typography from "@mui/material/Typography"
-import {FC, ReactNode} from "react"
+import {FC, ReactNode, useState} from "react"
 
 // #region: Styled Components
 const Accordion = styled((props: AccordionProps) => (
-    <MuiAccordion // eslint-disable-line enforce-ids-in-jsx/missing-ids
+    <MuiAccordion
         disableGutters
         elevation={0}
-        square
+        id="mui-accordion"
         {...props}
     />
 ))(({theme}) => ({
@@ -23,9 +23,13 @@ const Accordion = styled((props: AccordionProps) => (
 }))
 
 const AccordionSummary = styled((props: AccordionSummaryProps) => (
-    <MuiAccordionSummary // eslint-disable-line enforce-ids-in-jsx/missing-ids
-        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        expandIcon={<ArrowForwardIosSharpIcon sx={{fontSize: "0.9rem"}} />}
+    <MuiAccordionSummary
+        id="mui-accordion-summary"
+        expandIcon={
+            <ArrowForwardIosSharpIcon
+                id="arrow-forward"
+                sx={{fontSize: "0.9rem"}}
+            />}
         {...props}
     />
 ))(({theme}) => ({
@@ -51,13 +55,15 @@ const AccordionDetails = styled(MuiAccordionDetails)(({theme}) => ({
 
 // #region: Types
 interface MUIAccordionItem {
-    title: ReactNode
     content: ReactNode
     disabled?: boolean
+    panelKey?: number
+    title: ReactNode
 }
 
 interface MUIAccordionProps {
     arrowPosition?: "left" | "right"
+    defaultExpandedPanelKey?: number
     expandOnlyOnePanel?: boolean
     id: string
     items: MUIAccordionItem[]
@@ -65,45 +71,58 @@ interface MUIAccordionProps {
 }
 // #endregion: Types
 
-// TODO: write tests once all the features are added
-// TODO: implement expandOnlyOnePanel feature, and also specifiying which section to expand (antd did that with key)
 export const MUIAccordion: FC<MUIAccordionProps> = ({
     arrowPosition = "left",
+    defaultExpandedPanelKey,
     expandOnlyOnePanel = false,
     id,
     items,
     sx,
-}) => (
-    <>
-        {items.map(({title, content, disabled = false}, index) => (
-            <Accordion
-                disabled={disabled}
-                key={`${id}-${index}`} // eslint-disable-line react/no-array-index-key
-                id={`${id}-${index}`}
-                sx={sx}
-            >
-                <AccordionSummary
-                    aria-controls={`${id}-${index}-summary`}
-                    id={`${id}-${index}-summary`}
-                    sx={{flexDirection: arrowPosition === "left" ? "row-reverse" : undefined}}
-                >
-                    <Typography
-                        component="span"
-                        id={`${id}-${index}-summary-typography`}
-                        sx={{fontSize: "0.9rem"}}
+}) => {
+    const [expanded, setExpanded] = useState<number | undefined>(defaultExpandedPanelKey);
+
+    const handleChange = (panelKey: number) => () => {
+        expandOnlyOnePanel && panelKey && setExpanded(panelKey)
+    }
+
+    return (
+        <>
+            {items.map(({title, content, disabled = false, panelKey}, index) => {
+                const baseIdAndIndex = `${id}-${index}`
+
+                return (
+                    <Accordion
+                        disabled={disabled}
+                        expanded={expandOnlyOnePanel && panelKey && expanded === panelKey}
+                        key={`${baseIdAndIndex}-accordion`}
+                        id={`${baseIdAndIndex}-accordion`}
+                        onChange={panelKey && handleChange(panelKey)}
+                        sx={sx}
                     >
-                        {title}
-                    </Typography>
-                </AccordionSummary>
-                <AccordionDetails id={`${id}-${index}-details`}>
-                    <Typography
-                        id={`${id}-${index}-details-typography`}
-                        sx={{fontSize: "0.85rem"}}
-                    >
-                        {content}
-                    </Typography>
-                </AccordionDetails>
-            </Accordion>
-        ))}
-    </>
-)
+                        <AccordionSummary
+                            aria-controls={`${baseIdAndIndex}-summary`}
+                            id={`${baseIdAndIndex}-summary`}
+                            sx={{flexDirection: arrowPosition === "left" ? "row-reverse" : undefined}}
+                        >
+                            <Typography
+                                component="span"
+                                id={`${baseIdAndIndex}-summary-typography`}
+                                sx={{fontSize: "0.9rem"}}
+                            >
+                                {title}
+                            </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails id={`${baseIdAndIndex}-details`}>
+                            <Typography
+                                id={`${baseIdAndIndex}-details-typography`}
+                                sx={{fontSize: "0.85rem"}}
+                            >
+                                {content}
+                            </Typography>
+                        </AccordionDetails>
+                    </Accordion>
+                )
+            })}
+        </>
+    )
+}
