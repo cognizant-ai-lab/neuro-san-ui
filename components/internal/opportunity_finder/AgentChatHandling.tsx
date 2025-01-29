@@ -150,7 +150,7 @@ function splitLogLine(logLine: string) {
 }
 
 /**
- * Process a log line from the agent and format it nicely using the syntax highlighter and antd Collapse component.
+ * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
  * @param logLine The log line to process
  * @param highlighterTheme The theme to use for the syntax highlighter
  * @returns A React component representing the log line (agent message)
@@ -209,7 +209,7 @@ function processLogLine(logLine: string, highlighterTheme: {[p: string]: CSSProp
 }
 
 /**
- * Process new logs from the agent and format them nicely using the syntax highlighter and antd Collapse component.
+ * Process new logs from the agent and format them nicely using the syntax highlighter and Accordion components.
  * @param response The response from the agent network containing potentially new-to-us logs
  * @param logHandling Items related to the log handling process
  * @param highlighterTheme The theme to use for the syntax highlighter

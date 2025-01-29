@@ -36,7 +36,6 @@
         "@mui/icons-material": "6.1.9",
         "@mui/material": "6.1.9",
         "@pinecone-database/pinecone": "2.2.2",
-        "antd": "5.13.1",
         "dagre": "0.8.5",
         "debug": "4.3.4",
         "echarts": "5.5.1",
