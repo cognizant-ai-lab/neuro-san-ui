@@ -4,14 +4,15 @@ import Checkbox from "@mui/material/Checkbox"
 import CircularProgress from "@mui/material/CircularProgress"
 import Container from "@mui/material/Container"
 import FormControlLabel from "@mui/material/FormControlLabel"
+import Radio from "@mui/material/Radio"
+import RadioGroup from "@mui/material/RadioGroup"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
-import {Radio, RadioChangeEvent, Space} from "antd"
 import debugModule from "debug"
 import httpStatus from "http-status"
 import {NextRouter, useRouter} from "next/router"
 import prettyBytes from "pretty-bytes"
-import {useEffect, useRef, useState} from "react"
+import {ChangeEvent, useEffect, useRef, useState} from "react"
 
 import {checkValidity} from "./dataprofile/dataprofileutils"
 import ProfileTable from "./dataprofile/profiletable"
@@ -75,8 +76,8 @@ export default function NewProject(props: NewProps) {
         uploadedFileS3Key: "",
     })
 
-    const s3Option = 1
-    const localFileOption = 2
+    const LOCAL_FILE_OPTION = "LOCAL_FILE_OPTION"
+    const S3_OPTION = "S3_OPTION"
 
     // State variable for project ID
     const [projectId, setProjectId] = useState(props.ProjectID)
@@ -85,7 +86,7 @@ export default function NewProject(props: NewProps) {
     const [profile, setProfile] = useState<Profile | undefined>(null)
 
     // Data source currently chosen by the user using the radio buttons
-    const [chosenDataSource, setChosenDataSource] = useState(localFileOption)
+    const [chosenDataSource, setChosenDataSource] = useState<string>(LOCAL_FILE_OPTION)
 
     // For access to logged in session and current user name
     const {data: session} = useAuthentication()
@@ -104,14 +105,14 @@ export default function NewProject(props: NewProps) {
         const shouldDisableFileUpload = uploadButtonTooltip !== null
 
         return (
-            <Space
-                id="local-file-space"
-                direction="vertical"
-                size="middle"
-            >
+            <>
                 <div
                     id="local-file-upload-div"
-                    style={{display: "inline-flex"}}
+                    style={{
+                        display: "inline-flex",
+                        fontSize: "0.8rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     From a local file
                     <InfoTip
@@ -127,6 +128,7 @@ export default function NewProject(props: NewProps) {
                         name="file"
                         onChange={changeHandler}
                         ref={fileInputRef}
+                        style={{marginBottom: "0.5rem"}}
                         type="file"
                     />
                     {selectedFile ? (
@@ -134,7 +136,7 @@ export default function NewProject(props: NewProps) {
                             id="file-info-div"
                             sx={{
                                 opacity: isUsingLocalFile ? OPAQUE : SEMI_OPAQUE,
-                                fontSize: "90%",
+                                fontSize: "0.8rem",
                             }}
                         >
                             <b id="file-name">Filename:</b> {selectedFile.name}, <b id="file-type">filetype: </b>
@@ -149,10 +151,23 @@ export default function NewProject(props: NewProps) {
                             <b id="file-size">size:</b> {prettyBytes(selectedFile.size)}
                         </Box>
                     ) : (
-                        <p id="select-a-file">Select a file to show details.</p>
+                        <p
+                            id="select-a-file"
+                            style={{
+                                fontSize: "0.8rem",
+                            }}
+                        >
+                            Select a file to show details.
+                        </p>
                     )}
                 </div>
-                <div id="uploading-div">
+                <div
+                    id="uploading-div"
+                    style={{
+                        marginTop: "1rem",
+                        marginBottom: "1rem",
+                    }}
+                >
                     {isUploading ? (
                         <label id="uploading-label">
                             Uploading {selectedFile.name}
@@ -181,7 +196,7 @@ export default function NewProject(props: NewProps) {
                                     <Checkbox
                                         id="agree_checkbox"
                                         checked={fileUploadAcknowledged}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
                                             setFileUploadAcknowledged(e.target.checked)
                                         }}
                                     />
@@ -221,12 +236,12 @@ export default function NewProject(props: NewProps) {
                         </>
                     )}
                 </div>
-            </Space>
+            </>
         )
     }
 
     const getS3DataForm = () => {
-        const shouldDisableS3Create = getS3CreateButtonTooltip() !== null || chosenDataSource === localFileOption
+        const shouldDisableS3Create = getS3CreateButtonTooltip() !== null || chosenDataSource === LOCAL_FILE_OPTION
         return (
             <>
                 <Box
@@ -302,14 +317,24 @@ export default function NewProject(props: NewProps) {
         )
     }
 
+    const getS3DataFormAccordion = () => (
+        <MUIAccordion
+            id="advanced_data_source_panel"
+            items={[
+                {
+                    title: "Advanced",
+                    content: getS3DataForm(),
+                },
+            ]}
+        />
+    )
+
     // Decide which S3Key to use based on radio buttons
     const getS3Key = () => {
-        return chosenDataSource === s3Option ? inputFields.s3Key : inputFields.uploadedFileS3Key
+        return chosenDataSource === S3_OPTION ? inputFields.s3Key : inputFields.uploadedFileS3Key
     }
 
     const getProjectDetailsItem = () => ({
-        panelKey: projectDetailsPanelKey,
-        title: <span id="project-details-header">1. Project Details</span>,
         content: (
             <>
                 <Box
@@ -359,10 +384,33 @@ export default function NewProject(props: NewProps) {
                 </Box>
             </>
         ),
+        title: <span id="project-details-header">1. Project Details</span>,
     })
 
     const getDataSourceItem = () => ({
-        panelKey: dataSourcePanelKey,
+        content: (
+            <RadioGroup
+                id="data-source-radio"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    setChosenDataSource(e.target.value)
+                }}
+                value={chosenDataSource}
+            >
+                <FormControlLabel
+                    control={<Radio id="local-file-radio" />}
+                    id="local-file-form-control-label"
+                    label={getFileUploadForm()}
+                    value={LOCAL_FILE_OPTION}
+                />
+                <FormControlLabel
+                    control={<Radio id="s3-file-radio" />}
+                    id="s3-file-form-control-label"
+                    label={getS3DataFormAccordion()}
+                    value={S3_OPTION}
+                />
+            </RadioGroup>
+        ),
+        disabled: !enabledDataSourceSection,
         title: (
             <Tooltip
                 id="create-your-data-source-header-tooltip"
@@ -372,50 +420,11 @@ export default function NewProject(props: NewProps) {
                 <span id="create-your-data-source-header">{`${2 + startIndexOffset}. Create your data source`}</span>
             </Tooltip>
         ),
-        content: (
-            <Radio.Group
-                id="data-source-radio"
-                onChange={(e: RadioChangeEvent) => {
-                    setChosenDataSource(e.target.value)
-                }}
-                value={chosenDataSource}
-            >
-                <Space
-                    id="s3-file-space"
-                    direction="vertical"
-                    size="large"
-                >
-                    <Radio
-                        id="local-file-radio"
-                        value={localFileOption}
-                    >
-                        {getFileUploadForm()}
-                    </Radio>
-                    <MUIAccordion
-                        id="advanced_data_source_panel"
-                        items={[
-                            {
-                                title: "Advanced",
-                                content: (
-                                    <Radio
-                                        id="s3-file-radio"
-                                        value={s3Option}
-                                    >
-                                        {getS3DataForm()}
-                                    </Radio>
-                                ),
-                            },
-                        ]}
-                    />
-                </Space>
-            </Radio.Group>
-        ),
-        disabled: !enabledDataSourceSection,
     })
 
     const getProfileTableItem = () => ({
+        content: <>{profileTable}</>,
         disabled: !enabledDataTagSection,
-        panelKey: tagYourDataPanelKey,
         title: (
             <Tooltip
                 id="tag-your-data-header-tooltip"
@@ -425,7 +434,6 @@ export default function NewProject(props: NewProps) {
                 <span id="tag-your-data-header">{`${3 + startIndexOffset}. Tag your Data`}</span>
             </Tooltip>
         ),
-        content: <>{profileTable}</>,
     })
 
     const getCreateDataProfileButton = () => (
@@ -783,12 +791,7 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
         }
     }
 
-    // Keys for the various panels
-    const projectDetailsPanelKey = 1
-    const dataSourcePanelKey = 2
-    const tagYourDataPanelKey = 3
-
-    const isUsingLocalFile = chosenDataSource === localFileOption
+    const isUsingLocalFile = chosenDataSource === LOCAL_FILE_OPTION
     const isUsingS3Source = !isUsingLocalFile
 
     const isNewProject = startIndexOffset === 0
@@ -844,8 +847,8 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
         enabledDataSourceSection &&
         !isUploading &&
         profile &&
-        ((chosenDataSource === s3Option && Boolean(inputFields.s3Key)) ||
-            (chosenDataSource === localFileOption && Boolean(inputFields.uploadedFileS3Key)))
+        ((chosenDataSource === S3_OPTION && Boolean(inputFields.s3Key)) ||
+            (chosenDataSource === LOCAL_FILE_OPTION && Boolean(inputFields.uploadedFileS3Key)))
 
     // Tell user why button is disabled
     function getCreateProjectButtonTooltip() {
@@ -859,8 +862,6 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
 
     const propsId = props.id
 
-    // TODO: get this to work
-    // defaultActiveKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
     return (
         <>
             <Container
@@ -869,10 +870,9 @@ allowed file size of ${prettyBytes(MAX_ALLOWED_UPLOAD_SIZE_BYTES)}`
             >
                 <MUIAccordion
                     arrowPosition="right"
-                    defaultExpandedPanelKey={isNewProject ? projectDetailsPanelKey : dataSourcePanelKey}
+                    defaultExpandedPanelKey={1}
                     expandOnlyOnePanel={true}
                     id="project-details-panel"
-                    key={projectDetailsPanelKey}
                     items={[
                         ...(isNewProject ? [getProjectDetailsItem()] : []),
                         getDataSourceItem(),

@@ -103,19 +103,19 @@ describe("MUIAccordion", () => {
 
         // Click to expand the second panel, first panel should collapse
         await user.click(title2)
+        expect(screen.getByText("Content 1")).not.toBeVisible()
         await waitFor(() => {
             expect(screen.getByText("Content 2")).toBeVisible()
         })
-        expect(screen.getByText("Content 1")).not.toBeVisible()
         expect(screen.getByText("Content 3")).not.toBeVisible()
 
         // Click to expand the third panel, second panel should collapse
         await user.click(title3)
-        await waitFor(() => {
-            expect(screen.queryByText("Content 3")).toBeVisible()
-        })
         expect(screen.getByText("Content 1")).not.toBeVisible()
         expect(screen.getByText("Content 2")).not.toBeVisible()
+        await waitFor(() => {
+            expect(screen.getByText("Content 3")).toBeVisible()
+        })
     })
 
     test("handles disabled state correctly for panel two", async () => {

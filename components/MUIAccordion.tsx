@@ -4,7 +4,7 @@ import MuiAccordion, {AccordionProps} from "@mui/material/Accordion"
 import MuiAccordionDetails from "@mui/material/AccordionDetails"
 import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} from "@mui/material/AccordionSummary"
 import Typography from "@mui/material/Typography"
-import {FC, ReactNode, useState} from "react"
+import {FC, ReactNode, useCallback, useState} from "react"
 
 // #region: Styled Components
 const Accordion = styled((props: AccordionProps) => (
@@ -58,7 +58,6 @@ const AccordionDetails = styled(MuiAccordionDetails)(({theme}) => ({
 interface MUIAccordionItem {
     content: ReactNode
     disabled?: boolean
-    panelKey?: number
     title: ReactNode
 }
 
@@ -80,43 +79,61 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
     items,
     sx,
 }) => {
-    const [expanded, setExpanded] = useState<number | undefined>(defaultExpandedPanelKey)
+    const [expanded, setExpanded] = useState<number | false>(defaultExpandedPanelKey)
+    const [expandedList, setExpandedList] = useState<number[]>(defaultExpandedPanelKey ? [defaultExpandedPanelKey] : [])
 
-    const handleChange = (panelKey: number) => () => {
-        expandOnlyOnePanel && panelKey && setExpanded(panelKey)
-    }
+    const handleChange = useCallback(
+        (panelKey: number) => (_event: React.SyntheticEvent, newExpanded: boolean) => {
+            if (expandOnlyOnePanel) {
+                setExpanded(newExpanded ? panelKey : false)
+            } else {
+                setExpandedList((prevExpandedList) =>
+                    newExpanded ? [...prevExpandedList, panelKey] : prevExpandedList.filter((key) => key !== panelKey)
+                )
+            }
+        },
+        [expandOnlyOnePanel]
+    )
+
+    const isExpanded = useCallback(
+        (panelKey: number) => {
+            return expandOnlyOnePanel ? expanded === panelKey : expandedList.includes(panelKey)
+        },
+        [expandOnlyOnePanel, expanded, expandedList]
+    )
 
     return (
         <>
-            {items.map(({title, content, disabled = false, panelKey}, index) => {
-                const baseIdAndIndex = `${id}-${index}`
+            {items.map(({content, disabled = false, title}, index) => {
+                const panelKey = index + 1 // Start with index 1
+                const baseIdAndPanelKey = `${id}-${panelKey}`
 
                 return (
                     <Accordion
                         disabled={disabled}
-                        expanded={expandOnlyOnePanel && panelKey && expanded === panelKey}
-                        key={`${baseIdAndIndex}-accordion`}
-                        id={`${baseIdAndIndex}-accordion`}
-                        onChange={panelKey && handleChange(panelKey)}
+                        expanded={isExpanded(panelKey)}
+                        key={`${baseIdAndPanelKey}-accordion`}
+                        id={`${baseIdAndPanelKey}-accordion`}
+                        onChange={handleChange(panelKey)}
                         sx={sx}
                     >
                         <AccordionSummary
-                            aria-controls={`${baseIdAndIndex}-summary`}
-                            id={`${baseIdAndIndex}-summary`}
+                            aria-controls={`${baseIdAndPanelKey}-summary`}
+                            id={`${baseIdAndPanelKey}-summary`}
                             sx={{flexDirection: arrowPosition === "left" ? "row-reverse" : undefined}}
                         >
                             <Typography
                                 component="span"
-                                id={`${baseIdAndIndex}-summary-typography`}
+                                id={`${baseIdAndPanelKey}-summary-typography`}
                                 sx={{fontSize: "0.9rem"}}
                             >
                                 {title}
                             </Typography>
                         </AccordionSummary>
-                        <AccordionDetails id={`${baseIdAndIndex}-details`}>
+                        <AccordionDetails id={`${baseIdAndPanelKey}-details`}>
                             <Typography
                                 component="span"
-                                id={`${baseIdAndIndex}-details-typography`}
+                                id={`${baseIdAndPanelKey}-details-typography`}
                                 sx={{fontSize: "0.85rem"}}
                             >
                                 {content}
