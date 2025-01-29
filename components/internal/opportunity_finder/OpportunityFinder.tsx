@@ -334,7 +334,7 @@ export function OpportunityFinder(): ReactElement {
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    const enableOrchestration = !isAwaitingLlm
+    const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !isAwaitingLlm
 
     // Render the component
     return (
