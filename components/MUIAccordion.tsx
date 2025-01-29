@@ -79,28 +79,24 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
     items,
     sx,
 }) => {
-    const [expanded, setExpanded] = useState<number | false>(defaultExpandedPanelKey)
     const [expandedList, setExpandedList] = useState<number[]>(defaultExpandedPanelKey ? [defaultExpandedPanelKey] : [])
 
     const handleChange = useCallback(
         (panelKey: number) => (_event: React.SyntheticEvent, newExpanded: boolean) => {
-            if (expandOnlyOnePanel) {
-                setExpanded(newExpanded ? panelKey : false)
-            } else {
-                setExpandedList((prevExpandedList) =>
-                    newExpanded ? [...prevExpandedList, panelKey] : prevExpandedList.filter((key) => key !== panelKey)
-                )
-            }
+            setExpandedList((prevExpandedList) => {
+                if (!expandOnlyOnePanel) {
+                    return newExpanded
+                        ? [...prevExpandedList, panelKey]
+                        : prevExpandedList.filter((key) => key !== panelKey)
+                } else {
+                    return newExpanded ? [panelKey] : []
+                }
+            })
         },
         [expandOnlyOnePanel]
     )
 
-    const isExpanded = useCallback(
-        (panelKey: number) => {
-            return expandOnlyOnePanel ? expanded === panelKey : expandedList.includes(panelKey)
-        },
-        [expandOnlyOnePanel, expanded, expandedList]
-    )
+    const isExpanded = useCallback((panelKey: number) => expandedList.includes(panelKey), [expandedList])
 
     return (
         <>

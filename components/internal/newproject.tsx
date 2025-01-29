@@ -153,9 +153,7 @@ export default function NewProject(props: NewProps) {
                     ) : (
                         <p
                             id="select-a-file"
-                            style={{
-                                fontSize: "0.8rem",
-                            }}
+                            style={{fontSize: "0.8rem"}}
                         >
                             Select a file to show details.
                         </p>
@@ -169,7 +167,10 @@ export default function NewProject(props: NewProps) {
                     }}
                 >
                     {isUploading ? (
-                        <label id="uploading-label">
+                        <label
+                            id="uploading-label"
+                            style={{fontSize: "0.8rem"}}
+                        >
                             Uploading {selectedFile.name}
                             <span id="uploading-clip-loader-span">
                                 <CircularProgress
