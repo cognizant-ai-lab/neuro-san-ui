@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-shadow
-
 const mockSyntaxHighlighter = jest.fn(({children}) => <div>{children}</div>)
 
 jest.mock("react-syntax-highlighter", () => {

@@ -1,4 +1,3 @@
-import {Collapse} from "antd"
 import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
 import {CSSProperties, Dispatch, MutableRefObject, ReactNode, SetStateAction} from "react"
@@ -9,9 +8,8 @@ import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
+import {MUIAccordion} from "../../MUIAccordion"
 import {MUIAlert} from "../../MUIAlert"
-
-const {Panel} = Collapse
 
 // Delimiter for separating logs from agents
 const LOGS_DELIMITER = ">>>"
@@ -38,7 +36,7 @@ function splitLogLine(logLine: string) {
 }
 
 /**
- * Process a log line from the agent and format it nicely using the syntax highlighter and antd Collapse component.
+ * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
  * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
  *
  * @param logLine The log line to process
@@ -65,16 +63,12 @@ export function processLogLine(logLine: string, highlighterTheme: {[p: string]: 
     }
 
     return (
-        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        <Collapse
-            style={{marginBottom: "1rem"}}
+        <MUIAccordion
+            id={`${summarySentenceCase}-panel`}
             items={[
                 {
-                    id: `${summarySentenceCase}-panel`,
-                    label: summarySentenceCase,
-                    key: summarySentenceCase,
-                    style: {fontSize: "large"},
-                    children: (
+                    title: summarySentenceCase,
+                    content: (
                         <div id={`${summarySentenceCase}-details`}>
                             {/* If we managed to parse it as JSON, pretty print it */}
                             {repairedJson ? (
@@ -94,6 +88,10 @@ export function processLogLine(logLine: string, highlighterTheme: {[p: string]: 
                     ),
                 },
             ]}
+            sx={{
+                fontSize: "large",
+                marginBottom: "1rem",
+            }}
         />
     )
 }
@@ -180,19 +178,20 @@ export function handleStreamingReceived(
         // Generate the "experiment complete" item in the agent dialog
         updateOutput(
             <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                <Collapse>
-                    <Panel
-                        id="experiment-generation-complete-panel"
-                        header="Experiment generation complete"
-                        key="Experiment generation complete"
-                        style={{fontSize: "large"}}
-                    >
-                        <p id="experiment-generation-complete-details">
-                            {experimentGeneratedMessage(projectUrl.current)}
-                        </p>
-                    </Panel>
-                </Collapse>
+                <MUIAccordion
+                    id="experiment-generation-complete-panel"
+                    items={[
+                        {
+                            title: "Experiment generation complete",
+                            content: (
+                                <p id="experiment-generation-complete-details">
+                                    {experimentGeneratedMessage(projectUrl.current)}
+                                </p>
+                            ),
+                        },
+                    ]}
+                    sx={{fontSize: "large"}}
+                />
                 <br id="experiment-generation-complete-br" />
             </>
         )
@@ -243,19 +242,16 @@ export async function sendStreamingChatRequest(
         (inputOrganization ? `Organization in question: ${inputOrganization}\n` : "") + dataGeneratorResponse
 
     updateOutput(
-        <>
-            {/*eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-            <Collapse style={{marginBottom: "1rem"}}>
-                <Panel
-                    id="initiating-orchestration-panel"
-                    header="Contacting orchestration agents..."
-                    key="initiating-orchestration-panel"
-                    style={{fontSize: "large"}}
-                >
-                    <p id="initiating-orchestration-details">{`Query: ${orchestrationQuery}`}</p>
-                </Panel>
-            </Collapse>
-        </>
+        <MUIAccordion
+            id="initiating-orchestration-accordion"
+            items={[
+                {
+                    title: "Contacting orchestration agents...",
+                    content: `Query: ${orchestrationQuery}`,
+                },
+            ]}
+            sx={{marginBottom: "1rem"}}
+        />
     )
 
     let orchestrationAttemptNumber = 1
