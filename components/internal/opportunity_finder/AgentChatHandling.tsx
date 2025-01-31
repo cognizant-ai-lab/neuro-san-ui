@@ -3,16 +3,13 @@ import {capitalize} from "lodash"
 import {CSSProperties, Dispatch, MutableRefObject, ReactNode, SetStateAction} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {experimentGeneratedMessage} from "./common"
+import {AgentError, experimentGeneratedMessage, LOGS_DELIMITER} from "./common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 import {MUIAccordion} from "../../MUIAccordion"
 import {MUIAlert} from "../../MUIAlert"
-
-// Delimiter for separating logs from agents
-const LOGS_DELIMITER = ">>>"
 
 /**
  * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator. If the delimiter is not
@@ -102,13 +99,6 @@ interface AgentErrorProps {
     tool?: string
 }
 
-class AgentError extends Error {
-    constructor(message: string) {
-        super(message)
-        this.name = "AgentError"
-    }
-}
-
 /**
  * Handle a chunk of data received from the server. This is the main entry point for processing the data received from
  * neuro-san streaming chat.
@@ -133,7 +123,7 @@ export function handleStreamingReceived(
         console.error(`Error parsing log line: ${e}`)
         return
     }
-    const chatMessage: ChatMessage = chatResponse.response
+    const chatMessage: ChatMessage = chatResponse?.response
 
     const messageType: ChatMessageChatMessageType = chatMessage?.type
 
@@ -177,23 +167,20 @@ export function handleStreamingReceived(
 
         // Generate the "experiment complete" item in the agent dialog
         updateOutput(
-            <>
-                <MUIAccordion
-                    id="experiment-generation-complete-panel"
-                    items={[
-                        {
-                            title: "Experiment generation complete",
-                            content: (
-                                <p id="experiment-generation-complete-details">
-                                    {experimentGeneratedMessage(projectUrl.current)}
-                                </p>
-                            ),
-                        },
-                    ]}
-                    sx={{fontSize: "large"}}
-                />
-                <br id="experiment-generation-complete-br" />
-            </>
+            <MUIAccordion
+                id="experiment-generation-complete-panel"
+                items={[
+                    {
+                        title: "Experiment generation complete",
+                        content: (
+                            <p id="experiment-generation-complete-details">
+                                {experimentGeneratedMessage(projectUrl.current)}
+                            </p>
+                        ),
+                    },
+                ]}
+                sx={{fontSize: "large", marginBottom: "1rem"}}
+            />
         )
         setIsAwaitingLlm(false)
     } else if ("error" in chatMessageJson) {
@@ -218,28 +205,31 @@ export function handleStreamingReceived(
 /**
  * Sends the request to neuro-san to create the project and experiment.
  *
+ * @param projectUrl Mutable reference to the URL of the project that will be created. We update this as a side effect.
+ * @param updateOutput Function to display agent chat responses to the user
+ * @param setIsAwaitingLlm Function to set the state of whether we're awaiting a response from LLM
+ * @param controller Mutable reference to the AbortController used to cancel the request
+ * @param currentUser The current user (for displaying in the UI and for letting the server know who is calling)
+ * @param orchestrationQuery The query to send to the server
+ * @param callback The callback to call when streaming chunks are received
+ *
+ * @returns Nothing, but received chunks are pumped to the `handleStreamingReceived` function
  */
 export async function sendStreamingChatRequest(
     projectUrl: MutableRefObject<URL>,
     updateOutput: (node: ReactNode) => void,
-    highlighterTheme: {[p: string]: CSSProperties},
     setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>,
     controller: MutableRefObject<AbortController>,
     currentUser: string,
-    inputOrganization: string,
-    dataGeneratorResponse: string
-) {
+    orchestrationQuery: string,
+    callback: (chunk) => void
+): Promise<void> {
     // Reset project URL
     projectUrl.current = null
 
     // Set up the abort controller
     const abortController = new AbortController()
     controller.current = abortController
-
-    // The input to Orchestration is the organization name, if we have it, plus the Python code that generates
-    // the data.
-    const orchestrationQuery =
-        (inputOrganization ? `Organization in question: ${inputOrganization}\n` : "") + dataGeneratorResponse
 
     updateOutput(
         <MUIAccordion
@@ -254,29 +244,22 @@ export async function sendStreamingChatRequest(
         />
     )
 
-    let orchestrationAttemptNumber = 1
+    let orchestrationAttemptNumber = 0
 
     do {
         try {
+            // Increment the attempt number and set the state to indicate we're awaiting a response
+            orchestrationAttemptNumber += 1
             setIsAwaitingLlm(true)
 
             // Send the chat query to the server. This will block until the stream ends from the server
-            const response: ChatResponse = await sendChatQuery(
-                abortController.signal,
-                orchestrationQuery,
-                currentUser,
-                (chunk) => handleStreamingReceived(chunk, projectUrl, updateOutput, highlighterTheme, setIsAwaitingLlm)
-            )
-
-            console.debug(`Orchestration attempt ${orchestrationAttemptNumber} complete. Response: ${response}`)
+            await sendChatQuery(abortController.signal, orchestrationQuery, currentUser, callback)
         } catch (error: unknown) {
             if (error instanceof Error) {
                 // If the user clicked Stop, just bail
                 if (error.name === "AbortError") {
                     return
                 }
-
-                orchestrationAttemptNumber += 1
 
                 // Agent errors are handled elsewhere
                 if (!(error instanceof AgentError)) {
@@ -293,7 +276,7 @@ export async function sendStreamingChatRequest(
         } finally {
             setIsAwaitingLlm(false)
         }
-    } while (orchestrationAttemptNumber <= MAX_ORCHESTRATION_ATTEMPTS && projectUrl.current === null)
+    } while (orchestrationAttemptNumber < MAX_ORCHESTRATION_ATTEMPTS && projectUrl.current === null)
 
     if (orchestrationAttemptNumber >= MAX_ORCHESTRATION_ATTEMPTS && projectUrl.current === null) {
         updateOutput(

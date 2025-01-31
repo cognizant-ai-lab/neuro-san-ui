@@ -1,3 +1,16 @@
+// Delimiter for separating logs from agents
+export const LOGS_DELIMITER = ">>>"
+
+/**
+ * Errors thrown by Neuro-san agents
+ */
+export class AgentError extends Error {
+    constructor(message: string) {
+        super(message)
+        this.name = "AgentError"
+    }
+}
+
 /**
  * Generate the message to display to the user when the experiment has been generated.
  */

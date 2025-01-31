@@ -13,7 +13,7 @@ import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 
 import {AgentButtons} from "./Agentbuttons"
-import {sendStreamingChatRequest} from "./AgentChatHandling"
+import {handleStreamingReceived, sendStreamingChatRequest} from "./AgentChatHandling"
 import {experimentGeneratedMessage} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
@@ -243,15 +243,21 @@ export function OpportunityFinder(): ReactElement {
 
             // If it's the orchestration process, we need to handle the query differently
             if (selectedAgent === "OrchestrationAgent") {
+                // The input to Orchestration is the organization name, if we have it, plus the Python code
+                // that generates the data. The python code comes from a previous call to the DataGenerator agent.
+                const orchestrationQuery =
+                    (inputOrganization ? `Organization in question: ${inputOrganization}\n` : "") +
+                    previousResponse?.current?.DataGenerator
+
                 await sendStreamingChatRequest(
                     projectUrl,
                     updateOutput,
-                    highlighterTheme,
                     setIsAwaitingLlm,
                     controller,
                     currentUser,
-                    inputOrganization.current,
-                    previousResponse.current.DataGenerator
+                    orchestrationQuery,
+                    (chunk) =>
+                        handleStreamingReceived(chunk, projectUrl, updateOutput, highlighterTheme, setIsAwaitingLlm)
                 )
             } else {
                 // Record organization name if current agent is OpportunityFinder. This is risky as the user may
