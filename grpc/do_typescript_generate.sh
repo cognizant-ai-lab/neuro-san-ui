@@ -42,7 +42,7 @@ mkdir -p "${PROTOS_DIR}/internal" "$NEURO_SAN_PROTO_DIR" "${GENERATED_DIR}"
 # Copy main project proto files to the protos directory. Some day they will be in a separate repo.
 # This is only for the "local dev" case. In the Docker case, the previous steps will have copied these files where they
 # need to be so they don't need to be copied here.
-if [ -z "$(ls ${PROTOS_DIR}/*.proto)" ]; then
+if [ -z "$(ls ${PROTOS_DIR}/*.proto &> /dev/null)" ]; then
   cp -r ../proto/* "${PROTOS_DIR}/"
 fi
 
@@ -70,16 +70,6 @@ done
 
 # Hack: google proto files expect to be in a certain hardcoded location, so we copy them there
 cp -r "node_modules/protobufjs/google" "${PROTOS_DIR}/internal"
-
-# More copying of files to work around Google hard-coded paths
-OPENAPIV2=protoc-gen-openapiv2
-GRPC_ECOSYSTEM_PATH="grpc-ecosystem/grpc-gateway/v2"
-
-# This is a hack to avoid nasty problems with proto files
-# import paths and such.
-echo "Copying up ${OPENAPIV2} directory"
-rm -rf "${PROTOS_DIR:?}/${OPENAPIV2:?}"
-cp -R "${PROTOS_DIR}/${GRPC_ECOSYSTEM_PATH}/${OPENAPIV2}" "${PROTOS_DIR}"
 
 # Ordering matters w/rt where generated file is output
 PROTO_PATH="--proto_path=${GENERATED_DIR} \
