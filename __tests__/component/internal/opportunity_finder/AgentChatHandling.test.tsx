@@ -41,7 +41,7 @@ describe("processLogLine", () => {
 
         // UI "sentence cases" agent names as they tend to come in all caps from neuro-san which is ugly
         expect(screen.getByText("Agentname")).toBeInTheDocument()
-        expect(screen.getByText("[]This is a test log line")).toBeInTheDocument()
+        expect(screen.getByText(logLineDetails)).toBeInTheDocument()
     })
 
     it("Should syntax highlight JSON", () => {
