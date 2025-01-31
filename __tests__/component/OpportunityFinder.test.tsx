@@ -2,7 +2,7 @@
 import {render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent} from "@testing-library/user-event"
 
-import {OpportunityFinder} from "../../components/internal/opportunity_finder/opportunity_finder"
+import {OpportunityFinder} from "../../components/internal/opportunity_finder/OpportunityFinder"
 
 // mock useSession
 jest.mock("next-auth/react", () => {

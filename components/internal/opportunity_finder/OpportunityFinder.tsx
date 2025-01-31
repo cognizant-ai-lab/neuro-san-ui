@@ -13,26 +13,21 @@ import * as hljsStyles from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import * as prismStyles from "react-syntax-highlighter/dist/cjs/styles/prism"
 
 import {AgentButtons} from "./Agentbuttons"
-import {pollForLogs} from "./AgentChatHandling"
+import {handleStreamingReceived, sendStreamingChatRequest} from "./AgentChatHandling"
 import {experimentGeneratedMessage} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES, PRISM_THEMES} from "./SyntaxHighlighterThemes"
 import {DEFAULT_USER_IMAGE} from "../../../const"
-import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendOpportunityFinderRequest} from "../../../controller/opportunity_finder/fetch"
-import {AgentStatus, ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import {OpportunityFinderRequestType} from "../../../pages/api/gpt/opportunityFinder/types"
 import {useAuthentication} from "../../../utils/authentication"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getTitleBase} from "../../../utils/title"
-import {MUIAccordion} from "../../MUIAccordion"
 import {MUIAlert} from "../../MUIAlert"
 import {LlmChatButton} from "../LlmChatButton"
 import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
 
 // #region: Constants
-// Interval for polling the agents for logs
-const AGENT_POLL_INTERVAL_MS = 5_000
 
 // Input text placeholders for each agent type
 const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
@@ -41,6 +36,18 @@ const AGENT_PLACEHOLDERS: Record<OpportunityFinderRequestType, string> = {
     DataGenerator: "Generate 1500 rows",
     OrchestrationAgent: "Generate the experiment",
 }
+
+// Syntax themes for code and markdown syntax highlighter
+const SYNTAX_THEMES = [
+    {
+        label: "HLJS Themes",
+        options: HLJS_THEMES,
+    },
+    {
+        label: "Prism Themes",
+        options: PRISM_THEMES,
+    },
+]
 // #endregion: Constants
 
 // #region: Styled Components
@@ -76,10 +83,6 @@ export function OpportunityFinder(): ReactElement {
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
     const isAwaitingLlmRef = useRef(false)
-
-    // Track index of last log seen from agents. This is like a "cursor" into the array of logs that keeps track
-    // of the last log we've seen.
-    const lastLogIndexRef = useRef<number>(-1)
 
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
     const chatHistory = useRef<BaseMessage[]>([])
@@ -129,26 +132,13 @@ export function OpportunityFinder(): ReactElement {
         user: {image: userImage, name: currentUser},
     } = useAuthentication().data
 
-    // Session ID for orchestration. We also use this as an overall "orchestration is in process" flag. If we have a
-    // session ID, we are in the orchestration process.
-    const sessionId = useRef<string>(null)
-
     // For newly created project/experiment URL
     const projectUrl = useRef<URL | null>(null)
-
-    // To track time of last new logs from agents
-    const lastLogTime = useRef<number | null>(null)
-
-    // ID for log polling interval timer
-    const logPollingIntervalId = useRef<ReturnType<typeof setInterval> | null>(null)
 
     // dynamic import syntax highlighter style based on selected theme
     const highlighterTheme = HLJS_THEMES.includes(selectedTheme)
         ? hljsStyles[selectedTheme]
         : prismStyles[selectedTheme]
-
-    // Orchestration retry count. Bootstrap with 0; we increment this each time we retry the orchestration process.
-    const orchestrationAttemptNumber = useRef<number>(0)
 
     // Define styles based on user options (wrap setting)
     const divStyle: CSSProperties = {
@@ -184,54 +174,6 @@ export function OpportunityFinder(): ReactElement {
         }
     }, [chatOutput])
 
-    async function pollAgent() {
-        await pollForLogs(
-            currentUser,
-            sessionId.current,
-            {
-                lastLogIndex: lastLogIndexRef.current,
-                setLastLogIndex: (index) => (lastLogIndexRef.current = index),
-                lastLogTime: lastLogTime.current,
-                setLastLogTime: (time) => (lastLogTime.current = time),
-            },
-            {
-                orchestrationAttemptNumber: orchestrationAttemptNumber.current,
-                initiateOrchestration,
-                endOrchestration,
-            },
-            {
-                isAwaitingLlm: isAwaitingLlmRef.current,
-                setIsAwaitingLlm,
-                signal: controller.current?.signal,
-            },
-            (url) => (projectUrl.current = url),
-            updateOutput,
-            highlighterTheme
-        )
-    }
-
-    // Poll the agent for logs when the Orchestration Agent is being used
-    useEffect(() => {
-        if (sessionId.current) {
-            // We have a session ID, so we're in the orchestration process. Start polling the agents for logs.
-            // Set last log time to now() to have something to compare to when we start polling for logs
-            lastLogTime.current = Date.now()
-
-            // Kick off the polling process
-            logPollingIntervalId.current = setInterval(pollAgent, AGENT_POLL_INTERVAL_MS)
-
-            // Cleanup function to clear the interval
-            return () => {
-                if (logPollingIntervalId.current) {
-                    clearInterval(logPollingIntervalId.current)
-                    logPollingIntervalId.current = null
-                }
-            }
-        } else {
-            return undefined
-        }
-    }, [sessionId.current])
-
     /**
      * Handles adding content to the output window.
      * @param node A ReactNode to add to the output window -- text, spinner, etc.
@@ -241,17 +183,6 @@ export function OpportunityFinder(): ReactElement {
         // Auto scroll as response is generated
         currentResponse.current += node
         setChatOutput((currentOutput) => [...currentOutput, node])
-    }
-
-    /**
-     * End the orchestration process. Resets state in preparation for next orchestration.
-     */
-    const endOrchestration = () => {
-        clearInterval(logPollingIntervalId.current)
-        setIsAwaitingLlm(false)
-        sessionId.current = null
-        lastLogIndexRef.current = -1
-        lastLogTime.current = null
     }
 
     /**
@@ -310,7 +241,22 @@ export function OpportunityFinder(): ReactElement {
 
             // If it's the orchestration process, we need to handle the query differently
             if (selectedAgent === "OrchestrationAgent") {
-                await initiateOrchestration(false)
+                // The input to Orchestration is the organization name, if we have it, plus the Python code
+                // that generates the data. The python code comes from a previous call to the DataGenerator agent.
+                const orchestrationQuery =
+                    (inputOrganization ? `Organization in question: ${inputOrganization}\n` : "") +
+                    previousResponse?.current?.DataGenerator
+
+                await sendStreamingChatRequest(
+                    projectUrl,
+                    updateOutput,
+                    setIsAwaitingLlm,
+                    controller,
+                    currentUser,
+                    orchestrationQuery,
+                    (chunk) =>
+                        handleStreamingReceived(chunk, projectUrl, updateOutput, highlighterTheme, setIsAwaitingLlm)
+                )
             } else {
                 // Record organization name if current agent is OpportunityFinder. This is risky as the user may
                 // have had a back-and-forth with the OpportunityFinder agent, but we'll assume that the last
@@ -375,116 +321,24 @@ export function OpportunityFinder(): ReactElement {
             )
         } finally {
             resetState()
-            endOrchestration()
-        }
-    }
-
-    // Determine if awaiting response from any of the agents
-    const orchestrationInProgress = sessionId.current != null
-    const awaitingResponse = isAwaitingLlm || orchestrationInProgress
-
-    // Regex to check if user has typed anything besides whitespace
-    const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
-
-    // Enable Send button when there is user input and not awaiting a response
-    const shouldEnableSendButton = !userInputEmpty && !awaitingResponse
-
-    // Enable regenerate button when there is a previous query to resent, and we're not awaiting a response
-    const shouldEnableRegenerateButton = previousUserQuery && !awaitingResponse
-
-    // Enable Clear Chat button if not awaiting response and there is chat output to clear
-    const enableClearChatButton = !awaitingResponse && chatOutput.length > 0
-
-    const SYNTAX_THEMES = [
-        {
-            label: "HLJS Themes",
-            options: HLJS_THEMES,
-        },
-        {
-            label: "Prism Themes",
-            options: PRISM_THEMES,
-        },
-    ]
-
-    /**
-     * Initiate the orchestration process. Sends the initial chat query to initiate the session, and saves the resulting
-     * session ID in a ref for later use.
-     *
-     * @param isRetry Whether this is a retry of the orchestration process or the first attempt initiated by user
-     * @returns Nothing, but sets the session ID for the orchestration process
-     */
-    async function initiateOrchestration(isRetry: boolean) {
-        // Reset project URL
-        projectUrl.current = null
-
-        if (isRetry) {
-            // Increment attempt number
-            orchestrationAttemptNumber.current += 1
-        } else {
-            // Reset attempt number
-            orchestrationAttemptNumber.current = 1
-        }
-
-        // Set up the abort controller
-        const abortController = new AbortController()
-        controller.current = abortController
-
-        // The input to Orchestration is the organization name, if we have it, plus the Python code that generates
-        // the data.
-        const orchestrationQuery =
-            (inputOrganization.current ? `Organization in question: ${inputOrganization.current}\n` : "") +
-            previousResponse.current.DataGenerator
-
-        updateOutput(
-            <MUIAccordion
-                id="initiating-orchestration-accordion"
-                items={[
-                    {
-                        title: "Contacting orchestration agents...",
-                        content: `Query: ${orchestrationQuery}`,
-                    },
-                ]}
-                sx={{marginBottom: "1rem"}}
-            />
-        )
-
-        try {
-            setIsAwaitingLlm(true)
-
-            // Send the initial chat query to the server.
-            const response: ChatResponse = await sendChatQuery(abortController.signal, orchestrationQuery, currentUser)
-
-            // We expect the response to have status CREATED and to contain the session ID
-            if (response.status !== AgentStatus.CREATED || !response.sessionId) {
-                updateOutput(
-                    <MUIAlert
-                        id="opp-finder-error-occurred-session-not-created-alert"
-                        severity="error"
-                    >
-                        {`Error occurred: session not created. Status: ${response.status}`}
-                    </MUIAlert>
-                )
-
-                endOrchestration()
-            } else {
-                sessionId.current = response.sessionId
-            }
-        } catch (e) {
-            updateOutput(
-                <MUIAlert
-                    id="opp-finder-error-occurred-while-interacting-with-agents-alert"
-                    severity="error"
-                >
-                    {`Internal Error occurred while interacting with agents. Exception: ${e}`}
-                </MUIAlert>
-            )
-            endOrchestration()
-        } finally {
             setIsAwaitingLlm(false)
         }
     }
 
-    const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !awaitingResponse
+    // Determine if awaiting response from any of the agents
+    // Regex to check if user has typed anything besides whitespace
+    const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
+
+    // Enable Send button when there is user input and not awaiting a response
+    const shouldEnableSendButton = !userInputEmpty && !isAwaitingLlm
+
+    // Enable regenerate button when there is a previous query to resent, and we're not awaiting a response
+    const shouldEnableRegenerateButton = previousUserQuery && !isAwaitingLlm
+
+    // Enable Clear Chat button if not awaiting response and there is chat output to clear
+    const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
+
+    const enableOrchestration = previousResponse?.current?.DataGenerator?.length > 0 && !isAwaitingLlm
 
     // Render the component
     return (
@@ -495,7 +349,7 @@ export function OpportunityFinder(): ReactElement {
             <AgentButtons
                 id="opp-finder-agent-buttons"
                 enableOrchestration={enableOrchestration}
-                awaitingResponse={awaitingResponse}
+                awaitingResponse={isAwaitingLlm}
                 selectedAgent={selectedAgent}
                 setSelectedAgent={setSelectedAgent}
             />
@@ -661,7 +515,7 @@ export function OpportunityFinder(): ReactElement {
                         ) : (
                             "(Agent output will appear here)"
                         )}
-                        {awaitingResponse && (
+                        {isAwaitingLlm && (
                             <Box
                                 id="awaitingOutputContainer"
                                 sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
@@ -684,7 +538,7 @@ export function OpportunityFinder(): ReactElement {
                     </Box>
 
                     {/*Clear Chat button*/}
-                    {!awaitingResponse && (
+                    {!isAwaitingLlm && (
                         <LlmChatButton
                             id="clear-chat-button"
                             onClick={() => {
@@ -709,13 +563,13 @@ export function OpportunityFinder(): ReactElement {
                     )}
 
                     {/*Stop Button*/}
-                    {awaitingResponse && (
+                    {isAwaitingLlm && (
                         <LlmChatButton
                             id="stop-output-button"
                             onClick={() => handleStop()}
                             posRight={10}
                             posBottom={10}
-                            disabled={!awaitingResponse}
+                            disabled={!isAwaitingLlm}
                             sx={{
                                 position: "absolute",
                             }}
@@ -729,7 +583,7 @@ export function OpportunityFinder(): ReactElement {
                     )}
 
                     {/*Regenerate Button*/}
-                    {!awaitingResponse && (
+                    {!isAwaitingLlm && (
                         <LlmChatButton
                             id="regenerate-output-button"
                             onClick={async (event) => {

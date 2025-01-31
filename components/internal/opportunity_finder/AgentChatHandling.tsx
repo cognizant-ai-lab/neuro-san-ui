@@ -1,161 +1,46 @@
 import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
-import {CSSProperties, ReactNode} from "react"
+import {CSSProperties, Dispatch, MutableRefObject, ReactNode, SetStateAction} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {experimentGeneratedMessage, OrchestrationHandling, retry} from "./common"
+import {AgentError, AgentErrorProps, experimentGeneratedMessage, LOGS_DELIMITER} from "./common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
-import {getLogs} from "../../../controller/agent/agent"
-import {AgentStatus, LogsResponse} from "../../../generated/neuro_san/api/grpc/agent"
-import useEnvironmentStore from "../../../state/environment"
+import {sendChatQuery} from "../../../controller/agent/agent"
+import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
+import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 import {MUIAccordion} from "../../MUIAccordion"
-
-// Regex to extract project and experiment IDs from agent response
-const AGENT_RESULT_REGEX = /assistant: \{'project_id': '(?<projectId>\d+)', 'experiment_id': '(?<experimentId>\d+)'\}/u
-
-// Regex to extract error in agent response
-const AGENT_ERROR_REGEX = /```json(?<errorBlock>[\s\S]*?)```/u
-
-// Delimiter for separating logs from agents
-const LOGS_DELIMITER = ">>>"
-
-// Maximum inactivity time since last agent response before we give up
-const MAX_AGENT_INACTIVITY_SECS = 2 * 60
-
-interface LogHandling {
-    lastLogIndex: number
-    setLastLogIndex: (newIndex: number) => void
-    lastLogTime: number
-    setLastLogTime: (newTime: number) => void
-}
-
-interface LlmInteraction {
-    isAwaitingLlm: boolean
-    setIsAwaitingLlm: (newVal: boolean) => void
-    signal: AbortSignal
-}
-
-async function checkAgentTimeout(
-    lastLogTime: number,
-    orchestrationHandling: OrchestrationHandling,
-    updateOutput: (node: ReactNode) => void
-) {
-    // No new logs, check if it's been too long since last log
-    const timeSinceLastLog = Date.now() - lastLogTime
-    const isTimeout = lastLogTime && timeSinceLastLog > MAX_AGENT_INACTIVITY_SECS * 1000
-    if (isTimeout) {
-        const baseMessage = "Error occurred: exceeded wait time for agent response."
-        await retry(
-            `${baseMessage} Retrying...`,
-            `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-            orchestrationHandling,
-            updateOutput
-        )
-    }
-
-    return isTimeout
-}
-
-export const processChatResponse = async (
-    chatResponse: string,
-    orchestrationHandling: OrchestrationHandling,
-    setProjectUrl: (url: URL) => void,
-    updateOutput: (node: ReactNode) => void
-) => {
-    // Check for error
-    const errorMatches = AGENT_ERROR_REGEX.exec(chatResponse)
-    if (errorMatches) {
-        try {
-            // We got an error. Parse the error block and display it to the user
-            const errorBlock = JSON.parse(errorMatches.groups.errorBlock)
-
-            const baseMessage =
-                `Error occurred. Error: "${errorBlock.error}", ` +
-                `traceback: "${errorBlock.traceback}", ` +
-                `tool: "${errorBlock.tool}".`
-            await retry(
-                `${baseMessage} Retrying...`,
-                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-                orchestrationHandling,
-                updateOutput
-            )
-
-            return
-        } catch (e) {
-            // We couldn't parse the error block. Could be a false positive -- occurrence of ```json but it's not an
-            // error, so log a warning and continue.
-            console.warn(
-                "Error occurred and was unable to parse error block. " +
-                    `Error block: "${errorMatches.groups.errorBlock}, parsing error: ${e}".`
-            )
-        }
-    }
-
-    // Check for completion of orchestration by checking if response contains project info
-    const matches = AGENT_RESULT_REGEX.exec(chatResponse)
-
-    if (matches) {
-        // We found the agent completion message
-
-        // Build the URl and set it in state so the notification will be displayed
-        const projectId = matches.groups.projectId
-        const experimentId = matches.groups.experimentId
-
-        // Get backend API URL from environment store
-        const baseUrl = useEnvironmentStore.getState().backendApiUrl
-
-        // Construct the URL for the new project
-        const projectUrl: URL = new URL(`/projects/${projectId}/experiments/${experimentId}/?generated=true`, baseUrl)
-
-        // Set the URL in state
-        setProjectUrl(projectUrl)
-
-        // Generate the "experiment complete" item in the agent dialog
-        updateOutput(
-            <>
-                <MUIAccordion
-                    id="experiment-generation-complete-panel"
-                    items={[
-                        {
-                            title: "Experiment generation complete",
-                            content: (
-                                <p id="experiment-generation-complete-details">
-                                    {experimentGeneratedMessage(projectUrl)}
-                                </p>
-                            ),
-                        },
-                    ]}
-                    sx={{fontSize: "large"}}
-                />
-                <br id="experiment-generation-complete-br" />
-            </>
-        )
-        orchestrationHandling.endOrchestration()
-    }
-}
+import {MUIAlert} from "../../MUIAlert"
 
 /**
- * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator.
+ * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator. If the delimiter is not
+ * found, the entire log line is treated as the details part. This can happen when it's a "follow-on" message from
+ * an agent we've already heard from.
  * @param logLine The log line to split
  * @returns An object containing the summary and details parts of the log line
  */
 function splitLogLine(logLine: string) {
-    const logLineElements = logLine.split(LOGS_DELIMITER)
+    if (logLine.includes(LOGS_DELIMITER)) {
+        const logLineElements = logLine.split(LOGS_DELIMITER)
 
-    const logLineSummary = logLineElements[0]
-    const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+        const logLineSummary = logLineElements[0]
+        const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
 
-    const logLineDetails = logLineElements[1]
-    return {summarySentenceCase, logLineDetails}
+        const logLineDetails = logLineElements[1]
+        return {summarySentenceCase, logLineDetails}
+    } else {
+        return {summarySentenceCase: "Agent message", logLineDetails: logLine}
+    }
 }
 
 /**
  * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
+ * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
+ *
  * @param logLine The log line to process
  * @param highlighterTheme The theme to use for the syntax highlighter
  * @returns A React component representing the log line (agent message)
  */
-function processLogLine(logLine: string, highlighterTheme: {[p: string]: CSSProperties}) {
+export function processLogLine(logLine: string, highlighterTheme: {[p: string]: CSSProperties}) {
     // extract the parts of the line
     const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
 
@@ -209,89 +94,192 @@ function processLogLine(logLine: string, highlighterTheme: {[p: string]: CSSProp
 }
 
 /**
- * Process new logs from the agent and format them nicely using the syntax highlighter and Accordion components.
- * @param response The response from the agent network containing potentially new-to-us logs
- * @param logHandling Items related to the log handling process
- * @param highlighterTheme The theme to use for the syntax highlighter
- * @returns An array of React components representing the new logs (agent messages)
+ * Handle a chunk of data received from the server. This is the main entry point for processing the data received from
+ * neuro-san streaming chat.
+ *
+ * @param chunk The chunk of data received from the server. This is expected to be a JSON object with a `response` key.
+ * @param projectUrl Mutable reference to the URL of the project that will be created. We update this as a side effect.
+ * @param updateOutput Function to update the output window.
+ * @param highlighterTheme The theme to use for the syntax highlighter.
+ * @param setIsAwaitingLlm Function to set the state of whether we're awaiting a response from LLM.
  */
-export const processNewLogs = (
-    response: LogsResponse,
-    logHandling: LogHandling,
-    highlighterTheme: {[p: string]: CSSProperties}
-) => {
-    // Get new logs
-    const newLogs = response.logs.slice(logHandling.lastLogIndex + 1)
-
-    // Update last log time
-    logHandling.setLastLogTime(Date.now())
-
-    // Update last log index
-    logHandling.setLastLogIndex(response.logs.length - 1)
-
-    const newOutputItems = []
-
-    // Process new logs and display summaries to user
-    for (const logLine of newLogs) {
-        const outputItem = processLogLine(logLine, highlighterTheme)
-        newOutputItems.push(outputItem)
-    }
-
-    return newOutputItems
-}
-
-export const pollForLogs = async (
-    currentUser: string,
-    sessionId: string,
-    logHandling: LogHandling,
-    orchestrationHandling: OrchestrationHandling,
-    llmInteraction: LlmInteraction,
-    setProjectUrl: (url: URL) => void,
+export function handleStreamingReceived(
+    chunk: string,
+    projectUrl: MutableRefObject<URL>,
     updateOutput: (node: ReactNode) => void,
-    highlighterTheme: {[p: string]: CSSProperties}
-) => {
-    if (llmInteraction.isAwaitingLlm) {
-        // Already a request in progress
+    highlighterTheme: {[p: string]: CSSProperties},
+    setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>
+): void {
+    let chatResponse: ChatResponse
+    try {
+        chatResponse = JSON.parse(chunk).result
+    } catch (e) {
+        console.error(`Error parsing log line: ${e}`)
+        return
+    }
+    const chatMessage: ChatMessage = chatResponse?.response
+
+    const messageType: ChatMessageChatMessageType = chatMessage?.type
+
+    const knownMessageTypes = [ChatMessageChatMessageType.AI, ChatMessageChatMessageType.LEGACY_LOGS]
+
+    // Check if it's a message type we know how to handle
+    if (!knownMessageTypes.includes(messageType)) {
         return
     }
 
-    // Poll the agent for logs
+    let chatMessageJson: object = null
+
+    // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
+    const chatMessageCleaned = chatMessage.text.replace(/```json/gu, "").replace(/```/gu, "")
+
     try {
-        // Set "busy" flag
-        llmInteraction.setIsAwaitingLlm(true)
-
-        const response: LogsResponse = await getLogs(sessionId, llmInteraction.signal, currentUser)
-
-        // Check status from agents
-        // Any status other than "FOUND" means something went wrong
-        if (response.status !== AgentStatus.FOUND) {
-            const baseMessage = "Error occurred: session not found."
-            await retry(
-                `${baseMessage} Retrying...`,
-                `${baseMessage} Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`,
-                orchestrationHandling,
-                updateOutput
-            )
-
+        chatMessageJson = JSON.parse(chatMessageCleaned)
+    } catch (error) {
+        // Not JSON-like, so just add it to the output
+        if (error instanceof SyntaxError) {
+            // Regular chat message (not error or end condition) so just add it to the output
+            const newOutputItem = processLogLine(chatMessage.text, highlighterTheme)
+            updateOutput(newOutputItem)
             return
-        }
-
-        // Check for new logs
-        const hasNewLogs = response?.logs?.length > 0 && response.logs.length > logHandling.lastLogIndex + 1
-        if (hasNewLogs) {
-            const newOutputItems = processNewLogs(response, logHandling, highlighterTheme)
-            updateOutput(newOutputItems)
         } else {
-            const timedOut = await checkAgentTimeout(logHandling.lastLogTime, orchestrationHandling, updateOutput)
-            if (timedOut) {
-                return
-            }
+            // Not an expected error, so rethrow it for someone else to figure out.
+            throw error
         }
+    }
 
-        if (response.chatResponse) {
-            await processChatResponse(response.chatResponse, orchestrationHandling, setProjectUrl, updateOutput)
+    // It was JSON-like. Figure out what we're dealing with
+    // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
+    if ("project_id" in chatMessageJson && "experiment_id" in chatMessageJson) {
+        const baseUrl = window.location.origin
+
+        // Set the URL for displaying to the user
+        projectUrl.current = new URL(
+            `/projects/${chatMessageJson.project_id}/experiments/${chatMessageJson.experiment_id}/?generated=true`,
+            baseUrl
+        )
+
+        // Generate the "experiment complete" item in the agent dialog
+        updateOutput(
+            <MUIAccordion
+                id="experiment-generation-complete-panel"
+                items={[
+                    {
+                        title: "Experiment generation complete",
+                        content: (
+                            <p id="experiment-generation-complete-details">
+                                {experimentGeneratedMessage(projectUrl.current)}
+                            </p>
+                        ),
+                    },
+                ]}
+                sx={{fontSize: "large", marginBottom: "1rem"}}
+            />
+        )
+        setIsAwaitingLlm(false)
+    } else if ("error" in chatMessageJson) {
+        const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
+        const errorMessage =
+            `Error occurred. Error: "${agentError.error}", ` +
+            `traceback: "${agentError?.traceback}", ` +
+            `tool: "${agentError?.tool}" Retrying...`
+        updateOutput(
+            <MUIAlert
+                id="retry-message-alert"
+                severity="warning"
+            >
+                {errorMessage}
+            </MUIAlert>
+        )
+        setIsAwaitingLlm(false)
+        throw new AgentError(errorMessage)
+    }
+}
+
+/**
+ * Sends the request to neuro-san to create the project and experiment.
+ *
+ * @param projectUrl Mutable reference to the URL of the project that will be created. We update this as a side effect.
+ * @param updateOutput Function to display agent chat responses to the user
+ * @param setIsAwaitingLlm Function to set the state of whether we're awaiting a response from LLM
+ * @param controller Mutable reference to the AbortController used to cancel the request
+ * @param currentUser The current user (for displaying in the UI and for letting the server know who is calling)
+ * @param orchestrationQuery The query to send to the server
+ * @param callback The callback to call when streaming chunks are received
+ *
+ * @returns Nothing, but received chunks are pumped to the `handleStreamingReceived` function
+ */
+export async function sendStreamingChatRequest(
+    projectUrl: MutableRefObject<URL>,
+    updateOutput: (node: ReactNode) => void,
+    setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>,
+    controller: MutableRefObject<AbortController>,
+    currentUser: string,
+    orchestrationQuery: string,
+    callback: (chunk) => void
+): Promise<void> {
+    // Reset project URL
+    projectUrl.current = null
+
+    // Set up the abort controller
+    const abortController = new AbortController()
+    controller.current = abortController
+
+    updateOutput(
+        <MUIAccordion
+            id="initiating-orchestration-accordion"
+            items={[
+                {
+                    title: "Contacting orchestration agents...",
+                    content: `Query: ${orchestrationQuery}`,
+                },
+            ]}
+            sx={{marginBottom: "1rem"}}
+        />
+    )
+
+    let orchestrationAttemptNumber = 0
+
+    do {
+        try {
+            // Increment the attempt number and set the state to indicate we're awaiting a response
+            orchestrationAttemptNumber += 1
+            setIsAwaitingLlm(true)
+
+            // Send the chat query to the server. This will block until the stream ends from the server
+            await sendChatQuery(abortController.signal, orchestrationQuery, currentUser, callback)
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                // If the user clicked Stop, just bail
+                if (error.name === "AbortError") {
+                    return
+                }
+
+                // Agent errors are handled elsewhere
+                if (!(error instanceof AgentError)) {
+                    updateOutput(
+                        <MUIAlert
+                            id="opp-finder-error-occurred-while-interacting-with-agents-alert"
+                            severity="error"
+                        >
+                            {`Internal Error occurred while interacting with agents. Exception: ${error}`}
+                        </MUIAlert>
+                    )
+                }
+            }
+        } finally {
+            setIsAwaitingLlm(false)
         }
-    } finally {
-        llmInteraction.setIsAwaitingLlm(false)
+    } while (orchestrationAttemptNumber < MAX_ORCHESTRATION_ATTEMPTS && projectUrl.current === null)
+
+    if (orchestrationAttemptNumber >= MAX_ORCHESTRATION_ATTEMPTS && projectUrl.current === null) {
+        updateOutput(
+            <MUIAlert
+                id="opp-finder-max-retries-exceeded-alert"
+                severity="error"
+            >
+                {`Gave up after ${MAX_ORCHESTRATION_ATTEMPTS} attempts.`}
+            </MUIAlert>
+        )
     }
 }
