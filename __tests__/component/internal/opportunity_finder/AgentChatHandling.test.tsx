@@ -6,7 +6,7 @@ import {
     processLogLine,
     sendStreamingChatRequest,
 } from "../../../../components/internal/opportunity_finder/AgentChatHandling"
-import {AgentError, LOGS_DELIMITER} from "../../../../components/internal/opportunity_finder/common"
+import {AgentError, AgentErrorProps, LOGS_DELIMITER} from "../../../../components/internal/opportunity_finder/common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "../../../../components/internal/opportunity_finder/const"
 import {sendChatQuery} from "../../../../controller/agent/agent"
 import {ChatResponse} from "../../../../generated/neuro_san/api/grpc/agent"
@@ -119,7 +119,7 @@ describe("handleStreamingReceived", () => {
     })
 
     it("Should detect an 'orchestration failed' message", async () => {
-        const orchestrationFailedMessage = {
+        const orchestrationFailedMessage: AgentErrorProps = {
             error: "This is an error message",
             traceback: "This is a traceback",
             tool: "Orchestration tool",

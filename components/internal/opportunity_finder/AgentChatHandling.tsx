@@ -3,7 +3,7 @@ import {capitalize} from "lodash"
 import {CSSProperties, Dispatch, MutableRefObject, ReactNode, SetStateAction} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {AgentError, experimentGeneratedMessage, LOGS_DELIMITER} from "./common"
+import {AgentError, AgentErrorProps, experimentGeneratedMessage, LOGS_DELIMITER} from "./common"
 import {MAX_ORCHESTRATION_ATTEMPTS} from "./const"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
@@ -91,12 +91,6 @@ export function processLogLine(logLine: string, highlighterTheme: {[p: string]: 
             }}
         />
     )
-}
-
-interface AgentErrorProps {
-    error: string
-    traceback?: string
-    tool?: string
 }
 
 /**
