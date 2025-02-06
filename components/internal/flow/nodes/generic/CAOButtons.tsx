@@ -64,7 +64,11 @@ const CAOButtons = (props) => {
             >
                 <Card
                     id={`${flowPrefix}-context-card${idExtension}`}
-                    className="overflow-y-auto h-40 text-xs"
+                    sx={{
+                        overflowY: "auto",
+                        height: "10rem",
+                        fontSize: "0.75rem",
+                    }}
                 >
                     <span
                         id={`${flowPrefix}-context-text${idExtension}`}
