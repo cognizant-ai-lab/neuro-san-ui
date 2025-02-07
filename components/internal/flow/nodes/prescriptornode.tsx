@@ -504,36 +504,42 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 id={`${flowPrefix}-representation-div`}
                 className="flex justify-between mb-4 content-center"
             >
-                <label id={`${flowPrefix}-representation-label`}>Representation: </label>
-                <select
-                    id={`${flowPrefix}-representation-select`}
-                    name={`${NodeID}-representation`}
-                    onChange={(event) =>
-                        SetParentPrescriptorState({
-                            ...ParentPrescriptorState,
-                            LEAF: {
-                                ...ParentPrescriptorState.LEAF,
-                                representation: event.target.value,
-                            },
-                        })
-                    }
-                    value={ParentPrescriptorState.LEAF.representation}
+                <FormControl
+                    id={`${flowPrefix}-representation-form-control`}
+                    sx={{width: "10rem"}}
                 >
-                    <option
-                        id={`${flowPrefix}-representation-nn-weights`}
-                        value="NNWeights"
+                    <InputLabel id={`${flowPrefix}-representation-label`}>Representation</InputLabel>
+                    <Select
+                        labelId={`${flowPrefix}-representation-label`}
+                        label="Representation"
+                        id={`${flowPrefix}-representation-select`}
+                        name={`${NodeID}-representation`}
+                        value={ParentPrescriptorState.LEAF.representation}
+                        onChange={(event) =>
+                            SetParentPrescriptorState({
+                                ...ParentPrescriptorState,
+                                LEAF: {
+                                    ...ParentPrescriptorState.LEAF,
+                                    representation: event.target.value,
+                                },
+                            })
+                        }
                         disabled={readOnlyNode}
                     >
-                        Neural Network
-                    </option>
-                    <option
-                        id={`${flowPrefix}-representation-rules`}
-                        value="RuleBased"
-                        disabled={readOnlyNode}
-                    >
-                        Rules
-                    </option>
-                </select>
+                        <MenuItem
+                            id={`${flowPrefix}-representation-nn-weights`}
+                            value="NNWeights"
+                        >
+                            Neural Network
+                        </MenuItem>
+                        <MenuItem
+                            id={`${flowPrefix}-representation-rules`}
+                            value="RuleBased"
+                        >
+                            Rules
+                        </MenuItem>
+                    </Select>
+                </FormControl>
             </div>
             <hr id={`${flowPrefix}-config-separator`} />
             <div id={`${flowPrefix}-nn-weights-config-div`}>
