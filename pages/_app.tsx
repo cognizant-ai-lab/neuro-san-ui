@@ -106,10 +106,11 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
             }
 
             if (!data.supportEmailAddress) {
-                throw new Error("No Neuro AI support email address in response")
+                throw new Error("No Neuro AI Decisioning Platform support email address in response")
             } else {
                 debug(
-                    `Received Neuro AI support email address from NodeJS server. Setting to ${data.supportEmailAddress}`
+                    `Received Neuro AI Decisioning Platform support email address from NodeJS server.
+                    Setting to ${data.supportEmailAddress}`
                 )
                 setSupportEmailAddress(data.supportEmailAddress)
             }

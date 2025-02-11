@@ -3,7 +3,7 @@ import getConfig from "next/config"
 const {publicRuntimeConfig} = getConfig()
 
 // Name to use for application
-export const LOGO: string = "Neuro AI 2.3: Multi-Agent Edition"
+export const LOGO: string = "Neuro AI Decisioning Platform"
 export const GENERIC_LOGO: string = "Autopilot"
 
 // Build version (passed in from build system)
@@ -47,7 +47,7 @@ export const EDIT_EXPERIMENT_DIALOG_TEXT =
 export const CONTACT_US_CONFIRMATION_DIALOG_TITLE = "Contact Us"
 
 export const CONTACT_US_CONFIRMATION_DIALOG_TEXT =
-    "Would you like to send the Cognizant Neuro AI support team an email? " +
+    "Would you like to send the Cognizant Neuro AI Decisioning Platform support team an email? " +
     "You will need to have an email client installed on your device in order " +
     "to continue. If you don't have an email client, you can still contact us at " +
     "NeuroAiSupport@cognizant.com using a web based email client."

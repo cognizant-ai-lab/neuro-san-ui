@@ -113,7 +113,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Now you've made it this far, try a simple change within the UI. Here's an example:
 
-1. Navigate to the page for any Project within Neuro AI, using the `http://localhost:3000` URL mentioned above.
+1. Navigate to the page for any Project within the Neuro AI Decisioning Platform, using the `http://localhost:3000` URL mentioned above.
 1. Open `nextfront/pages/projects/[projectID]/index.tsx`
 1. Add a message at the appropriate place in the tsx file (somewhere within the `return` statement, inside the `<>`  
    fragment).
