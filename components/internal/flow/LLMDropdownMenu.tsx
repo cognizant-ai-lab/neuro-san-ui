@@ -36,6 +36,7 @@ type LLMDropDownPropsType = {
     readOnlyNode: boolean
     edges: EdgeType[]
     dataTagfields: {[key: string]: DataTagField}
+    enableConfabAndCatReducerLLM?: boolean // See UN-2783
 }
 
 const LLMDropdownMenu = ({
@@ -53,6 +54,7 @@ const LLMDropdownMenu = ({
     readOnlyNode,
     edges,
     dataTagfields,
+    enableConfabAndCatReducerLLM = false,
 }: LLMDropDownPropsType) => {
     // For setting the position of the MUI popup menu for the LLMs
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -456,7 +458,7 @@ const LLMDropdownMenu = ({
                         "Analytics"
                     )}
                 </MenuItem>
-                {dataTagFieldHasCategoricalValue(dataTagfields) && (
+                {enableConfabAndCatReducerLLM && dataTagFieldHasCategoricalValue(dataTagfields) && (
                     <MenuItem
                         id="add-category-reducer-llm-btn"
                         value="category-reducer"
@@ -471,7 +473,7 @@ const LLMDropdownMenu = ({
                         )}
                     </MenuItem>
                 )}
-                {dataTagFieldHasNaN(dataTagfields) && (
+                {enableConfabAndCatReducerLLM && dataTagFieldHasNaN(dataTagfields) && (
                     <MenuItem
                         id="add-confabulator-llm-btn"
                         value="confabulator"

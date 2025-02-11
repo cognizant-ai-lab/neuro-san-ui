@@ -5,7 +5,7 @@ import LLMDropdownMenu from "../../components/internal/flow/LLMDropdownMenu"
 import {DataTagFieldValued} from "../../generated/metadata"
 
 describe("Add LLMDropdownMenu", () => {
-    const renderMockLLMDropdownMenu = ({readOnly, dataTagFields}) => (
+    const renderMockLLMDropdownMenu = ({enableConfabAndCatReducerLLM = false, readOnly, dataTagFields}) => (
         <LLMDropdownMenu
             deleteNodeById={jest.fn()}
             getPrescriptorEdge={jest.fn()}
@@ -21,6 +21,7 @@ describe("Add LLMDropdownMenu", () => {
             readOnlyNode={readOnly}
             edges={[]}
             dataTagfields={dataTagFields}
+            enableConfabAndCatReducerLLM={enableConfabAndCatReducerLLM}
         />
     )
 
@@ -48,12 +49,13 @@ describe("Add LLMDropdownMenu", () => {
         })
 
         expect(screen.getByText("Analytics")).toBeInTheDocument()
-        expect(screen.getByText("Confabulator")).toBeInTheDocument()
-        expect(screen.getByText("Category reducer")).toBeInTheDocument()
+        expect(screen.queryByText("Confabulator")).not.toBeInTheDocument()
+        expect(screen.queryByText("Category reducer")).not.toBeInTheDocument()
     })
 
     it("should render add llm drop down without category reducer", async () => {
         const view = renderMockLLMDropdownMenu({
+            enableConfabAndCatReducerLLM: true, // See UN-2783
             readOnly: false,
             dataTagFields: {hasNanField: {has_nan: true}},
         })
@@ -74,6 +76,7 @@ describe("Add LLMDropdownMenu", () => {
 
     it("should render add llm drop down without confabulator option", async () => {
         const view = renderMockLLMDropdownMenu({
+            enableConfabAndCatReducerLLM: true, // See UN-2783
             readOnly: false,
             dataTagFields: {hasCategoricalValueField: {valued: DataTagFieldValued.CATEGORICAL}},
         })
