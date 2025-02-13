@@ -72,7 +72,7 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
                 a({...codeProps}) {
                     return (
                         <a
-                            {...props}
+                            {...codeProps}
                             id="reference-link"
                             target="_blank"
                             rel="noopener noreferrer"
