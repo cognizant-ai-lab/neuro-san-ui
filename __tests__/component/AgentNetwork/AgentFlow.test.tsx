@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-shadow
 import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/common"
 import AgentFlow from "../../../components/AgentNetwork/AgentFlow"
@@ -48,11 +49,13 @@ describe("AgentFlow", () => {
 
     it("Should render correctly", async () => {
         const {container} = render(
-            <AgentFlow
-                id="test-flow-id"
-                agentsInNetwork={network}
-                selectedAgentId="agent1"
-            />
+            <ReactFlowProvider>
+                <AgentFlow
+                    id="test-flow-id"
+                    agentsInNetwork={network}
+                    selectedAgentId="agent1"
+                />
+            </ReactFlowProvider>
         )
 
         // We don't pay for premium so we get the ad!
@@ -63,11 +66,13 @@ describe("AgentFlow", () => {
 
     it("Should handle highlighting the active agents", async () => {
         const {container, rerender} = render(
-            <AgentFlow
-                id="test-flow-id"
-                agentsInNetwork={network}
-                selectedAgentId="agent2"
-            />
+            <ReactFlowProvider>
+                <AgentFlow
+                    id="test-flow-id"
+                    agentsInNetwork={network}
+                    selectedAgentId="agent2"
+                />
+            </ReactFlowProvider>
         )
 
         // Force a re-render by changing layout
@@ -75,11 +80,13 @@ describe("AgentFlow", () => {
         await user.click(layoutButton)
 
         rerender(
-            <AgentFlow
-                id="test-flow-id"
-                agentsInNetwork={network}
-                selectedAgentId="agent3"
-            />
+            <ReactFlowProvider>
+                <AgentFlow
+                    id="test-flow-id"
+                    agentsInNetwork={network}
+                    selectedAgentId="agent3"
+                />
+            </ReactFlowProvider>
         )
 
         // agent1 and agent3 should highlighted since agent1 (the Frontman) is the first upstream of agent3.
@@ -105,11 +112,13 @@ describe("AgentFlow", () => {
 
     it("Should handle an empty agent list", async () => {
         const {container} = render(
-            <AgentFlow
-                id="test-flow-id"
-                agentsInNetwork={[]}
-                selectedAgentId={null}
-            />
+            <ReactFlowProvider>
+                <AgentFlow
+                    id="test-flow-id"
+                    agentsInNetwork={[]}
+                    selectedAgentId={null}
+                />
+            </ReactFlowProvider>
         )
 
         const nodes = container.getElementsByClassName("react-flow__node")
@@ -118,11 +127,13 @@ describe("AgentFlow", () => {
 
     test.each(["radial", "linear"])("Should allow switching to %s layout", async (layout) => {
         const {container} = render(
-            <AgentFlow
-                id="test-flow-id"
-                agentsInNetwork={network}
-                selectedAgentId="agent1"
-            />
+            <ReactFlowProvider>
+                <AgentFlow
+                    id="test-flow-id"
+                    agentsInNetwork={network}
+                    selectedAgentId="agent1"
+                />
+            </ReactFlowProvider>
         )
 
         // locate appropriate button

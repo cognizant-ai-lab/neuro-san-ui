@@ -3,6 +3,7 @@ import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
+import Typography from "@mui/material/Typography"
 import {FC, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {
     applyNodeChanges,
@@ -23,9 +24,9 @@ import {
 } from "reactflow"
 
 import "reactflow/dist/style.css"
-import {AgentNode, AgentNodeProps} from "./AgentNode"
+import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AnimatedEdge} from "./AnimatedEdge"
-import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {BACKGROUND_COLORS, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {ConnectivityInfo} from "../../generated/neuro_san/api/grpc/agent"
 
@@ -166,33 +167,35 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
         [AnimatedEdge]
     )
 
-    const getRadialGuides = () => {
-        console.debug("nodes", nodes)
-        // Figure out the maximum depth of the network
-        const maxDepth = nodes?.reduce((max, node) => (node.data.depth > max ? node.data.depth : max), 0)
+    // Figure out the maximum depth of the network
+    const maxDepth = useMemo(() => {
+        return nodes?.reduce((max, node) => (node.data.depth > max ? node.data.depth : max), 0)
+    }, [nodes])
 
+    // Generate radial guides for the network to guide the eye in the radial layout
+    const getRadialGuides = () => {
         // If it's just Frontman, no need to draw guides
         if (maxDepth === 0) {
             return null
         }
 
-        const circles = []
-        for (let i = 1; i <= maxDepth; i += 1) {
-            circles.push(
-                <circle
-                    key={i}
-                    cx={DEFAULT_FRONTMAN_X_POS + 35}
-                    cy={DEFAULT_FRONTMAN_Y_POS + 35}
-                    r={BASE_RADIUS + i * LEVEL_SPACING}
-                    stroke="lightgray"
-                    fill="none"
-                    opacity="0.7"
-                />
-            )
-        }
+        const circles = Array.from({length: maxDepth}).map((_, i) => (
+            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+            <circle
+                id={`radial-guide-${BASE_RADIUS + (i + 1) * LEVEL_SPACING}`}
+                key={`radial-guide-${BASE_RADIUS + (i + 1) * LEVEL_SPACING}`}
+                cx={DEFAULT_FRONTMAN_X_POS + NODE_WIDTH / 2}
+                cy={DEFAULT_FRONTMAN_Y_POS + NODE_HEIGHT / 2}
+                r={BASE_RADIUS + (i + 1) * LEVEL_SPACING}
+                stroke="var(--bs-gray-medium)"
+                fill="none"
+                opacity="1"
+            />
+        ))
 
         return (
             <svg
+                id={`${id}-radial-guides`}
                 style={{
                     position: "absolute",
                     top: 0,
@@ -202,8 +205,93 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                     pointerEvents: "none", // Prevents blocking interactions with React Flow
                 }}
             >
-                <g transform={`translate(${transform[0]}, ${transform[1]}) scale(${transform[2]})`}>{circles}</g>
+                <g
+                    id={`${id}-radial-guides-group`}
+                    transform={`translate(${transform[0]}, ${transform[1]}) scale(${transform[2]})`}
+                >
+                    {circles}
+                </g>
             </svg>
+        )
+    }
+
+    // Generate Legend for depth coloring
+    function getLegend() {
+        return (
+            <Box
+                id={`${id}-legend`}
+                sx={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    backgroundColor: "white",
+                    padding: "5px",
+                    borderRadius: "5px",
+                    boxShadow: "0 0 5px rgba(0,0,0,0.3)",
+                    display: "flex",
+                    flexDirection: "row",
+                }}
+            >
+                <Typography
+                    id={`${id}-legend-label`}
+                    sx={{
+                        fontSize: "10px",
+                    }}
+                >
+                    Depth
+                </Typography>
+                {/*Frontman legend is different since it uses a non-palette color*/}
+                <Box
+                    id={`${id}-legend-depth-0`}
+                    key={0}
+                    style={{
+                        alignItems: "center",
+                        backgroundColor: "var(--bs-secondary)",
+                        borderRadius: "50%",
+                        color: "var(--bs-white)",
+                        display: "flex",
+                        height: "15px",
+                        justifyContent: "center",
+                        marginLeft: "5px",
+                        width: "15px",
+                    }}
+                >
+                    <Typography
+                        id={`${id}-legend-depth-0-text`}
+                        sx={{
+                            fontSize: "8px",
+                        }}
+                    >
+                        {0}
+                    </Typography>
+                </Box>
+                {Array.from({length: Math.min(maxDepth, BACKGROUND_COLORS.length)}, (_, i) => (
+                    <Box
+                        id={`${id}-legend-depth-${i}`}
+                        key={i + 1}
+                        style={{
+                            alignItems: "center",
+                            backgroundColor: BACKGROUND_COLORS[i],
+                            borderRadius: "50%",
+                            color: i >= 4 ? "var(--bs-white)" : "var(--bs-primary)",
+                            display: "flex",
+                            height: "15px",
+                            justifyContent: "center",
+                            marginLeft: "5px",
+                            width: "15px",
+                        }}
+                    >
+                        <Typography
+                            id={`${id}-legend-depth-${i}-text`}
+                            sx={{
+                                fontSize: "8px",
+                            }}
+                        >
+                            {i + 1}
+                        </Typography>
+                    </Box>
+                ))}
+            </Box>
         )
     }
 
@@ -224,6 +312,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
             >
+                {layout === "radial" && maxDepth > 0 && getLegend()}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"
@@ -246,6 +335,9 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                             <ControlButton
                                 id="radial-layout-button"
                                 onClick={() => setLayout("radial")}
+                                style={{
+                                    backgroundColor: layout === "radial" ? "var(--bs-gray-lighter" : undefined,
+                                }}
                             >
                                 <HubOutlinedIcon
                                     id="radial-layout-icon"
@@ -263,6 +355,9 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                             <ControlButton
                                 id="linear-layout-button"
                                 onClick={() => setLayout("linear")}
+                                style={{
+                                    backgroundColor: layout === "linear" ? "var(--bs-gray-lighter" : undefined,
+                                }}
                             >
                                 <ScatterPlotOutlinedIcon
                                     id="linear-layout-icon"
@@ -273,13 +368,20 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                     </Tooltip>
                     <Tooltip
                         id="radial-guides-tooltip"
-                        title="Enable/disable radial guides"
+                        title={`Enable/disable radial guides${
+                            layout === "radial" ? "" : " (only available in radial layout)"
+                        }`}
                         placement="right"
                     >
                         <span id="radial-guides-span">
                             <ControlButton
                                 id="radial-guides-button"
                                 onClick={() => setEnableRadialGuides(!enableRadialGuides)}
+                                style={{
+                                    backgroundColor:
+                                        layout === "radial" && enableRadialGuides ? "var(--bs-gray-lighter" : undefined,
+                                }}
+                                disabled={layout !== "radial"}
                             >
                                 <AdjustRoundedIcon
                                     id="radial-guides-icon"

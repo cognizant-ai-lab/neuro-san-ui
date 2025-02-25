@@ -3,6 +3,8 @@ import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
+import {BACKGROUND_COLORS} from "./const"
+
 export interface AgentNodeProps {
     agentName: string
     getSelectedAgentId: () => string
@@ -11,9 +13,9 @@ export interface AgentNodeProps {
     depth: number
 }
 
-// Orange palette for progressive coloring of nodes based on depth
-// TODO: these are arbitrary and not related to the theme or global CSS. But they are a nice palette.
-const BACKGROUND_COLORS = ["#FFDDC1", "#FED7AA", "#FDBA74", "#FB923C", "#F97316", "#EA580C"]
+// Node dimensions
+export const NODE_HEIGHT = 70
+export const NODE_WIDTH = 70
 
 /**
  * A node representing an agent in the network for use in react-flow.
@@ -37,13 +39,13 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     /* eslint-enable newline-per-chained-call */
 
-    let bgColor
+    let backgroundColor
     if (isFrontman) {
-        bgColor = "var(--bs-secondary)"
+        backgroundColor = "var(--bs-secondary)"
     } else if (isActiveAgent) {
-        bgColor = "var(--bs-red)"
+        backgroundColor = "var(--bs-red)"
     } else {
-        bgColor = BACKGROUND_COLORS[depth % BACKGROUND_COLORS.length]
+        backgroundColor = BACKGROUND_COLORS[(depth - 1) % BACKGROUND_COLORS.length]
     }
 
     const textColor = isFrontman || isActiveAgent || depth >= 4 ? "var(--bs-white)" : "var(--bs-primary)"
@@ -63,16 +65,16 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
             id={agentId}
             style={{
                 alignItems: "center",
-                backgroundColor: bgColor,
+                backgroundColor: backgroundColor,
                 borderRadius: "50%",
                 borderColor: "var(--bs-primary)",
                 borderWidth: !isFrontman && isActiveAgent ? 4 : 1,
                 color: textColor,
                 display: "flex",
-                height: 70,
+                height: NODE_HEIGHT,
                 justifyContent: "center",
                 textAlign: "center",
-                width: 70,
+                width: NODE_WIDTH,
                 animation: isActiveAgent ? "glow 2.0s infinite" : "none",
                 shapeOutside: "circle(50%)",
             }}
