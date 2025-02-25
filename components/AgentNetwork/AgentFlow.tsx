@@ -203,11 +203,10 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                 id={`${id}-radial-guides`}
                 style={{
                     position: "absolute",
+                    left: 0,
                     top: 0,
                     width: "100%",
-                    left: 0,
                     height: "100%",
-                    pointerEvents: "none", // Prevents blocking interactions with React Flow
                 }}
             >
                 <g
