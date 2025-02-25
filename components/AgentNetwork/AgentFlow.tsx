@@ -42,15 +42,18 @@ type Layout = "radial" | "linear"
 
 const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) => {
     // Save this as a mutable ref so child nodes see updates
-    const selectedAgentIdRef = useRef(selectedAgentId)
+    const selectedAgentIdRef = useRef<string>(selectedAgentId)
     const selectedSourceAgentId = useRef<string | undefined>(undefined)
 
     useEffect(() => {
         selectedAgentIdRef.current = selectedAgentId
     }, [selectedAgentId])
 
-    const getSelectedAgentId = useCallback(() => selectedAgentIdRef.current, [selectedAgentIdRef.current])
-    const getSelectedSourceAgentId = useCallback(() => selectedSourceAgentId.current, [selectedSourceAgentId.current])
+    const getSelectedAgentId = useCallback<() => string>(() => selectedAgentIdRef.current, [selectedAgentIdRef.current])
+    const getSelectedSourceAgentId = useCallback<() => string>(
+        () => selectedSourceAgentId.current,
+        [selectedSourceAgentId.current]
+    )
 
     const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>(null)
 
@@ -65,7 +68,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
         flowInstance && setTimeout(flowInstance.fitView, 50)
     }, [flowInstance, nodes.length, edges.length, layout])
 
-    // TODO: does this really need to be an effect?
+    // Create the flow layout depending on user preference
     useEffect(() => {
         if (agentsInNetwork?.length === 0) {
             return
@@ -106,12 +109,12 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
         setFlowInstance(reactFlowInstance)
     }, [])
 
-    // Highlight first edge we find connected to active agent. Sometimes this will be wrong if there are multiple
+    // Highlight first edge we find connected to active agent. SOMETIMES THIS WILL BE WRONG if there are multiple
     // edges to the active agent but this is a start.
     // TODO: we really only want to highlight the one from the sender to the active agent, but we don't have
     // origins info yet. We don't know _who_ sent the message to the active agent so for now, we guess.
     useEffect(() => {
-        let sourceAgentId
+        let sourceAgentId: string
 
         /* eslint-disable newline-per-chained-call */
         const selectedAgentFirstEdge = edges.find((edge) => {
@@ -121,9 +124,12 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
             }
             return false
         })
+        /* eslint-enable newline-per-chained-call */
 
         if (sourceAgentId) {
             selectedSourceAgentId.current = sourceAgentId
+        } else {
+            selectedSourceAgentId.current = null
         }
 
         const edgesCopy = edges.map((edge: Edge<EdgeProps>) => ({
@@ -143,7 +149,6 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, selectedAgentId}) =
                     : undefined,
             type: edge.id === selectedAgentFirstEdge?.id ? "animatedEdge" : undefined,
         }))
-        /* eslint-enable newline-per-chained-call */
 
         setEdges(edgesCopy)
     }, [selectedAgentId])
