@@ -253,20 +253,22 @@ export function DMSChat(props: {
                         value={userLlmChatOutput}
                     />
 
-                    <AgentChatButtons
-                        clearChatOnClickCallback={() => {
-                            chatHistory.current = []
-                            currentResponse.current = ""
-                            setPreviousUserQuery("")
-                            setUserLlmChatOutput("")
-                        }}
-                        enableClearChatButton={enableClearChatButton}
-                        isAwaitingLlm={isAwaitingLlm}
-                        handleSend={sendQuery}
-                        handleStop={handleStop}
-                        previousUserQuery={previousUserQuery}
-                        shouldEnableRegenerateButton={shouldEnableRegenerateButton}
-                    />
+                    <Box sx={{position: "absolute", right: "10px", bottom: "10px"}}>
+                        <AgentChatButtons
+                            clearChatOnClickCallback={() => {
+                                chatHistory.current = []
+                                currentResponse.current = ""
+                                setPreviousUserQuery("")
+                                setUserLlmChatOutput("")
+                            }}
+                            enableClearChatButton={enableClearChatButton}
+                            isAwaitingLlm={isAwaitingLlm}
+                            handleSend={sendQuery}
+                            handleStop={handleStop}
+                            previousUserQuery={previousUserQuery}
+                            shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+                        />
+                    </Box>
                 </Box>
 
                 <Box
