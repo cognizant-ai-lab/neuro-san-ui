@@ -1,6 +1,6 @@
 import {jsonrepair} from "jsonrepair"
 import {capitalize} from "lodash"
-import {Dispatch, MutableRefObject, ReactNode, SetStateAction} from "react"
+import {MutableRefObject, ReactNode} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {AgentError, AgentErrorProps, cleanUpAgentName, CombinedAgentType, LOGS_DELIMITER} from "./common"
@@ -107,13 +107,11 @@ export function processLogLine(logLine: string, messageType?: ChatMessageChatMes
  *
  * @param chunk The chunk of data received from the server. This is expected to be a JSON object with a `response` key.
  * @param updateOutput Function to update the output window.
- * @param setIsAwaitingLlm Function to set the state of whether we're awaiting a response from LLM.
  * @param handleJsonReceived Caller-supplied function to handle the JSON object received from the server.
  */
 export function handleStreamingReceived(
     chunk: string,
     updateOutput: (node: ReactNode) => void,
-    setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>,
     handleJsonReceived?: (receivedObject: object) => void
 ): void {
     let chatResponse: ChatResponse
@@ -170,7 +168,6 @@ export function handleStreamingReceived(
                 {errorMessage}
             </MUIAlert>
         )
-        setIsAwaitingLlm(false)
         throw new AgentError(errorMessage)
     }
 
@@ -182,7 +179,6 @@ export function handleStreamingReceived(
  * Sends the request to neuro-san to create the project and experiment.
  *
  * @param updateOutput Function to display agent chat responses to the user
- * @param setIsAwaitingLlm Function to set the state of whether we're awaiting a response from LLM
  * @param controller Mutable reference to the AbortController used to cancel the request
  * @param currentUser The current user (for displaying in the UI and for letting the server know who is calling)
  * @param query The query to send to the server
@@ -193,7 +189,6 @@ export function handleStreamingReceived(
  */
 export async function sendStreamingChatRequest(
     updateOutput: (node: ReactNode) => void,
-    setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>,
     controller: MutableRefObject<AbortController>,
     currentUser: string,
     query: string,
@@ -225,7 +220,6 @@ export async function sendStreamingChatRequest(
         try {
             // Increment the attempt number and set the state to indicate we're awaiting a response
             orchestrationAttemptNumber += 1
-            setIsAwaitingLlm(true)
 
             // Send the chat query to the server. This will block until the stream ends from the server
             await sendChatQuery(abortController.signal, query, currentUser, targetAgent as AgentType, callback)
@@ -250,8 +244,6 @@ export async function sendStreamingChatRequest(
                     )
                 }
             }
-        } finally {
-            setIsAwaitingLlm(false)
         }
     } while (orchestrationAttemptNumber < MAX_AGENT_RETRIES && !succeeded)
 

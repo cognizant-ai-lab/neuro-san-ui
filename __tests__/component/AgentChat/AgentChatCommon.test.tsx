@@ -101,7 +101,6 @@ describe("AgentChatCommon", () => {
         expect(mockSendFunction).toHaveBeenCalledTimes(1)
         expect(mockSendFunction).toHaveBeenCalledWith(
             expect.any(Function),
-            expect.any(Function),
             expect.any(Object),
             testUser,
             query,

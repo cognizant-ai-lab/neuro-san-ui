@@ -1,6 +1,6 @@
 import {BaseMessage} from "@langchain/core/messages"
 import Grid from "@mui/material/Grid2"
-import {Dispatch, MutableRefObject, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
+import {MutableRefObject, ReactNode, useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {AgentChatCommon} from "../../components/AgentChat/AgentChatCommon"
@@ -158,7 +158,6 @@ export default function AgentNetworkPage() {
                         sx={{height: "100%"}}
                         sendFunction={async function (
                             updateOutput: (node: ReactNode) => void,
-                            sendFunctionSetIsAwaitingLlm: Dispatch<SetStateAction<boolean>>,
                             controller: MutableRefObject<AbortController>,
                             currentUser: string,
                             query: string,
@@ -166,13 +165,12 @@ export default function AgentNetworkPage() {
                         ): Promise<void> {
                             await sendStreamingChatRequest(
                                 updateOutput,
-                                sendFunctionSetIsAwaitingLlm,
                                 controller,
                                 currentUser,
                                 query,
                                 targetAgent,
                                 (chunk) => {
-                                    handleStreamingReceived(chunk, updateOutput, sendFunctionSetIsAwaitingLlm)
+                                    handleStreamingReceived(chunk, updateOutput)
                                     highlightAgentNetwork(chunk)
                                 }
                             )

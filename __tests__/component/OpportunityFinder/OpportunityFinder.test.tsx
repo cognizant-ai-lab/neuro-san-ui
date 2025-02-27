@@ -102,14 +102,7 @@ describe("OpportunityFinder", () => {
         const updateOutputMock = (node: ReactNode) => {
             render(<>{node}</>)
         }
-        await invokeOrchestrationAgent(
-            "query",
-            updateOutputMock,
-            mockController,
-            mockProjectRef,
-            jest.fn(),
-            "currentUser"
-        )
+        await invokeOrchestrationAgent("query", updateOutputMock, mockController, mockProjectRef, "currentUser")
 
         expect(await screen.findByText("Experiment generation complete")).toBeInTheDocument()
     })

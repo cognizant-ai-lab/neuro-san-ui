@@ -71,7 +71,7 @@ describe("handleStreamingReceived", () => {
             }),
         }
         const updateOutputMock = jest.fn()
-        handleStreamingReceived(JSON.stringify(chunk), updateOutputMock, null, null)
+        handleStreamingReceived(JSON.stringify(chunk), updateOutputMock, null)
 
         expect(updateOutputMock).not.toHaveBeenCalled()
     })
@@ -93,10 +93,9 @@ describe("handleStreamingReceived", () => {
         }
 
         const updateOutputMock = jest.fn()
-        const setIsAwaitingLlmMock = jest.fn()
         let caughtError: Error | null = null
         try {
-            handleStreamingReceived(JSON.stringify(chunk), updateOutputMock, setIsAwaitingLlmMock, jest.fn())
+            handleStreamingReceived(JSON.stringify(chunk), updateOutputMock, jest.fn())
         } catch (error: unknown) {
             caughtError = error as Error
         }
@@ -106,9 +105,6 @@ describe("handleStreamingReceived", () => {
         expect(caughtError.message).toContain(orchestrationFailedMessage.error)
         expect(caughtError.message).toContain(orchestrationFailedMessage.traceback)
         expect(caughtError.message).toContain(orchestrationFailedMessage.tool)
-
-        // Should have signaled that we are done with the interaction
-        expect(setIsAwaitingLlmMock).toHaveBeenCalledWith(false)
     })
 
     it("Should handle a non-JSON chat message", async () => {
@@ -147,7 +143,6 @@ describe("handleStreamingReceived", () => {
                 current: null,
             }
             const updateOutputMock = jest.fn()
-            const setAwaitingLlmMock = jest.fn()
 
             ;(sendChatQuery as jest.Mock).mockImplementation(async (_signal, _query, _user, _targetAgent, callback) => {
                 callback()
@@ -155,7 +150,6 @@ describe("handleStreamingReceived", () => {
 
             await sendStreamingChatRequest(
                 updateOutputMock,
-                setAwaitingLlmMock,
                 abortController,
                 "testUser",
                 "testQuery",
@@ -184,7 +178,6 @@ describe("handleStreamingReceived", () => {
                 current: null,
             }
             const updateOutputMock = jest.fn()
-            const setAwaitingLlmMock = jest.fn()
 
             ;(sendChatQuery as jest.Mock).mockImplementation(async (_signal, _query, _user, callback) => {
                 callback("Random chat message")
@@ -192,7 +185,6 @@ describe("handleStreamingReceived", () => {
 
             await sendStreamingChatRequest(
                 updateOutputMock,
-                setAwaitingLlmMock,
                 abortController,
                 "testUser",
                 "testQuery",

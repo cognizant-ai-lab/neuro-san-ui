@@ -5,7 +5,17 @@ import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {Box, Button, Input, SxProps} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Tooltip from "@mui/material/Tooltip"
-import {CSSProperties, Dispatch, FC, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
+import {
+    CSSProperties,
+    Dispatch,
+    FC,
+    MutableRefObject,
+    ReactNode,
+    SetStateAction,
+    useEffect,
+    useRef,
+    useState,
+} from "react"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 
 import {handleStreamingReceived, sendStreamingChatRequest} from "./AgentChatHandling"
@@ -32,7 +42,15 @@ interface AgentChatCommonProps {
     readonly setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>
     readonly isAwaitingLlm: boolean
     readonly targetAgent: CombinedAgentType
-    readonly sendFunction?: (...params: Parameters<typeof sendStreamingChatRequest>) => Promise<void>
+    readonly sendFunction?: (
+        updateOutput: (node: ReactNode) => void,
+        controller: MutableRefObject<AbortController>,
+        currentUser: string,
+        query: string,
+        targetAgent: CombinedAgentType,
+        callback: (chunk: string) => void,
+        checkSuccess: () => boolean
+    ) => Promise<void>
     readonly setPreviousResponse?: (agent: string, response: string) => void
     readonly setChatHistory?: (val: BaseMessage[]) => void
     readonly getChatHistory?: () => BaseMessage[]
@@ -291,9 +309,10 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
 
             // Set up the abort controller
             controller.current = new AbortController()
+            setIsAwaitingLlm(true)
 
-            await sendFunction(updateOutput, setIsAwaitingLlm, controller, currentUser, query, targetAgent, (chunk) =>
-                handleStreamingReceived(chunk, updateOutput, setIsAwaitingLlm)
+            await sendFunction(updateOutput, controller, currentUser, query, targetAgent, (chunk: string) =>
+                handleStreamingReceived(chunk, updateOutput)
             )
 
             // Add a blank line after response
@@ -323,6 +342,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                 }
             }
         } finally {
+            setIsAwaitingLlm(false)
             resetState()
         }
     }
