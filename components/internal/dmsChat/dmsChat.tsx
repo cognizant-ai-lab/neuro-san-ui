@@ -19,6 +19,7 @@ import {Run} from "../../../controller/run/types"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {MUIDrawer} from "../../MUIDrawer"
 import {LlmChatButton} from "../LlmChatButton"
+import {AgentChatButtons} from "../../AgentChat/AgentChatButtons"
 
 /**
  * Chat assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
@@ -251,43 +252,21 @@ export function DMSChat(props: {
                         }}
                         value={userLlmChatOutput}
                     />
-                    {/*Clear Chat button*/}
-                    {!isAwaitingLlm && (
-                        <LlmChatButton
-                            id="clear-chat-button"
-                            onClick={() => {
-                                chatHistory.current = []
-                                currentResponse.current = ""
-                                setPreviousUserQuery("")
-                                setUserLlmChatOutput("")
-                            }}
-                            disabled={!enableClearChatButton}
-                            posRight={80}
-                        >
-                            <DeleteOutline id="clear-chat-icon" />
-                        </LlmChatButton>
-                    )}
-                    {/*Stop Button*/}
-                    {isAwaitingLlm && (
-                        <LlmChatButton
-                            id="stop-output-button"
-                            onClick={() => handleStop()}
-                        >
-                            <StopCircle id="stop-button-icon" />
-                        </LlmChatButton>
-                    )}
-                    {/*Regenerate Button*/}
-                    {!isAwaitingLlm && (
-                        <LlmChatButton
-                            id="regenerate-output-button"
-                            onClick={async () => {
-                                await sendQuery(previousUserQuery)
-                            }}
-                            disabled={!shouldEnableRegenerateButton}
-                        >
-                            <Loop id="generate-icon" />
-                        </LlmChatButton>
-                    )}
+
+                    <AgentChatButtons
+                        clearChatOnClickCallback={() => {
+                            chatHistory.current = []
+                            currentResponse.current = ""
+                            setPreviousUserQuery("")
+                            setUserLlmChatOutput("")
+                        }}
+                        enableClearChatButton={enableClearChatButton}
+                        isAwaitingLlm={isAwaitingLlm}
+                        handleSend={sendQuery}
+                        handleStop={handleStop}
+                        previousUserQuery={previousUserQuery}
+                        shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+                    />
                 </Box>
 
                 <Box

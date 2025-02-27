@@ -2,13 +2,13 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
 import {Box, Button, Input, SxProps} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Tooltip from "@mui/material/Tooltip"
 import {CSSProperties, Dispatch, FC, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 
+import {AgentChatButtons} from "./AgentChatButtons"
 import {handleStreamingReceived, sendStreamingChatRequest} from "./AgentChatHandling"
 import {AGENT_GREETINGS} from "./AgentGreetings"
 import {cleanUpAgentName, CombinedAgentType, getUserImageAndUserQuery} from "./common"
@@ -415,45 +415,21 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                     )}
                 </Box>
 
-                {/*Clear Chat button*/}
-                {!isAwaitingLlm && (
-                    <LlmChatButton
-                        id="clear-chat-button"
-                        onClick={() => {
-                            setChatOutput([])
-                            setChatHistory([])
-                            setPreviousUserQuery("")
-                            currentResponse.current = ""
-                            introduceAgent()
-                        }}
-                        posRight={80}
-                        disabled={!enableClearChatButton}
-                    >
-                        <DeleteOutline id="stop-button-icon" />
-                    </LlmChatButton>
-                )}
-
-                {/*Stop Button*/}
-                {isAwaitingLlm && (
-                    <LlmChatButton
-                        id="stop-output-button"
-                        onClick={() => handleStop()}
-                        disabled={!isAwaitingLlm}
-                    >
-                        <StopCircle id="stop-button-icon" />
-                    </LlmChatButton>
-                )}
-
-                {/*Regenerate Button*/}
-                {!isAwaitingLlm && (
-                    <LlmChatButton
-                        id="regenerate-output-button"
-                        onClick={() => handleSend(previousUserQuery)}
-                        disabled={!shouldEnableRegenerateButton}
-                    >
-                        <Loop id="generate-icon" />
-                    </LlmChatButton>
-                )}
+                <AgentChatButtons
+                    clearChatOnClickCallback={() => {
+                        setChatOutput([])
+                        setChatHistory([])
+                        setPreviousUserQuery("")
+                        currentResponse.current = ""
+                        introduceAgent()
+                    }}
+                    enableClearChatButton={enableClearChatButton}
+                    isAwaitingLlm={isAwaitingLlm}
+                    handleSend={handleSend}
+                    handleStop={handleStop}
+                    previousUserQuery={previousUserQuery}
+                    shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+                />
             </Box>
             <Box
                 id="user-input-div"
