@@ -8,17 +8,19 @@ import Tooltip from "@mui/material/Tooltip"
 import {CSSProperties, Dispatch, FC, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 
-import {sendStreamingChatRequest} from "./AgentChatHandling"
+import {processLogLine, sendStreamingChatRequest} from "./AgentChatHandling"
 import {AgentChatMultiButtons} from "./AgentChatMultiButtons"
 import {AgentChatSendButton} from "./AgentChatSendButton"
 import {AGENT_GREETINGS} from "./AgentGreetings"
 import {cleanUpAgentName, CombinedAgentType, getUserImageAndUserQuery} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
+import {chatMessageFromChunk} from "./JsonUtils"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {getAgentFunction, getConnectivity} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
 import {AgentType} from "../../generated/metadata"
 import {ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
+import {ChatMessage} from "../../generated/neuro_san/api/grpc/chat"
 import {hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
 import {LlmChatOptionsButton} from "../internal/LlmChatOptionsButton"
@@ -106,12 +108,19 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     const highlighterTheme = HLJS_THEMES["a11yDark"]
 
     // Define styles based on user options (wrap setting)
-    const divStyle: CSSProperties = {
-        whiteSpace: shouldWrapOutput ? "normal" : "nowrap",
-        overflow: shouldWrapOutput ? "visible" : "hidden",
-        textOverflow: shouldWrapOutput ? "clip" : "ellipsis",
-        overflowX: shouldWrapOutput ? "visible" : "auto",
-    }
+    const divStyle: CSSProperties = shouldWrapOutput
+        ? {
+              whiteSpace: "normal",
+              overflow: "visible",
+              textOverflow: "clip",
+              overflowX: "visible",
+          }
+        : {
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              overflowX: "auto",
+          }
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -324,7 +333,10 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                     query,
                     targetAgent as AgentType,
                     (chunk: string) => {
-                        updateOutput(chunk)
+                        const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
+                        if (chatMessage) {
+                            updateOutput(processLogLine(chatMessage.text, chatMessage.type))
+                        }
                         handleStreamingReceived?.(chunk)
                     }
                 )

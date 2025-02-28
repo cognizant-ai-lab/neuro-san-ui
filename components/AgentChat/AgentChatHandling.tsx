@@ -3,7 +3,7 @@ import {capitalize} from "lodash"
 import {MutableRefObject, ReactNode} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {AgentError, cleanUpAgentName, CombinedAgentType, LOGS_DELIMITER} from "./common"
+import {AgentError, CombinedAgentType, LOGS_DELIMITER} from "./common"
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {sendChatQuery} from "../../controller/agent/agent"
 import {AgentType} from "../../generated/metadata"

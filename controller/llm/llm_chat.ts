@@ -32,8 +32,8 @@ export async function sendLlmRequest(
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            ...(chatHistory && {chatHistory: chatHistory}), // Only include chat history if it exists (optional)
-            ...(userQuery && {userQuery: userQuery}), // Only include user query if it exists (optional)
+            ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)
+            ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
             ...params,
         }),
         signal: signal,
