@@ -24,7 +24,7 @@ describe("AgentChatSendButton", () => {
 
         const button = screen.getByRole("button", {name: "Send"})
         expect(button).toBeInTheDocument()
-        expect(button).not.toBeDisabled()
+        expect(button).toBeEnabled()
     })
 
     it("disables button when enableSendButton is false", () => {
