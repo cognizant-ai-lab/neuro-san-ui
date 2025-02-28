@@ -4,7 +4,7 @@ import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {AgentChatSendButton} from "../../../components/AgentChat/AgentChatSendButton"
 
-describe("AgentChatButtons", () => {
+describe("AgentChatSendButton", () => {
     let user: UserEvent
     const handleClick = jest.fn()
 
