@@ -156,6 +156,8 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
 
     useEffect(() => {
         const newAgent = async () => {
+            introduceAgent()
+
             let agentFunction: FunctionResponse
 
             try {
@@ -164,8 +166,6 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                 // For now, just return. May be a legacy agent without a functional description in Neuro-San.
                 return
             }
-
-            introduceAgent()
 
             let connectivity: ConnectivityResponse
             try {
@@ -234,6 +234,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
             )
         }
 
+        console.debug("in effect, targetAgent is", targetAgent)
         if (targetAgent) {
             void newAgent()
         }
