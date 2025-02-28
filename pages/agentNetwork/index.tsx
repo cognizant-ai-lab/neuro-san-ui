@@ -64,7 +64,7 @@ export default function AgentNetworkPage() {
         })()
     }, [selectedNetwork])
 
-    const highlightAgentNetwork = (chatMessageText: string) => {
+    const detectSelectedAgent = (chatMessageText: string) => {
         // TODO: replace this with a strategy using "origins" info now available in Neuro-san API
         const calledIndexOf = chatMessageText.indexOf(AgentNetworkEvents.CALLED)
         const returnedIndexOf = chatMessageText.indexOf(AgentNetworkEvents.RETURNED)
@@ -89,7 +89,11 @@ export default function AgentNetworkPage() {
             return
         }
 
-        highlightAgentNetwork(chatMessage)
+        detectSelectedAgent(chatMessage)
+    }
+
+    const onStreamingComplete = (): void => {
+        setSelectedAgentId("")
     }
 
     return (
@@ -145,7 +149,8 @@ export default function AgentNetworkPage() {
                         }}
                         getChatHistory={() => chatHistory.current}
                         sx={{height: "100%"}}
-                        handleStreamingReceived={handleStreamingReceived}
+                        onChunkReceived={handleStreamingReceived}
+                        onStreamingComplete={onStreamingComplete}
                     />
                 </Grid>
             </Grid>

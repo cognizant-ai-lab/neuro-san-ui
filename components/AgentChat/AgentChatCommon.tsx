@@ -39,7 +39,11 @@ interface AgentChatCommonProps {
     /**
      * Optional extra callback for containers to do extra things with the chunks as they are received
      */
-    readonly handleStreamingReceived?: (chunk: string) => void
+    readonly onChunkReceived?: (chunk: string) => void
+    /**
+     * Will be called when the streaming is complete, whatever the reason for termination (normal or error)
+     */
+    readonly onStreamingComplete?: () => void
     readonly setPreviousResponse?: (agent: string, response: string) => void
     readonly setChatHistory?: (val: BaseMessage[]) => void
     readonly getChatHistory?: () => BaseMessage[]
@@ -64,7 +68,8 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     userImage,
     setIsAwaitingLlm,
     isAwaitingLlm,
-    handleStreamingReceived,
+    onChunkReceived,
+    onStreamingComplete,
     setPreviousResponse,
     setChatHistory = NO_OP_SET,
     getChatHistory = NO_OP_GET,
@@ -337,7 +342,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                         if (chatMessage) {
                             updateOutput(processLogLine(chatMessage.text, chatMessage.type))
                         }
-                        handleStreamingReceived?.(chunk)
+                        onChunkReceived?.(chunk)
                     }
                 )
             } else {
@@ -346,7 +351,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                 await sendLlmRequest(
                     (chunk: string) => {
                         updateOutput(chunk)
-                        handleStreamingReceived?.(chunk)
+                        onChunkReceived?.(chunk)
                     },
                     controller?.current.signal,
                     legacyAgentEndpoint,
@@ -385,6 +390,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
         } finally {
             setIsAwaitingLlm(false)
             resetState()
+            onStreamingComplete?.()
         }
     }
 
