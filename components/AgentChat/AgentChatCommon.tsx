@@ -8,8 +8,9 @@ import Tooltip from "@mui/material/Tooltip"
 import {CSSProperties, Dispatch, FC, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 
-import {AgentChatButtons} from "./AgentChatButtons"
 import {handleStreamingReceived, sendStreamingChatRequest} from "./AgentChatHandling"
+import {AgentChatMultiButtons} from "./AgentChatMultiButtons"
+import {AgentChatSendButton} from "./AgentChatSendButton"
 import {AGENT_GREETINGS} from "./AgentGreetings"
 import {cleanUpAgentName, CombinedAgentType, getUserImageAndUserQuery} from "./common"
 import {FormattedMarkdown} from "./FormattedMarkdown"
@@ -19,7 +20,6 @@ import {AgentType} from "../../generated/metadata"
 import {ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
-import {LlmChatButton} from "../internal/LlmChatButton"
 import {LlmChatOptionsButton} from "../internal/LlmChatOptionsButton"
 import {MUIAccordion} from "../MUIAccordion"
 import {MUIAlert} from "../MUIAlert"
@@ -415,7 +415,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                     )}
                 </Box>
 
-                <AgentChatButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                <AgentChatMultiButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     clearChatOnClickCallback={() => {
                         setChatOutput([])
                         setChatHistory([])
@@ -443,7 +443,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                     sx={{
                         display: "flex",
                         flexGrow: 1,
-                        marginRight: "10px",
+                        marginRight: "0.5rem",
                         borderWidth: "1px",
                         borderColor: "var(--bs-border-color)",
                         borderRadius: "0.5rem",
@@ -470,10 +470,10 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                         color: "var(--bs-primary)",
                         border: "none",
                         fontWeight: 550,
-                        left: "calc(100% - 180px)",
                         lineHeight: "35px",
                         opacity: userInputEmpty ? "25%" : "100%",
                         position: "absolute",
+                        right: 60,
                         zIndex: 99999,
                     }}
                     disabled={userInputEmpty}
@@ -483,26 +483,11 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                 </Button>
 
                 {/* Send Button */}
-                <LlmChatButton
+                <AgentChatSendButton
+                    enableSendButton={shouldEnableSendButton}
                     id="submit-query-button"
-                    type="submit"
-                    posBottom={0}
-                    posRight={0}
-                    disabled={!shouldEnableSendButton}
-                    sx={{
-                        opacity: shouldEnableSendButton ? "100%" : "50%",
-                        color: "white !important",
-                        fontSize: "15px",
-                        fontWeight: "500",
-                        lineHeight: "38px",
-                        padding: "2px",
-                        position: "relative",
-                        width: 126,
-                    }}
-                    onClick={() => handleSend(chatInput)}
-                >
-                    Send
-                </LlmChatButton>
+                    onClickCallback={() => handleSend(chatInput)}
+                />
             </Box>
         </Box>
     )

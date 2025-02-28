@@ -14,9 +14,9 @@ import {StringToStringOrNumber} from "../../../controller/base_types"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 import {Run} from "../../../controller/run/types"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {AgentChatButtons} from "../../AgentChat/AgentChatButtons"
+import {AgentChatMultiButtons} from "../../AgentChat/AgentChatMultiButtons"
+import {AgentChatSendButton} from "../../AgentChat/AgentChatSendButton"
 import {MUIDrawer} from "../../MUIDrawer"
-import {LlmChatButton} from "../LlmChatButton"
 
 /**
  * Chat assistant, initially for DMS page but in theory could be used elsewhere. Allows the user to chat with an LLM
@@ -254,7 +254,7 @@ export function DMSChat(props: {
                         id="dms-chat-agent-chat-btns-box"
                         sx={{position: "absolute", right: "10px", bottom: "10px"}}
                     >
-                        <AgentChatButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                        <AgentChatMultiButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             clearChatOnClickCallback={() => {
                                 chatHistory.current = []
                                 currentResponse.current = ""
@@ -339,27 +339,13 @@ export function DMSChat(props: {
                                 sx={{color: "var(--bs-primary)"}}
                             />
                         ) : (
-                            <LlmChatButton
+                            <AgentChatSendButton
+                                enableSendButton={!shouldDisableSendButton}
                                 id="submit-query-button"
-                                disabled={shouldDisableSendButton}
-                                onClick={async () => {
+                                onClickCallback={async () => {
                                     await sendQuery(userInput)
                                 }}
-                                posBottom={0}
-                                posRight={0}
-                                sx={{
-                                    opacity: shouldDisableSendButton ? "50%" : "100%",
-                                    color: "white !important",
-                                    fontSize: "15px",
-                                    fontWeight: "500",
-                                    lineHeight: "38px",
-                                    padding: "2px",
-                                    position: "relative",
-                                    width: 126,
-                                }}
-                            >
-                                Send
-                            </LlmChatButton>
+                            />
                         )}
                     </div>
                 </Box>

@@ -20,10 +20,10 @@ import {CsvDataChatResponse} from "../../../generated/analytics_chat"
 import {ChatMessage as AnalyticsChatMessage, ChatMessageChatMessageType} from "../../../generated/chat"
 import {DataSource} from "../../../generated/metadata"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {AgentChatButtons} from "../../AgentChat/AgentChatButtons"
+import {AgentChatMultiButtons} from "../../AgentChat/AgentChatMultiButtons"
+import {AgentChatSendButton} from "../../AgentChat/AgentChatSendButton"
 import {ConfirmationModal} from "../../confirmationModal"
 import {NotificationType, sendNotification} from "../../notification"
-import {LlmChatButton} from "../LlmChatButton"
 import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
 
 interface AnalyticsChatProps {
@@ -363,7 +363,7 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                         }
                     />
 
-                    <AgentChatButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    <AgentChatMultiButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         clearChatOnClickCallback={() => {
                             chatHistory.current = []
                             setPreviousUserQuery("")
@@ -450,27 +450,13 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                                 sx={{color: "var(--bs-primary)"}}
                             />
                         ) : (
-                            <LlmChatButton
+                            <AgentChatSendButton
+                                enableSendButton={!shouldDisableSendButton}
                                 id="submit-query-button"
-                                disabled={shouldDisableSendButton}
-                                onClick={async () => {
+                                onClickCallback={async () => {
                                     await sendQuery(userInput)
                                 }}
-                                posBottom={0}
-                                posRight={0}
-                                sx={{
-                                    opacity: shouldDisableSendButton ? "50%" : "100%",
-                                    color: "white !important",
-                                    fontSize: "15px",
-                                    fontWeight: "500",
-                                    lineHeight: "38px",
-                                    padding: "2px",
-                                    position: "relative",
-                                    width: 126,
-                                }}
-                            >
-                                Send
-                            </LlmChatButton>
+                            />
                         )}
                     </div>
                 </div>

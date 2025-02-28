@@ -4,7 +4,7 @@ import {styled} from "@mui/material"
 import {LlmChatButton} from "../internal/LlmChatButton"
 
 // #region: Types
-interface AgentButtonsProps {
+interface AgentChatMultiButtonsProps {
     clearChatOnClickCallback: () => void
     enableClearChatButton: boolean
     isAwaitingLlm: boolean
@@ -26,7 +26,7 @@ const SmallLlmChatButton = styled(LlmChatButton)({
  * Generate the agent buttons for the Opportunity Finder agents.
  * @returns A div containing the agent buttons
  */
-export const AgentChatButtons: React.FC<AgentButtonsProps> = ({
+export const AgentChatMultiButtons: React.FC<AgentChatMultiButtonsProps> = ({
     clearChatOnClickCallback,
     enableClearChatButton,
     isAwaitingLlm,
@@ -43,7 +43,8 @@ export const AgentChatButtons: React.FC<AgentButtonsProps> = ({
                 disabled={!enableClearChatButton}
                 id="clear-chat-button"
                 onClick={clearChatOnClickCallback}
-                posRight={55}
+                posBottom={15}
+                posRight={60}
             >
                 <DeleteOutline
                     fontSize="small"
@@ -59,6 +60,8 @@ export const AgentChatButtons: React.FC<AgentButtonsProps> = ({
                 disabled={!isAwaitingLlm}
                 id="stop-output-button"
                 onClick={() => handleStop()}
+                posBottom={15}
+                posRight={15}
             >
                 <StopCircle
                     fontSize="small"
@@ -74,6 +77,8 @@ export const AgentChatButtons: React.FC<AgentButtonsProps> = ({
                 disabled={!shouldEnableRegenerateButton}
                 id="regenerate-output-button"
                 onClick={() => handleSend(previousUserQuery)}
+                posBottom={15}
+                posRight={15}
             >
                 <Loop
                     fontSize="small"
