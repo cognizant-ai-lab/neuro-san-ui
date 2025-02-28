@@ -4,7 +4,7 @@ import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {AgentChatMultiButtons} from "../../../components/AgentChat/AgentChatMultiButtons"
 
-describe("AgentChatButtons", () => {
+describe("AgentChatMultiButtons", () => {
     let user: UserEvent
     const mockClearChat = jest.fn()
     const mockHandleSend = jest.fn()
