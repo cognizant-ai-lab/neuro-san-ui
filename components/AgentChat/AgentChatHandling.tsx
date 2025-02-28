@@ -3,16 +3,13 @@ import {capitalize} from "lodash"
 import {MutableRefObject, ReactNode} from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {AgentError, AgentErrorProps, cleanUpAgentName, CombinedAgentType, LOGS_DELIMITER} from "./common"
+import {AgentError, cleanUpAgentName, CombinedAgentType, LOGS_DELIMITER} from "./common"
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {sendChatQuery} from "../../controller/agent/agent"
 import {AgentType} from "../../generated/metadata"
-import {ChatResponse} from "../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
+import {ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {MUIAccordion} from "../MUIAccordion"
 import {MUIAlert} from "../MUIAlert"
-
-const knownMessageTypes = [ChatMessageChatMessageType.AI, ChatMessageChatMessageType.LEGACY_LOGS]
 
 /**
  * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator. If the delimiter is not
@@ -102,80 +99,6 @@ export function processLogLine(logLine: string, messageType?: ChatMessageChatMes
 }
 
 /**
- * Handle a chunk of data received from the server. This is the main entry point for processing the data received from
- * neuro-san streaming chat.
- *
- * @param chunk The chunk of data received from the server. This is expected to be a JSON object with a `response` key.
- * @param updateOutput Function to update the output window.
- * @param handleJsonReceived Caller-supplied function to handle the JSON object received from the server.
- */
-export function handleStreamingReceived(
-    chunk: string,
-    updateOutput: (node: ReactNode) => void,
-    handleJsonReceived?: (receivedObject: object) => void
-): void {
-    let chatResponse: ChatResponse
-    try {
-        chatResponse = JSON.parse(chunk).result
-    } catch (e) {
-        console.error(`Error parsing log line: ${e}`)
-        return
-    }
-    const chatMessage: ChatMessage = chatResponse?.response
-
-    const messageType: ChatMessageChatMessageType = chatMessage?.type
-
-    // Check if it's a message type we know how to handle
-    if (!knownMessageTypes.includes(messageType)) {
-        return
-    }
-
-    let chatMessageJson: object = null
-    const chatMessageText = chatMessage.text
-
-    // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
-    const chatMessageCleaned = chatMessageText.replace(/```json/gu, "").replace(/```/gu, "")
-
-    try {
-        chatMessageJson = JSON.parse(chatMessageCleaned)
-    } catch (error) {
-        // Not JSON-like, so just add it to the output
-        if (error instanceof SyntaxError) {
-            // Regular chat message (not error or end condition) so just add it to the output
-            const newOutputItem = processLogLine(chatMessageText, messageType)
-            updateOutput(newOutputItem)
-            return
-        } else {
-            // Not an expected error, so rethrow it for someone else to figure out.
-            throw error
-        }
-    }
-
-    // It was JSON-like. Figure out what we're dealing with
-
-    // Error?
-    if ("error" in chatMessageJson) {
-        const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
-        const errorMessage =
-            `Error occurred. Error: "${agentError.error}", ` +
-            `traceback: "${agentError?.traceback}", ` +
-            `tool: "${agentError?.tool}" Retrying...`
-        updateOutput(
-            <MUIAlert
-                id="retry-message-alert"
-                severity="warning"
-            >
-                {errorMessage}
-            </MUIAlert>
-        )
-        throw new AgentError(errorMessage)
-    }
-
-    // Some other kind of JSON block. Let the caller handle it.
-    handleJsonReceived(chatMessageJson)
-}
-
-/**
  * Sends the request to neuro-san to create the project and experiment.
  *
  * @param updateOutput Function to display agent chat responses to the user
@@ -200,26 +123,13 @@ export async function sendStreamingChatRequest(
     const abortController = new AbortController()
     controller.current = abortController
 
-    updateOutput(
-        <MUIAccordion
-            id="initiating-orchestration-accordion"
-            items={[
-                {
-                    title: `Contacting ${cleanUpAgentName(targetAgent)} agent...`,
-                    content: `Query: ${query}`,
-                },
-            ]}
-            sx={{marginBottom: "1rem"}}
-        />
-    )
-
-    let orchestrationAttemptNumber = 0
+    let attemptNumber = 0
 
     let succeeded: boolean = false
     do {
         try {
             // Increment the attempt number and set the state to indicate we're awaiting a response
-            orchestrationAttemptNumber += 1
+            attemptNumber += 1
 
             // Send the chat query to the server. This will block until the stream ends from the server
             await sendChatQuery(abortController.signal, query, currentUser, targetAgent as AgentType, callback)
@@ -245,7 +155,7 @@ export async function sendStreamingChatRequest(
                 }
             }
         }
-    } while (orchestrationAttemptNumber < MAX_AGENT_RETRIES && !succeeded)
+    } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded)
 
     if (!succeeded) {
         updateOutput(

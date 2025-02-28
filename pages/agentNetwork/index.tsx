@@ -1,19 +1,18 @@
 import {BaseMessage} from "@langchain/core/messages"
 import Grid from "@mui/material/Grid2"
-import {MutableRefObject, ReactNode, useEffect, useRef, useState} from "react"
+import {useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {AgentChatCommon} from "../../components/AgentChat/AgentChatCommon"
-import {handleStreamingReceived, sendStreamingChatRequest} from "../../components/AgentChat/AgentChatHandling"
-import {cleanUpAgentName, CombinedAgentType} from "../../components/AgentChat/common"
+import {cleanUpAgentName} from "../../components/AgentChat/common"
+import {tryParseJson} from "../../components/AgentChat/JsonUtils"
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/notification"
 import {getConnectivity} from "../../controller/agent/agent"
 import "../../styles/AgentNetwork.module.css"
 import {AgentType} from "../../generated/metadata"
-import {ChatResponse, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
+import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {useAuthentication} from "../../utils/authentication"
 
 // #region: Types
@@ -26,8 +25,6 @@ enum AgentNetworkEvents {
 }
 
 // #endregion: Types
-
-const knownAgentEventMessageTypes = [ChatMessageChatMessageType.LEGACY_LOGS]
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -67,30 +64,11 @@ export default function AgentNetworkPage() {
         })()
     }, [selectedNetwork])
 
-    const highlightAgentNetwork = (chunk: string) => {
-        let chatResponse: ChatResponse
-        try {
-            chatResponse = JSON.parse(chunk).result
-        } catch (e) {
-            console.error(`Error parsing log line: ${e}`)
-            return
-        }
-        const chatMessage: ChatMessage = chatResponse?.response
-        const messageType: ChatMessageChatMessageType = chatMessage?.type
-
-        // Check if it's a message type we know how to handle
-        if (!knownAgentEventMessageTypes.includes(messageType)) {
-            return
-        }
-
-        const chatMessageText = chatMessage.text
-
-        // TODO: Let's keep LEGACY_LOGS type since those are useful?
-        // Or, we could get the markdown header instead on AI type, but that seems more error prone?
-        // eg. "**Sales Engineer:**"
+    const highlightAgentNetwork = (chatMessageText: string) => {
+        // TODO: replace this with a strategy using "origins" info now available in Neuro-san API
         const calledIndexOf = chatMessageText.indexOf(AgentNetworkEvents.CALLED)
         const returnedIndexOf = chatMessageText.indexOf(AgentNetworkEvents.RETURNED)
-        let agentName
+        let agentName: string
 
         if (calledIndexOf > -1) {
             agentName = chatMessageText.slice(0, calledIndexOf)
@@ -101,6 +79,17 @@ export default function AgentNetworkPage() {
         if (agentName) {
             setSelectedAgentId(agentName)
         }
+    }
+
+    const handleStreamingReceived = (chunk: string) => {
+        const chatMessage = tryParseJson(chunk)
+        if (!chatMessage || typeof chatMessage !== "object" || !("text" in chatMessage)) {
+            return
+        }
+
+        const chatMessageText = chatMessage.text as string
+
+        highlightAgentNetwork(chatMessageText)
     }
 
     return (
@@ -156,27 +145,7 @@ export default function AgentNetworkPage() {
                         }}
                         getChatHistory={() => chatHistory.current}
                         sx={{height: "100%"}}
-                        sendFunction={async function (
-                            updateOutput: (node: ReactNode) => void,
-                            controller: MutableRefObject<AbortController>,
-                            currentUser: string,
-                            query: string,
-                            targetAgent: CombinedAgentType
-                        ): Promise<void> {
-                            await sendStreamingChatRequest(
-                                updateOutput,
-                                controller,
-                                currentUser,
-                                query,
-                                targetAgent,
-                                (chunk) => {
-                                    handleStreamingReceived(chunk, updateOutput)
-                                    highlightAgentNetwork(chunk)
-                                }
-                            )
-
-                            setSelectedAgentId("")
-                        }}
+                        handleStreamingReceived={handleStreamingReceived}
                     />
                 </Grid>
             </Grid>

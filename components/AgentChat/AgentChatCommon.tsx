@@ -5,20 +5,10 @@ import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {Box, Button, Input, SxProps} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Tooltip from "@mui/material/Tooltip"
-import {
-    CSSProperties,
-    Dispatch,
-    FC,
-    MutableRefObject,
-    ReactNode,
-    SetStateAction,
-    useEffect,
-    useRef,
-    useState,
-} from "react"
+import {CSSProperties, Dispatch, FC, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 
-import {handleStreamingReceived, sendStreamingChatRequest} from "./AgentChatHandling"
+import {sendStreamingChatRequest} from "./AgentChatHandling"
 import {AgentChatMultiButtons} from "./AgentChatMultiButtons"
 import {AgentChatSendButton} from "./AgentChatSendButton"
 import {AGENT_GREETINGS} from "./AgentGreetings"
@@ -26,6 +16,7 @@ import {cleanUpAgentName, CombinedAgentType, getUserImageAndUserQuery} from "./c
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {getAgentFunction, getConnectivity} from "../../controller/agent/agent"
+import {sendLlmRequest} from "../../controller/llm/llm_chat"
 import {AgentType} from "../../generated/metadata"
 import {ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {hasOnlyWhitespace} from "../../utils/text"
@@ -42,15 +33,11 @@ interface AgentChatCommonProps {
     readonly setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>
     readonly isAwaitingLlm: boolean
     readonly targetAgent: CombinedAgentType
-    readonly sendFunction?: (
-        updateOutput: (node: ReactNode) => void,
-        controller: MutableRefObject<AbortController>,
-        currentUser: string,
-        query: string,
-        targetAgent: CombinedAgentType,
-        callback: (chunk: string) => void,
-        checkSuccess: () => boolean
-    ) => Promise<void>
+    readonly legacyAgentEndpoint?: string
+    /**
+     * Optional extra callback for containers to do extra things with the chunks as they are received
+     */
+    readonly handleStreamingReceived?: (chunk: string) => void
     readonly setPreviousResponse?: (agent: string, response: string) => void
     readonly setChatHistory?: (val: BaseMessage[]) => void
     readonly getChatHistory?: () => BaseMessage[]
@@ -75,11 +62,12 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     userImage,
     setIsAwaitingLlm,
     isAwaitingLlm,
-    sendFunction = sendStreamingChatRequest,
+    handleStreamingReceived,
     setPreviousResponse,
     setChatHistory = NO_OP_SET,
     getChatHistory = NO_OP_GET,
     targetAgent,
+    legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
     sx,
 }) => {
@@ -311,9 +299,50 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
             controller.current = new AbortController()
             setIsAwaitingLlm(true)
 
-            await sendFunction(updateOutput, controller, currentUser, query, targetAgent, (chunk: string) =>
-                handleStreamingReceived(chunk, updateOutput)
+            updateOutput(
+                <MUIAccordion
+                    id="initiating-orchestration-accordion"
+                    items={[
+                        {
+                            title: `Contacting ${cleanUpAgentName(targetAgent)} agent...`,
+                            content: `Query: ${query}`,
+                        },
+                    ]}
+                    sx={{marginBottom: "1rem"}}
+                />
             )
+
+            // check if targetAgent is Neuro-san agent type. We have to use a different "send" function for those.
+            if (targetAgent in AgentType) {
+                // It's a Neuro-san agent.
+
+                // Send the chat query to the server. This will block until the stream ends from the server
+                await sendStreamingChatRequest(
+                    updateOutput,
+                    controller,
+                    currentUser,
+                    query,
+                    targetAgent as AgentType,
+                    (chunk: string) => {
+                        updateOutput(chunk)
+                        handleStreamingReceived?.(chunk)
+                    }
+                )
+            } else {
+                // It's a legacy agent.
+                // Send the chat query to the server. This will block until the stream ends from the server
+                await sendLlmRequest(
+                    (chunk: string) => {
+                        updateOutput(chunk)
+                        handleStreamingReceived?.(chunk)
+                    },
+                    controller?.current.signal,
+                    legacyAgentEndpoint,
+                    {requestType: targetAgent},
+                    query,
+                    getChatHistory()
+                )
+            }
 
             // Add a blank line after response
             updateOutput("\n")
