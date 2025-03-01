@@ -2,31 +2,48 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {Box, Button, Input, SxProps} from "@mui/material"
+import {Box, Button, Input, styled, SxProps} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Tooltip from "@mui/material/Tooltip"
-import {CSSProperties, Dispatch, FC, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
+import {jsonrepair} from "jsonrepair"
+import NextImage from "next/image"
+import {CSSProperties, Dispatch, FC, ReactElement, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
+import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {processLogLine, sendStreamingChatRequest} from "./AgentChatHandling"
 import {AgentChatMultiButtons} from "./AgentChatMultiButtons"
 import {AgentChatSendButton} from "./AgentChatSendButton"
+import {AgentError} from "./AgentError"
 import {AGENT_GREETINGS} from "./AgentGreetings"
-import {cleanUpAgentName, CombinedAgentType, getUserImageAndUserQuery} from "./common"
+import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {FormattedMarkdown} from "./FormattedMarkdown"
-import {chatMessageFromChunk} from "./JsonUtils"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
-import {getAgentFunction, getConnectivity} from "../../controller/agent/agent"
+import {CombinedAgentType} from "./Types"
+import {chatMessageFromChunk, cleanUpAgentName, splitLogLine} from "./Utils"
+import {DEFAULT_USER_IMAGE} from "../../const"
+import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
 import {AgentType} from "../../generated/metadata"
 import {ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage} from "../../generated/neuro_san/api/grpc/chat"
+import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
 import {LlmChatOptionsButton} from "../internal/LlmChatOptionsButton"
 import {MUIAccordion} from "../MUIAccordion"
 import {MUIAlert} from "../MUIAlert"
 import {NotificationType, sendNotification} from "../notification"
+
+// #region: Styled Components
+
+const UserQueryContainer = styled("div")({
+    backgroundColor: "#FFF",
+    borderRadius: "8px",
+    boxShadow: "0 0px 2px 0 rgba(0, 0, 0, 0.15)",
+    display: "inline-flex",
+    padding: "10px",
+})
+
+// #endregion: Styled Components
 
 interface AgentChatCommonProps {
     readonly id: string
@@ -62,6 +79,29 @@ const EMPTY = {}
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
 
+export const getUserImageAndUserQuery = (userQuery: string, title: string, userImage: string): ReactElement => (
+    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
+    <div style={{marginBottom: "1rem"}}>
+        {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+        <UserQueryContainer>
+            <NextImage
+                id="user-query-image"
+                src={userImage || DEFAULT_USER_IMAGE}
+                width={30}
+                height={30}
+                title={title}
+                alt=""
+                unoptimized={true}
+            />
+            <span
+                id="user-query"
+                style={{marginLeft: "0.625rem", marginTop: "0.125rem"}}
+            >
+                {userQuery}
+            </span>
+        </UserQueryContainer>
+    </div>
+)
 export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     id,
     currentUser,
@@ -146,7 +186,135 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
         }
     }, [chatOutput])
 
-    function introduceAgent() {
+    /**
+     * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
+     * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
+     *
+     * @param logLine The log line to process
+     * @param messageType The type of the message (AI, LEGACY_LOGS etc.). Used for displaying certain message types
+     * differently
+     * @returns A React component representing the log line (agent message)
+     */
+    function processLogLine(logLine: string, messageType?: ChatMessageChatMessageType): ReactNode {
+        // extract the parts of the line
+        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
+
+        let repairedJson: string = null
+
+        try {
+            // Attempt to parse as JSON
+
+            // First, repair it
+            repairedJson = jsonrepair(logLineDetails)
+
+            // Now try to parse it. We don't care about the result, only if it throws on parsing.
+            JSON.parse(repairedJson)
+        } catch (e) {
+            // Not valid JSON
+            repairedJson = null
+        }
+
+        const isAIMessage = messageType === ChatMessageChatMessageType.AI
+
+        return (
+            <MUIAccordion
+                id={`${summarySentenceCase}-panel`}
+                defaultExpandedPanelKey={isAIMessage ? 1 : null}
+                items={[
+                    {
+                        title: summarySentenceCase,
+                        content: (
+                            <div id={`${summarySentenceCase}-details`}>
+                                {/* If we managed to parse it as JSON, pretty print it */}
+                                {repairedJson ? (
+                                    <SyntaxHighlighter
+                                        id="syntax-highlighter"
+                                        language="json"
+                                        style={HIGHLIGHTER_THEME}
+                                        showLineNumbers={false}
+                                        wrapLines={true}
+                                    >
+                                        {repairedJson}
+                                    </SyntaxHighlighter>
+                                ) : (
+                                    logLineDetails || "No further details"
+                                )}
+                            </div>
+                        ),
+                    },
+                ]}
+                sx={{
+                    fontSize: "large",
+                    marginBottom: "1rem",
+                    backgroundColor: isAIMessage ? "var(--bs-accent3-light)" : undefined,
+                }}
+            />
+        )
+    }
+
+    /**
+     * Sends the request to neuro-san to create the project and experiment.
+     *
+     * @param query The query to send to the server
+     * @param callback The callback to call when a chunk is received
+     * @returns Nothing, but received chunks are pumped to the supplied callback function
+     */
+    async function sendStreamingChatRequest(query: string, callback: (chunk: string) => void): Promise<void> {
+        // Set up the abort controller
+        const abortController = new AbortController()
+        controller.current = abortController
+
+        let attemptNumber = 0
+
+        let succeeded: boolean = false
+        do {
+            try {
+                // Increment the attempt number and set the state to indicate we're awaiting a response
+                attemptNumber += 1
+
+                // Send the chat query to the server. This will block until the stream ends from the server
+                await sendChatQuery(abortController.signal, query, currentUser, targetAgent as AgentType, callback)
+
+                // TODO: how to handle this?
+                succeeded = true
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    // If the user clicked Stop, just bail
+                    if (error.name === "AbortError") {
+                        return
+                    }
+
+                    // Agent errors are handled elsewhere
+                    if (!(error instanceof AgentError)) {
+                        updateOutput(
+                            <MUIAlert
+                                id="opp-finder-error-occurred-while-interacting-with-agents-alert"
+                                severity="error"
+                            >
+                                {`Internal Error occurred while interacting with agents. Exception: ${error}`}
+                            </MUIAlert>
+                        )
+                    }
+                }
+            }
+        } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded)
+
+        if (!succeeded) {
+            updateOutput(
+                <MUIAlert
+                    id="opp-finder-max-retries-exceeded-alert"
+                    severity="error"
+                >
+                    {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
+                </MUIAlert>
+            )
+        }
+    }
+
+    /**
+     * Introduce the agent to the user with a friendly greeting
+     */
+    const introduceAgent = () => {
         updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
 
         // Random greeting
@@ -332,22 +500,16 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                 // It's a Neuro-san agent.
 
                 // Send the chat query to the server. This will block until the stream ends from the server
-                await sendStreamingChatRequest(
-                    updateOutput,
-                    controller,
-                    currentUser,
-                    query,
-                    targetAgent as AgentType,
-                    (chunk: string) => {
-                        const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
-                        if (chatMessage) {
-                            updateOutput(processLogLine(chatMessage.text, chatMessage.type))
-                        }
-                        onChunkReceived?.(chunk)
+                await sendStreamingChatRequest(query, (chunk: string) => {
+                    const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
+                    if (chatMessage) {
+                        updateOutput(processLogLine(chatMessage.text, chatMessage.type))
                     }
-                )
+                    onChunkReceived?.(chunk)
+                })
             } else {
                 // It's a legacy agent.
+
                 // Send the chat query to the server. This will block until the stream ends from the server
                 await sendLlmRequest(
                     (chunk: string) => {

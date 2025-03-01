@@ -6,7 +6,8 @@ import ListItemText from "@mui/material/ListItemText"
 import {FC} from "react"
 
 import {AgentType} from "../../generated/metadata"
-import {cleanUpAgentName} from "../AgentChat/common"
+
+import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Types
 interface SidebarProps {

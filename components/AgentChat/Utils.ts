@@ -1,4 +1,7 @@
-import {AgentErrorProps} from "./common"
+import {capitalize, startCase} from "lodash"
+
+import {AgentErrorProps} from "./AgentError"
+import {LOGS_DELIMITER} from "./const"
 import {ChatResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 
@@ -60,4 +63,34 @@ export const checkError = (chatMessageJson: object) => {
     } else {
         return null
     }
+}
+
+/**
+ * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator. If the delimiter is not
+ * found, the entire log line is treated as the details part. This can happen when it's a "follow-on" message from
+ * an agent we've already heard from.
+ * @param logLine The log line to split
+ * @returns An object containing the summary and details parts of the log line
+ */
+export function splitLogLine(logLine: string) {
+    if (logLine.includes(LOGS_DELIMITER)) {
+        const logLineElements = logLine.split(LOGS_DELIMITER)
+
+        const logLineSummary = logLineElements[0]
+        const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
+
+        const logLineDetails = logLineElements[1]
+        return {summarySentenceCase, logLineDetails}
+    } else {
+        return {summarySentenceCase: "Agent message", logLineDetails: logLine}
+    }
+}
+
+/**
+ * Convert FOO_BAR to more human "Foo Bar"
+ * @param agentName Agent name in SNAKE_CASE format.
+ * @returns User-friendly agent name.
+ */
+export function cleanUpAgentName(agentName: string): string {
+    return startCase(capitalize(agentName))
 }

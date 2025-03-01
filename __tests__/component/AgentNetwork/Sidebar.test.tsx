@@ -2,7 +2,7 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
-import {cleanUpAgentName} from "../../../components/AgentChat/common"
+import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import Sidebar, {BLOCK_AGENT_TYPES} from "../../../components/AgentNetwork/Sidebar"
 import {AgentType} from "../../../generated/metadata"
 

@@ -4,8 +4,9 @@ import {useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {AgentChatCommon} from "../../components/AgentChat/AgentChatCommon"
-import {cleanUpAgentName} from "../../components/AgentChat/common"
-import {tryParseJson} from "../../components/AgentChat/JsonUtils"
+
+import {cleanUpAgentName} from "../../components/AgentChat/Utils"
+import {tryParseJson} from "../../components/AgentChat/Utils"
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/notification"

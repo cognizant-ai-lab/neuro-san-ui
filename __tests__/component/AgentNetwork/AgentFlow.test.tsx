@@ -3,7 +3,7 @@ import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "reactflow"
 
-import {cleanUpAgentName} from "../../../components/AgentChat/common"
+import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import AgentFlow from "../../../components/AgentNetwork/AgentFlow"
 import {ConnectivityInfo} from "../../../generated/neuro_san/api/grpc/agent"
 
