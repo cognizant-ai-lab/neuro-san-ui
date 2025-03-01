@@ -99,63 +99,63 @@ export default function AgentNetworkPage() {
 
     return (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-        <ReactFlowProvider>
+
+        <Grid
+            id="multi-agent-accelerator-grid"
+            container
+            columns={18}
+            sx={{
+                border: "solid 1px #CFCFDC",
+                borderRadius: "var(--bs-border-radius)",
+                height: "100%",
+                marginTop: "1rem",
+                minWidth: "1450px",
+                padding: "1rem",
+            }}
+        >
             <Grid
-                id="multi-agent-accelerator-grid"
-                container
-                columns={18}
-                sx={{
-                    border: "solid 1px #CFCFDC",
-                    borderRadius: "var(--bs-border-radius)",
-                    height: "100%",
-                    marginTop: "1rem",
-                    minWidth: "1450px",
-                    padding: "1rem",
-                }}
+                id="multi-agent-accelerator-grid-sidebar"
+                size={3.25}
             >
-                <Grid
-                    id="multi-agent-accelerator-grid-sidebar"
-                    size={3.25}
-                >
-                    <Sidebar
-                        id="multi-agent-accelerator-sidebar"
-                        selectedNetwork={selectedNetwork}
-                        setSelectedNetwork={setSelectedNetwork}
-                        isAwaitingLlm={isAwaitingLlm}
-                    />
-                </Grid>
-                <Grid
-                    id="multi-agent-accelerator-grid-agent-flow"
-                    size={8.25}
-                >
+                <Sidebar
+                    id="multi-agent-accelerator-sidebar"
+                    selectedNetwork={selectedNetwork}
+                    setSelectedNetwork={setSelectedNetwork}
+                    isAwaitingLlm={isAwaitingLlm}
+                />
+            </Grid>
+            <Grid
+                id="multi-agent-accelerator-grid-agent-flow"
+                size={8.25}
+            >
+                <ReactFlowProvider>
                     <AgentFlow
                         agentsInNetwork={agentsInNetwork}
                         id="multi-agent-accelerator-agent-flow"
                         selectedAgentId={selectedAgentId}
                     />
-                </Grid>
-                <Grid
-                    id="multi-agent-accelerator-grid-agent-chat-common"
-                    size={6.5}
-                >
-                    <AgentChatCommon
-                        id="agent-network-ui"
-                        currentUser={userName}
-                        userImage={userImage}
-                        setIsAwaitingLlm={setIsAwaitingLlm}
-                        isAwaitingLlm={isAwaitingLlm}
-                        targetAgent={selectedNetwork}
-                        setChatHistory={(val: BaseMessage[]) => {
-                            chatHistory.current = val
-                        }}
-                        getChatHistory={() => chatHistory.current}
-                        sx={{height: "100%"}}
-                        onChunkReceived={handleStreamingReceived}
-                        onStreamingComplete={onStreamingComplete}
-                    />
-                </Grid>
+                </ReactFlowProvider>
             </Grid>
-        </ReactFlowProvider>
+            <Grid
+                id="multi-agent-accelerator-grid-agent-chat-common"
+                size={6.5}
+            >
+                <AgentChatCommon
+                    id="agent-network-ui"
+                    currentUser={userName}
+                    userImage={userImage}
+                    setIsAwaitingLlm={setIsAwaitingLlm}
+                    isAwaitingLlm={isAwaitingLlm}
+                    targetAgent={selectedNetwork}
+                    setChatHistory={(val: BaseMessage[]) => {
+                        chatHistory.current = val
+                    }}
+                    getChatHistory={() => chatHistory.current}
+                    onChunkReceived={handleStreamingReceived}
+                    onStreamingComplete={onStreamingComplete}
+                />
+            </Grid>
+        </Grid>
     )
 }
 

@@ -2,7 +2,7 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {Box, Button, Input, styled, SxProps} from "@mui/material"
+import {Box, Button, Input, styled} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Tooltip from "@mui/material/Tooltip"
 import {jsonrepair} from "jsonrepair"
@@ -24,7 +24,7 @@ import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
 import {AgentType} from "../../generated/metadata"
-import {ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
+import {ConnectivityInfo, ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
@@ -65,7 +65,6 @@ interface AgentChatCommonProps {
     readonly setChatHistory?: (val: BaseMessage[]) => void
     readonly getChatHistory?: () => BaseMessage[]
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
-    readonly sx?: SxProps
 }
 
 const NO_OP_SET = () => {
@@ -116,7 +115,6 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     targetAgent,
     legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
-    sx,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -322,7 +320,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
         updateOutput(greeting)
     }
 
-    const getConnectivityInfo = (connectivityInfo) => (
+    const getConnectivityInfo = (connectivityInfo: ConnectivityInfo[]) => (
         /* eslint-disable enforce-ids-in-jsx/missing-ids */
         <>
             {connectivityInfo
@@ -561,11 +559,11 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     return (
         <Box
             id={`llm-chat-${id}`}
-            sx={{...sx, marginTop: "1rem", marginBottom: "1rem"}}
+            sx={{marginTop: "1rem", marginBottom: "1rem"}}
         >
             <Box
                 id="llm-response-div"
-                sx={{...divStyle, height: "50vh", margin: "10px", position: "relative", marginTop: "1rem"}}
+                sx={{...divStyle, height: "60vh", margin: "10px", position: "relative", marginTop: "1rem"}}
             >
                 <Tooltip
                     id="enable-autoscroll"
