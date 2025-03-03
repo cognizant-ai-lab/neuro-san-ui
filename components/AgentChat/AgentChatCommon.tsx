@@ -2,8 +2,11 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {Box, Button, Input, styled} from "@mui/material"
+import ClearIcon from "@mui/icons-material/Clear"
+import {Box, Input, styled} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
+import IconButton from "@mui/material/IconButton"
+import InputAdornment from "@mui/material/InputAdornment"
 import Tooltip from "@mui/material/Tooltip"
 import {jsonrepair} from "jsonrepair"
 import NextImage from "next/image"
@@ -11,12 +14,12 @@ import {CSSProperties, Dispatch, FC, ReactElement, ReactNode, SetStateAction, us
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {AgentChatMultiButtons} from "./AgentChatMultiButtons"
-import {AgentChatSendButton} from "./AgentChatSendButton"
 import {AgentErrorProps} from "./AgentError"
 import {AGENT_GREETINGS} from "./AgentGreetings"
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
+import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
+import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType} from "./Types"
 import {checkError, cleanUpAgentName, splitLogLine, tryParseJson} from "./Utils"
@@ -658,7 +661,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                     )}
                 </Box>
 
-                <AgentChatMultiButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                <ControlButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     clearChatOnClickCallback={() => {
                         setChatOutput([])
                         setChatHistory([])
@@ -700,33 +703,33 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                         setChatInput(event.target.value)
                     }}
                     value={chatInput}
+                    endAdornment={
+                        <InputAdornment
+                            id="clear-input-adornment"
+                            position="end"
+                            disableTypography={true}
+                        >
+                            <IconButton
+                                id="clear-input-button"
+                                onClick={() => {
+                                    setChatInput("")
+                                }}
+                                sx={{
+                                    color: "var(--bs-primary)",
+                                    opacity: userInputEmpty ? "25%" : "100%",
+                                }}
+                                disabled={userInputEmpty}
+                                tabIndex={-1}
+                                edge="end"
+                            >
+                                <ClearIcon id="clear-input-icon" />
+                            </IconButton>
+                        </InputAdornment>
+                    }
                 />
 
-                {/* Clear Input Button */}
-                <Button
-                    id="clear-input-button"
-                    onClick={() => {
-                        setChatInput("")
-                    }}
-                    style={{
-                        backgroundColor: "transparent",
-                        color: "var(--bs-primary)",
-                        border: "none",
-                        fontWeight: 550,
-                        lineHeight: "35px",
-                        opacity: userInputEmpty ? "25%" : "100%",
-                        position: "absolute",
-                        right: 60,
-                        zIndex: 99999,
-                    }}
-                    disabled={userInputEmpty}
-                    tabIndex={-1}
-                >
-                    X
-                </Button>
-
                 {/* Send Button */}
-                <AgentChatSendButton
+                <SendButton
                     enableSendButton={shouldEnableSendButton}
                     id="submit-query-button"
                     onClickCallback={() => handleSend(chatInput)}

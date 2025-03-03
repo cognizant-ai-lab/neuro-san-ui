@@ -14,8 +14,8 @@ import {StringToStringOrNumber} from "../../../controller/base_types"
 import {sendDmsChatQuery} from "../../../controller/dmschat/dmschat"
 import {Run} from "../../../controller/run/types"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {AgentChatMultiButtons} from "../../AgentChat/AgentChatMultiButtons"
-import {AgentChatSendButton} from "../../AgentChat/AgentChatSendButton"
+import {ControlButtons} from "../../AgentChat/ControlButtons"
+import {SendButton} from "../../AgentChat/SendButton"
 import {MUIDrawer} from "../../MUIDrawer"
 
 /**
@@ -254,7 +254,7 @@ export function DMSChat(props: {
                         id="dms-chat-agent-chat-btns-box"
                         sx={{position: "absolute", right: "10px", bottom: "10px"}}
                     >
-                        <AgentChatMultiButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                        <ControlButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             clearChatOnClickCallback={() => {
                                 chatHistory.current = []
                                 currentResponse.current = ""
@@ -329,7 +329,7 @@ export function DMSChat(props: {
                             display: "flex",
                             width: "100px",
                             justifyContent: "center",
-                            marginLeft: "1rem",
+                            marginLeft: "0.1rem",
                         }}
                     >
                         {isAwaitingLlm ? (
@@ -339,7 +339,7 @@ export function DMSChat(props: {
                                 sx={{color: "var(--bs-primary)"}}
                             />
                         ) : (
-                            <AgentChatSendButton
+                            <SendButton
                                 enableSendButton={!shouldDisableSendButton}
                                 id="submit-query-button"
                                 onClickCallback={async () => {

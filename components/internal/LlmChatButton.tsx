@@ -18,7 +18,7 @@ export const LlmChatButton = styled(Button, {
     borderRadius: "var(--bs-border-radius)",
     bottom: posBottom !== undefined ? posBottom : "10px",
     cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? "50%" : "70%",
+    opacity: disabled ? "50%" : "100%",
     right: posRight !== undefined ? posRight : "10px",
     position: "absolute",
     zIndex: 99999,

@@ -20,8 +20,8 @@ import {CsvDataChatResponse} from "../../../generated/analytics_chat"
 import {ChatMessage as AnalyticsChatMessage, ChatMessageChatMessageType} from "../../../generated/chat"
 import {DataSource} from "../../../generated/metadata"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {AgentChatMultiButtons} from "../../AgentChat/AgentChatMultiButtons"
-import {AgentChatSendButton} from "../../AgentChat/AgentChatSendButton"
+import {ControlButtons} from "../../AgentChat/ControlButtons"
+import {SendButton} from "../../AgentChat/SendButton"
 import {ConfirmationModal} from "../../confirmationModal"
 import {NotificationType, sendNotification} from "../../notification"
 import {LlmChatOptionsButton} from "../LlmChatOptionsButton"
@@ -363,7 +363,7 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                         }
                     />
 
-                    <AgentChatMultiButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                    <ControlButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                         clearChatOnClickCallback={() => {
                             chatHistory.current = []
                             setPreviousUserQuery("")
@@ -440,7 +440,7 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                             width: "100px",
                             justifyContent: "center",
                             marginTop: "1rem",
-                            marginLeft: "1rem",
+                            marginLeft: "0.1rem",
                         }}
                     >
                         {isAwaitingLlm ? (
@@ -450,7 +450,7 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                                 sx={{color: "var(--bs-primary)"}}
                             />
                         ) : (
-                            <AgentChatSendButton
+                            <SendButton
                                 enableSendButton={!shouldDisableSendButton}
                                 id="submit-query-button"
                                 onClickCallback={async () => {
