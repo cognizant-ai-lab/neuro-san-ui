@@ -94,6 +94,9 @@
         // Other than that, prevent and shadowing of outer scope variables and system globals
         "no-shadow": ["error", {"builtinGlobals": true, "allow": ["event"]}],
 
+        // Conflicts with @typescript-eslint/no-loop-func
+        "no-loop-func": "off",
+
         // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict with
         // other plugins we're using?
         // Also the place for rules we want to explicitly enable.
