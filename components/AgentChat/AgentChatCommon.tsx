@@ -13,17 +13,17 @@ import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {AgentChatMultiButtons} from "./AgentChatMultiButtons"
 import {AgentChatSendButton} from "./AgentChatSendButton"
-import {AgentError} from "./AgentError"
+import {AgentErrorProps} from "./AgentError"
 import {AGENT_GREETINGS} from "./AgentGreetings"
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType} from "./Types"
-import {chatMessageFromChunk, cleanUpAgentName, splitLogLine} from "./Utils"
+import {checkError, cleanUpAgentName, splitLogLine, tryParseJson} from "./Utils"
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
-import {AgentType} from "../../generated/metadata"
+import {AgentType as NeuroSanAgent} from "../../generated/metadata"
 import {ConnectivityInfo, ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {hasOnlyWhitespace} from "../../utils/text"
@@ -52,11 +52,16 @@ interface AgentChatCommonProps {
     readonly setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>
     readonly isAwaitingLlm: boolean
     readonly targetAgent: CombinedAgentType
+    /**
+     * Special endpoint for legacy agents since they do not have a single unified endpoint like Neuro-san agents.
+     */
     readonly legacyAgentEndpoint?: string
     /**
-     * Optional extra callback for containers to do extra things with the chunks as they are received
+     * Optional extra callback for containers to do extra things with the chunks as they are received. Parent
+     * returns true if it believes the chunk indicates that the interaction with the agent was successful and no
+     * retries are necessary.
      */
-    readonly onChunkReceived?: (chunk: string) => void
+    readonly onChunkReceived?: (chunk: string) => boolean
     /**
      * Will be called when the streaming is complete, whatever the reason for termination (normal or error)
      */
@@ -251,66 +256,6 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
             />
         )
     }
-
-    /**
-     * Sends the request to neuro-san to create the project and experiment.
-     *
-     * @param query The query to send to the server
-     * @param callback The callback to call when a chunk is received
-     * @returns Nothing, but received chunks are pumped to the supplied callback function
-     */
-    async function sendStreamingChatRequest(query: string, callback: (chunk: string) => void): Promise<void> {
-        // Set up the abort controller
-        const abortController = new AbortController()
-        controller.current = abortController
-
-        let attemptNumber = 0
-
-        let succeeded: boolean = false
-        do {
-            try {
-                // Increment the attempt number and set the state to indicate we're awaiting a response
-                attemptNumber += 1
-
-                // Send the chat query to the server. This will block until the stream ends from the server
-                await sendChatQuery(abortController.signal, query, currentUser, targetAgent as AgentType, callback)
-
-                // TODO: how to handle this?
-                succeeded = true
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    // If the user clicked Stop, just bail
-                    if (error.name === "AbortError") {
-                        return
-                    }
-
-                    // Agent errors are handled elsewhere
-                    if (!(error instanceof AgentError)) {
-                        updateOutput(
-                            <MUIAlert
-                                id="opp-finder-error-occurred-while-interacting-with-agents-alert"
-                                severity="error"
-                            >
-                                {`Internal Error occurred while interacting with agents. Exception: ${error}`}
-                            </MUIAlert>
-                        )
-                    }
-                }
-            }
-        } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded)
-
-        if (!succeeded) {
-            updateOutput(
-                <MUIAlert
-                    id="opp-finder-max-retries-exceeded-alert"
-                    severity="error"
-                >
-                    {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
-                </MUIAlert>
-            )
-        }
-    }
-
     /**
      * Introduce the agent to the user with a friendly greeting
      */
@@ -357,17 +302,26 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
         const newAgent = async () => {
             introduceAgent()
 
+            // if not neuro san agent, just return since we won't get connectivity info
+            if (!(targetAgent in NeuroSanAgent)) {
+                return
+            }
+
+            // It is a Neuro-san agent, so get the function and connectivity info
             let agentFunction: FunctionResponse
 
             try {
-                agentFunction = await getAgentFunction(currentUser, targetAgent as AgentType)
+                agentFunction = await getAgentFunction(currentUser, targetAgent as NeuroSanAgent)
             } catch (e) {
                 // For now, just return. May be a legacy agent without a functional description in Neuro-San.
                 return
             }
 
             try {
-                const connectivity: ConnectivityResponse = await getConnectivity(currentUser, targetAgent as AgentType)
+                const connectivity: ConnectivityResponse = await getConnectivity(
+                    currentUser,
+                    targetAgent as NeuroSanAgent
+                )
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
@@ -429,7 +383,7 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
         setChatInput("")
 
         // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
-        const agentName = AgentType[targetAgent] || targetAgent
+        const agentName = NeuroSanAgent[targetAgent] || targetAgent
         setPreviousResponse?.(agentName, currentResponse.current)
         currentResponse.current = ""
     }
@@ -464,83 +418,84 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    const handleSend = async (query: string) => {
-        try {
-            // Record user query in chat history
-            setChatHistory([...getChatHistory(), new HumanMessage(previousUserQuery)])
+    async function doQueryLoop(query: string, queryToSend: string) {
+        let succeeded: boolean = false
 
-            // Allow parent to intercept and modify the query before sending if needed
-            const queryToSend = onSend?.(query) ?? query
-            console.debug(`Sending query: ${queryToSend}`)
-            setPreviousUserQuery(queryToSend)
-
-            setIsAwaitingLlm(true)
-
-            // Always start output by echoing user query.
-            updateOutput(getUserImageAndUserQuery(queryToSend, currentUser, userImage))
-
-            // Add ID block for agent
-            updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
-
-            // Set up the abort controller
-            controller.current = new AbortController()
-            setIsAwaitingLlm(true)
-
-            updateOutput(
-                <MUIAccordion
-                    id="initiating-orchestration-accordion"
-                    items={[
-                        {
-                            title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
-                            content: `Query: ${queryToSend}`,
-                        },
-                    ]}
-                    sx={{marginBottom: "1rem"}}
-                />
-            )
-
-            // check if targetAgent is Neuro-san agent type. We have to use a different "send" function for those.
-            if (targetAgent in AgentType) {
-                // It's a Neuro-san agent.
-
-                // Send the chat query to the server. This will block until the stream ends from the server
-                await sendStreamingChatRequest(queryToSend, (chunk: string) => {
-                    const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
-                    if (chatMessage) {
-                        updateOutput(processLogLine(chatMessage.text, chatMessage.type))
-                    }
-                    onChunkReceived?.(chunk)
-                })
-            } else {
-                // It's a legacy agent.
-
-                // Send the chat query to the server. This will block until the stream ends from the server
-                await sendLlmRequest(
-                    (chunk: string) => {
-                        updateOutput(chunk)
-                        onChunkReceived?.(chunk)
-                    },
-                    controller?.current.signal,
-                    legacyAgentEndpoint,
-                    {requestType: targetAgent},
-                    queryToSend,
-                    getChatHistory()
-                )
+        function handleChunk(chunk: string) {
+            succeeded = onChunkReceived?.(chunk) || true
+            // Could be a ChatMessage (Neuro-san) or just a string (legacy agent)
+            const parsedResult: null | object | string = tryParseJson(chunk)
+            if (typeof parsedResult === "string") {
+                updateOutput(chunk)
+            } else if (typeof parsedResult === "object") {
+                // It's a ChatMessage. Does it have the error block?
+                const isError = checkError(parsedResult)
+                if (isError) {
+                    const agentError: AgentErrorProps = parsedResult as AgentErrorProps
+                    const errorMessage =
+                        `Error occurred. Error: "${agentError.error}", ` +
+                        `traceback: "${agentError?.traceback}", ` +
+                        `tool: "${agentError?.tool}" Retrying...`
+                    updateOutput(
+                        <MUIAlert
+                            id="retry-message-alert"
+                            severity="warning"
+                        >
+                            {errorMessage}
+                        </MUIAlert>
+                    )
+                    succeeded = false
+                } else {
+                    // Not an error, so output it
+                    const chatMessage: ChatMessage = parsedResult as ChatMessage
+                    updateOutput(processLogLine(chatMessage.text, chatMessage.type))
+                }
             }
+        }
 
-            // Add a blank line after response
-            updateOutput("\n")
+        let attemptNumber: number = 0
+        let wasAborted: boolean = false
 
-            // Record bot answer in history.
-            if (currentResponse?.current?.length > 0) {
-                setChatHistory([...getChatHistory(), new AIMessage(currentResponse.current)])
-            }
-        } catch (error) {
-            const isAbortError = error instanceof Error && error.name === "AbortError"
+        do {
+            try {
+                // Increment the attempt number and set the state to indicate we're awaiting a response
+                attemptNumber += 1
 
-            if (error instanceof Error) {
-                // AbortErrors are handled elsewhere
-                if (!isAbortError) {
+                // check if targetAgent is Neuro-san agent type. We have to use a different "send" function
+                // for those.
+                if (targetAgent in NeuroSanAgent) {
+                    // It's a Neuro-san agent.
+
+                    // Send the chat query to the server. This will block until the stream ends from the server
+                    await sendChatQuery(
+                        controller?.current.signal,
+                        query,
+                        currentUser,
+                        targetAgent as NeuroSanAgent,
+                        handleChunk
+                    )
+                } else {
+                    // It's a legacy agent.
+
+                    // Send the chat query to the server. This will block until the stream ends from the server
+                    await sendLlmRequest(
+                        handleChunk,
+                        controller?.current.signal,
+                        legacyAgentEndpoint,
+                        {requestType: targetAgent},
+                        queryToSend,
+                        getChatHistory()
+                    )
+                }
+            } catch (error: unknown) {
+                // Was it due to user aborting the request?
+                wasAborted = error instanceof Error && error.name === "AbortError"
+                if (wasAborted) {
+                    // AbortErrors are handled elsewhere. We also want to stop retries here.
+                    break
+                }
+
+                if (!wasAborted) {
                     updateOutput(
                         <MUIAlert
                             id="opp-finder-error-occurred-alert"
@@ -549,15 +504,69 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                             {`Error occurred: ${error}`}
                         </MUIAlert>
                     )
-
-                    // log error to console
-                    console.error(error)
                 }
+            }
+        } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded)
+        return {succeeded, wasAborted}
+    }
+
+    const handleSend = async (query: string) => {
+        // Record user query in chat history
+        setChatHistory([...getChatHistory(), new HumanMessage(previousUserQuery)])
+
+        // Allow parent to intercept and modify the query before sending if needed
+        const queryToSend = onSend?.(query) ?? query
+        setPreviousUserQuery(queryToSend)
+
+        setIsAwaitingLlm(true)
+
+        // Always start output by echoing user query.
+        updateOutput(getUserImageAndUserQuery(queryToSend, currentUser, userImage))
+
+        // Add ID block for agent
+        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
+
+        // Set up the abort controller
+        controller.current = new AbortController()
+        setIsAwaitingLlm(true)
+
+        updateOutput(
+            <MUIAccordion
+                id="initiating-orchestration-accordion"
+                items={[
+                    {
+                        title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
+                        content: `Query: ${queryToSend}`,
+                    },
+                ]}
+                sx={{marginBottom: "1rem"}}
+            />
+        )
+        try {
+            const {succeeded, wasAborted} = await doQueryLoop(query, queryToSend)
+
+            if (!wasAborted && !succeeded) {
+                updateOutput(
+                    <MUIAlert
+                        id="opp-finder-max-retries-exceeded-alert"
+                        severity="error"
+                    >
+                        {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
+                    </MUIAlert>
+                )
             }
         } finally {
             setIsAwaitingLlm(false)
             resetState()
             onStreamingComplete?.()
+        }
+
+        // Add a blank line after response
+        updateOutput("\n")
+
+        // Record bot answer in history.
+        if (currentResponse?.current?.length > 0) {
+            setChatHistory([...getChatHistory(), new AIMessage(currentResponse.current)])
         }
     }
 

@@ -87,10 +87,12 @@ export default function AgentNetworkPage() {
 
         // Messages that contain agent origin info currently are only the "string" ones, not JSON
         if (!chatMessage || typeof chatMessage !== "string") {
-            return
+            return true
         }
 
         detectSelectedAgent(chatMessage)
+
+        return true
     }
 
     const onStreamingComplete = (): void => {

@@ -12,7 +12,6 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
     try {
         chatResponse = JSON.parse(chunk).result
     } catch (e) {
-        console.error(`Error parsing log line: ${e}`)
         return null
     }
     const chatMessage: ChatMessage = chatResponse?.response
@@ -26,10 +25,20 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
 
     return chatMessage
 }
+
+/**
+ * This function deals with the ambiguity of what we get back from the Neuro-san API.
+ * We may receive plain text, or JSON, and the JSON itself may have a text field containing JSON which may or may
+ * not be escaped and/or quoted in unpredictable ways by the LLMs.
+ * @param chunk The chunk of text to process, as received from Neuro-san
+ * @return It's complicated. Either (1) the input chunk, as-is, if we failed to parse it as a ChatMessage,
+ * (2) a JSON object if we were able to parse it as such or (3) plain text if all else fails.
+ * @throws If we failed to parse JSON but got anything other than a SyntaxError, we rethrow it as-is.
+ */
 export const tryParseJson: (chunk: string) => null | object | string = (chunk: string) => {
     const chatMessage = chatMessageFromChunk(chunk)
     if (!chatMessage) {
-        return null
+        return chunk
     }
 
     let chatMessageJson: object = null
@@ -42,7 +51,7 @@ export const tryParseJson: (chunk: string) => null | object | string = (chunk: s
         chatMessageJson = JSON.parse(chatMessageCleaned)
         return chatMessageJson
     } catch (error) {
-        // Not JSON-like, so just add it to the output
+        // Not JSON-like, so just return it as is
         if (error instanceof SyntaxError) {
             return chatMessageText
         } else {
