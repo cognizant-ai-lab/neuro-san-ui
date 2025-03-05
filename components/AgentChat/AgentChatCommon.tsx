@@ -175,6 +175,9 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
               overflowX: "auto",
           }
 
+    // Keeps track of whether the agent completed its task
+    const succeeded = useRef<boolean>(false)
+
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
         autoScrollEnabledRef.current = autoScrollEnabled
@@ -420,20 +423,19 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    function handleChunk(chunk: string): boolean {
+    function handleChunk(chunk: string): void {
         // Give container a chance to process the chunk first
-        let succeeded: boolean = onChunkReceived ? onChunkReceived(chunk) : true
+        succeeded.current = succeeded.current || (onChunkReceived ? onChunkReceived(chunk) : true)
 
         // For legacy agents, we either get plain text or markdown. Just output it as-is.
         if (targetAgent in LegacyAgentType) {
             updateOutput(chunk)
-            return succeeded
         }
 
         const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
         if (!chatMessage) {
             // This is an error. But don't want to spam output.
-            return succeeded
+            return
         }
 
         // It's a Neuro-san agent. Should be a ChatMessage at this point since all Neuro-san agents should return
@@ -458,18 +460,16 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                         {errorMessage}
                     </MUIAlert>
                 )
-                succeeded = false
+                succeeded.current = false
             } else {
                 // Not an error, so output it
                 updateOutput(processLogLine(chatMessage.text, chatMessage.type))
             }
         }
-
-        return succeeded
     }
 
     async function doQueryLoop(query: string) {
-        let succeeded: boolean = false
+        succeeded.current = false
 
         let attemptNumber: number = 0
         let wasAborted: boolean = false
@@ -490,20 +490,14 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                         query,
                         currentUser,
                         targetAgent as NeuroSanAgent,
-                        // eslint-disable-next-line @typescript-eslint/no-loop-func
-                        (chunk) => {
-                            succeeded = handleChunk(chunk)
-                        }
+                        handleChunk
                     )
                 } else {
                     // It's a legacy agent.
 
                     // Send the chat query to the server. This will block until the stream ends from the server
                     await sendLlmRequest(
-                        // eslint-disable-next-line @typescript-eslint/no-loop-func
-                        (chunk) => {
-                            succeeded = handleChunk(chunk)
-                        },
+                        handleChunk,
                         controller?.current.signal,
                         legacyAgentEndpoint,
                         {requestType: targetAgent},
@@ -530,8 +524,8 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
                     )
                 }
             }
-        } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded)
-        return {succeeded, wasAborted}
+        } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
+        return {wasAborted}
     }
 
     const handleSend = async (query: string) => {
@@ -573,9 +567,9 @@ export const AgentChatCommon: FC<AgentChatCommonProps> = ({
             />
         )
         try {
-            const {succeeded, wasAborted} = await doQueryLoop(queryToSend)
+            const {wasAborted} = await doQueryLoop(queryToSend)
 
-            if (!wasAborted && !succeeded) {
+            if (!wasAborted && !succeeded.current) {
                 updateOutput(
                     <MUIAlert
                         id="opp-finder-max-retries-exceeded-alert"
