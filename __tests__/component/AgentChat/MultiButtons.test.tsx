@@ -2,7 +2,7 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
-import {AgentChatMultiButtons} from "../../../components/AgentChat/AgentChatMultiButtons"
+import {MultiButtons} from "../../../components/AgentChat/MultiButtons"
 
 describe("AgentChatMultiButtons", () => {
     let user: UserEvent
@@ -26,14 +26,14 @@ describe("AgentChatMultiButtons", () => {
     })
 
     it("renders the Clear Chat and Regenerate buttons when not awaiting LLM", () => {
-        render(<AgentChatMultiButtons {...defaultProps} />)
+        render(<MultiButtons {...defaultProps} />)
         expect(screen.getByRole("button", {name: "Clear Chat"})).toBeInTheDocument()
         expect(screen.getByRole("button", {name: "Regenerate"})).toBeInTheDocument()
     })
 
     it("renders the Stop button when awaiting LLM", () => {
         render(
-            <AgentChatMultiButtons
+            <MultiButtons
                 {...defaultProps}
                 isAwaitingLlm={true}
             />
@@ -42,14 +42,14 @@ describe("AgentChatMultiButtons", () => {
     })
 
     it("calls clearChatOnClickCallback when Clear Chat button is clicked", async () => {
-        render(<AgentChatMultiButtons {...defaultProps} />)
+        render(<MultiButtons {...defaultProps} />)
         await user.click(screen.getByRole("button", {name: "Clear Chat"}))
         expect(mockClearChat).toHaveBeenCalledTimes(1)
     })
 
     it("calls handleStop when Stop button is clicked", async () => {
         render(
-            <AgentChatMultiButtons
+            <MultiButtons
                 {...defaultProps}
                 isAwaitingLlm={true}
             />
@@ -59,14 +59,14 @@ describe("AgentChatMultiButtons", () => {
     })
 
     it("calls handleSend with previousUserQuery when Regenerate button is clicked", async () => {
-        render(<AgentChatMultiButtons {...defaultProps} />)
+        render(<MultiButtons {...defaultProps} />)
         await user.click(screen.getByRole("button", {name: "Regenerate"}))
         expect(mockHandleSend).toHaveBeenCalledWith("Previous query")
     })
 
     it("disables the Clear Chat button when enableClearChatButton is false", () => {
         render(
-            <AgentChatMultiButtons
+            <MultiButtons
                 {...defaultProps}
                 enableClearChatButton={false}
             />
@@ -76,7 +76,7 @@ describe("AgentChatMultiButtons", () => {
 
     it("disables the Regenerate button when shouldEnableRegenerateButton is false", () => {
         render(
-            <AgentChatMultiButtons
+            <MultiButtons
                 {...defaultProps}
                 shouldEnableRegenerateButton={false}
             />

@@ -1,5 +1,6 @@
 import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
 import {styled} from "@mui/material"
+import {FC} from "react"
 
 import {LlmChatButton} from "../internal/LlmChatButton"
 
@@ -26,7 +27,7 @@ const SmallLlmChatButton = styled(LlmChatButton)({
  * Generate the agent buttons for the Opportunity Finder agents.
  * @returns A div containing the agent buttons
  */
-export const AgentChatMultiButtons: React.FC<AgentChatMultiButtonsProps> = ({
+export const MultiButtons: FC<AgentChatMultiButtonsProps> = ({
     clearChatOnClickCallback,
     enableClearChatButton,
     isAwaitingLlm,

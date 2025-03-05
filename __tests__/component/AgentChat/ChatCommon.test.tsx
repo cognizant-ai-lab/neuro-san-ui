@@ -2,7 +2,7 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
-import {AgentChatCommon} from "../../../components/AgentChat/AgentChatCommon"
+import {ChatCommon} from "../../../components/AgentChat/ChatCommon"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentType} from "../../../generated/metadata"
@@ -26,7 +26,7 @@ describe("AgentChatCommon", () => {
 
     it("Should render correctly", async () => {
         render(
-            <AgentChatCommon
+            <ChatCommon
                 id=""
                 currentUser=""
                 userImage=""
@@ -46,7 +46,7 @@ describe("AgentChatCommon", () => {
 
     it("Should behave correctly when awaiting the LLM response", async () => {
         render(
-            <AgentChatCommon
+            <ChatCommon
                 id=""
                 currentUser=""
                 userImage=""
@@ -74,7 +74,7 @@ describe("AgentChatCommon", () => {
         const mockSendFunction = jest.fn()
         const testUser = "testUser"
         render(
-            <AgentChatCommon
+            <ChatCommon
                 id=""
                 currentUser={testUser}
                 userImage=""
@@ -112,7 +112,7 @@ describe("AgentChatCommon", () => {
 
     it("Should show agent introduction", async () => {
         render(
-            <AgentChatCommon
+            <ChatCommon
                 id=""
                 currentUser="testUser"
                 userImage=""

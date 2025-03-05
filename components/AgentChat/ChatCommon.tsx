@@ -15,10 +15,10 @@ import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {AgentErrorProps} from "./AgentError"
-import {AGENT_GREETINGS} from "./AgentGreetings"
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
+import {AGENT_GREETINGS} from "./Greetings"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, LegacyAgentType} from "./Types"
@@ -110,7 +110,7 @@ export const getUserImageAndUserQuery = (userQuery: string, title: string, userI
         </UserQueryContainer>
     </div>
 )
-export const AgentChatCommon: FC<AgentChatCommonProps> = ({
+export const ChatCommon: FC<AgentChatCommonProps> = ({
     id,
     currentUser,
     userImage,

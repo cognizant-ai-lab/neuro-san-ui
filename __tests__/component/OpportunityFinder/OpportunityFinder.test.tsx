@@ -19,7 +19,7 @@ jest.mock("next-auth/react", () => {
     }
 })
 
-jest.mock("../../../components/AgentChat/AgentChatCommon", () => ({
+jest.mock("../../../components/AgentChat/ChatCommon", () => ({
     AgentChatCommon: jest.fn(),
 }))
 

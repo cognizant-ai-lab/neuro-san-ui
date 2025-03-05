@@ -3,10 +3,8 @@ import Grid from "@mui/material/Grid2"
 import {useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
-import {AgentChatCommon} from "../../components/AgentChat/AgentChatCommon"
-
-import {cleanUpAgentName} from "../../components/AgentChat/Utils"
-import {tryParseJson} from "../../components/AgentChat/Utils"
+import {ChatCommon} from "../../components/AgentChat/ChatCommon"
+import {cleanUpAgentName, tryParseJson} from "../../components/AgentChat/Utils"
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/notification"
@@ -130,6 +128,7 @@ export default function AgentNetworkPage() {
                 id="multi-agent-accelerator-grid-agent-flow"
                 size={8.25}
             >
+                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <ReactFlowProvider>
                     <AgentFlow
                         agentsInNetwork={agentsInNetwork}
@@ -142,7 +141,7 @@ export default function AgentNetworkPage() {
                 id="multi-agent-accelerator-grid-agent-chat-common"
                 size={6.5}
             >
-                <AgentChatCommon
+                <ChatCommon
                     id="agent-network-ui"
                     currentUser={userName}
                     userImage={userImage}

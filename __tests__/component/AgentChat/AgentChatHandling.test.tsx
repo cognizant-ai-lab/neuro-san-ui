@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-shadow
 import {render, screen} from "@testing-library/react"
-import {processLogLine} from "../../../components/AgentChat/AgentChatCommon"
-import {sendStreamingChatRequest} from "../../../components/AgentChat/AgentChatCommon"
+import {processLogLine} from "../../../components/AgentChat/ChatCommon"
+import {sendStreamingChatRequest} from "../../../components/AgentChat/ChatCommon"
 
 import {handleStreamingReceived} from "../../../components/AgentChat/AgentChatHandling"
 import {AgentError, AgentErrorProps, LOGS_DELIMITER} from "../../../components/AgentChat/common"
