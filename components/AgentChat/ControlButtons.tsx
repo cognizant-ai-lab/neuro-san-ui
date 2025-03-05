@@ -22,6 +22,10 @@ const SmallLlmChatButton = styled(LlmChatButton)({
 })
 // #endregion: Styled Components
 
+/**
+ * Generate the Control Buttons for a chat window.
+ * @returns A fragment containing the Control Buttons.
+ */
 export const ControlButtons: React.FC<ControlButtonsProps> = ({
     clearChatOnClickCallback,
     enableClearChatButton,

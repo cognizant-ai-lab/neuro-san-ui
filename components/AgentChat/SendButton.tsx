@@ -10,6 +10,10 @@ interface SendButtonProps {
 }
 // #endregion: Types
 
+/**
+ * Generate the Send Button for a chat window.
+ * @returns The Send Button.
+ */
 export const SendButton: React.FC<SendButtonProps> = ({enableSendButton, id, onClickCallback}) => (
     <LlmChatButton
         aria-label="Send"
