@@ -3,7 +3,6 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {ChatCommon} from "../../../components/AgentChat/ChatCommon"
-
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentType} from "../../../generated/metadata"
 import {ConnectivityResponse, FunctionResponse} from "../../../generated/neuro_san/api/grpc/agent"

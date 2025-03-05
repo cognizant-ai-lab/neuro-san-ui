@@ -14,7 +14,6 @@ import {CSSProperties, Dispatch, FC, ReactElement, ReactNode, SetStateAction, us
 import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {AgentErrorProps} from "./AgentError"
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
@@ -70,7 +69,7 @@ interface AgentChatCommonProps {
      */
     readonly onStreamingComplete?: () => void
     readonly onSend?: (query: string) => string
-    readonly setPreviousResponse?: (agent: string, response: string) => void
+    readonly setPreviousResponse?: (agent: CombinedAgentType, response: string) => void
     readonly setChatHistory?: (val: BaseMessage[]) => void
     readonly getChatHistory?: () => BaseMessage[]
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
@@ -87,7 +86,7 @@ const EMPTY = {}
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
 
-export const getUserImageAndUserQuery = (userQuery: string, title: string, userImage: string): ReactElement => (
+const getUserImageAndUserQuery = (userQuery: string, title: string, userImage: string): ReactElement => (
     // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
     <div style={{marginBottom: "1rem"}}>
         {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
@@ -445,13 +444,8 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
             updateOutput(processLogLine(parsedResult, chatMessage.type))
         } else if (typeof parsedResult === "object") {
             // It's a ChatMessage. Does it have the error block?
-            const isError = checkError(parsedResult)
-            if (isError) {
-                const agentError: AgentErrorProps = parsedResult as AgentErrorProps
-                const errorMessage =
-                    `Error occurred. Error: "${agentError.error}", ` +
-                    `traceback: "${agentError?.traceback}", ` +
-                    `tool: "${agentError?.tool}" Retrying...`
+            const errorMessage = checkError(parsedResult)
+            if (errorMessage) {
                 updateOutput(
                     <MUIAlert
                         id="retry-message-alert"

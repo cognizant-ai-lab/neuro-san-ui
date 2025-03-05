@@ -8,3 +8,12 @@ export enum LegacyAgentType {
 }
 
 export type CombinedAgentType = LegacyAgentType | NeuroSanAgentType
+
+/**
+ * Models the error we receive from neuro-san agents.
+ */
+export interface AgentErrorProps {
+    error: string
+    traceback?: string
+    tool?: string
+}

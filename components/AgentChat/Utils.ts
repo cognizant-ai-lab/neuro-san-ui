@@ -1,11 +1,12 @@
 import {capitalize, startCase} from "lodash"
 
-import {AgentErrorProps} from "./AgentError"
 import {LOGS_DELIMITER} from "./const"
+import {AgentErrorProps} from "./Types"
 import {ChatResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 
-const knownMessageTypes = [ChatMessageChatMessageType.AI, ChatMessageChatMessageType.LEGACY_LOGS]
+// We ignore any messages that are not of these types
+const KNOWN_MESSAGE_TYPES = [ChatMessageChatMessageType.AI, ChatMessageChatMessageType.LEGACY_LOGS]
 
 export const chatMessageFromChunk = (chunk: string): ChatMessage => {
     let chatResponse: ChatResponse
@@ -19,7 +20,7 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
     const messageType: ChatMessageChatMessageType = chatMessage?.type
 
     // Check if it's a message type we know how to handle
-    if (!knownMessageTypes.includes(messageType)) {
+    if (!KNOWN_MESSAGE_TYPES.includes(messageType)) {
         return null
     }
 
@@ -29,7 +30,7 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
 /**
  * This function deals with the ambiguity of what we get back from the Neuro-san API.
  * We may receive plain text, or JSON, and the JSON itself may have a text field containing JSON which may or may
- * not be escaped and/or quoted in unpredictable ways by the LLMs.
+ * not be escaped and/or quoted in unpredictable ways by the LLMs. Or it could be a JSON error block.
  * @param chunk The chunk of text to process, as received from Neuro-san
  * @return It's complicated. Either (1) the input chunk, as-is, if we failed to parse it as a ChatMessage,
  * (2) a JSON object if we were able to parse it as such or (3) plain text if all else fails.
@@ -61,14 +62,14 @@ export const tryParseJson: (chunk: string) => null | object | string = (chunk: s
     }
 }
 
-export const checkError = (chatMessageJson: object) => {
+export const checkError: (chatMessageJson: object) => string | null = (chatMessageJson: object) => {
     if ("error" in chatMessageJson) {
         const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
-        const errorMessage =
+        return (
             `Error occurred. Error: "${agentError.error}", ` +
             `traceback: "${agentError?.traceback}", ` +
-            `tool: "${agentError?.tool}" Retrying...`
-        return {errorMessage}
+            `tool: "${agentError?.tool}"`
+        )
     } else {
         return null
     }

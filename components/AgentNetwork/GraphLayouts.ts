@@ -4,11 +4,11 @@
 import dagre from "dagre"
 import {cloneDeep} from "lodash"
 import {Edge, EdgeProps, Node as RFNode} from "reactflow"
-import {cleanUpAgentName} from "../AgentChat/Utils"
 
 import {AgentNodeProps} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ConnectivityInfo} from "../../generated/neuro_san/api/grpc/agent"
+import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Constants
 
