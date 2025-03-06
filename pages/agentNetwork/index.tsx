@@ -1,6 +1,5 @@
-import {BaseMessage} from "@langchain/core/messages"
 import Grid from "@mui/material/Grid2"
-import {useEffect, useRef, useState} from "react"
+import {useEffect, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {ChatCommon} from "../../components/AgentChat/ChatCommon"
@@ -41,9 +40,6 @@ export default function AgentNetworkPage() {
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
 
     const [selectedNetwork, setSelectedNetwork] = useState<AgentType>(AgentType.TELCO_NETWORK_SUPPORT)
-
-    // Use useRef here since we don't want changes in the chat history to trigger a re-render
-    const chatHistory = useRef<BaseMessage[]>([])
 
     useEffect(() => {
         ;(async () => {
@@ -142,10 +138,6 @@ export default function AgentNetworkPage() {
                     setIsAwaitingLlm={setIsAwaitingLlm}
                     isAwaitingLlm={isAwaitingLlm}
                     targetAgent={selectedNetwork}
-                    setChatHistory={(val: BaseMessage[]) => {
-                        chatHistory.current = val
-                    }}
-                    getChatHistory={() => chatHistory.current}
                     onChunkReceived={onChunkReceived}
                     onStreamingComplete={onStreamingComplete}
                 />

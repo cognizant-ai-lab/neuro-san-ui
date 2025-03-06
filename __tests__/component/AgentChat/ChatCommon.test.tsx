@@ -8,7 +8,12 @@ import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {AgentType} from "../../../generated/metadata"
 import {ChatResponse, ConnectivityResponse, FunctionResponse} from "../../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
+import {
+    ChatContext,
+    ChatHistory,
+    ChatMessage,
+    ChatMessageChatMessageType,
+} from "../../../generated/neuro_san/api/grpc/chat"
 
 // Mock agent API
 jest.mock("../../../controller/agent/agent", () => ({
@@ -151,7 +156,7 @@ describe("AgentChatCommon", () => {
     })
 
     it("Should correctly detect an error chunk from Neuro-san", async () => {
-        const chatCommon = (
+        render(
             <ChatCommon
                 id=""
                 currentUser={TEST_USER}
@@ -162,7 +167,6 @@ describe("AgentChatCommon", () => {
                 onSend={jest.fn()}
             />
         )
-        render(chatCommon)
 
         const errorMessage = "Error message from LLM"
         const testResponseText = JSON.stringify({
@@ -199,6 +203,68 @@ describe("AgentChatCommon", () => {
 
         // Final one is an error
         expect(alertItems[3]).toHaveClass("MuiAlert-standardError")
+    })
+
+    it("Should correctly handle chat context", async () => {
+        const {rerender} = render(
+            <ChatCommon
+                id=""
+                currentUser={TEST_USER}
+                userImage=""
+                setIsAwaitingLlm={jest.fn()}
+                isAwaitingLlm={false}
+                targetAgent={AgentType.ESP_DECISION_ASSISTANT}
+                onSend={jest.fn()}
+            />
+        )
+
+        const responseMessage: ChatMessage = ChatMessage.fromPartial({
+            type: ChatMessageChatMessageType.AGENT_FRAMEWORK,
+            chatContext: ChatContext.fromPartial({
+                chatHistories: [
+                    ChatHistory.fromPartial({
+                        messages: [
+                            ChatMessage.fromPartial({
+                                type: ChatMessageChatMessageType.AI,
+                                text: "Sample AI response",
+                            }),
+                        ],
+                    }),
+                ],
+            }),
+        })
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
+        const chatResponse = ChatResponse.toJSON(
+            ChatResponse.fromPartial({
+                response: responseMessage,
+            })
+        )
+
+        let sentChatContext: ChatContext
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback, chatContext) => {
+            callback(JSON.stringify({result: chatResponse}))
+            sentChatContext = chatContext
+        })
+
+        const query = "Sample test query for chat context"
+        await sendQuery(AgentType.ESP_DECISION_ASSISTANT, query)
+
+        // re-render to update chat_context ref
+        rerender(
+            <ChatCommon
+                id=""
+                currentUser=""
+                userImage=""
+                setIsAwaitingLlm={jest.fn()}
+                isAwaitingLlm={false}
+                targetAgent={AgentType.ESP_DECISION_ASSISTANT}
+            />
+        )
+        await sendQuery(AgentType.ESP_DECISION_ASSISTANT, query)
+
+        //We should be sending back chat context as-is to the server to maintain conversation state
+        expect(sentChatContext).toEqual(responseMessage.chatContext)
     })
 
     it("Should show agent introduction", async () => {

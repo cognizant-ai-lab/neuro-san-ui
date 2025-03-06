@@ -9,6 +9,7 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro_san/api/grpc/agent"
+import {ChatContext} from "../../generated/neuro_san/api/grpc/chat"
 import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"
 
@@ -30,6 +31,8 @@ const AGENT_FUNCTION_PATH = "api/v1/agent/function"
  * @param requestUser The user making the request
  * @param targetAgent The target agent to send the request to. See CombinedAgentType for the list of available agents.
  * @param callback The callback function to be called when a chunk of data is received from the server.
+ * @param chatContext "Opaque" conversation context for maintaining conversation state with the server. Neuro-san
+ * agents do not use ChatHistory directly, but rather, ChatContext, which is a collection of ChatHistory objects.
  * @returns The response from the agent network.
  */
 export async function sendChatQuery(
@@ -37,7 +40,8 @@ export async function sendChatQuery(
     userInput: string,
     requestUser: string,
     targetAgent: AgentType,
-    callback: (chunk: string) => void
+    callback: (chunk: string) => void,
+    chatContext: ChatContext
 ): Promise<ChatResponse> {
     const baseUrl = useEnvironmentStore.getState().backendApiUrl
     const fetchUrl = `${baseUrl}/${CHAT_PATH}`
@@ -45,7 +49,7 @@ export async function sendChatQuery(
     // Create request
     const agentChatRequest: AgentChatRequest = {
         user: {login: requestUser},
-        request: ChatRequest.fromPartial({userInput: userInput}),
+        request: ChatRequest.fromPartial({userInput, chatContext}),
         targetAgent: targetAgent as AgentType,
     }
 
@@ -53,14 +57,12 @@ export async function sendChatQuery(
     const requestJSON = AgentChatRequest.toJSON(agentChatRequest)
 
     // Convert to k-v pairs as required by sendLlmRequest
-    const requestRecord = Object.entries(requestJSON).reduce(
+    const requestRecord: Record<string, unknown> = Object.entries(requestJSON).reduce(
         (acc, [key, value]) => (value ? {...acc, [key]: value} : acc),
         {}
     )
 
-    const result = await sendLlmRequest(callback, signal, fetchUrl, requestRecord, null)
-
-    return ChatResponse.fromPartial(result || {})
+    return sendLlmRequest(callback, signal, fetchUrl, requestRecord, null)
 }
 
 /**

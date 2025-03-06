@@ -27,7 +27,7 @@ import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
 import {AgentType as NeuroSanAgent} from "../../generated/metadata"
 import {ConnectivityInfo, ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
+import {ChatContext, ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
 import {LlmChatOptionsButton} from "../internal/LlmChatOptionsButton"
@@ -74,16 +74,8 @@ interface AgentChatCommonProps {
      */
     readonly onSend?: (query: string) => string
     readonly setPreviousResponse?: (agent: CombinedAgentType, response: string) => void
-    readonly setChatHistory?: (val: BaseMessage[]) => void
-    readonly getChatHistory?: () => BaseMessage[]
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
 }
-
-const NO_OP_SET = () => {
-    /* do nothing */
-}
-
-const NO_OP_GET = () => []
 
 const EMPTY = {}
 
@@ -129,8 +121,6 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
     onStreamingComplete,
     onSend,
     setPreviousResponse,
-    setChatHistory = NO_OP_SET,
-    getChatHistory = NO_OP_GET,
     targetAgent,
     legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
@@ -165,6 +155,19 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
+
+    // Use useRef here since we don't want changes in the chat history to trigger a re-render
+    const chatHistory = useRef<BaseMessage[]>([])
+
+    /* Use useRef here since we don't want changes in the chat context to trigger a re-render
+    Note on ChatContext vs ChatHistory:
+    "Legacy" (not Neuro-san) agents use ChatHistory, which is a collection of messages of various types, Human, AI,
+    System etc. It mimics the langchain field of the same name.
+    Neuro-san agents deal in ChatContext, which is a more complex collection of chat histories, since more agents
+    are involved.
+    Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
+    */
+    const chatContext = useRef<ChatContext>(null)
 
     // Use hard-coded highlighter theme for now
     const highlighterTheme = HLJS_THEMES["a11yDark"]
@@ -448,13 +451,20 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
             return
         }
 
+        // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
+        if (chatMessage.type === ChatMessageChatMessageType.AGENT_FRAMEWORK && chatMessage.chatContext) {
+            // Save the chat context, potentially overwriting any previous ones we received during this session.
+            // We only care about the last one received.
+            chatContext.current = chatMessage.chatContext
+        }
+
         // It's a Neuro-san agent. Should be a ChatMessage at this point since all Neuro-san agents should return
         // ChatMessages.
         const parsedResult: null | object | string = tryParseJson(chunk)
         if (typeof parsedResult === "string") {
             updateOutput(processLogLine(parsedResult, chatMessage.type))
         } else if (typeof parsedResult === "object") {
-            // It's a ChatMessage. Does it have the error block?
+            // Does it have the error block?
             const errorMessage = checkError(parsedResult)
             if (errorMessage) {
                 updateOutput(
@@ -495,7 +505,8 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         query,
                         currentUser,
                         targetAgent as NeuroSanAgent,
-                        handleChunk
+                        handleChunk,
+                        chatContext.current
                     )
                 } else {
                     // It's a legacy agent.
@@ -507,7 +518,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         legacyAgentEndpoint,
                         {requestType: targetAgent},
                         query,
-                        getChatHistory()
+                        chatHistory.current
                     )
                 }
             } catch (error: unknown) {
@@ -519,6 +530,9 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                 }
 
                 if (!wasAborted) {
+                    if (error instanceof Error) {
+                        console.error(error, error.stack)
+                    }
                     updateOutput(
                         <MUIAlert
                             id="opp-finder-error-occurred-alert"
@@ -535,7 +549,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
     const handleSend = async (query: string) => {
         // Record user query in chat history
-        setChatHistory([...getChatHistory(), new HumanMessage(previousUserQuery)])
+        chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery)]
 
         // Allow parent to intercept and modify the query before sending if needed
         const queryToSend = onSend?.(query) ?? query
@@ -595,7 +609,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
         // Record bot answer in history.
         if (currentResponse?.current?.length > 0) {
-            setChatHistory([...getChatHistory(), new AIMessage(currentResponse.current)])
+            chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
         }
     }
 
@@ -690,7 +704,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                 <ControlButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
                     clearChatOnClickCallback={() => {
                         setChatOutput([])
-                        setChatHistory([])
+                        chatHistory.current = []
                         setPreviousUserQuery("")
                         currentResponse.current = ""
                         introduceAgent()

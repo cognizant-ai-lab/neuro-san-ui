@@ -37,12 +37,13 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
     /**
      * Get the formatted output for a given string. The string is assumed to be in markdown format.
      * @param stringToFormat The string to format.
+     * @param index The index of the string in the nodes list. Used as "salt" to generate a unique key.
      * @returns The formatted markdown.
      */
-    const getFormattedMarkdown = (stringToFormat: string): JSX.Element => (
+    const getFormattedMarkdown = (stringToFormat: string, index: number): JSX.Element => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
-            key={hashString(stringToFormat)}
+            key={`${hashString(stringToFormat)}-${index}`}
             rehypePlugins={[rehypeRaw, rehypeSlug]}
             components={{
                 code(codeProps) {
@@ -87,6 +88,16 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
         </ReactMarkdown>
     )
 
+    const getNodeKey = (node: ReactNode, index: number): string => {
+        // If it has a key, use that
+        if (typeof node === "object" && node !== null && "key" in node && node.key !== null) {
+            return `${node.key}-${index}`
+        }
+
+        // If not, do our best to synthesize a key
+        return `${hashString(node?.toString() || "")}-${index}`
+    }
+
     // Walk through the nodes list. If we encounter a string node, we'll aggregate it with other string nodes.
     const formattedOutput: ReactNode[] = []
     let currentTextNodes: string[] = []
@@ -98,23 +109,22 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
         } else {
             // Not a string node. Process any aggregated text nodes
             if (currentTextNodes.length > 0) {
-                const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""))
+                const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), i)
                 formattedOutput.push(concatenatedText)
                 currentTextNodes = []
             }
 
             // Not a string node. Add the node as-is
+            const key = getNodeKey(node, i)
 
-            // TODO: need a good unique key here. Loop index is a poor choice.
-            // formattedOutput.push(<Fragment key={hashString(JSON.stringify(node))}>{node}</Fragment>)
             // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-            formattedOutput.push(<Fragment key={i}>{node}</Fragment>)
+            formattedOutput.push(<Fragment key={key}>{node}</Fragment>)
         }
     }
 
     // Process any remaining text nodes
     if (currentTextNodes.length > 0) {
-        const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""))
+        const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), props.nodesList.length)
         formattedOutput.push(concatenatedText)
     }
 

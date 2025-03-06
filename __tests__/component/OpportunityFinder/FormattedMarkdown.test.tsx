@@ -64,4 +64,17 @@ describe("FormattedMarkdown component tests", () => {
         await screen.findByText(/Text 1. Text 2\./u)
         await screen.findByText(/Text 3. Text 4\./u)
     })
+
+    it("Generates unique keys for formatted items", async () => {
+        render(
+            <FormattedMarkdown
+                id="test-keys"
+                nodesList={["Text 1. ", <div key="" />, "Text 1. "]}
+                style={{}}
+            />
+        )
+
+        const elements = await screen.findAllByText(/Text 1./u)
+        expect(elements).toHaveLength(2)
+    })
 })

@@ -6,7 +6,11 @@ import {ChatResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 
 // We ignore any messages that are not of these types
-const KNOWN_MESSAGE_TYPES = [ChatMessageChatMessageType.AI, ChatMessageChatMessageType.LEGACY_LOGS]
+const KNOWN_MESSAGE_TYPES = [
+    ChatMessageChatMessageType.AI,
+    ChatMessageChatMessageType.LEGACY_LOGS,
+    ChatMessageChatMessageType.AGENT_FRAMEWORK,
+]
 
 export const chatMessageFromChunk = (chunk: string): ChatMessage => {
     let chatResponse: ChatResponse
@@ -24,7 +28,8 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
         return null
     }
 
-    return chatMessage
+    // Have to use fromJSON to convert from "wire format" to "Typescript format", like foo_bar -> fooBar.
+    return ChatMessage.fromJSON(chatMessage)
 }
 
 /**
@@ -46,7 +51,7 @@ export const tryParseJson: (chunk: string) => null | object | string = (chunk: s
     const chatMessageText = chatMessage.text
 
     // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
-    const chatMessageCleaned = chatMessageText.replace(/```json/gu, "").replace(/```/gu, "")
+    const chatMessageCleaned = chatMessageText?.replace(/```json/gu, "").replace(/```/gu, "")
 
     try {
         chatMessageJson = JSON.parse(chatMessageCleaned)
