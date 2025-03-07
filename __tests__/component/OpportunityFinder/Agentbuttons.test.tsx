@@ -2,6 +2,7 @@
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
+import {LegacyAgentType} from "../../../components/AgentChat/Types"
 import {AgentButtons} from "../../../components/OpportunityFinder/Agentbuttons"
 
 describe("AgentButtons", () => {
@@ -14,7 +15,7 @@ describe("AgentButtons", () => {
                 id="opp-finder-agent-buttons"
                 enableOrchestration={false}
                 awaitingResponse={false}
-                selectedAgent="OpportunityFinder"
+                selectedAgent={LegacyAgentType.OpportunityFinder}
                 setSelectedAgent={setSelectedAgentMock}
             />
         )
@@ -31,7 +32,7 @@ describe("AgentButtons", () => {
                 id="opp-finder-agent-buttons"
                 enableOrchestration={false}
                 awaitingResponse={false}
-                selectedAgent="OpportunityFinder"
+                selectedAgent={LegacyAgentType.OpportunityFinder}
                 setSelectedAgent={setSelectedAgentMock}
             />
         )
@@ -49,7 +50,7 @@ describe("AgentButtons", () => {
                 id="opp-finder-agent-buttons"
                 enableOrchestration={true}
                 awaitingResponse={false}
-                selectedAgent="OpportunityFinder"
+                selectedAgent={LegacyAgentType.OpportunityFinder}
                 setSelectedAgent={setSelectedAgentMock}
             />
         )

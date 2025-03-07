@@ -1,16 +1,10 @@
 // eslint-disable-next-line no-shadow
 import {render, screen, waitFor} from "@testing-library/react"
-import {default as userEvent} from "@testing-library/user-event"
-import {ReactNode} from "react"
+import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
-import {
-    experimentGeneratedMessage,
-    invokeOrchestrationAgent,
-    OpportunityFinder,
-} from "../../../components/OpportunityFinder/OpportunityFinder"
-import {sendChatQuery} from "../../../controller/agent/agent"
-import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
+import {LegacyAgentType} from "../../../components/AgentChat/Types"
+import {experimentGeneratedMessage, OpportunityFinder} from "../../../components/OpportunityFinder/OpportunityFinder"
+import {ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 
 // mock useSession
 jest.mock("next-auth/react", () => {
@@ -19,19 +13,23 @@ jest.mock("next-auth/react", () => {
     }
 })
 
-jest.mock("../../../components/AgentChat/AgentChatCommon", () => ({
-    AgentChatCommon: jest.fn(),
-}))
+let onChunkReceived
+let setPreviousResponse
 
-jest.mock("../../../controller/opportunity_finder/fetch")
-
-// Mock sendChatQuery
-jest.mock("../../../controller/agent/agent", () => ({
-    sendChatQuery: jest.fn(),
-}))
+jest.mock("../../../components/AgentChat/ChatCommon", () => {
+    return {
+        __esModule: true,
+        ChatCommon: jest.fn((props) => {
+            // Capture the onChunkReceived function
+            onChunkReceived = props.onChunkReceived
+            setPreviousResponse = props.setPreviousResponse
+            return <div>Mocked ChatCommon</div>
+        }),
+    }
+})
 
 describe("OpportunityFinder", () => {
-    let user
+    let user: UserEvent
     beforeEach(() => {
         jest.clearAllMocks()
         user = userEvent.setup()
@@ -57,7 +55,7 @@ describe("OpportunityFinder", () => {
         const orchestratorButton = screen.getByText("Orchestrator")
 
         // Click on the Scoping Agent button
-        user.click(scopingAgentButton)
+        await user.click(scopingAgentButton)
 
         // Check that the Scoping Agent button is selected
         await waitFor(() => {
@@ -76,42 +74,60 @@ describe("OpportunityFinder", () => {
         })
     })
 
-    it("Should detect an 'orchestration complete' message", async () => {
-        const mockController = {current: new AbortController()}
-        const mockProjectRef = {current: null}
+    it("should handle chunk received correctly", async () => {
+        const {rerender} = render(<OpportunityFinder />)
 
-        // mock sendChatQuery function implementation to invoke the supplied callback
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
-            const successMessage: ChatMessage = {
-                type: ChatMessageChatMessageType.AI,
-                text: JSON.stringify({project_id: "mockProjectId", experiment_id: "mockExperimentId"}),
-                structure: null,
-                mimeData: [],
-                origin: [],
-                chatContext: null,
-                toolResultOrigin: [],
-            }
+        // Select Orchestrator agent
+        const orchestratorButton = screen.getByText("Orchestrator")
+        expect(orchestratorButton).toBeInTheDocument()
 
-            const chatResponse: ChatResponse = ChatResponse.fromPartial({
-                response: successMessage,
-            })
+        // Have to feed it a data generator response to enable the orchestrator
+        setPreviousResponse(LegacyAgentType.DataGenerator, "testResponse")
+        rerender(<OpportunityFinder />)
 
-            callback(JSON.stringify({result: chatResponse}))
+        await user.click(orchestratorButton)
+
+        // Call the captured onChunkReceived function
+        const mockChunk = JSON.stringify({
+            result: {
+                response: {
+                    type: ChatMessageChatMessageType.AI,
+                    text: JSON.stringify({
+                        project_id: "mockProjectId",
+                        experiment_id: "mockExperimentId",
+                    }),
+                },
+            },
         })
 
-        const updateOutputMock = (node: ReactNode) => {
-            render(<>{node}</>)
-        }
-        await invokeOrchestrationAgent(
-            "query",
-            updateOutputMock,
-            mockController,
-            mockProjectRef,
-            jest.fn(),
-            "currentUser"
-        )
+        const result = onChunkReceived(mockChunk)
+        expect(result).toBe(true)
 
-        expect(await screen.findByText("Experiment generation complete")).toBeInTheDocument()
+        // Re-render to pick up "experiment complete" message
+        rerender(<OpportunityFinder />)
+
+        // Check the experiment text
+        const experimentText = await screen.findByText(/Your new experiment has been generated/u)
+        expect(experimentText).toBeInTheDocument()
+    })
+
+    it("should return false for invalid chunk", async () => {
+        const {rerender} = render(<OpportunityFinder />)
+
+        // Select Orchestrator agent
+        const orchestratorButton = screen.getByText("Orchestrator")
+        expect(orchestratorButton).toBeInTheDocument()
+
+        // Have to feed it a data generator response to enable the orchestrator
+        setPreviousResponse(LegacyAgentType.DataGenerator, "testResponse")
+        rerender(<OpportunityFinder />)
+
+        await user.click(orchestratorButton)
+
+        // Call the captured onChunkReceived function
+        const invalidChunk = "invalid json"
+        const result = onChunkReceived(invalidChunk)
+        expect(result).toBe(false)
     })
 })
 

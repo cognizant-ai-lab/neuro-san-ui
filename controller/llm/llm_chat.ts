@@ -15,7 +15,8 @@ import {MessageWithKargs} from "../../pages/api/gpt/shared/types"
  * @param params Arbitrary parameters to send to the server.
  * @param userQuery The user query to send to the server (sometimes part of chat history instead).
  * @param chatHistory The chat history to be sent to the server. Contains user requests and server responses.
- * @returns Nothing, but tokens are streamed to the callback as they are received from the server.
+ * @returns Either the JSON result of the call, or, if a callback is provided, nothing, but tokens are streamed
+ * to the callback as they are received from the server.
  */
 export async function sendLlmRequest(
     callback: (token: string) => void,
@@ -32,8 +33,8 @@ export async function sendLlmRequest(
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            ...(chatHistory && {chatHistory: chatHistory}), // Only include chat history if it exists (optional)
-            ...(userQuery && {userQuery: userQuery}), // Only include user query if it exists (optional)
+            ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)
+            ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
             ...params,
         }),
         signal: signal,
