@@ -227,8 +227,8 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
         try {
             // Attempt to parse as JSON
 
-            // First, repair it
-            repairedJson = jsonrepair(logLineDetails)
+            // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
+            repairedJson = jsonrepair(logLineDetails).replace(/\\n/gu, "\n")
 
             // Now try to parse it. We don't care about the result, only if it throws on parsing.
             JSON.parse(repairedJson)
@@ -256,6 +256,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                                         style={HIGHLIGHTER_THEME}
                                         showLineNumbers={false}
                                         wrapLines={true}
+                                        wrapLongLines={shouldWrapOutput}
                                     >
                                         {repairedJson}
                                     </SyntaxHighlighter>
@@ -318,6 +319,11 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
     useEffect(() => {
         const newAgent = async () => {
+            // New agent, so clear chat context. Note: for now we don't clear chat history as that would mess up the
+            // flow going from agent to another in opp finder. TBD how to resolve that.
+            chatContext.current = null
+
+            // Introduce the agent to the user
             introduceAgent()
 
             // if not neuro san agent, just return since we won't get connectivity info
@@ -705,6 +711,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                     clearChatOnClickCallback={() => {
                         setChatOutput([])
                         chatHistory.current = []
+                        chatContext.current = null
                         setPreviousUserQuery("")
                         currentResponse.current = ""
                         introduceAgent()
