@@ -453,6 +453,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
         // For legacy agents, we either get plain text or markdown. Just output it as-is.
         if (targetAgent in LegacyAgentType) {
             updateOutput(chunk)
+            return
         }
 
         const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
