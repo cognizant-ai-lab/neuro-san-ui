@@ -9,7 +9,7 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro_san/api/grpc/agent"
-import {ChatContext} from "../../generated/neuro_san/api/grpc/chat"
+import {ChatContext, ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"
 
@@ -47,9 +47,14 @@ export async function sendChatQuery(
     const fetchUrl = `${baseUrl}/${CHAT_PATH}`
 
     // Create request
+    const userMessage: ChatMessage = ChatMessage.fromPartial({
+        type: ChatMessageChatMessageType.HUMAN,
+        text: userInput,
+    })
+
     const agentChatRequest: AgentChatRequest = {
         user: {login: requestUser},
-        request: ChatRequest.fromPartial({userInput, chatContext}),
+        request: ChatRequest.fromPartial({userMessage, chatContext}),
         targetAgent: targetAgent as AgentType,
     }
 
