@@ -107,28 +107,29 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo}) => {
 
     // Highlight active edges, which are those connecting active agents as defined by originInfo.
     useEffect(() => {
-        const originTools = originInfo.map((originItem) => originItem.tool)
+        if (originInfo) {
+            const originTools = originInfo.map((originItem) => originItem.tool)
+            const edgesCopy = edges.map((edge: Edge<EdgeProps>) => {
+                return {
+                    ...edge,
+                    style: {
+                        strokeWidth: originTools.includes(edge.target) ? 3 : undefined,
+                        stroke: originTools.includes(edge.target) ? "var(--bs-primary)" : undefined,
+                    },
+                    markerEnd: originTools.includes(edge.target)
+                        ? {
+                              type: MarkerType.Arrow,
+                              color: "darkblue", // var(--bs-primary) doesn't work here for some reason
+                              width: 15,
+                              height: 15,
+                          }
+                        : undefined,
+                    type: originTools.includes(edge.target) ? "animatedEdge" : undefined,
+                }
+            })
 
-        const edgesCopy = edges.map((edge: Edge<EdgeProps>) => {
-            return {
-                ...edge,
-                style: {
-                    strokeWidth: originTools.includes(edge.target.toLowerCase().trim()) ? 3 : undefined,
-                    stroke: originTools.includes(edge.target.toLowerCase().trim()) ? "var(--bs-primary)" : undefined,
-                },
-                markerEnd: originTools.includes(edge.target.toLowerCase().trim())
-                    ? {
-                          type: MarkerType.Arrow,
-                          color: "darkblue", // var(--bs-primary) doesn't work here for some reason
-                          width: 15,
-                          height: 15,
-                      }
-                    : undefined,
-                type: originTools.includes(edge.target.toLowerCase().trim()) ? "animatedEdge" : undefined,
-            }
-        })
-
-        setEdges(edgesCopy)
+            setEdges(edgesCopy)
+        }
     }, [originInfo])
 
     const transform = useStore((state) => state.transform)
