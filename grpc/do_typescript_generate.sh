@@ -20,7 +20,6 @@ set -o errexit
 set -o errtrace
 set -o nounset
 set -o pipefail
-set -x
 
 # Define Neuro AI protocol version to use
 NEURO_AI_VERSION="2.6.0"
@@ -31,35 +30,34 @@ NEURO_SAN_VERSION="0.4.5"
 # Define directories
 GENERATED_DIR=./generated
 PROTOS_DIR=./proto
-NEURO_SAN_PROTO_DIR="${PROTOS_DIR}/neuro-san"
+NEURO_SAN_PROTO_DIR="${PROTOS_DIR}/neuro-san/neuro_san/api/grpc"
+
+# Define the path to the proto manifest file
 PROTO_MANIFEST="${PROTOS_DIR}/mdserver_proto.txt"
 
+# Make sure we have the pre-requisites to run the script
 check_pre_reqs() {
   # Check if Github PAT is present
   if [ -z "${LEAF_SOURCE_CREDENTIALS:-}" ]; then
     echo "Error: LEAF_SOURCE_CREDENTIALS environment variable must be set to a Github access token."
     exit 1
   fi
-
-  # Check if jq tool is available
-  if ! command -v jq &>/dev/null; then
-    echo "Error: jq is not installed. Please install jq to run this script."
-    exit 1
-  fi
 }
 
+# Prepare directories for generated files and proto files
 prepare_dirs() {
   # Clean proto and generated directories
   rm -rf "${GENERATED_DIR:?}"/*
   rm -rf "${PROTOS_DIR:?}"/*
 
   # Create directories if necessary
-  mkdir -p "${PROTOS_DIR}/internal" "$NEURO_SAN_PROTO_DIR" "${GENERATED_DIR}"
+  mkdir -p "${PROTOS_DIR}/internal" "${NEURO_SAN_PROTO_DIR}" "${GENERATED_DIR}"
 
   # Hack: google proto files expect to be in a certain hardcoded location, so we copy them there
   cp -r "node_modules/protobufjs/google" "${PROTOS_DIR}/internal"
 }
 
+# Checkout a specific path from a git repository. Only retrieves proto files.
 checkout_repo_path() {
   local repo="$1"
   local version="$2"
@@ -90,10 +88,16 @@ checkout_repo_path() {
 
 # Generate the Typepscript types for the services
 generate_typescript_grpc_code() {
-  local all_proto_files="$1"
-  local proto_path="$2"
-  local generated_dir="$3"
+  # Ordering matters with respect to where generated file is output
+  local proto_path="--proto_path=${GENERATED_DIR} \
+            --proto_path=${PROTOS_DIR} \
+            --proto_path=${PROTOS_DIR}/neuro-san \
+            --proto_path=./node_modules/protobufjs"
 
+  local all_proto_files=""
+  all_proto_files=$(<"${PROTO_MANIFEST}" grep -v "^#")
+
+  # Generate the gRPC code for each proto file
   for proto_file in ${all_proto_files}; do
     echo "generating gRPC code for ${proto_file}."
     # shellcheck disable=SC2086 # PROTO_PATH is compilation of cmd line args
@@ -110,55 +114,9 @@ generate_typescript_grpc_code() {
       --ts_proto_opt=snakeToCamel=keys \
       --ts_proto_opt=stringEnums=true \
       --ts_proto_opt=useSnakeTypeName=false \
-      --ts_proto_out="${generated_dir}" "${proto_file}"
+      --ts_proto_out="${GENERATED_DIR}" "${proto_file}"
   done
 }
-
-# Get the list of proto files from the leaf-ai/unileaf repository
-#NEURO_AI_PROTOS=$(curl --location \
-#  --header "Accept: application/vnd.github+json" \
-#  --header "Authorization: token $LEAF_SOURCE_CREDENTIALS" \
-#  --header "X-GitHub-Api-Version: 2022-11-28" \
-#  --location \
-#  --show-error \
-#  --silent \
-#  "https://api.github.com/repos/leaf-ai/unileaf/contents/proto?ref=${NEURO_AI_VERSION}" \
-#  | jq -r '.[].path')
-#
-#echo "Retrieving neuro-ai proto files from leaf-ai/unileaf repository..."
-## Get any necessary proto files from the neuro-ai repository.
-#for ONE_PROTO in ${NEURO_AI_PROTOS}
-#do
-#  FILE_PATH="https://api.github.com/repos/leaf-ai/unileaf/contents/${ONE_PROTO}?ref=${NEURO_AI_VERSION}"
-#  HTTP_CODE=$(curl --header "Authorization: token $LEAF_SOURCE_CREDENTIALS" \
-#      --header "Accept: application/vnd.github.raw+json" \
-#      --output "${ONE_PROTO}" \
-#      --location \
-#      --show-error \
-#      --silent \
-#      --write-out "%{http_code}" \
-#      "$FILE_PATH")
-#
-#  if [ "$HTTP_CODE" -ne 200 ]; then
-#      echo "Error retrieving $FILE_PATH: HTTP status code $HTTP_CODE"
-#      echo "File contents: $(cat "${ONE_PROTO}")"
-#      exit 1
-#  fi
-#done
-
-#NEURO_SAN_PROTOS=$(< "${PROTO_MANIFEST}" grep -v "^#" | grep neuro_san | awk -F"/" '{print $4}')
-#
-## Get any necessary proto files from the neuro-san repository.
-#for ONE_PROTO in ${NEURO_SAN_PROTOS}
-#do
-#    curl --header "Authorization: token $LEAF_SOURCE_CREDENTIALS" \
-#        --header "Accept: application/vnd.github.raw+json" \
-#        --output "${LOCAL_PATH_NEURO_SAN_PROTOS}/${ONE_PROTO}" \
-#        --location \
-#        --show-error \
-#        --silent \
-#        "https://api.github.com/repos/leaf-ai/neuro-san/contents/neuro_san/api/grpc/${ONE_PROTO}?ref=${NEURO_SAN_VERSION}"
-#done
 
 # Main entry point of the script
 main() {
@@ -171,20 +129,14 @@ main() {
   prepare_dirs
 
   # Get Neuro AI proto files
-  checkout_repo_path "git@github.com:leaf-ai/unileaf.git" "$NEURO_AI_VERSION" "/proto" "./proto"
+  checkout_repo_path "https://$LEAF_SOURCE_CREDENTIALS@github.com/leaf-ai/unileaf.git" "${NEURO_AI_VERSION}" \
+    "/proto" "./proto"
 
-#  # Get Neuro-san proto files
-#  checkout_repo_path git@github.com:leaf-ai/unileaf.git "${NEURO_SAN_VERSION}" /neuro_san/api/grpc ./proto
-#
-#  # Ordering matters with respect to where generated file is output
-#  PROTO_PATH="--proto_path=${GENERATED_DIR} \
-#            --proto_path=${PROTOS_DIR} \
-#            --proto_path=${PROTOS_DIR}/neuro-san \
-#            --proto_path=./node_modules/protobufjs"
-#
-#  ALL_PROTO_FILES=$(<"${PROTO_MANIFEST}" grep -v "^#")
-#
-#  generate_typescript_grpc_code "${ALL_PROTO_FILES}" "${PROTO_PATH}" "${GENERATED_DIR}"
+  # Get Neuro-san proto files
+  checkout_repo_path "https://$LEAF_SOURCE_CREDENTIALS@github.com/leaf-ai/neuro-san.git" "${NEURO_SAN_VERSION}" \
+    "neuro_san/api/grpc" "${NEURO_SAN_PROTO_DIR}"
+
+  generate_typescript_grpc_code
 
   echo "Script completed."
 }

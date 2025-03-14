@@ -34,13 +34,11 @@ COPY . .
 ARG UNILEAF_VERSION
 ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 
-# Install protobuf compiler and other needed packages
+# Install protobuf compiler and lib
 RUN apt-get update && \
     apt-get install --quiet --assume-yes --no-install-recommends --no-install-suggests \
-      curl=7.74.0-1.3+deb11u14  \
-      jq=1.7.1-3build1 \
-      libprotobuf-dev=3.12.4-1+deb11u1 ca-certificates=20210119 \
-      protobuf-compiler=3.12.4-1+deb11u1
+      protobuf-compiler=3.12.4-1+deb11u1 libprotobuf-dev=3.12.4-1+deb11u1 ca-certificates=20210119 \
+      curl=7.74.0-1.3+deb11u14
 
 # Deal with github pat in order to clone neuro-san repo
 # which is part of the do_typescript_generate script called below
