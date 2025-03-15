@@ -68,6 +68,7 @@ export const MUIDialog: FC<MUIDialogProps> = ({
                 <CloseIcon
                     data-testid={`${id}-close-icon`}
                     id={`${id}-close-icon`}
+                    sx={{color: "var(--bs-gray-medium)", fontSize: "1rem"}}
                 />
             </IconButton>
         )}

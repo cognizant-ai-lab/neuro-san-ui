@@ -6,6 +6,15 @@ import {createTheme} from "@mui/material"
  * to ease our migration to that library, from a plethora of other libraries that we were using previously.
  */
 export const APP_THEME = createTheme({
+    components: {
+        MuiDialog: {
+            styleOverrides: {
+                paper: {
+                    borderRadius: "var(--bs-border-radius)",
+                },
+            },
+        },
+    },
     typography: {
         // Initially just force MUI to use our corporate font.
         fontFamily: "var(--bs-body-font-family)",

@@ -242,8 +242,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
         )
     } else {
         body = (
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-            <ThemeProvider theme={APP_THEME}>
+            <>
                 {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <CssBaseline />
                 {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
@@ -273,7 +272,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                         </Container>
                     </ErrorBoundary>
                 </SessionProvider>
-            </ThemeProvider>
+            </>
         )
     }
 
@@ -294,7 +293,11 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            {body}
+            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                theme={APP_THEME}
+            >
+                {body}
+            </ThemeProvider>
             <SnackbarProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 Components={{
                     info: Snackbar,

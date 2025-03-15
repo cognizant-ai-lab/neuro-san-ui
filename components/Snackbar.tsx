@@ -52,12 +52,14 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                     id={`${id}-snackbar-box`}
                     sx={{
                         background: "var(--bs-white)",
-                        borderColor: "var(--bs-border-color)",
+                        borderColor: "transparent",
                         borderRadius: "var(--bs-border-radius)",
                         borderWidth: "1px",
+                        boxShadow: `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 
+                                    0 9px 28px 8px rgba(0, 0, 0, 0.05)`,
                         maxWidth: "450px",
                         minWidth: "250px",
-                        padding: "5px",
+                        padding: "0.9rem",
                     }}
                 >
                     {!hideIconVariant && (
@@ -88,7 +90,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                             sx={{
                                 display: "block",
                                 // If no description, this is the only message, so reduce font size
-                                fontSize: description ? "0.9rem" : "0.85rem",
+                                fontSize: description ? "0.95rem" : "0.85rem",
                                 paddingRight: "25px",
                             }}
                         >
@@ -107,13 +109,16 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                             <CloseIcon
                                 data-testid={`${id}-close-icon`}
                                 id={`${id}-close-icon`}
-                                sx={{fontSize: "0.6em"}}
+                                sx={{
+                                    color: "var(--bs-gray-medium)",
+                                    fontSize: "0.6em",
+                                }}
                             />
                         </IconButton>
                         {description && (
                             <Box
                                 id={`${id}-snackbar-description-box`}
-                                sx={{fontSize: "0.8em", paddingTop: "10px", paddingBottom: "10px"}}
+                                sx={{fontSize: "0.8rem", paddingTop: "10px", paddingBottom: "10px"}}
                             >
                                 {description}
                             </Box>
