@@ -86,9 +86,10 @@ export const checkError: (chatMessageJson: object) => string | null = (chatMessa
  * found, the entire log line is treated as the details part. This can happen when it's a "follow-on" message from
  * an agent we've already heard from.
  * @param logLine The log line to split
+ * @param defaultSummary The default summary to use if the log line does not contain the delimiter
  * @returns An object containing the summary and details parts of the log line
  */
-export function splitLogLine(logLine: string) {
+export function splitLogLine(logLine: string, defaultSummary: string) {
     if (logLine.includes(LOGS_DELIMITER)) {
         const logLineElements = logLine.split(LOGS_DELIMITER)
 
@@ -96,9 +97,9 @@ export function splitLogLine(logLine: string) {
         const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
 
         const logLineDetails = logLineElements[1]
-        return {summarySentenceCase, logLineDetails}
+        return {summarySentenceCase: defaultSummary || summarySentenceCase, logLineDetails}
     } else {
-        return {summarySentenceCase: "Agent message", logLineDetails: logLine}
+        return {summarySentenceCase: defaultSummary || "Agent Message", logLineDetails: logLine}
     }
 }
 

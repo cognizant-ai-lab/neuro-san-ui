@@ -8,7 +8,7 @@ describe("AgentChat/Utils/splitLogLine", () => {
     it("Should correctly split a log line with delimiter", () => {
         const details = "This is a test log line"
         const logLine = `AgentName${LOGS_DELIMITER}${details}`
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
+        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine, "Agent message")
 
         // UI "sentence cases" agent names as they tend to come in all caps from neuro-san which is ugly
         expect(summarySentenceCase).toEqual("Agentname")
@@ -19,7 +19,7 @@ describe("AgentChat/Utils/splitLogLine", () => {
     it("Should correctly handle a log line without delimiter", () => {
         // Use a value that intentionally doesn't parse as JSON for this test case
         const logLine = "This is a test log line"
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
+        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine, "Agent message")
 
         expect(summarySentenceCase).toEqual("Agent message")
         expect(logLineDetails).toEqual(logLine)

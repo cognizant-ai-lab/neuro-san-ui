@@ -2,7 +2,10 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
+import AccountTreeIcon from "@mui/icons-material/AccountTree"
 import ClearIcon from "@mui/icons-material/Clear"
+import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
+import WrapTextIcon from "@mui/icons-material/WrapText"
 import {Box, Input, styled} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
@@ -10,10 +13,22 @@ import InputAdornment from "@mui/material/InputAdornment"
 import Tooltip from "@mui/material/Tooltip"
 import {jsonrepair} from "jsonrepair"
 import NextImage from "next/image"
-import {CSSProperties, Dispatch, FC, ReactElement, ReactNode, SetStateAction, useEffect, useRef, useState} from "react"
-import {MdOutlineWrapText, MdVerticalAlignBottom} from "react-icons/md"
+import {
+    cloneElement,
+    CSSProperties,
+    Dispatch,
+    FC,
+    isValidElement,
+    ReactElement,
+    ReactNode,
+    SetStateAction,
+    useEffect,
+    useRef,
+    useState,
+} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
+import remarkGfm from "remark-gfm"
 
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {ControlButtons} from "./ControlButtons"
@@ -126,6 +141,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
     legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
 }) => {
+    console.debug("rendering")
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
 
@@ -157,6 +173,9 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
+    // lastAIMessage
+    const lastAIMessage = useRef<string>("")
+
     // Use useRef here since we don't want changes in the chat history to trigger a re-render
     const chatHistory = useRef<BaseMessage[]>([])
 
@@ -169,6 +188,8 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
     */
     const chatContext = useRef<ChatContext>(null)
+
+    const [showThinking, setShowThinking] = useState<boolean>(false)
 
     // Use hard-coded highlighter theme for now
     const highlighterTheme = HLJS_THEMES["a11yDark"]
@@ -190,6 +211,23 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
+
+    useEffect(() => {
+        setChatOutput((currentOutput) =>
+            currentOutput.map((item) => {
+                if (isValidElement(item) && item.type === MUIAccordion) {
+                    return cloneElement(item, {
+                        // TODO: need type guard/coercion here
+                        sx: {
+                            ...item.props.sx,
+                            display: showThinking || item.props.isFinalAnswer ? "block" : "none",
+                        },
+                    })
+                }
+                return item
+            })
+        )
+    }, [showThinking])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -217,11 +255,17 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
      * @param logLine The log line to process
      * @param messageType The type of the message (AI, LEGACY_LOGS etc.). Used for displaying certain message types
      * differently
+     * @param isFinalAnswer
      * @returns A React component representing the log line (agent message)
      */
-    function processLogLine(logLine: string, messageType?: ChatMessageChatMessageType): ReactNode {
+    function processLogLine(
+        logLine: string,
+        messageType?: ChatMessageChatMessageType,
+        isFinalAnswer?: boolean,
+        defaultSummary?: string
+    ): ReactNode {
         // extract the parts of the line
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
+        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine, defaultSummary)
 
         let repairedJson: string = null
 
@@ -239,13 +283,20 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
             // Not valid JSON
             repairedJson = null
         }
-
         const isAIMessage = messageType === ChatMessageChatMessageType.AI
+        if (isAIMessage && !isFinalAnswer) {
+            console.debug("setting lastAIMessage to: ", logLine)
+            lastAIMessage.current = logLine
+        }
+        console.debug("logLineDetails: ", logLineDetails)
 
         return (
             <MUIAccordion
+                key={`${summarySentenceCase}-${showThinking}`}
                 id={`${summarySentenceCase}-panel`}
-                defaultExpandedPanelKey={isAIMessage ? 1 : null}
+                defaultExpandedPanelKey={isFinalAnswer ? 1 : null}
+                // TODO: this property doesn't exist on MUIAccordion. How to fix this?
+                isFinalAnswer={isFinalAnswer} // Add the isFinalAnswer prop here
                 items={[
                     {
                         title: summarySentenceCase,
@@ -264,7 +315,10 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                                     </SyntaxHighlighter>
                                 ) : (
                                     // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                                    <ReactMarkdown key={hashString(logLineDetails)}>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        key={hashString(logLineDetails)}
+                                    >
                                         {logLineDetails || "No further details"}
                                     </ReactMarkdown>
                                 )}
@@ -275,7 +329,11 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                 sx={{
                     fontSize: "large",
                     marginBottom: "1rem",
-                    backgroundColor: isAIMessage ? "var(--bs-accent3-light)" : undefined,
+                    display: showThinking || isFinalAnswer ? "block" : "none",
+                    boxShadow: isFinalAnswer
+                        ? `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 
+                                    0 9px 28px 8px rgba(0, 0, 0, 0.05)`
+                        : "none",
                 }}
             />
         )
@@ -327,6 +385,8 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
             // New agent, so clear chat context. Note: for now we don't clear chat history as that would mess up the
             // flow going from agent to another in opp finder. TBD how to resolve that.
             chatContext.current = null
+            currentResponse.current = ""
+            setChatOutput([])
 
             // Introduce the agent to the user
             introduceAgent()
@@ -409,6 +469,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
         // Reset state, whatever happened during request
         setIsAwaitingLlm(false)
         setChatInput("")
+        lastAIMessage.current = ""
 
         // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
         const agentName = NeuroSanAgent[targetAgent] || targetAgent
@@ -452,6 +513,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
         // For legacy agents, we either get plain text or markdown. Just output it as-is.
         if (targetAgent in LegacyAgentType) {
+            console.debug(chunk)
             updateOutput(chunk)
             return
         }
@@ -590,13 +652,14 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
         updateOutput(
             <MUIAccordion
                 id="initiating-orchestration-accordion"
+                key={`initiating-orchestration-accordion-${hashString(queryToSend)}${showThinking}`}
                 items={[
                     {
                         title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
                         content: `Query: ${queryToSend}`,
                     },
                 ]}
-                sx={{marginBottom: "1rem"}}
+                sx={{marginBottom: "1rem", display: showThinking ? "block" : "none"}}
             />
         )
         try {
@@ -611,6 +674,10 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
                     </MUIAlert>
                 )
+            }
+
+            if (lastAIMessage.current) {
+                updateOutput(processLogLine(lastAIMessage.current, ChatMessageChatMessageType.AI, true, "Final Answer"))
             }
         } finally {
             setIsAwaitingLlm(false)
@@ -643,6 +710,22 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                 }}
             >
                 <Tooltip
+                    id="show-thinking"
+                    title={showThinking ? "Displaying agent thinking" : "Hiding agent thinking"}
+                >
+                    <LlmChatOptionsButton
+                        enabled={showThinking}
+                        id="show-thinking-button"
+                        onClick={() => setShowThinking(!showThinking)}
+                        posRight={150}
+                    >
+                        <AccountTreeIcon
+                            id="show-thinking-icon"
+                            sx={{color: "white", fontSize: "0.85rem"}}
+                        />
+                    </LlmChatOptionsButton>
+                </Tooltip>
+                <Tooltip
                     id="enable-autoscroll"
                     title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
                 >
@@ -652,10 +735,9 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
                         posRight={80}
                     >
-                        <MdVerticalAlignBottom
+                        <VerticalAlignBottomIcon
                             id="autoscroll-icon"
-                            size="15px"
-                            style={{color: "white"}}
+                            sx={{color: "white", fontSize: "0.85rem"}}
                         />
                     </LlmChatOptionsButton>
                 </Tooltip>
@@ -669,10 +751,9 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
                         posRight={10}
                     >
-                        <MdOutlineWrapText
+                        <WrapTextIcon
                             id="wrap-icon"
-                            size="15px"
-                            style={{color: "white"}}
+                            sx={{color: "white", fontSize: "0.85rem"}}
                         />
                     </LlmChatOptionsButton>
                 </Tooltip>
@@ -687,7 +768,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         height: "100%",
                         resize: "none",
                         overflowY: "scroll", // Enable vertical scrollbar
-                        paddingBottom: "7.5px",
+                        paddingBottom: "60px",
                         paddingTop: "7.5px",
                         paddingLeft: "15px",
                         paddingRight: "15px",
@@ -728,6 +809,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
                         chatContext.current = null
                         setPreviousUserQuery("")
                         currentResponse.current = ""
+                        lastAIMessage.current = ""
                         introduceAgent()
                     }}
                     enableClearChatButton={enableClearChatButton}
