@@ -516,7 +516,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
     function handleChunk(chunk: string): void {
         // Give container a chance to process the chunk first
-        const onChunkReceivedResult = onChunkReceived ? onChunkReceived(chunk) : true
+        const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
         succeeded.current = succeeded.current || onChunkReceivedResult
 
         // For legacy agents, we either get plain text or markdown. Just output it as-is.
@@ -527,7 +527,8 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
         const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
         if (!chatMessage) {
-            // This is an error. But don't want to spam output.
+            // This is an error since Neuro-san agents should send us ChatMessage structures.
+            // But don't want to spam output by logging errors for every bad message.
             return
         }
 
@@ -659,14 +660,13 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
         updateOutput(
             <MUIAccordion
                 id="initiating-orchestration-accordion"
-                key={`initiating-orchestration-accordion-${hashString(queryToSend)}${showThinking}`}
                 items={[
                     {
                         title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
                         content: `Query: ${queryToSend}`,
                     },
                 ]}
-                sx={{marginBottom: "1rem", display: showThinking ? "block" : "none"}}
+                sx={{marginBottom: "1rem"}}
             />
         )
         try {
