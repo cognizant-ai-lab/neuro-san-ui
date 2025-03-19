@@ -62,7 +62,7 @@ const UserQueryContainer = styled("div")({
 
 // #endregion: Styled Components
 
-interface AgentChatCommonProps {
+interface ChatCommonProps {
     readonly id: string
     readonly currentUser: string
     readonly userImage: string
@@ -90,6 +90,10 @@ interface AgentChatCommonProps {
     readonly onSend?: (query: string) => string
     readonly setPreviousResponse?: (agent: CombinedAgentType, response: string) => void
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
+    /**
+     * Whether to clear the chat window and history when the user starts chatting with a new agent or network.
+     */
+    readonly clearChatOnNewAgent?: boolean
 }
 
 const EMPTY = {}
@@ -126,7 +130,7 @@ const getUserImageAndUserQuery = (userQuery: string, title: string, userImage: s
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
-export const ChatCommon: FC<AgentChatCommonProps> = ({
+export const ChatCommon: FC<ChatCommonProps> = ({
     id,
     currentUser,
     userImage,
@@ -139,6 +143,7 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
     targetAgent,
     legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
+    clearChatOnNewAgent = false,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -390,11 +395,12 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
 
     useEffect(() => {
         const newAgent = async () => {
-            // New agent, so clear chat context. Note: for now we don't clear chat history as that would mess up the
-            // flow going from agent to another in opp finder. TBD how to resolve that.
-            chatContext.current = null
-            currentResponse.current = ""
-            setChatOutput([])
+            if (clearChatOnNewAgent) {
+                // New agent, so clear chat context if desired
+                chatContext.current = null
+                currentResponse.current = ""
+                setChatOutput([])
+            }
 
             // Introduce the agent to the user
             introduceAgent()
@@ -686,18 +692,18 @@ export const ChatCommon: FC<AgentChatCommonProps> = ({
             if (lastAIMessage.current) {
                 updateOutput(processLogLine(lastAIMessage.current, ChatMessageChatMessageType.AI, true, "Final Answer"))
             }
+
+            // Add a blank line after response
+            updateOutput("\n")
+
+            // Record bot answer in history.
+            if (currentResponse?.current?.length > 0) {
+                chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
+            }
         } finally {
             setIsAwaitingLlm(false)
             resetState()
             onStreamingComplete?.()
-        }
-
-        // Add a blank line after response
-        updateOutput("\n")
-
-        // Record bot answer in history.
-        if (currentResponse?.current?.length > 0) {
-            chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
         }
     }
 

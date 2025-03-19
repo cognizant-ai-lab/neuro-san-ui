@@ -396,6 +396,41 @@ describe("ChatCommon", () => {
         expect(await screen.findByText(cleanUpAgentName(AgentType.HELLO_WORLD))).toBeInTheDocument()
     })
 
+    it("Should clear chat when a new agent is selected", async () => {
+        const {rerender} = render(
+            <ChatCommon
+                id=""
+                currentUser={TEST_USER}
+                userImage=""
+                setIsAwaitingLlm={jest.fn()}
+                isAwaitingLlm={false}
+                targetAgent={AgentType.HELLO_WORLD}
+                clearChatOnNewAgent={true}
+            />
+        )
+
+        // Make sure first agent greeting appears
+        expect(await screen.findByText(cleanUpAgentName(AgentType.HELLO_WORLD))).toBeInTheDocument()
+
+        rerender(
+            <ChatCommon
+                id=""
+                currentUser={TEST_USER}
+                userImage=""
+                setIsAwaitingLlm={jest.fn()}
+                isAwaitingLlm={false}
+                targetAgent={AgentType.TELCO_NETWORK_SUPPORT}
+                clearChatOnNewAgent={true}
+            />
+        )
+
+        // Previous agent output should have been cleared
+        expect(screen.queryByText(cleanUpAgentName(AgentType.HELLO_WORLD))).not.toBeInTheDocument()
+
+        // New agent greeting should be present
+        expect(await screen.findByText(cleanUpAgentName(AgentType.TELCO_NETWORK_SUPPORT))).toBeInTheDocument()
+    })
+
     it("Should handle Stop correctly", async () => {
         const setAwaitingLlmMock = jest.fn()
         render(
