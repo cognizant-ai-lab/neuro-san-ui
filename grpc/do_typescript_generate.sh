@@ -129,11 +129,11 @@ main() {
   prepare_dirs
 
   # Get Neuro AI proto files
-  checkout_repo_path "https://$LEAF_SOURCE_CREDENTIALS@github.com/leaf-ai/unileaf.git" "${NEURO_AI_VERSION}" \
+  checkout_repo_path "https://x-access-token:$LEAF_SOURCE_CREDENTIALS@github.com/leaf-ai/unileaf.git" "${NEURO_AI_VERSION}" \
     "/proto" "./proto"
 
   # Get Neuro-san proto files
-  checkout_repo_path "https://$LEAF_SOURCE_CREDENTIALS@github.com/leaf-ai/neuro-san.git" "${NEURO_SAN_VERSION}" \
+  checkout_repo_path "https://x-access-token:$LEAF_SOURCE_CREDENTIALS@github.com/leaf-ai/neuro-san.git" "${NEURO_SAN_VERSION}" \
     "neuro_san/api/grpc" "${NEURO_SAN_PROTO_DIR}"
 
   generate_typescript_grpc_code
