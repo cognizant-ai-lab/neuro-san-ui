@@ -4,6 +4,7 @@
 
 import {AgentChatRequest, AgentConnectivityRequest, AgentFunctionRequest, AgentType} from "../../generated/metadata"
 import {
+    ChatFilterType,
     ChatRequest,
     ChatResponse,
     ConnectivityResponse,
@@ -54,7 +55,11 @@ export async function sendChatQuery(
 
     const agentChatRequest: AgentChatRequest = {
         user: {login: requestUser},
-        request: ChatRequest.fromPartial({userMessage, chatContext}),
+        request: ChatRequest.fromPartial({
+            userMessage,
+            chatContext,
+            chatFilter: {chatFilterType: ChatFilterType.MAXIMAL},
+        }),
         targetAgent: targetAgent as AgentType,
     }
 
