@@ -22,7 +22,15 @@ jest.mock("../../../controller/agent/agent", () => ({
         FunctionResponse.fromPartial({
             function: {description: "Hello, I am the Hello World agent", parameters: []},
         }),
-    getConnectivity: () => ConnectivityResponse.fromPartial({connectivityInfo: []}),
+    getConnectivity: () =>
+        ConnectivityResponse.fromPartial({
+            connectivityInfo: [
+                {
+                    origin: "testOrigin",
+                    tools: ["testTool"],
+                },
+            ],
+        }),
     sendChatQuery: jest.fn(),
 }))
 
@@ -32,6 +40,25 @@ jest.mock("../../../controller/llm/llm_chat", () => ({
 }))
 
 const TEST_USER = "testUser"
+
+function getResponseMessage(type: ChatMessageChatMessageType, text: string): ChatMessage {
+    return ChatMessage.fromPartial({
+        type: type,
+        text: text,
+        chatContext: ChatContext.fromPartial({
+            chatHistories: [
+                ChatHistory.fromPartial({
+                    messages: [
+                        ChatMessage.fromPartial({
+                            type: type,
+                            text: text,
+                        }),
+                    ],
+                }),
+            ],
+        }),
+    })
+}
 
 describe("ChatCommon", () => {
     let user: UserEvent
@@ -332,21 +359,7 @@ describe("ChatCommon", () => {
             />
         )
 
-        const responseMessage: ChatMessage = ChatMessage.fromPartial({
-            type: ChatMessageChatMessageType.AGENT_FRAMEWORK,
-            chatContext: ChatContext.fromPartial({
-                chatHistories: [
-                    ChatHistory.fromPartial({
-                        messages: [
-                            ChatMessage.fromPartial({
-                                type: ChatMessageChatMessageType.AI,
-                                text: "Sample AI response",
-                            }),
-                        ],
-                    }),
-                ],
-            }),
-        })
+        const responseMessage = getResponseMessage(ChatMessageChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
         const chatResponse = ChatResponse.toJSON(
@@ -489,5 +502,92 @@ describe("ChatCommon", () => {
 
         await user.click(wrapButton)
         expect(screen.getByRole("button", {name: "Text wrapping disabled"})).toBeInTheDocument()
+    })
+
+    it("Should highlight the final answer correctly", async () => {
+        render(
+            <ChatCommon
+                id=""
+                currentUser={TEST_USER}
+                userImage=""
+                setIsAwaitingLlm={jest.fn()}
+                isAwaitingLlm={false}
+                targetAgent={AgentType.HELLO_WORLD}
+            />
+        )
+
+        const responseMessage = getResponseMessage(ChatMessageChatMessageType.AI, "Sample AI response")
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
+        const chatResponse = ChatResponse.toJSON(
+            ChatResponse.fromPartial({
+                response: responseMessage,
+            })
+        )
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify({result: chatResponse}))
+        })
+
+        await sendQuery(AgentType.HELLO_WORLD, "Sample test query final answer test")
+
+        expect(await screen.findByText("Final Answer")).toBeInTheDocument()
+    })
+
+    it("Should handle 'show thinking' button correctly", async () => {
+        render(
+            <ChatCommon
+                id=""
+                currentUser={TEST_USER}
+                userImage=""
+                setIsAwaitingLlm={jest.fn()}
+                isAwaitingLlm={false}
+                targetAgent={AgentType.HELLO_WORLD}
+            />
+        )
+
+        // Send two responses, a regular AGENT one and an AI one
+        // The initial [] is to make sure the message is not treated as JSON
+        const agentResponseText = "[]Sample Agent response"
+        const aiResponseText = "[]Sample AI response"
+        const responseMessages = [
+            getResponseMessage(ChatMessageChatMessageType.AGENT, agentResponseText),
+            getResponseMessage(ChatMessageChatMessageType.AI, aiResponseText),
+        ]
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
+        const chatResponsesStringified = responseMessages.map((response) =>
+            ChatResponse.toJSON(
+                ChatResponse.fromPartial({
+                    response: response,
+                })
+            )
+        )
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify({result: chatResponsesStringified[0]}))
+            callback(JSON.stringify({result: chatResponsesStringified[1]}))
+        })
+
+        await sendQuery(AgentType.HELLO_WORLD, "Sample test query handle thinking button test")
+
+        // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
+        const showThinkingButton = document.getElementById("show-thinking-button")
+        expect(showThinkingButton).toBeInTheDocument()
+        await user.click(showThinkingButton)
+
+        // screen.debug()
+        // All responsees should be visible when "show thinking" is enabled
+        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
+        expect(await screen.findByText(agentResponseText)).toBeInTheDocument()
+
+        // Now click the button again to hide agent thinking
+        await user.click(showThinkingButton)
+
+        // Only the AI response should be visible
+        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
+
+        // Agent response should be in the DOM but with display: none
+        expect(await screen.findByText(agentResponseText)).not.toBeVisible()
     })
 })

@@ -36,7 +36,7 @@ import {AGENT_GREETINGS} from "./Greetings"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, LegacyAgentType} from "./Types"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, splitLogLine, tryParseJson} from "./Utils"
+import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
@@ -223,6 +223,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         setChatOutput((currentOutput) =>
             currentOutput.map((item) => {
                 if (isValidElement(item) && item.type === MUIAccordion) {
+                    // console.debug(`setting item with id ${item.id} to display: ${showThinking}`)
                     const itemAsAccordion = item as ReactElement<MUIAccordionProps>
                     return cloneElement(itemAsAccordion, {
                         sx: {
@@ -254,7 +255,6 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
     }, [chatOutput])
-
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
      * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
@@ -264,28 +264,23 @@ export const ChatCommon: FC<ChatCommonProps> = ({
      * differently
      * @param isFinalAnswer If true, the log line is the final answer from the agent. This will be highlighted in some
      * way to draw the user's attention to it.
-     * @param summaryOverride If provided, this string will be used as the summary instead of one from the chat
-     * message. Initially implemented for the "Final answer" scenario.
+     * @param summary Used as the "title" for the accordion block. Something like an agent name or "Final Answer"
      * @returns A React component representing the log line (agent message)
      */
     const processLogLine = (
         logLine: string,
+        summary: string,
         messageType?: ChatMessageChatMessageType,
-        isFinalAnswer?: boolean,
-        summaryOverride?: string
+        isFinalAnswer?: boolean
     ): ReactNode => {
         // extract the parts of the line
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
-
-        const summary = summaryOverride || summarySentenceCase || "Agent message"
-
         let repairedJson: string = null
 
         try {
             // Attempt to parse as JSON
 
             // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
-            repairedJson = jsonrepair(logLineDetails)
+            repairedJson = jsonrepair(logLine)
 
             // Now try to parse it. We don't care about the result, only if it throws on parsing.
             JSON.parse(repairedJson)
@@ -331,8 +326,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                                     </SyntaxHighlighter>
                                 ) : (
                                     // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                                    <ReactMarkdown key={hashString(logLineDetails)}>
-                                        {logLineDetails || "No further details"}
+                                    <ReactMarkdown key={hashString(logLine)}>
+                                        {logLine || "No further details"}
                                     </ReactMarkdown>
                                 )}
                             </div>
@@ -351,6 +346,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             />
         )
     }
+
     /**
      * Introduce the agent to the user with a friendly greeting
      */
@@ -548,11 +544,17 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             return
         }
 
+        // Agent name is the last tool in the origin array. If it's not there, use a default name.
+        const agentName =
+            chatMessage?.origin?.length > 0
+                ? cleanUpAgentName(chatMessage?.origin[chatMessage.origin.length - 1].tool)
+                : "Agent message"
+
         // It's a Neuro-san agent. Should be a ChatMessage at this point since all Neuro-san agents should return
         // ChatMessages.
         const parsedResult: null | object | string = tryParseJson(chunk)
         if (typeof parsedResult === "string") {
-            updateOutput(processLogLine(parsedResult, chatMessage.type))
+            updateOutput(processLogLine(parsedResult, agentName, chatMessage.type))
         } else if (typeof parsedResult === "object") {
             // Does it have the error block?
             const errorMessage = checkError(parsedResult)
@@ -568,7 +570,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 succeeded.current = false
             } else {
                 // Not an error, so output it
-                updateOutput(processLogLine(chatMessage.text, chatMessage.type))
+                updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
             }
         }
     }
@@ -690,7 +692,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             }
 
             if (lastAIMessage.current) {
-                updateOutput(processLogLine(lastAIMessage.current, ChatMessageChatMessageType.AI, true, "Final Answer"))
+                updateOutput(processLogLine(lastAIMessage.current, "Final Answer", ChatMessageChatMessageType.AI, true))
             }
 
             // Add a blank line after response

@@ -1,6 +1,5 @@
 import {capitalize, startCase} from "lodash"
 
-import {LOGS_DELIMITER} from "./const"
 import {AgentErrorProps} from "./Types"
 import {ChatResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
@@ -8,7 +7,7 @@ import {ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san
 // We ignore any messages that are not of these types
 const KNOWN_MESSAGE_TYPES = [
     ChatMessageChatMessageType.AI,
-    ChatMessageChatMessageType.LEGACY_LOGS,
+    ChatMessageChatMessageType.AGENT,
     ChatMessageChatMessageType.AGENT_FRAMEWORK,
 ]
 
@@ -78,27 +77,6 @@ export const checkError: (chatMessageJson: object) => string | null = (chatMessa
         )
     } else {
         return null
-    }
-}
-
-/**
- * Split a log line into its summary and details parts, using `LOGS_DELIMITER` as the separator. If the delimiter is not
- * found, the entire log line is treated as the details part. This can happen when it's a "follow-on" message from
- * an agent we've already heard from.
- * @param logLine The log line to split
- * @returns An object containing the summary and details parts of the log line
- */
-export function splitLogLine(logLine: string) {
-    if (logLine.includes(LOGS_DELIMITER)) {
-        const logLineElements = logLine.split(LOGS_DELIMITER)
-
-        const logLineSummary = logLineElements[0]
-        const summarySentenceCase = logLineSummary.replace(/\w+/gu, capitalize)
-
-        const logLineDetails = logLineElements[1]
-        return {summarySentenceCase, logLineDetails}
-    } else {
-        return {summarySentenceCase: null, logLineDetails: logLine}
     }
 }
 
