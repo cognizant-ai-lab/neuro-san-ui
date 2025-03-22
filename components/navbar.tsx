@@ -10,7 +10,6 @@ import Link from "next/link"
 import {useRouter} from "next/router"
 import {ReactElement, MouseEvent as ReactMouseEvent, useState} from "react"
 
-import NeuroAIBreadcrumbs from "./breadcrumbs"
 import {ConfirmationModal} from "./confirmationModal"
 import {
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
@@ -29,8 +28,6 @@ interface NavbarProps {
 
     // Logo is the title of the NavBar
     readonly Logo: string
-
-    readonly WithBreadcrumbs?: boolean
 }
 
 const MENU_ITEM_TEXT_PROPS = {
@@ -59,8 +56,6 @@ function Navbar(props: NavbarProps): ReactElement {
     const {data: session} = useAuthentication()
 
     const propsId = props.id
-
-    const withBreadcrumbs = props.WithBreadcrumbs ?? true
 
     const userInfo = session.user
     const userName = userInfo.name
@@ -245,6 +240,7 @@ function Navbar(props: NavbarProps): ReactElement {
             {userInfo ? (
                 <Grid id="user-dropdown">
                     <IconButton
+                        aria-label="User dropdown toggle"
                         id="user-dropdown-toggle"
                         onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
                             setUserMenuAnchorEl(event.currentTarget)
@@ -315,23 +311,6 @@ function Navbar(props: NavbarProps): ReactElement {
                     </Menu>
                 </Grid>
             ) : null}
-
-            {/*Breadcrumbs*/}
-            {withBreadcrumbs && (
-                <Grid
-                    id="nav-bar-breadcrumbs-row"
-                    container={true}
-                    sx={{
-                        width: "100%",
-                        backgroundColor: "white",
-                        justifyContent: "flex-start",
-                    }}
-                >
-                    <NeuroAIBreadcrumbs // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                        rootLabel="Home"
-                    />
-                </Grid>
-            )}
         </Grid>
     )
 }

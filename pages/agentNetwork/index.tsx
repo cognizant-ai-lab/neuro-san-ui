@@ -13,10 +13,6 @@ import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro_san/
 import {Origin} from "../../generated/neuro_san/api/grpc/chat"
 import {useAuthentication} from "../../utils/authentication"
 
-// #region: Types
-
-// #endregion: Types
-
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
@@ -74,15 +70,20 @@ export default function AgentNetworkPage() {
             sx={{
                 border: "solid 1px #CFCFDC",
                 borderRadius: "var(--bs-border-radius)",
-                height: "100%",
+                display: "flex",
+                flex: 1,
+                height: "95%",
                 marginTop: "1rem",
-                minWidth: "1450px",
+                overflow: "hidden",
                 padding: "1rem",
             }}
         >
             <Grid
                 id="multi-agent-accelerator-grid-sidebar"
                 size={3.25}
+                sx={{
+                    height: "100%",
+                }}
             >
                 <Sidebar
                     id="multi-agent-accelerator-sidebar"
@@ -94,6 +95,9 @@ export default function AgentNetworkPage() {
             <Grid
                 id="multi-agent-accelerator-grid-agent-flow"
                 size={8.25}
+                sx={{
+                    height: "100%",
+                }}
             >
                 {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <ReactFlowProvider>
@@ -101,12 +105,16 @@ export default function AgentNetworkPage() {
                         agentsInNetwork={agentsInNetwork}
                         id="multi-agent-accelerator-agent-flow"
                         originInfo={originInfo}
+                        selectedNetwork={selectedNetwork}
                     />
                 </ReactFlowProvider>
             </Grid>
             <Grid
                 id="multi-agent-accelerator-grid-agent-chat-common"
                 size={6.5}
+                sx={{
+                    height: "100%",
+                }}
             >
                 <ChatCommon
                     id="agent-network-ui"

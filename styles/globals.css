@@ -286,6 +286,7 @@ select {
 html {
     font-family: var(--bs-body-font-family);
     font-size: 125%;
+    height: 100%;
     box-sizing: border-box;
 }
 
@@ -293,10 +294,17 @@ body {
     font-family: var(--bs-body-font-family);
     font-size: 1rem;
     font-feature-settings: "ss01";
+    height: 100%;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     /* word-break: break-word; */
     color: var(--bs-primary);
+}
+
+/* We need height set on all the elements leading up to the root element */
+#__next,
+#unileaf {
+    height: 95%;
 }
 
 * {

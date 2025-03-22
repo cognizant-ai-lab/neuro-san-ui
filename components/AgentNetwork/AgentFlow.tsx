@@ -17,9 +17,9 @@ import {
     MarkerType,
     NodeChange,
     ReactFlow,
-    ReactFlowInstance,
     Node as RFNode,
     NodeTypes as RFNodeTypes,
+    useReactFlow,
     useStore,
 } from "reactflow"
 
@@ -28,6 +28,7 @@ import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AnimatedEdge} from "./AnimatedEdge"
 import {BACKGROUND_COLORS, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
+import {AgentType} from "../../generated/metadata"
 import {ConnectivityInfo} from "../../generated/neuro_san/api/grpc/agent"
 import {Origin} from "../../generated/neuro_san/api/grpc/chat"
 
@@ -36,12 +37,24 @@ interface AgentFlowProps {
     agentsInNetwork: ConnectivityInfo[]
     id: string
     originInfo?: Origin[]
+    selectedNetwork: AgentType
 }
 
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo}) => {
+const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selectedNetwork}) => {
+    const {fitView} = useReactFlow()
+
+    const handleResize = useCallback(() => {
+        fitView() // Adjusts the view to fit after resizing
+    }, [fitView])
+
+    useEffect(() => {
+        window.addEventListener("resize", handleResize)
+        return () => window.removeEventListener("resize", handleResize)
+    }, [handleResize])
+
     // Save this as a mutable ref so child nodes see updates
     const originInfoRef = useRef<Origin[]>(originInfo)
 
@@ -51,18 +64,12 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo}) => {
 
     const getOriginInfo = useCallback<() => Origin[]>(() => originInfoRef.current, [originInfoRef.current])
 
-    const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>(null)
-
     const [nodes, setNodes] = useState<RFNode<AgentNodeProps>[]>([])
     const [edges, setEdges] = useState<Edge<EdgeProps>[]>([])
 
     const [layout, setLayout] = useState<Layout>("radial")
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
-
-    useEffect(() => {
-        flowInstance && setTimeout(flowInstance.fitView, 50)
-    }, [flowInstance, nodes.length, edges.length, layout])
 
     // Create the flow layout depending on user preference
     useEffect(() => {
@@ -87,23 +94,20 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo}) => {
         }
     }, [agentsInNetwork, layout, originInfo])
 
-    const onNodesChange = useCallback((changes: NodeChange[]) => {
-        setNodes((ns) =>
-            applyNodeChanges<AgentNodeProps>(
-                // For now we only allow dragging, no updates
-                changes.filter((c) => c.type === "position"),
-                ns
+    const onNodesChange = useCallback(
+        (changes: NodeChange[]) => {
+            setNodes((ns) =>
+                applyNodeChanges<AgentNodeProps>(
+                    // For now we only allow dragging, no updates
+                    changes.filter((c) => c.type === "position"),
+                    ns
+                )
             )
-        )
-    }, [])
 
-    const onInit = useCallback((reactFlowInstance: ReactFlowInstance) => {
-        /*
-        Helper function to adjust the flow when it is loaded.
-        */
-        reactFlowInstance.fitView()
-        setFlowInstance(reactFlowInstance)
-    }, [])
+            fitView()
+        },
+        [selectedNetwork, fitView]
+    )
 
     // Highlight active edges, which are those connecting active agents as defined by originInfo.
     useEffect(() => {
@@ -289,7 +293,6 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo}) => {
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
-                onInit={onInit}
                 fitView={true}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
