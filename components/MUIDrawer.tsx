@@ -29,38 +29,48 @@ export const MUIDrawer: FC<MUIDrawerProps> = ({id, anchor = "right", children, i
         open={isOpen}
         PaperProps={paperProps}
     >
-        <Toolbar
-            id={`${id}-toolbar`}
-            sx={{
-                backgroundColor: "var(--bs-primary)",
-                color: "var(--bs-white)",
-            }}
+        <Box
+            id={`${id}-container`}
+            sx={{display: "flex", flexDirection: "column", height: "100%"}}
         >
-            <IconButton
-                id={`${id}-icon-button`}
-                aria-label="close"
-                onClick={onClose}
-                size="small"
+            <Toolbar
+                id={`${id}-toolbar`}
                 sx={{
-                    right: "10px",
-                    position: "relative",
+                    backgroundColor: "var(--bs-primary)",
+                    color: "var(--bs-white)",
                 }}
             >
-                <CloseIcon
-                    id={`${id}-close-icon`}
-                    fontSize="inherit"
-                />
-            </IconButton>
-            <Typography
-                id={`${id}-title`}
-                variant="h6"
-                noWrap
-                component="div"
-                sx={{fontWeight: "bold"}}
+                <IconButton
+                    id={`${id}-icon-button`}
+                    aria-label="close"
+                    onClick={onClose}
+                    size="small"
+                    sx={{
+                        right: "10px",
+                        position: "relative",
+                    }}
+                >
+                    <CloseIcon
+                        id={`${id}-close-icon`}
+                        fontSize="inherit"
+                    />
+                </IconButton>
+                <Typography
+                    id={`${id}-title`}
+                    variant="h6"
+                    noWrap
+                    component="div"
+                    sx={{fontWeight: "bold"}}
+                >
+                    {title}
+                </Typography>
+            </Toolbar>
+            <Box
+                id={`${id}-box`}
+                sx={{flex: 1, overflow: "hidden"}}
             >
-                {title}
-            </Typography>
-        </Toolbar>
-        <Box id={`${id}-box`}>{children}</Box>
+                {children}
+            </Box>
+        </Box>
     </Drawer>
 )
