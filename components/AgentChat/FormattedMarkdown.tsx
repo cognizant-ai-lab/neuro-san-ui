@@ -38,15 +38,19 @@ interface FormattedMarkdownProps {
  * @returns The formatted output. Consecutive string nodes will be aggregated and wrapped in a markdown component,
  * while other nodes will be passed along as-is.
  */
-export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<FormattedMarkdownProps, "div"> => {
+export const FormattedMarkdown = ({
+    id,
+    nodesList,
+    style,
+    wrapLongLines = false,
+}): ReactElement<FormattedMarkdownProps, "div"> => {
     /**
      * Get the formatted output for a given string. The string is assumed to be in markdown format.
      * @param stringToFormat The string to format.
      * @param index The index of the string in the nodes list. Used as "salt" to generate a unique key.
-     * @param wrapLongLines Whether to wrap long lines in the markdown.
      * @returns The formatted markdown.
      */
-    const getFormattedMarkdown = (stringToFormat: string, index: number, wrapLongLines: boolean): JSX.Element => (
+    const getFormattedMarkdown = (stringToFormat: string, index: number): JSX.Element => (
         // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
             key={`${hashString(stringToFormat)}-${index}`}
@@ -61,7 +65,7 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
                             id={`syntax-highlighter-${match.groups.language}`}
                             PreTag="div"
                             language={match.groups.language}
-                            style={props.style}
+                            style={style}
                         >
                             {String(children).replace(/\n$/u, "")}
                         </SyntaxHighlighter>
@@ -108,15 +112,15 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
     // Walk through the nodes list. If we encounter a string node, we'll aggregate it with other string nodes.
     const formattedOutput: ReactNode[] = []
     let currentTextNodes: string[] = []
-    for (let i = 0; i < props.nodesList.length; i += 1) {
-        const node = props.nodesList[i]
+    for (let i = 0; i < nodesList.length; i += 1) {
+        const node = nodesList[i]
         // If it's a string node, aggregate it with other string nodes
         if (typeof node === "string") {
             currentTextNodes.push(node)
         } else {
             // Not a string node. Process any aggregated text nodes
             if (currentTextNodes.length > 0) {
-                const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), i, props.wrapLongLines)
+                const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), i)
                 formattedOutput.push(concatenatedText)
                 currentTextNodes = []
             }
@@ -131,14 +135,9 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
 
     // Process any remaining text nodes
     if (currentTextNodes.length > 0) {
-        const concatenatedText = getFormattedMarkdown(
-            currentTextNodes.join(""),
-            props.nodesList.length,
-            props.wrapLongLines
-        )
+        const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), nodesList.length)
         formattedOutput.push(concatenatedText)
     }
 
-    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-    return <div id={props.id}>{formattedOutput}</div>
+    return <div id={id}>{formattedOutput}</div>
 }
