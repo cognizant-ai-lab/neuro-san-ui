@@ -96,6 +96,7 @@ interface ChatCommonProps {
     readonly clearChatOnNewAgent?: boolean
     /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
+     * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
      */
     readonly extraParams?: Record<string, unknown>
 }
