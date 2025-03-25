@@ -5,10 +5,12 @@ import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import AgentFlow from "../../../components/AgentNetwork/AgentFlow"
+import {AgentType} from "../../../generated/metadata"
 import {ConnectivityInfo} from "../../../generated/neuro_san/api/grpc/agent"
 
 describe("AgentFlow", () => {
     let user: UserEvent
+
     beforeEach(() => {
         jest.clearAllMocks()
         user = userEvent.setup()
@@ -54,6 +56,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent1", instantiationIndex: 1}]}
+                    selectedNetwork={AgentType.HELLO_WORLD}
                 />
             </ReactFlowProvider>
         )
@@ -71,6 +74,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent2", instantiationIndex: 1}]}
+                    selectedNetwork={AgentType.HELLO_WORLD}
                 />
             </ReactFlowProvider>
         )
@@ -85,6 +89,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent3", instantiationIndex: 1}]}
+                    selectedNetwork={AgentType.HELLO_WORLD}
                 />
             </ReactFlowProvider>
         )
@@ -117,6 +122,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={[]}
                     originInfo={[]}
+                    selectedNetwork={AgentType.HELLO_WORLD}
                 />
             </ReactFlowProvider>
         )
@@ -132,6 +138,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent1", instantiationIndex: 1}]}
+                    selectedNetwork={AgentType.HELLO_WORLD}
                 />
             </ReactFlowProvider>
         )

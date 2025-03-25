@@ -16,6 +16,7 @@ import {ReactElement, ReactFragment, useEffect} from "react"
 
 import {UserInfoResponse} from "./api/userInfo/types"
 import {Auth} from "../components/auth"
+import NeuroAIBreadcrumbs from "../components/breadcrumbs"
 import ErrorBoundary from "../components/errorboundary"
 import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
@@ -46,6 +47,8 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
     const {currentUser, setCurrentUser, picture, setPicture, setOidcProvider} = useUserInfoStore()
 
     const {query, isReady, pathname} = useRouter()
+
+    const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
     useEffect(() => {
         if (isReady) {
@@ -252,15 +255,17 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                     session={session}
                 >
                     <ErrorBoundary id="error_boundary">
+                        <Navbar
+                            id="nav-bar"
+                            Logo={isGeneric ? GENERIC_LOGO : LOGO}
+                        />
                         <Container
                             id="body-container"
-                            maxWidth="xl"
+                            maxWidth={false}
+                            sx={{height: "100%"}}
                         >
-                            <Navbar
-                                id="nav-bar"
-                                Logo={isGeneric ? GENERIC_LOGO : LOGO}
-                                WithBreadcrumbs={Component.withBreadcrumbs ?? true}
-                            />
+                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                            {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
                             {getAppComponent()}
                             <div id="fixed-pos-div">
                                 <NeuroAIChatbot

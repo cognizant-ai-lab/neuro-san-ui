@@ -5,6 +5,7 @@ export enum LegacyAgentType {
     OpportunityFinder = "OpportunityFinder",
     ScopingAgent = "ScopingAgent",
     DataGenerator = "DataGenerator",
+    DMSChat = "DMSChat",
 }
 
 export type CombinedAgentType = LegacyAgentType | NeuroSanAgentType

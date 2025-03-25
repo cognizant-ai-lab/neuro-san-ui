@@ -13,17 +13,22 @@ interface FormattedMarkdownProps {
     /**
      * The id for the div that will contain the formatted markdown.
      */
-    id: string
+    readonly id: string
 
     /**
      * The list of nodes to format. Each node can be a string or a react node.
      */
-    nodesList: ReactNode[]
+    readonly nodesList: ReactNode[]
 
     /**
      * The style to use for the syntax highlighter. @see SyntaxHighlighterThemes
      */
-    style: SyntaxHighlighterProps["style"]
+    readonly style: SyntaxHighlighterProps["style"]
+
+    /**
+     * Whether to wrap long lines in the markdown.
+     */
+    readonly wrapLongLines: boolean
 }
 
 /**
@@ -33,7 +38,12 @@ interface FormattedMarkdownProps {
  * @returns The formatted output. Consecutive string nodes will be aggregated and wrapped in a markdown component,
  * while other nodes will be passed along as-is.
  */
-export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<FormattedMarkdownProps, "div"> => {
+export const FormattedMarkdown = ({
+    id,
+    nodesList,
+    style,
+    wrapLongLines = false,
+}): ReactElement<FormattedMarkdownProps, "div"> => {
     /**
      * Get the formatted output for a given string. The string is assumed to be in markdown format.
      * @param stringToFormat The string to format.
@@ -55,7 +65,7 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
                             id={`syntax-highlighter-${match.groups.language}`}
                             PreTag="div"
                             language={match.groups.language}
-                            style={props.style}
+                            style={style}
                         >
                             {String(children).replace(/\n$/u, "")}
                         </SyntaxHighlighter>
@@ -64,6 +74,7 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
                             id={`code-${className}`}
                             {...rest}
                             className={className}
+                            style={wrapLongLines ? {whiteSpace: "pre-wrap", wordBreak: "break-word"} : {}}
                         >
                             {children}
                         </code>
@@ -101,8 +112,8 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
     // Walk through the nodes list. If we encounter a string node, we'll aggregate it with other string nodes.
     const formattedOutput: ReactNode[] = []
     let currentTextNodes: string[] = []
-    for (let i = 0; i < props.nodesList.length; i += 1) {
-        const node = props.nodesList[i]
+    for (let i = 0; i < nodesList.length; i += 1) {
+        const node = nodesList[i]
         // If it's a string node, aggregate it with other string nodes
         if (typeof node === "string") {
             currentTextNodes.push(node)
@@ -124,10 +135,9 @@ export const FormattedMarkdown = (props: FormattedMarkdownProps): ReactElement<F
 
     // Process any remaining text nodes
     if (currentTextNodes.length > 0) {
-        const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), props.nodesList.length)
+        const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), nodesList.length)
         formattedOutput.push(concatenatedText)
     }
 
-    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-    return <div id={props.id}>{formattedOutput}</div>
+    return <div id={id}>{formattedOutput}</div>
 }

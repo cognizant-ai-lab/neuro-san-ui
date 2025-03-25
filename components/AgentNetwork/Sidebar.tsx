@@ -47,7 +47,6 @@ const Sidebar: FC<SidebarProps> = ({id, selectedNetwork, setSelectedNetwork, isA
                 borderRightStyle: "solid",
                 borderRightWidth: "1px",
                 height: "100%",
-                maxHeight: "35rem",
                 overflowY: "auto",
                 paddingRight: "0.75rem",
             }}

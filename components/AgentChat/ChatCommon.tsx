@@ -94,6 +94,11 @@ interface ChatCommonProps {
      * Whether to clear the chat window and history when the user starts chatting with a new agent or network.
      */
     readonly clearChatOnNewAgent?: boolean
+    /**
+     * Extra parameters to send to the server to be forwarded to the agent or used by the server.
+     * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
+     */
+    readonly extraParams?: Record<string, unknown>
 }
 
 const EMPTY = {}
@@ -144,6 +149,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
     clearChatOnNewAgent = false,
+    extraParams,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -515,14 +521,29 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    function handleChunk(chunk: string): void {
+    /**
+     * Extract the final answer from the response from a legacy agent
+     * @param response The response from the legacy agent
+     * @returns The final answer from the agent, if it exists or null if it doesn't
+     */
+    const extractFinalAnswer = (response: string) =>
+        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.finalAnswerText
+
+    const handleChunk = (chunk: string): void => {
         // Give container a chance to process the chunk first
         const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
         succeeded.current = succeeded.current || onChunkReceivedResult
 
         // For legacy agents, we either get plain text or markdown. Just output it as-is.
         if (targetAgent in LegacyAgentType) {
+            // Display output as-is
             updateOutput(chunk)
+
+            // Check for Final Answer from legacy agent
+            const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
+            if (finalAnswerMatch) {
+                lastAIMessage.current = finalAnswerMatch
+            }
             return
         }
 
@@ -607,7 +628,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         handleChunk,
                         controller?.current.signal,
                         legacyAgentEndpoint,
-                        {requestType: targetAgent},
+                        extraParams,
                         query,
                         chatHistory.current
                     )
@@ -690,8 +711,13 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 )
             }
 
+            // Display prominent "Final Answer" message if we have one
             if (lastAIMessage.current) {
-                updateOutput(processLogLine(lastAIMessage.current, "Final Answer", ChatMessageChatMessageType.AI, true))
+                // Legacy agents text is a bit messy and doesn't add a blank line, so we add it here
+                if (targetAgent in LegacyAgentType) {
+                    updateOutput("    \n\n")
+                }
+                updateOutput(processLogLine(lastAIMessage.current, ChatMessageChatMessageType.AI, true, "Final Answer"))
             }
 
             // Add a blank line after response
@@ -711,16 +737,24 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     return (
         <Box
             id={`llm-chat-${id}`}
-            sx={{marginTop: "1rem", marginBottom: "1rem"}}
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                flexGrow: 1,
+                height: "100%",
+            }}
         >
             <Box
                 id="llm-response-div"
                 sx={{
                     ...divStyle,
-                    height: "60vh",
+                    display: "flex",
+                    flexGrow: 1,
+                    height: "100%",
                     margin: "10px",
                     position: "relative",
                     marginTop: "1rem",
+                    overflowY: "auto",
                 }}
             >
                 <Tooltip
@@ -782,13 +816,13 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         borderWidth: "1px",
                         borderRadius: "0.5rem",
                         fontSize: "smaller",
-                        height: "100%",
                         resize: "none",
-                        overflowY: "scroll", // Enable vertical scrollbar
+                        overflowY: "auto", // Enable vertical scrollbar
                         paddingBottom: "60px",
                         paddingTop: "7.5px",
                         paddingLeft: "15px",
                         paddingRight: "15px",
+                        width: "100%",
                     }}
                     tabIndex={-1}
                 >
@@ -796,6 +830,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         id={`${id}-formatted-markdown`}
                         nodesList={chatOutput}
                         style={highlighterTheme}
+                        wrapLongLines={shouldWrapOutput}
                     />
                     {isAwaitingLlm && (
                         <Box
