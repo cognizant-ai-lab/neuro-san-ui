@@ -717,7 +717,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 if (targetAgent in LegacyAgentType) {
                     updateOutput("    \n\n")
                 }
-                updateOutput(processLogLine(lastAIMessage.current, ChatMessageChatMessageType.AI, true, "Final Answer"))
+
+                updateOutput(processLogLine(lastAIMessage.current, "Final Answer", ChatMessageChatMessageType.AI, true))
             }
 
             // Add a blank line after response
