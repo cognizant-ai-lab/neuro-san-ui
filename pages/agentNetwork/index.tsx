@@ -72,7 +72,7 @@ export default function AgentNetworkPage() {
                 borderRadius: "var(--bs-border-radius)",
                 display: "flex",
                 flex: 1,
-                height: "95%",
+                height: "85%",
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",

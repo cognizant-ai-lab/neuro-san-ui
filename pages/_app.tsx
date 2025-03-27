@@ -262,7 +262,7 @@ export default function LEAF({Component, pageProps: {session, ...pageProps}}): R
                         <Container
                             id="body-container"
                             maxWidth={false}
-                            sx={{height: "100%"}}
+                            sx={{flex: 1, paddingBottom: "5rem"}}
                         >
                             {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
