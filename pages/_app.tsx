@@ -44,6 +44,8 @@ type ExtendedAppProps = AppProps & {
 
 const debug = debugModule("app")
 
+const CHATBOX_PAGES = ["/agentNetwork", "/analyticsChat", "/opportunityFinder"]
+
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
