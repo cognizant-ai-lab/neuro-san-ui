@@ -9,6 +9,7 @@ import WrapTextIcon from "@mui/icons-material/WrapText"
 import {Box, Input, styled} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
+import Typography from "@mui/material/Typography"
 import InputAdornment from "@mui/material/InputAdornment"
 import Tooltip from "@mui/material/Tooltip"
 import {jsonrepair} from "jsonrepair"
@@ -99,6 +100,10 @@ interface ChatCommonProps {
      * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
      */
     readonly extraParams?: Record<string, unknown>
+
+    readonly backgroundColor?: string
+
+    readonly title?: string
 }
 
 const EMPTY = {}
@@ -150,6 +155,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     agentPlaceholders = EMPTY,
     clearChatOnNewAgent = false,
     extraParams,
+    backgroundColor,
+    title,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -765,6 +772,24 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 height: "100%",
             }}
         >
+            {title && (
+                <Box
+                    sx={{
+                        // borderRadius: "0.5rem",
+                        alignContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "var(--bs-primary)",
+                        borderTopLeftRadius: "var(--bs-border-radius)",
+                        borderTopRightRadius: "var(--bs-border-radius)",
+                        color: "white",
+                        display: "flex",
+                        margin: "0",
+                        padding: "0.5rem",
+                    }}
+                >
+                    <Typography sx={{fontSize: "0.9rem"}}>{title}</Typography>
+                </Box>
+            )}
             <Box
                 id="llm-response-div"
                 sx={{
@@ -774,7 +799,6 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     height: "100%",
                     margin: "10px",
                     position: "relative",
-                    marginTop: "1rem",
                     overflowY: "auto",
                 }}
             >
@@ -833,7 +857,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     id="llm-responses"
                     ref={chatOutputRef}
                     sx={{
-                        backgroundColor: "var(--bs-secondary-blue)",
+                        backgroundColor: backgroundColor || "var(--bs-secondary-blue)",
                         borderWidth: "1px",
                         borderRadius: "0.5rem",
                         fontSize: "smaller",
