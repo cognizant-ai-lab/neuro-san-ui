@@ -8,6 +8,7 @@ import "../styles/rundialog.css"
 import {Container, CssBaseline, ThemeProvider} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import debugModule from "debug"
+import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
@@ -27,12 +28,26 @@ import useFeaturesStore from "../state/features"
 import useUserInfoStore from "../state/userInfo"
 import {APP_THEME} from "../theme"
 
+type BaseComponent = AppProps extends {Component: infer C} ? C : never
+
+interface CustomPageProps {
+    authRequired?: boolean
+    isContainedInViewport?: boolean
+    pageContext?: string
+    withBreadcrumbs?: boolean
+}
+
+type ExtendedAppProps = AppProps & {
+    // Extend Component with custom properties
+    Component: BaseComponent & CustomPageProps
+}
+
 const debug = debugModule("app")
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
-export default function LEAF({Component, pageProps: {session, ...pageProps}}): ReactElement {
+export default function NeuroAI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
     const {isGeneric, setEnableProjectSharing} = useFeaturesStore()
     const {
         backendApiUrl,
