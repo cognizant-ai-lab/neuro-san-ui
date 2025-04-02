@@ -25,7 +25,7 @@ set -o pipefail
 NEURO_AI_VERSION="2.6.0"
 
 # Define agent protocol version to use
-NEURO_SAN_VERSION="0.4.5"
+NEURO_SAN_VERSION="0.5.8"
 
 # Define directories
 GENERATED_DIR=./generated

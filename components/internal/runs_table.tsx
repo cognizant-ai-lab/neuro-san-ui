@@ -63,9 +63,9 @@ const MUI_TABLE_ROW_HEIGHT = "73.85px"
 
 // Create a styled component for TableCell
 const RunsTableCell = styled(TableCell)({
-    textAlign: "center",
-    borderBottom: "1px solid var(--bs-gray-light)",
+    borderBottom: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-light)",
     fontSize: "15px",
+    textAlign: "center",
 })
 
 // Create a styled component for TableHead
@@ -552,7 +552,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
 
                 <RunsTableCell
                     id={`run-created-at-${runId}`}
-                    sx={{textAlign: "center", fontWeight: "bold", borderBottom: "1px solid var(--bs-gray-light)"}}
+                    sx={{fontWeight: "bold"}}
                 >
                     {toFriendlyDateTime(run.created_at)}
                 </RunsTableCell>

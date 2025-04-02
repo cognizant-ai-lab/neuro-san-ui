@@ -72,7 +72,7 @@ export default function AgentNetworkPage() {
                 borderRadius: "var(--bs-border-radius)",
                 display: "flex",
                 flex: 1,
-                height: "95%",
+                height: "85%",
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",
@@ -133,4 +133,8 @@ export default function AgentNetworkPage() {
 }
 
 AgentNetworkPage.authRequired = true
-AgentNetworkPage.pageContext = "Agent Network UI."
+AgentNetworkPage.isContainedInViewport = true
+AgentNetworkPage.pageContext = `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an Agent
+    Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
+    connect and collaborate to complete tasks. A chat panel on the right allows users to ask questions and receive
+    answers.`

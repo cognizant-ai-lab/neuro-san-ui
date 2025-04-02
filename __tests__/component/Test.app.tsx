@@ -2,7 +2,7 @@
 import {render, screen} from "@testing-library/react"
 
 import {LOGO} from "../../const"
-import LEAF from "../../pages/_app"
+import NeuroAI from "../../pages/_app"
 import {mockFetch} from "../testUtils"
 
 // mock next/router
@@ -45,11 +45,10 @@ describe("Main App Component", () => {
         })
 
         render(
-            // The name has been all upper forever. Refactor someday.
-            // eslint-disable-next-line react/jsx-pascal-case
-            <LEAF
+            <NeuroAI
                 Component={() => <div>Test Component to Render</div>}
                 pageProps={{url: "TestComponentURL", session: {user: {}}}}
+                router={jest.requireMock("next/router").useRouter()}
             />
         )
 

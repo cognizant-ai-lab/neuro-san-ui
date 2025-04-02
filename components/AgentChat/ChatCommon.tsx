@@ -36,7 +36,7 @@ import {AGENT_GREETINGS} from "./Greetings"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, LegacyAgentType} from "./Types"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, splitLogLine, tryParseJson} from "./Utils"
+import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
@@ -94,6 +94,11 @@ interface ChatCommonProps {
      * Whether to clear the chat window and history when the user starts chatting with a new agent or network.
      */
     readonly clearChatOnNewAgent?: boolean
+    /**
+     * Extra parameters to send to the server to be forwarded to the agent or used by the server.
+     * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
+     */
+    readonly extraParams?: Record<string, unknown>
 }
 
 const EMPTY = {}
@@ -144,6 +149,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     legacyAgentEndpoint,
     agentPlaceholders = EMPTY,
     clearChatOnNewAgent = false,
+    extraParams,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -194,6 +200,9 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
     */
     const chatContext = useRef<ChatContext>(null)
+
+    // Create a ref for the final answer element
+    const finalAnswerRef = useRef<HTMLDivElement>(null)
 
     const [showThinking, setShowThinking] = useState<boolean>(false)
 
@@ -250,11 +259,18 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
     // Auto scroll chat output window when new content is added
     useEffect(() => {
+        // Scroll the final answer into view
+        if (finalAnswerRef.current && !isAwaitingLlm) {
+            const offset = 50
+            const topPosition = finalAnswerRef.current.offsetTop - offset
+            chatOutputRef.current.scrollTop = topPosition
+            return
+        }
+
         if (autoScrollEnabledRef.current && chatOutputRef?.current) {
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
     }, [chatOutput])
-
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
      * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
@@ -264,28 +280,23 @@ export const ChatCommon: FC<ChatCommonProps> = ({
      * differently
      * @param isFinalAnswer If true, the log line is the final answer from the agent. This will be highlighted in some
      * way to draw the user's attention to it.
-     * @param summaryOverride If provided, this string will be used as the summary instead of one from the chat
-     * message. Initially implemented for the "Final answer" scenario.
+     * @param summary Used as the "title" for the accordion block. Something like an agent name or "Final Answer"
      * @returns A React component representing the log line (agent message)
      */
     const processLogLine = (
         logLine: string,
+        summary: string,
         messageType?: ChatMessageChatMessageType,
-        isFinalAnswer?: boolean,
-        summaryOverride?: string
+        isFinalAnswer?: boolean
     ): ReactNode => {
         // extract the parts of the line
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
-
-        const summary = summaryOverride || summarySentenceCase || "Agent message"
-
         let repairedJson: string = null
 
         try {
             // Attempt to parse as JSON
 
             // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
-            repairedJson = jsonrepair(logLineDetails)
+            repairedJson = jsonrepair(logLine)
 
             // Now try to parse it. We don't care about the result, only if it throws on parsing.
             JSON.parse(repairedJson)
@@ -331,8 +342,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                                     </SyntaxHighlighter>
                                 ) : (
                                     // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-                                    <ReactMarkdown key={hashString(logLineDetails)}>
-                                        {logLineDetails || "No further details"}
+                                    <ReactMarkdown key={hashString(logLine)}>
+                                        {logLine || "No further details"}
                                     </ReactMarkdown>
                                 )}
                             </div>
@@ -351,6 +362,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             />
         )
     }
+
     /**
      * Introduce the agent to the user with a friendly greeting
      */
@@ -484,6 +496,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         setIsAwaitingLlm(false)
         setChatInput("")
         lastAIMessage.current = ""
+        finalAnswerRef.current = null
 
         // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
         const agentName = NeuroSanAgent[targetAgent] || targetAgent
@@ -520,14 +533,29 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    function handleChunk(chunk: string): void {
+    /**
+     * Extract the final answer from the response from a legacy agent
+     * @param response The response from the legacy agent
+     * @returns The final answer from the agent, if it exists or null if it doesn't
+     */
+    const extractFinalAnswer = (response: string) =>
+        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.finalAnswerText
+
+    const handleChunk = (chunk: string): void => {
         // Give container a chance to process the chunk first
         const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
         succeeded.current = succeeded.current || onChunkReceivedResult
 
         // For legacy agents, we either get plain text or markdown. Just output it as-is.
         if (targetAgent in LegacyAgentType) {
+            // Display output as-is
             updateOutput(chunk)
+
+            // Check for Final Answer from legacy agent
+            const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
+            if (finalAnswerMatch) {
+                lastAIMessage.current = finalAnswerMatch
+            }
             return
         }
 
@@ -548,11 +576,17 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             return
         }
 
+        // Agent name is the last tool in the origin array. If it's not there, use a default name.
+        const agentName =
+            chatMessage?.origin?.length > 0
+                ? cleanUpAgentName(chatMessage?.origin[chatMessage.origin.length - 1].tool)
+                : "Agent message"
+
         // It's a Neuro-san agent. Should be a ChatMessage at this point since all Neuro-san agents should return
         // ChatMessages.
         const parsedResult: null | object | string = tryParseJson(chunk)
         if (typeof parsedResult === "string") {
-            updateOutput(processLogLine(parsedResult, chatMessage.type))
+            updateOutput(processLogLine(parsedResult, agentName, chatMessage.type))
         } else if (typeof parsedResult === "object") {
             // Does it have the error block?
             const errorMessage = checkError(parsedResult)
@@ -568,7 +602,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 succeeded.current = false
             } else {
                 // Not an error, so output it
-                updateOutput(processLogLine(chatMessage.text, chatMessage.type))
+                updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
             }
         }
     }
@@ -606,7 +640,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         handleChunk,
                         controller?.current.signal,
                         legacyAgentEndpoint,
-                        {requestType: targetAgent},
+                        extraParams,
                         query,
                         chatHistory.current
                     )
@@ -689,8 +723,22 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 )
             }
 
+            // Display prominent "Final Answer" message if we have one
             if (lastAIMessage.current) {
-                updateOutput(processLogLine(lastAIMessage.current, ChatMessageChatMessageType.AI, true, "Final Answer"))
+                // Legacy agents text is a bit messy and doesn't add a blank line, so we add it here
+                if (targetAgent in LegacyAgentType) {
+                    updateOutput("    \n\n")
+                }
+
+                updateOutput(
+                    <div
+                        id="final-answer-div"
+                        ref={finalAnswerRef}
+                        style={{marginBottom: "1rem"}}
+                    >
+                        {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageChatMessageType.AI, true)}
+                    </div>
+                )
             }
 
             // Add a blank line after response
@@ -803,6 +851,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         id={`${id}-formatted-markdown`}
                         nodesList={chatOutput}
                         style={highlighterTheme}
+                        wrapLongLines={shouldWrapOutput}
                     />
                     {isAwaitingLlm && (
                         <Box

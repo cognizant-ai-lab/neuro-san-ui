@@ -1,30 +1,7 @@
-import {LOGS_DELIMITER} from "../../../components/AgentChat/const"
 import {AgentErrorProps} from "../../../components/AgentChat/Types"
-import {chatMessageFromChunk, checkError, splitLogLine, tryParseJson} from "../../../components/AgentChat/Utils"
+import {chatMessageFromChunk, checkError, tryParseJson} from "../../../components/AgentChat/Utils"
 import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
-
-describe("AgentChat/Utils/splitLogLine", () => {
-    it("Should correctly split a log line with delimiter", () => {
-        const details = "This is a test log line"
-        const logLine = `AgentName${LOGS_DELIMITER}${details}`
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
-
-        // UI "sentence cases" agent names as they tend to come in all caps from neuro-san which is ugly
-        expect(summarySentenceCase).toEqual("Agentname")
-
-        expect(logLineDetails).toEqual(details)
-    })
-
-    it("Should correctly handle a log line without delimiter", () => {
-        // Use a value that intentionally doesn't parse as JSON for this test case
-        const logLine = "This is a test log line"
-        const {summarySentenceCase, logLineDetails} = splitLogLine(logLine)
-
-        expect(summarySentenceCase).toBeNull()
-        expect(logLineDetails).toEqual(logLine)
-    })
-})
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {
     it("Should reject unknown message types", () => {
@@ -63,7 +40,7 @@ describe("AgentChat/Utils/tryParseJson", () => {
         const chunk = {
             result: ChatResponse.fromPartial({
                 response: ChatMessage.fromPartial({
-                    type: ChatMessageChatMessageType.LEGACY_LOGS,
+                    type: ChatMessageChatMessageType.AGENT,
                     text: JSON.stringify({foo: 42}),
                 }),
             }),
@@ -82,7 +59,7 @@ describe("AgentChat/Utils/tryParseJson", () => {
         const chunk = {
             result: ChatResponse.fromPartial({
                 response: ChatMessage.fromPartial({
-                    type: ChatMessageChatMessageType.LEGACY_LOGS,
+                    type: ChatMessageChatMessageType.AGENT,
                     text: 'This is a test string with embedded newline \\n and escaped double quote \\"',
                 }),
             }),

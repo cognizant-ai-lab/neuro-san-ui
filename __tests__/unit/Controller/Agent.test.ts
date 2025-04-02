@@ -1,6 +1,7 @@
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
 import {AgentType} from "../../../generated/metadata"
+import {ChatFilterType} from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 
 jest.mock("../../../controller/llm/llm_chat")
@@ -23,10 +24,18 @@ describe("Controller/Agent/sendChatQuery", () => {
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
 
         const expectedRequestParams = {
-            request: {chat_context: {}, user_message: {type: ChatMessageChatMessageType.HUMAN, text: testQuery}},
+            request: {
+                chat_context: {},
+                chat_filter: {chat_filter_type: ChatFilterType.MAXIMAL},
+                user_message: {
+                    type: ChatMessageChatMessageType.HUMAN,
+                    text: testQuery,
+                },
+            },
             target_agent: testAgent,
             user: {login: testUser},
         }
+
         expect(sendLlmRequest).toHaveBeenCalledWith(
             callbackMock,
             abortSignal,

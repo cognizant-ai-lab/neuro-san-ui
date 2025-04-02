@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import Link, {LinkProps} from "next/link"
 import {ReactElement, useState} from "react"
@@ -154,13 +155,19 @@ export default function NewBar(props: NavbarProps) {
 
     const propsId = props.id
     return (
-        <div
+        <Box
             id={propsId}
-            className="flex justify-between pt-3 items-center border-b border-black"
+            sx={{
+                alignItems: "center",
+                borderBottom: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-light)",
+                display: "flex",
+                justifyContent: "space-between",
+                paddingTop: "0.75rem",
+            }}
         >
             {title}
             {newButton}
             {sharingButton}
-        </div>
+        </Box>
     )
 }

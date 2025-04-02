@@ -49,6 +49,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                 role="alert"
             >
                 <Box
+                    className={`${variant}-snackbar-notification`}
                     id={`${id}-snackbar-box`}
                     sx={{
                         background: "var(--bs-white)",

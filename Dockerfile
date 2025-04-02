@@ -10,7 +10,7 @@
 # Currently we are targeting 16. Pass in via build argument
 ARG NODEJS_VERSION
 
-FROM node:$NODEJS_VERSION-bullseye-slim AS deps
+FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 
 ENV NODE_ENV production
 
@@ -21,7 +21,7 @@ COPY generated ./generated
 RUN yarn install --production --silent --prefer-offline --frozen-lockfile --non-interactive
 
 # Rebuild the source code only when needed
-FROM node:$NODEJS_VERSION-bullseye-slim AS builder
+FROM node:$NODEJS_VERSION-bookworm-slim AS builder
 
 ENV NODE_ENV production
 

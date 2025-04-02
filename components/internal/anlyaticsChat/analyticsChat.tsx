@@ -279,11 +279,17 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
                     />
                 )}
             </div>
-            <Box id="user-query-form">
+            <Box
+                id="user-query-form"
+                sx={{
+                    height: "75%",
+                    paddingBottom: "6rem",
+                }}
+            >
                 <Box
                     id="llm-response-div"
                     sx={{
-                        height: "30rem",
+                        height: "100%",
                         position: "relative",
                         border: "none !important",
                     }}
@@ -383,7 +389,7 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
 
                 <div
                     id="user-input-div"
-                    style={{display: "flex", marginBottom: "20rem"}}
+                    style={{display: "flex"}}
                 >
                     <TextField
                         id="user-input"
