@@ -35,6 +35,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
     return (
         <>
             <Grow
+                id={`chatbot-window-animation-${id}`}
                 in={chatOpen}
                 timeout={300}
                 style={{transformOrigin: "bottom right"}}
@@ -73,6 +74,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
             </Grow>
             {!chatOpen && (
                 <Box
+                    id={`chatbot-icon-${id}`}
                     sx={{
                         display: "flex",
                         alignItems: "center",
@@ -88,8 +90,9 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
                         position: "fixed",
                         right: 16,
                     }}
+                    onClick={() => setChatOpen(true)}
                 >
-                    <ContactSupportIcon onClick={() => setChatOpen(true)} />
+                    <ContactSupportIcon id={`chatbot-icon-${id}`} />
                 </Box>
             )}
         </>

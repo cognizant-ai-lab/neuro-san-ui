@@ -777,6 +777,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         >
             {title && (
                 <Box
+                    id={`llm-chat-title-container-${id}`}
                     sx={{
                         alignItems: "center",
                         backgroundColor: "var(--bs-primary)",
@@ -791,13 +792,21 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         paddingBottom: "0.25rem",
                     }}
                 >
-                    <Typography sx={{fontSize: "0.9rem"}}>{title}</Typography>
+                    <Typography
+                        id={`llm-chat-title-${id}-text`}
+                        sx={{fontSize: "0.9rem"}}
+                    >
+                        {title}
+                    </Typography>
                     {onClose && (
                         <IconButton
-                            id="close-button"
+                            id={`close-button-${id}`}
                             onClick={onClose}
                         >
-                            <CloseIcon sx={{color: "var(--bs-white)"}} />
+                            <CloseIcon
+                                id={`close-icon-${id}`}
+                                sx={{color: "var(--bs-white)"}}
+                            />
                         </IconButton>
                     )}
                 </Box>
