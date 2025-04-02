@@ -778,14 +778,17 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             {title && (
                 <Box
                     sx={{
+                        alignItems: "center",
                         backgroundColor: "var(--bs-primary)",
                         borderTopLeftRadius: "var(--bs-border-radius)",
                         borderTopRightRadius: "var(--bs-border-radius)",
                         color: "var(--bs-white)",
-                        padding: "0.5rem",
                         display: "flex",
                         justifyContent: "space-between",
-                        alignItems: "center",
+                        paddingLeft: "1rem",
+                        paddingRight: "0.5rem",
+                        paddingTop: "0.25rem",
+                        paddingBottom: "0.25rem",
                     }}
                 >
                     <Typography sx={{fontSize: "0.9rem"}}>{title}</Typography>

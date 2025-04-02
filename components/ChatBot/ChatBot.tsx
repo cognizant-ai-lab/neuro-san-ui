@@ -9,11 +9,25 @@ import {ChatCommon} from "../AgentChat/ChatCommon"
 import {LegacyAgentType} from "../AgentChat/Types"
 
 interface ChatBotProps {
+    /**
+     * id HTML id to use for the outer component
+     */
     readonly id: string
+
+    /**
+     * Path to image for user avatar
+     */
     readonly userAvatar: string
+
+    /**
+     * Text about current page to help the LLM respond intelligently
+     */
     readonly pageContext: string
 }
 
+/**
+ * Site-wide chat bot component.
+ */
 export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
     const [chatOpen, setChatOpen] = useState<boolean>(false)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState<boolean>(false)
