@@ -5,8 +5,6 @@
 
 import {BaseMessage} from "@langchain/core/messages"
 
-import {MessageWithKargs} from "../../pages/api/gpt/shared/types"
-
 /**
  * Send a request to an LLM and stream the response to a callback.
  * @param callback The callback function to be called when a chunk of data is received from the server.
@@ -24,7 +22,7 @@ export async function sendLlmRequest(
     fetchUrl: string,
     params: Record<string, unknown>,
     userQuery?: string,
-    chatHistory?: (BaseMessage | MessageWithKargs)[]
+    chatHistory?: BaseMessage[]
 ) {
     const res = await fetch(fetchUrl, {
         method: "POST",

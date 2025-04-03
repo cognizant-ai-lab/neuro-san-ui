@@ -6,6 +6,7 @@ export enum LegacyAgentType {
     ScopingAgent = "ScopingAgent",
     DataGenerator = "DataGenerator",
     DMSChat = "DMSChat",
+    ChatBot = "ChatBot",
 }
 
 export type CombinedAgentType = LegacyAgentType | NeuroSanAgentType

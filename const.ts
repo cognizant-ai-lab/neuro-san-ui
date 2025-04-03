@@ -11,20 +11,6 @@ export const UNILEAF_VERSION: string = publicRuntimeConfig.unileafVersion
 
 export const ESPResultverbs = ["max", "min", "mean"]
 
-/* TODO: feels like it should be a stylesheet somewhere. But the current chatbot library we're using seems to
-require it in this format. */
-export const chatbotTheme = {
-    background: "#f5f8fb",
-    fontFamily: "var(--bs-body-font-family)",
-    headerBgColor: "var(--bs-primary)",
-    headerFontColor: "#fff",
-    headerFontSize: "15px",
-    botBubbleColor: "var(--bs-secondary)",
-    botFontColor: "#fff",
-    userBubbleColor: "#fff",
-    userFontColor: "#4a4a4a",
-}
-
 // Maximum allowed categorical values before we prompt a user to add a category reducer node.
 // This number was the previous maximum categorical values the BE would handle.
 export const MAX_ALLOWED_CATEGORIES = 20

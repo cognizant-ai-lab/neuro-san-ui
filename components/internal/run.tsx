@@ -16,7 +16,6 @@ import {docco} from "react-syntax-highlighter/dist/cjs/styles/hljs"
 import {ReactFlowProvider} from "reactflow"
 import remarkGfm from "remark-gfm"
 
-import NeuroAIChatbot from "./chatbot/neuro_ai_chatbot"
 import Flow from "./flow/flow"
 import {FlowQueries} from "./flow/flowqueries"
 import {PrescriptorNode} from "./flow/nodes/prescriptornode"
@@ -35,6 +34,7 @@ import decode from "../../utils/conversion"
 import {empty} from "../../utils/objects"
 import {consolidateFlow} from "../../utils/transformation"
 import {useLocalStorage} from "../../utils/use_local_storage"
+import {ChatBot} from "../ChatBot/ChatBot"
 import ESPRunPlot from "../esprunplot"
 import {InfoTip} from "../infotip"
 import MetricsTable from "../metricstable"
@@ -891,7 +891,7 @@ export default function RunPage(props: RunProps): ReactElement {
 
             {plotDiv}
 
-            <NeuroAIChatbot
+            <ChatBot
                 id="chatbot"
                 userAvatar={undefined}
                 pageContext={RunPage.pageContext}

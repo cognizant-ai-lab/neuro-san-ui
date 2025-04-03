@@ -18,8 +18,8 @@ import {ReactElement, ReactFragment, useEffect} from "react"
 import {UserInfoResponse} from "./api/userInfo/types"
 import {Auth} from "../components/auth"
 import NeuroAIBreadcrumbs from "../components/breadcrumbs"
+import {ChatBot} from "../components/ChatBot/ChatBot"
 import ErrorBoundary from "../components/errorboundary"
-import NeuroAIChatbot from "../components/internal/chatbot/neuro_ai_chatbot"
 import Navbar from "../components/navbar"
 import {Snackbar} from "../components/Snackbar"
 import {GENERIC_LOGO, LOGO} from "../const"
@@ -289,7 +289,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
                             {getAppComponent()}
                             <div id="fixed-pos-div">
-                                <NeuroAIChatbot
+                                <ChatBot
                                     id="chatbot"
                                     userAvatar={picture || undefined}
                                     pageContext={Component.pageContext || ""}

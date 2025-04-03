@@ -17,9 +17,9 @@ import {AiFillEdit, AiFillWarning} from "react-icons/ai"
 import {reasonToHumanReadable} from "../../../controller/datasources/conversion"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued, Profile} from "../../../generated/metadata"
 import {empty, jsonStringifyInOrder} from "../../../utils/objects"
+import {ChatBot} from "../../ChatBot/ChatBot"
 import {ConfirmationModal} from "../../confirmationModal"
 import {MUIAlert} from "../../MUIAlert"
-import NeuroAIChatbot from "../chatbot/neuro_ai_chatbot"
 
 interface ProfileTableProps {
     id: string
@@ -736,7 +736,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                     </table>
                 </Box>
             </Box>
-            <NeuroAIChatbot
+            <ChatBot
                 id="chatbot"
                 userAvatar={undefined}
                 pageContext={ProfileTable.pageContext}
