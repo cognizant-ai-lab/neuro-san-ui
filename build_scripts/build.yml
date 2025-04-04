@@ -5,7 +5,7 @@ steps:
         type: "git-clone"
         repo: "leaf-ai/neuro-ui"
         git: "github"
-        revision: ${{VERSION}}
+        revision: ${{UNILEAF_VERSION}}
 
     prepare_for_build:
         description: "Do any common preparation for tests"
@@ -51,10 +51,8 @@ steps:
       working_directory: ./
       build_arguments:
         - NODEJS_VERSION=${{NODEJS_VERSION}}
-        - VERSION=${{VERSION}}
-      tag: "${{VERSION}}"
-      secrets:
-        - id=LEAF_SOURCE_CREDENTIALS,src=${{TEMP_DIR_OUTSIDE_CONTAINER}}/LEAF_SOURCE_CREDENTIALS.txt
+        - UNILEAF_VERSION=${{UNILEAF_VERSION}}
+      tag: "${{UNILEAF_VERSION}}"
 
     clean_up:
       description: "Clean up after ourselves"

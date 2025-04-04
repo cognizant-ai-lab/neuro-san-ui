@@ -31,8 +31,8 @@ COPY --from=deps /app/generated ./generated
 COPY . .
 
 # Extract build version
-ARG VERSION
-ENV VERSION ${VERSION}
+ARG UNILEAF_VERSION
+ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 
 RUN yarn build
 
