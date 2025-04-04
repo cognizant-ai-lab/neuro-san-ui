@@ -37,7 +37,7 @@ steps:
         - >-
           python3 deploy_to_cluster.py 
           --file-path ../values-${{DEPLOY_ENV}}.yaml 
-          --new-version ${{UNILEAF_VERSION}}
+          --tag-overwrite uiNode=${{UNILEAF_VERSION}}
 
   commit_and_push:
     title: Commit changes and push
@@ -52,3 +52,8 @@ steps:
       allow_empty: false
       rebase: true
       base_branch: main
+      # don't commit and push for the moment, testing in progress
+      when:
+            branch:
+              only:
+                - master 
