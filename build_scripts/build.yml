@@ -47,13 +47,12 @@ steps:
       image_name: "leaf/unileaf-ui-node"
       type: build
       buildkit: true
-      disable_push: true
       progress: "plain"
       dockerfile: ./Dockerfile
       working_directory: ./
       build_arguments:
         - NODEJS_VERSION=${{NODEJS_VERSION}}
-        - UNILEAF_VERSION=${{UNILEAF_VERSION}}
+        - UNILEAF_VERSION=${{VERSION}}
         # Provide either "old" or "new" to switch between
         # model serving versions.
         - MODEL_SERVING_VERSION=${{MODEL_SERVING_VERSION}}
