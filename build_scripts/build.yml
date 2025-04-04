@@ -7,15 +7,6 @@ steps:
         git: "github"
         revision: ${{UNILEAF_VERSION}}
 
-    prepare_for_build:
-        description: "Do any common preparation for tests"
-        type: "freestyle"
-        image: alpine:3.13.1
-        commands:
-            - export TEMP_DIR_OUTSIDE_CONTAINER=${{CF_VOLUME_PATH}}/tmp/${{CF_BUILD_ID}}
-            - mkdir -p ${TEMP_DIR_OUTSIDE_CONTAINER}
-            - cf_export TEMP_DIR_OUTSIDE_CONTAINER
-
     create-temp-git-creds-from-vault:
         title: "Get ephemeral GitHub creds"
         description: "Get temporary git credentials from vault server."
