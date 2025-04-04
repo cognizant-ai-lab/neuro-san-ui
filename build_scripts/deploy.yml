@@ -52,8 +52,3 @@ steps:
       allow_empty: false
       rebase: true
       base_branch: main
-    # don't commit and push for the moment, testing in progress
-    when:
-      branch:
-        only:
-          - master 
