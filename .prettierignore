@@ -1,2 +1,4 @@
 generated
 **/coverage/
+build_scripts/
+proto/

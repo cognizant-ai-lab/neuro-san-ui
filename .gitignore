@@ -1,7 +1,22 @@
+# Node/NextJS/dotenv things
+.env*
+.env.local
 .next
-.swc
+embed/node_modules
 next-env.d.ts
-proto
+node_modules
 tsconfig.tsbuildinfo
 yarn-error.log
+
+# Coverage directory used by tools like lcov
 coverage
+
+# Generated proto files
+generated
+
+# IntelliJ IDE
+.idea
+
+# VS Code
+*.code-workspace
+.vscode/
