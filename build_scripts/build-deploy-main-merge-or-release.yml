@@ -1,44 +1,30 @@
 # This pipeline is designed to be triggered by a github
 # merge to main event or a release event.
 # When that happens, the appropriate 
-# values are passed to the generic 'build-all-images'
+# values are passed to the generic 'build'
 # pipeline and then the generic 'deploy' pipeline.
 
 # The resulting behavior is: 
 # - A merge to main builds all the images and deploys 
-#   them to dev namespace, with short git sha as the version.
+#   them to dev environment, with short git sha as the version.
 # - A release builds all the images and deploys them to
-#   staging namespace, with the user-friendly semantic version tag as the version.
+#   staging environment, with the user-friendly semantic version tag as the version.
 
 version: '1.0'
 steps:
   clone:
     title: "Cloning repository"
     type: "git-clone"
-    repo: "leaf-ai/unileaf"
+    repo: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
     git: "github"
     revision: ${{CF_REVISION}}
 
   set_version_main_merge:
-    title: "Set the unileaf-version for a main merge case"
+    title: "Set the version for a main merge case"
     image: alpine:3.13.1
     commands:
-      # This is where we map the namespace to the desired cluster.
-      # Previously all namespaces were on one cluster, now we
-      # have 2 clusters. By mapping the values here we can deploy any
-      # arbitrary namespace on any given cluster.
+      # Merge to main goes to dev with short git sha
       - cf_export UNILEAF_VERSION=${{CF_SHORT_REVISION}}
-      - cf_export NAMESPACE=leaf-unileaf-dev
-      - cf_export KUBE_CONTEXT=unileaf-dev-stage
-      # Our deployment process updates a values file in the manifest
-      # repo, where the directory structure uses a common-sense
-      # naming pattern, eg
-      # manifest/unileaf/dev/values.yaml
-      # manifest/unileaf/staging/values.yaml
-      # So here we map our branded-namespaces to names used in manifest repo.
-      # Note: when we build the clusters again (planned soon) we
-      # will use the simple namespaces of dev,staging,prod so this sort of
-      # mapping can go away.
       - cf_export DEPLOY_ENV=dev
 
   # When codefresh sets the CF_RELEASE_TAG, this task will run
@@ -48,9 +34,6 @@ steps:
     image: alpine:3.13.1
     commands:
       - cf_export UNILEAF_VERSION=${{CF_RELEASE_TAG}}
-      - cf_export NAMESPACE=leaf-unileaf-staging
-      # The staging environment is in this cluster:
-      - cf_export KUBE_CONTEXT=unileaf-dev-stage
       - cf_export DEPLOY_ENV=staging
     when:
       condition:
@@ -58,13 +41,13 @@ steps:
           # This is idiomatic Codefresh for detecting if ${{CF_RELEASE_TAG}} has a value.
           deploy_tagged_builds_only: 'includes("${{CF_RELEASE_TAG}}", "{{CF_RELEASE_TAG}}") == false'
 
-  call_build_all_pipeline:
+  call_build_pipeline:
     title: "Run build-all-images pipeline"
     type: codefresh-run
     arguments:
-      PIPELINE_ID: unileaf/build-all-images
+      PIPELINE_ID: neuro-ui/build
       VARIABLE:
-         # All of these values can be overridden at the build-all-images
+         # All of these values can be overridden at the build
          # pipeline by running manually.
          - UNILEAF_VERSION=${{UNILEAF_VERSION}}
 
@@ -72,11 +55,9 @@ steps:
     title: "Run deploy pipeline"
     type: codefresh-run
     arguments:
-      PIPELINE_ID: unileaf/deploy
+      PIPELINE_ID: neuro-ui/deploy
       VARIABLE:
          # All of these values can be overridden at the deploy
          # pipeline by running manually.
          - UNILEAF_VERSION=${{UNILEAF_VERSION}}
-         - NAMESPACE=${{NAMESPACE}}
-         - KUBE_CONTEXT=${{KUBE_CONTEXT}}
          - DEPLOY_ENV=${{DEPLOY_ENV}}
