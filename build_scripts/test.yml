@@ -7,9 +7,8 @@ steps:
   clone:
     title: "Cloning repository"
     type: "git-clone"
-    repo: "leaf-ai/neuro-ui"
-    #revision: ${{CF_REVISION}}
-    revision: "main"
+    repo: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
+    revision: ${{CF_REVISION}}
     git: "github"
 
   create-temp-git-creds-from-vault:
@@ -33,7 +32,7 @@ steps:
     title: Install npm/yarn dependencies
     description: Install npm/yarn dependencies as required
     image: node:${{NODEJS_VERSION}}-alpine
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     # We want this one to fail fast: no point continuing if we can't install dependencies
     fail_fast: true
     commands:
@@ -44,7 +43,7 @@ steps:
     title: Generate proto stubs
     description: Generate proto stubs for the frontend
     image: node:${{NODEJS_VERSION}}-alpine
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: true
     commands:
       - apk add --quiet --no-progress --upgrade bash protobuf-dev git
@@ -53,7 +52,7 @@ steps:
   run_eslint:
     title: Run eslint on Typescript sources
     image: node:${{NODEJS_VERSION}}-alpine
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui/build_scripts
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}/build_scripts
     fail_fast: false
     commands:
       - apk add --quiet --no-progress --upgrade bash
@@ -63,7 +62,7 @@ steps:
   run_prettier:
     title: Run prettier (code formatting checker)
     image: node:${{NODEJS_VERSION}}-alpine
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
       - yarn check-format --version # Display version for troubleshooting
@@ -72,7 +71,7 @@ steps:
   run_depcheck:
     title: Run depcheck (dependency checker)
     image: node:${{NODEJS_VERSION}}-alpine
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
       - yarn depcheck --version  # Display version for troubleshooting
@@ -81,7 +80,7 @@ steps:
   run_ts_prune:
     title: Run ts-prune (looks for unused externals in modules)
     image: node:${{NODEJS_VERSION}}-alpine
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
       # Display version for troubleshooting. Not perfect, but ts-prune doesn't support --version
@@ -92,7 +91,7 @@ steps:
     title: Run unit tests
     image: node:${{NODEJS_VERSION}}-alpine
     description: Run unit tests (jest Typescript tests)
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
       - yarn unit_test --version  # Display version for troubleshooting
@@ -103,7 +102,7 @@ steps:
     title: Run Typescript compilation
     image: node:${{NODEJS_VERSION}}-alpine
     description: Run Typescript compiler to check for type issues
-    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
       - yarn tsc --version  # Display version for troubleshooting
