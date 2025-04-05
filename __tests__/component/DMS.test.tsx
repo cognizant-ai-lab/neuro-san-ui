@@ -2,9 +2,10 @@
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
-// import JSON file for conoxFlow to use in test
 import DMS from "../../pages/projects/[projectID]/experiments/[experimentID]/runs/[runID]/prescriptors/[prescriptorID]"
 import conoxFlow from "../fixtures/conoxFlow.json"
+import conoxRuns from "../fixtures/conoxRuns.json"
+import project from "../fixtures/project.json"
 import {mockFetch} from "../testUtils"
 
 // isSuperUser
@@ -12,21 +13,10 @@ jest.mock("../../controller/authorize/superuser", () => ({
     isSuperUser: jest.fn(),
 }))
 
-const MOCK_PROJECT = {
-    created_at: "2024-08-20T00:21:52.539586Z",
-    updated_at: "2024-08-20T00:24:08.301003Z",
-    id: Math.floor(Math.random() * 1000),
-    name: "mock project",
-    description: "mock project description",
-    hidden: false,
-    owner: "mock_user",
-    lastEditedBy: "mock_user",
-}
-
 // Mock fetchProjects
 jest.mock("../../controller/projects/fetch", () => {
     return {
-        fetchProjects: jest.fn(() => Promise.resolve([MOCK_PROJECT])),
+        fetchProjects: jest.fn(() => Promise.resolve([project])),
     }
 })
 
@@ -44,24 +34,7 @@ jest.mock("../../controller/run/fetch", () => ({
                 owner: "mock_user",
                 lastEditedBy: "mock_user",
                 flow: JSON.stringify(conoxFlow),
-                output_artifacts: JSON.stringify({
-                    "3288": "s3://s3bucket/run_data/5997/artifacts/3288.csv",
-                    experiment: "s3://s3bucket/run_data/5997/artifacts/experiment.ipynb",
-                    llm_dataops: "s3://s3bucket/run_data/5997/artifacts/llm_dataops.ipynb",
-                    "3288_profile": "s3://s3bucket/run_data/5997/artifacts/3288_profile.json",
-                    requirements: "s3://s3bucket/run_data/5997/artifacts/requirements.txt",
-                    private_dependencies: "s3://s3bucket/run_data/5997/artifacts/private_dependencies.zip",
-                    "rio-f7649978-9ba0-11ef-ac92-0ea0df19cb35-Cost":
-                        "s3://s3bucket/run_data/5997/artifacts/rio-f7649978-9ba0-11ef-ac92-0ea0df19cb35-Cost",
-                    "predictor-f76482ee-9ba0-11ef-ac92-0ea0df19cb35":
-                        "s3://s3bucket/run_data/5997/artifacts/predictor-f76482ee-9ba0-11ef-ac92-0ea0df19cb35.onnx",
-                    "predictor-f7648eec-9ba0-11ef-ac92-0ea0df19cb35":
-                        "s3://s3bucket/run_data/5997/artifacts/predictor-f7648eec-9ba0-11ef-ac92-0ea0df19cb35.onnx",
-                    "predictor-f7649978-9ba0-11ef-ac92-0ea0df19cb35":
-                        "s3://s3bucket/run_data/5997/artifacts/predictor-f7649978-9ba0-11ef-ac92-0ea0df19cb35.onnx",
-                    "prescriptor-f780fe2e-9ba0-11ef-ac92-0ea0df19cb35-1_2":
-                        "s3://s3bucket/run_data/5997/artifacts/prescriptor-f780fe2e-9ba0-11ef-ac92-0ea0df19cb35-1_2.json",
-                }),
+                output_artifacts: JSON.stringify(conoxRuns),
             },
         ])
     ),
@@ -127,7 +100,7 @@ describe("DMS", () => {
         render(<DMS />)
 
         // Title
-        expect(await screen.findByText(`${MOCK_PROJECT.name} Project - Decision Making System`)).toBeInTheDocument()
+        expect(await screen.findByText(`${project.name} Project - Decision Making System`)).toBeInTheDocument()
 
         // CAO sections
 

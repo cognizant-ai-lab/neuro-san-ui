@@ -128,6 +128,13 @@ jest.mock(
         ({children}) =>
             createElement("div", null, children)
 )
+jest.mock(
+    "remark-gfm",
+    () =>
+        ({children}) =>
+            createElement("div", null, children)
+)
+
 /* eslint-enable react/display-name, react/no-multi-comp */
 
 // Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
