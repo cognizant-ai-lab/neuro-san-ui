@@ -47,7 +47,6 @@ export async function sendLlmRequest(
         const reader = res.body.getReader()
         const utf8decoder = new TextDecoder("utf8")
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             const {done, value} = await reader.read()
 

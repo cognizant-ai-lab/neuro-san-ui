@@ -16,6 +16,7 @@ describe("useAuthentication", () => {
     // Mock the window location so we can test the redirect
     beforeAll(() => {
         delete window.location
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         window.location = {...location, href: "www.example.com", host: "127.0.0.1"}
     })
 

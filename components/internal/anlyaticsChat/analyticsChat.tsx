@@ -85,8 +85,6 @@ export function AnalyticsChat(props: AnalyticsChatProps): ReactElement {
     // Create img tag from data in Uint8Array format
     function getImage(): JSX.Element {
         return (
-            // We don't want the fancy NextJS image features here
-            // eslint-disable-next-line @next/next/no-img-element
             <img
                 id="plot-img"
                 src={`data:image/png;base64,${imageData}`}

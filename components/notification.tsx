@@ -1,8 +1,6 @@
 import {enqueueSnackbar, SnackbarOrigin, /*SnackbarOrigin, */ VariantType} from "notistack"
 import {renderToString} from "react-dom/server"
 
-// no-shadow doesn't do well with enums. Search their github issues if you're curious.
-// eslint-disable-next-line no-shadow
 export enum NotificationType {
     "success",
     "info",

@@ -33,7 +33,12 @@ COPY . .
 ARG UNILEAF_VERSION
 ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 
-RUN yarn build
+# Deal with github pat in order to clone neuro-san repo
+# which is part of the do_typescript_generate script called below
+RUN --mount=type=secret,id="LEAF_SOURCE_CREDENTIALS" \
+    SECRET_CREDS="$(cat /run/secrets/LEAF_SOURCE_CREDENTIALS)" \
+    && export LEAF_SOURCE_CREDENTIALS="$SECRET_CREDS" \
+    && yarn build
 
 # Production image, copy all the files and run next
 FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12 AS runner

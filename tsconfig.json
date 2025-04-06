@@ -8,6 +8,7 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "alwaysStrict": true,
+    "checkJs": true,
     "declaration": false,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": false,
@@ -48,6 +49,8 @@
     "**/*.mjs",
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    "coverage",
   ]
 }

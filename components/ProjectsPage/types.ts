@@ -1,12 +1,9 @@
 // For sorting
-// no-shadow doesn't do well with enums. Search their github issues if you're curious.
-// eslint-disable-next-line no-shadow
 export const enum ShowAsOption {
     CARDS,
     LIST,
 }
 
-// eslint-disable-next-line no-shadow
 export const enum DisplayOption {
     ALL_PROJECTS = 1,
     MY_PROJECTS_ONLY = 2,

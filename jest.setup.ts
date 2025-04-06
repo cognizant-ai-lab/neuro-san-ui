@@ -13,12 +13,10 @@ See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-i
 // eslint-disable-next-line no-shadow
 import {TextDecoder, TextEncoder} from "util"
 
-// eslint-disable-next-line no-undef
 Object.defineProperty(globalThis, "crypto", {
     value: webcrypto,
 })
 
-// eslint-disable-next-line no-undef
 Object.defineProperties(globalThis, {
     ReadableStream: {value: ReadableStream},
 })
@@ -32,16 +30,13 @@ global.TextDecoder = TextDecoder
 // See: https://github.com/xyflow/xyflow/issues/716#issuecomment-1246602067
 // eslint-disable-next-line no-shadow
 class ResizeObserver {
-    // eslint-disable-next-line no-undef
     callback: globalThis.ResizeObserverCallback
 
-    // eslint-disable-next-line no-undef
     constructor(callback: globalThis.ResizeObserverCallback) {
         this.callback = callback
     }
 
     observe(target: Element) {
-        // eslint-disable-next-line no-undef
         this.callback([{target} as globalThis.ResizeObserverEntry], this)
     }
 

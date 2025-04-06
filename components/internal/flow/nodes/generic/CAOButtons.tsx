@@ -94,7 +94,6 @@ const CAOButtons = (props) => {
                                 name={element}
                                 id={`${flowPrefix}-context-input-${element}${idExtension}`}
                                 type="checkbox"
-                                defaultChecked={true}
                                 disabled={props.readOnlyNode}
                                 checked={ParentNodeState?.caoState?.context[element]}
                                 onChange={(event) => onUpdateCAOState(event, "context")}
@@ -144,7 +143,6 @@ const CAOButtons = (props) => {
                                 id={`${flowPrefix}-actions-input-${element}${idExtension}`}
                                 name={element}
                                 type="checkbox"
-                                defaultChecked={true}
                                 checked={ParentNodeState.caoState.action[element]}
                                 disabled={props.readOnlyNode}
                                 onChange={(event) => onUpdateCAOState(event, "action")}
@@ -206,7 +204,6 @@ const CAOButtons = (props) => {
                                         name={element}
                                         id={`${flowPrefix}-outcomes-input-${element}${idExtension}`}
                                         type="checkbox"
-                                        defaultChecked={false}
                                         checked={dataOutcomes[element].outcome}
                                         onChange={(event) => onUpdateCAOState(event, "outcome")}
                                         disabled={dataOutcomes[element].disabled || props.readOnlyNode}

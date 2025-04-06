@@ -1,7 +1,7 @@
 import {FlowQueries} from "./flow/flowqueries"
+import {MAX_ALLOWED_CATEGORIES} from "../../const"
 import {DataSourceNode} from "./flow/nodes/datasourcenode"
 import {NodeType} from "./flow/nodes/types"
-import {MAX_ALLOWED_CATEGORIES} from "../../const"
 import {DataTag, DataTagFieldCAOType} from "../../generated/metadata"
 import {arraysEqual, commaListFromArray} from "../../utils/objects"
 import {NotificationType, sendNotification} from "../notification"
@@ -50,7 +50,6 @@ export function checkValidity(flow: NodeType[]): boolean {
     const hasExactlyOneOutcomeChecked = predictorNodes.every(
         (node) =>
             // External data -- don't trust it to be a clean bool
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
             Object.values(node.data.ParentNodeState.caoState.outcome).filter((val) => val === true).length === 1
     )
 
@@ -65,7 +64,6 @@ export function checkValidity(flow: NodeType[]): boolean {
     // Must have at least one context checked
     const hasAnyContextsChecked = predictorNodes.some((node) =>
         // External data -- don't trust it to be a clean bool
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
         Object.values(node.data.ParentNodeState.caoState.context).some((val) => val === true)
     )
 

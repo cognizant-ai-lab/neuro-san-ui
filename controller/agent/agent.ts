@@ -60,7 +60,7 @@ export async function sendChatQuery(
             chatContext,
             chatFilter: {chatFilterType: ChatFilterType.MAXIMAL},
         }),
-        targetAgent: targetAgent as AgentType,
+        targetAgent: targetAgent,
     }
 
     // Convert to JSON (wire) format

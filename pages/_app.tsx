@@ -15,7 +15,6 @@ import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect} from "react"
 
-import {UserInfoResponse} from "./api/userInfo/types"
 import {Auth} from "../components/auth"
 import NeuroAIBreadcrumbs from "../components/breadcrumbs"
 import {ChatBot} from "../components/ChatBot/ChatBot"
@@ -27,6 +26,7 @@ import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"
 import useUserInfoStore from "../state/userInfo"
 import {APP_THEME} from "../theme"
+import {UserInfoResponse} from "./api/userInfo/types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 

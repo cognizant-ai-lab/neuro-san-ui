@@ -29,8 +29,6 @@ export type ParameterType = boolean | number | string | Enum
 // Used for nodes to reflect on the type of each parameter and potentially do different things depending on the type.
 // For example, a boolean parameter might be rendered as a checkbox, while a string parameter might be rendered as a
 // text field, and an enum parameter might be rendered as a dropdown.
-// no-shadow doesn't do well with enums. Search their github issues if you're curious.
-// eslint-disable-next-line no-shadow
 export enum BaseParameterType {
     BOOLEAN,
     STRING,

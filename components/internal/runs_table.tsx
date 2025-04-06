@@ -49,7 +49,7 @@ interface RunTableProps {
     readonly runs: Runs
     readonly setEditingLoading: (editingLoading: {editing: boolean; loading: boolean}[]) => void
     readonly setRunDrawer: (isOpen: boolean) => void
-    readonly setSelectedRunID: (runId: string) => void
+    readonly setSelectedRunID: (runId: number) => void
     readonly setSelectedRunName: (runName: string) => void
     readonly setRuns: (runs: Runs) => void
 }
@@ -119,7 +119,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         setTerminateRunModalOpen(true)
     }
 
-    function handleDelete(event, idx: number, run: Run) {
+    function handleDelete(event: ReactMouseEvent<HTMLElement>, idx: number, run: Run) {
         event.preventDefault()
         const runName = run.name ?? run.id
         setSelectedDeleteIdx(idx)
@@ -155,7 +155,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
     // Set a timer to update the status of any runs
     useEffect(() => {
         // If any incomplete runs, set a timer to poll status
-        if (props.runs && props.runs.some((run: Run) => !run.completed)) {
+        if (props.runs?.some((run: Run) => !run.completed)) {
             const tempIntervalID = setInterval(updateRunStatuses, 5000, props.experimentId)
 
             return function cleanup() {
@@ -166,7 +166,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         return undefined
     }, [props.runs])
 
-    async function updateRunStatuses(experimentIdTmp) {
+    async function updateRunStatuses(experimentIdTmp: number) {
         if (props.runDrawer) {
             // No need to update if Run drawer is open since user can't see runs list
             return
@@ -370,9 +370,9 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         }
     }
 
-    function getRunButton(run, idx) {
+    function getRunButton(run: Run, idx) {
         const runId = run.id
-        const runTitle = run.name || runId
+        const runTitle = String(run.name || runId)
         return (
             <Box
                 id={`run-buttons-${idx}`}
@@ -623,7 +623,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
         if (props.runs && props.runs.length !== 0 && props.editingLoading.length !== 0) {
             props.runs.forEach((run, idx) => {
                 let runNameColumn: JSX.Element
-                if (props.editingLoading[idx] && props.editingLoading[idx].editing) {
+                if (props.editingLoading[idx]?.editing) {
                     runNameColumn = getRunNameRowEditing(run, idx)
                 } else {
                     runNameColumn = getRunNameColumn(run, idx)

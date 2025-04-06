@@ -11,21 +11,18 @@ interface PredictorParams {
     [key: string]: PredictorNodeParameters
 }
 
-// eslint-disable-next-line no-shadow
 enum MaxFeatures {
     "auto" = "auto",
     "sqrt" = "sqrt",
     "log2" = "log2",
 }
 
-// eslint-disable-next-line no-shadow
 enum Booster {
     "gbtree" = "gbtree",
     "gblinear" = "gblinear",
     "dart" = "dart",
 }
 
-// eslint-disable-next-line no-shadow
 enum TreeMethod {
     "auto" = "auto",
     "exact" = "exact",
@@ -34,7 +31,6 @@ enum TreeMethod {
     "gpu_hist" = "gpu_hist",
 }
 
-// eslint-disable-next-line no-shadow
 enum ImportanceType {
     "gain" = "gain",
     "weight" = "weight",
@@ -43,13 +39,11 @@ enum ImportanceType {
     "total_Cover" = "total_cover",
 }
 
-// eslint-disable-next-line no-shadow
 enum SupportedRegressionCriterion {
     "mse" = "mse",
     "mae" = "mae",
 }
 
-// eslint-disable-next-line no-shadow
 enum SupportedClassificationCriterion {
     "gini" = "gini",
     "entropy" = "entropy",
@@ -57,7 +51,6 @@ enum SupportedClassificationCriterion {
 }
 
 // The NUM in the enum name is a hack to get around rendering enums that are actual numbers.
-// eslint-disable-next-line no-shadow
 enum Verbosity {
     "NUM_ZERO" = "0",
     "NUM_ONE" = "1",

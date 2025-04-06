@@ -108,9 +108,9 @@ const DataSourceNodeComponent: FC<NodeProps<DataSourceNodeData>> = (props) => {
                             paddingRight: 24,
                         }}
                         onChange={(event) => {
-                            const filteredSelectedData = taggedDataList.filter(
+                            const filteredSelectedData = taggedDataList.find(
                                 (dataTmp) => Number(event.target.value) === Number(dataTmp.DataSource.id)
-                            )[0]
+                            )
                             data.SelfStateUpdateHandler(
                                 filteredSelectedData.DataSource,
                                 filteredSelectedData.LatestDataTag
