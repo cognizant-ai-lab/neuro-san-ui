@@ -6,7 +6,7 @@
 
 # The resulting behavior is: 
 # - A merge to main builds the image and deploys 
-#   it tothe  dev environment, with short git SHA as the version.
+#   it to the  dev environment, with short git SHA as the version.
 # - A release builds the image and deploys it to the staging environment, with the user-friendly semantic version 
 #  tag as the version.
 
