@@ -11,7 +11,7 @@ Note: Previously the project was known as UniLEAF and that name is still used in
 ## Set Up Prerequisites
 
 - Install [NodeJS](https://nodejs.org/) on your development machine. At time of writing Node 22 is the current LTS version.
-    - Example on mac: `brew install node@18`
+    - Example on mac: `brew install node@22`
     - For Ubuntu, see this link: https://joshtronic.com/2024/05/26/ubuntu-nodejs-22-install/
     - Make sure that the node executable is in your path. You can do this by typing `node --version`.
 - Install the protobuf compiler. This is needed to generate the protocol buffer files for the UI.
