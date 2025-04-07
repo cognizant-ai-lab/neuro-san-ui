@@ -3,8 +3,8 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
 import DMS from "../../pages/projects/[projectID]/experiments/[experimentID]/runs/[runID]/prescriptors/[prescriptorID]"
+import conoxArtifacts from "../fixtures/conoxArtifacts.json"
 import conoxFlow from "../fixtures/conoxFlow.json"
-import conoxRuns from "../fixtures/conoxRuns.json"
 import project from "../fixtures/project.json"
 import {mockFetch} from "../testUtils"
 
@@ -34,7 +34,7 @@ jest.mock("../../controller/run/fetch", () => ({
                 owner: "mock_user",
                 lastEditedBy: "mock_user",
                 flow: JSON.stringify(conoxFlow),
-                output_artifacts: JSON.stringify(conoxRuns),
+                output_artifacts: JSON.stringify(conoxArtifacts),
             },
         ])
     ),
