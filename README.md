@@ -123,9 +123,9 @@ Now you've made it this far, try a simple change within the UI. Here's an exampl
         ;`Hello world! The current project ID is ${projectId}`
     }
     ```
-1. Your change appears immediately in the UI for the Project page, without relaunching any services or recompiling, 
-   thanks to [Hot Module Replacement](https://webpack.js.org/guides/hot-module-replacement/) in Webpack which is used 
-   by NextJS. If you don't see your change, try holding down `Shift` and clicking the browser refresh button -- 
+1. Your change appears immediately in the UI for the Project page, without relaunching any services or recompiling,
+   thanks to [Hot Module Replacement](https://webpack.js.org/guides/hot-module-replacement/) in Webpack which is used
+   by NextJS. If you don't see your change, try holding down `Shift` and clicking the browser refresh button --
    this bypasses the browser cache.
 
 ### Congratulations, you are now a UI developer!
