@@ -75,7 +75,6 @@ const Sidebar: FC<SidebarProps> = ({id, selectedNetwork, setSelectedNetwork, isA
             >
                 {NETWORKS.map((network) => (
                     <ListItemButton
-                        className="text-sm bg-blue-700 hover:bg-blue-600 rounded cursor-pointer"
                         id={`${network}-btn`}
                         key={network}
                         onClick={() => selectNetworkHandler(network)}

@@ -132,6 +132,7 @@ export default function NewBar(props: NavbarProps) {
                         onClick={() => {
                             setEditing(true)
                         }}
+                        sx={{minWidth: "auto"}}
                     >
                         <BorderColorIcon // Misleading name - this icon is a pencil with a line below
                             id={`${idPrefix}-button-fill-edit`}
