@@ -5,13 +5,25 @@ import {NextApiRequest, NextApiResponse} from "next"
 import {createMocks, RequestOptions} from "node-mocks-http"
 
 import handler from "../../pages/api/gpt/dmschat"
+import {withStrictMocks} from "../common/strictMocks"
 
 // Mock the OpenAI module which we import transitively via langchain to avoid issues with "fetch" not being defined.
 // See: https://github.com/openai/openai-node/issues/666
 jest.mock("@langchain/openai", () => ({}))
 
+// Reset the environment variables that are used in the handler to ensure a clean test environment
+const resetEnv = () => {
+    ;["DMS_CHAT_MODEL_NAME", "INTERNAL_GATEWAY_URL", "MD_SERVER_URL", "OPEN_AI_MODEL_NAME", "OPENAI_API_KEY"].forEach(
+        (env) => {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete process.env[env]
+        }
+    )
+}
 describe("handler", () => {
     let request: RequestOptions
+
+    withStrictMocks(true)
 
     beforeEach(() => {
         request = {
@@ -24,6 +36,9 @@ describe("handler", () => {
                 userQuery: "This is a user query",
             },
         }
+
+        // Clear out env vars for sterile test environment
+        resetEnv()
     })
 
     it("Should reject for missing user query", () => {
