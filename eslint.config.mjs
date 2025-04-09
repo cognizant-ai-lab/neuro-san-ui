@@ -1,27 +1,28 @@
 import {fixupConfigRules, fixupPluginRules} from "@eslint/compat"
 import {FlatCompat} from "@eslint/eslintrc"
-import eslintPluginImport from "eslint-plugin-import"
 import js from "@eslint/js"
+import next from "@next/eslint-plugin-next"
 import stylisticTs from "@stylistic/eslint-plugin-ts"
 import typescriptEslint from "@typescript-eslint/eslint-plugin"
 // @ts-expect-error: parser has no types, but works
 import tsParser from "@typescript-eslint/parser"
+import eslintConfigPrettier from "eslint-config-prettier/flat"
 import enforceIdsInJsx from "eslint-plugin-enforce-ids-in-jsx"
+import eslintPluginImport from "eslint-plugin-import"
+// eslint-disable-next-line no-shadow
 import jest from "eslint-plugin-jest"
+import jestDom from "eslint-plugin-jest-dom"
+import eslintPluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
+import testingLibrary from "eslint-plugin-testing-library"
 import globals from "globals"
 import path from "node:path"
 import {fileURLToPath} from "node:url"
-import next from "@next/eslint-plugin-next"
-import eslintConfigPrettier from "eslint-config-prettier/flat"
-import eslintPluginReact from "eslint-plugin-react"
-import jestDom from "eslint-plugin-jest-dom"
-import testingLibrary from "eslint-plugin-testing-library"
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const ___filename = fileURLToPath(import.meta.url)
+const ___dirname = path.dirname(___filename)
 const compat = new FlatCompat({
-    baseDirectory: __dirname,
+    baseDirectory: ___dirname,
     recommendedConfig: js.configs.recommended,
     allConfig: js.configs.all,
 })
@@ -34,6 +35,14 @@ export default [
             react: {
                 version: "detect",
             },
+            /*
+            Per ChatGPT: 
+            "eslint-plugin-import is trying to parse an ESM module (likely @stylistic/eslint-plugin-ts) 
+            using CommonJS expectations. This happens because ESLint’s parser and import plugin may not fully 
+            support ESM for imported plugins without special setup."
+            It recommends adding this setting which seems to fix the issue.
+             */
+            "import/core-modules": ["@stylistic/eslint-plugin-ts"],
         },
         languageOptions: {
             globals: {
@@ -43,7 +52,7 @@ export default [
         },
     },
     {
-        ignores: [".next", "coverage", "generated", "eslint.config.mjs"],
+        ignores: [".next", "coverage", "generated"],
     },
     ...fixupConfigRules(
         compat.extends(
@@ -258,7 +267,7 @@ export default [
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["__tests__/**", "jest*.*", "tailwind.config.js"],
+                    devDependencies: ["__tests__/**", "jest*.*", "tailwind.config.js", "eslint.config.mjs"],
                 },
             ],
 
