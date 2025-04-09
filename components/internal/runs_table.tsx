@@ -377,6 +377,8 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 id={`run-buttons-${idx}`}
                 style={{
                     cursor: run.completed ? "pointer" : "not-allowed",
+                    display: "flex",
+                    justifyContent: "center",
                 }}
             >
                 <Grid
@@ -415,8 +417,8 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                                         textOverflow: "ellipsis",
                                         whiteSpace: "nowrap",
                                         overflow: "hidden",
-                                        width: "100%",
                                         padding: 0,
+                                        fontSize: "0.8rem",
                                     }}
                                 >
                                     {runTitle}

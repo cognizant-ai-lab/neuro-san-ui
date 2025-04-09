@@ -1152,13 +1152,9 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             <div
                 id={`${flowPrefix}-delete-div`}
                 style={{
-                    bottom: "0px",
-                    marginLeft: "0.25rem",
-                    marginRight: "0.25rem",
-                    paddingLeft: "0.25rem",
-                    paddingRight: "0.25rem",
+                    bottom: "0.25rem",
                     position: "absolute",
-                    right: "1px",
+                    right: "-1rem",
                 }}
             >
                 <Button
@@ -1176,7 +1172,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                             "&:hover": {
                                 color: "var(--bs-red)",
                             },
-                            fontSize: "0.9rem", // TODO: the other trash icon is 0.8rem here
+                            fontSize: "0.9rem",
                         }}
                     />
                 </Button>
@@ -1217,6 +1213,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     alignContent: "center",
                     display: "flex",
                     justifyContent: "center",
+                    paddingTop: "1rem",
                 }}
             >
                 <span
@@ -1224,7 +1221,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     style={{
                         color: "var(--bs-primary)",
                         fontSize: "0.75rem",
-                        marginRight: "0.5rem",
                     }}
                 >
                     Prescriptor

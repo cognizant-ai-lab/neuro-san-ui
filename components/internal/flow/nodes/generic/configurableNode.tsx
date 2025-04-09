@@ -221,7 +221,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                         style={{
                             color: "var(--bs-primary)",
                             fontSize: "0.75rem",
-                            marginRight: "0.5rem",
+                            marginLeft: "1.5rem",
                         }}
                     >
                         {NodeTitle}
@@ -337,13 +337,9 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     <div
                         id={`${flowPrefix}-delete-button-div${idExtension}`}
                         style={{
-                            marginLeft: "0.25rem",
-                            marginRight: "0.25rem",
-                            paddingLeft: "0.25rem",
-                            paddingRight: "0.25rem",
+                            bottom: "0.25rem",
                             position: "absolute",
-                            bottom: "0px",
-                            right: "1px",
+                            right: "-1rem",
                         }}
                     >
                         <Button

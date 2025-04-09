@@ -234,7 +234,7 @@ const NodeConfigPanel = ({
                             ...customStyles?.inputCompnentStyles,
                             display: "grid",
                             gridTemplateColumns: "repeat(8, 1fr)",
-                            gap: "3rem",
+                            gap: "0.5rem",
                             marginBottom: "0.75rem",
                         }}
                     >
