@@ -298,6 +298,8 @@ const config = [
             ],
 
             // Rules we're not ready to enable yet
+
+            // Requires strict type checks enabled in tsc which we're not ready for yet
             "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
 
             // Conflicts with react/sort-comp
@@ -507,7 +509,6 @@ const config = [
             "no-class-assign": "error",
             "import/no-anonymous-default-export": "error",
             "@typescript-eslint/no-empty-interface": "error",
-            "@typescript-eslint/no-unnecessary-boolean-literal-compare": "error",
         },
     },
 ]
