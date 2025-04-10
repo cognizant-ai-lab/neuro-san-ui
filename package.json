@@ -36,7 +36,7 @@
         "jsonrepair": "3.8.0",
         "langchain": "0.2.19",
         "lodash": "4.17.21",
-        "next": "15.1.6",
+        "next": "15.3.0",
         "next-auth": "4.24.9",
         "notistack": "3.0.1",
         "pretty-bytes": "6.1.1",
