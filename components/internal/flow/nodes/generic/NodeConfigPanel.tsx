@@ -240,7 +240,7 @@ const NodeConfigPanel = ({
                     >
                         <div
                             id={`${flowPrefix}-${param}-input-component-div${idExtension}`}
-                            style={{gridColumn: "span 3 / span 3"}}
+                            style={{gridColumn: "span 3"}}
                         >
                             <label
                                 id={`${flowPrefix}-${param}-label${idExtension}`}
@@ -252,7 +252,7 @@ const NodeConfigPanel = ({
                         <div
                             id={`${flowPrefix}-${param}-data-type-div${idExtension}`}
                             style={{
-                                gridColumn: "span 4 / span 4",
+                                gridColumn: "span 4",
                                 width: customStyles?.inputRowWidth || undefined,
                             }}
                         >
@@ -355,7 +355,7 @@ const NodeConfigPanel = ({
                         </div>
                         <div
                             id={`${flowPrefix}-${param}-tooltip-div${idExtension}`}
-                            style={{gridColumn: "span 1 / span 1"}}
+                            style={{gridColumn: "span 1"}}
                         >
                             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling
