@@ -290,13 +290,7 @@ export default function Index(): ReactElement {
                                         id="neuro-san-button"
                                         style={{position: "relative", ...getButtonStyle(["neuro-san-button"])}}
                                     >
-                                        <Badge
-                                            badgeContent="New"
-                                            color="primary"
-                                            id="multi-agent-accelerator-new-badge"
-                                        >
-                                            Multi-Agent Accelerator
-                                        </Badge>
+                                        Multi-Agent Accelerator
                                     </LaunchButton>
                                 </a>
                             </Link>

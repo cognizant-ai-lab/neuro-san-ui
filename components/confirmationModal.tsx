@@ -95,7 +95,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
     return (
         <MUIDialog
             closeable={closeable}
-            contentSx={{fontSize: "0.8rem", minWidth: "600px", paddingTop: "0"}}
+            contentSx={{fontSize: "0.8rem", minWidth: "550px", paddingTop: "0"}}
             footer={Footer}
             id={`${id}-confirm-main`}
             isOpen={modalOpen}
