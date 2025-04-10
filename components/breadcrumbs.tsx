@@ -15,9 +15,9 @@ const NeuroAIBreadcrumbs = () => {
             id="nav-bar-breadcrumbs-row"
             container={true}
             sx={{
-                width: "100%",
                 backgroundColor: "var(--bs-white)",
                 justifyContent: "flex-start",
+                width: "100%",
             }}
         >
             <Breadcrumbs
