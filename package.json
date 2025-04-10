@@ -12,7 +12,7 @@
         "start": "next start",
         "unit_test": "jest '__tests__/component' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts",
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
-        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ../build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
+        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
         "check-format": "prettier --check .",
         "generate": "cp -r ../proto . && build_scripts/do_typescript_generate.sh"
     },
