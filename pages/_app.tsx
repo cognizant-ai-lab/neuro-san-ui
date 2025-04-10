@@ -255,7 +255,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             <div
                 id="body-div"
                 style={{
-                    // eslint-disable-next-line max-len, quotes, @typescript-eslint/quotes
+                    // eslint-disable-next-line max-len, quotes
                     background: `linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/NeuroAI_SC_BH1.webp")`,
                     backgroundSize: "cover",
                     height: "100%",
