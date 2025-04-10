@@ -80,7 +80,6 @@
         "@types/react-syntax-highlighter": "15.5.11",
         "@typescript-eslint/eslint-plugin": "8.29.0",
         "@typescript-eslint/parser": "8.29.0",
-        "autoprefixer": "10.4.17",
         "depcheck": "1.4.7",
         "eslint": "9.24.0",
         "eslint-config-next": "15.2.4",
