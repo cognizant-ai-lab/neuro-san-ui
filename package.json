@@ -14,7 +14,7 @@
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
         "check-format": "prettier --check .",
-        "generate": "cp -r ../proto . && build_scripts/do_typescript_generate.sh"
+        "generate": "build_scripts/do_typescript_generate.sh"
     },
     "dependencies": {
         "@emotion/react": "11.13.3",

@@ -471,6 +471,18 @@ const config = [
             "react/no-array-index-key": "off",
         },
     },
+    {
+        // Want to allow devDependencies in these files
+        files: ["next.config.ts", "webpack.config.*"],
+        rules: {
+            "import/no-extraneous-dependencies": [
+                "error",
+                {
+                    devDependencies: true, // allow in these files
+                },
+            ],
+        },
+    },
     eslintConfigPrettier,
     {
         // re-enable these rules _after_ prettier since prettier disables them

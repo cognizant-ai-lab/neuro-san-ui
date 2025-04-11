@@ -11,6 +11,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 /* eslint-enable no-shadow */
 
+const BUILD_TARGETS: Record<string, string[] | null> = {
+    all: null,
+    neuroSan: ["pages/agentNetwork", "components/AgentNetwork"].map((dir) => path.join(__dirname, dir)),
+}
+
 // Extra headers to be returned
 // Gleaned from here: https://nextjs.org/docs/advanced-features/security-headers
 const securityHeaders = [
@@ -36,10 +41,13 @@ const securityHeaders = [
     },
 ]
 
-/**
- * @type {import('next').NextConfig}
- **/
-const nextConfig = {
+const target = process.env.BUILD_TARGET || "all"
+
+if (target && !Object.hasOwn(BUILD_TARGETS, target)) {
+    throw new Error(`Unknown BUILD_TARGET: ${target}`)
+}
+
+const nextConfig: import("next").NextConfig = {
     typescript: {
         // Cause build to fail on Typescript transpilation errors
         ignoreBuildErrors: false,
@@ -76,6 +84,9 @@ const nextConfig = {
 
     poweredByHeader: false,
 
+    // Disable dev tools icon
+    devIndicators: false,
+
     async headers() {
         return [
             {
@@ -103,13 +114,6 @@ const nextConfig = {
         "rc-util",
         "zrender",
     ],
-
-    compiler: {
-        // Prevent errors like "webpack Warning: Prop `className` did not match. Server: ..."
-        // See: https://nextjs.org/docs/architecture/nextjs-compiler#styled-components
-        // ssr and displayName are configured by default
-        styledComponents: true,
-    },
 }
 
 // Seems to need to be exported for NextJS to pick it up
