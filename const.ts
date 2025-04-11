@@ -9,6 +9,8 @@ export const GENERIC_LOGO: string = "Autopilot"
 // Build version (passed in from build system)
 export const UNILEAF_VERSION: string = publicRuntimeConfig.unileafVersion
 
+export const BUILD_TARGET: string = publicRuntimeConfig.buildTarget
+
 export const ESPResultverbs = ["max", "min", "mean"]
 
 // Maximum allowed categorical values before we prompt a user to add a category reducer node.
