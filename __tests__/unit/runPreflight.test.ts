@@ -1,7 +1,7 @@
+import {NotificationType, sendNotification} from "../../components/Common/notification"
 import {FlowQueries} from "../../components/Flow/flowqueries"
 import {NodeType} from "../../components/Flow/nodes/types"
 import {checkValidity} from "../../components/Run/runPreflight"
-import {NotificationType, sendNotification} from "../../components/Common/notification"
 import conoxFlow from "../fixtures/conoxFlow.json"
 
 jest.mock("../../components/Common/notification")
