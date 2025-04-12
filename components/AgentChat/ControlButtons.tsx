@@ -1,7 +1,7 @@
 import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
 import {styled} from "@mui/material"
 
-import {LlmChatButton} from "../internal/LlmChatButton"
+import {LlmChatButton} from "./LlmChatButton"
 
 // #region: Types
 interface ControlButtonsProps {

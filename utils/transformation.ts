@@ -1,4 +1,4 @@
-import {NodeType} from "../components/internal/flow/nodes/types"
+import {NodeType} from "../components/Flow/nodes/types"
 // Miscellaneous object transformation utilities
 
 // Removes the first instance of "value" from array"arr", if found, and returns the modified

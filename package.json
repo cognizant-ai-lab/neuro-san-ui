@@ -10,7 +10,7 @@
         "lint-rules": "npx eslint --print-config jest.config.ts",
         "build": "next build",
         "start": "next start",
-        "unit_test": "jest '__tests__/component' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts",
+        "unit_test": "jest '__tests__/components' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts",
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
         "check-format": "prettier --check .",

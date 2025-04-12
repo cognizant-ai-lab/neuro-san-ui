@@ -47,10 +47,10 @@ import {ConnectivityInfo, ConnectivityResponse, FunctionResponse} from "../../ge
 import {ChatContext, ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
-import {LlmChatOptionsButton} from "../internal/LlmChatOptionsButton"
-import {MUIAccordion, MUIAccordionProps} from "../MUIAccordion"
-import {MUIAlert} from "../MUIAlert"
-import {NotificationType, sendNotification} from "../notification"
+import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
+import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
+import {MUIAlert} from "../Common/MUIAlert"
+import {NotificationType, sendNotification} from "../Common/notification"
 
 // #region: Styled Components
 

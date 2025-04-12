@@ -5,7 +5,7 @@ import Link from "next/link"
 import {useRouter} from "next/router"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
-import {ConfirmationModal} from "../components/confirmationModal"
+import {ConfirmationModal} from "../components/Common/confirmationModal"
 import {CONTACT_US_CONFIRMATION_DIALOG_TEXT, CONTACT_US_CONFIRMATION_DIALOG_TITLE, GENERIC_LOGO, LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"

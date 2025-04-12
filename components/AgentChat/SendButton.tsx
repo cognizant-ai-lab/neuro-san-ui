@@ -1,6 +1,6 @@
 import SendIcon from "@mui/icons-material/Send"
 
-import {LlmChatButton} from "../internal/LlmChatButton"
+import {LlmChatButton} from "./LlmChatButton"
 
 // #region: Types
 interface SendButtonProps {

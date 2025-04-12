@@ -1,5 +1,5 @@
-import {ConfigurableNodeState} from "../../components/internal/flow/nodes/generic/types"
-import {addDisabledPropertyToOutcomes, getSelectedDataSource} from "../../components/internal/flow/nodes/utils"
+import {ConfigurableNodeState} from "../../components/Flow/nodes/generic/types"
+import {addDisabledPropertyToOutcomes, getSelectedDataSource} from "../../components/Flow/nodes/utils"
 import {DataTagField} from "../../generated/metadata"
 import {TaggedDataInfo} from "../../pages/projects/[projectID]/experiments/new"
 

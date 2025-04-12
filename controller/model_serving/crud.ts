@@ -1,8 +1,8 @@
 import debugModule from "debug"
 
 import {ModelResponse, RunModels} from "./types"
-import {FlowQueries} from "../../components/internal/flow/flowqueries"
-import {NodeType} from "../../components/internal/flow/nodes/types"
+import {FlowQueries} from "../../components/Flow/flowqueries"
+import {NodeType} from "../../components/Flow/nodes/types"
 import {DataField} from "../../generated/csv_data_description"
 import {
     DeployModelsRequest,

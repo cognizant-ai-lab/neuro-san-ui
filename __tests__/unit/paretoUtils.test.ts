@@ -1,6 +1,6 @@
 // Jest test for pareto utils
 
-import {calculateMinMax, niceNum} from "../../components/pareto/utils"
+import {calculateMinMax, niceNum} from "../../components/Run/Pareto/utils"
 
 describe("Pareto utils", () => {
     describe("calculateMinMax", () => {
