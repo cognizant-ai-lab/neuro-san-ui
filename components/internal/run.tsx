@@ -42,6 +42,7 @@ import NewBar from "../newbar"
 import {NotificationType, sendNotification} from "../notification"
 import {PageLoader} from "../pageLoader"
 import {MultiPareto} from "../pareto/multi_pareto"
+import {StyledMarkdownContainer} from "../../styles/StyledMarkdownContainer"
 
 interface TabPanelProps {
     id: string
@@ -744,7 +745,7 @@ export default function RunPage(props: RunProps): ReactElement {
                             Accessing LLM...
                         </>
                     ) : (
-                        <div id="insights-inner-div">
+                        <StyledMarkdownContainer id="insights-inner-div">
                             <h1 id="insights-h1">Insights</h1>
                             <h2 id="project-name">{project.name}</h2>
                             {project.description}
@@ -754,7 +755,7 @@ export default function RunPage(props: RunProps): ReactElement {
                             >
                                 {insights}
                             </ReactMarkdown>
-                        </div>
+                        </StyledMarkdownContainer>
                     )}
                 </div>
             </CustomTabPanel>
