@@ -12,6 +12,7 @@ import {ReactElement, MouseEvent as ReactMouseEvent, useState} from "react"
 
 import {ConfirmationModal} from "./confirmationModal"
 import {
+    BUILD_TARGET,
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     DEFAULT_USER_IMAGE,
@@ -146,7 +147,7 @@ function Navbar(props: NavbarProps): ReactElement {
                     id="build-text"
                     sx={{...MENU_ITEM_TEXT_PROPS}}
                 >
-                    Build: <strong id="build-strong">{UNILEAF_VERSION ?? "Unknown"}</strong>
+                    Build: <strong id="build-strong">{`${UNILEAF_VERSION} (${BUILD_TARGET})`}</strong>
                 </Typography>
             </Grid>
 
@@ -159,6 +160,8 @@ function Navbar(props: NavbarProps): ReactElement {
                     id="help-toggle"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
+                        display: "flex",
+                        alignItems: "center",
                     }}
                     onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
                         setHelpMenuAnchorEl(event.currentTarget)
@@ -177,42 +180,49 @@ function Navbar(props: NavbarProps): ReactElement {
                     open={helpMenuOpen}
                     onClose={handleCloseHelpMenu}
                 >
-                    <MenuItem
-                        id="user-guide"
-                        component="a"
-                        href="/userguide"
-                        target="_blank"
-                        sx={{...DISABLE_OUTLINE_PROPS}}
-                    >
-                        User guide
-                    </MenuItem>
-                    <MenuItem
-                        id="neuro-ai-for-clients"
-                        component="a"
-                        href="https://youtu.be/oxiu_oaTMSg"
-                        target="_blank"
-                    >
-                        For Clients (Video)
-                    </MenuItem>
-                    <MenuItem
-                        id="neuro-ai-use-case"
-                        component="a"
-                        href="https://youtu.be/KkmRtmDudMk"
-                        target="_blank"
-                    >
-                        Use Case (Video)
-                    </MenuItem>
-                    <MenuItem
-                        id="neuro-ai-concepts"
-                        component="a"
-                        href="https://youtu.be/_8g9Zfj08T8"
-                        target="_blank"
-                    >
-                        Concepts (Video)
-                    </MenuItem>
+                    {BUILD_TARGET === "all" && [
+                        <MenuItem
+                            id="user-guide"
+                            key="user-guide"
+                            component="a"
+                            href="/userguide"
+                            target="_blank"
+                            sx={{...DISABLE_OUTLINE_PROPS}}
+                        >
+                            User guide
+                        </MenuItem>,
+                        <MenuItem
+                            id="neuro-ai-for-clients"
+                            key="neuro-ai-for-clients"
+                            component="a"
+                            href="https://youtu.be/oxiu_oaTMSg"
+                            target="_blank"
+                        >
+                            For Clients (Video)
+                        </MenuItem>,
+                        <MenuItem
+                            id="neuro-ai-use-case"
+                            key="neuro-ai-use-case"
+                            component="a"
+                            href="https://youtu.be/KkmRtmDudMk"
+                            target="_blank"
+                        >
+                            Use Case (Video)
+                        </MenuItem>,
+                        <MenuItem
+                            id="neuro-ai-concepts"
+                            key="neuro-ai-concepts"
+                            component="a"
+                            href="https://youtu.be/_8g9Zfj08T8"
+                            target="_blank"
+                        >
+                            Concepts (Video)
+                        </MenuItem>,
+                    ]}
                     <MenuItem
                         href={null}
                         id="contact-us-help"
+                        key="contact-us-help"
                         onClick={() => setEmailDialogOpen(true)}
                     >
                         Contact Us

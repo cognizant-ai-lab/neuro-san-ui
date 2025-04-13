@@ -92,6 +92,7 @@ Object.defineProperties(global.HTMLElement.prototype, {
 jest.mock("next/config", () => () => ({
     publicRuntimeConfig: {
         enableAuthentication: false,
+        buildTarget: "all",
     },
 }))
 

@@ -11,11 +11,6 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 /* eslint-enable no-shadow */
 
-const BUILD_TARGETS: Record<string, string[] | null> = {
-    all: null,
-    neuroSan: ["pages/agentNetwork", "components/AgentNetwork"].map((dir) => path.join(__dirname, dir)),
-}
-
 // Extra headers to be returned
 // Gleaned from here: https://nextjs.org/docs/advanced-features/security-headers
 const securityHeaders = [
@@ -41,12 +36,6 @@ const securityHeaders = [
     },
 ]
 
-const target = process.env.BUILD_TARGET || "all"
-
-if (target && !Object.hasOwn(BUILD_TARGETS, target)) {
-    throw new Error(`Unknown BUILD_TARGET: ${target}`)
-}
-
 const nextConfig: import("next").NextConfig = {
     typescript: {
         // Cause build to fail on Typescript transpilation errors
@@ -61,8 +50,8 @@ const nextConfig: import("next").NextConfig = {
     },
 
     publicRuntimeConfig: {
-        unileafVersion: process.env.UNILEAF_VERSION,
-        buildTarget: process.env.BUILD_TARGET,
+        unileafVersion: process.env.UNILEAF_VERSION || "unknown",
+        buildTarget: process.env.BUILD_TARGET || "all",
     },
 
     output: "standalone",
@@ -102,19 +91,7 @@ const nextConfig: import("next").NextConfig = {
         includePaths: [path.join(__dirname, "styles")],
     },
 
-    transpilePackages: [
-        "@ant-design/pro-editor",
-        "@ant-design/icons",
-        "@ant-design/icons-svg",
-        "echarts",
-        "echarts-gl",
-        "rc-pagination",
-        "rc-picker",
-        "rc-table",
-        "rc-tree",
-        "rc-util",
-        "zrender",
-    ],
+    transpilePackages: ["echarts", "echarts-gl", "zrender"],
 }
 
 // Seems to need to be exported for NextJS to pick it up

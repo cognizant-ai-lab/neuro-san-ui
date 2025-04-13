@@ -6,7 +6,13 @@ import {useRouter} from "next/router"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "../components/Common/confirmationModal"
-import {BUILD_TARGET,CONTACT_US_CONFIRMATION_DIALOG_TEXT, CONTACT_US_CONFIRMATION_DIALOG_TITLE, GENERIC_LOGO, LOGO} from "../const"
+import {
+    BUILD_TARGET,
+    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
+    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
+    GENERIC_LOGO,
+    LOGO,
+} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"
 import {getTitleBase} from "../utils/title"

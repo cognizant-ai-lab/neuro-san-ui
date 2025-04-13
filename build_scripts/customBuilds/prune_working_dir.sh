@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # This script removes files from the working directory in preparation for a custom Docker build.
-
+# To run it, make sure your working dir is clean (because it wants to delete directories) and set the
+# BUILD_TARGET environment variable to the name of the build target you want to use.
 
 # See https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html for what these do
 set -o errexit
@@ -17,14 +18,6 @@ check_clean_working_dir() {
   fi
 }
 
-check_env_var() {
-  # if BUILD_TARGET is not set, exit with an error
-  if [ -z "${BUILD_TARGET:-}" ]; then
-    echo "Error: BUILD_TARGET environment variable must be set."
-    exit 2
-  fi
-}
-
 check_build_target() {
   local build_target="$1"
   
@@ -37,14 +30,38 @@ check_build_target() {
 
 prune_files() {
   local build_target="$1"
-#  xargs -d '\n' -I {} rm -rf "{}" < pruneLists/${build_target.txt}
+  local file="build_scripts/customBuilds/pruneLists/${build_target}.txt"
+  
   echo "Pruning files for build target: ${build_target}"
+  
+  while IFS= read -r path || [[ -n "$path" ]]; do
+    # Skip empty lines
+    [[ -z "$path" ]] && continue
+  
+    # Skip lines starting with #
+    [[ "$path" =~ ^# ]] && continue
+    
+    # Skip dangerous path(s)
+    if [[ "$path" =~ ^/ ]]; then
+      echo "Skipping: Dangerous path -> $full_path"
+      continue
+    fi
+    
+    # Resolve absolute path
+    full_path=$(realpath -m "$path" 2>/dev/null)
+      
+    echo "Deleting: $full_path"
+    #  rm -rf -- "$full_path"
+  done < "$file"
+    
 }
 
 # Main entry point of the script
 main() {
+  # Get build target from env var or default to "all"
+  BUILD_TARGET="${BUILD_TARGET:-all}"
+  
   check_clean_working_dir
-  check_env_var
   check_build_target "${BUILD_TARGET}"
   prune_files "${BUILD_TARGET}"
 }
