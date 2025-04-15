@@ -14,6 +14,7 @@ import jestDom from "eslint-plugin-jest-dom"
 import eslintPluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
 import testingLibrary from "eslint-plugin-testing-library"
+import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 import path from "node:path"
 import {fileURLToPath} from "node:url"
@@ -27,6 +28,7 @@ const compat = new FlatCompat({
 })
 
 const config = [
+    eslintPluginUnicorn.configs.all,
     {
         settings: {
             react: {
@@ -446,6 +448,61 @@ const config = [
             "require-await": "off",
             "sort-keys": "off",
             "spaced-comment": "off",
+            "unicorn/consistent-existence-index-check": "off",
+            "unicorn/escape-case": "off",
+            "unicorn/no-await-expression-member": "off",
+            "unicorn/no-for-loop": "off",
+            "unicorn/no-lonely-if": "off",
+            "unicorn/no-static-only-class": "off",
+            "unicorn/no-unused-properties": "off",
+            "unicorn/no-useless-length-check": "off",
+            "unicorn/prefer-array-flat": "off",
+            "unicorn/prefer-array-some": "off",
+            "unicorn/prefer-blob-reading-methods": "off",
+            "unicorn/prefer-code-point": "off",
+            "unicorn/prefer-dom-node-append": "off",
+            "unicorn/prefer-dom-node-dataset": "off",
+            "unicorn/prefer-dom-node-remove": "off",
+            "unicorn/prefer-math-min-max": "off",
+            "unicorn/prefer-negative-index": "off",
+            "unicorn/prefer-top-level-await": "off",
+            "unicorn/text-encoding-identifier-case": "off",
+            "unicorn/no-object-as-default-parameter": "off",
+            "unicorn/prefer-add-event-listener": "off",
+            "unicorn/prefer-includes": "off",
+            "unicorn/new-for-builtins": "off",
+            "unicorn/no-console-spaces": "off",
+            "unicorn/no-instanceof-builtins": "off",
+            "unicorn/prefer-module": "off",
+            "unicorn/prefer-structured-clone": "off",
+            "unicorn/prefer-set-has": "off",
+            "unicorn/prefer-string-raw": "off",
+            "unicorn/no-useless-undefined": "off",
+            "unicorn/prefer-node-protocol": "off",
+            "unicorn/prefer-string-slice": "off",
+            "unicorn/no-named-default": "off",
+            "unicorn/no-array-reduce": "off",
+            "unicorn/no-useless-switch-case": "off",
+            "unicorn/prefer-at": "off",
+            "unicorn/explicit-length-check": "off",
+            "unicorn/prefer-string-replace-all": "off",
+            "unicorn/consistent-destructuring": "off",
+            "unicorn/numeric-separators-style": "off",
+            "unicorn/prefer-query-selector": "off",
+            "unicorn/catch-error-name": "off",
+            "unicorn/prefer-ternary": "off",
+            "unicorn/consistent-function-scoping": "off",
+            "unicorn/no-negated-condition": "off",
+            "unicorn/prefer-spread": "off",
+            "unicorn/no-zero-fractions": "off",
+            "unicorn/prefer-number-properties": "off",
+            "unicorn/prefer-global-this": "off",
+            "unicorn/switch-case-braces": "off",
+            "unicorn/no-array-for-each": "off",
+            "unicorn/no-keyword-prefix": "off",
+            "unicorn/filename-case": "off",
+            "unicorn/no-null": "off",
+            "unicorn/prevent-abbreviations": "off",
         },
     },
     // overrides
