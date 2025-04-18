@@ -69,7 +69,7 @@ const LaunchButton = styled("div")({
 })
 
 const HeaderLineFive = styled("h5")({
-    color: "var(--bs-white) !important",
+    color: "var(--bs-white)",
     fontWeight: "bold",
 })
 
