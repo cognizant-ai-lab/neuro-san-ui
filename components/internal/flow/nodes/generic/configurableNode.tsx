@@ -237,9 +237,10 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                 btnContent: (
                                     <GrSettingsOption
                                         id={`${flowPrefix}-show-config-button-settings-option${idExtension}`}
+                                        size={21}
                                     />
                                 ),
-                                btnSxProps: {height: 0, marginTop: "0.25rem"},
+                                btnSxProps: {height: 0, marginTop: "0.5rem"},
                                 id: `${flowPrefix}-show-config-button${idExtension}`,
                             }}
                             popperProps={{
