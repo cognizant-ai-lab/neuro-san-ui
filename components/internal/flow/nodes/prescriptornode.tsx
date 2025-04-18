@@ -1028,7 +1028,12 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         return (
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    btnContent: <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} size={21} />,
+                    btnContent: (
+                        <GrSettingsOption
+                            id={`${flowPrefix}-gr-settings-option`}
+                            size={21}
+                        />
+                    ),
                     btnSxProps: {height: 0, marginTop: "0.25rem"},
                     id: `${flowPrefix}-gr-settings-button`,
                 }}
