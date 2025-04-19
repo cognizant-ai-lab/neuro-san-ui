@@ -7,6 +7,17 @@ import {createTheme} from "@mui/material"
  */
 export const APP_THEME = createTheme({
     components: {
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    "&:hover": {
+                        // TODO: May still want this for some buttons like "Cancel" in the modals,
+                        // but it was causing issues with icons.
+                        backgroundColor: "transparent",
+                    },
+                },
+            },
+        },
         MuiDialog: {
             styleOverrides: {
                 paper: {
@@ -22,6 +33,12 @@ export const APP_THEME = createTheme({
         // Undo MUI's urge to upper case everything
         button: {
             textTransform: "none",
+        },
+
+        h3: {
+            fontSize: "2rem",
+            fontWeight: 400,
+            marginBottom: "0.75rem",
         },
     },
 })

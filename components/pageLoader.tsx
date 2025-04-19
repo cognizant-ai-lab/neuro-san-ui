@@ -1,11 +1,22 @@
-import {CircularProgress} from "@mui/material"
+import {CircularProgress, Typography} from "@mui/material"
 
 export const PageLoader = ({id}) => (
     <div
         id={`${id}__loader`}
-        className="absolute top-50 start-0 right-0 text-center"
+        style={{
+            left: "0",
+            position: "absolute",
+            right: "0",
+            textAlign: "center",
+            top: "50%",
+        }}
     >
-        <h3 id={`${id}-loader__message`}>Loading... Please wait</h3>
+        <Typography
+            id={`${id}-loader__message`}
+            variant="h3"
+        >
+            Loading... Please wait
+        </Typography>
         <CircularProgress
             id={`${id}-loader__spinner`}
             sx={{

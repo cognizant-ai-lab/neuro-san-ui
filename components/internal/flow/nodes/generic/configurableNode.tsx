@@ -1,6 +1,6 @@
-import {Card, CardContent, Collapse, Tab, Tabs} from "@mui/material"
+import DeleteIcon from "@mui/icons-material/Delete"
+import {Button, Card, CardContent, Collapse, Tab, Tabs} from "@mui/material"
 import {Dispatch, FC, MouseEvent as ReactMouseEvent, SetStateAction, useEffect, useState} from "react"
-import {AiFillDelete} from "react-icons/ai"
 import {GrSettingsOption} from "react-icons/gr"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
@@ -90,9 +90,6 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
         readOnlyNode,
     } = data
 
-    // Allows the trash icon to change color when hovered over
-    const [trashHover, setTrashHover] = useState<boolean>(false)
-    const trashColor = trashHover ? "var(--bs-red)" : null
     const [selectedIndex, setSelectedIndex] = useState<number>(0)
     // For showing advanced configuration settings
     const [showAdvanced, setShowAdvanced] = useState<boolean>(false)
@@ -213,12 +210,19 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
             >
                 <CardContent
                     id={`${flowPrefix}-card-2${idExtension}`}
-                    className="flex justify-center content-center"
+                    sx={{
+                        alignContent: "center",
+                        display: "flex",
+                        justifyContent: "center",
+                    }}
                 >
                     <span
                         id={`${flowPrefix}-text${idExtension}`}
-                        className="mr-2 text-xs"
-                        style={{color: "var(--bs-primary)"}}
+                        style={{
+                            color: "var(--bs-primary)",
+                            fontSize: "0.75rem",
+                            marginLeft: "1.5rem",
+                        }}
                     >
                         {NodeTitle}
                     </span>
@@ -230,20 +234,20 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                     >
                         <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                             buttonProps={{
-                                id: `${flowPrefix}-show-config-button${idExtension}`,
-                                className: "mt-1",
-                                style: {height: 0},
                                 btnContent: (
                                     <GrSettingsOption
                                         id={`${flowPrefix}-show-config-button-settings-option${idExtension}`}
+                                        size={21}
                                     />
                                 ),
+                                btnSxProps: {height: 0, marginTop: "0.5rem"},
+                                id: `${flowPrefix}-show-config-button${idExtension}`,
                             }}
                             popperProps={{
                                 id: `${flowPrefix}-show-config-popper${idExtension}`,
-                                className: "rounded-sm shadow-2xl",
                                 style: {
                                     backgroundColor: "var(--bs-white)",
+                                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
                                     paddingBottom: "12px",
                                     overflowY: "scroll",
                                     margin: 0,
@@ -258,11 +262,11 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                             ) : (
                                 <CardContent
                                     id={`${flowPrefix}-config${idExtension}`}
-                                    className="h-45 text-xs"
+                                    sx={{fontSize: "0.75rem", height: "11.25rem"}}
                                 >
                                     <div
                                         id={`${flowPrefix}-basic-settings-div${idExtension}`}
-                                        className="mt-3"
+                                        style={{marginTop: "0.75rem"}}
                                     >
                                         {getInputComponent(
                                             Object.keys(ParameterSet)
@@ -275,7 +279,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                     </div>
                                     <div
                                         id={`${flowPrefix}-advanced-settings-label-div${idExtension}`}
-                                        className="mt-4 mb-2 pl-4"
+                                        style={{marginTop: "1rem", marginBottom: "0.5rem", paddingLeft: "1rem"}}
                                     >
                                         <span id={`${flowPrefix}-advanced-settings-text${idExtension}`}>
                                             <b id={`${flowPrefix}-advanced-settings-label${idExtension}`}>
@@ -284,17 +288,17 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                             (most users should not change these)
                                         </span>
                                     </div>
-                                    <button
+                                    <Button
                                         id={`${flowPrefix}-show-advanced-settings-button${idExtension}`}
                                         onClick={handleShowAdvanced}
-                                        className="pl-4"
+                                        sx={{paddingLeft: "1rem"}}
                                     >
                                         {showAdvanced ? (
                                             <u id={`${flowPrefix}-show-advanced-settings${idExtension}`}>Hide</u>
                                         ) : (
                                             <u id={`${flowPrefix}-hide-advanced-settings${idExtension}`}>Show</u>
                                         )}
-                                    </button>
+                                    </Button>
                                     <Collapse
                                         id={`${flowPrefix}-basic-settings-collapse${idExtension}`}
                                         in={showAdvanced}
@@ -302,7 +306,7 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                     >
                                         <div
                                             id={`${flowPrefix}-basic-settings-div${idExtension}`}
-                                            className="mt-3"
+                                            style={{marginTop: "0.75rem"}}
                                         >
                                             {getInputComponent(
                                                 Object.keys(ParameterSet)
@@ -333,10 +337,13 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                 {!readOnlyNode ? (
                     <div
                         id={`${flowPrefix}-delete-button-div${idExtension}`}
-                        className="px-1 my-1"
-                        style={{position: "absolute", bottom: "0px", right: "1px"}}
+                        style={{
+                            bottom: "0.25rem",
+                            position: "absolute",
+                            right: "-1rem",
+                        }}
                     >
-                        <button
+                        <Button
                             id={`${flowPrefix}-delete-button${idExtension}`}
                             type="button"
                             onClick={(event: ReactMouseEvent<HTMLElement>) => {
@@ -345,14 +352,16 @@ const ConfigurableNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) =
                                 }
                             }}
                         >
-                            <AiFillDelete
+                            <DeleteIcon
                                 id={`${flowPrefix}-delete-button-fill${idExtension}`}
-                                size="15"
-                                color={trashColor}
-                                onMouseEnter={() => setTrashHover(true)}
-                                onMouseLeave={() => setTrashHover(false)}
+                                sx={{
+                                    "&:hover": {
+                                        color: "var(--bs-red)",
+                                    },
+                                    fontSize: "0.9rem",
+                                }}
                             />
-                        </button>
+                        </Button>
                     </div>
                 ) : null}
                 <Handle

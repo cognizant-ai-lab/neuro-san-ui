@@ -1,5 +1,4 @@
 import {styled} from "@mui/material"
-import Badge from "@mui/material/Badge"
 import Box from "@mui/material/Box"
 import NextImage from "next/legacy/image"
 import Link from "next/link"
@@ -14,13 +13,19 @@ import {getTitleBase} from "../utils/title"
 
 // #region: Styled Components
 const OuterContainer = styled("div")({
-    width: "100%",
-    minHeight: "75vh",
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
     overflow: "auto",
+    paddingBottom: "2rem",
+    width: "100%",
 })
 
-const Marginer = styled("div")({
-    margin: "3% 9.375% 6% 9.375%",
+const BodyContent = styled("div")({
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+    margin: "4.5% 9.375% 3% 9.375%",
 })
 
 const Navbar = styled("div")({
@@ -45,9 +50,10 @@ const NavbarMiddleSection = styled("div")({
 })
 
 const HeaderLineOne = styled("h1")({
-    margin: "0",
-    marginTop: "6rem",
     color: "var(--bs-white)",
+    fontWeight: 400,
+    margin: "0",
+    marginTop: "7rem",
 })
 
 const LaunchButton = styled("div")({
@@ -56,10 +62,10 @@ const LaunchButton = styled("div")({
     fontWeight: "bold",
     fontSize: "1.25rem",
     borderRadius: "1000px",
-    padding: "1rem 2rem",
+    padding: "1.25rem 2rem",
     background: "#26efe9",
     textAlign: "center",
-    width: "350px",
+    width: "270px",
 })
 
 const HeaderLineFive = styled("h5")({
@@ -67,10 +73,32 @@ const HeaderLineFive = styled("h5")({
     fontWeight: "bold",
 })
 
+const LinkDivider = styled("div")({
+    border: "1px solid rgb(38 239 233)",
+    marginBottom: "1.2rem",
+    width: "2.4rem",
+})
+
+const MoreLinks = styled("div")({
+    marginTop: "0.1rem",
+})
+
+const SplashLink = styled("a")({
+    color: "rgb(120, 115, 115)",
+    display: "block",
+    marginBottom: "0.37rem",
+    width: "fit-content",
+
+    "&:hover": {
+        color: "var(--bs-white)",
+    },
+})
+
 const NeuroAIDescriptionBox = styled(Box)({
     color: "var(--bs-white)",
     fontSize: "1.5rem",
     fontWeight: "bold",
+    marginTop: "2.25rem",
 })
 // #endregion: Styled Components
 
@@ -123,7 +151,14 @@ export default function Index(): ReactElement {
     }
 
     return (
-        <div id="splash-page__container">
+        <div
+            id="splash-page__container"
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+            }}
+        >
             {emailDialogOpen && (
                 <ConfirmationModal
                     content={CONTACT_US_CONFIRMATION_DIALOG_TEXT}
@@ -139,7 +174,7 @@ export default function Index(): ReactElement {
                 />
             )}
             <OuterContainer id="outer-container">
-                <Marginer id="marginer">
+                <BodyContent id="body-content">
                     <Navbar id="nav-bar">
                         {!isGeneric && (
                             <>
@@ -166,7 +201,7 @@ export default function Index(): ReactElement {
                         <HeaderLineOne id="header-line">
                             <div
                                 id="headline-eyebrow"
-                                className="d-block text-white mb-8"
+                                style={{marginBottom: "2rem"}}
                             >
                                 {isGeneric ? GENERIC_LOGO : LOGO}
                             </div>
@@ -174,7 +209,10 @@ export default function Index(): ReactElement {
                         <NeuroAIDescriptionBox id="neuro-ai-description-box">
                             The AI platform for smarter business decisions.
                         </NeuroAIDescriptionBox>
-                        <div id="neuro-ai-tools-container">
+                        <div
+                            id="neuro-ai-tools-container"
+                            style={{marginTop: "0.25rem"}}
+                        >
                             <Link
                                 id="of-link"
                                 href={`/opportunityFinder?${buildQueryString()}`}
@@ -251,110 +289,98 @@ export default function Index(): ReactElement {
                                         id="neuro-san-button"
                                         style={{position: "relative", ...getButtonStyle(["neuro-san-button"])}}
                                     >
-                                        <Badge
-                                            badgeContent="New"
-                                            color="primary"
-                                            id="multi-agent-accelerator-new-badge"
-                                        >
-                                            Multi-Agent Accelerator
-                                        </Badge>
+                                        Multi-Agent Accelerator
                                     </LaunchButton>
                                 </a>
                             </Link>
                         </div>
                     </div>
-                </Marginer>
+                </BodyContent>
+                <footer
+                    id="footer"
+                    style={{
+                        borderTop: "1px solid rgb(190, 199, 199)",
+                        marginLeft: "2rem",
+                        marginRight: "2rem",
+                    }}
+                >
+                    <div
+                        id="additional-links-container"
+                        style={{
+                            columnGap: "60px",
+                            display: "flex",
+                            marginLeft: "1.5rem",
+                            marginTop: "1.1rem",
+                        }}
+                    >
+                        <MoreLinks id="team-links">
+                            <HeaderLineFive id="additional-links-header">Team</HeaderLineFive>
+                            <LinkDivider id="additional-links-divider" />
+                            <SplashLink
+                                id="learn-more-link"
+                                href="https://www.cognizant.com/us/en/services/ai/ai-lab"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                About
+                            </SplashLink>
+                            <SplashLink
+                                id="contact-us-footer-link"
+                                href={null}
+                                onClick={() => setEmailDialogOpen(true)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Contact Us
+                            </SplashLink>
+                        </MoreLinks>
+                        <MoreLinks id="services-links">
+                            <HeaderLineFive id="additional-links-header">Services</HeaderLineFive>
+                            <LinkDivider id="additional-links-divider" />
+                            <SplashLink
+                                id="ai-innovation-studios-link"
+                                href="https://portal-innovationstudio-apps-prod-we-001.azurewebsites.net/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                AI Innovation Studios
+                            </SplashLink>
+                            <SplashLink
+                                id="neuro-it-ops-link"
+                                href="https://www.cognizant.com/us/en/services/neuro-intelligent-automation/neuro-ai-it-operations"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Neuro IT Ops
+                            </SplashLink>
+                            <SplashLink
+                                id="flowsource-link"
+                                href="https://www.cognizant.com/us/en/services/software-engineering-services/flowsource"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Flowsource
+                            </SplashLink>
+                            <SplashLink
+                                id="skygrade-link"
+                                href="https://www.cognizant.com/us/en/services/cloud-solutions/cognizant-skygrade"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Skygrade
+                            </SplashLink>
+                            <SplashLink
+                                id="cdit-link"
+                                href="https://cditoolkit.cognizant.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Cognizant Data And Intelligence Toolkit
+                            </SplashLink>
+                        </MoreLinks>
+                    </div>
+                </footer>
             </OuterContainer>
-            <footer id="footer">
-                <div id="footer_divider" />
-
-                <div id="additional-links-container">
-                    <div
-                        id="team-links"
-                        className="more-links"
-                    >
-                        <HeaderLineFive id="additional-links-header">Team</HeaderLineFive>
-                        <div
-                            id="additional-links-divider"
-                            className="link-divider"
-                        />
-                        <a
-                            id="learn-more-link"
-                            className="splash-link"
-                            href="https://www.cognizant.com/us/en/services/ai/ai-lab"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            About
-                        </a>
-                        <a
-                            id="contact-us-footer-link"
-                            className="splash-link"
-                            href={null}
-                            onClick={() => setEmailDialogOpen(true)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Contact Us
-                        </a>
-                    </div>
-                    <div
-                        id="services-links"
-                        className="more-links"
-                    >
-                        <HeaderLineFive id="additional-links-header">Services</HeaderLineFive>
-                        <div
-                            id="additional-links-divider"
-                            className="link-divider"
-                        />
-                        <a
-                            id="ai-innovation-studios-link"
-                            className="splash-link"
-                            href="https://portal-innovationstudio-apps-prod-we-001.azurewebsites.net/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            AI Innovation Studios
-                        </a>
-                        <a
-                            id="neuro-it-ops-link"
-                            className="splash-link"
-                            href="https://www.cognizant.com/us/en/services/neuro-intelligent-automation/neuro-ai-it-operations"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Neuro IT Ops
-                        </a>
-                        <a
-                            id="flowsource-link"
-                            className="splash-link"
-                            href="https://www.cognizant.com/us/en/services/software-engineering-services/flowsource"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Flowsource
-                        </a>
-                        <a
-                            id="skygrade-link"
-                            className="splash-link"
-                            href="https://www.cognizant.com/us/en/services/cloud-solutions/cognizant-skygrade"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Skygrade
-                        </a>
-                        <a
-                            id="cdit-link"
-                            className="splash-link"
-                            href="https://cditoolkit.cognizant.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Cognizant Data And Intelligence Toolkit
-                        </a>
-                    </div>
-                </div>
-            </footer>
         </div>
     )
 }

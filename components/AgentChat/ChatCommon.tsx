@@ -862,6 +862,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 id="llm-response-div"
                 sx={{
                     ...divStyle,
+                    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-primary)",
+                    borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flexGrow: 1,
                     height: "100%",
@@ -996,13 +998,12 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
                     ref={chatInputRef}
                     sx={{
+                        border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
+                        borderRadius: "var(--bs-border-radius)",
                         display: "flex",
                         flexGrow: 1,
-                        marginRight: "0.5rem",
-                        borderWidth: "1px",
-                        borderColor: "var(--bs-border-color)",
-                        borderRadius: "0.5rem",
                         fontSize: "smaller",
+                        marginRight: "0.5rem",
                         paddingBottom: "7.5px",
                         paddingTop: "7.5px",
                         paddingLeft: "15px",

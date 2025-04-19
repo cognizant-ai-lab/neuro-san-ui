@@ -28,6 +28,7 @@ import {fetchLlmRules} from "../../controller/rules/rules"
 import {fetchRunArtifact, fetchRuns} from "../../controller/run/fetch"
 import {constructRunMetricsForRunPlot} from "../../controller/run/results"
 import {Artifact, Run, Runs} from "../../controller/run/types"
+import {StyledMarkdownContainer} from "../../styles/StyledMarkdownContainer"
 import {useAuthentication} from "../../utils/authentication"
 import {AuthorizationInfo} from "../../utils/authorization"
 import decode from "../../utils/conversion"
@@ -488,7 +489,33 @@ export default function RunPage(props: RunProps): ReactElement {
         }
     }, [rules])
 
+    const flowDiv = []
+
+    if (run && flow) {
+        flowDiv.push(
+            <div
+                id="run-flow"
+                key="run-flow-div"
+            >
+                {/* 2/6/23 DEF - ReactFlowProvider does not have an id property when compiling */}
+                <ReactFlowProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                >
+                    <Flow
+                        id="flow"
+                        ProjectID={props.ProjectId}
+                        Flow={flow}
+                        SetParentState={setFlow}
+                        ElementsSelectable={false}
+                        idExtension={props.idExtension}
+                        projectPermissions={props.projectPermissions}
+                    />
+                </ReactFlowProvider>
+            </div>
+        )
+    }
+
     const plotDiv = []
+
     if (predictorPlotData && !isLoadingPlotData) {
         const predictors = FlowQueries.getPredictorNodes(flow)
         plotDiv.push(
@@ -528,6 +555,67 @@ export default function RunPage(props: RunProps): ReactElement {
                 PrescriptorNodeToCIDMapUpdater={setNodeToCIDMap}
                 ObjectivesCount={objectivesCount}
             />
+        )
+    }
+
+    function handleTabChange(_event: SyntheticEvent, newTabIndex: number) {
+        setSelectedTab(newTabIndex)
+    }
+
+    function getRulesSection() {
+        return (
+            <Box
+                id="rules-section"
+                sx={{width: "100%"}}
+            >
+                <Tabs
+                    id="rules-tabs"
+                    value={selectedTab}
+                    onChange={handleTabChange}
+                    sx={{
+                        "& .MuiTabs-flexContainer": {
+                            justifyContent: "space-around",
+                            border: "1px solid lightgray",
+                            borderRadius: "4px 4px 0 0",
+                        },
+                        "& .MuiTab-root": {
+                            flex: 1,
+                            textAlign: "center",
+                            marginRight: "2px",
+                        },
+                        "& .Mui-selected": {
+                            borderBottom: "none",
+                        },
+                    }}
+                >
+                    <Tab
+                        id="rules-decoded-tab"
+                        label="Details"
+                    />
+                    <Tab
+                        id="insights-tab"
+                        label="Insights"
+                    />
+                </Tabs>
+                {getDetailsPanel()}
+                {getInsightsPanel()}
+            </Box>
+        )
+    }
+
+    if (rules) {
+        // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
+        // the rules are in to get a decent coloring scheme
+        plotDiv.push(
+            <Box id="rules-div">
+                <NewBar
+                    id="rules-bar"
+                    InstanceId="rules"
+                    Title="Rules"
+                    DisplayNewLink={false}
+                />
+                {getRulesSection()}
+            </Box>
         )
     }
 
@@ -657,7 +745,7 @@ export default function RunPage(props: RunProps): ReactElement {
                             Accessing LLM...
                         </>
                     ) : (
-                        <div id="insights-inner-div">
+                        <StyledMarkdownContainer id="insights-inner-div">
                             <h1 id="insights-h1">Insights</h1>
                             <h2 id="project-name">{project.name}</h2>
                             {project.description}
@@ -667,7 +755,7 @@ export default function RunPage(props: RunProps): ReactElement {
                             >
                                 {insights}
                             </ReactMarkdown>
-                        </div>
+                        </StyledMarkdownContainer>
                     )}
                 </div>
             </CustomTabPanel>
@@ -790,102 +878,13 @@ export default function RunPage(props: RunProps): ReactElement {
         )
     }
 
-    function handleTabChange(_event: SyntheticEvent, newTabIndex: number) {
-        setSelectedTab(newTabIndex)
-    }
-
-    function getRulesSection() {
-        return (
-            <Box
-                id="rules-section"
-                sx={{width: "100%"}}
-            >
-                <Tabs
-                    id="rules-tabs"
-                    value={selectedTab}
-                    onChange={handleTabChange}
-                    sx={{
-                        "& .MuiTabs-flexContainer": {
-                            justifyContent: "space-around",
-                            border: "1px solid lightgray",
-                            borderRadius: "4px 4px 0 0",
-                        },
-                        "& .MuiTab-root": {
-                            flex: 1,
-                            textAlign: "center",
-                            marginRight: "2px",
-                        },
-                        "& .Mui-selected": {
-                            borderBottom: "none",
-                        },
-                    }}
-                >
-                    <Tab
-                        id="rules-decoded-tab"
-                        label="Details"
-                    />
-                    <Tab
-                        id="insights-tab"
-                        label="Insights"
-                    />
-                </Tabs>
-                {getDetailsPanel()}
-                {getInsightsPanel()}
-            </Box>
-        )
-    }
-
-    if (rules) {
-        // Add rules. We use a syntax highlighter to pretty-print the rules and lie about the language
-        // the rules are in to get a decent coloring scheme
-        plotDiv.push(
-            <Box
-                id="rules-div"
-                style={{marginBottom: "600px"}}
-            >
-                <NewBar
-                    id="rules-bar"
-                    InstanceId="rules"
-                    Title="Rules"
-                    DisplayNewLink={false}
-                />
-                {getRulesSection()}
-            </Box>
-        )
-    }
-
-    const flowDiv = []
-
-    if (run && flow) {
-        flowDiv.push(
-            <div
-                id="run-flow"
-                key="run-flow-div"
-            >
-                {/* 2/6/23 DEF - ReactFlowProvider does not have an id property when compiling */}
-                <ReactFlowProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                >
-                    <Flow
-                        id="flow"
-                        ProjectID={props.ProjectId}
-                        Flow={flow}
-                        SetParentState={setFlow}
-                        ElementsSelectable={false}
-                        idExtension={props.idExtension}
-                        projectPermissions={props.projectPermissions}
-                    />
-                </ReactFlowProvider>
-            </div>
-        )
-    }
-
     const propsId = props.id
     return runLoading ? (
         <PageLoader id="run" />
     ) : (
         <div
             id={propsId}
-            className="mr-8 ml-8"
+            style={{marginLeft: "2rem", marginRight: "2rem"}}
         >
             {flowDiv}
 

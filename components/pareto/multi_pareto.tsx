@@ -121,8 +121,7 @@ export function MultiPareto(props: ParetoPlotProps): ReactElement {
                     <div
                         id={`pareto-plot-div-${idx}`}
                         key={`pareto-plot-div-${nodeID}`}
-                        className="pb-28"
-                        style={{height: "600px", width: "100%"}}
+                        style={{height: "600px", paddingBottom: "7rem", width: "100%"}}
                     >
                         {/* Choose type of plot component based on user selection */}
 

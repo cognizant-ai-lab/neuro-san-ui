@@ -1,4 +1,6 @@
-import DeleteOutline from "@mui/icons-material/Delete"
+import AddIcon from "@mui/icons-material/Add"
+import DeleteIcon from "@mui/icons-material/Delete"
+import Button from "@mui/material/Button"
 import Card from "@mui/material/Card"
 import CardContent from "@mui/material/CardContent"
 import CardHeader from "@mui/material/CardHeader"
@@ -16,8 +18,6 @@ import Tabs from "@mui/material/Tabs"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
-import {AiFillDelete} from "react-icons/ai"
-import {BiPlusMedical} from "react-icons/bi"
 import {GrSettingsOption} from "react-icons/gr"
 import {Handle, Position as HandlePosition, NodeProps, Node as RFNode} from "reactflow"
 
@@ -99,10 +99,6 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         })
     }
 
-    // Allows the trash icon to change color when hovered over
-    const [trashHover, setTrashHover] = useState<boolean>(false)
-    const trashColor = trashHover ? "var(--bs-red)" : null
-
     // For delete node modal
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
 
@@ -165,8 +161,14 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         return (
             <div
                 id={metricPrefix}
-                className="p-2 grid grid-cols-2 gap-4 mb-2"
                 key={metric.metric_name}
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: "1rem",
+                    padding: "0.5rem",
+                    marginBottom: "0.5rem",
+                }}
             >
                 <label id={`${metricPrefix}-metric-name`}>{metric.metric_name}: </label>
                 <select
@@ -241,7 +243,7 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     {`Hidden Layer ${idx + 1}`}
                 </Typography>
                 {!readOnlyNode && (
-                    <DeleteOutline
+                    <DeleteIcon
                         id={`${flowPrefix}-hidden-layer-${idx}-delete`}
                         sx={{
                             marginLeft: "0.5rem",
@@ -497,12 +499,20 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
 
     const prescriptorRepresentationPanel = (
         <CardContent
-            className="pl-5 pr-5"
             id={`${flowPrefix}-representation-panel`}
+            style={{
+                paddingLeft: "1.25rem",
+                paddingRight: "1.25rem",
+            }}
         >
             <div
                 id={`${flowPrefix}-representation-div`}
-                className="flex justify-between mb-4 content-center"
+                style={{
+                    alignContent: "center",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "1rem",
+                }}
             >
                 <FormControl
                     id={`${flowPrefix}-representation-form-control`}
@@ -546,13 +556,11 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 {ParentPrescriptorState.LEAF.representation === "NNWeights" && (
                     <div
                         id={`${flowPrefix}-nn-weights-div`}
-                        className="overflow-y-auto h-40"
+                        style={{height: "10rem", overflowY: "auto"}}
                     >
                         {neuralNetworkConfiguration}
                         {!readOnlyNode && (
-                            <button
-                                type="button"
-                                className="float-right"
+                            <Button
                                 id={`${flowPrefix}-nn-weights-button`}
                                 onClick={() => {
                                     const stateCopy = {...ParentPrescriptorState}
@@ -567,9 +575,10 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                                     })
                                     SetParentPrescriptorState(stateCopy)
                                 }}
+                                sx={{float: "right"}}
                             >
-                                <BiPlusMedical id={`${flowPrefix}-nn-weights-button-plus`} />
-                            </button>
+                                <AddIcon id={`${flowPrefix}-nn-weights-button-plus`} />
+                            </Button>
                         )}
                     </div>
                 )}
@@ -586,19 +595,34 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
     const evolutionConfigurationPanel = (
         <CardContent
             id={`${flowPrefix}-evolution-configuration-panel`}
-            className="overflow-y-auto h-40 pl-5 pr-5"
+            sx={{
+                height: "10rem",
+                overflowY: "auto",
+                paddingLeft: "1.25rem",
+                paddingRight: "1.25rem",
+            }}
         >
             <div
                 id={`${flowPrefix}-evolution-configuration`}
-                className="flex flex-col mb-2"
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    marginBottom: "0.5rem",
+                }}
             >
                 <div
                     id={`${flowPrefix}-num-generations`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-num-generations-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Num Generations
                     </label>
@@ -625,11 +649,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-population-size`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-population-size-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Population Size
                     </label>
@@ -656,11 +686,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-num-elites`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-num-elites-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Num Elites
                     </label>
@@ -687,11 +723,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-parent-selection`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-parent-selection-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Parent Selection
                     </label>
@@ -721,11 +763,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-remove-population-percetange`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-remove-population-percentage-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Remove Population %
                     </label>
@@ -752,11 +800,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-mutation`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-mutation-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Mutation Type
                     </label>
@@ -800,11 +854,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-mutation-probability`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-mutation-probability-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Mutation Probability
                     </label>
@@ -831,11 +891,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-mutation-factor`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-mutation-factor-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Mutation Factor
                     </label>
@@ -860,11 +926,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-initialization-distribution`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-initialization-distribution-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Initialization Distribution
                     </label>
@@ -915,11 +987,17 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                 </div>
                 <div
                     id={`${flowPrefix}-initialization-range`}
-                    className="grid grid-cols-2 gap-1 mb-2 justify-items-start d-flex"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        justifyItems: "start",
+                        gap: "0.25rem",
+                        marginBottom: "0.5rem",
+                    }}
                 >
                     <label
                         id={`${flowPrefix}-initialization-range-label`}
-                        className="w-50"
+                        style={{width: "50%"}}
                     >
                         Initialization Range
                     </label>
@@ -950,20 +1028,26 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         return (
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
+                    btnContent: (
+                        <GrSettingsOption
+                            id={`${flowPrefix}-gr-settings-option`}
+                            size={21}
+                        />
+                    ),
+                    btnSxProps: {height: 0, marginTop: "0.25rem"},
                     id: `${flowPrefix}-gr-settings-button`,
-                    style: {height: 0, marginTop: "0.25rem"},
-                    btnContent: <GrSettingsOption id={`${flowPrefix}-gr-settings-option`} />,
                 }}
                 popperProps={{
                     id: `${flowPrefix}-gr-settings-popper`,
-                    className: "rounded-sm shadow-2xl",
                     style: {
-                        paddingBottom: "12px",
-                        overflowY: "scroll",
-                        margin: 0,
                         border: "4px solid var(--bs-border-color)",
                         borderRadius: "0.5rem",
                         backgroundColor: "var(--bs-white)",
+                        // TODO: Update this box shadow
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                        margin: 0,
+                        overflowY: "scroll",
+                        paddingBottom: "12px",
                     },
                 }}
             >
@@ -1004,8 +1088,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
                     btnContent: caoType === DataTagFieldCAOType.CONTEXT ? "C" : "A",
+                    btnSxProps: {height: 0, position: "absolute", ...position, bottom: "1.7rem"},
                     id: `${flowPrefix}-context-button`,
-                    style: {height: 0, position: "absolute", top: "1.25rem", ...position},
                 }}
                 popperProps={{
                     id: `${flowPrefix}-context-popper`,
@@ -1073,10 +1157,13 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         return (
             <div
                 id={`${flowPrefix}-delete-div`}
-                className="px-1 my-1"
-                style={{position: "absolute", bottom: "0px", right: "1px"}}
+                style={{
+                    bottom: "0.25rem",
+                    position: "absolute",
+                    right: "-1rem",
+                }}
             >
-                <button
+                <Button
                     id={`${flowPrefix}-delete-button`}
                     type="button"
                     onClick={(event) => {
@@ -1085,14 +1172,16 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                         }
                     }}
                 >
-                    <AiFillDelete
+                    <DeleteIcon
                         id={`${flowPrefix}-delete-button-fill`}
-                        size="15"
-                        color={trashColor}
-                        onMouseEnter={() => setTrashHover(true)}
-                        onMouseLeave={() => setTrashHover(false)}
+                        sx={{
+                            "&:hover": {
+                                color: "var(--bs-red)",
+                            },
+                            fontSize: "0.9rem",
+                        }}
                     />
-                </button>
+                </Button>
             </div>
         )
     }
@@ -1126,12 +1215,19 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
         return (
             <CardContent
                 id={`${flowPrefix}-card-2`}
-                className="flex justify-center content-center"
+                sx={{
+                    alignContent: "center",
+                    display: "flex",
+                    justifyContent: "center",
+                    paddingTop: "1rem",
+                }}
             >
                 <span
                     id={`${flowPrefix}-text`}
-                    className="mr-2 text-xs"
-                    style={{color: "var(--bs-primary)"}}
+                    style={{
+                        color: "var(--bs-primary)",
+                        fontSize: "0.75rem",
+                    }}
                 >
                     Prescriptor
                 </span>
@@ -1142,8 +1238,8 @@ const PrescriptorNodeComponent: FC<NodeProps<PrescriptorNodeData>> = (props) => 
                     }}
                 >
                     {getConfigPopup()}
-                    {getFieldsPopup(DataTagFieldCAOType.CONTEXT, {left: "-1rem"})}
-                    {getFieldsPopup(DataTagFieldCAOType.ACTION, {right: "-1rem"})}
+                    {getFieldsPopup(DataTagFieldCAOType.CONTEXT, {left: "-2.2rem"})}
+                    {getFieldsPopup(DataTagFieldCAOType.ACTION, {right: "-2.2rem"})}
                 </div>
             </CardContent>
         )

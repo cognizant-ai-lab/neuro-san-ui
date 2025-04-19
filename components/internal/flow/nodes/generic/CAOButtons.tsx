@@ -52,28 +52,35 @@ const CAOButtons = (props) => {
         <>
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    id: `${flowPrefix}-context-button${idExtension}`,
-                    className: "absolute top-2 -left-4",
-                    style: {height: 0},
                     btnContent: "C",
+                    btnSxProps: {
+                        left: "-2.2rem",
+                        height: 0,
+                        position: "absolute",
+                        top: "1rem",
+                    },
+                    id: `${flowPrefix}-context-button${idExtension}`,
                 }}
                 popperProps={{
                     id: `${flowPrefix}-context-popper${idExtension}`,
-                    className: "rounded-sm shadow-2xl",
                     placement: "left",
+                    style: {
+                        borderRadius: "0.5rem",
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                    },
                 }}
             >
                 <Card
                     id={`${flowPrefix}-context-card${idExtension}`}
                     sx={{
-                        overflowY: "auto",
-                        height: "10rem",
                         fontSize: "0.75rem",
+                        height: "10rem",
+                        overflowY: "auto",
                     }}
                 >
                     <span
                         id={`${flowPrefix}-context-text${idExtension}`}
-                        className="mb-2"
+                        style={{marginBottom: "0.5rem"}}
                     >
                         Context
                     </span>
@@ -81,11 +88,16 @@ const CAOButtons = (props) => {
                         <div
                             id={`${flowPrefix}-context-div${idExtension}`}
                             key={element}
-                            className="grid grid-cols-2 gap-4 mb-2"
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(2, 1fr)",
+                                gap: "1rem",
+                                marginBottom: "0.5rem",
+                            }}
                         >
                             <label
                                 id={`${flowPrefix}-context-label-${element}${idExtension}`}
-                                className="capitalize"
+                                style={{textTransform: "capitalize"}}
                             >
                                 {" "}
                                 {element}{" "}
@@ -104,25 +116,36 @@ const CAOButtons = (props) => {
             </NodePopper>
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    id: `${flowPrefix}-actions-button${idExtension}`,
-                    className: "absolute bottom-6 -left-4",
-                    style: {height: 0},
                     btnContent: "A",
+                    btnSxProps: {
+                        bottom: "0.55rem",
+                        height: 0,
+                        left: "-2.2rem",
+                        position: "absolute",
+                    },
+                    id: `${flowPrefix}-actions-button${idExtension}`,
                 }}
                 popperProps={{
                     id: `${flowPrefix}-actions-popper${idExtension}`,
-                    className: "rounded-sm shadow-2xl",
                     placement: "left",
+                    style: {
+                        borderRadius: "0.5rem",
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                    },
                 }}
             >
                 <Card
                     id={`${flowPrefix}-actions-card${idExtension}`}
-                    className="overflow-y-auto h-40 text-xs"
-                    style={{zIndex: ZIndexLayers.LAYER_2}}
+                    sx={{
+                        fontSize: "0.75rem",
+                        height: "10rem",
+                        overflowY: "auto",
+                        zIndex: ZIndexLayers.LAYER_2,
+                    }}
                 >
                     <span
                         id={`${flowPrefix}-actions-text${idExtension}`}
-                        className="mb-2"
+                        style={{marginBottom: "0.5rem"}}
                     >
                         Actions
                     </span>
@@ -130,11 +153,16 @@ const CAOButtons = (props) => {
                         <div
                             id={`${flowPrefix}-actions-div-${element}${idExtension}`}
                             key={element}
-                            className="grid grid-cols-2 gap-4 mb-2"
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(2, 1fr)",
+                                gap: "1rem",
+                                marginBottom: "0.5rem",
+                            }}
                         >
                             <label
                                 id={`${flowPrefix}-actions-label-${element}${idExtension}`}
-                                className="capitalize"
+                                style={{textTransform: "capitalize"}}
                             >
                                 {" "}
                                 {element}{" "}
@@ -153,24 +181,35 @@ const CAOButtons = (props) => {
             </NodePopper>
             <NodePopper // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 buttonProps={{
-                    id: `${flowPrefix}-outcomes-button${idExtension}`,
-                    className: "absolute top-5 -right-4",
-                    style: {height: 0},
                     btnContent: "O",
+                    btnSxProps: {
+                        height: 0,
+                        position: "absolute",
+                        right: "-2.1rem",
+                        top: "1.7rem",
+                    },
+                    id: `${flowPrefix}-outcomes-button${idExtension}`,
                 }}
                 popperProps={{
                     id: `${flowPrefix}-outcomes-popper${idExtension}`,
-                    className: "rounded-sm shadow-2xl",
                     placement: "right",
+                    style: {
+                        borderRadius: "0.5rem",
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                    },
                 }}
             >
                 <Card
                     id={`${flowPrefix}-outcomes-card${idExtension}`}
-                    className="overflow-y-auto h-40 text-xs"
+                    sx={{
+                        fontSize: "0.75rem",
+                        height: "10rem",
+                        overflowY: "auto",
+                    }}
                 >
                     <span
                         id={`${flowPrefix}-outcomes-text${idExtension}`}
-                        className="mb-2"
+                        style={{marginBottom: "0.5rem"}}
                     >
                         Outcomes
                     </span>
@@ -188,13 +227,18 @@ const CAOButtons = (props) => {
                             >
                                 <div
                                     id={`${flowPrefix}-outcomes-div-${element}${idExtension}`}
-                                    className="grid grid-cols-2 gap-4 mb-2"
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "repeat(2, 1fr)",
+                                        gap: "1rem",
+                                        marginBottom: "0.5rem",
+                                    }}
                                 >
                                     <label
                                         id={`${flowPrefix}-outcomes-label-${element}${idExtension}`}
-                                        className="capitalize"
                                         style={{
                                             ...(dataOutcomes[element].disabled && {opacity: "50%"}),
+                                            textTransform: "capitalize",
                                         }}
                                     >
                                         {" "}

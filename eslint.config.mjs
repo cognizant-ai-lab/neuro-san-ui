@@ -270,7 +270,7 @@ const config = [
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["__tests__/**", "jest*.*", "tailwind.config.js", "eslint.config.mjs"],
+                    devDependencies: ["__tests__/**", "jest*.*", "eslint.config.mjs"],
                 },
             ],
 

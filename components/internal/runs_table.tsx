@@ -4,7 +4,7 @@
 
 import {DeleteOutline} from "@mui/icons-material"
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline"
-import {Box, styled, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography} from "@mui/material"
+import {Box, Button, styled, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid2"
 import {
@@ -282,26 +282,25 @@ export default function RunsTable(props: RunTableProps): ReactElement {
             // Run errored out. Add link for downloading error logs.
             // TODO: someday allow user to download logs even if successful?
             return (
-                <div
-                    id="run-status"
-                    style={{
-                        display: "flex",
-                    }}
-                >
+                <div id="run-status">
                     {phase}
-                    <button
+                    <Button
                         id="download-file"
-                        style={{
-                            color: "var(--bs-primary)",
-                            textDecoration: "underline",
-                            marginLeft: "3px",
-                        }}
                         onClick={() => {
                             downloadFile(run.eval_error, "logs.txt")
                         }}
+                        sx={{
+                            color: "var(--bs-primary)",
+                            fontSize: "0.75rem",
+                            justifyContent: "start",
+                            marginLeft: "3px",
+                            marginBottom: "3px",
+                            padding: 0,
+                            textDecoration: "underline",
+                        }}
                     >
                         (Logs)
-                    </button>
+                    </Button>
                 </div>
             )
         }
@@ -378,6 +377,8 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 id={`run-buttons-${idx}`}
                 style={{
                     cursor: run.completed ? "pointer" : "not-allowed",
+                    display: "flex",
+                    justifyContent: "center",
                 }}
             >
                 <Grid
@@ -402,26 +403,26 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                             title={runTitle}
                         >
                             <span id="run_button_span">
-                                <button
-                                    id={`run-button-${runId}`}
-                                    style={{
-                                        color: run.completed ? "var(--bs-primary)" : "gray",
-                                        pointerEvents: run.completed ? "auto" : "none",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        overflow: "hidden",
-                                        width: "100%",
-                                        padding: 0,
-                                    }}
+                                <Button
                                     disabled={!run.completed}
+                                    id={`run-button-${runId}`}
                                     onClick={() => {
                                         props.setSelectedRunID(run.id)
                                         props.setSelectedRunName(runTitle)
                                         props.setRunDrawer(true)
                                     }}
+                                    sx={{
+                                        color: run.completed ? "var(--bs-primary)" : "gray",
+                                        pointerEvents: run.completed ? "auto" : "none",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        padding: 0,
+                                        fontSize: "0.8rem",
+                                    }}
                                 >
                                     {runTitle}
-                                </button>
+                                </Button>
                             </span>
                         </Tooltip>
                     </Grid>
@@ -679,9 +680,9 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 id={`delete-training-run-${runId}-tooltip`}
                 title="Delete Run"
             >
-                <button
-                    id={`delete-training-run-${runId}-button`}
+                <Button
                     disabled={deleteRunModalOpen}
+                    id={`delete-training-run-${runId}-button`}
                     onClick={(event: ReactMouseEvent<HTMLElement>) => handleDelete(event, idx, run)}
                 >
                     <DeleteOutline
@@ -693,7 +694,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         }}
                         fontSize="small"
                     />
-                </button>
+                </Button>
             </Tooltip>
         )
     }
@@ -710,9 +711,9 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                 id={`terminate-training-run-${runId}-tooltip`}
                 title="Terminate Run"
             >
-                <button
-                    id={`terminate-training-run-${runId}-button`}
+                <Button
                     disabled={run.completed || terminateRunModalOpen}
+                    id={`terminate-training-run-${runId}-button`}
                     onClick={(event: ReactMouseEvent<HTMLElement>) => handleTerminateRun(event, run, idx)}
                 >
                     <RemoveCircleOutlineIcon
@@ -724,7 +725,7 @@ export default function RunsTable(props: RunTableProps): ReactElement {
                         }}
                         fontSize="small"
                     />
-                </button>
+                </Button>
             </Tooltip>
         )
     }

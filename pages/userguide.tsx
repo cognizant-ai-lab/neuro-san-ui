@@ -4,6 +4,8 @@ import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 import remarkToc from "remark-toc"
 
+import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
+
 // Path to user guide Markdown doc on the server
 const USER_GUIDE_PATH = "user_guide.md"
 
@@ -41,16 +43,15 @@ export default function UserGuide() {
     }, [])
 
     return (
-        <>
+        <StyledMarkdownContainer id="user-guide-container">
             {/* 2/6/23 DEF - ReactMarkdown does not have an id property when compiling */}
             <ReactMarkdown // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
-                className="prose"
             >
                 {userGuide}
             </ReactMarkdown>
-        </>
+        </StyledMarkdownContainer>
     )
 }
 

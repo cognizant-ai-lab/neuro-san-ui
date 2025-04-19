@@ -32,8 +32,6 @@ const config: Config.InitialOptions = {
         "!**/generated/**",
         "!jest*.ts",
         "!next-env.d.ts",
-        "!postcss.config.js",
-        "!tailwind.config.js",
     ],
     coverageReporters: ["text-summary"],
 

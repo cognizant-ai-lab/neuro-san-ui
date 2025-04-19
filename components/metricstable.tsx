@@ -100,8 +100,8 @@ export default function MetricsTable(props: MetricstableProps) {
         predictorRenders.push(
             <div id={`${predictorMetricsId}-table`}>
                 <h4
-                    className="mt-4 mb-4"
                     id={predictorMetricsId}
+                    style={{marginTop: "1rem", marginBottom: "1rem"}}
                 >
                     Predictor with Objectives: {predictorRunData[nodeID].objectives}
                 </h4>
@@ -126,12 +126,12 @@ export default function MetricsTable(props: MetricstableProps) {
                                     <b id={`${predictorMetricsId}-rio-header`}>Uncertainty Model Mean</b>
                                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                         title="Mean corrected prediction from the uncertainty model"
-                                        className="opacity-75"
                                         placement="top-end"
+                                        style={{opacity: 0.75}}
                                     >
                                         <div
                                             id={`${predictorMetricsId}-rio-tooltip-info-sign-div`}
-                                            className="ps-1"
+                                            style={{paddingInlineStart: "0.25rem"}}
                                         >
                                             <InfoIcon
                                                 id={`${predictorMetricsId}-tooltip-info-sign-icon`}
@@ -155,12 +155,12 @@ export default function MetricsTable(props: MetricstableProps) {
                                     <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                         /* eslint-disable-next-line max-len */
                                         title="Improvement of uncertainty model enhanced predictor metric over original predictor metric, as a percentage"
-                                        className="opacity-75"
                                         placement="top-end"
+                                        style={{opacity: 0.75}}
                                     >
                                         <div
                                             id={`${predictorMetricsId}-rio-percent-tooltip-info-sign-div`}
-                                            className="ps-1"
+                                            style={{paddingInlineStart: "0.25rem"}}
                                         >
                                             <InfoIcon
                                                 id={`${predictorMetricsId}-tooltip-info-sign-icon`}

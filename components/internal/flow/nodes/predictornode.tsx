@@ -201,7 +201,15 @@ const PredictorNodeComponent: FC<NodeProps<ConfigurableNodeData>> = (props) => {
 
     // Create the selection Panel
     const predictorSelectionPanel = (
-        <CardContent id={`${flowPrefix}-predictor-selection-panel${idExtension}`}>
+        <CardContent
+            id={`${flowPrefix}-predictor-selection-panel${idExtension}`}
+            sx={{
+                alignContent: "center",
+                display: "flex",
+                justifyContent: "center",
+                paddingTop: "1rem",
+            }}
+        >
             <Container
                 id={`${flowPrefix}-config-container${idExtension}`}
                 style={{fontSize: "smaller"}}

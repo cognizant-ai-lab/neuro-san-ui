@@ -1,4 +1,6 @@
+import BorderColorIcon from "@mui/icons-material/BorderColor"
 import DeleteOutline from "@mui/icons-material/DeleteOutline"
+import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Grid from "@mui/material/Grid2"
@@ -12,7 +14,7 @@ import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd"
-import {AiFillEdit, AiFillWarning} from "react-icons/ai"
+import {AiFillWarning} from "react-icons/ai"
 
 import {reasonToHumanReadable} from "../../../controller/datasources/conversion"
 import {DataTagFieldCAOType, DataTagFieldDataType, DataTagFieldValued, Profile} from "../../../generated/metadata"
@@ -21,6 +23,29 @@ import {ChatBot} from "../../ChatBot/ChatBot"
 import {ConfirmationModal} from "../../confirmationModal"
 import {MUIAlert} from "../../MUIAlert"
 
+// #region: Styled Components
+const TableCell = styled("td")({
+    color: "var(--bs-primary)",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    paddingBottom: "0.75rem",
+    paddingTop: "0.75rem",
+    textAlign: "center",
+})
+
+const RejectionSpan = styled("span")({
+    borderRadius: "var(--bs-border-radius)",
+    display: "flex",
+    flexWrap: "nowrap",
+    fontSize: "0.75rem",
+    fontWeight: 600,
+    lineHeight: "1.25rem",
+    opacity: 0.5,
+    paddingLeft: "0.5rem",
+    paddingRight: "0.5rem",
+    whiteSpace: "nowrap",
+})
+// #endregion: Styled Components
 interface ProfileTableProps {
     id: string
     Profile: Profile
@@ -69,7 +94,12 @@ export default function ProfileTable(props: ProfileTableProps) {
                 id={header}
                 key={header}
                 scope="col"
-                className="py-3 text-center text-xs font-medium text-gray-500"
+                style={{
+                    fontSize: "0.75rem",
+                    paddingTop: "0.75rem",
+                    paddingBottom: "0.75rem",
+                    textAlign: "center",
+                }}
             >
                 {header}
             </th>
@@ -83,8 +113,6 @@ export default function ProfileTable(props: ProfileTableProps) {
         OUTCOME: "#b4e5af",
         REJECTED: "#ebbfc3",
     }
-
-    const tableCellClassName = "py-3 text-center text-xs font-medium text-gray-900"
 
     // Fields are in arbitrary order as returned from DataProfiler (gRPC runtime jumbles the keys since maps are
     // defined as not having a key order)
@@ -103,31 +131,31 @@ export default function ProfileTable(props: ProfileTableProps) {
         <tr
             id={field}
             key={field}
-            style={{backgroundColor: caoColorCoding[fields[field].espType], height: "1rem", padding: 0, margin: 0}}
+            style={{
+                backgroundColor: caoColorCoding[fields[field].espType],
+                borderBottom: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-dark)",
+                height: "1rem",
+                margin: 0,
+                padding: 0,
+            }}
         >
             {/*Field name*/}
-            <td
-                id={`${field}-name`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-name`}>
                 <span id={`${field}-name-label`}>{field}</span>
-            </td>
+            </TableCell>
 
             {/*CAO type*/}
-            <td
-                id={`${field}-esp-type`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-esp-type`}>
                 <select
                     id={`${field}-esp-type-select`}
                     name={`${field}-espType`}
-                    value={fields[field].espType}
-                    className="w-18"
                     onChange={(event) => {
                         const profileCopy = {...profile}
                         profileCopy.dataTag.fields[field].espType = DataTagFieldCAOType[event.target.value]
                         setProfile(profileCopy)
                     }}
+                    style={{width: "4.5rem"}}
+                    value={fields[field].espType}
                 >
                     <option
                         id={`${field}-esp-type-context`}
@@ -151,13 +179,10 @@ export default function ProfileTable(props: ProfileTableProps) {
                         OUTCOME
                     </option>
                 </select>
-            </td>
+            </TableCell>
 
             {/*Data type -- float, int etc. */}
-            <td
-                id={`${field}-data-type`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-data-type`}>
                 <select
                     id={`${field}-data-type-select`}
                     name={`${field}-dataType`}
@@ -197,13 +222,10 @@ export default function ProfileTable(props: ProfileTableProps) {
                         BOOL
                     </option>
                 </select>
-            </td>
+            </TableCell>
 
             {/*Valued type (categorical or continuous)*/}
-            <td
-                id={`${field}-data-continuity`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-data-continuity`}>
                 <select
                     id={`${field}-data-continuity-select`}
                     name={`${field}-valued`}
@@ -229,13 +251,10 @@ export default function ProfileTable(props: ProfileTableProps) {
                         CONTINUOUS
                     </option>
                 </select>
-            </td>
+            </TableCell>
 
             {/*Available values, if categorical*/}
-            <td
-                id={`${field}-categorical`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-categorical`}>
                 {fields[field].valued === "CATEGORICAL" ? (
                     <span
                         id={`${field}-categorical-span`}
@@ -266,7 +285,7 @@ export default function ProfileTable(props: ProfileTableProps) {
                             ))}
                         </select>
                         {updatePermission ? (
-                            <button
+                            <Button
                                 id={`${field}-set-current-category-values`}
                                 onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
                                     // Don't want to submit form here!
@@ -278,34 +297,37 @@ export default function ProfileTable(props: ProfileTableProps) {
                                     setShowFieldEditor(true)
                                 }}
                             >
-                                <AiFillEdit
+                                <BorderColorIcon // Misleading name - this icon is a pencil with a line below
                                     id={`${field}-set-current-category-values-fill`}
-                                    size="14"
-                                    style={{cursor: "pointer"}}
+                                    sx={{fontSize: "0.9rem"}}
                                 />
-                            </button>
+                            </Button>
                         ) : null}
                     </span>
                 ) : (
                     "N/A"
                 )}
-            </td>
+            </TableCell>
 
             {/*Min value*/}
-            <td
-                id={`${field}-min-range`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-min-range`}>
                 {isContinuous(field) ? (
                     <Box id={`${field}-min-range-data`}>
                         <Input
+                            disabled={!updatePermission}
                             id={`${field}-min-range-control`}
-                            className="m-0 p-0 mx-auto"
-                            sx={{width: "16ch", backgroundColor: "var(--bs-white)"}}
+                            sx={{
+                                backgroundColor: "var(--bs-white)",
+                                marginTop: 0,
+                                marginBottom: 0,
+                                marginLeft: "auto",
+                                marginRight: "auto",
+                                padding: 0,
+                                width: "16ch",
+                            }}
                             name={`${field}-min-range`}
                             type="number"
                             value={fields[field].range[0]}
-                            disabled={!updatePermission}
                             onChange={(event) => {
                                 const profileCopy = {...profile}
                                 profileCopy.dataTag.fields[field].range[0] = parseFloat(event.target.value)
@@ -316,66 +338,50 @@ export default function ProfileTable(props: ProfileTableProps) {
                 ) : (
                     "N/A"
                 )}
-            </td>
+            </TableCell>
 
             {/*Max value*/}
-            <td
-                id={`${field}-max-range`}
-                className={tableCellClassName}
-            >
+            <TableCell id={`${field}-max-range`}>
                 {isContinuous(field) ? (
                     <Box id={`${field}-max-range-group`}>
                         <Input
-                            id={`${field}-max-range-control`}
-                            className="m-0 p-0 mx-auto"
-                            sx={{width: "16ch", backgroundColor: "var(--bs-white)"}}
-                            name={`${field}-max-range`}
-                            type="number"
-                            value={fields[field].range[1]}
                             disabled={!updatePermission}
+                            id={`${field}-max-range-control`}
+                            name={`${field}-max-range`}
                             onChange={(event) => {
                                 const profileCopy = {...profile}
                                 profileCopy.dataTag.fields[field].range[1] = parseFloat(event.target.value)
                                 setProfile(profileCopy)
                             }}
+                            sx={{
+                                backgroundColor: "var(--bs-white)",
+                                marginTop: 0,
+                                marginBottom: 0,
+                                marginLeft: "auto",
+                                marginRight: "auto",
+                                padding: 0,
+                                width: "16ch",
+                            }}
+                            type="number"
+                            value={fields[field].range[1]}
                         />
                     </Box>
                 ) : (
                     "N/A"
                 )}
-            </td>
+            </TableCell>
 
             {/*Mean*/}
-            <td
-                id={`${field}-mean`}
-                className={tableCellClassName}
-            >
-                {isContinuous(field) ? fields[field].mean : "N/A"}
-            </td>
+            <TableCell id={`${field}-mean`}>{isContinuous(field) ? fields[field].mean : "N/A"}</TableCell>
 
             {/*Sum*/}
-            <td
-                id={`${field}-sum`}
-                className={tableCellClassName}
-            >
-                {isContinuous(field) ? fields[field].sum : "N/A"}
-            </td>
+            <TableCell id={`${field}-sum`}>{isContinuous(field) ? fields[field].sum : "N/A"}</TableCell>
 
             {/*Stddev*/}
-            <td
-                id={`${field}-std-dev`}
-                className={tableCellClassName}
-            >
-                {isContinuous(field) ? fields[field].stdDev : "N/A"}
-            </td>
+            <TableCell id={`${field}-std-dev`}>{isContinuous(field) ? fields[field].stdDev : "N/A"}</TableCell>
 
             {/*has nan*/}
-            <td
-                id={`${field}-has-nan`}
-                className={tableCellClassName}
-            >
-                {fields[field].hasNan.toString()}
-            </td>
+            <TableCell id={`${field}-has-nan`}>{fields[field].hasNan.toString()}</TableCell>
         </tr>
     ))
 
@@ -392,34 +398,21 @@ export default function ProfileTable(props: ProfileTableProps) {
                       key={columnName}
                       style={{backgroundColor: caoColorCoding.REJECTED, whiteSpace: "nowrap"}}
                   >
-                      <td
-                          id={`${columnName}-rejected-data`}
-                          className={tableCellClassName}
-                      >
-                          <span
-                              id={`${columnName}-rejected`}
-                              className="px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"
-                              style={{display: "flex", flexWrap: "nowrap"}}
-                          >
+                      <TableCell id={`${columnName}-rejected-data`}>
+                          <RejectionSpan id={`${columnName}-rejected`}>
                               <AiFillWarning
                                   id={`${columnName}-rejected-fill-warning`}
                                   size="20"
-                                  className="mr-2"
+                                  style={{marginRight: "0.5rem"}}
                               />
                               {columnName}
-                          </span>
-                      </td>
-                      <td
-                          id={`${columnName}-rejection-reason-data`}
-                          className={tableCellClassName}
-                      >
-                          <span
-                              id={`${columnName}-rejection-reason`}
-                              className="px-2 text-xs leading-5 font-semibold rounded-full flex-nowrap opacity-50"
-                          >
+                          </RejectionSpan>
+                      </TableCell>
+                      <TableCell id={`${columnName}-rejection-reason-data`}>
+                          <RejectionSpan id={`${columnName}-rejection-reason`}>
                               {`${rejectedColumns[columnName]}: ${reasonToHumanReadable(rejectedColumns[columnName])}`}
-                          </span>
-                      </td>
+                          </RejectionSpan>
+                      </TableCell>
                   </tr>
               ))
             : []
@@ -719,20 +712,22 @@ export default function ProfileTable(props: ProfileTableProps) {
                 >
                     <table
                         id="profile-table"
-                        className="min-w-full divide-y divide-gray-200"
+                        style={{
+                            borderCollapse: "collapse",
+                            borderBottom: "1px solid #e5e7eb",
+                            minWidth: "100%",
+                        }}
                     >
                         <thead
                             id="profile-table-header"
-                            className="bg-gray-50"
+                            style={{
+                                borderCollapse: "collapse",
+                                borderBottom: "var(--bs-border-width) var(--bs-border-style) var(--bs-black)",
+                            }}
                         >
                             <tr id="profile-table-header-elements">{tableHeaderElements}</tr>
                         </thead>
-                        <tbody
-                            id="profile-table-all-rows"
-                            className="bg-white divide-y divide-gray-200"
-                        >
-                            {allRows}
-                        </tbody>
+                        <tbody id="profile-table-all-rows">{allRows}</tbody>
                     </table>
                 </Box>
             </Box>

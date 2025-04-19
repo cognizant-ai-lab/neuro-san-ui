@@ -285,8 +285,15 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
     return (
         <Box
             id={`${id}-outer-box`}
-            sx={{height: "100%", width: "100%"}}
-            style={{}}
+            sx={{
+                height: "100%",
+                width: "100%",
+
+                "& .react-flow__node": {
+                    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-black)",
+                    borderRadius: "var(--bs-border-radius-2xl)",
+                },
+            }}
         >
             <ReactFlow
                 id={`${id}-react-flow`}

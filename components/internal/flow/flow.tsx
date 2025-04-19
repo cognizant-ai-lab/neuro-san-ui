@@ -1260,7 +1260,12 @@ export default function Flow(props: FlowProps) {
         return (
             <div
                 id="flow-buttons"
-                className="grid grid-cols-4 gap-4 mb-4"
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: "1rem",
+                    marginBottom: "1rem",
+                }}
             >
                 <Button
                     id="add_predictor_btn"

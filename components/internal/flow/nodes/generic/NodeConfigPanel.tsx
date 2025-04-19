@@ -111,7 +111,12 @@ const NodeConfigPanel = ({
                 {parentNodeState.trainSliderValue != null && (
                     <Grid
                         id={`${flowPrefix}-train${idExtension}`}
-                        className="mx-2 my-8"
+                        style={{
+                            marginLeft: "0.5rem",
+                            marginRight: "0.5rem",
+                            marginTop: "2rem",
+                            marginBottom: "2rem",
+                        }}
                     >
                         <Grid id={`${flowPrefix}-train-label${idExtension}`}>Train:</Grid>
                         <Grid id={`${flowPrefix}-train-slider${idExtension}`}>
@@ -141,7 +146,12 @@ const NodeConfigPanel = ({
                 {parentNodeState.testSliderValue != null && (
                     <Grid
                         id={`${flowPrefix}-test${idExtension}`}
-                        className="mx-2 my-8"
+                        style={{
+                            marginLeft: "0.5rem",
+                            marginRight: "0.5rem",
+                            marginTop: "2rem",
+                            marginBottom: "2rem",
+                        }}
                     >
                         <Grid id={`${flowPrefix}-test-label${idExtension}`}>Test:</Grid>
                         <Grid id={`${flowPrefix}-test-slider${idExtension}`}>
@@ -171,7 +181,12 @@ const NodeConfigPanel = ({
                 {Object.keys(parentNodeState).includes("rngSeedValue") && (
                     <Grid
                         id={`${flowPrefix}-split-rng-seed${idExtension}`}
-                        className="mx-2 my-8"
+                        style={{
+                            marginLeft: "0.5rem",
+                            marginRight: "0.5rem",
+                            marginTop: "2rem",
+                            marginBottom: "2rem",
+                        }}
                     >
                         <Grid id={`${flowPrefix}-split-rng-seed-label${idExtension}`}>RNG seed:</Grid>
                         <Grid id={`${flowPrefix}-split-rng-seed-column${idExtension}`}>
@@ -187,7 +202,7 @@ const NodeConfigPanel = ({
                                         rngSeedValue: parseInt(event.target.value),
                                     })
                                 }}
-                                className="input-field w-50"
+                                style={{width: "50%"}}
                             />
                         </Grid>
                     </Grid>
@@ -201,31 +216,45 @@ const NodeConfigPanel = ({
 
     const inputsComponent = inputTypes.has("inputs") && (
         <CardContent
-            className={`overflow-y-scroll ${customStyles?.inputsCardHeight || "h-40"} text-xs pl-4 pr-4`}
             id={id}
+            sx={{
+                fontSize: "0.75rem",
+                height: customStyles?.inputsCardHeight || "10rem",
+                overflowY: "scroll",
+                paddingLeft: "1rem",
+                paddingRight: "1rem",
+            }}
         >
             {hasParams ? (
                 Object.keys(defaultParams).map((param) => (
                     <div
                         id={`${flowPrefix}-${param}-input-component${idExtension}`}
-                        className="grid grid-cols-8 gap-12 mb-3"
-                        style={customStyles?.inputCompnentStyles}
                         key={param}
+                        style={{
+                            ...customStyles?.inputCompnentStyles,
+                            display: "grid",
+                            gridTemplateColumns: "repeat(8, 1fr)",
+                            gap: "0.5rem",
+                            marginBottom: "0.75rem",
+                        }}
                     >
                         <div
                             id={`${flowPrefix}-${param}-input-component-div${idExtension}`}
-                            className="item1 col-span-3"
+                            style={{gridColumn: "span 3"}}
                         >
                             <label
                                 id={`${flowPrefix}-${param}-label${idExtension}`}
-                                className="capitalize"
+                                style={{textTransform: "capitalize"}}
                             >
                                 {param}:
                             </label>
                         </div>
                         <div
                             id={`${flowPrefix}-${param}-data-type-div${idExtension}`}
-                            className={`item2 col-span-4 ${customStyles?.inputRowWidth || ""}`}
+                            style={{
+                                gridColumn: "span 4",
+                                width: customStyles?.inputRowWidth || undefined,
+                            }}
                         >
                             {(defaultParams[param].type === BaseParameterType.INT ||
                                 defaultParams[param].type === BaseParameterType.FLOAT) && (
@@ -259,7 +288,6 @@ const NodeConfigPanel = ({
                             )}
                             {defaultParams[param].type === BaseParameterType.ENUM && (
                                 <select
-                                    style={{width: "100%"}}
                                     id={`${flowPrefix}-${param}-value${idExtension}`}
                                     value={
                                         parentNodeState.params[param]?.value == null
@@ -269,7 +297,7 @@ const NodeConfigPanel = ({
                                             : parentNodeState.params[param].value?.toString()
                                     }
                                     onChange={(event) => onParamChange(event, param)}
-                                    className="w-32 p-0"
+                                    style={{padding: 0, width: "100%"}}
                                 >
                                     {Object.entries(defaultParams[param].enum).map((value) => {
                                         // if enum is numeric, we want the value of the property
@@ -304,30 +332,30 @@ const NodeConfigPanel = ({
                                 ) : (
                                     <input
                                         id={`${flowPrefix}-${param}-value${idExtension}`}
-                                        className="w-full"
                                         type="text"
                                         defaultValue={defaultParams[param].default_value?.toString()}
                                         value={parentNodeState.params[param]?.value?.toString()}
                                         onChange={(event) => onParamChange(event, param)}
                                         disabled={readOnlyNode}
+                                        style={{width: "100%"}}
                                     />
                                 )
                             ) : null}
                             {defaultParams[param].type === BaseParameterType.PASSWORD && (
                                 <input
                                     id={`${flowPrefix}-${param}-value${idExtension}`}
-                                    className="w-full"
                                     type="password"
                                     defaultValue={defaultParams[param].default_value?.toString()}
                                     value={parentNodeState.params[param]?.value?.toString()}
                                     onChange={(event) => onParamChange(event, param)}
                                     disabled={readOnlyNode}
+                                    style={{width: "100%"}}
                                 />
                             )}
                         </div>
                         <div
                             id={`${flowPrefix}-${param}-tooltip-div${idExtension}`}
-                            className="item3 col-span-1"
+                            style={{gridColumn: "span 1"}}
                         >
                             <Tooltip // eslint-disable-line enforce-ids-in-jsx/missing-ids
                                 // 2/6/23 DEF - Tooltip does not have an id property when compiling

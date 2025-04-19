@@ -1,12 +1,15 @@
 import {ClickAwayListener} from "@mui/base/ClickAwayListener"
-import {Popper, PopperPlacementType} from "@mui/material"
-import {CSSProperties, ReactNode, useState} from "react"
+import {Button, Popper, PopperPlacementType, SxProps} from "@mui/material"
+// eslint-disable-next-line no-shadow
+import {CSSProperties, MouseEvent, ReactNode, useState} from "react"
 
 import {ZIndexLayers} from "../utils/zIndexLayers"
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    btnContent: string | ReactNode
+interface ButtonProps {
+    btnContent: ReactNode
+    btnSxProps?: SxProps
     id: string
+    onClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
 interface NodePopperProps {
@@ -27,10 +30,10 @@ const NodePopper = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-    const {btnContent, onClick: btnClick, id: btnId, ...restBtnProps} = buttonProps
+    const {btnContent, btnSxProps, id: btnId, onClick: btnClick} = buttonProps
     const {id: popperId, ...restPopperProps} = popperProps
 
-    const handleClick = (event) => {
+    const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
         setIsOpen((prev) => !prev)
         setAnchorEl(anchorEl ? null : event.currentTarget)
         if (btnClick) {
@@ -45,14 +48,13 @@ const NodePopper = ({
 
     return (
         <>
-            <button
-                type="button"
+            <Button
                 id={btnId}
                 onClick={handleClick}
-                {...restBtnProps}
+                sx={btnSxProps}
             >
                 {btnContent}
-            </button>
+            </Button>
             <ClickAwayListener // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 mouseEvent="onPointerUp"
                 touchEvent="onTouchStart"
