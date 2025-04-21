@@ -73,10 +73,10 @@ prune_files() {
 
 # Main entry point of the script
 main() {
-#  check_clean_working_dir
+  check_clean_working_dir
   check_env_var
   check_build_target "${BUILD_TARGET}"
-#  prune_files "${BUILD_TARGET}"
+  prune_files "${BUILD_TARGET}"
 }
   
 # Execute main
