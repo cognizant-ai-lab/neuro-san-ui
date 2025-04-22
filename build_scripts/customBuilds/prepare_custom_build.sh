@@ -63,22 +63,22 @@ prune_files() {
   echo "Pruning files for build target: ${build_target}"
   
   while IFS= read -r path || [[ -n "$path" ]]; do
-    echo "➡️ Raw path: '$path'"
+    echo "➡️ Raw path A: '$path'"
     # Skip empty lines
     [[ -z "$path" ]] && continue
-     
+    echo "➡️ Raw path B: '$path'" 
     # Skip lines starting with #
     [[ "$path" =~ ^# ]] && continue
-    
+    echo "➡️ Raw path C: '$path'"
     # Skip dangerous path(s)
     if [[ "$path" =~ ^/ ]]; then
       echo "Skipping: Dangerous path -> $full_path"
       continue
     fi
-    
+    echo "➡️ Raw path D: '$path'"
     # Resolve absolute path
     full_path=$(realpath -m "$path" 2>/dev/null)
-      
+    echo "➡️ Raw path E: '$path'"  
     echo "Deleting: $full_path"
     rm -rf -- "$full_path"
   done < "$file"
