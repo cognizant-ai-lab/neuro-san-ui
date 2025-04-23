@@ -6,7 +6,7 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import Navbar from "../../../components/Common/navbar"
-import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
+import {ALL_BUILD_TARGET, CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
 
@@ -37,7 +37,7 @@ jest.mock("next-auth/react", () => {
 jest.mock("../../../state/environment", () => ({
     ...jest.requireActual("../../../state/environment"),
     __esModule: true,
-    default: jest.fn(() => ({supportEmailAddress: MOCK_EMAIL_ADDRESS})),
+    default: jest.fn(() => ({buildTarget: ALL_BUILD_TARGET, supportEmailAddress: MOCK_EMAIL_ADDRESS})),
 }))
 
 describe("navbar", () => {

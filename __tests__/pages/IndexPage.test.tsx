@@ -2,6 +2,7 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useRouter} from "next/router"
 
+import {ALL_BUILD_TARGET} from "../../const"
 import Index from "../../pages/index"
 import useEnvironmentStore from "../../state/environment"
 import useFeaturesStore from "../../state/features"
@@ -27,7 +28,10 @@ describe("Index Page", () => {
     beforeEach(() => {
         jest.clearAllMocks()
         ;(useFeaturesStore as unknown as jest.Mock).mockReturnValue({isGeneric: false})
-        ;(useEnvironmentStore as unknown as jest.Mock).mockReturnValue({supportEmailAddress: "support@example.com"})
+        ;(useEnvironmentStore as unknown as jest.Mock).mockReturnValue({
+            buildTarget: ALL_BUILD_TARGET,
+            supportEmailAddress: "support@example.com",
+        })
         ;(useRouter as jest.Mock).mockReturnValue({
             query: {key: "value"},
         })

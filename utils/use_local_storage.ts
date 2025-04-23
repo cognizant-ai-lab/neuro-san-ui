@@ -1,7 +1,7 @@
 import {useState} from "react"
 
 // Hook
-export function useLocalStorage(key, initialValue: unknown) {
+export function useLocalStorage(key: string, initialValue: unknown) {
     // State to store our value
     // Pass initial state function to useState so logic is only executed once
     const [storedValue, setStoredValue] = useState(() => {
@@ -24,7 +24,7 @@ export function useLocalStorage(key, initialValue: unknown) {
     const setValue = (value: unknown) => {
         try {
             // Allow value to be a function so we have same API as useState
-            const valueToStore = value instanceof Function ? value(storedValue) : value
+            const valueToStore = typeof value === "function" ? value(storedValue) : value
             // Save state
             setStoredValue(valueToStore)
             // Save to local storage

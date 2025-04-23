@@ -92,11 +92,13 @@ Object.defineProperties(global.HTMLElement.prototype, {
 jest.mock("next/config", () => () => ({
     publicRuntimeConfig: {
         enableAuthentication: false,
+        buildTarget: "all", // Can't use ALL_BUILD_TARGET here due to circular dependency
     },
 }))
 
 // Cheesy mock implementation of structuredClone since it's not available in jsdom
 // See: https://github.com/jsdom/jsdom/issues/3363
+// eslint-disable-next-line unicorn/prefer-structured-clone
 global.structuredClone = (val: object) => JSON.parse(JSON.stringify(val))
 
 /* Have to mock these up due to https://github.com/remarkjs/react-markdown/issues/635

@@ -157,7 +157,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
 
     // Figure out the maximum depth of the network
     const maxDepth = useMemo(() => {
-        return nodes?.reduce((max, node) => (node.data.depth > max ? node.data.depth : max), 0)
+        return nodes?.reduce((max, node) => Math.max(node.data.depth, max), 0)
     }, [nodes])
 
     // Generate radial guides for the network to guide the eye in the radial layout

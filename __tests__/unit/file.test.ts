@@ -83,7 +83,7 @@ describe("downloadFile", () => {
         const testUrl = "http://example.com/test_object_url"
         global.URL.createObjectURL = jest.fn(() => testUrl)
 
-        const appendChildSpy = jest.spyOn(global.document.body, "appendChild")
+        const appendChildSpy = jest.spyOn(global.document.body, "append")
 
         const fileName = "hello.txt"
         downloadFile("Hello, world!", fileName)

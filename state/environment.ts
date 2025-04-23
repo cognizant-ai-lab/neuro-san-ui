@@ -27,6 +27,10 @@ interface EnvironmentStore {
     // team support email address
     supportEmailAddress: string
     setSupportEmailAddress: (supportEmailAddress: string) => void
+
+    // Build target
+    buildTarget: string
+    setBuildTarget: (buildTarget: string) => void
 }
 
 /**
@@ -47,6 +51,9 @@ const useEnvironmentStore = create<EnvironmentStore>((set) => ({
 
     supportEmailAddress: null,
     setSupportEmailAddress: (supportEmailAddress: string) => set(() => ({supportEmailAddress})),
+
+    buildTarget: null,
+    setBuildTarget: (buildTarget: string) => set(() => ({buildTarget})),
 }))
 
 export default useEnvironmentStore

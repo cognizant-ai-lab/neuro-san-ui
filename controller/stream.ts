@@ -23,7 +23,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
     try {
         response = await fetch(url, requestParams)
     } catch (e) {
-        console.error(`Error fetching url: ${url} for resource: ${resourceName}: `, e)
+        console.error(`Error fetching url: ${url} for resource: ${resourceName}:`, e)
         return null
     }
 
@@ -49,7 +49,7 @@ export default async function HackyStream<ObjectType extends MDServerObject>(
             }
         } catch (e) {
             // invalid json input, log the error
-            console.error(`Error Serializing ${resourceName}: `, e)
+            console.error(`Error Serializing ${resourceName}:`, e)
         }
     }
 

@@ -26,6 +26,7 @@ export function sendNotification(
     variantType: NotificationType,
     message: string,
     description: string | JSX.Element = "",
+    // eslint-disable-next-line unicorn/no-object-as-default-parameter
     placement: SnackbarOrigin = {
         vertical: "top",
         horizontal: "right",

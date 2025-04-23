@@ -52,7 +52,7 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
 
     // now base64 decode jwtheader
     const buff = Buffer.from(jwtHeaders[1], "base64")
-    const decoded = buff.toString("utf-8")
+    const decoded = buff.toString("utf8")
     debug("Decoded JWT Header:", decoded)
 
     const userInfo = JSON.parse(decoded)

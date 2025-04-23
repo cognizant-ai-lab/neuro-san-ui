@@ -112,8 +112,7 @@ export const FormattedMarkdown = ({
     // Walk through the nodes list. If we encounter a string node, we'll aggregate it with other string nodes.
     const formattedOutput: ReactNode[] = []
     let currentTextNodes: string[] = []
-    for (let i = 0; i < nodesList.length; i += 1) {
-        const node = nodesList[i]
+    for (const [i, node] of nodesList.entries()) {
         // If it's a string node, aggregate it with other string nodes
         if (typeof node === "string") {
             currentTextNodes.push(node)

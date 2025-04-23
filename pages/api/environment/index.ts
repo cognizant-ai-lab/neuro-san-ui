@@ -1,4 +1,19 @@
 import httpStatus from "http-status"
+import {NextApiRequest, NextApiResponse} from "next"
+
+import {ALL_BUILD_TARGET} from "../../../const"
+
+// Possible values returned by this API. Note that not all will necessarily be set
+interface EnvironmentResponse {
+    readonly auth0ClientId: string
+    readonly auth0Domain: string
+    readonly backendApiUrl: string
+    readonly buildTarget: string
+    readonly enableAuthorizeAPI: boolean
+    readonly enableProjectSharing: boolean
+    readonly supportEmailAddress: string
+    readonly error?: string
+}
 
 /**
  * This function is a handler for the /api/gpt/environment endpoint. It retrieves environment settings from the
@@ -7,7 +22,7 @@ import httpStatus from "http-status"
  * @param res Response -- the response object. It is used to send the environment settings to the client.
  */
 // ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
-export default async function handler(_req, res) {
+export default function handler(_req: NextApiRequest, res: NextApiResponse<Partial<EnvironmentResponse>>) {
     res.setHeader("Content-Type", "application/json")
     const backendApiUrl = process.env.MD_SERVER_URL
     if (!backendApiUrl) {
@@ -41,7 +56,9 @@ export default async function handler(_req, res) {
         return
     }
 
-    const enableProjectSharing = process.env.ENABLE_PROJECT_SHARING || false
+    const enableProjectSharing = Boolean(process.env.ENABLE_PROJECT_SHARING || false)
+
+    const buildTarget = process.env.BUILD_TARGET || ALL_BUILD_TARGET
 
     res.status(httpStatus.OK).json({
         backendApiUrl,
@@ -50,5 +67,6 @@ export default async function handler(_req, res) {
         enableProjectSharing,
         supportEmailAddress,
         enableAuthorizeAPI: Boolean(process.env.ENABLE_AUTHORIZE_API),
+        buildTarget,
     })
 }

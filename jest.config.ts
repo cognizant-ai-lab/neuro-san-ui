@@ -16,6 +16,8 @@ const config: Config.InitialOptions = {
             {
                 // Doc: https://kulshekhar.github.io/ts-jest/docs/getting-started/options/isolatedModules/
                 isolatedModules: true,
+                // Can't use ESM with Jest yet, so use CJS format for __dirname
+                // eslint-disable-next-line unicorn/prefer-module
                 tsconfig: path.resolve(__dirname, "tsconfig.test.json"),
             },
         ],

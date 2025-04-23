@@ -112,7 +112,7 @@ export default function Index(): ReactElement {
     const router = useRouter()
 
     // Access environment info
-    const {supportEmailAddress} = useEnvironmentStore()
+    const {buildTarget, supportEmailAddress} = useEnvironmentStore()
 
     // Keeps track of which button the user is hovering over. Either a button id or null
     const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -213,61 +213,68 @@ export default function Index(): ReactElement {
                             id="neuro-ai-tools-container"
                             style={{marginTop: "0.25rem"}}
                         >
-                            <Link
-                                id="of-link"
-                                href={`/opportunityFinder?${buildQueryString()}`}
-                                /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                legacyBehavior={true} // Need this so we can "open in new tab"
-                                passHref
-                            >
-                                <a
-                                    id="of-link-anchor"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    href={`/of?${buildQueryString()}`}
-                                    onMouseEnter={handleMouseEnter}
-                                    onMouseLeave={handleMouseLeave}
-                                >
-                                    <LaunchButton
-                                        id="opportunity-finder-button"
-                                        style={{
-                                            position: "relative",
-                                            ...getButtonStyle([
-                                                "opportunity-finder-button",
-                                                "star-new-span",
-                                                "of-link-anchor",
-                                            ]),
-                                        }}
+                            {buildTarget === "all" && (
+                                <>
+                                    <Link
+                                        id="of-link"
+                                        href={`/opportunityFinder?${buildQueryString()}`}
+                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                        legacyBehavior={true} // Need this so we can "open in new tab"
+                                        passHref
                                     >
-                                        Opportunity Finder
-                                    </LaunchButton>
-                                </a>
-                            </Link>
-                            <Link
-                                id="orchestrator-link"
-                                // Use the URL object form of `href` to pass along the query string
-                                href={`/projects?${buildQueryString()}`}
-                                /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                legacyBehavior={true}
-                                passHref
-                            >
-                                <a
-                                    id="of-link-anchor"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    href={`/projects?${buildQueryString()}`}
-                                    style={{marginLeft: "50px"}}
-                                    onMouseEnter={handleMouseEnter}
-                                    onMouseLeave={handleMouseLeave}
-                                >
-                                    <LaunchButton
-                                        id="model-orchestrator-button"
-                                        style={{position: "relative", ...getButtonStyle(["model-orchestrator-button"])}}
+                                        <a
+                                            id="of-link-anchor"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            href={`/of?${buildQueryString()}`}
+                                            onMouseEnter={handleMouseEnter}
+                                            onMouseLeave={handleMouseLeave}
+                                        >
+                                            <LaunchButton
+                                                id="opportunity-finder-button"
+                                                style={{
+                                                    position: "relative",
+                                                    ...getButtonStyle([
+                                                        "opportunity-finder-button",
+                                                        "star-new-span",
+                                                        "of-link-anchor",
+                                                    ]),
+                                                }}
+                                            >
+                                                Opportunity Finder
+                                            </LaunchButton>
+                                        </a>
+                                    </Link>
+                                    <Link
+                                        id="orchestrator-link"
+                                        // Use the URL object form of `href` to pass along the query string
+                                        href={`/projects?${buildQueryString()}`}
+                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                        legacyBehavior={true}
+                                        passHref
                                     >
-                                        Model Orchestrator
-                                    </LaunchButton>
-                                </a>
-                            </Link>
+                                        <a
+                                            id="of-link-anchor"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            href={`/projects?${buildQueryString()}`}
+                                            style={{marginLeft: "50px"}}
+                                            onMouseEnter={handleMouseEnter}
+                                            onMouseLeave={handleMouseLeave}
+                                        >
+                                            <LaunchButton
+                                                id="model-orchestrator-button"
+                                                style={{
+                                                    position: "relative",
+                                                    ...getButtonStyle(["model-orchestrator-button"]),
+                                                }}
+                                            >
+                                                Model Orchestrator
+                                            </LaunchButton>
+                                        </a>
+                                    </Link>
+                                </>
+                            )}
                             <Link
                                 id="agent-network-link"
                                 // Use the URL object form of `href` to pass along the query string
