@@ -54,9 +54,7 @@ steps:
           else
             export TAG="${{UNILEAF_VERSION}}-${{BUILD_TARGET}}"
           fi
-          echo $TAG
-          exit 1
-          echo "export TAG=${TAG}" >> $CF_VOLUME_PATH/env_vars_to_share
+          cf_export TAG
 
     ui-node-build:
       title: Build ui-node Docker image
