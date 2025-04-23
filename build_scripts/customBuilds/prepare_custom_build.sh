@@ -47,47 +47,29 @@ prune_files() {
   local build_target="$1"
   local file="build_scripts/customBuilds/buildTargets/${build_target}.txt"
   
-
-  echo "📢 Bash version: $BASH_VERSION"
-  echo "📁 PWD: $(pwd)"
-  echo "📄 File: $file"
-  ls -l "$file" || echo "⚠️ Missing file"
-
-  echo "📄 BEGIN FILE CONTENTS"
-  cat "$file"
-  echo "📄 END FILE CONTENTS"
-
-  command -v realpath || echo "❗ realpath missing"
-
-  
   echo "Pruning files for build target: ${build_target}"
   
   while IFS= read -r path || [[ -n "$path" ]]; do
-    echo "➡️ Raw path A: '$path'"
     # Skip empty lines
     [[ -z "$path" ]] && continue
-    echo "➡️ Raw path B: '$path'" 
+  
     # Skip lines starting with #
     [[ "$path" =~ ^# ]] && continue
-    echo "➡️ Raw path C: '$path'"
+    
     # Skip dangerous path(s)
     if [[ "$path" =~ ^/ ]]; then
       echo "Skipping: Dangerous path -> $full_path"
       continue
     fi
-    echo "➡️ Raw path D: '$path'"
+    
     # Resolve absolute path
-    realpath -m "$path"
-    echo "➡️ Raw path D.2: '$path'"
-    ####full_path=$(realpath -m "$path" 2>/dev/null)
-    full_path="$(cd "$(dirname "$path")" && pwd)/$(basename "$path")"
-    echo "➡️ Raw path E: '$path'"  
+    full_path=$(realpath -m "$path" 2>/dev/null)
+      
     echo "Deleting: $full_path"
     rm -rf -- "$full_path"
   done < "$file"
     
 }
-
 
 # Main entry point of the script
 main() {
