@@ -79,7 +79,8 @@ prune_files() {
     # Resolve absolute path
     realpath -m "$path"
     echo "➡️ Raw path D.2: '$path'"
-    full_path=$(realpath -m "$path" 2>/dev/null)
+    ####full_path=$(realpath -m "$path" 2>/dev/null)
+    full_path="$(cd "$(dirname "$path")" && pwd)/$(basename "$path")"
     echo "➡️ Raw path E: '$path'"  
     echo "Deleting: $full_path"
     rm -rf -- "$full_path"
