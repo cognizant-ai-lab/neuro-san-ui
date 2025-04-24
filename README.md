@@ -36,6 +36,9 @@ Note: Previously the project was known as UniLEAF and that name is still used in
 # Determines which backend API server to access. This one is for the Dev environment -- change as necessary.
 MD_SERVER_URL=https://neuro-ai-dev.evolution.ml
 
+# Determines which backend neuro-san server to access. This one is for the Dev environment -- change as necessary.
+NEURO_SAN_SERVER_URL=https://neuro-san-dev.decisionai.ml
+
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=<redacted>
 

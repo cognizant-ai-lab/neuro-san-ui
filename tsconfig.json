@@ -47,7 +47,7 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
-    "**/*.mjs",
+    "**/*.mjs"
   ],
   "exclude": [
     "node_modules",

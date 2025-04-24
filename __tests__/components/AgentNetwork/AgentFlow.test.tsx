@@ -4,8 +4,11 @@ import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import AgentFlow from "../../../components/AgentNetwork/AgentFlow"
-import {AgentType} from "../../../generated/metadata"
 import {ConnectivityInfo} from "../../../generated/neuro_san/api/grpc/agent"
+
+const TEST_AGENT_MATH_GUY = "Math Guy"
+const TEST_AGENT_MUSIC_NERD = "Music Nerd"
+const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
 describe("AgentFlow", () => {
     let user: UserEvent
@@ -55,7 +58,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent1", instantiationIndex: 1}]}
-                    selectedNetwork={AgentType.HELLO_WORLD}
+                    selectedNetwork={TEST_AGENT_MATH_GUY}
                 />
             </ReactFlowProvider>
         )
@@ -73,7 +76,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent2", instantiationIndex: 1}]}
-                    selectedNetwork={AgentType.HELLO_WORLD}
+                    selectedNetwork={TEST_AGENT_MUSIC_NERD}
                 />
             </ReactFlowProvider>
         )
@@ -88,7 +91,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent3", instantiationIndex: 1}]}
-                    selectedNetwork={AgentType.HELLO_WORLD}
+                    selectedNetwork={TEST_AGENT_MUSIC_NERD_PRO}
                 />
             </ReactFlowProvider>
         )
@@ -121,7 +124,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={[]}
                     originInfo={[]}
-                    selectedNetwork={AgentType.HELLO_WORLD}
+                    selectedNetwork={TEST_AGENT_MATH_GUY}
                 />
             </ReactFlowProvider>
         )
@@ -137,7 +140,7 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     agentsInNetwork={network}
                     originInfo={[{tool: "agent1", instantiationIndex: 1}]}
-                    selectedNetwork={AgentType.HELLO_WORLD}
+                    selectedNetwork={TEST_AGENT_MATH_GUY}
                 />
             </ReactFlowProvider>
         )

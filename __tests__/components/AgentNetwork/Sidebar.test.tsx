@@ -2,8 +2,9 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import Sidebar, {BLOCK_AGENT_TYPES} from "../../../components/AgentNetwork/Sidebar"
-import {AgentType} from "../../../generated/metadata"
+import Sidebar from "../../../components/AgentNetwork/Sidebar"
+
+const TEST_AGENT_MATH_GUY = "Math Guy"
 
 describe("SideBar", () => {
     let user: UserEvent
@@ -17,26 +18,21 @@ describe("SideBar", () => {
         render(
             <Sidebar
                 id="test-flow-id"
-                selectedNetwork={AgentType.HELLO_WORLD}
+                selectedNetwork={TEST_AGENT_MATH_GUY}
                 setSelectedNetwork={selectedNetworkMock}
                 isAwaitingLlm={false}
             />
         )
 
-        // Make sure all networks appear on screen
-        Object.values(AgentType)
-            .filter((agent) => !BLOCK_AGENT_TYPES.includes(agent))
-            .forEach((network) => {
-                expect(screen.getByText(cleanUpAgentName(network))).toBeInTheDocument()
-            })
+        // TODO: Mock the getNetworks call
 
         // Make sure the heading is present
         expect(screen.getByText("Agent Networks")).toBeInTheDocument()
 
         // Clicking on a network should call the setSelectedNetwork function
-        const network = screen.getByText(cleanUpAgentName(AgentType.HELLO_WORLD))
+        const network = screen.getByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
         await user.click(network)
         expect(selectedNetworkMock).toHaveBeenCalledTimes(1)
-        expect(selectedNetworkMock).toHaveBeenCalledWith(AgentType.HELLO_WORLD)
+        expect(selectedNetworkMock).toHaveBeenCalledWith(TEST_AGENT_MATH_GUY)
     })
 })

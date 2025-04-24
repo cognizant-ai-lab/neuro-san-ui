@@ -6,7 +6,6 @@ import {AgentErrorProps, CombinedAgentType, LegacyAgentType} from "../../../comp
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
-import {AgentType as NeuroSanAgentType} from "../../../generated/metadata"
 import {ChatResponse, ConnectivityResponse, FunctionResponse} from "../../../generated/neuro_san/api/grpc/agent"
 import {
     ChatContext,
@@ -39,6 +38,8 @@ jest.mock("../../../controller/llm/llm_chat", () => ({
 }))
 
 const TEST_USER = "testUser"
+const TEST_AGENT_MATH_GUY = "Math Guy"
+const TEST_AGENT_MUSIC_NERD = "Music Nerd"
 
 function getResponseMessage(type: ChatMessageChatMessageType, text: string): ChatMessage {
     return ChatMessage.fromPartial({
@@ -90,7 +91,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -110,7 +111,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={true}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -138,11 +139,12 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 onSend={mockSendFunction}
             />
         )
 
+        // TODO: Update
         const userInput = screen.getByPlaceholderText("Chat with Telco Network Support")
         expect(userInput).toBeInTheDocument()
 
@@ -172,11 +174,12 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 onSend={mockSendFunction}
             />
         )
 
+        // TODO: Update
         const userInput = screen.getByPlaceholderText("Chat with Telco Network Support")
         expect(userInput).toBeInTheDocument()
 
@@ -203,11 +206,12 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 onSend={mockSendFunction}
             />
         )
 
+        // TODO: Update
         const userInput = screen.getByPlaceholderText("Chat with Telco Network Support")
         expect(userInput).toBeInTheDocument()
 
@@ -239,7 +243,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 onSend={jest.fn()}
                 onChunkReceived={onChunkReceivedMock}
             />
@@ -260,7 +264,7 @@ describe("ChatCommon", () => {
         })
 
         const query = "Sample test query for chunk handling"
-        await sendQuery(NeuroSanAgentType.TELCO_NETWORK_SUPPORT, query)
+        await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         expect(await screen.findByText(testResponseText)).toBeInTheDocument()
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
@@ -392,7 +396,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.ESP_DECISION_ASSISTANT}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 onSend={jest.fn()}
             />
         )
@@ -417,7 +421,7 @@ describe("ChatCommon", () => {
         })
 
         const query = "Sample test query for error handling"
-        await sendQuery(NeuroSanAgentType.ESP_DECISION_ASSISTANT, query)
+        await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         // Should be 3 retries due to the error
         expect(await screen.findAllByText(/Error occurred/u)).toHaveLength(3)
@@ -442,7 +446,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.ESP_DECISION_ASSISTANT}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 onSend={jest.fn()}
             />
         )
@@ -463,7 +467,7 @@ describe("ChatCommon", () => {
         })
 
         const query = "Sample test query for chat context"
-        await sendQuery(NeuroSanAgentType.ESP_DECISION_ASSISTANT, query)
+        await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         // re-render to update chat_context ref
         rerender(
@@ -473,10 +477,10 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.ESP_DECISION_ASSISTANT}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
-        await sendQuery(NeuroSanAgentType.ESP_DECISION_ASSISTANT, query)
+        await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         //We should be sending back chat context as-is to the server to maintain conversation state
         expect(sentChatContext).toEqual(responseMessage.chatContext)
@@ -490,11 +494,11 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.HELLO_WORLD}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
-        expect(await screen.findByText(cleanUpAgentName(NeuroSanAgentType.HELLO_WORLD))).toBeInTheDocument()
+        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
     })
 
     it("Should clear chat when a new agent is selected", async () => {
@@ -505,13 +509,13 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.HELLO_WORLD}
+                targetAgent={TEST_AGENT_MATH_GUY}
                 clearChatOnNewAgent={true}
             />
         )
 
         // Make sure first agent greeting appears
-        expect(await screen.findByText(cleanUpAgentName(NeuroSanAgentType.HELLO_WORLD))).toBeInTheDocument()
+        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
 
         rerender(
             <ChatCommon
@@ -520,16 +524,16 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MUSIC_NERD}
                 clearChatOnNewAgent={true}
             />
         )
 
         // Previous agent output should have been cleared
-        expect(screen.queryByText(cleanUpAgentName(NeuroSanAgentType.HELLO_WORLD))).not.toBeInTheDocument()
+        expect(screen.queryByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).not.toBeInTheDocument()
 
         // New agent greeting should be present
-        expect(await screen.findByText(cleanUpAgentName(NeuroSanAgentType.TELCO_NETWORK_SUPPORT))).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))).toBeInTheDocument()
     })
 
     it("Should handle Stop correctly", async () => {
@@ -541,7 +545,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={setAwaitingLlmMock}
                 isAwaitingLlm={true}
-                targetAgent={NeuroSanAgentType.HELLO_WORLD}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -562,7 +566,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -581,7 +585,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.TELCO_NETWORK_SUPPORT}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -600,7 +604,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.HELLO_WORLD}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -617,7 +621,7 @@ describe("ChatCommon", () => {
             callback(JSON.stringify({result: chatResponse}))
         })
 
-        await sendQuery(NeuroSanAgentType.HELLO_WORLD, "Sample test query final answer test")
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
 
         expect(await screen.findByText("Final Answer")).toBeInTheDocument()
     })
@@ -630,7 +634,7 @@ describe("ChatCommon", () => {
                 userImage=""
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
-                targetAgent={NeuroSanAgentType.HELLO_WORLD}
+                targetAgent={TEST_AGENT_MATH_GUY}
             />
         )
 
@@ -657,7 +661,7 @@ describe("ChatCommon", () => {
             callback(JSON.stringify({result: chatResponsesStringified[1]}))
         })
 
-        await sendQuery(NeuroSanAgentType.HELLO_WORLD, "Sample test query handle thinking button test")
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
 
         // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
         const showThinkingButton = document.getElementById("show-thinking-button")

@@ -28,7 +28,6 @@ import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AnimatedEdge} from "./AnimatedEdge"
 import {BACKGROUND_COLORS, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
-import {AgentType} from "../../generated/metadata"
 import {ConnectivityInfo} from "../../generated/neuro_san/api/grpc/agent"
 import {Origin} from "../../generated/neuro_san/api/grpc/chat"
 
@@ -37,7 +36,7 @@ interface AgentFlowProps {
     agentsInNetwork: ConnectivityInfo[]
     id: string
     originInfo?: Origin[]
-    selectedNetwork: AgentType
+    selectedNetwork: string
 }
 
 type Layout = "radial" | "linear"

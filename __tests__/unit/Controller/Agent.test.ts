@@ -1,10 +1,11 @@
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
-import {AgentType} from "../../../generated/metadata"
 import {ChatFilterType} from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 
 jest.mock("../../../controller/llm/llm_chat")
+
+const TEST_AGENT_MATH_GUY = "Math Guy"
 
 describe("Controller/Agent/sendChatQuery", () => {
     beforeEach(() => {
@@ -17,8 +18,7 @@ describe("Controller/Agent/sendChatQuery", () => {
         const callbackMock = jest.fn()
         const testQuery = "test query with special characters: !@#$%^&*()_+"
         const testUser = "test user"
-        const testAgent = AgentType.BANKING_OPS
-        await sendChatQuery(abortSignal, testQuery, testUser, testAgent, callbackMock, {
+        await sendChatQuery(abortSignal, testQuery, testUser, TEST_AGENT_MATH_GUY, callbackMock, {
             chatHistories: [],
         })
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
@@ -32,7 +32,8 @@ describe("Controller/Agent/sendChatQuery", () => {
                     text: testQuery,
                 },
             },
-            target_agent: testAgent,
+            target_agent: TEST_AGENT_MATH_GUY,
+            // TODO: Need to figure this one out
             user: {login: testUser},
         }
 

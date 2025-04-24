@@ -25,6 +25,9 @@ export interface AgentErrorProps {
 
 export type ChatContext = components["schemas"]["ChatContext"]
 export type ChatMessage = components["schemas"]["ChatMessage"]
+export type ChatRequest = components["schemas"]["ChatRequest"]
+export type ChatResponse = components["schemas"]["ChatResponse"]
+export type ConciergeResponse = components["schemas"]["ConciergeResponse"]
 export type ConnectivityInfo = components["schemas"]["ConnectivityInfo"]
 export type FunctionResponse = components["schemas"]["FunctionResponse"]
 export type ConnectivityResponse = components["schemas"]["ConnectivityResponse"]

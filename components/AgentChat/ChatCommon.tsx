@@ -51,9 +51,6 @@ import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
 import {sendLlmRequest} from "../../controller/llm/llm_chat"
-import {AgentType as NeuroSanAgent} from "../../generated/metadata"
-// import {ConnectivityInfo, ConnectivityResponse, FunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
-// import {ChatContext, ChatMessage, ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {ChatMessageChatMessageType} from "../../generated/neuro_san/api/grpc/chat"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
@@ -338,6 +335,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
     }, [chatOutput])
+
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
      * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
@@ -353,17 +351,17 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     const processLogLine = (
         logLine: string,
         summary: string,
-        messageType: number,
+        messageType: number | string,
         isFinalAnswer?: boolean
     ): ReactNode => {
         console.debug(
-            "processLogLine: ",
+            "processLogLine:",
             logLine,
-            " summary: ",
+            "summary:",
             summary,
-            " isFinalAnswer: ",
+            "isFinalAnswer:",
             isFinalAnswer,
-            "messageType: ",
+            "messageType:",
             messageType
         )
         // extract the parts of the line
@@ -385,7 +383,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         }
 
         const hashedSummary = hashString(summary)
-        const isAIMessage = messageType === "AI"
+        const isAIMessage = messageType === ChatMessageChatMessageType.AI
 
         if (isAIMessage && !isFinalAnswer) {
             lastAIMessage.current = logLine
@@ -494,23 +492,18 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             // Introduce the agent to the user
             introduceAgent()
 
-            // if not neuro san agent, just return since we won't get connectivity info
-            if (!(targetAgent in NeuroSanAgent)) {
-                return
-            }
-
             // It is a Neuro-san agent, so get the function and connectivity info
             let agentFunction: FunctionResponse
 
             try {
-                agentFunction = await getAgentFunction(currentUser, targetAgent as NeuroSanAgent)
+                agentFunction = await getAgentFunction(currentUser, targetAgent)
             } catch {
                 // For now, just return. May be a legacy agent without a functional description in Neuro-San.
                 return
             }
 
             try {
-                const connectivity: ConnectivityResponse = await getConnectivity(targetAgent as NeuroSanAgent)
+                const connectivity: ConnectivityResponse = await getConnectivity(targetAgent)
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
@@ -573,7 +566,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         finalAnswerRef.current = null
 
         // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
-        const agentName = NeuroSanAgent[targetAgent] || targetAgent
+        const agentName = targetAgent
         setPreviousResponse?.(agentName, currentResponse.current)
         currentResponse.current = ""
     }
@@ -703,7 +696,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         controller?.current.signal,
                         query,
                         currentUser,
-                        targetAgent as NeuroSanAgent,
+                        targetAgent,
                         handleChunk,
                         chatContext.current
                     )

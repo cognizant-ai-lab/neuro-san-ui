@@ -1,21 +1,20 @@
 /**
  * Controller module for interacting with the Agent LLM API.
  */
-import type {components} from "../../generated/neuro-san/NeuroSanClient"
-
-import {ConnectivityResponse, FunctionResponse} from "../../components/AgentChat/Types"
+import {
+    ChatContext,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    ConciergeResponse,
+    ConnectivityResponse,
+    FunctionResponse,
+} from "../../components/AgentChat/Types"
+import {NEURO_SAN_SERVER_URL} from "../../const"
 import {sendLlmRequest} from "../llm/llm_chat"
 
-type ChatContext = components["schemas"]["ChatContext"]
-type ChatRequest = components["schemas"]["ChatRequest"]
-type ChatResponse = components["schemas"]["ChatResponse"]
-type ChatMessage = components["schemas"]["ChatMessage"]
-type ConciergeResponse = components["schemas"]["ConciergeResponse"]
-
-const BASE_API_PATH = "https://neuro-san.decisionai.ml"
-
 export async function getAgentNetworks(): Promise<string[]> {
-    const path = `${BASE_API_PATH}/api/v1/list`
+    const path = `${NEURO_SAN_SERVER_URL}/api/v1/list`
     const response = await fetch(path)
     const conciergeResponse: ConciergeResponse = (await response.json()) as ConciergeResponse
     return conciergeResponse.agents.map((network) => network.agent_name)
@@ -49,13 +48,14 @@ export async function sendChatQuery(
     }
 
     const agentChatRequest: ChatRequest = {
+        // TODO: Type 'string' is not assignable to type 'never'.
         sly_data: {login: requestUser},
         user_message: userMessage,
         chat_filter: {chat_filter_type: 2},
         chat_context: chatContext,
     }
 
-    const fetchUrl = `${BASE_API_PATH}/api/v1/${targetAgent.toLocaleLowerCase()}/streaming_chat`
+    const fetchUrl = `${NEURO_SAN_SERVER_URL}/api/v1/${targetAgent.toLocaleLowerCase()}/streaming_chat`
     const requestRecord: Record<string, unknown> = Object.entries(agentChatRequest).reduce(
         (acc, [key, value]) => (value ? {...acc, [key]: value} : acc),
         {}
@@ -72,7 +72,7 @@ export async function sendChatQuery(
  * Caller is responsible for try-catch.
  */
 export async function getConnectivity(targetAgent: string): Promise<ConnectivityResponse> {
-    const fetchUrl = `${BASE_API_PATH}/api/v1/${targetAgent.toLocaleLowerCase()}/connectivity`
+    const fetchUrl = `${NEURO_SAN_SERVER_URL}/api/v1/${targetAgent.toLocaleLowerCase()}/connectivity`
 
     const response = await fetch(fetchUrl, {
         method: "GET",
@@ -98,7 +98,7 @@ export async function getConnectivity(targetAgent: string): Promise<Connectivity
  * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
  */
 export async function getAgentFunction(_requestUser: string, targetAgent: string): Promise<FunctionResponse> {
-    const fetchUrl = `${BASE_API_PATH}/api/v1/${targetAgent.toLocaleLowerCase()}/funmction`
+    const fetchUrl = `${NEURO_SAN_SERVER_URL}/api/v1/${targetAgent.toLocaleLowerCase()}/function`
 
     const response = await fetch(fetchUrl, {
         method: "POST",
