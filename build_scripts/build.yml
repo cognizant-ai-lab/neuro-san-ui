@@ -39,7 +39,7 @@ steps:
       image: alpine:3.21.3
       working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
       commands:
-        - apk --quite --no-progress add bash git coreutils
+        - apk --quiet --no-progress add bash git coreutils
         - ./build_scripts/customBuilds/prepare_custom_build.sh
 
     set_tag:
