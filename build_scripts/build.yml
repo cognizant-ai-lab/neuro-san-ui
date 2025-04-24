@@ -33,6 +33,29 @@ steps:
         - yarn --cwd embed install
         - ./build_scripts/do_typescript_generate.sh
 
+    prebuild:
+      title: Run prebuild step for custom build
+      description: Pare down the code to build sub-sets of the ui
+      image: alpine:3.21.3
+      working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+      commands:
+        - apk --quiet --no-progress add bash git coreutils
+        - ./build_scripts/customBuilds/prepare_custom_build.sh
+
+    set_tag:
+      title: Set Image Tag
+      description: Keep current tag the same for full builds, append for custom builds
+      image: alpine:3.21.3
+      shell: sh
+      commands:
+        - |
+          if [ -z "${{BUILD_TARGET}}" ] || [ "${{BUILD_TARGET}}" = "all" ]; then
+            export TAG="${{UNILEAF_VERSION}}"
+          else
+            export TAG="${{UNILEAF_VERSION}}-${{BUILD_TARGET}}"
+          fi
+          cf_export TAG
+
     ui-node-build:
       title: Build ui-node Docker image
       image_name: "leaf/unileaf-ui-node"
@@ -44,4 +67,4 @@ steps:
       build_arguments:
         - NODEJS_VERSION=${{NODEJS_VERSION}}
         - UNILEAF_VERSION=${{UNILEAF_VERSION}}
-      tag: "${{UNILEAF_VERSION}}"
+      tag: "${{TAG}}"
