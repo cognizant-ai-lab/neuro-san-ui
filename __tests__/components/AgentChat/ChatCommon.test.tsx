@@ -37,9 +37,13 @@ jest.mock("../../../controller/llm/llm_chat", () => ({
     sendLlmRequest: jest.fn(),
 }))
 
+// Don't want to send user notifications during tests so mock this
+jest.mock("../../../components/Common/notification")
+
 const TEST_USER = "testUser"
 const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
+const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
 
 function getResponseMessage(type: ChatMessageChatMessageType, text: string): ChatMessage {
     return ChatMessage.fromPartial({
@@ -95,7 +99,7 @@ describe("ChatCommon", () => {
             />
         )
 
-        expect(await screen.findByText("Telco Network Support")).toBeInTheDocument()
+        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
 
         // Should have "Clear Chat", "Regenerate" and "Send" buttons
         expect(screen.getByRole("button", {name: "Clear Chat"})).toBeInTheDocument()
@@ -144,8 +148,7 @@ describe("ChatCommon", () => {
             />
         )
 
-        // TODO: Update
-        const userInput = screen.getByPlaceholderText("Chat with Telco Network Support")
+        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
 
         // Type user input
@@ -179,8 +182,7 @@ describe("ChatCommon", () => {
             />
         )
 
-        // TODO: Update
-        const userInput = screen.getByPlaceholderText("Chat with Telco Network Support")
+        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
 
         // Type user input
@@ -211,8 +213,7 @@ describe("ChatCommon", () => {
             />
         )
 
-        // TODO: Update
-        const userInput = screen.getByPlaceholderText("Chat with Telco Network Support")
+        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
 
         // Type line 1
