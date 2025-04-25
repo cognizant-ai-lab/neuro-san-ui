@@ -36,6 +36,7 @@ export default function AgentNetworkPage() {
             const networksTmp: string[] = await getAgentNetworks()
             const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
             setNetworks(sortedNetworks)
+            // Set the first network as the selected network
             setSelectedNetwork(sortedNetworks[0])
         }
 
