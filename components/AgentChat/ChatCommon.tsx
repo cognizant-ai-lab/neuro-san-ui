@@ -493,7 +493,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             introduceAgent()
 
             // if not neuro san agent, just return since we won't get connectivity info
-            if (!isLegacyAgentType(targetAgent)) {
+            if (isLegacyAgentType(targetAgent)) {
                 return
             }
 
