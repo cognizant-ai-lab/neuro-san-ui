@@ -1,3 +1,4 @@
+import {ChatRequest} from "../../../components/AgentChat/Types"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
 
@@ -29,16 +30,14 @@ describe("Controller/Agent/sendChatQuery", () => {
         )
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
 
-        const expectedRequestParams = {
+        const expectedRequestParams: ChatRequest = {
             chat_context: {chat_histories: []},
-            // TODO: use enum types here when available
-            chat_filter: {chat_filter_type: 2},
+            chat_filter: {chat_filter_type: "MAXIMAL"},
             user_message: {
-                // TODO: use enum types here when available
-                type: 2,
+                type: "HUMAN",
                 text: testQuery,
             },
-            sly_data: {login: testUser},
+            sly_data: {login: testUser} as unknown as Record<string, never>,
         }
 
         expect(sendLlmRequest).toHaveBeenCalledWith(
