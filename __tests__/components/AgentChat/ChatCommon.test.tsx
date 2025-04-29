@@ -260,7 +260,7 @@ describe("ChatCommon", () => {
         })
 
         const chunk = JSON.stringify({result: chatResponse})
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
             callback(chunk)
         })
 
@@ -417,7 +417,7 @@ describe("ChatCommon", () => {
             response: successMessage,
         })
 
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
             callback(JSON.stringify({result: chatResponse}))
         })
 
@@ -462,7 +462,7 @@ describe("ChatCommon", () => {
         )
 
         let sentChatContext: ChatContext
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback, chatContext) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback, chatContext) => {
             callback(JSON.stringify({result: chatResponse}))
             sentChatContext = chatContext
         })
@@ -618,7 +618,7 @@ describe("ChatCommon", () => {
             })
         )
 
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
             callback(JSON.stringify({result: chatResponse}))
         })
 
@@ -657,7 +657,7 @@ describe("ChatCommon", () => {
             )
         )
 
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
             callback(JSON.stringify({result: chatResponsesStringified[0]}))
             callback(JSON.stringify({result: chatResponsesStringified[1]}))
         })

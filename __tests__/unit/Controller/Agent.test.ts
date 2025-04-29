@@ -18,9 +18,16 @@ describe("Controller/Agent/sendChatQuery", () => {
         const callbackMock = jest.fn()
         const testQuery = "test query with special characters: !@#$%^&*()_+"
         const testUser = "test user"
-        await sendChatQuery(abortSignal, testQuery, testUser, TEST_AGENT_MATH_GUY, callbackMock, {
-            chatHistories: [],
-        })
+        await sendChatQuery(
+            abortSignal,
+            testQuery,
+            TEST_AGENT_MATH_GUY,
+            callbackMock,
+            {
+                chat_histories: [],
+            },
+            {}
+        )
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
 
         const expectedRequestParams = {

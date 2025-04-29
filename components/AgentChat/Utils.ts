@@ -6,11 +6,12 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
     let chatResponse: ChatResponse
     try {
         chatResponse = JSON.parse(chunk)
-        console.debug(`Parsed chat response: ${JSON.stringify(chatResponse)}`)
     } catch {
         return null
     }
     const chatMessage: ChatMessage = chatResponse.response
+
+    // TODO: filter out unknown message types like we did with previous API
 
     // Have to use fromJSON to convert from "wire format" to "Typescript format", like foo_bar -> fooBar.
     return chatMessage
@@ -28,7 +29,6 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
 export const tryParseJson: (chunk: string) => null | object | string = (chunk: string) => {
     const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
     if (!chatMessage) {
-        console.debug(`Failed to parse chat message from chunk: ${chunk}`)
         return chunk
     }
 
@@ -42,7 +42,6 @@ export const tryParseJson: (chunk: string) => null | object | string = (chunk: s
         chatMessageJson = JSON.parse(chatMessageCleaned)
         return chatMessageJson
     } catch (error) {
-        console.debug(`Failed to parse chat message JSON: ${error}`)
         // Not JSON-like, so just return it as is, except we replace escaped newlines with actual newlines
         // Also replace escaped double quotes with single quotes
         if (error instanceof SyntaxError) {

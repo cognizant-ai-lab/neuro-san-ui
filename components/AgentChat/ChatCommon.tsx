@@ -266,6 +266,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     */
     const chatContext = useRef<ChatContext>(null)
 
+    const slyData = useRef<Record<string, never>>({})
+
     // Create a ref for the final answer element
     const finalAnswerRef = useRef<HTMLDivElement>(null)
 
@@ -486,6 +488,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 // New agent, so clear chat context if desired
                 chatContext.current = null
                 currentResponse.current = ""
+                slyData.current = null
                 setChatOutput([])
             }
 
@@ -571,8 +574,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         finalAnswerRef.current = null
 
         // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
-        const agentName = targetAgent
-        setPreviousResponse?.(agentName, currentResponse.current)
+        setPreviousResponse?.(targetAgent, currentResponse.current)
         currentResponse.current = ""
     }
 
@@ -639,13 +641,18 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         }
 
         // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
-        if (chatMessage.type === 101 && chatMessage.chat_context) {
+        if (String(chatMessage.type) === "AGENT_FRAMEWORK" && chatMessage.chat_context) {
             // Save the chat context, potentially overwriting any previous ones we received during this session.
             // We only care about the last one received.
             chatContext.current = chatMessage.chat_context
 
             // Nothing more to do with this message. It's just a message to give us the chat context, so return
             return
+        }
+
+        // Merge slyData.current with incoming chatMessage.sly_data
+        if (chatMessage.sly_data) {
+            slyData.current = {...slyData.current, ...chatMessage.sly_data}
         }
 
         // Agent name is the last tool in the origin array. If it's not there, use a default name.
@@ -657,7 +664,6 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         // It's a Neuro-san agent. Should be a ChatMessage at this point since all Neuro-san agents should return
         // ChatMessages.
         const parsedResult: null | object | string = tryParseJson(chunk)
-        console.debug(`Parsed result: ${parsedResult} type is ${typeof parsedResult}`)
         if (typeof parsedResult === "string") {
             updateOutput(processLogLine(parsedResult, agentName, chatMessage?.type))
         } else if (typeof parsedResult === "object") {
@@ -700,10 +706,10 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     await sendChatQuery(
                         controller?.current.signal,
                         query,
-                        currentUser,
                         targetAgent,
                         handleChunk,
-                        chatContext.current
+                        chatContext.current,
+                        slyData.current
                     )
                 } else {
                     // It's a legacy agent.
