@@ -10,11 +10,12 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../components/AgentChat/Types"
-import {NEURO_SAN_SERVER_URL} from "../../const"
+import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"
 
 export async function getAgentNetworks(): Promise<string[]> {
-    const path = `${NEURO_SAN_SERVER_URL}/api/v1/list`
+    const backendNeuroSanApiUrl = useEnvironmentStore.getState().backendNeuroSanApiUrl
+    const path = `${backendNeuroSanApiUrl}/api/v1/list`
     const response = await fetch(path)
     const conciergeResponse: ConciergeResponse = (await response.json()) as ConciergeResponse
     return conciergeResponse.agents.map((network) => network.agent_name)
@@ -41,6 +42,8 @@ export async function sendChatQuery(
     chatContext: ChatContext,
     slyData: Record<string, never>
 ): Promise<ChatResponse> {
+    const backendNeuroSanApiUrl = useEnvironmentStore.getState().backendNeuroSanApiUrl
+
     // Create request
     const userMessage: ChatMessage = {
         type: 2,
@@ -55,7 +58,7 @@ export async function sendChatQuery(
         chat_context: chatContext,
     }
 
-    const fetchUrl = `${NEURO_SAN_SERVER_URL}/api/v1/${targetAgent.toLocaleLowerCase()}/streaming_chat`
+    const fetchUrl = `${backendNeuroSanApiUrl}/api/v1/${targetAgent.toLocaleLowerCase()}/streaming_chat`
     const requestRecord: Record<string, unknown> = Object.entries(agentChatRequest).reduce(
         (acc, [key, value]) => (value ? {...acc, [key]: value} : acc),
         {}
@@ -72,7 +75,8 @@ export async function sendChatQuery(
  * Caller is responsible for try-catch.
  */
 export async function getConnectivity(targetAgent: string): Promise<ConnectivityResponse> {
-    const fetchUrl = `${NEURO_SAN_SERVER_URL}/api/v1/${targetAgent.toLocaleLowerCase()}/connectivity`
+    const backendNeuroSanApiUrl = useEnvironmentStore.getState().backendNeuroSanApiUrl
+    const fetchUrl = `${backendNeuroSanApiUrl}/api/v1/${targetAgent.toLocaleLowerCase()}/connectivity`
 
     const response = await fetch(fetchUrl, {
         method: "GET",
@@ -98,7 +102,8 @@ export async function getConnectivity(targetAgent: string): Promise<Connectivity
  * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
  */
 export async function getAgentFunction(_requestUser: string, targetAgent: string): Promise<FunctionResponse> {
-    const fetchUrl = `${NEURO_SAN_SERVER_URL}/api/v1/${targetAgent.toLocaleLowerCase()}/function`
+    const backendNeuroSanApiUrl = useEnvironmentStore.getState().backendNeuroSanApiUrl
+    const fetchUrl = `${backendNeuroSanApiUrl}/api/v1/${targetAgent.toLocaleLowerCase()}/function`
 
     const response = await fetch(fetchUrl, {
         method: "GET",

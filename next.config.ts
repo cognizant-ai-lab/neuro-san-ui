@@ -50,7 +50,6 @@ const nextConfig: import("next").NextConfig = {
     },
 
     publicRuntimeConfig: {
-        neuroSanServerUrl: process.env.NEURO_SAN_SERVER_URL || "unknown",
         unileafVersion: process.env.UNILEAF_VERSION || "unknown",
     },
 

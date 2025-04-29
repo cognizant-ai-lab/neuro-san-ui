@@ -7,9 +7,6 @@ export const LOGO: string = "Neuro AI"
 export const GENERIC_LOGO: string = "Autopilot"
 
 // Build version (passed in from build system)
-export const NEURO_SAN_SERVER_URL: string = publicRuntimeConfig.neuroSanServerUrl
-
-// Build version (passed in from build system)
 export const UNILEAF_VERSION: string = publicRuntimeConfig.unileafVersion
 
 export const ESPResultverbs = ["max", "min", "mean"]

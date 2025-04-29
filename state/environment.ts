@@ -12,6 +12,10 @@ interface EnvironmentStore {
     backendApiUrl: string
     setBackendApiUrl: (backendApiUrl: string) => void
 
+    // URL for NeuroSan API calls. Retrieved from NodeJS backend by first page visited
+    backendNeuroSanApiUrl: string
+    setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => void
+
     // Auth0 client ID
     auth0ClientId: string
     setAuth0ClientId: (auth0ClientId: string) => void
@@ -39,6 +43,9 @@ interface EnvironmentStore {
 const useEnvironmentStore = create<EnvironmentStore>((set) => ({
     backendApiUrl: null,
     setBackendApiUrl: (backendApiUrl: string) => set(() => ({backendApiUrl})),
+
+    backendNeuroSanApiUrl: null,
+    setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => set(() => ({backendNeuroSanApiUrl})),
 
     auth0ClientId: null,
     setAuth0ClientId: (auth0ClientId: string) => set(() => ({auth0ClientId})),
