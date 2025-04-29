@@ -36,7 +36,6 @@ steps:
     commands:
       - yarn --version
       - yarn install
-      - yarn --cwd embed install
 
   generate_proto_stubs:
     title: Generate proto stubs

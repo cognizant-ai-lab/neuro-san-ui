@@ -43,7 +43,7 @@ const config = [
         },
     },
     {
-        ignores: [".next", "coverage", "generated"],
+        ignores: [".next", "coverage", "generated", "embed"],
     },
     ...fixupConfigRules(
         compat.extends(
