@@ -10,6 +10,7 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../components/AgentChat/Types"
+// eslint-disable-next-line camelcase
 import {ApiPaths, ChatFilterChat_filter_type, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"

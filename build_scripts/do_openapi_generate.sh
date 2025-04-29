@@ -16,4 +16,4 @@ yarn openapi-typescript "${NEURO_SAN_SERVER_URL}/api/v1/docs" \
   --enum true \
   --immutable true \
   --make-paths-enum \
-  -o ./generated/neuro-san/NeuroSanClient.d.ts 
+  -o ./generated/neuro-san/NeuroSanClient.ts 
