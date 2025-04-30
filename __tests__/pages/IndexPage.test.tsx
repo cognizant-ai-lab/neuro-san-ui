@@ -41,10 +41,13 @@ describe("Index Page", () => {
         render(<Index />)
 
         expect(screen.getByText("Neuro AI")).toBeInTheDocument()
-        expect(screen.getByText("The AI platform for smarter business decisions.")).toBeInTheDocument()
-        expect(screen.getByText("Opportunity Finder")).toBeInTheDocument()
-        expect(screen.getByText("Model Orchestrator")).toBeInTheDocument()
-        expect(screen.getByText("Multi-Agent Accelerator")).toBeInTheDocument()
+        expect(screen.getByText("Neuro AI Decisioning")).toBeInTheDocument()
+        expect(screen.getByText("A platform for smarter business decisions")).toBeInTheDocument()
+        expect(screen.getByText("Neuro AI Multi-Agent Accelerator")).toBeInTheDocument()
+        expect(screen.getByText("No-code framework for rapidly agentifying your business")).toBeInTheDocument()
+        expect(screen.getByText("Find opportunities")).toBeInTheDocument()
+        expect(screen.getByText("Build model")).toBeInTheDocument()
+        expect(screen.getByText("Explore reference networks")).toBeInTheDocument()
     })
 
     it("renders the generic branding when isGeneric is true", () => {
@@ -75,7 +78,7 @@ describe("Index Page", () => {
     it("builds the query string correctly", () => {
         render(<Index />)
 
-        const link = screen.getByText("Opportunity Finder").closest("a")
+        const link = screen.getByText("Find opportunities").closest("a")
         expect(link).toHaveAttribute("href", "/opportunityFinder?key=value")
     })
 })
