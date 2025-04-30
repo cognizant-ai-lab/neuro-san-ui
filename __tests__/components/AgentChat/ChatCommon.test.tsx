@@ -14,6 +14,7 @@ import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock agent API
 jest.mock("../../../controller/agent/agent", () => ({
@@ -65,6 +66,9 @@ function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
 
 describe("ChatCommon", () => {
     let user: UserEvent
+
+    withStrictMocks()
+
     beforeEach(() => {
         jest.clearAllMocks()
         user = userEvent.setup()
