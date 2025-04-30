@@ -356,16 +356,6 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         messageType: ChatMessageType,
         isFinalAnswer?: boolean
     ): ReactNode => {
-        console.debug(
-            "processLogLine:",
-            logLine,
-            "summary:",
-            summary,
-            "isFinalAnswer:",
-            isFinalAnswer,
-            "messageType:",
-            messageType
-        )
         // extract the parts of the line
         let repairedJson: string
 

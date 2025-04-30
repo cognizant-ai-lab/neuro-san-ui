@@ -2,33 +2,32 @@ import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {ChatCommon} from "../../../components/AgentChat/ChatCommon"
-import {AgentErrorProps, CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
+import {
+    AgentErrorProps,
+    ChatContext,
+    ChatMessage,
+    ChatResponse,
+    CombinedAgentType,
+    LegacyAgentType,
+} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
-import {ChatResponse, ConnectivityResponse, FunctionResponse} from "../../../generated/neuro_san/api/grpc/agent"
-import {
-    ChatContext,
-    ChatHistory,
-    ChatMessage,
-    ChatMessageChatMessageType,
-} from "../../../generated/neuro_san/api/grpc/chat"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 // Mock agent API
 jest.mock("../../../controller/agent/agent", () => ({
-    getAgentFunction: () =>
-        FunctionResponse.fromPartial({
-            function: {description: "Hello, I am the Hello World agent", parameters: []},
-        }),
-    getConnectivity: () =>
-        ConnectivityResponse.fromPartial({
-            connectivityInfo: [
-                {
-                    origin: "testOrigin",
-                    tools: ["testTool"],
-                },
-            ],
-        }),
+    getAgentFunction: () => ({
+        function: {description: "Hello, I am the Hello World agent", parameters: []},
+    }),
+    getConnectivity: () => ({
+        connectivityInfo: [
+            {
+                origin: "testOrigin",
+                tools: ["testTool"],
+            },
+        ],
+    }),
     sendChatQuery: jest.fn(),
 }))
 
@@ -45,23 +44,23 @@ const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
 
-function getResponseMessage(type: ChatMessageChatMessageType, text: string): ChatMessage {
-    return ChatMessage.fromPartial({
+function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
+    return {
         type: type,
         text: text,
-        chatContext: ChatContext.fromPartial({
-            chatHistories: [
-                ChatHistory.fromPartial({
+        chat_context: {
+            chat_histories: [
+                {
                     messages: [
-                        ChatMessage.fromPartial({
+                        {
                             type: type,
                             text: text,
-                        }),
+                        },
                     ],
-                }),
+                },
             ],
-        }),
-    })
+        },
+    }
 }
 
 describe("ChatCommon", () => {
@@ -251,15 +250,15 @@ describe("ChatCommon", () => {
         )
 
         const testResponseText = '"Response text from LLM"'
-        const chatResponse: ChatResponse = ChatResponse.fromPartial({
-            response: ChatMessage.fromPartial({
-                type: ChatMessageChatMessageType.AGENT_FRAMEWORK,
+        const chatResponse: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT_FRAMEWORK,
                 text: testResponseText,
-                origin: [{tool: "testTool", instantiationIndex: 1}],
-            }),
-        })
+                origin: [{tool: "testTool", instantiation_index: 1}],
+            },
+        }
 
-        const chunk = JSON.stringify({result: chatResponse})
+        const chunk = JSON.stringify(chatResponse)
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
             callback(chunk)
         })
@@ -403,22 +402,24 @@ describe("ChatCommon", () => {
         )
 
         const errorMessage = "Error message from LLM"
+
         const testResponseText = JSON.stringify({
             error: errorMessage,
             traceback: "test tracebook",
             tool: "test tool",
         } as AgentErrorProps)
-        const successMessage: ChatMessage = ChatMessage.fromPartial({
-            type: ChatMessageChatMessageType.AI,
-            text: testResponseText,
-        })
 
-        const chatResponse: ChatResponse = ChatResponse.fromPartial({
+        const successMessage: ChatMessage = {
+            type: ChatMessageType.AI,
+            text: testResponseText,
+        }
+
+        const chatResponse: ChatResponse = {
             response: successMessage,
-        })
+        }
 
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
-            callback(JSON.stringify({result: chatResponse}))
+            callback(JSON.stringify(chatResponse))
         })
 
         const query = "Sample test query for error handling"
@@ -452,18 +453,14 @@ describe("ChatCommon", () => {
             />
         )
 
-        const responseMessage = getResponseMessage(ChatMessageChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
+        const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
-        const chatResponse = ChatResponse.toJSON(
-            ChatResponse.fromPartial({
-                response: responseMessage,
-            })
-        )
+        const chatResponse = {response: responseMessage}
 
         let sentChatContext: ChatContext
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback, chatContext) => {
-            callback(JSON.stringify({result: chatResponse}))
+            callback(JSON.stringify(chatResponse))
             sentChatContext = chatContext
         })
 
@@ -484,7 +481,7 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         //We should be sending back chat context as-is to the server to maintain conversation state
-        expect(sentChatContext).toEqual(responseMessage.chatContext)
+        expect(sentChatContext).toEqual(responseMessage.chat_context)
     })
 
     it("Should show agent introduction", async () => {
@@ -609,17 +606,13 @@ describe("ChatCommon", () => {
             />
         )
 
-        const responseMessage = getResponseMessage(ChatMessageChatMessageType.AI, "Sample AI response")
+        const responseMessage = getResponseMessage(ChatMessageType.AI, "Sample AI response")
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
-        const chatResponse = ChatResponse.toJSON(
-            ChatResponse.fromPartial({
-                response: responseMessage,
-            })
-        )
+        const chatResponse = {response: responseMessage}
 
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
-            callback(JSON.stringify({result: chatResponse}))
+            callback(JSON.stringify(chatResponse))
         })
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
@@ -644,22 +637,18 @@ describe("ChatCommon", () => {
         const agentResponseText = "[]Sample Agent response"
         const aiResponseText = "[]Sample AI response"
         const responseMessages = [
-            getResponseMessage(ChatMessageChatMessageType.AGENT, agentResponseText),
-            getResponseMessage(ChatMessageChatMessageType.AI, aiResponseText),
+            getResponseMessage(ChatMessageType.AGENT, agentResponseText),
+            getResponseMessage(ChatMessageType.AI, aiResponseText),
         ]
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
-        const chatResponsesStringified = responseMessages.map((response) =>
-            ChatResponse.toJSON(
-                ChatResponse.fromPartial({
-                    response: response,
-                })
-            )
-        )
+        const chatResponsesStringified = responseMessages.map((response) => ({
+            response: response,
+        }))
 
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
-            callback(JSON.stringify({result: chatResponsesStringified[0]}))
-            callback(JSON.stringify({result: chatResponsesStringified[1]}))
+            callback(JSON.stringify(chatResponsesStringified[0]))
+            callback(JSON.stringify(chatResponsesStringified[1]))
         })
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
