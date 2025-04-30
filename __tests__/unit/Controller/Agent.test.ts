@@ -12,10 +12,6 @@ const TEST_AGENT_MATH_GUY = "Math Guy"
 describe("Controller/Agent/sendChatQuery", () => {
     withStrictMocks()
 
-    beforeEach(() => {
-        jest.resetAllMocks()
-    })
-
     it("Should correctly construct and send a request", async () => {
         const abortSignal = new AbortController().signal
 

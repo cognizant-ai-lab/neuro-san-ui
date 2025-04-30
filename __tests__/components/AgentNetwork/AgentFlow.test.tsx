@@ -17,7 +17,6 @@ describe("AgentFlow", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        jest.clearAllMocks()
         user = userEvent.setup()
     })
 

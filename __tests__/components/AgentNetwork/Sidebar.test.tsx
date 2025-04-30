@@ -14,7 +14,6 @@ describe("SideBar", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        jest.clearAllMocks()
         user = userEvent.setup()
     })
 

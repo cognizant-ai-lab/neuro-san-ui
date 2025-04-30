@@ -70,7 +70,6 @@ describe("ChatCommon", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        jest.clearAllMocks()
         user = userEvent.setup()
     })
 
