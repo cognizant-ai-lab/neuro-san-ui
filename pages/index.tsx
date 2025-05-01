@@ -57,15 +57,15 @@ const HeaderLineOne = styled("h1")({
 })
 
 const LaunchButton = styled("div")({
+    background: "#26efe9",
+    borderRadius: "1000px",
     display: "inline-block",
-    marginTop: "3rem",
     fontWeight: "bold",
     fontSize: "1.25rem",
-    borderRadius: "1000px",
+    marginTop: "2rem",
+    minWidth: "270px",
     padding: "1.25rem 2rem",
-    background: "#26efe9",
     textAlign: "center",
-    width: "270px",
 })
 
 const HeaderLineFive = styled("h5")({
@@ -94,11 +94,21 @@ const SplashLink = styled("a")({
     },
 })
 
-const NeuroAIDescriptionBox = styled(Box)({
+const SubHeaderTitle = styled(Box)({
     color: "var(--bs-white)",
-    fontSize: "1.5rem",
+    fontSize: "1.75rem",
     fontWeight: "bold",
     marginTop: "2.25rem",
+})
+
+const NeuroAIDescriptionBox = styled(Box)({
+    color: "var(--bs-white)",
+    fontSize: "1.3rem",
+    marginTop: "1.25rem",
+})
+
+const NeuroAIToolsContainer = styled(Box)({
+    marginTop: "0.25rem",
 })
 // #endregion: Styled Components
 
@@ -206,13 +216,11 @@ export default function Index(): ReactElement {
                                 {isGeneric ? GENERIC_LOGO : LOGO}
                             </div>
                         </HeaderLineOne>
+                        <SubHeaderTitle id="neuro-ai-decisioning-box">Neuro AI Decisioning</SubHeaderTitle>
                         <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                            The AI platform for smarter business decisions.
+                            A platform for smarter business decisions
                         </NeuroAIDescriptionBox>
-                        <div
-                            id="neuro-ai-tools-container"
-                            style={{marginTop: "0.25rem"}}
-                        >
+                        <NeuroAIToolsContainer id="opp-finder-and-model-orchestrator-container">
                             {buildTarget === "all" && (
                                 <>
                                     <Link
@@ -241,7 +249,7 @@ export default function Index(): ReactElement {
                                                     ]),
                                                 }}
                                             >
-                                                Opportunity Finder
+                                                Find opportunities
                                             </LaunchButton>
                                         </a>
                                     </Link>
@@ -269,12 +277,23 @@ export default function Index(): ReactElement {
                                                     ...getButtonStyle(["model-orchestrator-button"]),
                                                 }}
                                             >
-                                                Model Orchestrator
+                                                Build models
                                             </LaunchButton>
                                         </a>
                                     </Link>
                                 </>
                             )}
+                        </NeuroAIToolsContainer>
+                        <SubHeaderTitle
+                            id="neuro-ai-maa-box"
+                            sx={{marginTop: "2.5rem"}}
+                        >
+                            Neuro AI Multi-Agent Accelerator
+                        </SubHeaderTitle>
+                        <NeuroAIDescriptionBox id="neuro-ai-description-box">
+                            Low-code framework for rapidly agentifying your business
+                        </NeuroAIDescriptionBox>
+                        <NeuroAIToolsContainer id="multi-agent-accelerator-container">
                             <Link
                                 id="agent-network-link"
                                 // Use the URL object form of `href` to pass along the query string
@@ -288,7 +307,6 @@ export default function Index(): ReactElement {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     href={`/projects?${buildQueryString()}`}
-                                    style={{marginLeft: "50px"}}
                                     onMouseEnter={handleMouseEnter}
                                     onMouseLeave={handleMouseLeave}
                                 >
@@ -296,11 +314,11 @@ export default function Index(): ReactElement {
                                         id="neuro-san-button"
                                         style={{position: "relative", ...getButtonStyle(["neuro-san-button"])}}
                                     >
-                                        Multi-Agent Accelerator
+                                        Explore reference networks
                                     </LaunchButton>
                                 </a>
                             </Link>
-                        </div>
+                        </NeuroAIToolsContainer>
                     </div>
                 </BodyContent>
                 <footer
@@ -378,11 +396,11 @@ export default function Index(): ReactElement {
                             </SplashLink>
                             <SplashLink
                                 id="cdit-link"
-                                href="https://cditoolkit.cognizant.com"
+                                href="https://cditoolkit.cognizant.com/cditlive2.0/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                Cognizant Data And Intelligence Toolkit
+                                Cognizant Ignition
                             </SplashLink>
                         </MoreLinks>
                     </div>
