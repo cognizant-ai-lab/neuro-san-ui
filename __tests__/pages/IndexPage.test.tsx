@@ -44,9 +44,9 @@ describe("Index Page", () => {
         expect(screen.getByText("Neuro AI Decisioning")).toBeInTheDocument()
         expect(screen.getByText("A platform for smarter business decisions")).toBeInTheDocument()
         expect(screen.getByText("Neuro AI Multi-Agent Accelerator")).toBeInTheDocument()
-        expect(screen.getByText("No-code framework for rapidly agentifying your business")).toBeInTheDocument()
+        expect(screen.getByText("Low-code framework for rapidly agentifying your business")).toBeInTheDocument()
         expect(screen.getByText("Find opportunities")).toBeInTheDocument()
-        expect(screen.getByText("Build model")).toBeInTheDocument()
+        expect(screen.getByText("Build models")).toBeInTheDocument()
         expect(screen.getByText("Explore reference networks")).toBeInTheDocument()
     })
 

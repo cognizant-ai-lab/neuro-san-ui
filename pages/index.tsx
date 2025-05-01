@@ -277,7 +277,7 @@ export default function Index(): ReactElement {
                                                     ...getButtonStyle(["model-orchestrator-button"]),
                                                 }}
                                             >
-                                                Build model
+                                                Build models
                                             </LaunchButton>
                                         </a>
                                     </Link>
@@ -291,7 +291,7 @@ export default function Index(): ReactElement {
                             Neuro AI Multi-Agent Accelerator
                         </SubHeaderTitle>
                         <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                            No-code framework for rapidly agentifying your business
+                            Low-code framework for rapidly agentifying your business
                         </NeuroAIDescriptionBox>
                         <NeuroAIToolsContainer id="multi-agent-accelerator-container">
                             <Link
