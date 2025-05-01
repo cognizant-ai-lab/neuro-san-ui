@@ -64,12 +64,11 @@ describe("Agent Network Page", () => {
 
         // UI displays the elements.
         const sidebarTitle = await screen.findByText("Agent Networks")
-        // await until the first Math Guy is rendered. Without this line, the test case fails.
-        await screen.findByText(TEST_AGENT_MATH_GUY)
+        // Get Music Nerd item.
+        const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
         // Get Math Guy items.
         const mathGuyItems = await screen.findAllByText(TEST_AGENT_MATH_GUY)
-        // Get Music Nerd items.
-        const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
+        // Get Music Nerd items (is overriden by a second query below).
         let musicNerdItems = await screen.findAllByText(TEST_AGENT_MUSIC_NERD)
 
         // Check that the sidebar title is present.
