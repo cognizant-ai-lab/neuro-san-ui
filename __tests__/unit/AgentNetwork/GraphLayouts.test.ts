@@ -6,10 +6,6 @@ import {withStrictMocks} from "../../common/strictMocks"
 describe("GraphLayouts", () => {
     withStrictMocks()
 
-    beforeEach(() => {
-        jest.clearAllMocks()
-    })
-
     const threeAgentNetwork: ConnectivityInfo[] = [
         {origin: "agent1", tools: ["agent2"]},
         {origin: "agent2", tools: ["agent3"]},
