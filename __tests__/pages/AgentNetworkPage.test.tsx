@@ -54,8 +54,9 @@ describe("Agent Network Page", () => {
 
         process.env.NEURO_SAN_SERVER_URL = NEURO_SAN_SERVER_URL
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(NEURO_SAN_SERVER_URL)
-        // TODO: should this env var be reset/removed?
     })
+
+    afterAll(() => delete process.env.NEURO_SAN_SERVER_URL)
 
     it("should render elements on the page and change the page on click of sidebar item", async () => {
         const user = userEvent.setup()
