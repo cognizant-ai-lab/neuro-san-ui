@@ -594,14 +594,14 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             // Introduce the agent to the user
             introduceAgent()
 
-            // if not neuro san agent (and not indirect neuro-san agent), return since we won't get connectivity info
+            // if not neuro san agent (and not indirect Neuro-san agent), return since we won't get connectivity info
             if (isLegacyAgentType(targetAgent)) {
                 return
             }
 
             let agentFunction: GrpcFunctionResponse | FunctionResponse
 
-            // For now, Opportunity Finder needs to use the indirect neuro-san API
+            // For now, Opportunity Finder needs to use the indirect Neuro-san API
             if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
                 try {
                     agentFunction = await getAgentFunctionNeuroSanIndirect(currentUser, targetAgent as AgentType)
@@ -613,13 +613,13 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 // Opportunity Finder shouldn't need connectivity, so return
                 return
 
-                // For all other agents, use the latest neuro-san API
+                // For all other agents, use the latest Neuro-san API
             } else {
                 // It is a Neuro-san agent, so get the function and connectivity info
                 try {
                     agentFunction = await getAgentFunction(targetAgent)
                 } catch {
-                    // For now, just return. May be a legacy agent without a functional description in Neuro-San.
+                    // For now, just return. May be a legacy agent without a functional description in Neuro-san.
                     return
                 }
             }
@@ -730,7 +730,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.finalAnswerText
 
     const handleChunk = (chunk: string): void => {
-        // Check if it's the Opportunity Finder pipeline. If so, we need to use the indirect neuro-san API
+        // Check if it's the Opportunity Finder pipeline. If so, we need to use the indirect Neuro-san API
         const isOppFinderPipeline = targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE
 
         // Give container a chance to process the chunk first
@@ -752,7 +752,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
         let chatMessage: GrpcChatMessage | ChatMessage
 
-        // For now, Opportunity Finder needs to use the indirect neuro-san API
+        // For now, Opportunity Finder needs to use the indirect Neuro-san API
         if (isOppFinderPipeline) {
             chatMessage = chatMessageFromChunkNeuroSanIndirect(chunk)
             if (!chatMessage) {
@@ -767,7 +767,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 grpcChatContext.current = chatMessage.chatContext
             }
 
-            // For all other agents, use the latest neuro-san API
+            // For all other agents, use the latest Neuro-san API
         } else {
             chatMessage = chatMessageFromChunk(chunk)
             if (!chatMessage) {
@@ -801,21 +801,21 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         // ChatMessages.
         let parsedResult: null | object | string
 
-        // For now, Opportunity Finder needs to use the indirect neuro-san API
+        // For now, Opportunity Finder needs to use the indirect Neuro-san API
         if (isOppFinderPipeline) {
             parsedResult = tryParseJsonNeuroSanIndirect(chunk)
-            // For all other agents, use the latest neuro-san API
+            // For all other agents, use the latest Neuro-san API
         } else {
             parsedResult = tryParseJson(chunk)
         }
 
         if (typeof parsedResult === "string") {
-            // For now, Opportunity Finder needs to use the indirect neuro-san API
+            // For now, Opportunity Finder needs to use the indirect Neuro-san API
             if (isOppFinderPipeline) {
                 updateOutput(
                     processLogLineNeuroSanIndirect(parsedResult, agentName, chatMessage.type as GrpcChatMessageChatMessageType)
                 )
-                // For all other agents, use the latest neuro-san API
+                // For all other agents, use the latest Neuro-san API
             } else {
                 updateOutput(processLogLine(parsedResult, agentName, chatMessage?.type as ChatMessageType))
             }
@@ -833,7 +833,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 )
                 succeeded.current = false
             } else {
-                // For now, Opportunity Finder needs to use the indirect neuro-san API
+                // For now, Opportunity Finder needs to use the indirect Neuro-san API
                 // eslint-disable-next-line no-lonely-if
                 if (isOppFinderPipeline) {
                     updateOutput(
@@ -844,7 +844,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         )
                     )
 
-                    // For all other agents, use the latest neuro-san API
+                    // For all other agents, use the latest Neuro-san API
                 } else {
                     // Not an error, so output it
                     updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type as ChatMessageType))
@@ -869,7 +869,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 if (!isLegacyAgentType(targetAgent)) {
                     // It's a Neuro-san agent.
 
-                    // For now, Opportunity Finder needs to use the indirect neuro-san API
+                    // For now, Opportunity Finder needs to use the indirect Neuro-san API
                     if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
                         // Send the chat query to the server. This will block until the stream ends from the server
                         await sendChatQueryLegacyNeuroSanIndirect(
@@ -881,7 +881,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                             grpcChatContext.current
                         )
 
-                        // For all other agents, use the latest neuro-san API
+                        // For all other agents, use the latest Neuro-san API
                     } else {
                         // Send the chat query to the server. This will block until the stream ends from the server
                         await sendChatQuery(
@@ -895,7 +895,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     }
                 } else {
                     // It's a legacy agent (these go directly to the LLM and are different from the indirect
-                    // neuro-san agents).
+                    // Neuro-san agents).
 
                     // Send the chat query to the server. This will block until the stream ends from the server
                     await sendLlmRequest(
@@ -999,7 +999,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         style={{marginBottom: "1rem"}}
                     >
                         {
-                            // For now, Opportunity Finder needs to use the indirect neuro-san API
+                            // For now, Opportunity Finder needs to use the indirect Neuro-san API
                             targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE
                                 ? processLogLineNeuroSanIndirect(
                                       lastAIMessage.current,
@@ -1007,7 +1007,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                                       GrpcChatMessageChatMessageType.AI,
                                       true
                                   )
-                                : // For all other agents, use the latest neuro-san API
+                                : // For all other agents, use the latest Neuro-san API
                                   processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)
                         }
                     </div>
