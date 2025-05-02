@@ -350,6 +350,9 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         }
     }, [chatOutput])
 
+    /* This function is required for Opportunity Finder > Orchestration
+     * We cannot call the Neuro-san API directly yet, so we need to use the old API.
+     * Ideally this function should be removed once we have the new API in place. */
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
      * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
@@ -362,7 +365,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
      * @param summary Used as the "title" for the accordion block. Something like an agent name or "Final Answer"
      * @returns A React component representing the log line (agent message)
      */
-    const processLogLineLegacy = (
+    const processLogLineNeuroSanIndirect = (
         logLine: string,
         summary: string,
         messageType?: GrpcChatMessageChatMessageType,
@@ -809,7 +812,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             // For now, Opportunity Finder needs to use the indirect neuro-san API
             if (isOppFinderPipeline) {
                 updateOutput(
-                    processLogLineLegacy(parsedResult, agentName, chatMessage.type as GrpcChatMessageChatMessageType)
+                    processLogLineNeuroSanIndirect(parsedResult, agentName, chatMessage.type as GrpcChatMessageChatMessageType)
                 )
                 // For all other agents, use the latest neuro-san API
             } else {
@@ -833,7 +836,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 // eslint-disable-next-line no-lonely-if
                 if (isOppFinderPipeline) {
                     updateOutput(
-                        processLogLineLegacy(
+                        processLogLineNeuroSanIndirect(
                             chatMessage.text,
                             agentName,
                             chatMessage.type as GrpcChatMessageChatMessageType
@@ -997,7 +1000,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         {
                             // For now, Opportunity Finder needs to use the indirect neuro-san API
                             targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE
-                                ? processLogLineLegacy(
+                                ? processLogLineNeuroSanIndirect(
                                       lastAIMessage.current,
                                       "Final Answer",
                                       GrpcChatMessageChatMessageType.AI,
