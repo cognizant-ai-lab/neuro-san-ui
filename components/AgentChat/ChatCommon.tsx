@@ -602,7 +602,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
             let agentFunction: GrpcFunctionResponse | FunctionResponse
 
-            // For now, Opportunity Finder needs to use the indirect Neuro-san API
+            // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
             if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
                 try {
                     agentFunction = await getAgentFunctionNeuroSanIndirect(currentUser, targetAgent as AgentType)
@@ -753,7 +753,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
         let chatMessage: GrpcChatMessage | ChatMessage
 
-        // For now, Opportunity Finder needs to use the indirect Neuro-san API
+        // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
         if (isOppFinderPipeline) {
             chatMessage = chatMessageFromChunkNeuroSanIndirect(chunk)
             if (!chatMessage) {
@@ -802,7 +802,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         // ChatMessages.
         let parsedResult: null | object | string
 
-        // For now, Opportunity Finder needs to use the indirect Neuro-san API
+        // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
         if (isOppFinderPipeline) {
             parsedResult = tryParseJsonNeuroSanIndirect(chunk)
             // For all other agents, use the latest Neuro-san API
@@ -811,10 +811,14 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         }
 
         if (typeof parsedResult === "string") {
-            // For now, Opportunity Finder needs to use the indirect Neuro-san API
+            // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
             if (isOppFinderPipeline) {
                 updateOutput(
-                    processLogLineNeuroSanIndirect(parsedResult, agentName, chatMessage.type as GrpcChatMessageChatMessageType)
+                    processLogLineNeuroSanIndirect(
+                        parsedResult,
+                        agentName,
+                        chatMessage.type as GrpcChatMessageChatMessageType
+                    )
                 )
                 // For all other agents, use the latest Neuro-san API
             } else {
@@ -834,7 +838,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 )
                 succeeded.current = false
             } else {
-                // For now, Opportunity Finder needs to use the indirect Neuro-san API
+                // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this
+                // later.
                 // eslint-disable-next-line no-lonely-if
                 if (isOppFinderPipeline) {
                     updateOutput(
@@ -870,7 +875,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 if (!isLegacyAgentType(targetAgent)) {
                     // It's a Neuro-san agent.
 
-                    // For now, Opportunity Finder needs to use the indirect Neuro-san API
+                    // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this
+                    // later.
                     if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
                         // Send the chat query to the server. This will block until the stream ends from the server
                         await sendChatQueryLegacyNeuroSanIndirect(
@@ -1000,7 +1006,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         style={{marginBottom: "1rem"}}
                     >
                         {
-                            // For now, Opportunity Finder needs to use the indirect Neuro-san API
+                            // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to
+                            // remove this later.
                             targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE
                                 ? processLogLineNeuroSanIndirect(
                                       lastAIMessage.current,
