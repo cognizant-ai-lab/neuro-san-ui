@@ -609,7 +609,11 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
                     // Surface error and return (any allows us to access `message` property)
-                    sendNotification(NotificationType.error, error?.message)
+                    sendNotification(
+                        NotificationType.error,
+                        "Internal error attempting to retrieve agent description for esp_decision_agent.",
+                        error?.message
+                    )
                     return
                 }
 
