@@ -1,15 +1,16 @@
+import {ChatRequest} from "../../../components/AgentChat/Types"
 import {sendChatQuery} from "../../../controller/agent/agent"
 import {sendLlmRequest} from "../../../controller/llm/llm_chat"
-import {AgentType} from "../../../generated/metadata"
-import {ChatFilterType} from "../../../generated/neuro_san/api/grpc/agent"
-import {ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
+// eslint-disable-next-line camelcase
+import {ChatFilterChat_filter_type, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {withStrictMocks} from "../../common/strictMocks"
 
 jest.mock("../../../controller/llm/llm_chat")
 
+const TEST_AGENT_MATH_GUY = "Math Guy"
+
 describe("Controller/Agent/sendChatQuery", () => {
-    beforeEach(() => {
-        jest.resetAllMocks()
-    })
+    withStrictMocks()
 
     it("Should correctly construct and send a request", async () => {
         const abortSignal = new AbortController().signal
@@ -17,23 +18,28 @@ describe("Controller/Agent/sendChatQuery", () => {
         const callbackMock = jest.fn()
         const testQuery = "test query with special characters: !@#$%^&*()_+"
         const testUser = "test user"
-        const testAgent = AgentType.BANKING_OPS
-        await sendChatQuery(abortSignal, testQuery, testUser, testAgent, callbackMock, {
-            chatHistories: [],
-        })
+        await sendChatQuery(
+            abortSignal,
+            testQuery,
+            TEST_AGENT_MATH_GUY,
+            callbackMock,
+            {
+                chat_histories: [],
+            },
+            // TODO: ugly cast due to how openapi-typescript generates `object` types. What to do here?
+            {login: testUser} as unknown as Record<string, never>
+        )
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
 
-        const expectedRequestParams = {
-            request: {
-                chat_context: {},
-                chat_filter: {chat_filter_type: ChatFilterType.MAXIMAL},
-                user_message: {
-                    type: ChatMessageChatMessageType.HUMAN,
-                    text: testQuery,
-                },
+        const expectedRequestParams: ChatRequest = {
+            chat_context: {chat_histories: []},
+            // eslint-disable-next-line camelcase
+            chat_filter: {chat_filter_type: ChatFilterChat_filter_type.MAXIMAL},
+            user_message: {
+                type: ChatMessageType.HUMAN,
+                text: testQuery,
             },
-            target_agent: testAgent,
-            user: {login: testUser},
+            sly_data: {login: testUser} as unknown as Record<string, never>,
         }
 
         expect(sendLlmRequest).toHaveBeenCalledWith(

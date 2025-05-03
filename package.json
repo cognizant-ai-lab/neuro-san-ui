@@ -14,7 +14,7 @@
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
         "check-format": "prettier --check .",
-        "generate": "build_scripts/do_typescript_generate.sh"
+        "generate": "build_scripts/do_typescript_generate.sh; build_scripts/do_openapi_generate.sh"
     },
     "dependencies": {
         "@emotion/react": "11.13.3",
@@ -99,6 +99,7 @@
         "jest-environment-jsdom": "29.7.0",
         "jest-fail-on-console": "3.3.1",
         "node-mocks-http": "1.16.2",
+        "openapi-typescript": "7.6.1",
         "prettier": "3.4.2",
         "ts-jest": "29.2.5",
         "ts-node": "10.9.2",

@@ -9,6 +9,7 @@
         "eslint-formatter-summary",
         "jest",
         "jest-environment-jsdom",
+        "openapi-typescript",
         "prettier",
         "sharp",
         "ts-jest",

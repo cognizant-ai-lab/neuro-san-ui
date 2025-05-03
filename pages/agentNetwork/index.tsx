@@ -3,14 +3,12 @@ import {useEffect, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {ChatCommon} from "../../components/AgentChat/ChatCommon"
+import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../components/AgentChat/Types"
 import {chatMessageFromChunk, cleanUpAgentName} from "../../components/AgentChat/Utils"
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/Common/notification"
-import {getConnectivity} from "../../controller/agent/agent"
-import {AgentType} from "../../generated/metadata"
-import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro_san/api/grpc/agent"
-import {Origin} from "../../generated/neuro_san/api/grpc/chat"
+import {getAgentNetworks, getConnectivity} from "../../controller/agent/agent"
 import {useAuthentication} from "../../utils/authentication"
 
 // Main function.
@@ -25,25 +23,41 @@ export default function AgentNetworkPage() {
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
+    const [networks, setNetworks] = useState<string[]>([])
+
     const [originInfo, setOriginInfo] = useState<Origin[]>([])
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
 
-    const [selectedNetwork, setSelectedNetwork] = useState<AgentType>(AgentType.TELCO_NETWORK_SUPPORT)
+    const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function getNetworks() {
+            const networksTmp: string[] = await getAgentNetworks()
+            const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
+            setNetworks(sortedNetworks)
+            // Set the first network as the selected network
+            setSelectedNetwork(sortedNetworks[0])
+        }
+
+        getNetworks()
+    }, [])
 
     useEffect(() => {
         ;(async () => {
-            try {
-                const connectivity: ConnectivityResponse = await getConnectivity(userName, selectedNetwork)
-                const agentsInNetworkSorted = connectivity.connectivityInfo.sort((a, b) =>
-                    a.origin.localeCompare(b.origin)
-                )
-                setAgentsInNetwork(agentsInNetworkSorted)
-            } catch (e) {
-                sendNotification(
-                    NotificationType.error,
-                    `Failed to get connectivity info for ${cleanUpAgentName(selectedNetwork)}. Error: ${e}`
-                )
+            if (selectedNetwork) {
+                try {
+                    const connectivity: ConnectivityResponse = await getConnectivity(selectedNetwork)
+                    const agentsInNetworkSorted: ConnectivityInfo[] = connectivity.connectivity_info
+                        .concat()
+                        .sort((a, b) => a?.origin.localeCompare(b?.origin))
+                    setAgentsInNetwork(agentsInNetworkSorted)
+                } catch (e) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to get connectivity info for ${cleanUpAgentName(selectedNetwork)}. Error: ${e}`
+                    )
+                }
             }
         })()
     }, [selectedNetwork])
@@ -51,8 +65,8 @@ export default function AgentNetworkPage() {
     const onChunkReceived = (chunk: string) => {
         // Obtain origin info if present
         const chatMessage = chatMessageFromChunk(chunk)
-        if (chatMessage?.origin.length > 0) {
-            setOriginInfo(chatMessage.origin)
+        if (chatMessage && chatMessage.origin?.length > 0) {
+            setOriginInfo([...chatMessage.origin])
         }
 
         return true
@@ -87,6 +101,7 @@ export default function AgentNetworkPage() {
             >
                 <Sidebar
                     id="multi-agent-accelerator-sidebar"
+                    networks={networks}
                     selectedNetwork={selectedNetwork}
                     setSelectedNetwork={setSelectedNetwork}
                     isAwaitingLlm={isAwaitingLlm}

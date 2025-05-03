@@ -37,15 +37,15 @@ steps:
       - yarn --version
       - yarn install
 
-  generate_proto_stubs:
-    title: Generate proto stubs
-    description: Generate proto stubs for the frontend
+  generate_typescript_api_stubs:
+    title: Generate Typescript stubs for APIs
     image: node:${{NODEJS_VERSION}}-alpine
     working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: true
     commands:
       - apk add --quiet --no-progress --upgrade bash protobuf-dev git
       - ./build_scripts/do_typescript_generate.sh
+      - ./build_scripts/do_openapi_generate.sh
 
   run_eslint:
     title: Run eslint on Typescript sources
@@ -122,4 +122,4 @@ steps:
             steps.run_depcheck.result == 'failure' ||
             steps.run_ts_compilation.result == 'failure' ||
             steps.run_ts_prune.result == 'failure' ||
-            steps.generate_proto_stubs.result == 'failure'
+            steps.generate_typescript_api_stubs.result == 'failure'

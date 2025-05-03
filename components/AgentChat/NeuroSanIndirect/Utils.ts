@@ -1,28 +1,36 @@
-import {capitalize, startCase} from "lodash"
+/**
+ * This file is required for Opportunity Finder > Orchestration.
+ * We cannot call the Neuro-san API directly yet, so we need to use the old API.
+ * Ideally this file should be removed once we have the new API in place.
+ */
 
-import {AgentErrorProps, ChatMessage, ChatResponse} from "./Types"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
+import {ChatMessageChatMessageType, ChatMessage as GrpcChatMessage} from "../../../generated/neuro_san/api/grpc/chat"
 
 // We ignore any messages that are not of these types
-const KNOWN_MESSAGE_TYPES = [ChatMessageType.AI, ChatMessageType.AGENT, ChatMessageType.AGENT_FRAMEWORK]
+const KNOWN_MESSAGE_TYPES = [
+    ChatMessageChatMessageType.AI,
+    ChatMessageChatMessageType.AGENT,
+    ChatMessageChatMessageType.AGENT_FRAMEWORK,
+]
 
-export const chatMessageFromChunk = (chunk: string): ChatMessage => {
+export const chatMessageFromChunkNeuroSanIndirect = (chunk: string): GrpcChatMessage => {
     let chatResponse: ChatResponse
     try {
-        chatResponse = JSON.parse(chunk)
+        chatResponse = JSON.parse(chunk).result
     } catch {
         return null
     }
-    const chatMessage: ChatMessage = chatResponse?.response
-
-    const messageType: ChatMessageType = chatMessage?.type
+    const chatMessage: GrpcChatMessage = chatResponse?.response
+    const messageType: ChatMessageChatMessageType = chatMessage?.type
 
     // Check if it's a message type we know how to handle
     if (!KNOWN_MESSAGE_TYPES.includes(messageType)) {
         return null
     }
 
-    return chatResponse.response
+    // Have to use fromJSON to convert from "wire format" to "Typescript format", like foo_bar -> fooBar.
+    return GrpcChatMessage.fromJSON(chatMessage)
 }
 
 /**
@@ -34,8 +42,8 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
  * (2) a JSON object if we were able to parse it as such or (3) plain text if all else fails.
  * @throws If we failed to parse JSON but got anything other than a SyntaxError, we rethrow it as-is.
  */
-export const tryParseJson: (chunk: string) => null | object | string = (chunk: string) => {
-    const chatMessage: ChatMessage = chatMessageFromChunk(chunk)
+export const tryParseJsonNeuroSanIndirect: (chunk: string) => null | object | string = (chunk: string) => {
+    const chatMessage: GrpcChatMessage = chatMessageFromChunkNeuroSanIndirect(chunk)
     if (!chatMessage) {
         return chunk
     }
@@ -53,32 +61,10 @@ export const tryParseJson: (chunk: string) => null | object | string = (chunk: s
         // Not JSON-like, so just return it as is, except we replace escaped newlines with actual newlines
         // Also replace escaped double quotes with single quotes
         if (error instanceof SyntaxError) {
-            return chatMessageText?.replace(/\\n/gu, "\n").replace(/\\"/gu, "'")
+            return chatMessageText.replace(/\\n/gu, "\n").replace(/\\"/gu, "'")
         } else {
             // Not an expected error, so rethrow it for someone else to figure out.
             throw error
         }
     }
-}
-
-export const checkError: (chatMessageJson: object) => string | null = (chatMessageJson: object) => {
-    if ("error" in chatMessageJson) {
-        const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
-        return (
-            `Error occurred. Error: "${agentError.error}", ` +
-            `traceback: "${agentError?.traceback}", ` +
-            `tool: "${agentError?.tool}"`
-        )
-    } else {
-        return null
-    }
-}
-
-/**
- * Convert FOO_BAR to more human "Foo Bar"
- * @param agentName Agent name in SNAKE_CASE format.
- * @returns User-friendly agent name.
- */
-export function cleanUpAgentName(agentName: string): string {
-    return startCase(capitalize(agentName))
 }

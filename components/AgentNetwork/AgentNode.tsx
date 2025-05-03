@@ -4,7 +4,7 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS} from "./const"
-import {Origin} from "../../generated/neuro_san/api/grpc/chat"
+import {Origin} from "../AgentChat/Types"
 
 export interface AgentNodeProps {
     agentName: string
@@ -35,7 +35,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         .map((originItem) => originItem.tool)
         .includes(agentId)
 
-    let backgroundColor
+    let backgroundColor: string
     if (isFrontman) {
         backgroundColor = "var(--bs-secondary)"
     } else if (isActiveAgent) {

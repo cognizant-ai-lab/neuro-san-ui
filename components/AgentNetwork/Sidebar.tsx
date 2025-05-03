@@ -5,27 +5,20 @@ import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import {FC, useEffect, useRef} from "react"
 
-import {AgentType} from "../../generated/metadata"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Types
 interface SidebarProps {
     id: string
-    selectedNetwork: AgentType
-    setSelectedNetwork: (network: AgentType) => void
     isAwaitingLlm: boolean
+    networks: string[]
+    selectedNetwork: string
+    setSelectedNetwork: (network: string) => void
 }
 // #endregion: Types
 
-// These aren't real agents, so don't show them to the user
-export const BLOCK_AGENT_TYPES = [AgentType.UNRECOGNIZED, AgentType.UNKNOWN_AGENT]
-
-const NETWORKS = Object.values(AgentType)
-    .filter((agent) => !BLOCK_AGENT_TYPES.includes(agent))
-    .sort((a, b) => a.localeCompare(b))
-
-const Sidebar: FC<SidebarProps> = ({id, selectedNetwork, setSelectedNetwork, isAwaitingLlm}) => {
+const Sidebar: FC<SidebarProps> = ({id, isAwaitingLlm, networks, selectedNetwork, setSelectedNetwork}) => {
     const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
 
     // Make sure selected network in the list is always in view
@@ -36,7 +29,7 @@ const Sidebar: FC<SidebarProps> = ({id, selectedNetwork, setSelectedNetwork, isA
     }, [selectedNetwork])
 
     const selectNetworkHandler = (network: string) => {
-        setSelectedNetwork(network as AgentType)
+        setSelectedNetwork(network)
     }
 
     return (
@@ -73,7 +66,7 @@ const Sidebar: FC<SidebarProps> = ({id, selectedNetwork, setSelectedNetwork, isA
                 id={`${id}-network-list`}
                 sx={{padding: 0, margin: 0}}
             >
-                {NETWORKS.map((network) => (
+                {networks?.map((network) => (
                     <ListItemButton
                         id={`${network}-btn`}
                         key={network}

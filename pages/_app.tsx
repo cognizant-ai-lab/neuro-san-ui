@@ -50,7 +50,9 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     const {isGeneric, setEnableProjectSharing} = useFeaturesStore()
     const {
         backendApiUrl,
+        backendNeuroSanApiUrl,
         setBackendApiUrl,
+        setBackendNeuroSanApiUrl,
         setAuth0ClientId,
         setAuth0Domain,
         setEnableAuthorizeAPI,
@@ -105,6 +107,15 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                 // Cache backend API URL in feature store
                 debug(`Received backend API URL from NodeJS server. Setting to ${data.backendApiUrl}`)
                 setBackendApiUrl(data.backendApiUrl)
+            }
+
+            // Make sure we got the backend neuro-san API URL
+            if (!data.backendNeuroSanApiUrl) {
+                throw new Error("No backend neuro-san API URL found in response")
+            } else {
+                // Cache backend neuro-san API URL in feature store
+                debug(`Received backend API URL from NodeJS server. Setting to ${data.backendNeuroSanApiUrl}`)
+                setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             }
 
             // Make sure we got the auth0 client ID
@@ -217,7 +228,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
      */
     function getAppComponent() {
         // Haven't figured out whether we have ALB headers yet
-        if (currentUser === undefined || !backendApiUrl) {
+        if (currentUser === undefined || !backendApiUrl || !backendNeuroSanApiUrl) {
             debug("Rendering loading spinner")
             return getLoadingSpinner()
         }
@@ -226,7 +237,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             // We got the ALB headers
             debug("Rendering ALB authentication case")
 
-            return backendApiUrl && currentUser ? (
+            return backendApiUrl && backendNeuroSanApiUrl && currentUser ? (
                 <Component
                     id="body-non-auth-component"
                     {...pageProps}

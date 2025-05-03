@@ -8,6 +8,7 @@ interface EnvironmentResponse {
     readonly auth0ClientId: string
     readonly auth0Domain: string
     readonly backendApiUrl: string
+    readonly backendNeuroSanApiUrl: string
     readonly buildTarget: string
     readonly enableAuthorizeAPI: boolean
     readonly enableProjectSharing: boolean
@@ -28,6 +29,14 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
     if (!backendApiUrl) {
         res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
             error: "MD_SERVER_URL not set in environment",
+        })
+        return
+    }
+
+    const backendNeuroSanApiUrl = process.env.NEURO_SAN_SERVER_URL
+    if (!backendNeuroSanApiUrl) {
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            error: "NEURO_SAN_SERVER_URL not set in environment",
         })
         return
     }
@@ -62,6 +71,7 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
 
     res.status(httpStatus.OK).json({
         backendApiUrl,
+        backendNeuroSanApiUrl,
         auth0ClientId,
         auth0Domain,
         enableProjectSharing,

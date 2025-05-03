@@ -22,15 +22,15 @@ steps:
             - cf_export EPHEMERAL_LEAF_SOURCE_CREDENTIALS="x-access-token:${EPHEMERAL_TOKEN}" --mask
             - cf_export LEAF_SOURCE_CREDENTIALS="${EPHEMERAL_TOKEN}" --mask
             
-    generate_proto_stubs_for_ui:
-      title: Generate proto stubs for ui
-      description: Generate proto stubs for the frontend
+    generate_typescript_api_stubs:
+      title: Generate Typescript stubs for APIs
       image: node:${{NODEJS_VERSION}}-alpine
       working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
       commands:
         - apk add --quiet --no-progress --upgrade bash protobuf-dev git
         - yarn install
         - ./build_scripts/do_typescript_generate.sh
+        - ./build_scripts/do_openapi_generate.sh
 
     prebuild:
       title: Run prebuild step for custom build

@@ -1,16 +1,16 @@
-import {AgentErrorProps} from "../../../components/AgentChat/Types"
+import {AgentErrorProps, ChatResponse} from "../../../components/AgentChat/Types"
 import {chatMessageFromChunk, checkError, tryParseJson} from "../../../components/AgentChat/Utils"
-import {ChatResponse} from "../../../generated/neuro_san/api/grpc/agent"
-import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {
+    withStrictMocks()
+
     it("Should reject unknown message types", () => {
-        const chunk = {
-            result: ChatResponse.fromPartial({
-                response: ChatMessage.fromPartial({
-                    type: ChatMessageChatMessageType.UNKNOWN,
-                }),
-            }),
+        const chunk: ChatResponse = {
+            response: {
+                type: ChatMessageType.UNKNOWN,
+            },
         }
 
         const chatMessage = chatMessageFromChunk(JSON.stringify(chunk))
@@ -18,32 +18,30 @@ describe("AgentChat/Utils/chatMessageFromChunk", () => {
     })
 
     it("Should correctly handle known message types", () => {
-        const chunk = {
-            result: ChatResponse.fromPartial({
-                response: ChatMessage.fromPartial({
-                    type: ChatMessageChatMessageType.AI,
-                    text: "This is a test message",
-                }),
-            }),
+        const chunk: ChatResponse = {
+            response: {
+                type: ChatMessageType.AI,
+                text: "This is a test message",
+            },
         }
 
         const chatMessage = chatMessageFromChunk(JSON.stringify(chunk))
         expect(chatMessage).not.toBeNull()
 
-        expect(chatMessage.type).toEqual(ChatMessageChatMessageType.AI)
+        expect(chatMessage.type).toEqual(ChatMessageType.AI)
         expect(chatMessage.text).toEqual("This is a test message")
     })
 })
 
 describe("AgentChat/Utils/tryParseJson", () => {
+    withStrictMocks()
+
     it("Should return an object for valid JSON", () => {
-        const chunk = {
-            result: ChatResponse.fromPartial({
-                response: ChatMessage.fromPartial({
-                    type: ChatMessageChatMessageType.AGENT,
-                    text: JSON.stringify({foo: 42}),
-                }),
-            }),
+        const chunk: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT,
+                text: JSON.stringify({foo: 42}),
+            },
         }
 
         const chatMessage = tryParseJson(JSON.stringify(chunk))
@@ -56,13 +54,11 @@ describe("AgentChat/Utils/tryParseJson", () => {
     })
 
     it("Should return text cleaned up for non-JSON", () => {
-        const chunk = {
-            result: ChatResponse.fromPartial({
-                response: ChatMessage.fromPartial({
-                    type: ChatMessageChatMessageType.AGENT,
-                    text: 'This is a test string with embedded newline \\n and escaped double quote \\"',
-                }),
-            }),
+        const chunk: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT,
+                text: 'This is a test string with embedded newline \\n and escaped double quote \\"',
+            },
         }
 
         const chatMessage = tryParseJson(JSON.stringify(chunk))
@@ -73,6 +69,8 @@ describe("AgentChat/Utils/tryParseJson", () => {
 })
 
 describe("AgentChat/Utils/checkError", () => {
+    withStrictMocks()
+
     it("Should return detect an error block", () => {
         const errorText = "This is a test error"
         const traceText = "This is a test trace"

@@ -7,8 +7,7 @@ import {Edge, EdgeProps, Node as RFNode} from "reactflow"
 
 import {AgentNodeProps} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
-import {ConnectivityInfo} from "../../generated/neuro_san/api/grpc/agent"
-import {Origin} from "../../generated/neuro_san/api/grpc/chat"
+import {ConnectivityInfo, Origin} from "../AgentChat/Types"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Constants
@@ -44,7 +43,7 @@ const getParentAgents = (agentsInNetwork: ConnectivityInfo[]): ConnectivityInfo[
 const getChildAgents = (parentAgents: ConnectivityInfo[]): Set<string> => {
     const childAgentsSet = new Set<string>()
     parentAgents.forEach((agent) => {
-        agent.tools.forEach((tool) => {
+        agent?.tools?.forEach((tool) => {
             childAgentsSet.add(tool)
         })
     })

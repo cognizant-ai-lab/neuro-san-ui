@@ -2,6 +2,7 @@ import {render, screen} from "@testing-library/react"
 
 import {LOGO} from "../../const"
 import NeuroAI from "../../pages/_app"
+import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../testUtils"
 
 // mock next/router
@@ -30,12 +31,15 @@ jest.mock("next/router", () => ({
 }))
 
 describe("Main App Component", () => {
+    withStrictMocks()
+
     it("Should render correctly", () => {
         console.error = jest.fn()
 
         const oldFetch = window.fetch
         window.fetch = mockFetch({
             backendApiUrl: "dummyURL",
+            backendNeuroSanApiUrl: "dummyNeuroSanURL",
             auth0ClientId: "dummyClientId",
             auth0Domain: "dummyDomain",
             supportEmailAddress: "test@example.com",
