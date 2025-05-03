@@ -1634,6 +1634,15 @@
     mkdirp "^1.0.4"
     path-browserify "^1.0.1"
 
+"@ts-morph/common@~0.26.0":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@ts-morph/common/-/common-0.26.1.tgz#a346188e59d2befe4c71f66a7d626d81b1abe2a8"
+  integrity sha512-Sn28TGl/4cFpcM+jwsH1wLncYq3FtN/BIpem+HOygfBWPT5pAeS5dB4VFVzV8FbnOKHpDLZmvAl4AjPEev5idA==
+  dependencies:
+    fast-glob "^3.3.2"
+    minimatch "^9.0.4"
+    path-browserify "^1.0.1"
+
 "@tsconfig/node10@^1.0.7":
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.11.tgz#6ee46400685f130e278128c7b38b7e031ff5b2f2"
@@ -3362,6 +3371,11 @@ code-block-writer@^11.0.0:
   version "11.0.3"
   resolved "https://registry.yarnpkg.com/code-block-writer/-/code-block-writer-11.0.3.tgz#9eec2993edfb79bfae845fbc093758c0a0b73b76"
   integrity sha512-NiujjUFB4SwScJq2bwbYUtXbZhBSlY6vYzm++3Q6oC+U+injTqfPYFK8wS9COOmb2lueqp0ZRB4nK1VYeHgNyw==
+
+code-block-writer@^13.0.3:
+  version "13.0.3"
+  resolved "https://registry.yarnpkg.com/code-block-writer/-/code-block-writer-13.0.3.tgz#90f8a84763a5012da7af61319dd638655ae90b5b"
+  integrity sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==
 
 code-point-at@^1.0.0:
   version "1.1.0"
@@ -9615,6 +9629,14 @@ ts-morph@^13.0.1:
   dependencies:
     "@ts-morph/common" "~0.12.3"
     code-block-writer "^11.0.0"
+
+ts-morph@^25.0.1:
+  version "25.0.1"
+  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-25.0.1.tgz#7de0b60fcc6e86955c8766831bcd2c5d87ffbd4f"
+  integrity sha512-QJEiTdnz1YjrB3JFhd626gX4rKHDLSjSVMvGGG4v7ONc3RBwa0Eei98G9AT9uNFDMtV54JyuXsFeC+OH0n6bXQ==
+  dependencies:
+    "@ts-morph/common" "~0.26.0"
+    code-block-writer "^13.0.3"
 
 ts-node@10.9.2:
   version "10.9.2"
