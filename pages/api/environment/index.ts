@@ -25,48 +25,14 @@ interface EnvironmentResponse {
 // ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
 export default function handler(_req: NextApiRequest, res: NextApiResponse<Partial<EnvironmentResponse>>) {
     res.setHeader("Content-Type", "application/json")
+
+    // We can safely grab these env vars because they are checked at NextJS startup in instrumentation.ts
     const backendApiUrl = process.env.MD_SERVER_URL
-    if (!backendApiUrl) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-            error: "MD_SERVER_URL not set in environment",
-        })
-        return
-    }
-
     const backendNeuroSanApiUrl = process.env.NEURO_SAN_SERVER_URL
-    if (!backendNeuroSanApiUrl) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-            error: "NEURO_SAN_SERVER_URL not set in environment",
-        })
-        return
-    }
-
     const auth0ClientId = process.env.AUTH0_CLIENT_ID
-    if (!auth0ClientId) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-            error: "AUTH0_CLIENT_ID not set in environment",
-        })
-        return
-    }
-
     const auth0Domain = process.env.AUTH0_DOMAIN
-    if (!auth0Domain) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-            error: "AUTH0_DOMAIN not set in environment",
-        })
-        return
-    }
-
     const supportEmailAddress = process.env.SUPPORT_EMAIL_ADDRESS
-    if (!supportEmailAddress) {
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-            error: "SUPPORT_EMAIL_ADDRESS not set in environment",
-        })
-        return
-    }
-
     const enableProjectSharing = Boolean(process.env.ENABLE_PROJECT_SHARING || false)
-
     const buildTarget = process.env.BUILD_TARGET || ALL_BUILD_TARGET
 
     res.status(httpStatus.OK).json({

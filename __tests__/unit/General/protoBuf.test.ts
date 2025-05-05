@@ -2,7 +2,7 @@
 Demo unit test for protobuf to TS machinery
  */
 
-import {ChatMessage, ChatMessageChatMessageType} from "../../generated/chat"
+import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/chat"
 
 describe("Make sure protobuf files generated", () => {
     it("should have generated protobuf types for chat.proto", () => {

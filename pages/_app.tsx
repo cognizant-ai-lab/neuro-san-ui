@@ -100,62 +100,15 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
 
             const data = await res.json()
 
-            // Make sure we got the backend API URL
-            if (!data.backendApiUrl) {
-                throw new Error("No backend API URL found in response")
-            } else {
-                // Cache backend API URL in feature store
-                debug(`Received backend API URL from NodeJS server. Setting to ${data.backendApiUrl}`)
-                setBackendApiUrl(data.backendApiUrl)
-            }
-
-            // Make sure we got the backend neuro-san API URL
-            if (!data.backendNeuroSanApiUrl) {
-                throw new Error("No backend neuro-san API URL found in response")
-            } else {
-                // Cache backend neuro-san API URL in feature store
-                debug(`Received backend API URL from NodeJS server. Setting to ${data.backendNeuroSanApiUrl}`)
-                setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
-            }
-
-            // Make sure we got the auth0 client ID
-            if (!data.auth0ClientId) {
-                throw new Error("No Auth0 client ID found in response")
-            } else {
-                // Cache auth0 client ID in feature store
-                debug(`Received Auth0 client ID from NodeJS server. Setting to ${data.auth0ClientId}`)
-                setAuth0ClientId(data.auth0ClientId)
-            }
-
-            // Make sure we got the auth0 domain
-            if (!data.auth0Domain) {
-                throw new Error("No Auth0 domain found in response")
-            } else {
-                // Cache auth0 domain in feature store
-                debug(`Received Auth0 domain from NodeJS server. Setting to ${data.auth0Domain}`)
-                setAuth0Domain(data.auth0Domain)
-            }
-
-            if (!data.supportEmailAddress) {
-                throw new Error("No Neuro AI support email address in response")
-            } else {
-                debug(
-                    `Received Neuro AI support email address from NodeJS server.
-                    Setting to ${data.supportEmailAddress}`
-                )
-                setSupportEmailAddress(data.supportEmailAddress)
-            }
-
-            // get enableAuthorizeAPI flag
+            // Save env vars in zustand store
+            setBackendApiUrl(data.backendApiUrl)
+            setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
+            setAuth0ClientId(data.auth0ClientId)
+            setAuth0Domain(data.auth0Domain)
+            setSupportEmailAddress(data.supportEmailAddress)
             setEnableAuthorizeAPI(data.enableAuthorizeAPI)
-
-            // Set project sharing enabled flag
-            const enableProjectSharing = data.enableProjectSharing
-            setEnableProjectSharing(enableProjectSharing || false)
-
-            // Set build target
-            const buildTarget = data.buildTarget
-            setBuildTarget(buildTarget || ALL_BUILD_TARGET)
+            setEnableProjectSharing(data.enableProjectSharing || false)
+            setBuildTarget(data.buildTarget || ALL_BUILD_TARGET)
         }
 
         void getEnvironment()

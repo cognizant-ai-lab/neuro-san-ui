@@ -1,4 +1,4 @@
-import {extractId, hashString} from "../../utils/text"
+import {extractId, hashString} from "../../../utils/text"
 
 describe("removeLast", () => {
     it("should handle prescriptor models", () => {
