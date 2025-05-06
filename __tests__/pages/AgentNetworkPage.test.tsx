@@ -59,14 +59,14 @@ describe("Agent Network Page", () => {
     })
 
     beforeEach(() => {
-        (useSession as unknown as jest.Mock).mockReturnValue({
-            data: { user: { name: MOCK_USER } },
+        ;(useSession as unknown as jest.Mock).mockReturnValue({
+            data: {user: {name: MOCK_USER}},
             status: "authenticated",
         })
-    
+
         const mockGetAgentNetworks = jest.requireMock("../../controller/agent/agent").getAgentNetworks
         mockGetAgentNetworks.mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
-    
+
         const mockGetConnectivity = jest.requireMock("../../controller/agent/agent").getConnectivity
         mockGetConnectivity.mockResolvedValue({
             connectivity_info: [
