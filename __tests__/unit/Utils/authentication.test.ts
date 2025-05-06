@@ -1,7 +1,7 @@
 import {signOut} from "next-auth/react"
 
-import {AD_TENANT_ID, smartSignOut} from "../../utils/authentication"
-import {mockFetch} from "../testUtils"
+import {AD_TENANT_ID, smartSignOut} from "../../../utils/authentication"
+import {mockFetch} from "../../testUtils"
 
 // Mock the next-auth/react module
 jest.mock("next-auth/react")
