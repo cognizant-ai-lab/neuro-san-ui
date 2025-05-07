@@ -1,6 +1,7 @@
 import {signOut} from "next-auth/react"
 
 import {AD_TENANT_ID, smartSignOut} from "../../../utils/authentication"
+import {withStrictMocks} from "../../common/strictMocks"
 import {mockFetch} from "../../testUtils"
 
 // Mock the next-auth/react module
@@ -10,6 +11,8 @@ jest.mock("next-auth/react")
  * Unit tests for the authentication utility module
  */
 describe("useAuthentication", () => {
+    withStrictMocks()
+
     // eslint-disable-next-line no-shadow
     const {location} = window
 

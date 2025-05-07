@@ -2,9 +2,12 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
 import {MUIDrawer} from "../../../components/Common/MUIDrawer"
+import {withStrictMocks} from "../../common/strictMocks"
 
 // TODO: Test different anchor positions?
 describe("MUIDrawer Component", () => {
+    withStrictMocks()
+    
     const mockOnClose = jest.fn()
 
     it("renders correctly with given props", () => {

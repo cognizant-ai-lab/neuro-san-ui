@@ -3,8 +3,11 @@ Demo unit test for protobuf to TS machinery
  */
 
 import {ChatMessage, ChatMessageChatMessageType} from "../../../generated/chat"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("Make sure protobuf files generated", () => {
+    withStrictMocks()
+    
     it("should have generated protobuf types for chat.proto", () => {
         const imageData = {mimeType: "image/png", imageBytes: new Uint8Array([1, 2, 3])}
         const message: ChatMessage = {
