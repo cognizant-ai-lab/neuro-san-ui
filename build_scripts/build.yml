@@ -38,8 +38,9 @@ steps:
       image: node:${{NODEJS_VERSION}}-alpine
       working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
       commands:
+        - yarn install
         - npx tsx ./openAPIUtils/GenerateOpenAPITypes.ts
-        
+
     prebuild:
       title: Run prebuild step for custom build
       description: Pare down the code to build sub-sets of the ui
