@@ -28,6 +28,7 @@ const lines = schemasType.map((prop) => {
 
 const fileContent = [staticHeader, ...lines, ""]
     .join("\n")
+    .replaceAll("// @ts-prune-ignore-next", "")
     .replace("// @ts-expect-error TS2307: Module not found", "")
     .replace("// eslint-disable-next-line import/no-unresolved, @typescript-eslint/no-unused-vars", "")
     .replace(/\n{3,}/gu, "\n\n") // Collapse 3+ newlines into just 2
