@@ -1,6 +1,8 @@
 /**
  * Controller module for interacting with the Agent LLM API.
  */
+// eslint-disable-next-line camelcase
+import {ApiPaths, ChatFilterChat_filter_type, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {
     ChatContext,
     ChatMessage,
@@ -9,9 +11,7 @@ import {
     ConciergeResponse,
     ConnectivityResponse,
     FunctionResponse,
-} from "../../components/AgentChat/Types"
-// eslint-disable-next-line camelcase
-import {ApiPaths, ChatFilterChat_filter_type, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+} from "../../generated/neuro-san/OpenAPITypes"
 import useEnvironmentStore from "../../state/environment"
 import {sendLlmRequest} from "../llm/llm_chat"
 

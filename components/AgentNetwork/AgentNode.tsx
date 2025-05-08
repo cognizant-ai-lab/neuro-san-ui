@@ -4,7 +4,7 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS} from "./const"
-import {Origin} from "../AgentChat/Types"
+import {Origin} from "../../generated/neuro-san/OpenAPITypes"
 
 export interface AgentNodeProps {
     agentName: string

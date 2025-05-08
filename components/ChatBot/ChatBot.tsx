@@ -5,11 +5,11 @@ import {FC, useState} from "react"
 
 import {ALL_BUILD_TARGET} from "../../const"
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
+import {LegacyAgentType} from "../../generated/neuro-san/OpenAPITypes"
 import useEnvironmentStore from "../../state/environment"
 import {useAuthentication} from "../../utils/authentication"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 import {ChatCommon} from "../AgentChat/ChatCommon"
-import {LegacyAgentType} from "../AgentChat/Types"
 
 interface ChatBotProps {
     /**

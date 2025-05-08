@@ -7,7 +7,7 @@ import {Edge, EdgeProps, Node as RFNode} from "reactflow"
 
 import {AgentNodeProps} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
-import {ConnectivityInfo, Origin} from "../AgentChat/Types"
+import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Constants

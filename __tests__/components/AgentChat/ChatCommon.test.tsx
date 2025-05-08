@@ -2,6 +2,10 @@ import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {ChatCommon} from "../../../components/AgentChat/ChatCommon"
+import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
+import {sendChatQuery} from "../../../controller/agent/agent"
+import {sendLlmRequest} from "../../../controller/llm/llm_chat"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {
     AgentErrorProps,
     ChatContext,
@@ -9,11 +13,7 @@ import {
     ChatResponse,
     CombinedAgentType,
     LegacyAgentType,
-} from "../../../components/AgentChat/Types"
-import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {sendChatQuery} from "../../../controller/agent/agent"
-import {sendLlmRequest} from "../../../controller/llm/llm_chat"
-import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock agent API

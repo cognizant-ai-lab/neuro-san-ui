@@ -5,15 +5,15 @@
 import {components} from "../../generated/neuro-san/NeuroSanClient"
 
 export enum LegacyAgentType {
-	OpportunityFinder = "OpportunityFinder",
-	ScopingAgent = "ScopingAgent",
-	DataGenerator = "DataGenerator",
-	DMSChat = "DMSChat",
-	ChatBot = "ChatBot",
+    OpportunityFinder = "OpportunityFinder",
+    ScopingAgent = "ScopingAgent",
+    DataGenerator = "DataGenerator",
+    DMSChat = "DMSChat",
+    ChatBot = "ChatBot",
 }
 
 export const isLegacyAgentType = (agent: string) => {
-	return Object.keys(LegacyAgentType).includes(agent)
+    return Object.keys(LegacyAgentType).includes(agent)
 }
 
 export type CombinedAgentType = LegacyAgentType | string
@@ -22,7 +22,7 @@ export type CombinedAgentType = LegacyAgentType | string
  * Models the error we receive from neuro-san agents.
  */
 export interface AgentErrorProps {
-	error: string
-	traceback?: string
-	tool?: string
+    error: string
+    traceback?: string
+    tool?: string
 }

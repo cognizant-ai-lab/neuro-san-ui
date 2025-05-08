@@ -3,12 +3,12 @@ import {useEffect, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {ChatCommon} from "../../components/AgentChat/ChatCommon"
-import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../components/AgentChat/Types"
 import {chatMessageFromChunk, cleanUpAgentName} from "../../components/AgentChat/Utils"
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/Common/notification"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/agent"
+import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import {useAuthentication} from "../../utils/authentication"
 
 // Main function.

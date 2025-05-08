@@ -1,6 +1,6 @@
-import {AgentErrorProps, ChatResponse} from "../../../components/AgentChat/Types"
 import {chatMessageFromChunk, checkError, tryParseJson} from "../../../components/AgentChat/Utils"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {AgentErrorProps, ChatResponse} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {

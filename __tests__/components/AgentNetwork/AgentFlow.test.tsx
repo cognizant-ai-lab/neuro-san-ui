@@ -2,9 +2,9 @@ import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "reactflow"
 
-import {ConnectivityInfo} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import AgentFlow from "../../../components/AgentNetwork/AgentFlow"
+import {ConnectivityInfo} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
 
 const TEST_AGENT_MATH_GUY = "Math Guy"
