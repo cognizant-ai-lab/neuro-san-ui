@@ -19,8 +19,8 @@ import {
     UNILEAF_VERSION,
 } from "../../const"
 import useEnvironmentStore from "../../state/environment"
-import useUserInfoStore from "../../state/userInfo"
-import {smartSignOut, useAuthentication} from "../../utils/authentication"
+import useUserInfoStore from "../../state/UserInfo"
+import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 
 // Declare the Props Interface
 interface NavbarProps {

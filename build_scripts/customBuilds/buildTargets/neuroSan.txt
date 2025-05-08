@@ -20,7 +20,7 @@ controller/model_serving
 controller/projects
 controller/rules
 controller/run/
-controller/stream.ts
+controller/Stream.ts
 embed
 pages/analyticsChat
 pages/api/gpt/code-ui
@@ -32,4 +32,4 @@ pages/api/gpt/rules
 pages/opportunityFinder
 pages/projects
 utils/authorization.ts
-utils/transformation.ts
+utils/Transformation.ts

@@ -35,7 +35,7 @@ export async function sendLlmRequest(
             ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
             ...params,
         }),
-        signal: signal,
+        signal,
     })
 
     // Check if the request was successful

@@ -24,10 +24,10 @@ const useUserInfoStore = create<UserInfoStore>((set) => ({
     setCurrentUser: (username: string) => set(() => ({currentUser: username})),
 
     oidcProvider: undefined,
-    setOidcProvider: (oidcProvider: OidcProvider) => set(() => ({oidcProvider: oidcProvider})),
+    setOidcProvider: (oidcProvider: OidcProvider) => set(() => ({oidcProvider})),
 
     picture: undefined,
-    setPicture: (picture: string) => set(() => ({picture: picture})),
+    setPicture: (picture: string) => set(() => ({picture})),
 }))
 
 export default useUserInfoStore

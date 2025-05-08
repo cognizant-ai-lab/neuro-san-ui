@@ -3,7 +3,7 @@
 import {signOut, useSession} from "next-auth/react"
 
 import {OidcProvider} from "../pages/api/userInfo/types"
-import useUserInfoStore from "../state/userInfo"
+import useUserInfoStore from "../state/UserInfo"
 
 /**
  * The Azure AD tenant ID.

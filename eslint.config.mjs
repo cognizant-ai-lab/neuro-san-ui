@@ -410,7 +410,6 @@ const config = [
             "no-underscore-dangle": "off",
             "no-use-before-define": "off",
             "no-void": "off",
-            "object-shorthand": "off",
             "one-var": "off",
             "prefer-destructuring": "off",
             radix: "off",

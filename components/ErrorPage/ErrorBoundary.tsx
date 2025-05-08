@@ -1,6 +1,6 @@
 import {Component, ErrorInfo, ReactNode} from "react"
 
-import ErrorPage from "./error_page"
+import ErrorPage from "./ErrorPage"
 
 /**
  * Optional properties that should be present on the Error object if it's a real Javascript error.
@@ -44,7 +44,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     // create error boundaries in functional components -- no way to override this method.
     static getDerivedStateFromError(error: unknown) {
         // Update state so the next render will show the fallback UI
-        return {hasError: true, error: error}
+        return {hasError: true, error}
     }
 
     constructor(props) {

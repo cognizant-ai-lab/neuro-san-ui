@@ -61,7 +61,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
             id={agentId}
             style={{
                 alignItems: "center",
-                backgroundColor: backgroundColor,
+                backgroundColor,
                 borderRadius: "50%",
                 borderColor: "var(--bs-primary)",
                 borderWidth: !isFrontman && isActiveAgent ? 4 : 1,

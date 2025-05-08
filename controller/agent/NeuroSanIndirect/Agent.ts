@@ -17,7 +17,7 @@ import {
 } from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatContext, ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 import useEnvironmentStore from "../../../state/environment"
-import {sendLlmRequest} from "../../llm/llm_chat"
+import {sendLlmRequest} from "../../llm/LlmChat"
 
 // API path for the agent chat endpoint
 const CHAT_PATH = "api/v1/agent/streaming_chat"
@@ -62,7 +62,7 @@ export async function sendChatQueryLegacyNeuroSanIndirect(
             chatContext,
             chatFilter: {chatFilterType: ChatFilterType.MAXIMAL},
         }),
-        targetAgent: targetAgent,
+        targetAgent,
     }
 
     // Convert to JSON (wire) format
@@ -92,7 +92,7 @@ export async function getAgentFunctionNeuroSanIndirect(
     const fetchUrl = `${baseUrl}/${AGENT_FUNCTION_PATH}`
 
     const request: AgentFunctionRequest = {
-        targetAgent: targetAgent,
+        targetAgent,
         user: {login: requestUser},
         request: undefined,
     }

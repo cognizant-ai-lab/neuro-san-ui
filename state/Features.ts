@@ -18,10 +18,10 @@ interface FeaturesStore {
  */
 const useFeaturesStore = create<FeaturesStore>((set) => ({
     isGeneric: null,
-    setIsGeneric: (isGeneric) => set(() => ({isGeneric: isGeneric})),
+    setIsGeneric: (isGeneric) => set(() => ({isGeneric})),
 
     enableProjectSharing: null,
-    setEnableProjectSharing: (enableProjectSharing) => set(() => ({enableProjectSharing: enableProjectSharing})),
+    setEnableProjectSharing: (enableProjectSharing) => set(() => ({enableProjectSharing})),
 }))
 
 export default useFeaturesStore

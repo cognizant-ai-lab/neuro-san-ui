@@ -8,8 +8,8 @@ import {chatMessageFromChunk, cleanUpAgentName} from "../../components/AgentChat
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/Common/notification"
-import {getAgentNetworks, getConnectivity} from "../../controller/agent/agent"
-import {useAuthentication} from "../../utils/authentication"
+import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
+import {useAuthentication} from "../../utils/Authentication"
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore

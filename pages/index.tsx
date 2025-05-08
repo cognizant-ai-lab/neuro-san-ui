@@ -14,7 +14,7 @@ import {
     LOGO,
 } from "../const"
 import useEnvironmentStore from "../state/environment"
-import useFeaturesStore from "../state/features"
+import useFeaturesStore from "../state/Features"
 import {getTitleBase} from "../utils/title"
 
 // #region: Styled Components

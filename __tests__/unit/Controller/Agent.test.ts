@@ -1,11 +1,11 @@
 import {ChatRequest} from "../../../components/AgentChat/Types"
-import {sendChatQuery} from "../../../controller/agent/agent"
-import {sendLlmRequest} from "../../../controller/llm/llm_chat"
+import {sendChatQuery} from "../../../controller/agent/Agent"
+import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 // eslint-disable-next-line camelcase
 import {ChatFilterChat_filter_type, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {withStrictMocks} from "../../common/strictMocks"
 
-jest.mock("../../../controller/llm/llm_chat")
+jest.mock("../../../controller/llm/LlmChat")
 
 const TEST_AGENT_MATH_GUY = "Math Guy"
 

@@ -49,12 +49,12 @@ import {
 } from "./Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 import {DEFAULT_USER_IMAGE} from "../../const"
-import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/agent"
+import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {
     getAgentFunctionNeuroSanIndirect,
     sendChatQueryLegacyNeuroSanIndirect,
-} from "../../controller/agent/NeuroSanIndirect/agent"
-import {sendLlmRequest} from "../../controller/llm/llm_chat"
+} from "../../controller/agent/NeuroSanIndirect/Agent"
+import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {AgentType} from "../../generated/metadata"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {FunctionResponse as GrpcFunctionResponse} from "../../generated/neuro_san/api/grpc/agent"

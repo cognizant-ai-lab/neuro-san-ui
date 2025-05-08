@@ -5,7 +5,7 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
-import Navbar from "../../../components/Common/navbar"
+import Navbar from "../../../components/Common/Navbar"
 import {ALL_BUILD_TARGET, CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"

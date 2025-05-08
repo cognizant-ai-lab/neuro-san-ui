@@ -11,13 +11,13 @@ import {
     LegacyAgentType,
 } from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {sendChatQuery} from "../../../controller/agent/agent"
-import {sendLlmRequest} from "../../../controller/llm/llm_chat"
+import {sendChatQuery} from "../../../controller/agent/Agent"
+import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock agent API
-jest.mock("../../../controller/agent/agent", () => ({
+jest.mock("../../../controller/agent/Agent", () => ({
     getAgentFunction: () => ({
         function: {description: "Hello, I am the Hello World agent", parameters: []},
     }),
@@ -33,7 +33,7 @@ jest.mock("../../../controller/agent/agent", () => ({
 }))
 
 // Mock llm_chat API
-jest.mock("../../../controller/llm/llm_chat", () => ({
+jest.mock("../../../controller/llm/LlmChat", () => ({
     sendLlmRequest: jest.fn(),
 }))
 
@@ -47,15 +47,15 @@ const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
 
 function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
     return {
-        type: type,
-        text: text,
+        type,
+        text,
         chat_context: {
             chat_histories: [
                 {
                     messages: [
                         {
-                            type: type,
-                            text: text,
+                            type,
+                            text,
                         },
                     ],
                 },
@@ -646,7 +646,7 @@ describe("ChatCommon", () => {
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
         const chatResponsesStringified = responseMessages.map((response) => ({
-            response: response,
+            response,
         }))
 
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
