@@ -2,13 +2,15 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {SendButton} from "../../../components/AgentChat/SendButton"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("SendButton", () => {
     let user: UserEvent
     const handleClick = jest.fn()
 
+    withStrictMocks()
+
     beforeEach(() => {
-        jest.clearAllMocks()
         user = userEvent.setup()
     })
 

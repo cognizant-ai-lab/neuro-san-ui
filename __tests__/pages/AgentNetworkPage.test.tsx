@@ -1,9 +1,11 @@
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 
 import AgentNetworkPage from "../../pages/agentNetwork"
 import useEnvironmentStore from "../../state/environment"
+import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../testUtils"
 
 const MOCK_USER = "mock-user"
@@ -13,6 +15,8 @@ const NEURO_SAN_SERVER_URL = "https://neuro-san-dev.decisionai.ml"
 
 const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
+
+const mockUseSession = useSession as jest.Mock
 
 // Mock dependencies
 jest.mock("next-auth/react", () => {
@@ -49,12 +53,32 @@ const renderAgentNetworkPage = () =>
     )
 
 describe("Agent Network Page", () => {
+    withStrictMocks()
+
     beforeAll(() => {
         process.env.NEURO_SAN_SERVER_URL = NEURO_SAN_SERVER_URL
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(NEURO_SAN_SERVER_URL)
     })
 
-    beforeEach(() => jest.clearAllMocks())
+    beforeEach(() => {
+        mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
+
+        const mockGetAgentNetworks = jest.requireMock("../../controller/agent/agent").getAgentNetworks
+        mockGetAgentNetworks.mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
+
+        const mockGetConnectivity = jest.requireMock("../../controller/agent/agent").getConnectivity
+        mockGetConnectivity.mockResolvedValue({
+            connectivity_info: [
+                {
+                    origin: "date_time_provider",
+                    tools: ["current_date_time"],
+                },
+                {
+                    origin: "current_date_time",
+                },
+            ],
+        })
+    })
 
     afterAll(() => delete process.env.NEURO_SAN_SERVER_URL)
 

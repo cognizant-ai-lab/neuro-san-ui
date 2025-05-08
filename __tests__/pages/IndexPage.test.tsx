@@ -6,6 +6,7 @@ import {ALL_BUILD_TARGET} from "../../const"
 import Index from "../../pages/index"
 import useEnvironmentStore from "../../state/environment"
 import useFeaturesStore from "../../state/features"
+import {withStrictMocks} from "../common/strictMocks"
 
 // Mock dependencies
 jest.mock("../../state/features", () => ({
@@ -25,8 +26,9 @@ jest.mock("next/router", () => ({
 }))
 
 describe("Index Page", () => {
+    withStrictMocks()
+
     beforeEach(() => {
-        jest.clearAllMocks()
         ;(useFeaturesStore as unknown as jest.Mock).mockReturnValue({isGeneric: false})
         ;(useEnvironmentStore as unknown as jest.Mock).mockReturnValue({
             buildTarget: ALL_BUILD_TARGET,

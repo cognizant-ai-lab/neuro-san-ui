@@ -3,6 +3,7 @@ import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
 
 import {Snackbar} from "../../../components/Common/Snackbar"
+import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock useSnackbar hook
 jest.mock("notistack", () => ({
@@ -11,6 +12,8 @@ jest.mock("notistack", () => ({
 }))
 
 describe("Snackbar Component", () => {
+    withStrictMocks()
+
     const mockCloseSnackbar = jest.fn()
 
     const renderSnackbar = (props?) =>

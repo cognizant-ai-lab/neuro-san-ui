@@ -2,11 +2,10 @@ import {render} from "@testing-library/react"
 import {Position} from "reactflow"
 
 import {AnimatedEdge} from "../../../components/AgentNetwork/AnimatedEdge"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("AnimatedEdge", () => {
-    beforeEach(() => {
-        jest.clearAllMocks()
-    })
+    withStrictMocks()
 
     it("Should render correctly", async () => {
         jest.spyOn(console, "error").mockImplementation()

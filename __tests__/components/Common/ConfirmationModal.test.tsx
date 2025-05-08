@@ -2,8 +2,11 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
 import {ConfirmationModal} from "../../../components/Common/confirmationModal"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("ConfirmationModal", () => {
+    withStrictMocks()
+
     const handleCancelMock = jest.fn()
     const handleConfirmMock = jest.fn()
     const id = "test-confirmation-modal"

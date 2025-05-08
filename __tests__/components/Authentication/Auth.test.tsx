@@ -2,6 +2,7 @@ import {render, screen} from "@testing-library/react"
 import {SessionContextValue, useSession} from "next-auth/react"
 
 import {Auth} from "../../../components/Authentication/auth"
+import {withStrictMocks} from "../../common/strictMocks"
 
 jest.mock("next-auth/react", () => {
     return {
@@ -12,6 +13,8 @@ jest.mock("next-auth/react", () => {
 
 const mockedUseSession = jest.mocked(useSession)
 describe("Auth Component", () => {
+    withStrictMocks()
+
     const renderMockAuth = () => (
         <Auth>
             <div>Mock Auth</div>

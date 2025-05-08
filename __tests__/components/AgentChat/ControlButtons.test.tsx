@@ -2,8 +2,11 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {ControlButtons} from "../../../components/AgentChat/ControlButtons"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("ControlButtons", () => {
+    withStrictMocks()
+
     let user: UserEvent
     const mockClearChat = jest.fn()
     const mockHandleSend = jest.fn()
@@ -20,7 +23,6 @@ describe("ControlButtons", () => {
     }
 
     beforeEach(() => {
-        jest.clearAllMocks()
         user = userEvent.setup()
     })
 

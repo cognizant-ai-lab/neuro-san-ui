@@ -1,9 +1,13 @@
 import {render, screen} from "@testing-library/react"
 
 import {PageLoader} from "../../../components/Common/pageLoader"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("PageLoader", () => {
+    withStrictMocks()
+
     const pageLoaderComponent = <PageLoader id="mock-page-loader" />
+
     it("should render a page loader", async () => {
         render(pageLoaderComponent)
 

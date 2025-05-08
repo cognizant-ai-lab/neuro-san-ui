@@ -2,8 +2,11 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
 import {MUIAlert} from "../../../components/Common/MUIAlert"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("MUIAlert Component", () => {
+    withStrictMocks()
+
     const DefaultMUIAlert = (
         <MUIAlert
             id="test-alert"

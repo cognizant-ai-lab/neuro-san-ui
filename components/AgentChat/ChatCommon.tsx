@@ -611,8 +611,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     // Surface error and return (any allows us to access `message` property)
                     sendNotification(
                         NotificationType.error,
-                        "Internal error attempting to retrieve agent description for esp_decision_agent.",
-                        error?.message
+                        "Internal error",
+                        `Error while attempting to retrieve agent description for esp_decision_agent. ${error?.message}`
                     )
                     return
                 }

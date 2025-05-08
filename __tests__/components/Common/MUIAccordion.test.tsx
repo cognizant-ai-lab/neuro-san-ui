@@ -2,8 +2,11 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
 import {MUIAccordion} from "../../../components/Common/MUIAccordion"
+import {withStrictMocks} from "../../common/strictMocks"
 
 describe("MUIAccordion", () => {
+    withStrictMocks()
+
     const defaultProps = {
         id: "test-accordion",
         items: [
