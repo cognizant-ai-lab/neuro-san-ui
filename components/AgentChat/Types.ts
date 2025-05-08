@@ -1,5 +1,7 @@
+// Auto generated. Do not edit!
+
 import {components} from "../../generated/neuro-san/NeuroSanClient"
-	
+
 export enum LegacyAgentType {
 	OpportunityFinder = "OpportunityFinder",
 	ScopingAgent = "ScopingAgent",
@@ -33,7 +35,7 @@ export type ChatResponse = components["schemas"]["ChatResponse"]
 export type ConciergeResponse = components["schemas"]["ConciergeResponse"]
 export type ConnectivityInfo = components["schemas"]["ConnectivityInfo"]
 export type ConnectivityResponse = components["schemas"]["ConnectivityResponse"]
-export type Function = components["schemas"]["Function"]
+export type _Function = components["schemas"]["Function"]
 export type FunctionResponse = components["schemas"]["FunctionResponse"]
 export type GoogleProtobufAny = components["schemas"]["GoogleProtobufAny"]
 export type MimeData = components["schemas"]["MimeData"]

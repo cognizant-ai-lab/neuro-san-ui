@@ -52,7 +52,6 @@
         "remark-gfm": "4.0.0",
         "remark-toc": "9.0.0",
         "sharp": "0.33.2",
-        "ts-morph": "^25.0.1",
         "ts-proto": "1.172.0",
         "uuid": "11.1.0",
         "zustand": "4.4.7"
@@ -103,6 +102,7 @@
         "openapi-typescript": "7.6.1",
         "prettier": "3.4.2",
         "ts-jest": "29.2.5",
+        "ts-morph": "^25.0.1",
         "ts-node": "10.9.2",
         "ts-prune": "0.10.3",
         "typescript": "5.3.3"
