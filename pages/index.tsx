@@ -6,7 +6,13 @@ import {useRouter} from "next/router"
 import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "../components/Common/confirmationModal"
-import {CONTACT_US_CONFIRMATION_DIALOG_TEXT, CONTACT_US_CONFIRMATION_DIALOG_TITLE, GENERIC_LOGO, LOGO} from "../const"
+import {
+    ALL_BUILD_TARGET,
+    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
+    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
+    GENERIC_LOGO,
+    LOGO,
+} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useFeaturesStore from "../state/features"
 import {getTitleBase} from "../utils/title"
@@ -216,74 +222,76 @@ export default function Index(): ReactElement {
                                 {isGeneric ? GENERIC_LOGO : LOGO}
                             </div>
                         </HeaderLineOne>
-                        <SubHeaderTitle id="neuro-ai-decisioning-box">Neuro AI Decisioning</SubHeaderTitle>
-                        <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                            A platform for smarter business decisions
-                        </NeuroAIDescriptionBox>
-                        <NeuroAIToolsContainer id="opp-finder-and-model-orchestrator-container">
-                            {buildTarget === "all" && (
-                                <>
-                                    <Link
-                                        id="of-link"
-                                        href={`/opportunityFinder?${buildQueryString()}`}
-                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                        legacyBehavior={true} // Need this so we can "open in new tab"
-                                        passHref
-                                    >
-                                        <a
-                                            id="of-link-anchor"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            href={`/of?${buildQueryString()}`}
-                                            onMouseEnter={handleMouseEnter}
-                                            onMouseLeave={handleMouseLeave}
+                        {buildTarget === ALL_BUILD_TARGET && (
+                            <>
+                                <SubHeaderTitle id="neuro-ai-decisioning-box">Neuro AI Decisioning</SubHeaderTitle>
+                                <NeuroAIDescriptionBox id="neuro-ai-description-box">
+                                    A platform for smarter business decisions
+                                </NeuroAIDescriptionBox>
+                                <NeuroAIToolsContainer id="opp-finder-and-model-orchestrator-container">
+                                    <>
+                                        <Link
+                                            id="of-link"
+                                            href={`/opportunityFinder?${buildQueryString()}`}
+                                            /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                            legacyBehavior={true} // Need this so we can "open in new tab"
+                                            passHref
                                         >
-                                            <LaunchButton
-                                                id="opportunity-finder-button"
-                                                style={{
-                                                    position: "relative",
-                                                    ...getButtonStyle([
-                                                        "opportunity-finder-button",
-                                                        "star-new-span",
-                                                        "of-link-anchor",
-                                                    ]),
-                                                }}
+                                            <a
+                                                id="of-link-anchor"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                href={`/of?${buildQueryString()}`}
+                                                onMouseEnter={handleMouseEnter}
+                                                onMouseLeave={handleMouseLeave}
                                             >
-                                                Find opportunities
-                                            </LaunchButton>
-                                        </a>
-                                    </Link>
-                                    <Link
-                                        id="orchestrator-link"
-                                        // Use the URL object form of `href` to pass along the query string
-                                        href={`/projects?${buildQueryString()}`}
-                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                        legacyBehavior={true}
-                                        passHref
-                                    >
-                                        <a
-                                            id="of-link-anchor"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                                <LaunchButton
+                                                    id="opportunity-finder-button"
+                                                    style={{
+                                                        position: "relative",
+                                                        ...getButtonStyle([
+                                                            "opportunity-finder-button",
+                                                            "star-new-span",
+                                                            "of-link-anchor",
+                                                        ]),
+                                                    }}
+                                                >
+                                                    Find opportunities
+                                                </LaunchButton>
+                                            </a>
+                                        </Link>
+                                        <Link
+                                            id="orchestrator-link"
+                                            // Use the URL object form of `href` to pass along the query string
                                             href={`/projects?${buildQueryString()}`}
-                                            style={{marginLeft: "50px"}}
-                                            onMouseEnter={handleMouseEnter}
-                                            onMouseLeave={handleMouseLeave}
+                                            /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                            legacyBehavior={true}
+                                            passHref
                                         >
-                                            <LaunchButton
-                                                id="model-orchestrator-button"
-                                                style={{
-                                                    position: "relative",
-                                                    ...getButtonStyle(["model-orchestrator-button"]),
-                                                }}
+                                            <a
+                                                id="of-link-anchor"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                href={`/projects?${buildQueryString()}`}
+                                                style={{marginLeft: "50px"}}
+                                                onMouseEnter={handleMouseEnter}
+                                                onMouseLeave={handleMouseLeave}
                                             >
-                                                Build models
-                                            </LaunchButton>
-                                        </a>
-                                    </Link>
-                                </>
-                            )}
-                        </NeuroAIToolsContainer>
+                                                <LaunchButton
+                                                    id="model-orchestrator-button"
+                                                    style={{
+                                                        position: "relative",
+                                                        ...getButtonStyle(["model-orchestrator-button"]),
+                                                    }}
+                                                >
+                                                    Build models
+                                                </LaunchButton>
+                                            </a>
+                                        </Link>
+                                    </>
+                                </NeuroAIToolsContainer>
+                            </>
+                        )}
                         <SubHeaderTitle
                             id="neuro-ai-maa-box"
                             sx={{marginTop: "2.5rem"}}
