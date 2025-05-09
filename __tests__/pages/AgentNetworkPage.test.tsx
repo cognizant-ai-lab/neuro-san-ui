@@ -95,12 +95,10 @@ describe("Agent Network Page", () => {
         })
 
         // Find sidebar
-        const sidebarTitle = await screen.findByText("Agent Networks")
-        expect(sidebarTitle).toBeInTheDocument()
+        await screen.findByText("Agent Networks")
 
         // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
-        const musicNerdItem = screen.getByText(TEST_AGENT_MUSIC_NERD)
-        expect(musicNerdItem).toBeInTheDocument()
+        const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
 
         // Click Music Nerd sidebar item
         await user.click(musicNerdItem)
