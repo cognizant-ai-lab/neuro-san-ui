@@ -26,6 +26,7 @@ const lines = schemasType.map((prop) => {
     return `export type ${exportName} = components["schemas"]["${schemaType}"]`
 })
 
+// Remove ts and eslint directive comments
 const fileContent = [staticHeader, ...lines, ""]
     .join("\n")
     .replaceAll("// @ts-prune-ignore-next", "")
