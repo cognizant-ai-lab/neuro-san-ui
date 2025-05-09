@@ -25,7 +25,7 @@ const REQUIRED_ENV_VARS = [
 export function register() {
     const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
 
-    if (missingEnvVars.length !== 0) {
+    if (missingEnvVars.length > 0) {
         throw new Error(
             `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
         )

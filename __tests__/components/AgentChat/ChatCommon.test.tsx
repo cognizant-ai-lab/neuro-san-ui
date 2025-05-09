@@ -355,7 +355,9 @@ describe("ChatCommon", () => {
         await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
 
         // Should be 3 attempts, so 3 error messages
-        expect(await screen.findAllByText(/Error occurred:/u)).toHaveLength(3)
+        await waitFor(() => {
+            expect(screen.getAllByText(/Error occurred:/u)).toHaveLength(3)
+        })
 
         expect(console.error).toHaveBeenCalledTimes(3)
     })
@@ -431,11 +433,14 @@ describe("ChatCommon", () => {
         // Should be 3 retries due to the error
         expect(await screen.findAllByText(/Error occurred/u)).toHaveLength(3)
 
-        // Should be 3 alert items
-        const alertItems = await screen.findAllByRole("alert")
+        let alertItems: HTMLElement[]
+        await waitFor(() => {
+            alertItems = screen.getAllByRole("alert")
+            expect(alertItems).toHaveLength(4)
+        })
 
         // First two are warnings
-        ;[alertItems[0], alertItems[1], alertItems[2]].forEach((item) => {
+        alertItems.slice(0, 2).forEach((item) => {
             expect(item).toHaveClass("MuiAlert-standardWarning")
         })
 
@@ -661,16 +666,19 @@ describe("ChatCommon", () => {
         expect(showThinkingButton).toBeInTheDocument()
         await user.click(showThinkingButton)
 
-        // screen.debug()
-        // All responsees should be visible when "show thinking" is enabled
-        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
+        // All responses should be visible when "show thinking" is enabled
+        await waitFor(() => {
+            expect(screen.getAllByText(aiResponseText)).toHaveLength(2)
+        })
         expect(await screen.findByText(agentResponseText)).toBeInTheDocument()
 
         // Now click the button again to hide agent thinking
         await user.click(showThinkingButton)
 
         // Only the AI response should be visible
-        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
+        await waitFor(() => {
+            expect(screen.getAllByText(aiResponseText)).toHaveLength(2)
+        })
 
         // Agent response should be in the DOM but with display: none
         expect(await screen.findByText(agentResponseText)).not.toBeVisible()

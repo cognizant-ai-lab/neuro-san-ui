@@ -459,7 +459,6 @@ const config = [
             "unicorn/no-array-reduce": "off",
             "unicorn/no-useless-switch-case": "off",
             "unicorn/prefer-at": "off",
-            "unicorn/explicit-length-check": "off",
             "unicorn/prefer-string-replace-all": "off",
             "unicorn/consistent-destructuring": "off",
             "unicorn/numeric-separators-style": "off",

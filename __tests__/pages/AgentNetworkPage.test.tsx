@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
@@ -86,28 +86,24 @@ describe("Agent Network Page", () => {
         const user = userEvent.setup()
         renderAgentNetworkPage()
 
-        // UI displays the elements.
-        const sidebarTitle = await screen.findByText("Agent Networks")
-        // Get Music Nerd item.
+        // Ensure Math Guy (default network) elements are rendered.
+        // Should be 2 Math Guy items (1 in sidebar, 1 in chat window)
+        await waitFor(() => {
+            expect(screen.getAllByText(TEST_AGENT_MATH_GUY)).toHaveLength(2)
+        })
+
+        // Find sidebar. Will fail if <> 1 found
+        await screen.findByText("Agent Networks")
+
+        // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
         const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
-        // Get Math Guy items.
-        const mathGuyItems = await screen.findAllByText(TEST_AGENT_MATH_GUY)
-        // Get Music Nerd items (is overriden by a second query below).
-        let musicNerdItems = await screen.findAllByText(TEST_AGENT_MUSIC_NERD)
-
-        // Check that the sidebar title is present.
-        expect(sidebarTitle).toBeInTheDocument()
-
-        // Math Guy is default, there should be a sidebar item and a chatbox item (2 items total).
-        expect(mathGuyItems.length).toBe(2)
-        expect(musicNerdItem).toBeInTheDocument()
-        // Music Nerd should only have 1 sidebar item.
-        expect(musicNerdItems.length).toBe(1)
 
         // Click Music Nerd sidebar item
         await user.click(musicNerdItem)
-        // Music Nerd is selected now. There should be a sidebar item and a chatbox item (2 items total).n
-        musicNerdItems = await screen.findAllByText(TEST_AGENT_MUSIC_NERD)
-        expect(musicNerdItems.length).toBe(2)
+
+        // Music Nerd is selected now. There should be a sidebar item and a chatbox item (2 items total)
+        await waitFor(() => {
+            expect(screen.getAllByText(TEST_AGENT_MUSIC_NERD)).toHaveLength(2)
+        })
     })
 })
