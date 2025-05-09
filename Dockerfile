@@ -7,7 +7,7 @@
 #
 
 # This is the major version of NodeJS we will enforce
-# Currently we are targeting 16. Pass in via build argument
+# Currently we are targeting 22. Pass in via build argument
 ARG NODEJS_VERSION
 
 FROM node:$NODEJS_VERSION-bookworm-slim AS deps
