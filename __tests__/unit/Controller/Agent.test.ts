@@ -1,8 +1,8 @@
-import {ChatRequest} from "../../../components/AgentChat/Types"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 // eslint-disable-next-line camelcase
 import {ChatFilterChat_filter_type, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {ChatRequest} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
 
 jest.mock("../../../controller/llm/LlmChat")

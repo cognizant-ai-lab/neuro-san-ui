@@ -47,6 +47,13 @@ steps:
       - ./build_scripts/do_typescript_generate.sh
       - ./build_scripts/do_openapi_generate.sh
 
+  generate_openapi_types:
+    title: Generate Typescript types for OpenAPI
+    image: node:${{NODEJS_VERSION}}-alpine
+    working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+    commands:
+      - npx tsx ./build_scripts/GenerateOpenAPITypes.ts
+
   run_eslint:
     title: Run eslint on Typescript sources
     image: node:${{NODEJS_VERSION}}-alpine

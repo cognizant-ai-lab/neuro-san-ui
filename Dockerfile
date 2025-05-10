@@ -7,7 +7,7 @@
 #
 
 # This is the major version of NodeJS we will enforce
-# Currently we are targeting 16. Pass in via build argument
+# Check in Codefresh to see what the variable is set to if you want to see the official version of NodeJS we are targeting
 ARG NODEJS_VERSION
 
 FROM node:$NODEJS_VERSION-bookworm-slim AS deps

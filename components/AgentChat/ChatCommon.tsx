@@ -38,15 +38,7 @@ import {AGENT_GREETINGS} from "./Greetings"
 import {chatMessageFromChunkNeuroSanIndirect, tryParseJsonNeuroSanIndirect} from "./NeuroSanIndirect/Utils"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
-import {
-    ChatContext,
-    ChatMessage,
-    CombinedAgentType,
-    ConnectivityInfo,
-    ConnectivityResponse,
-    FunctionResponse,
-    isLegacyAgentType,
-} from "./Types"
+import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
@@ -57,6 +49,13 @@ import {
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {AgentType} from "../../generated/metadata"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {
+    ChatContext,
+    ChatMessage,
+    ConnectivityInfo,
+    ConnectivityResponse,
+    FunctionResponse,
+} from "../../generated/neuro-san/OpenAPITypes"
 import {FunctionResponse as GrpcFunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
 import {
     ChatContext as GrpcChatContext,
