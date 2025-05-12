@@ -59,7 +59,6 @@ const config = [
             "enforce-ids-in-jsx": enforceIdsInJsx,
             "jest-dom": fixupPluginRules(jestDom),
             "react-hooks": fixupPluginRules(reactHooks),
-            "testing-library": fixupPluginRules(testingLibrary),
             import: fixupPluginRules(eslintPluginImport),
             jest: fixupPluginRules(jest),
             next: fixupPluginRules(next),
@@ -472,7 +471,16 @@ const config = [
     {
         // Test-specific rule configuration
         files: ["__tests__/**/*.{js,ts,jsx,tsx}"],
+
+        // Pull in RTL plugin
+        ...testingLibrary.configs["flat/react"],
         rules: {
+            // Pull in RTL rules
+            ...testingLibrary.configs["flat/react"].rules,
+
+            // Indicate that the findBy calls are implicit assertions
+            "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*"]}],
+
             // Extra rules for Jest tests
             "testing-library/await-async-queries": "error",
             "testing-library/no-await-sync-queries": "error",
@@ -489,18 +497,6 @@ const config = [
             "enforce-ids-in-jsx/missing-ids": "off",
             "react/display-name": "off",
             "react/no-array-index-key": "off",
-        },
-    },
-    {
-        // Want to allow devDependencies in these files
-        files: ["next.config.ts"],
-        rules: {
-            "import/no-extraneous-dependencies": [
-                "error",
-                {
-                    devDependencies: true, // allow in these files
-                },
-            ],
         },
     },
     eslintConfigPrettier,
