@@ -30,19 +30,6 @@ const compat = new FlatCompat({
 const config = [
     eslintPluginUnicorn.configs.all,
     {
-        settings: {
-            react: {
-                version: "detect",
-            },
-        },
-        languageOptions: {
-            globals: {
-                ...globals.browser,
-                ...globals.node,
-            },
-        },
-    },
-    {
         ignores: [".next", "coverage", "generated", "embed"],
     },
     ...fixupConfigRules(
@@ -86,6 +73,8 @@ const config = [
             // Define these globals to avoid false positives from the no-undef rule, which we want to enable as it's
             // useful
             globals: {
+                ...globals.browser,
+                ...globals.node,
                 ...globals.jest,
                 React: "readonly",
                 JSX: "readonly",
@@ -105,6 +94,9 @@ const config = [
         },
 
         settings: {
+            react: {
+                version: "detect",
+            },
             "import/resolver": {
                 typescript: true,
                 node: true,
@@ -284,14 +276,7 @@ const config = [
             "import/no-self-import": "error",
             "import/no-useless-path-segments": "error",
 
-            "import/no-unresolved": [
-                "error",
-                {
-                    // Was causing false positives in CI. Needs to be investigated. Probably related to it being used
-                    // in a subdirectory with its own package.json.
-                    ignore: ["dotenv"],
-                },
-            ],
+            "import/no-unresolved": "error",
 
             "sort-imports": [
                 "error",
