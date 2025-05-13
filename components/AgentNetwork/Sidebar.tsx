@@ -42,9 +42,15 @@ const Sidebar: FC<SidebarProps> = ({id, isAwaitingLlm, networks, selectedNetwork
     }
 
     const saveSettings = () => {
-        handleSettingsClose()
-        // console.log("saveSettings", customURL)
         // TODO: Reload component with new URL
+        // console.log("saveSettings", customURL)
+        handleSettingsClose()
+    }
+
+    const resetSettings = () => {
+        // TODO: Reload component with default URL
+        setCustomURL("")
+        handleSettingsClose()
     }
 
     const handleSettingsSaveEnterKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -148,8 +154,9 @@ const Sidebar: FC<SidebarProps> = ({id, isAwaitingLlm, networks, selectedNetwork
                 }}
             >
                 <TextField
+                    autoComplete="off"
+                    label="Custom Agent Network URL"
                     id="agent-network-settings-url"
-                    label="URL"
                     onChange={handleURLChange}
                     onKeyUp={handleSettingsSaveEnterKey}
                     placeholder="https://example.com"
@@ -157,13 +164,14 @@ const Sidebar: FC<SidebarProps> = ({id, isAwaitingLlm, networks, selectedNetwork
                     sx={{marginBottom: "0.5rem", minWidth: "300px"}}
                     type="url"
                     variant="outlined"
+                    value={customURL}
                 />
                 <Button
                     id="agent-network-settings-save-btn"
                     onClick={saveSettings}
                     sx={{
                         backgroundColor: "var(--bs-primary)",
-                        marginLeft: "0.25rem",
+                        marginLeft: "0.5rem",
                         marginTop: "2px",
                         "&:hover": {
                             backgroundColor:  "var(--bs-primary)",
@@ -172,6 +180,17 @@ const Sidebar: FC<SidebarProps> = ({id, isAwaitingLlm, networks, selectedNetwork
                     variant="contained" 
                 >
                     Save
+                </Button>
+                <Button
+                    id="agent-network-settings-save-btn"
+                    onClick={resetSettings}
+                    sx={{
+                        marginLeft: "0.35rem",
+                        marginTop: "2px",
+                    }}
+                    variant="text" 
+                >
+                    Reset
                 </Button>
             </Popover>
         </>
