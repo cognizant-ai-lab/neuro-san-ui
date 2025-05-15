@@ -59,7 +59,7 @@ steps:
         - |
           # Use DISPLAY_VERSION if set, else fallback to UNILEAF_VERSION
           VERSION="{{DISPLAY_VERSION}}"
-          if [ -z "$VERSION" ]; then
+          if [ "$VERSION" = "{{DISPLAY_VERSION}}" ] || [ -z "$VERSION" ]; then
             VERSION="{{UNILEAF_VERSION}}"
           fi
 
