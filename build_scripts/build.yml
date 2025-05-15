@@ -1,4 +1,5 @@
 version: '1.0'
+
 steps:
     main_clone:
         title: "Cloning repository"
@@ -56,10 +57,16 @@ steps:
       shell: sh
       commands:
         - |
+          # Use DISPLAY_VERSION if set, else fallback to UNILEAF_VERSION
+          VERSION="${{DISPLAY_VERSION}}"
+          if [ "$VERSION" = "{{DISPLAY_VERSION}}" ] || [ -z "$VERSION" ]; then
+            VERSION="${{UNILEAF_VERSION}}"
+          fi
+
           if [ -z "${{BUILD_TARGET}}" ] || [ "${{BUILD_TARGET}}" = "all" ]; then
-            export TAG="${{UNILEAF_VERSION}}"
+            export TAG="${VERSION}"
           else
-            export TAG="${{UNILEAF_VERSION}}-${{BUILD_TARGET}}"
+            export TAG="${VERSION}-${{BUILD_TARGET}}"
           fi
           cf_export TAG
 
