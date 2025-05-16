@@ -80,5 +80,5 @@ steps:
       working_directory: ./
       build_arguments:
         - NODEJS_VERSION=${{NODEJS_VERSION}}
-        - UNILEAF_VERSION=${{UNILEAF_VERSION}}
+        - UNILEAF_VERSION=${{TAG}}
       tag: "${{TAG}}"
