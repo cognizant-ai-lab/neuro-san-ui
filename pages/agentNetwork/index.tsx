@@ -9,9 +9,9 @@ import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {NotificationType, sendNotification} from "../../components/Common/notification"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import useEnvironmentStore from "../../state/environment"
 import {useAuthentication} from "../../utils/Authentication"
 import {useLocalStorage} from "../../utils/use_local_storage"
-import useEnvironmentStore from "../../state/environment"
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
