@@ -37,6 +37,7 @@ const getUrlToUse = () => {
     const customUrlLocalStorage = window.localStorage.getItem("customAgentNetworkURL")
     const backendNeuroSanApiUrl = useEnvironmentStore.getState().backendNeuroSanApiUrl
     if (customUrlLocalStorage && customUrlLocalStorage !== "null") {
+        // An extra set of quotes is making it in the the string in local storage.
         urlToUse = customUrlLocalStorage.replaceAll('"', "")
     } else {
         urlToUse = backendNeuroSanApiUrl
