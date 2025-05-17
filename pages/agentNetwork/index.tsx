@@ -177,7 +177,7 @@ export default function AgentNetworkPage() {
                     onChunkReceived={onChunkReceived}
                     onStreamingComplete={onStreamingComplete}
                     clearChatOnNewAgent={true}
-                    clearChatOuput={clearChatOutput}
+                    clearChatOutput={clearChatOutput}
                 />
             </Grid>
         </Grid>

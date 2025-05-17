@@ -678,7 +678,7 @@ describe("ChatCommon", () => {
         expect(await screen.findByText(agentResponseText)).not.toBeVisible()
     })
 
-    it("Should clear chat output when clearChatOuput prop is set to true", async () => {
+    it("Should clear chat output when clearChatOutput prop is set to true", async () => {
         const {rerender} = render(
             <ChatCommon
                 id=""
@@ -687,7 +687,7 @@ describe("ChatCommon", () => {
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
                 targetAgent="Math Guy"
-                clearChatOuput={false}
+                clearChatOutput={false}
             />
         )
 
@@ -700,7 +700,7 @@ describe("ChatCommon", () => {
         // The message should be present in the chat output
         expect(screen.getByText("Hello World!")).toBeInTheDocument()
 
-        // Now set clearChatOuput to true and rerender
+        // Now set clearChatOutput to true and rerender
         rerender(
             <ChatCommon
                 id=""
@@ -709,7 +709,7 @@ describe("ChatCommon", () => {
                 setIsAwaitingLlm={jest.fn()}
                 isAwaitingLlm={false}
                 targetAgent="Math Guy"
-                clearChatOuput={true}
+                clearChatOutput={true}
             />
         )
 

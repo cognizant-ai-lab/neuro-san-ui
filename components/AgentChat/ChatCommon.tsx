@@ -175,7 +175,7 @@ interface ChatCommonProps {
     /**
      * Whether to clear the chat window immediately.
      */
-    readonly clearChatOuput?: boolean
+    readonly clearChatOutput?: boolean
 }
 
 const EMPTY = {}
@@ -230,7 +230,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     backgroundColor,
     title,
     onClose,
-    clearChatOuput = false,
+    clearChatOutput = false,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -357,12 +357,12 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
     useEffect(() => {
         // Clear chat output if requested
-        if (clearChatOuput) {
+        if (clearChatOutput) {
             setChatOutput([])
             currentResponse.current = ""
             setShowThinking(false)
         }
-    }, [clearChatOuput])
+    }, [clearChatOutput])
 
     /**
      * This function is required for Opportunity Finder > Orchestration.
