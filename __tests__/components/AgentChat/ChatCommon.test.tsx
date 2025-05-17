@@ -693,12 +693,12 @@ describe("ChatCommon", () => {
 
         // Simulate sending a message to populate chat output
         const userInput = screen.getByPlaceholderText("Chat with Math Guy")
-        await user.type(userInput, "Hello!")
+        await user.type(userInput, "Hello World!")
         const sendButton = screen.getByRole("button", {name: "Send"})
         await user.click(sendButton)
 
         // The message should be present in the chat output
-        expect(screen.getByText("Hello!")).toBeInTheDocument()
+        expect(screen.getByText("Hello World!")).toBeInTheDocument()
 
         // Now set clearChatOuput to true and rerender
         rerender(
@@ -715,7 +715,7 @@ describe("ChatCommon", () => {
 
         // The chat output should be cleared
         await waitFor(() => {
-            expect(screen.queryByText("Hello!")).not.toBeInTheDocument()
+            expect(screen.queryByText("Hello World!")).not.toBeInTheDocument()
         })
     })
 })
