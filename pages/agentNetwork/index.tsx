@@ -33,16 +33,17 @@ export default function AgentNetworkPage() {
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
-    // Used if a custom agent network URL is set in the Settings popover in the Sidebar and we
-    // want to trigger a re-render so that the API calls use the new URL.
-    const [refreshKey, setRefreshKey] = useState<number>(0)
-
-    const onCustomUrlChange = () => setRefreshKey((prev) => prev + 1)
-
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
-    const [customUrlLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
+
+    const [customUrlLocalStorage, setCustomUrlLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
+    const [customURL, setCustomURL] = useState<string>(customUrlLocalStorage || "")
 
     const [clearChatOutput, setClearChatOutput] = useState<boolean>(false)
+
+    const customURLCallback = (url: string) => {
+        setCustomURL(url)
+        setCustomUrlLocalStorage(url === "" ? null : url)
+    }
 
     useEffect(() => {
         async function getNetworks() {
@@ -71,7 +72,7 @@ export default function AgentNetworkPage() {
         }
 
         getNetworks()
-    }, [refreshKey])
+    }, [customURL])
 
     useEffect(() => {
         ;(async () => {
@@ -94,7 +95,7 @@ export default function AgentNetworkPage() {
                 }
             }
         })()
-    }, [refreshKey, selectedNetwork])
+    }, [customURL, selectedNetwork])
 
     const onChunkReceived = (chunk: string) => {
         // Obtain origin info if present
@@ -134,10 +135,11 @@ export default function AgentNetworkPage() {
                 }}
             >
                 <Sidebar
+                    customURL={customURL}
+                    customURLCallback={customURLCallback}
                     id="multi-agent-accelerator-sidebar"
                     isAwaitingLlm={isAwaitingLlm}
                     networks={networks}
-                    onCustomUrlChange={onCustomUrlChange}
                     selectedNetwork={selectedNetwork}
                     setSelectedNetwork={setSelectedNetwork}
                 />

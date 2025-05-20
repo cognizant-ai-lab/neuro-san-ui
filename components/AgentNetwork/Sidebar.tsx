@@ -9,34 +9,34 @@ import Popover from "@mui/material/Popover"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useRef, useState} from "react"
 
-import {useLocalStorage} from "../../utils/use_local_storage"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Types
 interface SidebarProps {
+    customURL: string
+    customURLCallback: (url: string) => void
     id: string
     isAwaitingLlm: boolean
     networks: string[]
-    onCustomUrlChange: () => void
     selectedNetwork: string
     setSelectedNetwork: (network: string) => void
 }
 // #endregion: Types
 
 const Sidebar: FC<SidebarProps> = ({
+    customURL,
+    customURLCallback,
     id,
     isAwaitingLlm,
     networks,
-    onCustomUrlChange,
     selectedNetwork,
     setSelectedNetwork,
 }) => {
     const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const isSettingsPopoverOpen = Boolean(settingsAnchorEl)
-    const [customUrlLocalStorage, setCustomUrlLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
-    const [customURL, setCustomURL] = useState<string>(customUrlLocalStorage || "")
+    const [customURLInput, setCustomURLInput] = useState<string>(customURL || "")
 
     const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setSettingsAnchorEl(event.currentTarget)
@@ -47,27 +47,25 @@ const Sidebar: FC<SidebarProps> = ({
     }
 
     const handleURLChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setCustomURL(event.target.value)
+        setCustomURLInput(event.target.value)
     }
 
     const saveSettings = () => {
-        let tempUrl = customURL
+        let tempUrl = customURLInput
         if (tempUrl.endsWith("/")) {
             tempUrl = tempUrl.slice(0, -1)
         }
         if (!tempUrl.startsWith("http://") && !tempUrl.startsWith("https://")) {
             tempUrl = `https://${tempUrl}`
         }
-        setCustomUrlLocalStorage(tempUrl)
         handleSettingsClose()
-        onCustomUrlChange()
+        customURLCallback(tempUrl)
     }
 
     const resetSettings = () => {
         // Clear input but don't close the popover
-        setCustomURL("")
-        setCustomUrlLocalStorage(null)
-        onCustomUrlChange()
+        setCustomURLInput("")
+        customURLCallback("")
     }
 
     const handleSettingsSaveEnterKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -188,7 +186,7 @@ const Sidebar: FC<SidebarProps> = ({
                     sx={{marginBottom: "0.5rem", minWidth: "300px"}}
                     type="url"
                     variant="outlined"
-                    value={customURL}
+                    value={customURLInput}
                 />
                 <Button
                     id="agent-network-settings-save-btn"
