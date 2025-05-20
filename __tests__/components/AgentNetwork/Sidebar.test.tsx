@@ -13,11 +13,12 @@ describe("SideBar", () => {
     let user: UserEvent
 
     const defaultProps = {
+        customURL: "https://neuro-san-example.com",
+        customURLCallback: jest.fn(),
         id: "test-flow-id",
         networks: [TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD],
         selectedNetwork: TEST_AGENT_MATH_GUY,
         setSelectedNetwork: jest.fn(),
-        onCustomUrlChange: jest.fn(),
         isAwaitingLlm: false,
     }
 
@@ -57,7 +58,7 @@ describe("SideBar", () => {
     })
 
     it("Should open the popover, update the URL field, and save when the save button is clicked", async () => {
-        const {onCustomUrlChange} = renderSidebarComponent()
+        const {customURLCallback} = renderSidebarComponent()
 
         const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
         expect(screen.queryByLabelText("Agent server address")).not.toBeInTheDocument()
@@ -84,11 +85,11 @@ describe("SideBar", () => {
         expect(screen.getByDisplayValue("https://example.com")).toBeInTheDocument()
 
         // onCustomUrlChange should be called
-        expect(onCustomUrlChange).toHaveBeenCalledTimes(1)
+        expect(customURLCallback).toHaveBeenCalledTimes(1)
     })
 
     it("Should reset the custom URL when the reset button is clicked", async () => {
-        const {onCustomUrlChange} = renderSidebarComponent()
+        const {customURLCallback} = renderSidebarComponent()
 
         const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
         // Open Settings popover
@@ -102,7 +103,7 @@ describe("SideBar", () => {
         await user.click(resetButton)
 
         // onCustomUrlChange should be called
-        expect(onCustomUrlChange).toHaveBeenCalledTimes(1)
+        expect(customURLCallback).toHaveBeenCalledTimes(1)
 
         // Ensure the input value is reset
         expect(urlInput).toHaveValue("")
