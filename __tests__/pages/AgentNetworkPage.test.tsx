@@ -119,6 +119,7 @@ describe("Agent Network Page", () => {
         await waitFor(() => {
             expect(debugSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
+                    // eslint-disable-next-line max-len
                     `"Unable to get list of Agent Networks. Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch agent networks."`
                 )
             )
@@ -137,6 +138,7 @@ describe("Agent Network Page", () => {
         await waitFor(() => {
             expect(debugSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
+                    // eslint-disable-next-line max-len
                     `"Unable to get agent list for "${TEST_AGENT_MATH_GUY}". Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch connectivity."`
                 )
             )

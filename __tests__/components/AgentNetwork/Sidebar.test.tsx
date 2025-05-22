@@ -43,11 +43,10 @@ describe("SideBar", () => {
         const {setSelectedNetwork} = renderSidebarComponent()
 
         // Make sure the heading is present
-        expect(screen.getByText("Agent Networks")).toBeInTheDocument()
+        await screen.findByText("Agent Networks")
 
         // Ensure the settings button is rendered
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
-        expect(settingsButton).toBeInTheDocument()
+        await screen.findByRole("button", {name: /agent network settings/iu})
 
         // Clicking on a network should call the setSelectedNetwork function
         const network = screen.getByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
@@ -66,7 +65,7 @@ describe("SideBar", () => {
 
         // Open Settings popover
         await user.click(settingsButton)
-        expect(screen.getByLabelText("Agent server address")).toBeInTheDocument()
+        await screen.findByLabelText("Agent server address")
 
         const urlInput = screen.getByLabelText("Agent server address")
         await user.clear(urlInput)
@@ -83,7 +82,7 @@ describe("SideBar", () => {
 
         // Open the Settings popover again to check if the URL is saved
         await user.click(settingsButton)
-        expect(screen.getByDisplayValue(EDIT_EXAMPLE_URL)).toBeInTheDocument()
+        await screen.findByDisplayValue(EDIT_EXAMPLE_URL)
 
         // onCustomUrlChange should be called
         expect(customURLCallback).toHaveBeenCalledTimes(1)

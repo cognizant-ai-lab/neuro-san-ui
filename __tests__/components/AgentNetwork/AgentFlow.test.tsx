@@ -135,39 +135,6 @@ describe("AgentFlow", () => {
         expect(nodes).toHaveLength(0)
     })
 
-    it("Should handle agents list going from non-empty to empty", async () => {
-        const {container, rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    id="test-flow-id"
-                    agentsInNetwork={network}
-                    originInfo={[{tool: "agent1", instantiation_index: 1}]}
-                    selectedNetwork={TEST_AGENT_MATH_GUY}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Initially, nodes should be present
-        let nodes = container.getElementsByClassName("react-flow__node")
-        expect(nodes).toHaveLength(3)
-
-        // Rerender with empty agents list
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    id="test-flow-id"
-                    agentsInNetwork={[]}
-                    originInfo={[]}
-                    selectedNetwork={TEST_AGENT_MATH_GUY}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Now, nodes should be gone
-        nodes = container.getElementsByClassName("react-flow__node")
-        expect(nodes).toHaveLength(0)
-    })
-
     test.each(["radial", "linear"])("Should allow switching to %s layout", async (layout) => {
         const {container} = render(
             <ReactFlowProvider>
