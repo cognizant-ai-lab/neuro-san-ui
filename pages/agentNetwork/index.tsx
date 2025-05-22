@@ -48,9 +48,6 @@ export default function AgentNetworkPage() {
     useEffect(() => {
         async function getNetworks() {
             try {
-                // TODO: Should we clear any existing snackbars? Or keep track of and clear existing ones?
-                // This is if they use an incorrect URL and then a valid URL, and error messages might still be shown.
-
                 const networksTmp: string[] = await getAgentNetworks()
                 const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
                 setClearChatOutput(false)
