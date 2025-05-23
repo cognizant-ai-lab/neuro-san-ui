@@ -106,4 +106,42 @@ describe("Agent Network Page", () => {
             expect(screen.getAllByText(TEST_AGENT_MUSIC_NERD)).toHaveLength(2)
         })
     })
+
+    it("should display error toast when an error occurs for getAgentNetworks", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        // Mock getAgentNetworks to reject with an error
+        const mockGetAgentNetworks = jest.requireMock("../../controller/agent/Agent").getAgentNetworks
+        mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch agent networks"))
+
+        renderAgentNetworkPage()
+
+        // Assert the console.debug call
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    // eslint-disable-next-line max-len
+                    `"Unable to get list of Agent Networks. Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch agent networks."`
+                )
+            )
+        })
+    })
+
+    it("should display error toast when an error occurs for getConnectivity", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        // Mock getAgentNetworks to reject with an error
+        const mockGetAgentNetworks = jest.requireMock("../../controller/agent/Agent").getConnectivity
+        mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch connectivity"))
+
+        renderAgentNetworkPage()
+
+        // Assert the console.debug call
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    // eslint-disable-next-line max-len
+                    `"Unable to get agent list for "${TEST_AGENT_MATH_GUY}". Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch connectivity."`
+                )
+            )
+        })
+    })
 })

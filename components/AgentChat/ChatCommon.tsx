@@ -171,6 +171,11 @@ interface ChatCommonProps {
      * If present, the chat window will have a close button that will call this function when clicked.
      */
     readonly onClose?: () => void
+
+    /**
+     * The neuro-san server URL
+     */
+    readonly neuroSanURL?: string
 }
 
 const EMPTY = {}
@@ -225,6 +230,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     backgroundColor,
     title,
     onClose,
+    neuroSanURL,
 }) => {
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -348,6 +354,14 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
     }, [chatOutput])
+
+    useEffect(() => {
+        // Clear chat output on change of neuro-san URL
+        // TODO: We want to revise this in the future to not need a useEffect
+        setChatOutput([])
+        currentResponse.current = ""
+        setShowThinking(false)
+    }, [neuroSanURL])
 
     /**
      * This function is required for Opportunity Finder > Orchestration.
@@ -604,6 +618,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
             if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
                 try {
+                    // Does not use neuroSanURL since this is the Neuro-san indirect API
                     agentFunction = await getAgentFunctionNeuroSanIndirect(currentUser, targetAgent as AgentType)
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
@@ -623,7 +638,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             } else {
                 // It is a Neuro-san agent, so get the function and connectivity info
                 try {
-                    agentFunction = await getAgentFunction(targetAgent)
+                    agentFunction = await getAgentFunction(neuroSanURL, targetAgent)
                 } catch {
                     // For now, just return. May be a legacy agent without a functional description in Neuro-san.
                     return
@@ -631,7 +646,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
             }
 
             try {
-                const connectivity: ConnectivityResponse = await getConnectivity(targetAgent)
+                const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent)
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
@@ -897,6 +912,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     } else {
                         // Send the chat query to the server. This will block until the stream ends from the server
                         await sendChatQuery(
+                            neuroSanURL,
                             controller?.current.signal,
                             query,
                             targetAgent,

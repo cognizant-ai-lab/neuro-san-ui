@@ -6,10 +6,12 @@ import {ChatCommon} from "../../components/AgentChat/ChatCommon"
 import {chatMessageFromChunk, cleanUpAgentName} from "../../components/AgentChat/Utils"
 import AgentFlow from "../../components/AgentNetwork/AgentFlow"
 import Sidebar from "../../components/AgentNetwork/Sidebar"
-import {NotificationType, sendNotification} from "../../components/Common/notification"
+import {closeNotification, NotificationType, sendNotification} from "../../components/Common/notification"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import useEnvironmentStore from "../../state/environment"
 import {useAuthentication} from "../../utils/Authentication"
+import {useLocalStorage} from "../../utils/use_local_storage"
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -31,36 +33,66 @@ export default function AgentNetworkPage() {
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
+    const {backendNeuroSanApiUrl} = useEnvironmentStore()
+
+    const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
+
+    // An extra set of quotes is making it in the the string in local storage.
+    const [neuroSanURL, setNeuroSanURL] = useState<string>(
+        customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
+    )
+
+    const customURLCallback = (url: string) => {
+        setNeuroSanURL(url || backendNeuroSanApiUrl)
+        setCustomURLLocalStorage(url === "" ? null : url)
+    }
+
     useEffect(() => {
         async function getNetworks() {
-            const networksTmp: string[] = await getAgentNetworks()
-            const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
-            setNetworks(sortedNetworks)
-            // Set the first network as the selected network
-            setSelectedNetwork(sortedNetworks[0])
+            try {
+                const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
+                const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
+                setNetworks(sortedNetworks)
+                // Set the first network as the selected network
+                setSelectedNetwork(sortedNetworks[0])
+                closeNotification()
+            } catch (e) {
+                sendNotification(
+                    NotificationType.error,
+                    "Connection error",
+                    // eslint-disable-next-line max-len
+                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                )
+                setNetworks([])
+                setSelectedNetwork(null)
+            }
         }
 
         getNetworks()
-    }, [])
+    }, [neuroSanURL])
 
     useEffect(() => {
         ;(async () => {
             if (selectedNetwork) {
                 try {
-                    const connectivity: ConnectivityResponse = await getConnectivity(selectedNetwork)
+                    const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, selectedNetwork)
                     const agentsInNetworkSorted: ConnectivityInfo[] = connectivity.connectivity_info
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
                 } catch (e) {
+                    const agentName = cleanUpAgentName(selectedNetwork)
                     sendNotification(
                         NotificationType.error,
-                        `Failed to get connectivity info for ${cleanUpAgentName(selectedNetwork)}. Error: ${e}`
+                        "Connection error",
+                        // eslint-disable-next-line max-len
+                        `Unable to get agent list for "${agentName}". Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
                     )
+                    setAgentsInNetwork([])
                 }
             }
         })()
-    }, [selectedNetwork])
+    }, [neuroSanURL, selectedNetwork])
 
     const onChunkReceived = (chunk: string) => {
         // Obtain origin info if present
@@ -100,11 +132,13 @@ export default function AgentNetworkPage() {
                 }}
             >
                 <Sidebar
+                    customURLLocalStorage={customURLLocalStorage}
+                    customURLCallback={customURLCallback}
                     id="multi-agent-accelerator-sidebar"
+                    isAwaitingLlm={isAwaitingLlm}
                     networks={networks}
                     selectedNetwork={selectedNetwork}
                     setSelectedNetwork={setSelectedNetwork}
-                    isAwaitingLlm={isAwaitingLlm}
                 />
             </Grid>
             <Grid
@@ -132,6 +166,7 @@ export default function AgentNetworkPage() {
                 }}
             >
                 <ChatCommon
+                    neuroSanURL={neuroSanURL}
                     id="agent-network-ui"
                     currentUser={userName}
                     userImage={userImage}

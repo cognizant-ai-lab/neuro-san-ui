@@ -71,10 +71,6 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
 
     // Create the flow layout depending on user preference
     useEffect(() => {
-        if (agentsInNetwork?.length === 0) {
-            return
-        }
-
         switch (layout) {
             case "linear": {
                 const linearLayout = layoutLinear(agentsInNetwork, getOriginInfo)

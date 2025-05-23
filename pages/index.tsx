@@ -315,7 +315,7 @@ export default function Index(): ReactElement {
                                         id="neuro-san-button"
                                         style={{position: "relative", ...getButtonStyle(["neuro-san-button"])}}
                                     >
-                                        Explore reference networks
+                                        Explore agent networks
                                     </LaunchButton>
                                 </a>
                             </Link>

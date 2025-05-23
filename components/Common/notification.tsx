@@ -1,4 +1,4 @@
-import {enqueueSnackbar, SnackbarOrigin, /*SnackbarOrigin, */ VariantType} from "notistack"
+import {closeSnackbar, enqueueSnackbar, SnackbarKey, SnackbarOrigin, VariantType} from "notistack"
 import {renderToString} from "react-dom/server"
 
 export enum NotificationType {
@@ -13,6 +13,10 @@ const ERROR_WARNING_NOTIFICATION_DURATION_MS = 15_000
 
 // Display info notification popups for this many seconds
 const SUCCESS_NOTIFICATION_DURATION_MS = 5000
+
+export function closeNotification(snackbarId?: SnackbarKey) {
+    closeSnackbar(snackbarId)
+}
 
 /**
  * Convenience method to allow sending notifications to user with a one-liner.
