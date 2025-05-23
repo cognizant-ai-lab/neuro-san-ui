@@ -42,7 +42,7 @@ describe("Index Page", () => {
         expect(screen.getByText("Low-code framework for rapidly agentifying your business")).toBeInTheDocument()
         expect(screen.getByText("Find opportunities")).toBeInTheDocument()
         expect(screen.getByText("Build models")).toBeInTheDocument()
-        expect(screen.getByText("Explore reference networks")).toBeInTheDocument()
+        expect(screen.getByText("Explore agent networks")).toBeInTheDocument()
     })
 
     it("opens the email dialog when 'Contact Us' is clicked", async () => {

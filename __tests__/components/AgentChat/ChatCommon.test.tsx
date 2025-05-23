@@ -61,6 +61,22 @@ function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
 describe("ChatCommon", () => {
     let user: UserEvent
 
+    const defaultProps = {
+        currentUser: TEST_USER,
+        id: "",
+        isAwaitingLlm: false,
+        onSend: jest.fn(),
+        setIsAwaitingLlm: jest.fn(),
+        targetAgent: TEST_AGENT_MATH_GUY,
+        userImage: "",
+    }
+
+    const renderChatCommonComponent = (overrides = {}) => {
+        const props = {...defaultProps, ...overrides}
+        render(<ChatCommon {...props} />)
+        return props
+    }
+
     withStrictMocks()
 
     beforeEach(() => {
@@ -84,16 +100,7 @@ describe("ChatCommon", () => {
     }
 
     it("Should render correctly", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser=""
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent()
 
         expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
 
@@ -104,16 +111,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should behave correctly when awaiting the LLM response", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser=""
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={true}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent({isAwaitingLlm: true})
 
         // "Stop" button should be enabled while awaiting LLM response
         expect(await screen.findByRole("button", {name: "Stop"})).toBeEnabled()
@@ -132,17 +130,7 @@ describe("ChatCommon", () => {
         const mockSendFunction = jest.fn()
         const strToCheck = "Please fix my internet"
 
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-                onSend={mockSendFunction}
-            />
-        )
+        renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
@@ -166,17 +154,7 @@ describe("ChatCommon", () => {
         const mockSendFunction = jest.fn()
         const strToCheck = "Please fix my internet"
 
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-                onSend={mockSendFunction}
-            />
-        )
+        renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
@@ -197,17 +175,7 @@ describe("ChatCommon", () => {
         const strToCheckLine2 = "Please fix my internet line 2"
         const fullStrToCheck = `${strToCheckLine1}\n${strToCheckLine2}`
 
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-                onSend={mockSendFunction}
-            />
-        )
+        renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
@@ -233,20 +201,10 @@ describe("ChatCommon", () => {
 
     it("Should handle receiving chunks from Neuro-san agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-                onSend={jest.fn()}
-                onChunkReceived={onChunkReceivedMock}
-            />
-        )
-
         const testResponseText = '"Response text from LLM"'
+
+        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock})
+
         const chatResponse: ChatResponse = {
             response: {
                 type: ChatMessageType.AGENT_FRAMEWORK,
@@ -256,7 +214,7 @@ describe("ChatCommon", () => {
         }
 
         const chunk = JSON.stringify(chatResponse)
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(chunk)
         })
 
@@ -270,21 +228,9 @@ describe("ChatCommon", () => {
 
     it("Should handle receiving chunks from legacy agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={LegacyAgentType.DataGenerator}
-                onSend={jest.fn()}
-                onChunkReceived={onChunkReceivedMock}
-            />
-        )
-
         const testResponseText = '"Response text from LLM"'
 
+        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback(testResponseText)
         })
@@ -299,21 +245,9 @@ describe("ChatCommon", () => {
 
     it("Should handle final answer from legacy agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={LegacyAgentType.DMSChat}
-                onSend={jest.fn()}
-                onChunkReceived={onChunkReceivedMock}
-            />
-        )
-
         const testResponseText = "Final Answer: Sample final answer from LLM"
 
+        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DMSChat})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback(testResponseText)
         })
@@ -330,17 +264,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should correctly handle errors thrown while fetching", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={LegacyAgentType.OpportunityFinder}
-                onSend={jest.fn()}
-            />
-        )
+        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new Error("Sample error from fetch")
         })
@@ -357,17 +281,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should correctly an abort error correctly", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={LegacyAgentType.OpportunityFinder}
-                onSend={jest.fn()}
-            />
-        )
+        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new (class extends Error {
                 constructor(message?: string) {
@@ -388,17 +302,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should correctly detect an error chunk from Neuro-san", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-                onSend={jest.fn()}
-            />
-        )
+        renderChatCommonComponent()
 
         const errorMessage = "Error message from LLM"
 
@@ -417,7 +321,7 @@ describe("ChatCommon", () => {
             response: successMessage,
         }
 
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponse))
         })
 
@@ -443,17 +347,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should correctly handle chat context", async () => {
-        const {rerender} = render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-                onSend={jest.fn()}
-            />
-        )
+        const {rerender} = render(<ChatCommon {...defaultProps} />)
 
         const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
@@ -461,7 +355,7 @@ describe("ChatCommon", () => {
         const chatResponse = {response: responseMessage}
 
         let sentChatContext: ChatContext
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback, chatContext) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback, chatContext) => {
             callback(JSON.stringify(chatResponse))
             sentChatContext = chatContext
         })
@@ -470,16 +364,7 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         // re-render to update chat_context ref
-        rerender(
-            <ChatCommon
-                id=""
-                currentUser=""
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        rerender(<ChatCommon {...defaultProps} />)
         await sendQuery(TEST_AGENT_MATH_GUY, query)
 
         //We should be sending back chat context as-is to the server to maintain conversation state
@@ -487,16 +372,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should show agent introduction", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent()
 
         expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
     })
@@ -504,12 +380,7 @@ describe("ChatCommon", () => {
     it("Should clear chat when a new agent is selected", async () => {
         const {rerender} = render(
             <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
+                {...defaultProps}
                 clearChatOnNewAgent={true}
             />
         )
@@ -519,13 +390,9 @@ describe("ChatCommon", () => {
 
         rerender(
             <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MUSIC_NERD}
+                {...defaultProps}
                 clearChatOnNewAgent={true}
+                targetAgent={TEST_AGENT_MUSIC_NERD}
             />
         )
 
@@ -538,16 +405,7 @@ describe("ChatCommon", () => {
 
     it("Should handle Stop correctly", async () => {
         const setAwaitingLlmMock = jest.fn()
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={setAwaitingLlmMock}
-                isAwaitingLlm={true}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true})
 
         const stopButton = await screen.findByRole("button", {name: "Stop"})
         expect(stopButton).toBeInTheDocument()
@@ -559,16 +417,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle autoscroll toggle correctly", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent()
 
         const autoscrollButton = screen.getByRole("button", {name: "Autoscroll enabled"})
         expect(autoscrollButton).toBeInTheDocument()
@@ -578,16 +427,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle text wrapping toggle correctly", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent()
 
         const wrapButton = screen.getByRole("button", {name: "Text wrapping enabled"})
         expect(wrapButton).toBeInTheDocument()
@@ -597,23 +437,14 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle final answer from Neuro-san agents correctly", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent()
 
         const responseMessage = getResponseMessage(ChatMessageType.AI, "Sample AI response")
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
         const chatResponse = {response: responseMessage}
 
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponse))
         })
 
@@ -623,16 +454,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle 'show thinking' button correctly", async () => {
-        render(
-            <ChatCommon
-                id=""
-                currentUser={TEST_USER}
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent={TEST_AGENT_MATH_GUY}
-            />
-        )
+        renderChatCommonComponent()
 
         // Send two responses, a regular AGENT one and an AI one
         // The initial [] is to make sure the message is not treated as JSON
@@ -648,7 +470,7 @@ describe("ChatCommon", () => {
             response,
         }))
 
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, callback) => {
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponsesStringified[0]))
             callback(JSON.stringify(chatResponsesStringified[1]))
         })
@@ -676,46 +498,5 @@ describe("ChatCommon", () => {
 
         // Agent response should be in the DOM but with display: none
         expect(await screen.findByText(agentResponseText)).not.toBeVisible()
-    })
-
-    it("Should clear chat output when clearChatOutput prop is set to true", async () => {
-        const {rerender} = render(
-            <ChatCommon
-                id=""
-                currentUser="testUser"
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent="Math Guy"
-                clearChatOutput={false}
-            />
-        )
-
-        // Simulate sending a message to populate chat output
-        const userInput = screen.getByPlaceholderText("Chat with Math Guy")
-        await user.type(userInput, "Hello World!")
-        const sendButton = screen.getByRole("button", {name: "Send"})
-        await user.click(sendButton)
-
-        // The message should be present in the chat output
-        expect(screen.getByText("Hello World!")).toBeInTheDocument()
-
-        // Now set clearChatOutput to true and rerender
-        rerender(
-            <ChatCommon
-                id=""
-                currentUser="testUser"
-                userImage=""
-                setIsAwaitingLlm={jest.fn()}
-                isAwaitingLlm={false}
-                targetAgent="Math Guy"
-                clearChatOutput={true}
-            />
-        )
-
-        // The chat output should be cleared
-        await waitFor(() => {
-            expect(screen.queryByText("Hello World!")).not.toBeInTheDocument()
-        })
     })
 })

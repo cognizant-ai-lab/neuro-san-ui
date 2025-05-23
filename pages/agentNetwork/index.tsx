@@ -35,67 +35,64 @@ export default function AgentNetworkPage() {
 
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
-    const [customUrlLocalStorage, setCustomUrlLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
-    const [customURL, setCustomURL] = useState<string>(customUrlLocalStorage || "")
+    const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
 
-    const [clearChatOutput, setClearChatOutput] = useState<boolean>(false)
+    // An extra set of quotes is making it in the the string in local storage.
+    const [neuroSanURL, setNeuroSanURL] = useState<string>(
+        customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
+    )
 
     const customURLCallback = (url: string) => {
-        setCustomURL(url)
-        setCustomUrlLocalStorage(url === "" ? null : url)
+        setNeuroSanURL(url || backendNeuroSanApiUrl)
+        setCustomURLLocalStorage(url === "" ? null : url)
     }
 
     useEffect(() => {
         async function getNetworks() {
             try {
-                const networksTmp: string[] = await getAgentNetworks()
+                const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
                 const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
-                setClearChatOutput(false)
                 setNetworks(sortedNetworks)
                 // Set the first network as the selected network
                 setSelectedNetwork(sortedNetworks[0])
                 closeNotification()
             } catch (e) {
-                const urlToUse = customUrlLocalStorage || backendNeuroSanApiUrl
                 sendNotification(
                     NotificationType.error,
                     "Connection error",
                     // eslint-disable-next-line max-len
-                    `Unable to get list of Agent Networks. Verify that ${urlToUse} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
                 )
                 setNetworks([])
                 setSelectedNetwork(null)
-                // Clear chat output as well, if network list does not load
-                setClearChatOutput(true)
             }
         }
 
         getNetworks()
-    }, [customURL])
+    }, [neuroSanURL])
 
     useEffect(() => {
         ;(async () => {
             if (selectedNetwork) {
                 try {
-                    const connectivity: ConnectivityResponse = await getConnectivity(selectedNetwork)
+                    const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, selectedNetwork)
                     const agentsInNetworkSorted: ConnectivityInfo[] = connectivity.connectivity_info
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
                 } catch (e) {
                     const agentName = cleanUpAgentName(selectedNetwork)
-                    const urlToUse = customUrlLocalStorage || backendNeuroSanApiUrl
                     sendNotification(
                         NotificationType.error,
                         "Connection error",
                         // eslint-disable-next-line max-len
-                        `Unable to get agent list for "${agentName}". Verify that ${urlToUse} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                        `Unable to get agent list for "${agentName}". Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
                     )
                     setAgentsInNetwork([])
                 }
             }
         })()
-    }, [customURL, selectedNetwork])
+    }, [neuroSanURL, selectedNetwork])
 
     const onChunkReceived = (chunk: string) => {
         // Obtain origin info if present
@@ -135,7 +132,7 @@ export default function AgentNetworkPage() {
                 }}
             >
                 <Sidebar
-                    customURL={customURL}
+                    customURLLocalStorage={customURLLocalStorage}
                     customURLCallback={customURLCallback}
                     id="multi-agent-accelerator-sidebar"
                     isAwaitingLlm={isAwaitingLlm}
@@ -169,6 +166,7 @@ export default function AgentNetworkPage() {
                 }}
             >
                 <ChatCommon
+                    neuroSanURL={neuroSanURL}
                     id="agent-network-ui"
                     currentUser={userName}
                     userImage={userImage}
@@ -178,7 +176,6 @@ export default function AgentNetworkPage() {
                     onChunkReceived={onChunkReceived}
                     onStreamingComplete={onStreamingComplete}
                     clearChatOnNewAgent={true}
-                    clearChatOutput={clearChatOutput}
                 />
             </Grid>
         </Grid>

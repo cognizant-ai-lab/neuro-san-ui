@@ -15,8 +15,8 @@ import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Types
 interface SidebarProps {
-    customURL: string
     customURLCallback: (url: string) => void
+    customURLLocalStorage?: string
     id: string
     isAwaitingLlm: boolean
     networks: string[]
@@ -26,8 +26,8 @@ interface SidebarProps {
 // #endregion: Types
 
 const Sidebar: FC<SidebarProps> = ({
-    customURL,
     customURLCallback,
+    customURLLocalStorage,
     id,
     isAwaitingLlm,
     networks,
@@ -37,7 +37,7 @@ const Sidebar: FC<SidebarProps> = ({
     const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const isSettingsPopoverOpen = Boolean(settingsAnchorEl)
-    const [customURLInput, setCustomURLInput] = useState<string>(customURL || "")
+    const [customURLInput, setCustomURLInput] = useState<string>(customURLLocalStorage || "")
 
     const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setSettingsAnchorEl(event.currentTarget)
@@ -126,7 +126,7 @@ const Sidebar: FC<SidebarProps> = ({
                         <Tooltip
                             id="agent-network-settings-tooltip"
                             placement="top"
-                            title={customURL || null}
+                            title={customURLLocalStorage || null}
                         >
                             <SettingsIcon
                                 id="agent-network-settings-icon"

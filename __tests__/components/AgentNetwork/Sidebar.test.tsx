@@ -14,9 +14,9 @@ describe("SideBar", () => {
     let user: UserEvent
 
     const defaultProps = {
-        customURL: "",
         customURLCallback: jest.fn(),
         id: "test-flow-id",
+        neuroSanURL: "",
         networks: [TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD],
         selectedNetwork: TEST_AGENT_MATH_GUY,
         setSelectedNetwork: jest.fn(),
