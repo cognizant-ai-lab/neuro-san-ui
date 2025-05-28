@@ -4,11 +4,17 @@ import {SnackbarProvider} from "notistack"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import Sidebar from "../../../components/AgentNetwork/Sidebar"
+import {testConnection} from "../../../controller/agent/Agent"
 import {withStrictMocks} from "../../common/strictMocks"
 
 const EDIT_EXAMPLE_URL = "https://edit-example.com"
 const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
+
+jest.mock("../../../controller/agent/Agent", () => ({
+    ...jest.requireActual("../../../controller/agent/Agent"),
+    testConnection: jest.fn(),
+}))
 
 describe("SideBar", () => {
     let user: UserEvent
@@ -113,5 +119,40 @@ describe("SideBar", () => {
         renderSidebarComponent({isAwaitingLlm: true})
         const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
         expect(settingsButton).toBeDisabled()
+    })
+
+    it("should save settings when pressing Enter in the input", async () => {
+        const {customURLCallback} = renderSidebarComponent()
+        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        await user.click(settingsButton)
+        const urlInput = await screen.findByLabelText("Agent server address")
+        await user.clear(urlInput)
+        await user.type(urlInput, EDIT_EXAMPLE_URL)
+        await user.keyboard("{Enter}")
+        expect(customURLCallback).toHaveBeenCalledWith(EDIT_EXAMPLE_URL)
+    })
+
+    it("should show success message when Test button is clicked and connection succeeds", async () => {
+        ;(testConnection as jest.Mock).mockResolvedValue(true)
+        renderSidebarComponent()
+
+        await user.click(screen.getByRole("button", {name: /agent network settings/iu}))
+        const input = await screen.findByLabelText("Agent server address")
+        await user.clear(input)
+        await user.type(input, EDIT_EXAMPLE_URL)
+        await user.click(screen.getByRole("button", {name: /test/iu}))
+        expect(await screen.findByTestId("CheckCircleOutlineIcon")).toBeInTheDocument()
+    })
+
+    it("should show error message when Test button is clicked and connection fails", async () => {
+        ;(testConnection as jest.Mock).mockResolvedValue(false)
+        renderSidebarComponent()
+
+        await user.click(screen.getByRole("button", {name: /agent network settings/iu}))
+        const input = await screen.findByLabelText("Agent server address")
+        await user.clear(input)
+        await user.type(input, EDIT_EXAMPLE_URL)
+        await user.click(screen.getByRole("button", {name: /test/iu}))
+        expect(await screen.findByTestId("HighlightOffIcon")).toBeInTheDocument()
     })
 })

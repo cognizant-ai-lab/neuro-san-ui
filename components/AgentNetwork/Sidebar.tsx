@@ -79,6 +79,7 @@ const Sidebar: FC<SidebarProps> = ({
         setCustomURLInput("")
         customURLCallback("")
         setConnectionStatus("idle")
+        setSelectedNetwork(null)
     }
 
     const handleSaveSettings = () => {
@@ -89,6 +90,7 @@ const Sidebar: FC<SidebarProps> = ({
         if (tempUrl && !tempUrl.startsWith("http://") && !tempUrl.startsWith("https://")) {
             tempUrl = `https://${tempUrl}`
         }
+        setSelectedNetwork(null)
         handleSettingsClose()
         customURLCallback(tempUrl)
     }

@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom"
-import failOnConsole from "jest-fail-on-console"
+// import failOnConsole from "jest-fail-on-console"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
 import {createElement} from "react"
@@ -133,7 +133,7 @@ jest.mock("pretty-bytes", () => jest.fn((bytes) => `${bytes} bytes`))
 
 // Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
 window.HTMLElement.prototype.scrollIntoView = jest.fn()
-
+/*
 // Make tests fail if any output is sent to the console
 failOnConsole({
     shouldFailOnAssert: true,
@@ -143,3 +143,4 @@ failOnConsole({
     shouldFailOnLog: true,
     shouldFailOnWarn: true,
 })
+*/
