@@ -36,9 +36,9 @@ export async function testConnection(url: string): Promise<boolean> {
     const timeout = setTimeout(() => controller.abort(), 2500) // 2.5s timeout
 
     try {
-        const response = await fetch(url, { signal: controller.signal })
+        const response = await fetch(url, {signal: controller.signal})
         return response.ok // TODO: check {"service": "neuro-san agents", "status": "healthy"} instead?
-    } catch (error) {
+    } catch {
         return false
     } finally {
         clearTimeout(timeout)

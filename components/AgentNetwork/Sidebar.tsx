@@ -280,7 +280,7 @@ const Sidebar: FC<SidebarProps> = ({
                             <>
                                 <HighlightOff
                                     id="connection-status-error-icon"
-                                    sx={{color:"var(--bs-red)", fontSize: "1.2rem", mr: 0.5}}
+                                    sx={{color: "var(--bs-red)", fontSize: "1.2rem", mr: 0.5}}
                                 />
                                 <Typography
                                     id="connection-status-failed-msg"
