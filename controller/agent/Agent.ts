@@ -27,6 +27,28 @@ const insertTargetAgent = (targetAgent: string, path: string) => {
 }
 
 /**
+ * Test connection for a neuro-san server URL
+ * @param url The neuro-san server URL.
+ * @returns A promise that resolves to an array of agent network names.
+ */
+export async function testConnection(url: string): Promise<boolean> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 2500) // 2.5s timeout
+
+    try {
+        // const response = await fetch(url, { signal: controller.signal })
+        // TODO: Using ConciergeService_List for now
+        const response = await fetch(`${url}${ApiPaths.ConciergeService_List}`, {signal: controller.signal})
+        return response.ok
+    } catch (error) {
+        console.error("Connection failed:", error)
+        return false
+    } finally {
+        clearTimeout(timeout)
+    }
+}
+
+/**
  * Get the list of available agent networks from the concierge service.
  * @param url The neuro-san server URL
  * @returns A promise that resolves to an array of agent network names.

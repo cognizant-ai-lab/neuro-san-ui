@@ -1,5 +1,8 @@
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import SettingsIcon from "@mui/icons-material/Settings"
 import SpokeOutlinedIcon from "@mui/icons-material/SpokeOutlined"
+import {styled} from "@mui/material"
+import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import List from "@mui/material/List"
 import ListItemButton from "@mui/material/ListItemButton"
@@ -8,12 +11,28 @@ import ListItemText from "@mui/material/ListItemText"
 import Popover from "@mui/material/Popover"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
+import Typography from "@mui/material/Typography"
 import {FC, useEffect, useRef, useState} from "react"
 
+import {testConnection} from "../../controller/agent/Agent"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
+// #region: Styled Components
+
+const PrimaryButton = styled(Button)({
+    backgroundColor: "var(--bs-primary)",
+    marginLeft: "0.5rem",
+    marginTop: "2px",
+    "&:hover": {
+        backgroundColor: "var(--bs-primary)",
+    },
+})
+
+// #endregion: Styled Components
+
 // #region: Types
+
 interface SidebarProps {
     customURLCallback: (url: string) => void
     customURLLocalStorage?: string
@@ -23,6 +42,7 @@ interface SidebarProps {
     selectedNetwork: string
     setSelectedNetwork: (network: string) => void
 }
+
 // #endregion: Types
 
 const Sidebar: FC<SidebarProps> = ({
@@ -38,6 +58,7 @@ const Sidebar: FC<SidebarProps> = ({
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const isSettingsPopoverOpen = Boolean(settingsAnchorEl)
     const [customURLInput, setCustomURLInput] = useState<string>(customURLLocalStorage || "")
+    const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle")
 
     const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setSettingsAnchorEl(event.currentTarget)
@@ -51,7 +72,13 @@ const Sidebar: FC<SidebarProps> = ({
         setCustomURLInput(event.target.value)
     }
 
-    const saveSettings = () => {
+    const handleResetSettings = () => {
+        // Clear input but don't close the popover
+        setCustomURLInput("")
+        customURLCallback("")
+    }
+
+    const handleSaveSettings = () => {
         let tempUrl = customURLInput
         if (tempUrl.endsWith("/")) {
             tempUrl = tempUrl.slice(0, -1)
@@ -63,15 +90,18 @@ const Sidebar: FC<SidebarProps> = ({
         customURLCallback(tempUrl)
     }
 
-    const resetSettings = () => {
-        // Clear input but don't close the popover
-        setCustomURLInput("")
-        customURLCallback("")
-    }
-
     const handleSettingsSaveEnterKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
         if (event.key === "Enter") {
-            saveSettings()
+            handleSaveSettings()
+        }
+    }
+
+    const handleTestConnection = async () => {
+        const testConnectionResult = testConnection(customURLInput)
+        if (testConnectionResult) {
+            setConnectionStatus("success")
+        } else {
+            setConnectionStatus("error")
         }
     }
 
@@ -195,24 +225,23 @@ const Sidebar: FC<SidebarProps> = ({
                     variant="outlined"
                     value={customURLInput}
                 />
-                <Button
+                <PrimaryButton
                     id="agent-network-settings-save-btn"
-                    onClick={saveSettings}
-                    sx={{
-                        backgroundColor: "var(--bs-primary)",
-                        marginLeft: "0.5rem",
-                        marginTop: "2px",
-                        "&:hover": {
-                            backgroundColor: "var(--bs-primary)",
-                        },
-                    }}
+                    onClick={handleSaveSettings}
                     variant="contained"
                 >
                     Save
-                </Button>
+                </PrimaryButton>
+                <PrimaryButton
+                    id="agent-network-settings-test-btn"
+                    onClick={handleTestConnection}
+                    variant="contained"
+                >
+                    Test
+                </PrimaryButton>
                 <Button
                     id="agent-network-settings-reset-btn"
-                    onClick={resetSettings}
+                    onClick={handleResetSettings}
                     sx={{
                         marginLeft: "0.35rem",
                         marginTop: "2px",
@@ -221,6 +250,50 @@ const Sidebar: FC<SidebarProps> = ({
                 >
                     Reset
                 </Button>
+                {(connectionStatus === "success" || connectionStatus === "error") && (
+                    <Box
+                        id="connection-status-box"
+                        display="flex"
+                        alignItems="center"
+                        ml={0.5}
+                        mb={1.5}
+                    >
+                        {connectionStatus === "success" && (
+                            <>
+                                <CheckCircleOutlineIcon
+                                    id="connection-status-success-icon"
+                                    sx={{color: "green", fontSize: "1.2rem", mr: 0.5}}
+                                />
+                                <Typography
+                                    id="connection-status-success-msg"
+                                    variant="body2"
+                                    color="green"
+                                >
+                                    Connected successfully
+                                </Typography>
+                            </>
+                        )}
+                        {connectionStatus === "error" && (
+                            <>
+                                <Typography
+                                    id="connection-status-failed-x"
+                                    color="red"
+                                    fontWeight="bold"
+                                    fontSize="1.25rem"
+                                >
+                                    X
+                                </Typography>
+                                <Typography
+                                    id="connection-status-failed-msg"
+                                    variant="body2"
+                                    color="red"
+                                >
+                                    Connection failed
+                                </Typography>
+                            </>
+                        )}
+                    </Box>
+                )}
             </Popover>
         </>
     )
