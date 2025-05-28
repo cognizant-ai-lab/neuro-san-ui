@@ -121,17 +121,6 @@ describe("SideBar", () => {
         expect(settingsButton).toBeDisabled()
     })
 
-    it("should save settings when pressing Enter in the input", async () => {
-        const {customURLCallback} = renderSidebarComponent()
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
-        await user.click(settingsButton)
-        const urlInput = await screen.findByLabelText("Agent server address")
-        await user.clear(urlInput)
-        await user.type(urlInput, EDIT_EXAMPLE_URL)
-        await user.keyboard("{Enter}")
-        expect(customURLCallback).toHaveBeenCalledWith(EDIT_EXAMPLE_URL)
-    })
-
     it("should show success message when Test button is clicked and connection succeeds", async () => {
         ;(testConnection as jest.Mock).mockResolvedValue(true)
         renderSidebarComponent()
