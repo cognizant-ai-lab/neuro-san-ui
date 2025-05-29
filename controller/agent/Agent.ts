@@ -27,17 +27,22 @@ const insertTargetAgent = (targetAgent: string, path: string) => {
 }
 
 /**
- * Test connection for a neuro-san server URL
+ * Test connection for a neuro-san server.
  * @param url The neuro-san server URL.
  * @returns A promise that resolves to an array of agent network names.
  */
 export async function testConnection(url: string): Promise<boolean> {
+    debugger
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 2500) // 2.5s timeout
+    const timeout = setTimeout(() => controller.abort(), 2000) // 2s timeout
 
     try {
         const response = await fetch(url, {signal: controller.signal})
-        return response.ok // TODO: check {"service": "neuro-san agents", "status": "healthy"} instead?
+        if (!response.ok) {
+            return false
+        }
+        const jsonResponse = await response.json()
+        return jsonResponse.status === "healthy"
     } catch {
         return false
     } finally {

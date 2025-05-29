@@ -255,14 +255,16 @@ const Sidebar: FC<SidebarProps> = ({
                         id="connection-status-box"
                         display="flex"
                         alignItems="center"
-                        ml={0.5}
-                        mb={1.5}
+                        sx={{
+                            marginLeft: "0.25rem",
+                            marginBottom: "0.75rem",
+                        }}
                     >
                         {connectionStatus === "success" && (
                             <>
                                 <CheckCircleOutlineIcon
                                     id="connection-status-success-icon"
-                                    sx={{color: "var(--bs-green)", fontSize: "1.2rem", mr: 0.5}}
+                                    sx={{color: "var(--bs-green)", fontSize: "1.2rem", marginRight: "0.25rem"}}
                                 />
                                 <Typography
                                     id="connection-status-success-msg"
@@ -277,7 +279,7 @@ const Sidebar: FC<SidebarProps> = ({
                             <>
                                 <HighlightOff
                                     id="connection-status-error-icon"
-                                    sx={{color: "var(--bs-red)", fontSize: "1.2rem", mr: 0.5}}
+                                    sx={{color: "var(--bs-red)", fontSize: "1.2rem", marginRight: "0.25rem"}}
                                 />
                                 <Typography
                                     id="connection-status-failed-msg"
