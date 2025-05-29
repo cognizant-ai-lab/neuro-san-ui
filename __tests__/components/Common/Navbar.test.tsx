@@ -123,4 +123,17 @@ describe("navbar", () => {
         const signOut = screen.getByText("Sign out")
         expect(signOut).toBeVisible()
     })
+
+    it("opens the explore menu", async () => {
+        render(defaultNavbar)
+
+        const helpToggle = screen.getByText("Explore")
+        await user.click(helpToggle)
+
+        const neuroSanStudioItem = screen.getByText("Neuro-san studio (examples)")
+        expect(neuroSanStudioItem).toBeVisible()
+
+        const neuroSanCoreItem = screen.getByText("Neuro-san (core)")
+        expect(neuroSanCoreItem).toBeVisible()
+    })
 })
