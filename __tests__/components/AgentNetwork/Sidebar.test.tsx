@@ -79,7 +79,7 @@ describe("SideBar", () => {
         expect(settingsButton).toBeInTheDocument()
     })
 
-    it("Should open the popover, validate disabled buttons, update the URL field, and close the popup on Save", async () => {
+    it("Should open the popover, validate buttons, update the URL field, and close the popup on Save", async () => {
         ;(testConnection as jest.Mock).mockResolvedValue(true)
         const {customURLCallback} = renderSidebarComponent()
 
