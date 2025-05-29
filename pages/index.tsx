@@ -292,7 +292,15 @@ export default function Index(): ReactElement {
                             Neuro AI Multi-Agent Accelerator
                         </SubHeaderTitle>
                         <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                            Low-code framework for rapidly agentifying your business
+                            Low-code framework for rapidly agentifying your business.{" "}
+                            <a
+                                id="explore-more-link"
+                                href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Explore more
+                            </a>
                         </NeuroAIDescriptionBox>
                         <NeuroAIToolsContainer id="multi-agent-accelerator-container">
                             <Link

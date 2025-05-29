@@ -1,9 +1,7 @@
 import SettingsIcon from "@mui/icons-material/Settings"
-import SpokeOutlinedIcon from "@mui/icons-material/SpokeOutlined"
 import Button from "@mui/material/Button"
 import List from "@mui/material/List"
 import ListItemButton from "@mui/material/ListItemButton"
-import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import Popover from "@mui/material/Popover"
 import TextField from "@mui/material/TextField"
@@ -151,9 +149,6 @@ const Sidebar: FC<SidebarProps> = ({
                             disabled={isAwaitingLlm}
                             ref={selectedNetwork === network ? selectedNetworkRef : null}
                         >
-                            <ListItemIcon id={`${network}-icon`}>
-                                <SpokeOutlinedIcon id={`${network}-icon`} />
-                            </ListItemIcon>
                             <ListItemText
                                 id={`${network}-text`}
                                 primaryTypographyProps={{fontSize: "0.75rem"}}

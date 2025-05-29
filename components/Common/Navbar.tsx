@@ -94,6 +94,13 @@ function Navbar(props: NavbarProps): ReactElement {
         setUserMenuAnchorEl(null)
     }
 
+    // Explore menu wiring
+    const [exploreMenuAnchorEl, setExploreMenuAnchorEl] = useState<null | HTMLElement>(null)
+    const exploreMenuOpen = Boolean(exploreMenuAnchorEl)
+    const handleCloseExploreMenu = () => {
+        setExploreMenuAnchorEl(null)
+    }
+
     return (
         <Grid
             id="nav-bar-container"
@@ -151,6 +158,59 @@ function Navbar(props: NavbarProps): ReactElement {
                 </Typography>
             </Grid>
 
+            {/*Explore menu*/}
+            <Grid
+                id="explore-dropdown"
+                sx={{cursor: "pointer", marginRight: "30px"}}
+            >
+                <Typography
+                    id="explore-toggle"
+                    sx={{
+                        ...MENU_ITEM_TEXT_PROPS,
+                        display: "flex",
+                        alignItems: "center",
+                    }}
+                    onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                        setExploreMenuAnchorEl(event.currentTarget)
+                    }}
+                >
+                    Explore
+                    <ArrowDropDownIcon
+                        id="nav-explore-dropdown-arrow"
+                        sx={{color: "var(--bs-white)", fontSize: 22}}
+                    />
+                </Typography>
+                <Menu
+                    id="explore-menu"
+                    anchorEl={exploreMenuAnchorEl}
+                    open={exploreMenuOpen}
+                    onClose={handleCloseExploreMenu}
+                >
+                    {buildTarget === ALL_BUILD_TARGET && [
+                        <MenuItem
+                            id="explore-neuro-san-studio"
+                            key="explore-neuro-san-studio"
+                            component="a"
+                            href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                            target="_blank"
+                            sx={{...DISABLE_OUTLINE_PROPS}}
+                        >
+                            Neuro-san studio (examples)
+                        </MenuItem>,
+                        <MenuItem
+                            id="explore-neuro-san"
+                            key="explore-neuro-san"
+                            component="a"
+                            href="https://github.com/cognizant-ai-lab/neuro-san"
+                            target="_blank"
+                            sx={{...DISABLE_OUTLINE_PROPS}}
+                        >
+                            Neuro-san (core)
+                        </MenuItem>,
+                    ]}
+                </Menu>
+            </Grid>
+
             {/*Help menu*/}
             <Grid
                 id="help-dropdown"
@@ -173,7 +233,6 @@ function Navbar(props: NavbarProps): ReactElement {
                         sx={{color: "var(--bs-white)", fontSize: 22}}
                     />
                 </Typography>
-
                 <Menu
                     id="help-menu"
                     anchorEl={helpMenuAnchorEl}
