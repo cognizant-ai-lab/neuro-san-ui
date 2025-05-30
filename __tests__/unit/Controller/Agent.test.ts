@@ -7,7 +7,7 @@ import {withStrictMocks} from "../../common/strictMocks"
 
 jest.mock("../../../controller/llm/LlmChat")
 
-const NEURO_SAN_EXAMPLE_URL = "https://neuro-san-example.com"
+const NEURO_SAN_EXAMPLE_URL = "https://neuro-san.example.com"
 const TEST_AGENT_MATH_GUY = "Math Guy"
 
 describe("Controller/Agent/sendChatQuery", () => {
