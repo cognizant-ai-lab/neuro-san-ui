@@ -83,6 +83,7 @@ const Sidebar: FC<SidebarProps> = ({
         setCustomURLInput("")
         customURLCallback("")
         setConnectionStatus(CONNECTION_STATUS.IDLE)
+        // Call setSelectedNetwork(null) otherwise it can cause issues when switching agent networks (i.e. for Reset)
         setSelectedNetwork(null)
     }
 
