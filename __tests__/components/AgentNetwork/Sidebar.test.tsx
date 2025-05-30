@@ -1,14 +1,23 @@
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import Sidebar from "../../../components/AgentNetwork/Sidebar"
+import {testConnection} from "../../../controller/agent/Agent"
 import {withStrictMocks} from "../../common/strictMocks"
 
-const EDIT_EXAMPLE_URL = "https://edit-example.com"
+const AGENT_NETWORK_SETTINGS_NAME = {name: /agent network settings/iu}
+const AGENT_SERVER_ADDRESS = "Agent server address"
+const EDIT_EXAMPLE_URL = "https://edit.example.com"
 const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
+const TOOLTIP_EXAMPLE_URL = "https://tooltip.example.com"
+
+jest.mock("../../../controller/agent/Agent", () => ({
+    ...jest.requireActual("../../../controller/agent/Agent"),
+    testConnection: jest.fn(),
+}))
 
 describe("SideBar", () => {
     let user: UserEvent
@@ -39,14 +48,14 @@ describe("SideBar", () => {
         user = userEvent.setup()
     })
 
-    it("Should render correctly", async () => {
+    it("Should render Sidebar correctly", async () => {
         const {setSelectedNetwork} = renderSidebarComponent()
 
         // Make sure the heading is present
         await screen.findByText("Agent Networks")
 
         // Ensure the settings button is rendered
-        await screen.findByRole("button", {name: /agent network settings/iu})
+        await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
 
         // Clicking on a network should call the setSelectedNetwork function
         const network = screen.getByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
@@ -57,24 +66,62 @@ describe("SideBar", () => {
         expect(setSelectedNetwork).toHaveBeenCalledWith(TEST_AGENT_MATH_GUY)
     })
 
-    it("Should open the popover, update the URL field, and save when the save button is clicked", async () => {
+    it("should disable the Settings button when isAwaitingLlm is true", () => {
+        renderSidebarComponent({isAwaitingLlm: true})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        expect(settingsButton).toBeDisabled()
+    })
+
+    it("should display tooltip with customURLLocalStorage if provided", async () => {
+        renderSidebarComponent({customURLLocalStorage: TOOLTIP_EXAMPLE_URL})
+        const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        await user.hover(settingsButton)
+        // Query the SVG element by its aria-label
+        await screen.findByLabelText(TOOLTIP_EXAMPLE_URL)
+        await user.unhover(settingsButton)
+        await waitFor(() => expect(screen.queryByText(TOOLTIP_EXAMPLE_URL)).not.toBeInTheDocument())
+    })
+
+    it("Should open the popover, validate buttons, update the URL field, and close the popup on Save", async () => {
+        ;(testConnection as jest.Mock).mockResolvedValue(true)
         const {customURLCallback} = renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
-        expect(screen.queryByLabelText("Agent server address")).not.toBeInTheDocument()
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        expect(screen.queryByLabelText(AGENT_SERVER_ADDRESS)).not.toBeInTheDocument()
 
         // Open Settings popover
         await user.click(settingsButton)
-        await screen.findByLabelText("Agent server address")
+        await screen.findByLabelText(AGENT_SERVER_ADDRESS)
 
-        const urlInput = screen.getByLabelText("Agent server address")
+        const testButton = screen.getByRole("button", {name: /test/iu})
+        const saveButton = screen.getByRole("button", {name: /save/iu})
+        const resetButton = screen.getByRole("button", {name: /reset/iu})
+
+        // Test, Save, and Reset buttons should be disabled until the user types a URL
+        expect(testButton).toBeDisabled()
+        expect(resetButton).toBeDisabled()
+        expect(saveButton).toBeDisabled()
+
+        const urlInput = screen.getByLabelText(AGENT_SERVER_ADDRESS)
         await user.clear(urlInput)
         await user.type(urlInput, EDIT_EXAMPLE_URL)
 
         // Ensure the input value is updated
         expect(urlInput).toHaveValue(EDIT_EXAMPLE_URL)
 
-        const saveButton = screen.getByRole("button", {name: /save/iu})
+        // Test and Reset buttons should be enabled once the user types a URL
+        expect(testButton).toBeEnabled()
+        expect(resetButton).toBeEnabled()
+
+        // Make sure the Save button is still disabled, until Test button is clicked
+        expect(saveButton).toBeDisabled()
+
+        // Click the Test button
+        await user.click(testButton)
+
+        // Make sure the Save button is now enabled, after the Test button was clicked
+        expect(saveButton).toBeEnabled()
+
         await user.click(saveButton)
 
         // Ensure the popover is closed after saving
@@ -88,14 +135,14 @@ describe("SideBar", () => {
         expect(customURLCallback).toHaveBeenCalledTimes(1)
     })
 
-    it("Should reset the custom URL when the reset button is clicked", async () => {
+    it("Should reset the custom URL when the Reset button in popover is clicked", async () => {
         const {customURLCallback} = renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         // Open Settings popover
         await user.click(settingsButton)
 
-        const urlInput = screen.getByLabelText("Agent server address")
+        const urlInput = screen.getByLabelText(AGENT_SERVER_ADDRESS)
         await user.clear(urlInput)
         await user.type(urlInput, EDIT_EXAMPLE_URL)
 
@@ -109,9 +156,70 @@ describe("SideBar", () => {
         expect(urlInput).toHaveValue("")
     })
 
-    it("should disable the settings button when isAwaitingLlm is true", () => {
-        renderSidebarComponent({isAwaitingLlm: true})
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
-        expect(settingsButton).toBeDisabled()
+    it("should show success message when Test button is clicked and connection succeeds", async () => {
+        ;(testConnection as jest.Mock).mockResolvedValue(true)
+        renderSidebarComponent()
+
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        // Open Settings popover
+        await user.click(settingsButton)
+
+        const input = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
+        await user.clear(input)
+        await user.type(input, EDIT_EXAMPLE_URL)
+        await user.click(screen.getByRole("button", {name: /test/iu}))
+
+        // Check if Success icon is displayed
+        await screen.findByTestId("CheckCircleOutlineIcon")
+    })
+
+    it("should show error message when Test button is clicked and connection fails", async () => {
+        ;(testConnection as jest.Mock).mockResolvedValue(false)
+        renderSidebarComponent()
+
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        // Open Settings popover
+        await user.click(settingsButton)
+
+        const input = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
+        await user.clear(input)
+        await user.type(input, EDIT_EXAMPLE_URL)
+        await user.click(screen.getByRole("button", {name: /test/iu}))
+
+        // Check if Error icon is displayed
+        await screen.findByTestId("HighlightOffIcon")
+    })
+
+    it("should disable Save and Reset buttons in popover when input is empty", async () => {
+        renderSidebarComponent()
+
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        // Open Settings popover
+        await user.click(settingsButton)
+
+        const input = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
+        await user.clear(input)
+        const saveButton = screen.getByRole("button", {name: /save/iu})
+        const resetButton = screen.getByRole("button", {name: /reset/iu})
+        expect(saveButton).toBeDisabled()
+        expect(resetButton).toBeDisabled()
+    })
+
+    // Not really a pure user interaction test, but might as well have it
+    it("should call setSelectedNetwork(null) when resetting settings", async () => {
+        const setSelectedNetwork = jest.fn()
+        renderSidebarComponent({setSelectedNetwork})
+
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
+        // Open Settings popover
+        await user.click(settingsButton)
+
+        const input = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
+        await user.clear(input)
+        await user.type(input, EDIT_EXAMPLE_URL)
+        const resetButton = screen.getByRole("button", {name: /reset/iu})
+        await user.click(resetButton)
+
+        expect(setSelectedNetwork).toHaveBeenCalledWith(null)
     })
 })
