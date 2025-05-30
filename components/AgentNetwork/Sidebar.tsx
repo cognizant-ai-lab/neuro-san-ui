@@ -215,9 +215,10 @@ const Sidebar: FC<SidebarProps> = ({
                 slotProps={{
                     paper: {
                         sx: {
-                            paddingTop: "0.5rem",
+                            paddingTop: "0.75rem",
                             paddingLeft: "0.5rem",
                             paddingRight: "0.5rem",
+                            paddingBottom: "0.2rem",
                         },
                     },
                 }}
@@ -270,7 +271,7 @@ const Sidebar: FC<SidebarProps> = ({
                         alignItems="center"
                         sx={{
                             marginLeft: "0.25rem",
-                            marginBottom: "0.75rem",
+                            marginBottom: "0.5rem",
                         }}
                     >
                         {connectionStatusSuccess && (

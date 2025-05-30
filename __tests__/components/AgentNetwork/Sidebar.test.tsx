@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 
@@ -7,10 +7,12 @@ import Sidebar from "../../../components/AgentNetwork/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {withStrictMocks} from "../../common/strictMocks"
 
+const AGENT_NETWORK_SETTINGS_NAME = {name: /agent network settings/iu}
 const AGENT_SERVER_ADDRESS = "Agent server address"
 const EDIT_EXAMPLE_URL = "https://edit.example.com"
 const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
+const TOOLTIP_EXAMPLE_URL = "https://tooltip.example.com"
 
 jest.mock("../../../controller/agent/Agent", () => ({
     ...jest.requireActual("../../../controller/agent/Agent"),
@@ -53,7 +55,7 @@ describe("SideBar", () => {
         await screen.findByText("Agent Networks")
 
         // Ensure the settings button is rendered
-        await screen.findByRole("button", {name: /agent network settings/iu})
+        await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
 
         // Clicking on a network should call the setSelectedNetwork function
         const network = screen.getByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
@@ -66,24 +68,25 @@ describe("SideBar", () => {
 
     it("should disable the Settings button when isAwaitingLlm is true", () => {
         renderSidebarComponent({isAwaitingLlm: true})
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         expect(settingsButton).toBeDisabled()
     })
 
     it("should display tooltip with customURLLocalStorage if provided", async () => {
-        renderSidebarComponent({customURLLocalStorage: "https://foo.bar"})
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        renderSidebarComponent({customURLLocalStorage: TOOLTIP_EXAMPLE_URL})
+        const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         await user.hover(settingsButton)
-        // Tooltip is rendered in a portal, so we can't easily assert its content,
-        // but we can check that the button is present and enabled
-        expect(settingsButton).toBeInTheDocument()
+        // Query the SVG element by its aria-label
+        await screen.findByLabelText(TOOLTIP_EXAMPLE_URL)
+        await user.unhover(settingsButton)
+        await waitFor(() => expect(screen.queryByText(TOOLTIP_EXAMPLE_URL)).not.toBeInTheDocument())
     })
 
     it("Should open the popover, validate buttons, update the URL field, and close the popup on Save", async () => {
         ;(testConnection as jest.Mock).mockResolvedValue(true)
         const {customURLCallback} = renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         expect(screen.queryByLabelText(AGENT_SERVER_ADDRESS)).not.toBeInTheDocument()
 
         // Open Settings popover
@@ -135,7 +138,7 @@ describe("SideBar", () => {
     it("Should reset the custom URL when the Reset button in popover is clicked", async () => {
         const {customURLCallback} = renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         // Open Settings popover
         await user.click(settingsButton)
 
@@ -157,7 +160,7 @@ describe("SideBar", () => {
         ;(testConnection as jest.Mock).mockResolvedValue(true)
         renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         // Open Settings popover
         await user.click(settingsButton)
 
@@ -174,7 +177,7 @@ describe("SideBar", () => {
         ;(testConnection as jest.Mock).mockResolvedValue(false)
         renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         // Open Settings popover
         await user.click(settingsButton)
 
@@ -190,7 +193,7 @@ describe("SideBar", () => {
     it("should disable Save and Reset buttons in popover when input is empty", async () => {
         renderSidebarComponent()
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         // Open Settings popover
         await user.click(settingsButton)
 
@@ -207,7 +210,7 @@ describe("SideBar", () => {
         const setSelectedNetwork = jest.fn()
         renderSidebarComponent({setSelectedNetwork})
 
-        const settingsButton = screen.getByRole("button", {name: /agent network settings/iu})
+        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         // Open Settings popover
         await user.click(settingsButton)
 
