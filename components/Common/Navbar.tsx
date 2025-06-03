@@ -108,9 +108,6 @@ function Navbar(props: NavbarProps): ReactElement {
             alignItems="center"
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
-                minHeight: "50px",
-                height: "auto",
-                maxHeight: "100px",
                 color: "var(--bs-white)",
             }}
         >
@@ -118,8 +115,8 @@ function Navbar(props: NavbarProps): ReactElement {
                 id="splash-logo-link"
                 href="https://www.cognizant.com/us/en"
                 style={{
-                    paddingTop: "0.1rem",
-                    paddingLeft: "0.5rem",
+                    display: "flex",
+                    paddingLeft: "0.15rem",
                 }}
                 target="_blank"
             >
@@ -139,7 +136,7 @@ function Navbar(props: NavbarProps): ReactElement {
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
                         color: "var(--bs-white)",
-                        marginLeft: "1rem",
+                        marginLeft: "0.85rem",
                         fontSize: "16px",
                         fontWeight: "bold",
                     }}
@@ -148,7 +145,6 @@ function Navbar(props: NavbarProps): ReactElement {
                         id="navbar-brand-link"
                         style={{
                             fontWeight: 500,
-                            lineHeight: 1,
                             fontSize: "1.1rem",
                             color: "var(--bs-white)",
                             position: "relative",
