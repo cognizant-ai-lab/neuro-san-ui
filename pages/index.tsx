@@ -57,7 +57,7 @@ const HeaderLineOne = styled("h1")({
     color: "var(--bs-white)",
     fontWeight: 400,
     margin: "0",
-    marginTop: "7rem",
+    marginTop: "2rem",
 })
 
 const LaunchButton = styled("div")({
