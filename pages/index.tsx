@@ -199,7 +199,7 @@ export default function Index(): ReactElement {
                                         width="200"
                                         height="45"
                                         src="/cognizant-logo-white.svg"
-                                        alt=""
+                                        alt="Cognizant Logo"
                                     />
                                 </Link>
                             </NavbarLogo>
@@ -217,7 +217,7 @@ export default function Index(): ReactElement {
                         </HeaderLineOne>
                         {buildTarget === ALL_BUILD_TARGET && (
                             <>
-                                <SubHeaderTitle id="neuro-ai-decisioning-box">Neuro AI Decisioning</SubHeaderTitle>
+                                <SubHeaderTitle id="neuro-ai-decisioning-box">{LOGO} Decisioning</SubHeaderTitle>
                                 <NeuroAIDescriptionBox id="neuro-ai-description-box">
                                     A platform for smarter business decisions
                                 </NeuroAIDescriptionBox>
@@ -289,7 +289,7 @@ export default function Index(): ReactElement {
                             id="neuro-ai-maa-box"
                             sx={{marginTop: "2.5rem"}}
                         >
-                            Neuro AI Multi-Agent Accelerator
+                            {LOGO} Multi-Agent Accelerator
                         </SubHeaderTitle>
                         <NeuroAIDescriptionBox id="neuro-ai-description-box">
                             Low-code framework for rapidly agentifying your business.{" "}
@@ -299,7 +299,7 @@ export default function Index(): ReactElement {
                                 target="_blank"
                                 rel="noreferrer"
                             >
-                                Explore more
+                                Explore more.
                             </a>
                         </NeuroAIDescriptionBox>
                         <NeuroAIToolsContainer id="multi-agent-accelerator-container">

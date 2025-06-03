@@ -35,10 +35,10 @@ describe("Index Page", () => {
     it("renders the page correctly", () => {
         render(<Index />)
 
-        expect(screen.getByText("Neuro AI")).toBeInTheDocument()
-        expect(screen.getByText("Neuro AI Decisioning")).toBeInTheDocument()
+        expect(screen.getByText("Neuro® AI")).toBeInTheDocument()
+        expect(screen.getByText("Neuro® AI Decisioning")).toBeInTheDocument()
         expect(screen.getByText("A platform for smarter business decisions")).toBeInTheDocument()
-        expect(screen.getByText("Neuro AI Multi-Agent Accelerator")).toBeInTheDocument()
+        expect(screen.getByText("Neuro® AI Multi-Agent Accelerator")).toBeInTheDocument()
         expect(screen.getByText(/Low-code framework for rapidly agentifying your business./u)).toBeInTheDocument()
         expect(screen.getByText(/Explore more/u)).toBeInTheDocument()
         expect(screen.getByText("Find opportunities")).toBeInTheDocument()

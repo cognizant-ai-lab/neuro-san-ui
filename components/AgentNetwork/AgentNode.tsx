@@ -36,15 +36,24 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         .includes(agentId)
 
     let backgroundColor: string
+    // There's no depth for linear layout, so we just use the first color for both layouts (radial and linear).
     if (isFrontman) {
-        backgroundColor = "var(--bs-secondary)"
+        backgroundColor = BACKGROUND_COLORS[0]
     } else if (isActiveAgent) {
-        backgroundColor = "var(--bs-red)"
+        backgroundColor = "var(--bs-green)"
     } else {
-        backgroundColor = BACKGROUND_COLORS[(depth - 1) % BACKGROUND_COLORS.length]
+        backgroundColor = BACKGROUND_COLORS[depth % BACKGROUND_COLORS.length]
     }
 
-    const textColor = isFrontman || isActiveAgent || depth >= 4 ? "var(--bs-white)" : "var(--bs-primary)"
+    // Text color varies based on if it's a layout that has depth or not (radial vs linear).
+    const textColor =
+        depth === undefined
+            ? !isFrontman && isActiveAgent
+                ? "var(--bs-white)"
+                : "var(--bs-primary)"
+            : !isFrontman
+              ? "var(--bs-white)"
+              : "var(--bs-primary)"
 
     // Animation style for making active agent glow and pulse
     // TODO: more idiomatic MUI/style= way of doing this?

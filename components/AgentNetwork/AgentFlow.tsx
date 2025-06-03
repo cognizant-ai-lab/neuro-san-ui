@@ -151,7 +151,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
 
     // Figure out the maximum depth of the network
     const maxDepth = useMemo(() => {
-        return nodes?.reduce((max, node) => Math.max(node.data.depth, max), 0)
+        return nodes?.reduce((max, node) => Math.max(node.data.depth, max), 0) + 1
     }, [nodes])
 
     // Generate radial guides for the network to guide the eye in the radial layout
@@ -171,7 +171,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 r={BASE_RADIUS + (i + 1) * LEVEL_SPACING}
                 stroke="var(--bs-gray-medium)"
                 fill="none"
-                opacity="1"
+                opacity="0.25"
             />
         ))
 
@@ -221,40 +221,16 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 >
                     Depth
                 </Typography>
-                {/*Frontman legend is different since it uses a non-palette color*/}
-                <Box
-                    id={`${id}-legend-depth-0`}
-                    key={0}
-                    style={{
-                        alignItems: "center",
-                        backgroundColor: "var(--bs-secondary)",
-                        borderRadius: "50%",
-                        color: "var(--bs-white)",
-                        display: "flex",
-                        height: "15px",
-                        justifyContent: "center",
-                        marginLeft: "5px",
-                        width: "15px",
-                    }}
-                >
-                    <Typography
-                        id={`${id}-legend-depth-0-text`}
-                        sx={{
-                            fontSize: "8px",
-                        }}
-                    >
-                        {0}
-                    </Typography>
-                </Box>
+                {/* Depth palette */}
                 {Array.from({length: Math.min(maxDepth, BACKGROUND_COLORS.length)}, (_, i) => (
                     <Box
                         id={`${id}-legend-depth-${i}`}
-                        key={i + 1}
+                        key={i}
                         style={{
                             alignItems: "center",
                             backgroundColor: BACKGROUND_COLORS[i],
                             borderRadius: "50%",
-                            color: i >= 4 ? "var(--bs-white)" : "var(--bs-primary)",
+                            color: i === 0 ? "var(--bs-primary)" : "var(--bs-white)",
                             display: "flex",
                             height: "15px",
                             justifyContent: "center",
@@ -268,7 +244,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                                 fontSize: "8px",
                             }}
                         >
-                            {i + 1}
+                            {i}
                         </Typography>
                     </Box>
                 ))}
@@ -299,7 +275,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
             >
-                {layout === "radial" && maxDepth > 0 && getLegend()}
+                {layout === "radial" && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"

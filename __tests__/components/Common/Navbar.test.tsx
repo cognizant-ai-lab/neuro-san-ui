@@ -11,6 +11,22 @@ import {ALL_BUILD_TARGET, CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../co
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
 
 // Mock dependencies
+jest.mock("next/image", () => ({
+    __esModule: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    default: (props: any) => {
+        const copyProps = {...props}
+        delete copyProps.priority
+        delete copyProps.unoptimized
+        return (
+            <img
+                {...copyProps}
+                alt="Test alt"
+            />
+        )
+    },
+}))
+
 jest.mock("next/router", () => ({
     useRouter() {
         return {
