@@ -104,7 +104,7 @@ describe("navbar", () => {
     it("renders the Navbar with the provided logo (Neuro® AI Decisioning)", () => {
         render(defaultNavbar)
 
-        const logoLink = screen.getByRole("link", {name: "mock-title Descisioning"})
+        const logoLink = screen.getByRole("link", {name: "mock-title Decisioning"})
         expect(logoLink).toBeInTheDocument()
         expect(logoLink).toHaveAttribute("href", "/")
     })
