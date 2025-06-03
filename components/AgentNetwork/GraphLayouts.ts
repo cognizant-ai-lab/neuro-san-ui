@@ -148,6 +148,13 @@ export const layoutRadial = (
                     depth,
                 },
                 position: isFrontman ? {x: centerX, y: centerY} : {x, y},
+                style: {
+                    border: "none",
+                    background: "transparent",
+                    boxShadow: "none",
+                    padding: 0,
+                    margin: 0,
+                },
             })
         })
     })

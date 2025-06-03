@@ -59,32 +59,47 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // TODO: more idiomatic MUI/style= way of doing this?
     const glowAnimation = isActiveAgent
         ? `@keyframes glow {
-                0% { box-shadow: 0 0 5px var(--bs-primary) ; opacity: 0.50; }
-                50% { box-shadow: 0 0 20px var(--bs-primary); opacity: 0.75 }
-                100% { box-shadow: 0 0 5px var(--bs-primary); opacity: 1.0 }
-            }`
+            0% { box-shadow: 0 0 10px 4px var(--bs-primary); opacity: 0.60; }
+            50% { box-shadow: 0 0 30px 12px var(--bs-primary); opacity: 0.90; }
+            100% { box-shadow: 0 0 10px 4px var(--bs-primary); opacity: 1.0; }
+        }`
         : "none"
 
     return (
-        <div
-            id={agentId}
-            style={{
-                alignItems: "center",
-                backgroundColor,
-                borderRadius: "50%",
-                borderColor: "var(--bs-primary)",
-                borderWidth: !isFrontman && isActiveAgent ? 4 : 1,
-                color: textColor,
-                display: "flex",
-                height: NODE_HEIGHT,
-                justifyContent: "center",
-                textAlign: "center",
-                width: NODE_WIDTH,
-                animation: isActiveAgent ? "glow 2.0s infinite" : "none",
-                shapeOutside: "circle(50%)",
-            }}
-        >
-            <style id={`${agentId}-glow-animation`}>{glowAnimation}</style>
+        <>
+            <div
+                id={agentId}
+                style={{
+                    alignItems: "center",
+                    backgroundColor,
+                    borderRadius: "50%",
+                    // borderColor: "red",
+                    // borderWidth: 1,
+                    boxShadow: isActiveAgent
+                        ? "0 0 30px 12px var(--bs-primary), 0 0 60px 24px var(--bs-primary)"
+                        : undefined,
+                    color: textColor,
+                    display: "flex",
+                    height: NODE_HEIGHT,
+                    justifyContent: "center",
+                    textAlign: "center",
+                    width: NODE_WIDTH,
+                    animation: isActiveAgent ? "glow 2.0s infinite" : "none",
+                    shapeOutside: "circle(50%)",
+                }}
+            >
+                <style id={`${agentId}-glow-animation`}>{glowAnimation}</style>
+                <Handle
+                    id={`${agentId}-left-handle`}
+                    position={Position.Left}
+                    type="source"
+                />
+                <Handle
+                    id={`${agentId}-right-handle`}
+                    position={Position.Right}
+                    type="source"
+                />
+            </div>
             <Tooltip
                 id={`${agentId}-tooltip`}
                 title={agentName}
@@ -104,16 +119,6 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     {agentName}
                 </Typography>
             </Tooltip>
-            <Handle
-                id={`${agentId}-left-handle`}
-                position={Position.Left}
-                type="source"
-            />
-            <Handle
-                id={`${agentId}-right-handle`}
-                position={Position.Right}
-                type="source"
-            />
-        </div>
+        </>
     )
 }
