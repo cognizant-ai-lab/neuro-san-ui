@@ -4,11 +4,26 @@
 
 import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
+import {useSession} from "next-auth/react"
 
 import Navbar from "../../../components/Common/Navbar"
 import {ALL_BUILD_TARGET, CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
+import {withStrictMocks} from "../../common/strictMocks"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
+const MOCK_USER = "mock-user"
+
+const mockUseSession = useSession as jest.Mock
+
+const mockEnvironment = {
+    buildTarget: ALL_BUILD_TARGET,
+    supportEmailAddress: MOCK_EMAIL_ADDRESS,
+    auth0ClientId: "mock-auth0-client-id",
+}
+
+const mockRouterValues = {
+    pathname: "/projects",
+}
 
 // Mock dependencies
 jest.mock("next/image", () => ({
@@ -27,24 +42,19 @@ jest.mock("next/image", () => ({
     },
 }))
 
-const mockRouterValues = {
-    pathname: "/projects",
-}
-
 jest.mock("next/router", () => ({
     useRouter: () => mockRouterValues,
 }))
 
 jest.mock("next-auth/react", () => {
     return {
-        useSession: jest.fn(() => ({data: {user: {name: "MOCK_USER"}}})),
+        useSession: jest.fn(() => ({data: {user: {name: MOCK_USER}}})),
     }
 })
 
 jest.mock("../../../state/environment", () => ({
-    ...jest.requireActual("../../../state/environment"),
     __esModule: true,
-    default: jest.fn(() => ({buildTarget: ALL_BUILD_TARGET, supportEmailAddress: MOCK_EMAIL_ADDRESS})),
+    default: () => mockEnvironment,
 }))
 
 describe("navbar", () => {
@@ -58,7 +68,11 @@ describe("navbar", () => {
     )
 
     const windowLocation = window.location
+
+    withStrictMocks()
+
     beforeEach(() => {
+        mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
         // https://www.joshmcarthur.com/til/2022/01/19/assert-windowlocation-properties-with-jest.html
         Object.defineProperty(window, "location", {
             value: new URL(window.location.href),
