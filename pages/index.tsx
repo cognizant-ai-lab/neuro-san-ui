@@ -88,7 +88,7 @@ const LaunchButton = styled("div")({
         marginLeft: "0.25rem",
         textTransform: "none",
         content: '""',
-    }
+    },
 })
 
 const HeaderLineFive = styled("h5")({

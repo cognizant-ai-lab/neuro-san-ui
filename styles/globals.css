@@ -133,13 +133,11 @@
 }
 
 @font-face {
-    font-family: 'Cognizant-Icons';
-    src: url('/icons/Cognizant-Icons.ttf?fo68q0')
-        format('truetype'),
-        url('/icons/Cognizant-Icons.svg?fo68q0#Cognizant-Icons')
-        format('svg'),
-        url('/icons/Cognizant-Icons.woff')
-        format('woff');
+    font-family: "Cognizant-Icons";
+    src:
+        url("/icons/Cognizant-Icons.ttf?fo68q0") format("truetype"),
+        url("/icons/Cognizant-Icons.svg?fo68q0#Cognizant-Icons") format("svg"),
+        url("/icons/Cognizant-Icons.woff") format("woff");
     font-weight: normal;
     font-style: normal;
     font-display: block;
