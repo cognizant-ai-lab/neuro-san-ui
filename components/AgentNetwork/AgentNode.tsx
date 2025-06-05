@@ -14,8 +14,8 @@ export interface AgentNodeProps {
 }
 
 // Node dimensions
-export const NODE_HEIGHT = 70
-export const NODE_WIDTH = 70
+export const NODE_HEIGHT = 80
+export const NODE_WIDTH = 80
 
 /**
  * A node representing an agent in the network for use in react-flow.
@@ -93,7 +93,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                 <Typography
                     id={`${agentId}-name`}
                     sx={{
-                        fontSize: "12px",
+                        fontSize: "11px",
                         overflowWrap: "break-word",
                         textAlign: "center",
                         width: "90%",
