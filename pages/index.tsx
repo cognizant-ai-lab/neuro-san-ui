@@ -288,7 +288,7 @@ export default function Index(): ReactElement {
                         <SubHeaderTitle
                             id="neuro-ai-maa-box"
                             sx={{
-                                borderTop: "var(--bs-border-width) var(--bs-border-style) rgb(190, 199, 199)",
+                                borderTop: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
                                 marginTop: "2.5rem",
                                 paddingTop: "2.5rem",
                             }}
@@ -337,7 +337,7 @@ export default function Index(): ReactElement {
                 <footer
                     id="footer"
                     style={{
-                        borderTop: "var(--bs-border-width) var(--bs-border-style) rgb(190, 199, 199)",
+                        borderTop: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
                         marginLeft: "2rem",
                         marginRight: "2rem",
                     }}
