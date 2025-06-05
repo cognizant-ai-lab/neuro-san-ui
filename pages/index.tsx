@@ -368,6 +368,7 @@ export default function Index(): ReactElement {
                                 onClick={() => setEmailDialogOpen(true)}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                style={{cursor: "pointer"}}
                             >
                                 Contact Us
                             </SplashLink>

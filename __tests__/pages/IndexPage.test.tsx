@@ -8,7 +8,6 @@ import useEnvironmentStore from "../../state/environment"
 import {withStrictMocks} from "../common/strictMocks"
 
 // Mock dependencies
-
 jest.mock("../../state/environment", () => ({
     __esModule: true,
     default: jest.fn(),
@@ -32,42 +31,47 @@ describe("Index Page", () => {
         })
     })
 
-    it("renders the page correctly", () => {
+    it("renders the page correctly", async () => {
         render(<Index />)
 
-        expect(screen.getByText("Neuro® AI")).toBeInTheDocument()
-        expect(screen.getByText("Neuro® AI Decisioning")).toBeInTheDocument()
-        expect(screen.getByText("A platform for smarter business decisions")).toBeInTheDocument()
-        expect(screen.getByText("Neuro® AI Multi-Agent Accelerator")).toBeInTheDocument()
-        expect(screen.getByText(/Low-code framework for rapidly agentifying your business./u)).toBeInTheDocument()
-        expect(screen.getByText(/Explore more/u)).toBeInTheDocument()
-        expect(screen.getByText("Find opportunities")).toBeInTheDocument()
-        expect(screen.getByText("Build models")).toBeInTheDocument()
-        expect(screen.getByText("Explore agent networks")).toBeInTheDocument()
+        await screen.findByText("Neuro® AI")
+        await screen.findByText("Neuro® AI Decisioning")
+        await screen.findByText("A platform for smarter business decisions")
+        await screen.findByText("Neuro® AI Multi-Agent Accelerator")
+        await screen.findByText(/Low-code framework for rapidly agentifying your business./u)
+        await screen.findByText(/Explore more/u)
+        await screen.findByText("Find opportunities")
+        await screen.findByText("Build models")
+        await screen.findByText("Explore agent networks")
     })
 
     it("opens the email dialog when 'Contact Us' is clicked", async () => {
         const user = userEvent.setup()
         render(<Index />)
 
-        await user.click(screen.getByText("Contact Us"))
-        expect(screen.getByText("Confirm")).toBeInTheDocument()
-        expect(screen.getByText("Cancel")).toBeInTheDocument()
+        const contactUsLink = await screen.findByText("Contact Us")
+        await user.click(contactUsLink)
+        await screen.findByText("Confirm")
+        await screen.findByText("Cancel")
     })
 
     it("closes the email dialog when cancel is clicked", async () => {
         const user = userEvent.setup()
         render(<Index />)
 
-        await user.click(screen.getByText("Contact Us"))
-        await user.click(screen.getByText("Cancel"))
+        const contactUsLink = await screen.findByText("Contact Us")
+        await user.click(contactUsLink)
+        const cancelButton = await screen.findByText("Cancel")
+        await user.click(cancelButton)
+
         expect(screen.queryByText("Confirm")).not.toBeInTheDocument()
     })
 
-    it("builds the query string correctly", () => {
+    it("builds the query string correctly", async () => {
         render(<Index />)
 
-        const link = screen.getByText("Find opportunities").closest("a")
-        expect(link).toHaveAttribute("href", "/opportunityFinder?key=value")
+        const link = await screen.findByText("Find opportunities")
+        const closestAnchor = link.closest("a")
+        expect(closestAnchor).toHaveAttribute("href", "/opportunityFinder?key=value")
     })
 })
