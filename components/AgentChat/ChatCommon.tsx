@@ -64,6 +64,7 @@ import {
 } from "../../generated/neuro_san/api/grpc/chat"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
+import {useLocalStorage} from "../../utils/use_local_storage"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
@@ -72,7 +73,6 @@ import {NotificationType, sendNotification} from "../Common/notification"
 // #region: Styled Components
 
 const UserQueryContainer = styled("div")({
-    backgroundColor: "#FFF",
     borderRadius: "8px",
     boxShadow: "0 0px 2px 0 rgba(0, 0, 0, 0.15)",
     display: "inline-flex",
@@ -310,6 +310,9 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
+
+    // Dark mode
+    const isDarkMode = useLocalStorage("darkMode", false)[0]
 
     // Hide/show existing accordions based on showThinking state
     useEffect(() => {
@@ -650,7 +653,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
-                        sx={{marginTop: "1rem", marginBottom: "1rem"}}
+                        sx={{marginTop: "1rem", marginBottom: "1rem", backgroundColor: "black", color: "white"}}
                         items={[
                             {
                                 title: "Agent Details",
@@ -1072,10 +1075,9 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     id={`llm-chat-title-container-${id}`}
                     sx={{
                         alignItems: "center",
-                        backgroundColor: "var(--bs-primary)",
+                        backgroundColor,
                         borderTopLeftRadius: "var(--bs-border-radius)",
                         borderTopRightRadius: "var(--bs-border-radius)",
-                        color: "var(--bs-white)",
                         display: "flex",
                         justifyContent: "space-between",
                         paddingLeft: "1rem",
@@ -1107,7 +1109,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 id="llm-response-div"
                 sx={{
                     ...divStyle,
-                    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-primary)",
+                    border: "var(--bs-border-width) var(--bs-border-style) white",
                     borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flexGrow: 1,
@@ -1246,6 +1248,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     sx={{
                         border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
                         borderRadius: "var(--bs-border-radius)",
+                        color: isDarkMode ? "var(--bs-white)" : "black",
                         display: "flex",
                         flexGrow: 1,
                         fontSize: "smaller",

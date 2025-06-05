@@ -24,6 +24,7 @@ import {ALL_BUILD_TARGET, LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 import useUserInfoStore from "../state/UserInfo"
 import {APP_THEME} from "../theme"
+import {useLocalStorage} from "../utils/use_local_storage"
 import {UserInfoResponse} from "./api/userInfo/types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
@@ -66,6 +67,9 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
     const isContainedInViewport = Component.isContainedInViewport ?? false
+
+    // Dark mode
+    const isDarkMode = useLocalStorage("darkMode", false)[0]
 
     useEffect(() => {
         async function getEnvironment() {
@@ -244,6 +248,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                                 flex: 1,
                                 height: isContainedInViewport ? "100%" : "auto",
                                 paddingBottom: "5rem",
+                                backgroundColor: isDarkMode ? "black" : "var(--bs-white)",
                             }}
                         >
                             {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}

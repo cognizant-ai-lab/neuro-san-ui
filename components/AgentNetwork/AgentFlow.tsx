@@ -29,6 +29,7 @@ import {AnimatedEdge} from "./AnimatedEdge"
 import {BACKGROUND_COLORS, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {useLocalStorage} from "../../utils/use_local_storage"
 
 // #region: Types
 interface AgentFlowProps {
@@ -68,6 +69,9 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
     const [layout, setLayout] = useState<Layout>("radial")
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
+
+    // Dark mode
+    const isDarkMode = useLocalStorage("darkMode", false)[0]
 
     // Create the flow layout depending on user preference
     useEffect(() => {
@@ -205,7 +209,6 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                     position: "absolute",
                     top: "10px",
                     right: "10px",
-                    backgroundColor: "white",
                     padding: "5px",
                     borderRadius: "5px",
                     boxShadow: "0 0 5px rgba(0,0,0,0.3)",
@@ -274,9 +277,10 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
+                style={{backgroundColor: isDarkMode ? "black" : "white"}}
             >
                 {layout === "radial" && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
-                <Background id={`${id}-background`} />
+                {!isDarkMode && <Background id={`${id}-background`} />}
                 <Controls
                     id="react-flow-controls"
                     position="top-left"
@@ -286,6 +290,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                         left: "0px",
                         height: "auto",
                         width: "auto",
+                        backgroundColor: isDarkMode ? "black" : "var(--bs-white)",
                     }}
                     showInteractive={true}
                 >

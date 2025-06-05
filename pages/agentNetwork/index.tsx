@@ -42,6 +42,9 @@ export default function AgentNetworkPage() {
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
 
+    // Dark mode
+    const isDarkMode = useLocalStorage("darkMode", false)[0]
+
     const customURLCallback = (url: string) => {
         setNeuroSanURL(url || backendNeuroSanApiUrl)
         setCustomURLLocalStorage(url === "" ? null : url)
@@ -122,6 +125,8 @@ export default function AgentNetworkPage() {
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",
+                background: isDarkMode ? "black" : "var(--bs-white)",
+                color: isDarkMode ? "var(--bs-white)" : "black",
             }}
         >
             <Grid
@@ -176,6 +181,7 @@ export default function AgentNetworkPage() {
                     onChunkReceived={onChunkReceived}
                     onStreamingComplete={onStreamingComplete}
                     clearChatOnNewAgent={true}
+                    backgroundColor={isDarkMode ? "black" : "var(--bs-white)"}
                 />
             </Grid>
         </Grid>
