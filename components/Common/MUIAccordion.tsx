@@ -35,7 +35,6 @@ const AccordionSummary = styled((props: AccordionSummaryProps) => (
     />
 ))(({theme}) => ({
     backgroundColor: "rgba(0, 0, 0, 0.02)",
-    color: "rgba(0, 0, 0, 0.88)",
 
     [`& .${accordionSummaryClasses.expandIconWrapper}.${accordionSummaryClasses.expanded}`]: {
         transform: "rotate(90deg)",

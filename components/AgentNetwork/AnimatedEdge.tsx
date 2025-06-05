@@ -1,6 +1,5 @@
 import {FC} from "react"
 import {EdgeProps, getBezierPath} from "reactflow"
-import {BACKGROUND_COLORS} from "./const"
 
 interface AnimatedEdgeProps {
     markerEnd: object
@@ -24,7 +23,7 @@ export const AnimatedEdge: FC<EdgeProps<AnimatedEdgeProps>> = ({
         targetPosition,
     })
 
-    const particleCount = 64
+    const particleCount = 128
     const beamWidth = 32
     const meanRadius = 3
     const radiusVariance = 1
@@ -68,11 +67,11 @@ export const AnimatedEdge: FC<EdgeProps<AnimatedEdgeProps>> = ({
                 >
                     <stop
                         offset="0%"
-                        stopColor={BACKGROUND_COLORS[0]}
+                        stopColor="var(--bs-green)"
                     />
                     <stop
                         offset="100%"
-                        stopColor={BACKGROUND_COLORS[2]}
+                        stopColor="white"
                     />
                 </radialGradient>
             </defs>

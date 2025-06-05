@@ -3,7 +3,8 @@
  */
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
-import {IconButton, Menu, MenuItem, Typography} from "@mui/material"
+import DarkModeIcon from "@mui/icons-material/DarkMode"
+import {IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import NextImage from "next/image"
 import Link from "next/link"
@@ -21,6 +22,7 @@ import {
 import useEnvironmentStore from "../../state/environment"
 import useUserInfoStore from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {useLocalStorage} from "../../utils/use_local_storage"
 
 // Declare the Props Interface
 interface NavbarProps {
@@ -72,6 +74,9 @@ function Navbar(props: NavbarProps): ReactElement {
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
+    // Dark mode
+    const [darkMode, setDarkMode] = useLocalStorage("darkMode", false)
+    console.debug("darkMode", darkMode)
     async function handleSignOut() {
         // Clear our state storage variables
         setCurrentUser(undefined)
@@ -403,6 +408,24 @@ function Navbar(props: NavbarProps): ReactElement {
                     </Menu>
                 </Grid>
             ) : null}
+            <Tooltip
+                id="dark-mode-toggle"
+                title={`Dark mode is ${darkMode ? "on" : "off"}`}
+            >
+                <DarkModeIcon
+                    id="dark-mode-icon"
+                    sx={{
+                        marginRight: "1rem",
+                        fontSize: "1rem",
+                        cursor: "pointer",
+                        color: darkMode ? "yellow" : "var(--bs-gray-dark)",
+                        filter: darkMode ? "drop-shadow(0 0 4px #FFD600)" : "none",
+                    }}
+                    onClick={() => {
+                        setDarkMode(!darkMode)
+                    }}
+                />
+            </Tooltip>
         </Grid>
     )
 }
