@@ -63,8 +63,6 @@ function Navbar(props: NavbarProps): ReactElement {
     const userInfo = session.user
     const userName = userInfo.name
 
-
-
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 

@@ -72,12 +72,15 @@ import {NotificationType, sendNotification} from "../Common/notification"
 
 // #region: Styled Components
 
-const UserQueryContainer = styled("div")({
+const UserQueryContainer = styled("div", {
+    shouldForwardProp: (prop) => prop !== "darkMode",
+})<{darkMode?: boolean}>(({darkMode}) => ({
     borderRadius: "8px",
     boxShadow: "0 0px 2px 0 rgba(0, 0, 0, 0.15)",
     display: "inline-flex",
     padding: "10px",
-})
+    backgroundColor: darkMode ? "black" : "var(--bs-white)",
+}))
 
 // #endregion: Styled Components
 
@@ -183,11 +186,16 @@ const EMPTY = {}
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
 
-const getUserImageAndUserQuery = (userQuery: string, title: string, userImage: string): ReactElement => (
+const getUserImageAndUserQuery = (
+    userQuery: string,
+    title: string,
+    userImage: string,
+    darkMode: boolean
+): ReactElement => (
     // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
     <div style={{marginBottom: "1rem"}}>
         {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-        <UserQueryContainer>
+        <UserQueryContainer darkMode={darkMode}>
             <NextImage
                 id="user-query-image"
                 src={userImage || DEFAULT_USER_IMAGE}
@@ -330,7 +338,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 return item
             })
         )
-    }, [showThinking])
+    }, [showThinking, darkMode])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -559,7 +567,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
      * Introduce the agent to the user with a friendly greeting
      */
     const introduceAgent = () => {
-        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
+        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE, darkMode))
 
         // Random greeting
         const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
@@ -653,7 +661,12 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
-                        sx={{marginTop: "1rem", marginBottom: "1rem", backgroundColor: "black", color: "white"}}
+                        sx={{
+                            marginTop: "1rem",
+                            marginBottom: "1rem",
+                            backgroundColor: darkMode ? "black" : "white",
+                            color: darkMode ? "white" : "black",
+                        }}
                         items={[
                             {
                                 title: "Agent Details",
@@ -981,10 +994,10 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         // Note: we display the original user query, not the modified one. The modified one could be a monstrosity
         // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf of the
         // user but currently we do for orchestration.
-        updateOutput(getUserImageAndUserQuery(query, currentUser, userImage))
+        updateOutput(getUserImageAndUserQuery(query, currentUser, userImage, darkMode))
 
         // Add ID block for agent
-        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
+        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE, darkMode))
 
         // Set up the abort controller
         controller.current = new AbortController()
@@ -1078,6 +1091,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         backgroundColor,
                         borderTopLeftRadius: "var(--bs-border-radius)",
                         borderTopRightRadius: "var(--bs-border-radius)",
+                        color: darkMode ? "var(--bs-white)" : "var(--bs-black)",
                         display: "flex",
                         justifyContent: "space-between",
                         paddingLeft: "1rem",
@@ -1109,7 +1123,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 id="llm-response-div"
                 sx={{
                     ...divStyle,
-                    border: "var(--bs-border-width) var(--bs-border-style) white",
+                    border: "var(--bs-border-width) var(--bs-border-style)",
+                    borderColo: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                     borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flexGrow: 1,
@@ -1246,6 +1261,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
                     ref={chatInputRef}
                     sx={{
+                        backgroundColor: darkMode ? "black" : "var(--bs-white)",
                         border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
                         borderRadius: "var(--bs-border-radius)",
                         color: darkMode ? "var(--bs-white)" : "black",
