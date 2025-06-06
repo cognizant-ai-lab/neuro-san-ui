@@ -155,7 +155,7 @@ function Navbar(props: NavbarProps): ReactElement {
                             query: router.query,
                         }}
                     >
-                        {props.Logo}
+                        {props.Logo} {router.pathname === "/agentNetwork" ? "Multi-Agent Accelerator" : "Decisioning"}
                     </Link>
                 </Typography>
             </Grid>

@@ -5,6 +5,8 @@ import NeuroAI from "../../pages/_app"
 import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../testUtils"
 
+const originalFetch = window.fetch
+
 // mock next/router
 jest.mock("next/router", () => ({
     useRouter() {
@@ -33,10 +35,7 @@ jest.mock("next/router", () => ({
 describe("Main App Component", () => {
     withStrictMocks()
 
-    it("Should render correctly", () => {
-        console.error = jest.fn()
-
-        const oldFetch = window.fetch
+    beforeEach(() => {
         window.fetch = mockFetch({
             backendApiUrl: "dummyURL",
             backendNeuroSanApiUrl: "dummyNeuroSanURL",
@@ -46,7 +45,13 @@ describe("Main App Component", () => {
             oidcHeaderFound: true,
             username: "testUser",
         })
+    })
 
+    afterEach(() => {
+        window.fetch = originalFetch
+    })
+
+    it("Should render correctly", async () => {
         render(
             <NeuroAI
                 Component={() => <div>Test Component to Render</div>}
@@ -55,8 +60,6 @@ describe("Main App Component", () => {
             />
         )
 
-        expect(screen.getByText(LOGO)).toBeInTheDocument()
-
-        window.fetch = oldFetch
+        await screen.findByText(new RegExp(LOGO, "u"))
     })
 })
