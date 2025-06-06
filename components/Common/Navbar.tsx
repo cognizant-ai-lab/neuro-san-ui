@@ -109,6 +109,7 @@ function Navbar(props: NavbarProps): ReactElement {
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
                 color: "var(--bs-white)",
+                padding: "0.25rem",
             }}
         >
             <Link

@@ -132,6 +132,17 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: "Cognizant-Icons";
+    src:
+        url("/icons/Cognizant-Icons.ttf?fo68q0") format("truetype"),
+        url("/icons/Cognizant-Icons.svg?fo68q0#Cognizant-Icons") format("svg"),
+        url("/icons/Cognizant-Icons.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
+
 /* --------------- Font Face Rule End --------------- */
 
 :is(.h1, h1, .display-1, .display-2, .h2, h2, .h3, h3, .h4, h4, .h5, h5) {

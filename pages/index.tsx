@@ -70,6 +70,25 @@ const LaunchButton = styled("div")({
     minWidth: "270px",
     padding: "1.25rem 2rem",
     textAlign: "center",
+
+    "&::after": {
+        WebkitFontFeatureSettings: '"liga"',
+        msFontFeatureSettings: '"liga" 1',
+        fontFeatureSettings: '"liga"',
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+        fontFamily: '"Cognizant-Icons"',
+        fontStyle: "normal",
+        fontVariant: "normal",
+        WebkitFontVariantLigatures: "discretionary-ligatures",
+        fontVariantLigatures: "discretionary-ligatures",
+        fontWeight: 700,
+        letterSpacing: 0,
+        lineHeight: 1,
+        marginLeft: "0.25rem",
+        textTransform: "none",
+        content: '""',
+    },
 })
 
 const HeaderLineFive = styled("h5")({
