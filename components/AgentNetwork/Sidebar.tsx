@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography"
 import {FC, useEffect, useRef, useState} from "react"
 
 import {testConnection} from "../../controller/agent/Agent"
+import {useLocalStorage} from "../../utils/use_local_storage"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
@@ -63,6 +64,9 @@ const Sidebar: FC<SidebarProps> = ({
     const isSettingsPopoverOpen = Boolean(settingsAnchorEl)
     const [customURLInput, setCustomURLInput] = useState<string>(customURLLocalStorage || "")
     const [connectionStatus, setConnectionStatus] = useState<CONNECTION_STATUS>(CONNECTION_STATUS.IDLE)
+
+    // Dark mode
+    const isDarkMode = useLocalStorage("darkMode", false)[0]
 
     const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
@@ -147,6 +151,7 @@ const Sidebar: FC<SidebarProps> = ({
                 <h2
                     id={`${id}-heading`}
                     style={{
+                        backgroundColor: isDarkMode ? "black" : "var(--bs-white)",
                         borderBottomColor: "var(--bs-gray-light)",
                         borderBottomStyle: "solid",
                         borderBottomWidth: "1px",
