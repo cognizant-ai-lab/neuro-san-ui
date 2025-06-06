@@ -22,9 +22,9 @@ import {Snackbar} from "../components/Common/Snackbar"
 import ErrorBoundary from "../components/ErrorPage/ErrorBoundary"
 import {ALL_BUILD_TARGET, LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
+import {usePreferences} from "../state/Preferences"
 import useUserInfoStore from "../state/UserInfo"
 import {APP_THEME} from "../theme"
-import {useLocalStorage} from "../utils/use_local_storage"
 import {UserInfoResponse} from "./api/userInfo/types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
@@ -69,7 +69,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     const isContainedInViewport = Component.isContainedInViewport ?? false
 
     // Dark mode
-    const isDarkMode = useLocalStorage("darkMode", false)[0]
+    const {darkMode} = usePreferences()
 
     useEffect(() => {
         async function getEnvironment() {
@@ -248,7 +248,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                                 flex: 1,
                                 height: isContainedInViewport ? "100%" : "auto",
                                 paddingBottom: "5rem",
-                                backgroundColor: isDarkMode ? "black" : "var(--bs-white)",
+                                backgroundColor: darkMode ? "black" : "var(--bs-white)",
                             }}
                         >
                             {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}

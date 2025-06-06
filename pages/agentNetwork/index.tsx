@@ -10,6 +10,7 @@ import {closeNotification, NotificationType, sendNotification} from "../../compo
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import useEnvironmentStore from "../../state/environment"
+import {usePreferences} from "../../state/Preferences"
 import {useAuthentication} from "../../utils/Authentication"
 import {useLocalStorage} from "../../utils/use_local_storage"
 
@@ -43,7 +44,7 @@ export default function AgentNetworkPage() {
     )
 
     // Dark mode
-    const isDarkMode = useLocalStorage("darkMode", false)[0]
+    const {darkMode} = usePreferences()
 
     const customURLCallback = (url: string) => {
         setNeuroSanURL(url || backendNeuroSanApiUrl)
@@ -125,8 +126,8 @@ export default function AgentNetworkPage() {
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",
-                background: isDarkMode ? "black" : "var(--bs-white)",
-                color: isDarkMode ? "var(--bs-white)" : "black",
+                background: darkMode ? "black" : "var(--bs-white)",
+                color: darkMode ? "var(--bs-white)" : "black",
             }}
         >
             <Grid
@@ -181,7 +182,7 @@ export default function AgentNetworkPage() {
                     onChunkReceived={onChunkReceived}
                     onStreamingComplete={onStreamingComplete}
                     clearChatOnNewAgent={true}
-                    backgroundColor={isDarkMode ? "black" : "var(--bs-white)"}
+                    backgroundColor={darkMode ? "black" : "var(--bs-white)"}
                 />
             </Grid>
         </Grid>

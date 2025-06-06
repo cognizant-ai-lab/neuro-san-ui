@@ -30,7 +30,6 @@ import {
 } from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
-import {useLocalStorage} from "../../utils/use_local_storage"
 
 import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
 import {ControlButtons} from "./ControlButtons"
@@ -63,6 +62,7 @@ import {
     ChatMessage as GrpcChatMessage,
     ChatMessageChatMessageType as GrpcChatMessageChatMessageType,
 } from "../../generated/neuro_san/api/grpc/chat"
+import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
@@ -312,7 +312,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     const succeeded = useRef<boolean>(false)
 
     // Dark mode
-    const isDarkMode = useLocalStorage("darkMode", false)[0]
+    const {darkMode} = usePreferences()
 
     // Hide/show existing accordions based on showThinking state
     useEffect(() => {
@@ -1248,7 +1248,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     sx={{
                         border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
                         borderRadius: "var(--bs-border-radius)",
-                        color: isDarkMode ? "var(--bs-white)" : "black",
+                        color: darkMode ? "var(--bs-white)" : "black",
                         display: "flex",
                         flexGrow: 1,
                         fontSize: "smaller",

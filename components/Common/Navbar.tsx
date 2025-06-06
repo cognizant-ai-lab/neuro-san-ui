@@ -20,9 +20,9 @@ import {
     UNILEAF_VERSION,
 } from "../../const"
 import useEnvironmentStore from "../../state/environment"
+import {usePreferences} from "../../state/Preferences"
 import useUserInfoStore from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
-import {useLocalStorage} from "../../utils/use_local_storage"
 
 // Declare the Props Interface
 interface NavbarProps {
@@ -63,6 +63,8 @@ function Navbar(props: NavbarProps): ReactElement {
     const userInfo = session.user
     const userName = userInfo.name
 
+
+
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 
@@ -75,8 +77,7 @@ function Navbar(props: NavbarProps): ReactElement {
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
     // Dark mode
-    const [darkMode, setDarkMode] = useLocalStorage("darkMode", false)
-    console.debug("darkMode", darkMode)
+    const {darkMode, toggleDarkMode} = usePreferences()
     async function handleSignOut() {
         // Clear our state storage variables
         setCurrentUser(undefined)
@@ -418,11 +419,10 @@ function Navbar(props: NavbarProps): ReactElement {
                         marginRight: "1rem",
                         fontSize: "1rem",
                         cursor: "pointer",
-                        color: darkMode ? "yellow" : "var(--bs-gray-dark)",
-                        filter: darkMode ? "drop-shadow(0 0 4px #FFD600)" : "none",
+                        color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)",
                     }}
                     onClick={() => {
-                        setDarkMode(!darkMode)
+                        toggleDarkMode()
                     }}
                 />
             </Tooltip>

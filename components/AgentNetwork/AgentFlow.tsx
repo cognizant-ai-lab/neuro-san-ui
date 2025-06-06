@@ -29,7 +29,7 @@ import {AnimatedEdge} from "./AnimatedEdge"
 import {BACKGROUND_COLORS, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
-import {useLocalStorage} from "../../utils/use_local_storage"
+import {usePreferences} from "../../state/Preferences"
 
 // #region: Types
 interface AgentFlowProps {
@@ -71,7 +71,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
     // Dark mode
-    const isDarkMode = useLocalStorage("darkMode", false)[0]
+    const {darkMode} = usePreferences()
 
     // Create the flow layout depending on user preference
     useEffect(() => {
@@ -277,10 +277,10 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
-                style={{backgroundColor: isDarkMode ? "black" : "white"}}
+                style={{backgroundColor: darkMode ? "black" : "white"}}
             >
                 {layout === "radial" && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
-                {!isDarkMode && <Background id={`${id}-background`} />}
+                {!darkMode && <Background id={`${id}-background`} />}
                 <Controls
                     id="react-flow-controls"
                     position="top-left"
@@ -290,7 +290,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                         left: "0px",
                         height: "auto",
                         width: "auto",
-                        backgroundColor: isDarkMode ? "black" : "var(--bs-white)",
+                        backgroundColor: darkMode ? "black" : "var(--bs-white)",
                     }}
                     showInteractive={true}
                 >
