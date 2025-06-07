@@ -38,12 +38,13 @@ interface AgentFlowProps {
     id: string
     originInfo?: Origin[]
     selectedNetwork: string
+    isAwaitingLlm?: boolean
 }
 
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selectedNetwork}) => {
+const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selectedNetwork, isAwaitingLlm}) => {
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -118,6 +119,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                     style: {
                         strokeWidth: originTools.includes(edge.target) ? 3 : undefined,
                         stroke: originTools.includes(edge.target) ? "var(--bs-primary)" : undefined,
+                        display: !isAwaitingLlm || originTools.includes(edge.target) ? "block" : "none",
                     },
                     markerEnd: originTools.includes(edge.target)
                         ? {
@@ -281,86 +283,90 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 style={{backgroundColor: darkMode ? "black" : "white"}}
             >
                 {layout === "radial" && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
-                {!darkMode && <Background id={`${id}-background`} />}
-                <Controls
-                    id="react-flow-controls"
-                    position="top-left"
-                    style={{
-                        position: "absolute",
-                        top: "0px",
-                        left: "0px",
-                        height: "auto",
-                        width: "auto",
-                        backgroundColor: darkMode ? "black" : "var(--bs-white)",
-                    }}
-                    showInteractive={true}
-                >
-                    <Tooltip
-                        id="radial-layout-tooltip"
-                        title="Radial layout"
-                        placement="right"
+                {!isAwaitingLlm && <Background id={`${id}-background`} />}
+                {!isAwaitingLlm && (
+                    <Controls
+                        id="react-flow-controls"
+                        position="top-left"
+                        style={{
+                            position: "absolute",
+                            top: "0px",
+                            left: "0px",
+                            height: "auto",
+                            width: "auto",
+                            backgroundColor: darkMode ? "black" : "var(--bs-white)",
+                        }}
+                        showInteractive={true}
                     >
-                        <span id="radial-layout-span">
-                            <ControlButton
-                                id="radial-layout-button"
-                                onClick={() => setLayout("radial")}
-                                style={{
-                                    backgroundColor: layout === "radial" ? "var(--bs-gray-lighter" : undefined,
-                                }}
-                            >
-                                <HubOutlinedIcon
-                                    id="radial-layout-icon"
-                                    sx={{color: "black"}}
-                                />
-                            </ControlButton>
-                        </span>
-                    </Tooltip>
-                    <Tooltip
-                        id="linear-layout-tooltip"
-                        title="Linear layout"
-                        placement="right"
-                    >
-                        <span id="linear-layout-span">
-                            <ControlButton
-                                id="linear-layout-button"
-                                onClick={() => setLayout("linear")}
-                                style={{
-                                    backgroundColor: layout === "linear" ? "var(--bs-gray-lighter" : undefined,
-                                }}
-                            >
-                                <ScatterPlotOutlinedIcon
-                                    id="linear-layout-icon"
-                                    sx={{color: "black"}}
-                                />
-                            </ControlButton>
-                        </span>
-                    </Tooltip>
-                    <Tooltip
-                        id="radial-guides-tooltip"
-                        title={`Enable/disable radial guides${
-                            layout === "radial" ? "" : " (only available in radial layout)"
-                        }`}
-                        placement="right"
-                    >
-                        <span id="radial-guides-span">
-                            <ControlButton
-                                id="radial-guides-button"
-                                onClick={() => setEnableRadialGuides(!enableRadialGuides)}
-                                style={{
-                                    backgroundColor:
-                                        layout === "radial" && enableRadialGuides ? "var(--bs-gray-lighter" : undefined,
-                                }}
-                                disabled={layout !== "radial"}
-                            >
-                                <AdjustRoundedIcon
-                                    id="radial-guides-icon"
-                                    sx={{color: "black"}}
-                                />
-                            </ControlButton>
-                        </span>
-                    </Tooltip>
-                </Controls>
-                {enableRadialGuides && getRadialGuides()}
+                        <Tooltip
+                            id="radial-layout-tooltip"
+                            title="Radial layout"
+                            placement="right"
+                        >
+                            <span id="radial-layout-span">
+                                <ControlButton
+                                    id="radial-layout-button"
+                                    onClick={() => setLayout("radial")}
+                                    style={{
+                                        backgroundColor: layout === "radial" ? "var(--bs-gray-lighter" : undefined,
+                                    }}
+                                >
+                                    <HubOutlinedIcon
+                                        id="radial-layout-icon"
+                                        sx={{color: "black"}}
+                                    />
+                                </ControlButton>
+                            </span>
+                        </Tooltip>
+                        <Tooltip
+                            id="linear-layout-tooltip"
+                            title="Linear layout"
+                            placement="right"
+                        >
+                            <span id="linear-layout-span">
+                                <ControlButton
+                                    id="linear-layout-button"
+                                    onClick={() => setLayout("linear")}
+                                    style={{
+                                        backgroundColor: layout === "linear" ? "var(--bs-gray-lighter" : undefined,
+                                    }}
+                                >
+                                    <ScatterPlotOutlinedIcon
+                                        id="linear-layout-icon"
+                                        sx={{color: "black"}}
+                                    />
+                                </ControlButton>
+                            </span>
+                        </Tooltip>
+                        <Tooltip
+                            id="radial-guides-tooltip"
+                            title={`Enable/disable radial guides${
+                                layout === "radial" ? "" : " (only available in radial layout)"
+                            }`}
+                            placement="right"
+                        >
+                            <span id="radial-guides-span">
+                                <ControlButton
+                                    id="radial-guides-button"
+                                    onClick={() => setEnableRadialGuides(!enableRadialGuides)}
+                                    style={{
+                                        backgroundColor:
+                                            layout === "radial" && enableRadialGuides
+                                                ? "var(--bs-gray-lighter"
+                                                : undefined,
+                                    }}
+                                    disabled={layout !== "radial"}
+                                >
+                                    <AdjustRoundedIcon
+                                        id="radial-guides-icon"
+                                        sx={{color: "black"}}
+                                    />
+                                </ControlButton>
+                            </span>
+                        </Tooltip>
+                    </Controls>
+                )}
+                {enableRadialGuides && !isAwaitingLlm && getRadialGuides()}
             </ReactFlow>
         </Box>
     )
