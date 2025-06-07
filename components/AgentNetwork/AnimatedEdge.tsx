@@ -40,25 +40,29 @@ export const AnimatedEdge: FC<EdgeProps<AnimatedEdgeProps>> = ({
                 const begin = (i * 0.07 + Math.random() * 0.2).toFixed(2)
                 return (
                     <g
+                        id={`${id}-plasma-particle-group-${i}`}
+                        // eslint-disable-next-line react/no-array-index-key
                         key={`${id}-plasma-particle-group-${i}`}
                         transform={`translate(0, ${offset.toFixed(1)})`}
                     >
                         <circle
-                            r={r}
                             fill="url(#plasma-gradient)"
+                            id={`${id}-plasma-particle-circle-${i}`}
+                            r={r}
                             opacity={opacity}
                         >
                             <animateMotion
-                                dur={`${dur}s`}
-                                repeatCount="indefinite"
-                                path={edgePath}
                                 begin={`${begin}s`}
+                                dur={`${dur}s`}
+                                id={`${id}-plasma-particle-animate-motion-${i}`}
+                                path={edgePath}
+                                repeatCount="indefinite"
                             />
                         </circle>
                     </g>
                 )
             })}
-            <defs>
+            <defs id={`${id}-defs`}>
                 <radialGradient
                     id="plasma-gradient"
                     cx="50%"
@@ -66,10 +70,12 @@ export const AnimatedEdge: FC<EdgeProps<AnimatedEdgeProps>> = ({
                     r="50%"
                 >
                     <stop
+                        id={`${id}-stop-0`}
                         offset="0%"
                         stopColor="var(--bs-green)"
                     />
                     <stop
+                        id={`${id}-stop-100`}
                         offset="100%"
                         stopColor="var(--bs-white)"
                     />

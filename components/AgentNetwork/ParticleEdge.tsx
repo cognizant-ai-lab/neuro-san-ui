@@ -17,11 +17,11 @@ function createFunnelParticleOnPath(pathEl: SVGPathElement, color: string, canva
     let basePoint = pathEl.getPointAtLength(progress * totalLength)
 
     const update = () => {
-        remainingLife--
+        remainingLife -= 1
         progress += speed
         oscAngle += oscSpeed
-        const length = Math.min(progress * totalLength, totalLength)
-        basePoint = pathEl.getPointAtLength(length)
+        const _length = Math.min(progress * totalLength, totalLength)
+        basePoint = pathEl.getPointAtLength(_length)
     }
 
     const draw = (ctx: CanvasRenderingContext2D) => {
@@ -95,7 +95,7 @@ export const CanvasParticleEdge = ({sourceX, sourceY, targetX, targetY, sourcePo
             ctx.clearRect(0, 0, width, height)
 
             // More particles = denser flow
-            for (let i = 0; i < 6; i++) {
+            for (let i = 0; i < 6; i += 1) {
                 particles.current.push(createFunnelParticleOnPath(pathEl, "cyan", canvasOffset))
             }
 
@@ -110,21 +110,23 @@ export const CanvasParticleEdge = ({sourceX, sourceY, targetX, targetY, sourcePo
         }
 
         animate()
-        return () => cancelAnimationFrame(animationRef.current!)
+        return () => cancelAnimationFrame(animationRef.current)
     }, [edgePath, width, height, x, y])
 
     return (
         <>
             <foreignObject
+                id={`foreign-object-${x}-${y}`}
                 width={width}
                 height={height}
                 x={x}
                 y={y}
                 style={{pointerEvents: "none", overflow: "visible"}}
             >
-                <canvas ref={canvasRef} />
+                <canvas id={`canvas-${x}-${y}`} ref={canvasRef} />
             </foreignObject>
             <path
+                id={`path-${edgePath}`}
                 ref={pathRef}
                 d={edgePath}
                 fill="none"

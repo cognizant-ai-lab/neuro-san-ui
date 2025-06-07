@@ -42,7 +42,7 @@ export class Particle {
 
         this.x = this.baseX + offsetX
         this.y = this.baseY + offsetY
-        this.life--
+        this.life -= 1
     }
 
     draw(ctx: CanvasRenderingContext2D) {
