@@ -104,16 +104,24 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                 id={`${agentId}-tooltip`}
                 title={agentName}
                 placement="top"
+                disableInteractive // helps ensure hover works over clipped text
             >
                 <Typography
                     id={`${agentId}-name`}
                     sx={{
                         fontSize: "11px",
-                        overflowWrap: "break-word",
+                        width: `${NODE_WIDTH}px`,
                         textAlign: "center",
-                        width: "90%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
                         whiteSpace: "normal",
-                        wordBreak: "break-word",
+                        wordBreak: "normal",
+                        overflowWrap: "normal",
+                        lineHeight: "1.2em",
+                        maxHeight: "2.4em",
                     }}
                 >
                     {agentName}
