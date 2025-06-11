@@ -57,10 +57,11 @@ steps:
       shell: sh
       commands:
         - |
-          # Use DISPLAY_VERSION if set, else fallback to UNILEAF_VERSION
-          VERSION="${{DISPLAY_VERSION}}"
-          if [ "$VERSION" = "{{DISPLAY_VERSION}}" ] || [ -z "$VERSION" ]; then
-            VERSION="${{UNILEAF_VERSION}}"
+          # Use DISPLAY_VERSION if set and a manual trigger, else fallback to UNILEAF_VERSION
+          if [ -n "${{DISPLAY_VERSION}}" ] && [ "${{CF_BUILD_TRIGGER}}" = "manual" ]; then
+              VERSION="${{DISPLAY_VERSION}}"
+          else
+              VERSION="${{UNILEAF_VERSION}}"
           fi
 
           if [ -z "${{BUILD_TARGET}}" ] || [ "${{BUILD_TARGET}}" = "all" ]; then
