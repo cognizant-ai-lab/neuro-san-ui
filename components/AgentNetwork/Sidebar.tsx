@@ -64,14 +64,24 @@ const Sidebar: FC<SidebarProps> = ({
     const [customURLInput, setCustomURLInput] = useState<string>(customURLLocalStorage || "")
     const [connectionStatus, setConnectionStatus] = useState<CONNECTION_STATUS>(CONNECTION_STATUS.IDLE)
 
+    const connectionStatusSuccess = connectionStatus === CONNECTION_STATUS.SUCCESS
+    const connectionStatusError = connectionStatus === CONNECTION_STATUS.ERROR
+    const connectionStatusIdle = connectionStatus === CONNECTION_STATUS.IDLE
+
+    const isSaveDisabled = !customURLInput || (customURLInput && (connectionStatusError || connectionStatusIdle))
+
     const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
         setConnectionStatus(CONNECTION_STATUS.IDLE)
         setSettingsAnchorEl(event.currentTarget)
     }
 
-    const handleSettingsClose = () => {
+    const handleSettingsClose = (isCancel: boolean = false) => {
         setSettingsAnchorEl(null)
+        // If the user cancels, reset the custom URL input to the local storage value, or blank
+        if (isCancel) {
+            setCustomURLInput(customURLLocalStorage || "")
+        }
     }
 
     const handleURLChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +112,7 @@ const Sidebar: FC<SidebarProps> = ({
     }
 
     const handleSettingsSaveEnterKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !isSaveDisabled) {
             handleSaveSettings()
         }
     }
@@ -126,10 +136,6 @@ const Sidebar: FC<SidebarProps> = ({
     const selectNetworkHandler = (network: string) => {
         setSelectedNetwork(network)
     }
-
-    const connectionStatusSuccess = connectionStatus === CONNECTION_STATUS.SUCCESS
-    const connectionStatusError = connectionStatus === CONNECTION_STATUS.ERROR
-    const connectionStatusIdle = connectionStatus === CONNECTION_STATUS.IDLE
 
     return (
         <>
@@ -239,7 +245,7 @@ const Sidebar: FC<SidebarProps> = ({
                     value={customURLInput}
                 />
                 <PrimaryButton
-                    disabled={!customURLInput || (customURLInput && (connectionStatusError || connectionStatusIdle))}
+                    disabled={isSaveDisabled}
                     id="agent-network-settings-save-btn"
                     onClick={handleSaveSettings}
                     variant="contained"
