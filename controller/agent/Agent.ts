@@ -18,12 +18,12 @@ import {sendLlmRequest} from "../llm/LlmChat"
  * Insert the target agent name into the path. The paths Api enum contains values like:
  * <code>"/api/v1/:agent_name/connectivity"</code> so unfortunately we need to do a replace() to insert the target
  * agent.
- * @param targetAgent The target agent to send the request to.
+ * @param agent The agent to send the request to.
  * @param path The API path to insert the target agent into.
  * @returns The path with the target agent name inserted.
  */
-const insertTargetAgent = (targetAgent: string, path: string) => {
-    return path.replace(":agent_name", targetAgent.toLocaleLowerCase())
+const insertTargetAgent = (agent: string, path: string) => {
+    return path.replace(":agent_name", agent)
 }
 
 /**
@@ -108,15 +108,15 @@ export async function sendChatQuery(
 }
 
 /**
- * Gets information on what a specified agent is connected to (other agents and tools)
+ * Gets information on the agent and tool connections within a network
  * @param url The neuro-san server URL
- * @param targetAgent The agent to get connectivity information for
+ * @param network The network to get connectivity information for
  * @returns The connectivity info as a <code>ConnectivityResponse</code> object
  * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
  * Caller is responsible for try-catch.
  */
-export async function getConnectivity(url: string, targetAgent: string): Promise<ConnectivityResponse> {
-    const fetchUrl = `${url}${insertTargetAgent(targetAgent, ApiPaths.AgentService_Connectivity)}`
+export async function getConnectivity(url: string, network: string): Promise<ConnectivityResponse> {
+    const fetchUrl = `${url}${insertTargetAgent(network, ApiPaths.AgentService_Connectivity)}`
 
     const response = await fetch(fetchUrl, {
         method: "GET",
@@ -136,12 +136,12 @@ export async function getConnectivity(url: string, targetAgent: string): Promise
 /**
  * Get the function of a specified agent meaning its brief description
  * @param url The neuro-san server URL
- * @param targetAgent The agent to get the function for
+ * @param agent The agent to get the function for
  * @returns The function info as a <code>FunctionResponse</code> object
  * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
  */
-export async function getAgentFunction(url: string, targetAgent: string): Promise<FunctionResponse> {
-    const fetchUrl = `${url}${insertTargetAgent(targetAgent, ApiPaths.AgentService_Function)}`
+export async function getAgentFunction(url: string, agent: string): Promise<FunctionResponse> {
+    const fetchUrl = `${url}${insertTargetAgent(agent, ApiPaths.AgentService_Function)}`
 
     const response = await fetch(fetchUrl, {
         method: "GET",
