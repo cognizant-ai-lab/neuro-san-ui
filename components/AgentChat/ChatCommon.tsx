@@ -42,10 +42,7 @@ import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
-import {
-    getAgentFunctionNeuroSanIndirect,
-    sendChatQueryLegacyNeuroSanIndirect,
-} from "../../controller/agent/NeuroSanIndirect/Agent"
+import {sendChatQueryLegacyNeuroSanIndirect} from "../../controller/agent/NeuroSanIndirect/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {AgentType} from "../../generated/metadata"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
@@ -617,24 +614,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
             // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
             if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
-                try {
-                    // Does not use neuroSanURL since this is the Neuro-san indirect API
-                    agentFunction = await getAgentFunctionNeuroSanIndirect(currentUser, targetAgent as AgentType)
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } catch (error: any) {
-                    // Surface error and return (any allows us to access `message` property)
-                    sendNotification(
-                        NotificationType.error,
-                        "Internal error",
-                        `Error while attempting to retrieve agent description for esp_decision_agent. ${error?.message}`
-                    )
-                    return
-                }
-
                 // Opportunity Finder shouldn't need connectivity, so return
                 return
-
-                // For all other agents, use the latest Neuro-san API
             } else {
                 // It is a Neuro-san agent, so get the function and connectivity info
                 try {
@@ -841,7 +822,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     )
                 )
                 // For all other agents, use the latest Neuro-san API
-            } else {
+            } else if (parsedResult.trim() !== "") {
                 updateOutput(processLogLine(parsedResult, agentName, chatMessage?.type as ChatMessageType))
             }
         } else if (typeof parsedResult === "object") {
@@ -871,8 +852,9 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     )
 
                     // For all other agents, use the latest Neuro-san API
-                } else {
-                    // Not an error, so output it
+                } else if (chatMessage?.text?.trim() !== "") {
+                    // Not an error, so output it if it has text. The backend sometimes sends messages with no
+                    // text content and we don't want to display those to the user.
                     updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type as ChatMessageType))
                 }
             }
@@ -987,18 +969,20 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         controller.current = new AbortController()
         setIsAwaitingLlm(true)
 
-        updateOutput(
-            <MUIAccordion
-                id="initiating-orchestration-accordion"
-                items={[
-                    {
-                        title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
-                        content: `Query: ${queryToSend}`,
-                    },
-                ]}
-                sx={{marginBottom: "1rem"}}
-            />
-        )
+        if (showThinking) {
+            updateOutput(
+                <MUIAccordion
+                    id="initiating-orchestration-accordion"
+                    items={[
+                        {
+                            title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
+                            content: `Query: ${queryToSend}`,
+                        },
+                    ]}
+                    sx={{marginBottom: "1rem"}}
+                />
+            )
+        }
         try {
             const {wasAborted} = await doQueryLoop(queryToSend)
 

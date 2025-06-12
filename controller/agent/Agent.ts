@@ -61,6 +61,17 @@ export async function getAgentNetworks(url: string): Promise<string[]> {
     return conciergeResponse.agents.map((network) => network.agent_name)
 }
 
+// Function to split each chunk by newline and call the real callback. The server can send multiple JSON objects per
+// chunk delimited by newline.
+function handleJsonLines(chunk: string, callback: (line: string) => void) {
+    chunk.split("\n").forEach((line) => {
+        const trimmed = line.trim()
+        if (trimmed) {
+            callback(trimmed)
+        }
+    })
+}
+
 /**
  * Send a chat query to the Agent LLM API. This opens a session with the agent network..
  * @param url The neuro-san server URL
@@ -104,7 +115,7 @@ export async function sendChatQuery(
         {}
     )
 
-    return sendLlmRequest(callback, signal, fetchUrl, requestRecord, null)
+    return sendLlmRequest((chunk: string) => handleJsonLines(chunk, callback), signal, fetchUrl, requestRecord, null)
 }
 
 /**

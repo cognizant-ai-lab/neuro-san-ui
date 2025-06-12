@@ -8,12 +8,11 @@
  * Controller module for interacting with the Agent LLM API (Neuro-san indirect version).
  */
 
-import {AgentChatRequest, AgentFunctionRequest, AgentType} from "../../../generated/metadata"
+import {AgentChatRequest, AgentType} from "../../../generated/metadata"
 import {
     ChatFilterType,
     ChatRequest,
     ChatResponse as GrpcChatResponse,
-    FunctionResponse as GrpcFunctionResponse,
 } from "../../../generated/neuro_san/api/grpc/agent"
 import {ChatContext, ChatMessage, ChatMessageChatMessageType} from "../../../generated/neuro_san/api/grpc/chat"
 import useEnvironmentStore from "../../../state/environment"
@@ -21,9 +20,6 @@ import {sendLlmRequest} from "../../llm/LlmChat"
 
 // API path for the agent chat endpoint
 const CHAT_PATH = "api/v1/agent/streaming_chat"
-
-// API path for the agent function endpoint
-const AGENT_FUNCTION_PATH = "api/v1/agent/function"
 
 /**
  * Send a chat query to the Agent LLM API. This opens a session with the agent network.
@@ -75,43 +71,4 @@ export async function sendChatQueryLegacyNeuroSanIndirect(
     )
 
     return sendLlmRequest(callback, signal, fetchUrl, requestRecord, null)
-}
-
-/**
- * Get the function of a specified agent meaning its brief description
- * @param requestUser The user making the request
- * @param targetAgent The agent to get the function for
- * @returns The function info as a <code>FunctionResponse</code> object
- * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
- */
-export async function getAgentFunctionNeuroSanIndirect(
-    requestUser: string,
-    targetAgent: AgentType
-): Promise<GrpcFunctionResponse> {
-    const baseUrl = useEnvironmentStore.getState().backendApiUrl
-    const fetchUrl = `${baseUrl}/${AGENT_FUNCTION_PATH}`
-
-    const request: AgentFunctionRequest = {
-        targetAgent,
-        user: {login: requestUser},
-        request: undefined,
-    }
-
-    // Convert to JSON (wire) format
-    const requestJSON = AgentFunctionRequest.toJSON(request)
-
-    const response = await fetch(fetchUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestJSON),
-    })
-
-    if (!response.ok) {
-        throw new Error(`Failed to send agent function request: ${response.statusText}`)
-    }
-
-    const result = await response.json()
-    return GrpcFunctionResponse.fromJSON(result)
 }

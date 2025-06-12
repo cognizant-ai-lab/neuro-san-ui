@@ -8,12 +8,16 @@ import {withStrictMocks} from "../../common/strictMocks"
 jest.mock("../../../controller/llm/LlmChat")
 
 const NEURO_SAN_EXAMPLE_URL = "https://neuro-san.example.com"
-const TEST_AGENT_MATH_GUY = "Math Guy"
+const TEST_AGENT_MATH_GUY = "math_guy"
 
 describe("Controller/Agent/sendChatQuery", () => {
     withStrictMocks()
 
     it("Should correctly construct and send a request", async () => {
+        ;(sendLlmRequest as jest.Mock).mockImplementation((callback) => {
+            callback("line 1 of mocked chunk data\nline 2 of mocked chunk data\n")
+        })
+
         const abortSignal = new AbortController().signal
 
         const callbackMock = jest.fn()
@@ -45,11 +49,16 @@ describe("Controller/Agent/sendChatQuery", () => {
         }
 
         expect(sendLlmRequest).toHaveBeenCalledWith(
-            callbackMock,
+            expect.any(Function),
             abortSignal,
-            expect.stringContaining("streaming_chat"),
+            expect.stringMatching(new RegExp(`${TEST_AGENT_MATH_GUY}.*streaming_chat`, "u")),
             expectedRequestParams,
             null
         )
+
+        // Make sure we handle newline-delimited data. The use case is for json-lines: https://jsonlines.org/
+        expect(callbackMock).toHaveBeenCalledTimes(2)
+        expect(callbackMock).toHaveBeenCalledWith("line 1 of mocked chunk data")
+        expect(callbackMock).toHaveBeenCalledWith("line 2 of mocked chunk data")
     })
 })
