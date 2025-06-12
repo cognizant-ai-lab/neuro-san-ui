@@ -58,17 +58,14 @@ const Sidebar: FC<SidebarProps> = ({
     selectedNetwork,
     setSelectedNetwork,
 }) => {
-    const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
-    const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
-    const isSettingsPopoverOpen = Boolean(settingsAnchorEl)
     const [customURLInput, setCustomURLInput] = useState<string>(customURLLocalStorage || "")
     const [connectionStatus, setConnectionStatus] = useState<CONNECTION_STATUS>(CONNECTION_STATUS.IDLE)
-
     const connectionStatusSuccess = connectionStatus === CONNECTION_STATUS.SUCCESS
     const connectionStatusError = connectionStatus === CONNECTION_STATUS.ERROR
-    const connectionStatusIdle = connectionStatus === CONNECTION_STATUS.IDLE
-
-    const isSaveDisabled = !customURLInput || (customURLInput && (connectionStatusError || connectionStatusIdle))
+    const saveEnabled = customURLInput && connectionStatus === CONNECTION_STATUS.SUCCESS
+    const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
+    const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
+    const settingsPopoverOpen = Boolean(settingsAnchorEl)
 
     const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
@@ -76,10 +73,10 @@ const Sidebar: FC<SidebarProps> = ({
         setSettingsAnchorEl(event.currentTarget)
     }
 
-    const handleSettingsClose = (isCancel: boolean = false) => {
+    const handleSettingsClose = (cancel: boolean = false) => {
         setSettingsAnchorEl(null)
         // If the user cancels, reset the custom URL input to the local storage value, or blank
-        if (isCancel) {
+        if (cancel) {
             setCustomURLInput(customURLLocalStorage || "")
         }
     }
@@ -112,7 +109,7 @@ const Sidebar: FC<SidebarProps> = ({
     }
 
     const handleSettingsSaveEnterKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Enter" && !isSaveDisabled) {
+        if (event.key === "Enter" && saveEnabled) {
             handleSaveSettings()
         }
     }
@@ -213,7 +210,7 @@ const Sidebar: FC<SidebarProps> = ({
             </aside>
             <Popover
                 id="agent-network-settings-popover"
-                open={isSettingsPopoverOpen}
+                open={settingsPopoverOpen}
                 anchorEl={settingsAnchorEl}
                 onClose={() => handleSettingsClose(true)}
                 anchorOrigin={{
@@ -245,7 +242,7 @@ const Sidebar: FC<SidebarProps> = ({
                     value={customURLInput}
                 />
                 <PrimaryButton
-                    disabled={isSaveDisabled}
+                    disabled={!saveEnabled}
                     id="agent-network-settings-save-btn"
                     onClick={handleSaveSettings}
                     variant="contained"
