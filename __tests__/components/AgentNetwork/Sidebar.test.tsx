@@ -237,7 +237,7 @@ describe("SideBar", () => {
 
         // Popover should close and input should reset to customURLLocalStorage
         // Can't use document.body due to MuiBackdrop
-        await user.click(screen.getByRole("presentation").parentElement.querySelector(".MuiBackdrop-root"))
+        await user.click(document.querySelector(".MuiBackdrop-root"))
 
         // Open again to check input value is reset
         await user.click(settingsButton)
