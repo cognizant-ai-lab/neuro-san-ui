@@ -418,3 +418,16 @@ button[id*="prescriptoredge"] {
     font-family: "Gellix", sans-serif;
     white-space: pre-wrap;
 }
+
+/* React-flow dark mode support for the attribution logo */
+/* Light mode */
+.react-flow__panel.react-flow__attribution {
+    background: var(--bs-white);
+    color: var(--bs-dark-mode-dim);
+}
+
+/* Dark mode */
+.dark .react-flow__panel.react-flow__attribution {
+    background: var(--bs-dark-mode-dim);
+    color: var(--bs-white);
+}

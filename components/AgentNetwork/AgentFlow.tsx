@@ -269,6 +269,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                     borderRadius: "var(--bs-border-radius-2xl)",
                 },
             }}
+            className={darkMode ? "dark" : ""}
         >
             <ReactFlow
                 id={`${id}-react-flow`}

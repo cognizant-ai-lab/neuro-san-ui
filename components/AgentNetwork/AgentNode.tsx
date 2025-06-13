@@ -9,7 +9,6 @@ import {Origin} from "../../generated/neuro-san/OpenAPITypes"
 export interface AgentNodeProps {
     agentName: string
     getOriginInfo: () => Origin[]
-    isFrontman: boolean
     depth: number
 }
 
@@ -24,7 +23,7 @@ export const NODE_WIDTH = 80
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentName, getOriginInfo, isFrontman, depth} = data
+    const {agentName, getOriginInfo, depth} = data
 
     // Unpack the node-specific id
     const agentId = props.id
@@ -36,10 +35,9 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         .includes(agentId)
 
     let backgroundColor: string
+
     // There's no depth for linear layout, so we just use the first color for both layouts (radial and linear).
-    if (isFrontman) {
-        backgroundColor = BACKGROUND_COLORS[0]
-    } else if (isActiveAgent) {
+    if (isActiveAgent) {
         backgroundColor = "var(--bs-green)"
     } else {
         backgroundColor = BACKGROUND_COLORS[depth % BACKGROUND_COLORS.length]
@@ -47,21 +45,15 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Text color varies based on if it's a layout that has depth or not (radial vs linear).
     const textColor =
-        depth === undefined
-            ? !isFrontman && isActiveAgent
-                ? "var(--bs-white)"
-                : "var(--bs-primary)"
-            : !isFrontman
-              ? "var(--bs-white)"
-              : "var(--bs-primary)"
+        depth === undefined ? (isActiveAgent ? "var(--bs-white)" : "var(--bs-primary)") : "var(--bs-white)"
 
     // Animation style for making active agent glow and pulse
     // TODO: more idiomatic MUI/style= way of doing this?
     const glowAnimation = isActiveAgent
         ? `@keyframes glow {
-            0% { box-shadow: 0 0 10px 4px var(--bs-primary); opacity: 0.60; }
-            50% { box-shadow: 0 0 30px 12px var(--bs-primary); opacity: 0.90; }
-            100% { box-shadow: 0 0 10px 4px var(--bs-primary); opacity: 1.0; }
+            0% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 0.60; }
+            50% { box-shadow: 0 0 30px 12px ${backgroundColor}; opacity: 0.90; }
+            100% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 1.0; }
         }`
         : "none"
 
