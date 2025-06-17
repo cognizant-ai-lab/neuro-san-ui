@@ -11,6 +11,7 @@ interface ControlButtonsProps {
     handleSend: (query: string) => void
     handleStop: () => void
     previousUserQuery: string
+    repositionStopBtnWhileAwaitingLlm?: boolean
     shouldEnableRegenerateButton: boolean
 }
 // #endregion: Types
@@ -33,6 +34,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
     handleSend,
     handleStop,
     previousUserQuery,
+    repositionStopBtnWhileAwaitingLlm = false,
     shouldEnableRegenerateButton,
 }) => (
     <>
@@ -63,10 +65,10 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
                 onClick={() => handleStop()}
                 // Custom bottom and right position values when awaiting LLM response for MAA UI (should revise for
                 // other chat implementations)
-                posBottom={isAwaitingLlm ? 0 : 8}
-                posRight={isAwaitingLlm ? 0 : 23}
+                posBottom={repositionStopBtnWhileAwaitingLlm && isAwaitingLlm ? 0 : 8}
+                posRight={repositionStopBtnWhileAwaitingLlm && isAwaitingLlm ? 0 : 23}
                 // Set visibility to "visible" when awaiting LLM response to show the Stop button
-                sx={{visibility: isAwaitingLlm ? "visible" : "none"}}
+                sx={{visibility: repositionStopBtnWhileAwaitingLlm && isAwaitingLlm ? "visible" : "none"}}
             >
                 <StopCircle
                     fontSize="small"

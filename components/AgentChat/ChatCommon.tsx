@@ -1207,6 +1207,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     handleSend={handleSend}
                     handleStop={handleStop}
                     previousUserQuery={previousUserQuery}
+                    repositionStopBtnWhileAwaitingLlm={!legacyAgentEndpoint}
                     shouldEnableRegenerateButton={shouldEnableRegenerateButton}
                 />
             </Box>
@@ -1217,7 +1218,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     alignItems: "center",
                     // Display "none" when awaiting LLM response for MAA UI (should revise for other chat
                     // implementations)
-                    display: isAwaitingLlm ? "none" : "flex",
+                    display: !legacyAgentEndpoint && isAwaitingLlm ? "none" : "flex",
                     margin: "10px",
                     position: "relative",
                 }}
