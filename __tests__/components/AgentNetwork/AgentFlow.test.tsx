@@ -49,11 +49,9 @@ describe("AgentFlow", () => {
         // Make sure each agent node is rendered at least. Structure in react-flow is:
         // <div class="react-flow__node"><div><p>agentName</p></div></div>
         agentNames.forEach((agent) => {
-            expect(
-                nodesArray.some(
-                    (node) => node.querySelector("div")?.querySelector("p")?.textContent === cleanUpAgentName(agent)
-                )
-            ).toBe(true)
+            expect(nodesArray.some((node) => node.querySelector("p")?.textContent === cleanUpAgentName(agent))).toBe(
+                true
+            )
         })
     }
 
