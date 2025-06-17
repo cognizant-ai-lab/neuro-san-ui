@@ -11,6 +11,10 @@ const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
+jest.mock("../../../components/AgentNetwork/PlasmaEdge", () => ({
+    PlasmaEdge: () => <g data-testid="mock-plasma-edge" />,
+}))
+
 describe("AgentFlow", () => {
     let user: UserEvent
 
@@ -98,25 +102,25 @@ describe("AgentFlow", () => {
             </ReactFlowProvider>
         )
 
-        // agent1 and agent3 should highlighted since agent1 (the Frontman) is the first upstream of agent3.
-        // But we can't check that currently since we disable CSS parsing in jest due to other issues.
-        // Also the edge between agent1 and agent3 should be highlighted. We can verify that.
+        // agent3 is active so should be highlighted
+        const agent3Node = container.querySelector('[data-id="agent3"]')
+        expect(agent3Node).toBeInTheDocument()
 
-        // locate edge by aria-label
-        const edge = container.querySelector('[aria-label="Edge from agent1 to agent3"]')
-        expect(edge).toBeInTheDocument()
+        // first div is the one with the style
+        const agent3ChildDiv = agent3Node.children[0] as HTMLDivElement
 
-        // Get the <path> element within the edge
-        const path = edge?.firstElementChild
+        // make sure it has style animation: glow 2.0s infinite
+        expect(agent3ChildDiv).toHaveStyle({
+            animation: "glow 2.0s infinite",
+        })
 
-        // Should be highlighted
-        expect(path).toHaveStyle("stroke-width: 3")
-
-        // Verify that agent1 -> agent2 edge is not highlighted
-        const edge2 = container.querySelector('[aria-label="Edge from agent1 to agent2"]')
-        const path2 = edge2?.firstElementChild
-        expect(path2).toBeInTheDocument()
-        expect(path2).not.toHaveAttribute("style", expect.stringContaining("stroke-width"))
+        // agent2 is not "active" so should not have the pulsing animation
+        const agent2Div = container.querySelector('[data-id="agent2"]')
+        expect(agent2Div).toBeInTheDocument()
+        const agent2ChildDiv = agent2Div.children[0] as HTMLDivElement
+        expect(agent2ChildDiv).toHaveStyle({
+            animation: "none",
+        })
     })
 
     it("Should handle an empty agent list", async () => {

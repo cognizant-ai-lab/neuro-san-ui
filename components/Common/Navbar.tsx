@@ -409,7 +409,7 @@ function Navbar(props: NavbarProps): ReactElement {
             ) : null}
             <Tooltip
                 id="dark-mode-toggle"
-                title={`Dark mode is ${darkMode ? "on" : "off"}`}
+                title="Toggle dark mode (experimental)"
             >
                 <DarkModeIcon
                     id="dark-mode-icon"
