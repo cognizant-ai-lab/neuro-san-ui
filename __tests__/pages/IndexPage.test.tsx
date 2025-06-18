@@ -36,13 +36,13 @@ describe("Index Page", () => {
 
         await screen.findByText("Neuro® AI")
         await screen.findByText("Neuro® AI Decisioning")
-        await screen.findByText("A platform for smarter business decisions")
         await screen.findByText("Neuro® AI Multi-Agent Accelerator")
         await screen.findByText(/Low-code framework for rapidly agentifying your business./u)
         await screen.findByText(/Explore more/u)
-        await screen.findByText("Find opportunities")
-        await screen.findByText("Build models")
-        await screen.findByText("Explore agent networks")
+        expect(await screen.findAllByText(/Decisioning/u)).toHaveLength(2)
+        await screen.findByText("platform")
+        await screen.findByText(/for building grounded decisioning agents,/u)
+        await screen.findByText("using agents.")
     })
 
     it("opens the email dialog when 'Contact Us' is clicked", async () => {
@@ -70,7 +70,7 @@ describe("Index Page", () => {
     it("builds the query string correctly", async () => {
         render(<Index />)
 
-        const link = await screen.findByText("Find opportunities")
+        const link = await screen.findByText("using agents.")
         const closestAnchor = link.closest("a")
         expect(closestAnchor).toHaveAttribute("href", "/opportunityFinder?key=value")
     })
