@@ -57,8 +57,9 @@ steps:
       shell: sh
       commands:
         - |
-          # Use DISPLAY_VERSION if set and a manual trigger, else fallback to UNILEAF_VERSION
-          if [ -n "${{DISPLAY_VERSION}}" ] && [ "${{CF_BUILD_TRIGGER}}" = "manual" ]; then
+          # Use DISPLAY_VERSION if set and trigger is not automated(webhook),
+          # otherwise fallback to UNILEAF_VERSION
+          if [ -n "${{DISPLAY_VERSION}}" ] && [ "${{CF_BUILD_TRIGGER}}" != "webhook" ]; then
               VERSION="${{DISPLAY_VERSION}}"
           else
               VERSION="${{UNILEAF_VERSION}}"
