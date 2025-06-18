@@ -76,7 +76,7 @@ const LaunchButton = styled("div")({
         color: "var(--bs-white)",
         cursor: "pointer",
         transition: "background-color 0.3s, color 0.3s", // Smooth transition effect
-        boxShadow: "0 0 30px 0 var(--bs-accent3-medium)", // : "none", // Add shadow on hover
+        boxShadow: "0 0 30px 0 var(--bs-accent3-medium)", // Add shadow on hover
     },
 
     "&::after": {
