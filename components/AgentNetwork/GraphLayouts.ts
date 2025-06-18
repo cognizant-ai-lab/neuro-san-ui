@@ -5,7 +5,7 @@ import dagre from "dagre"
 import {cloneDeep} from "lodash"
 import {Edge, EdgeProps, Node as RFNode} from "reactflow"
 
-import {AgentNodeProps} from "./AgentNode"
+import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import {cleanUpAgentName} from "../AgentChat/Utils"
@@ -215,14 +215,11 @@ export const layoutLinear = (
     // Configure for left-to-right layout
     dagreGraph.setGraph({rankdir: "LR"})
 
-    const nodeWidth = 250
-    const nodeHeight = 36
-
     // Don't want to update nodes directly in existing flow so make a copy
     const nodesTmp = cloneDeep(nodesInNetwork)
 
     nodesTmp.forEach((node) => {
-        dagreGraph.setNode(node.id, {width: nodeWidth, height: nodeHeight})
+        dagreGraph.setNode(node.id, {width: NODE_WIDTH, height: NODE_HEIGHT})
     })
 
     edgesInNetwork.forEach((edge) => {
@@ -241,8 +238,8 @@ export const layoutLinear = (
         // We are shifting the dagre node position (anchor=center center) to the top left
         // so it matches the React Flow node anchor point (top left).
         node.position = {
-            x: nodeWithPosition.x - nodeWidth / 2,
-            y: nodeWithPosition.y - nodeHeight / 2,
+            x: nodeWithPosition.x - NODE_WIDTH / 2,
+            y: nodeWithPosition.y - NODE_HEIGHT / 2,
         }
 
         // Depth is index of x position in xPositions array
