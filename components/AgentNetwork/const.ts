@@ -18,6 +18,8 @@ export const BACKGROUND_COLORS = [
     "var(--bs-info)",
 ]
 
+// Palette for heatmap coloring of nodes. Gradient centered around the corporate value --bs-accent3-light from
+// global.css.
 export const HEATMAP_COLORS = [
     "#054b59",
     "#197d86",

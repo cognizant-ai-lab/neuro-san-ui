@@ -113,7 +113,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                 break
             }
         }
-    }, [agentsInNetwork, layout, originInfo, coloringOption, agentCounts, getOriginInfo])
+    }, [agentsInNetwork, layout, originInfo, coloringOption, agentCounts])
 
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
@@ -247,6 +247,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                     id={`${id}-legend-label`}
                     sx={{
                         fontSize: "10px",
+                        marginLeft: "0.25rem",
                     }}
                 >
                     {title}
@@ -278,6 +279,54 @@ const AgentFlow: FC<AgentFlowProps> = ({
                         </Typography>
                     </Box>
                 ))}
+                <ToggleButtonGroup
+                    id={`${id}-coloring-toggle`}
+                    value={coloringOption}
+                    exclusive={true}
+                    onChange={(_, newValue) => {
+                        if (newValue !== null) {
+                            setColoringOption(newValue)
+                        }
+                    }}
+                    sx={{
+                        backgroundColor: "var(--bs-white)",
+                        fontSize: "2rem",
+                        zIndex: 10,
+                        marginLeft: "1rem",
+                    }}
+                    size="small"
+                >
+                    <ToggleButton
+                        id={`${id}-depth-toggle`}
+                        size="small"
+                        value="depth"
+                        sx={{fontSize: "0.5rem", height: "1rem"}}
+                    >
+                        <Typography
+                            id={`${id}-depth-label`}
+                            sx={{
+                                fontSize: "10px",
+                            }}
+                        >
+                            Depth
+                        </Typography>
+                    </ToggleButton>
+                    <ToggleButton
+                        id={`${id}-heatmap-toggle`}
+                        size="small"
+                        value="heatmap"
+                        sx={{fontSize: "0.5rem", height: "1rem"}}
+                    >
+                        <Typography
+                            id={`${id}-heatmap-label`}
+                            sx={{
+                                fontSize: "10px",
+                            }}
+                        >
+                            Heatmap
+                        </Typography>
+                    </ToggleButton>
+                </ToggleButtonGroup>
             </Box>
         )
     }
@@ -305,44 +354,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
             >
-                {!isAwaitingLlm && (
-                    <ToggleButtonGroup
-                        id={`${id}-coloring-toggle`}
-                        value={coloringOption}
-                        exclusive={true}
-                        onChange={(_, newValue) => {
-                            if (newValue !== null) {
-                                setColoringOption(newValue)
-                            }
-                        }}
-                        sx={{
-                            backgroundColor: "var(--bs-white)",
-                            fontSize: "2rem",
-                            position: "absolute",
-                            right: "250px",
-                            top: "5px",
-                            zIndex: 10,
-                        }}
-                    >
-                        <ToggleButton
-                            id={`${id}-depth-toggle`}
-                            size="small"
-                            value="depth"
-                            sx={{fontSize: "0.5rem"}}
-                        >
-                            Depth
-                        </ToggleButton>
-                        <ToggleButton
-                            id={`${id}-heatmap-toggle`}
-                            size="small"
-                            value="heatmap"
-                            sx={{fontSize: "0.5rem"}}
-                        >
-                            Heatmap
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                )}
-                {!isAwaitingLlm && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
+                {!isAwaitingLlm && agentsInNetwork?.length && getLegend()}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"
@@ -421,7 +433,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                         </span>
                     </Tooltip>
                 </Controls>
-                {enableRadialGuides && getRadialGuides()}
+                {enableRadialGuides && layout === "radial" ? getRadialGuides() : null}
             </ReactFlow>
         </Box>
     )

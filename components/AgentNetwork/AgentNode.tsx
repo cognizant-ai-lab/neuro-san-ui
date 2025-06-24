@@ -38,12 +38,17 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         .map((originItem) => originItem.tool)
         .includes(agentId)
 
+    const isLinearLayout = depth === undefined
+
     let backgroundColor: string
-    // There's no depth for linear layout, so we just use the first color for both layouts (radial and linear).
-    if (agentCounts?.size > 0 && maxAgentCount > 0) {
-        const agentCount = agentCounts.get(agentId) ?? 0
-        backgroundColor = HEATMAP_COLORS[Math.floor((agentCount / maxAgentCount) * (HEATMAP_COLORS.length - 1))]
-    } else if (depth === undefined) {
+    const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
+    if (isHeatmap) {
+        const agentCount = agentCounts.has(agentId) ? agentCounts.get(agentId) : 0
+
+        // Calculate "heat" as a fraction of the times this agent was invoked compared to the maximum agent count.
+        const colorIndex = Math.floor((agentCount / maxAgentCount) * (HEATMAP_COLORS.length - 1))
+        backgroundColor = HEATMAP_COLORS[colorIndex]
+    } else if (isLinearLayout) {
         // For linear layout, we use a single color for all nodes.
         backgroundColor = isActiveAgent ? "var(--bs-red)" : "var(--bs-primary)"
     } else if (isActiveAgent) {
@@ -53,14 +58,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     }
 
     // Text color varies based on if it's a layout that has depth or not (radial vs linear).
-    const textColor =
-        depth === undefined
-            ? !isFrontman && isActiveAgent
-                ? "var(--bs-white)"
-                : "var(--bs-primary)"
-            : !isFrontman
-              ? "var(--bs-white)"
-              : "var(--bs-primary)"
+    let textColor: string
+    if (!isLinearLayout && isFrontman) {
+        textColor = "var(--bs-primary)"
+    } else {
+        textColor = "var(--bs-white)"
+    }
 
     // Animation style for making active agent glow and pulse
     // TODO: more idiomatic MUI/style= way of doing this?

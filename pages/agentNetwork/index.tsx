@@ -102,9 +102,13 @@ export default function AgentNetworkPage() {
         if (chatMessage && chatMessage.origin?.length > 0) {
             setOriginInfo([...chatMessage.origin])
 
-            // update agent counts
+            // Update agent counts.
+            // Note: we increment an agent's count each time it appears in the origin info, but another strategy would
+            // be to only count an agent when it is the "end destination" of the chain. Needs some thought to determine
+            // which is more useful.
             const agentCounts = agentCountsRef.current
             for (const agent of chatMessage.origin) {
+                // If the agent is not already in the counts map, initialize it to 0 aka "upsert"
                 agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
             }
         }
