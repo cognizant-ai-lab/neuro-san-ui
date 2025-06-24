@@ -7,11 +7,11 @@ import {BACKGROUND_COLORS, HEATMAP_COLORS} from "./const"
 import {Origin} from "../../generated/neuro-san/OpenAPITypes"
 
 export interface AgentNodeProps {
-    agentName: string
-    getOriginInfo: () => Origin[]
-    isFrontman: boolean
-    depth: number
-    agentCounts: Map<string, number>
+    readonly agentName: string
+    readonly getOriginInfo: () => Origin[]
+    readonly isFrontman: boolean
+    readonly depth: number
+    readonly agentCounts?: Map<string, number>
 }
 
 // Node dimensions
