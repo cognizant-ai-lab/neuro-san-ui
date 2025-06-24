@@ -1,8 +1,8 @@
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
+import {ToggleButton, ToggleButtonGroup} from "@mui/material"
 import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC, useCallback, useEffect, useMemo, useRef, useState} from "react"
@@ -84,7 +84,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
 
     const [layout, setLayout] = useState<Layout>("radial")
 
-    const [showHeatmap, setShowHeatmap] = useState<boolean>(false)
+    const [coloringOption, setColoringOption] = useState<"depth" | "heatmap">("depth")
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
@@ -92,20 +92,28 @@ const AgentFlow: FC<AgentFlowProps> = ({
     useEffect(() => {
         switch (layout) {
             case "linear": {
-                const linearLayout = layoutLinear(agentsInNetwork, getOriginInfo, showHeatmap ? agentCounts : undefined)
+                const linearLayout = layoutLinear(
+                    agentsInNetwork,
+                    getOriginInfo,
+                    coloringOption === "heatmap" ? agentCounts : undefined
+                )
                 linearLayout.nodes && setNodes(linearLayout.nodes)
                 linearLayout.edges && setEdges(linearLayout.edges)
                 break
             }
             case "radial":
             default: {
-                const radialLayout = layoutRadial(agentsInNetwork, getOriginInfo, showHeatmap ? agentCounts : undefined)
+                const radialLayout = layoutRadial(
+                    agentsInNetwork,
+                    getOriginInfo,
+                    coloringOption === "heatmap" ? agentCounts : undefined
+                )
                 radialLayout.nodes && setNodes(radialLayout.nodes)
                 radialLayout.edges && setEdges(radialLayout.edges)
                 break
             }
         }
-    }, [agentsInNetwork, layout, originInfo, showHeatmap, agentCounts, getOriginInfo])
+    }, [agentsInNetwork, layout, originInfo, coloringOption, agentCounts, getOriginInfo])
 
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
@@ -216,7 +224,11 @@ const AgentFlow: FC<AgentFlowProps> = ({
     }
 
     // Generate Legend for depth or heatmap colors
-    function getLegend(palette: string[], title: string, length: number) {
+    function getLegend() {
+        const showHeatmap = coloringOption === "heatmap"
+        const palette = showHeatmap ? HEATMAP_COLORS : BACKGROUND_COLORS
+        const title = showHeatmap ? "Heat" : "Depth"
+        const length = showHeatmap ? HEATMAP_COLORS.length : Math.min(maxDepth, BACKGROUND_COLORS.length)
         return (
             <Box
                 id={`${id}-legend`}
@@ -294,37 +306,43 @@ const AgentFlow: FC<AgentFlowProps> = ({
                 connectionMode={ConnectionMode.Loose}
             >
                 {!isAwaitingLlm && (
-                    <Button
-                        id={`${id}-heatmap-label`}
-                        sx={{
-                            position: "absolute",
-                            zIndex: 10,
-                            pointerEvents: "auto",
-                            top: "10px",
-                            right: "250px",
-                            borderRadius: "5px",
-                            display: "flex",
-                            flexDirection: "row",
-                            fontSize: "0.75rem",
-                            cursor: "pointer",
-                            borderWidth: "1px",
+                    <ToggleButtonGroup
+                        id={`${id}-coloring-toggle`}
+                        value={coloringOption}
+                        exclusive={true}
+                        onChange={(_, newValue) => {
+                            if (newValue !== null) {
+                                setColoringOption(newValue)
+                            }
                         }}
-                        variant="outlined"
-                        onClick={() => {
-                            setShowHeatmap(!showHeatmap)
+                        sx={{
+                            backgroundColor: "var(--bs-white)",
+                            fontSize: "2rem",
+                            position: "absolute",
+                            right: "250px",
+                            top: "5px",
+                            zIndex: 10,
                         }}
                     >
-                        Heatmap
-                    </Button>
+                        <ToggleButton
+                            id={`${id}-depth-toggle`}
+                            size="small"
+                            value="depth"
+                            sx={{fontSize: "0.5rem"}}
+                        >
+                            Depth
+                        </ToggleButton>
+                        <ToggleButton
+                            id={`${id}-heatmap-toggle`}
+                            size="small"
+                            value="heatmap"
+                            sx={{fontSize: "0.5rem"}}
+                        >
+                            Heatmap
+                        </ToggleButton>
+                    </ToggleButtonGroup>
                 )}
-                {!isAwaitingLlm &&
-                    maxDepth > 0 &&
-                    agentsInNetwork?.length &&
-                    getLegend(
-                        showHeatmap ? HEATMAP_COLORS : BACKGROUND_COLORS,
-                        showHeatmap ? "Heat" : "Depth",
-                        showHeatmap ? HEATMAP_COLORS.length : Math.min(maxDepth, BACKGROUND_COLORS.length)
-                    )}
+                {!isAwaitingLlm && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"
