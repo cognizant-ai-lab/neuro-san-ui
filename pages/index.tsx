@@ -3,7 +3,7 @@ import Box from "@mui/material/Box"
 import NextImage from "next/legacy/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
+import {ReactElement, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "../components/Common/confirmationModal"
 import {
@@ -61,8 +61,9 @@ const HeaderLineOne = styled("h1")({
 })
 
 const LaunchButton = styled("div")({
-    background: "#26efe9",
+    background: "var(--bs-accent3-medium)",
     borderRadius: "1000px",
+    color: "var(--bs-primary)",
     display: "inline-block",
     fontWeight: "bold",
     fontSize: "1.25rem",
@@ -70,6 +71,13 @@ const LaunchButton = styled("div")({
     minWidth: "270px",
     padding: "1.25rem 2rem",
     textAlign: "center",
+
+    "&:hover": {
+        color: "var(--bs-white)",
+        cursor: "pointer",
+        transition: "background-color 0.3s, color 0.3s", // Smooth transition effect
+        boxShadow: "0 0 30px 0 var(--bs-accent3-medium)", // Add shadow on hover
+    },
 
     "&::after": {
         WebkitFontFeatureSettings: '"liga"',
@@ -104,6 +112,12 @@ const LinkDivider = styled("div")({
 
 const MoreLinks = styled("div")({
     marginTop: "0.1rem",
+})
+
+const ActionLink = styled("a")({
+    "&:hover": {
+        color: "var(--bs-accent3-medium)",
+    },
 })
 
 const SplashLink = styled("a")({
@@ -144,28 +158,8 @@ export default function Index(): ReactElement {
     // Access environment info
     const {buildTarget, supportEmailAddress} = useEnvironmentStore()
 
-    // Keeps track of which button the user is hovering over. Either a button id or null
-    const [hoveredId, setHoveredId] = useState<string | null>(null)
-
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState<boolean>(false)
-
-    const handleMouseEnter = (event: ReactMouseEvent) => {
-        setHoveredId((event.target as HTMLElement).id)
-    }
-
-    const handleMouseLeave = () => {
-        setHoveredId(null)
-    }
-
-    function getButtonStyle(ids: string[]) {
-        return {
-            color: ids.includes(hoveredId) ? "var(--bs-white)" : "#000000", // Change text color on hover
-            cursor: "pointer",
-            transition: "background-color 0.3s, color 0.3s", // Smooth transition effect
-            boxShadow: ids.includes(hoveredId) ? "0 0 30px 0 #26efe9" : "none", // Add shadow on hover
-        }
-    }
 
     // Dynamically set the title to the current host
     useEffect(() => {
@@ -234,96 +228,18 @@ export default function Index(): ReactElement {
                                 {LOGO}
                             </div>
                         </HeaderLineOne>
-                        {buildTarget === ALL_BUILD_TARGET && (
-                            <>
-                                <SubHeaderTitle id="neuro-ai-decisioning-box">{LOGO} Decisioning</SubHeaderTitle>
-                                <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                                    A platform for smarter business decisions
-                                </NeuroAIDescriptionBox>
-                                <NeuroAIToolsContainer id="opp-finder-and-model-orchestrator-container">
-                                    <>
-                                        <Link
-                                            id="of-link"
-                                            href={`/opportunityFinder?${buildQueryString()}`}
-                                            /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                            legacyBehavior={true} // Need this so we can "open in new tab"
-                                            passHref
-                                        >
-                                            <a
-                                                id="of-link-anchor"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                href={`/of?${buildQueryString()}`}
-                                                onMouseEnter={handleMouseEnter}
-                                                onMouseLeave={handleMouseLeave}
-                                            >
-                                                <LaunchButton
-                                                    id="opportunity-finder-button"
-                                                    style={{
-                                                        position: "relative",
-                                                        ...getButtonStyle([
-                                                            "opportunity-finder-button",
-                                                            "star-new-span",
-                                                            "of-link-anchor",
-                                                        ]),
-                                                    }}
-                                                >
-                                                    Find opportunities
-                                                </LaunchButton>
-                                            </a>
-                                        </Link>
-                                        <Link
-                                            id="orchestrator-link"
-                                            // Use the URL object form of `href` to pass along the query string
-                                            href={`/projects?${buildQueryString()}`}
-                                            /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                            legacyBehavior={true}
-                                            passHref
-                                        >
-                                            <a
-                                                id="of-link-anchor"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                href={`/projects?${buildQueryString()}`}
-                                                style={{marginLeft: "50px"}}
-                                                onMouseEnter={handleMouseEnter}
-                                                onMouseLeave={handleMouseLeave}
-                                            >
-                                                <LaunchButton
-                                                    id="model-orchestrator-button"
-                                                    style={{
-                                                        position: "relative",
-                                                        ...getButtonStyle(["model-orchestrator-button"]),
-                                                    }}
-                                                >
-                                                    Build models
-                                                </LaunchButton>
-                                            </a>
-                                        </Link>
-                                    </>
-                                </NeuroAIToolsContainer>
-                            </>
-                        )}
-                        <SubHeaderTitle
-                            id="neuro-ai-maa-box"
-                            sx={{
-                                borderTop: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
-                                marginTop: "2.5rem",
-                                paddingTop: "2.5rem",
-                            }}
-                        >
-                            {LOGO} Multi-Agent Accelerator
-                        </SubHeaderTitle>
+
+                        <SubHeaderTitle id="neuro-ai-maa-box">Multi-Agent Accelerator</SubHeaderTitle>
                         <NeuroAIDescriptionBox id="neuro-ai-description-box">
                             Low-code framework for rapidly agentifying your business.{" "}
-                            <a
+                            <ActionLink
                                 id="explore-more-link"
                                 href="https://github.com/cognizant-ai-lab/neuro-san-studio"
                                 target="_blank"
                                 rel="noreferrer"
                             >
                                 Explore more.
-                            </a>
+                            </ActionLink>
                         </NeuroAIDescriptionBox>
                         <NeuroAIToolsContainer id="multi-agent-accelerator-container">
                             <Link
@@ -339,18 +255,64 @@ export default function Index(): ReactElement {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     href={`/projects?${buildQueryString()}`}
-                                    onMouseEnter={handleMouseEnter}
-                                    onMouseLeave={handleMouseLeave}
                                 >
-                                    <LaunchButton
-                                        id="neuro-san-button"
-                                        style={{position: "relative", ...getButtonStyle(["neuro-san-button"])}}
-                                    >
-                                        Explore agent networks
-                                    </LaunchButton>
+                                    <LaunchButton id="neuro-san-button">Explore agent networks</LaunchButton>
                                 </a>
                             </Link>
                         </NeuroAIToolsContainer>
+                        {buildTarget === ALL_BUILD_TARGET && (
+                            <>
+                                <SubHeaderTitle
+                                    id="neuro-ai-maa-box"
+                                    sx={{
+                                        borderTop:
+                                            "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
+                                        marginTop: "2.5rem",
+                                        paddingTop: "2.5rem",
+                                    }}
+                                >
+                                    Decisioning
+                                </SubHeaderTitle>
+                                <NeuroAIDescriptionBox id="neuro-ai-description-box">
+                                    <Link
+                                        id="orchestrator-link"
+                                        // Use the URL object form of `href` to pass along the query string
+                                        href={`/projects?${buildQueryString()}`}
+                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                        legacyBehavior={true}
+                                        passHref
+                                    >
+                                        <ActionLink
+                                            id="of-link-anchor"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            href={`/projects?${buildQueryString()}`}
+                                            style={{marginRight: "0.3rem"}}
+                                        >
+                                            Platform
+                                        </ActionLink>
+                                    </Link>
+                                    for building grounded decisioning agents,
+                                    <Link
+                                        id="of-link"
+                                        href={`/opportunityFinder?${buildQueryString()}`}
+                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                        legacyBehavior={true} // Need this so we can "open in new tab"
+                                        passHref
+                                    >
+                                        <ActionLink
+                                            id="of-link-anchor"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            href={`/of?${buildQueryString()}`}
+                                            style={{marginLeft: "0.25rem"}}
+                                        >
+                                            using agents.
+                                        </ActionLink>
+                                    </Link>
+                                </NeuroAIDescriptionBox>
+                            </>
+                        )}
                     </div>
                 </BodyContent>
                 <footer

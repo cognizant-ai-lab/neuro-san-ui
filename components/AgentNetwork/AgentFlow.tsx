@@ -275,7 +275,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
             >
-                {layout === "radial" && maxDepth > 0 && agentsInNetwork?.length && getLegend()}
+                {layout === "radial" && maxDepth > 0 && agentsInNetwork?.length ? getLegend() : null}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"

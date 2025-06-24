@@ -24,10 +24,12 @@ Note: Previously the project was known as UniLEAF and that name is still used in
     - `git clone git@github.com:leaf-ai/neuro-ui.git`
 - Install all dependencies including dev dependencies
     - `yarn install`
-- Generate the protocol buffer files for the UI. This is done by running the following command in the project root
+- [Create](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) a classic Personal Access Token (classic) in GitHub
+- Generate the protocol buffer files for the UI. This is done by running the following commands in the project root
   directory:
+    - `export LEAF_SOURCE_CREDENTIALS=<github PAT>`
     - `yarn generate`
-    - This command will generate the necessary files in the `generated` directory.
+        - `yarn generate` will generate the necessary files in the `generated` directory.
     - To view the files: `ls generated`
 - In your project root directory, create a file named `.env` which contains the following keys.  
   Ask a current UI developer for the redacted values or get them self-serve from the leaf-team-vault server (see below).
