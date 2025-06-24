@@ -57,8 +57,9 @@ steps:
       shell: sh
       commands:
         - |
-          # Use DISPLAY_VERSION if set and a manual trigger, else fallback to UNILEAF_VERSION
-          if [ -n "${{DISPLAY_VERSION}}" ] && [ "${{CF_BUILD_TRIGGER}}" = "manual" ]; then
+          # Use DISPLAY_VERSION if set and not triggered as a child pipeline.
+          # Otherwise fallback to UNILEAF_VERSION.
+          if [ -n "${{DISPLAY_VERSION}}" ] && [ -z "${CHILD_PIPELINE}" ]; then
               VERSION="${{DISPLAY_VERSION}}"
           else
               VERSION="${{UNILEAF_VERSION}}"

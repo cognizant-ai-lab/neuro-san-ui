@@ -47,9 +47,13 @@ steps:
     arguments:
       PIPELINE_ID: neuro-ui/build
       VARIABLE:
-         # All of these values can be overridden at the build
+         # This value can be overridden at the build
          # pipeline by running manually.
          - UNILEAF_VERSION=${{UNILEAF_VERSION}}
+         # Tell the child pipeline it is a child pipeline. We need to differentiate
+         # the two trigger types (automated or manual) in the build process to support
+         # DISPLAY_VERSION
+         - CHILD_PIPELINE=true
 
   call_deploy_pipeline:
     title: "Run deploy pipeline"
