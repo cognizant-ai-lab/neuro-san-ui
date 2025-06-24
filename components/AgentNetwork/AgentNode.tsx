@@ -5,7 +5,6 @@ import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, HEATMAP_COLORS} from "./const"
 import {Origin} from "../../generated/neuro-san/OpenAPITypes"
-import {empty} from "../../utils/objects"
 
 export interface AgentNodeProps {
     agentName: string
@@ -28,7 +27,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const data: AgentNodeProps = props.data
     const {agentName, getOriginInfo, isFrontman, depth, agentCounts} = data
 
-    const maxAgentCount = agentCounts ? Math.max(...Object.values(agentCounts)) : 0
+    const maxAgentCount = agentCounts ? Math.max(...Array.from(agentCounts.values())) : 0
 
     // Unpack the node-specific id
     const agentId = props.id
@@ -40,10 +39,9 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         .includes(agentId)
 
     let backgroundColor: string
-    let agentCount: number = 0
     // There's no depth for linear layout, so we just use the first color for both layouts (radial and linear).
-    if (agentCounts && !empty(agentCounts) && maxAgentCount > 0) {
-        agentCount = agentCounts[agentId] ?? 0
+    if (agentCounts?.size > 0 && maxAgentCount > 0) {
+        const agentCount = agentCounts.get(agentId) ?? 0
         backgroundColor = HEATMAP_COLORS[Math.floor((agentCount / maxAgentCount) * (HEATMAP_COLORS.length - 1))]
     } else if (depth === undefined) {
         // For linear layout, we use a single color for all nodes.

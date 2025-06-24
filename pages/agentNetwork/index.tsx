@@ -103,16 +103,18 @@ export default function AgentNetworkPage() {
             setOriginInfo([...chatMessage.origin])
 
             // update agent counts
-            const agent = chatMessage.origin[chatMessage.origin.length - 1]
             const agentCounts = agentCountsRef.current
-            if (agentCounts.has(agent.tool)) {
-                agentCounts[agent.tool] += 1
-            } else {
-                agentCounts[agent.tool] = 1
+            for (const agent of chatMessage.origin) {
+                agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
             }
         }
 
         return true
+    }
+
+    const onStreamingStarted = (): void => {
+        // reset agent counts when a new streaming starts
+        agentCountsRef.current = new Map<string, number>()
     }
 
     const onStreamingComplete = (): void => {
@@ -188,6 +190,7 @@ export default function AgentNetworkPage() {
                     targetAgent={selectedNetwork}
                     onChunkReceived={onChunkReceived}
                     onStreamingComplete={onStreamingComplete}
+                    onStreamingStarted={onStreamingStarted}
                     clearChatOnNewAgent={true}
                 />
             </Grid>

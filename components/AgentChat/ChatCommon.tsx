@@ -122,6 +122,11 @@ interface ChatCommonProps {
     readonly onChunkReceived?: (chunk: string) => boolean
 
     /**
+     * Will be called when the streaming is started, before any chunks are received.
+     */
+    readonly onStreamingStarted?: () => void
+
+    /**
      * Will be called when the streaming is complete, whatever the reason for termination (normal or error)
      */
     readonly onStreamingComplete?: () => void
@@ -216,6 +221,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     setIsAwaitingLlm,
     isAwaitingLlm,
     onChunkReceived,
+    onStreamingStarted,
     onStreamingComplete,
     onSend,
     setPreviousResponse,
@@ -964,6 +970,9 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
         // Add ID block for agent
         updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
+
+        // Allow clients to do something when streaming starts
+        onStreamingStarted?.()
 
         // Set up the abort controller
         controller.current = new AbortController()
