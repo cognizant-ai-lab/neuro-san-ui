@@ -38,6 +38,7 @@ import {
 } from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {usePreferences} from "../../state/Preferences"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 // #region: Types
@@ -82,6 +83,8 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
+    // Dark mode
+    const {darkMode} = usePreferences()
     // Create the flow layout depending on user preference
     useEffect(() => {
         switch (layout) {
@@ -339,6 +342,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                     borderRadius: "var(--bs-border-radius-2xl)",
                 },
             }}
+            className={darkMode ? "dark" : ""}
         >
             <ReactFlow
                 id={`${id}-react-flow`}
@@ -361,6 +365,7 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                         left: "0px",
                         height: "auto",
                         width: "auto",
+                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                     }}
                     showInteractive={true}
                 >

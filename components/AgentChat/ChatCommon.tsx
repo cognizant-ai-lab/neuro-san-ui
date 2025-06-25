@@ -7,14 +7,13 @@ import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
 import WrapTextIcon from "@mui/icons-material/WrapText"
-import {Box, Input, styled} from "@mui/material"
+import {Box, Input} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
-import NextImage from "next/image"
 import {
     cloneElement,
     CSSProperties,
@@ -31,7 +30,7 @@ import {
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {HIGHLIGHTER_THEME, MAX_AGENT_RETRIES} from "./const"
+import {MAX_AGENT_RETRIES} from "./const"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
@@ -39,8 +38,8 @@ import {chatMessageFromChunkNeuroSanIndirect, tryParseJsonNeuroSanIndirect} from
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
+import {UserQueryDisplay} from "./UserQueryDisplay"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
-import {DEFAULT_USER_IMAGE} from "../../const"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendChatQueryLegacyNeuroSanIndirect} from "../../controller/agent/NeuroSanIndirect/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
@@ -59,24 +58,13 @@ import {
     ChatMessage as GrpcChatMessage,
     ChatMessageChatMessageType as GrpcChatMessageChatMessageType,
 } from "../../generated/neuro_san/api/grpc/chat"
+import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {getTitleBase} from "../../utils/title"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
-
-// #region: Styled Components
-
-const UserQueryContainer = styled("div")({
-    backgroundColor: "#FFF",
-    borderRadius: "8px",
-    boxShadow: "0 0px 2px 0 rgba(0, 0, 0, 0.15)",
-    display: "inline-flex",
-    padding: "10px",
-})
-
-// #endregion: Styled Components
 
 interface ChatCommonProps {
     /**
@@ -185,30 +173,6 @@ const EMPTY = {}
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
 
-const getUserImageAndUserQuery = (userQuery: string, title: string, userImage: string): ReactElement => (
-    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
-    <div style={{marginBottom: "1rem"}}>
-        {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-        <UserQueryContainer>
-            <NextImage
-                id="user-query-image"
-                src={userImage || DEFAULT_USER_IMAGE}
-                width={30}
-                height={30}
-                title={title}
-                alt=""
-                unoptimized={true}
-            />
-            <span
-                id="user-query"
-                style={{marginLeft: "0.625rem", marginTop: "0.125rem"}}
-            >
-                {userQuery}
-            </span>
-        </UserQueryContainer>
-    </div>
-)
-
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
@@ -293,9 +257,6 @@ export const ChatCommon: FC<ChatCommonProps> = ({
 
     const [showThinking, setShowThinking] = useState<boolean>(false)
 
-    // Use hard-coded highlighter theme for now
-    const highlighterTheme = HLJS_THEMES["a11yDark"]
-
     // Define styles based on user options (wrap setting)
     const divStyle: CSSProperties = shouldWrapOutput
         ? {
@@ -314,6 +275,10 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
+    // Dark mode
+    const {darkMode} = usePreferences()
+
+    const {atelierDuneDark, a11yLight} = HLJS_THEMES
     // Hide/show existing accordions based on showThinking state
     useEffect(() => {
         setChatOutput((currentOutput) =>
@@ -324,13 +289,15 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         sx: {
                             ...item.props.sx,
                             display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none",
+                            backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                            color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                         },
                     })
                 }
                 return item
             })
         )
-    }, [showThinking])
+    }, [showThinking, darkMode])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -434,7 +401,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                                     <SyntaxHighlighter
                                         id="syntax-highlighter"
                                         language="json"
-                                        style={HIGHLIGHTER_THEME}
+                                        style={darkMode ? atelierDuneDark : a11yLight}
                                         showLineNumbers={false}
                                         wrapLongLines={shouldWrapOutput}
                                     >
@@ -526,7 +493,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                                     <SyntaxHighlighter
                                         id="syntax-highlighter"
                                         language="json"
-                                        style={HIGHLIGHTER_THEME}
+                                        style={darkMode ? atelierDuneDark : a11yLight}
                                         showLineNumbers={false}
                                         wrapLongLines={shouldWrapOutput}
                                     >
@@ -559,7 +526,13 @@ export const ChatCommon: FC<ChatCommonProps> = ({
      * Introduce the agent to the user with a friendly greeting
      */
     const introduceAgent = () => {
-        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
+        updateOutput(
+            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                userQuery={cleanUpAgentName(targetAgent)}
+                title={targetAgent}
+                userImage={AGENT_IMAGE}
+            />
+        )
 
         // Random greeting
         const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
@@ -637,7 +610,13 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
-                        sx={{marginTop: "1rem", marginBottom: "1rem"}}
+                        sx={{
+                            marginTop: "1rem",
+                            marginBottom: "1rem",
+                            backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                            borderColor: darkMode ? "var(--bs-white)" : "var(--bs-border-color)",
+                            color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
+                        }}
                         items={[
                             {
                                 title: "Agent Details",
@@ -966,10 +945,22 @@ export const ChatCommon: FC<ChatCommonProps> = ({
         // Note: we display the original user query, not the modified one. The modified one could be a monstrosity
         // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf of the
         // user but currently we do for orchestration.
-        updateOutput(getUserImageAndUserQuery(query, currentUser, userImage))
+        updateOutput(
+            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                userQuery={query}
+                title={currentUser}
+                userImage={userImage}
+            />
+        )
 
         // Add ID block for agent
-        updateOutput(getUserImageAndUserQuery(cleanUpAgentName(targetAgent), targetAgent, AGENT_IMAGE))
+        updateOutput(
+            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                userQuery={cleanUpAgentName(targetAgent)}
+                title={targetAgent}
+                userImage={AGENT_IMAGE}
+            />
+        )
 
         // Allow clients to do something when streaming starts
         onStreamingStarted?.()
@@ -1065,10 +1056,10 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     id={`llm-chat-title-container-${id}`}
                     sx={{
                         alignItems: "center",
-                        backgroundColor: "var(--bs-primary)",
+                        backgroundColor,
                         borderTopLeftRadius: "var(--bs-border-radius)",
                         borderTopRightRadius: "var(--bs-border-radius)",
-                        color: "var(--bs-white)",
+                        color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                         display: "flex",
                         justifyContent: "space-between",
                         paddingLeft: "1rem",
@@ -1100,7 +1091,8 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                 id="llm-response-div"
                 sx={{
                     ...divStyle,
-                    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-primary)",
+                    border: "var(--bs-border-width) var(--bs-border-style)",
+                    borderColor: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                     borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flexGrow: 1,
@@ -1124,7 +1116,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                         >
                             <AccountTreeIcon
                                 id="show-thinking-icon"
-                                sx={{color: "white", fontSize: "0.85rem"}}
+                                sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
                             />
                         </LlmChatOptionsButton>
                     </span>
@@ -1141,7 +1133,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     >
                         <VerticalAlignBottomIcon
                             id="autoscroll-icon"
-                            sx={{color: "white", fontSize: "0.85rem"}}
+                            sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
                         />
                     </LlmChatOptionsButton>
                 </Tooltip>
@@ -1157,7 +1149,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     >
                         <WrapTextIcon
                             id="wrap-icon"
-                            sx={{color: "white", fontSize: "0.85rem"}}
+                            sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
                         />
                     </LlmChatOptionsButton>
                 </Tooltip>
@@ -1182,7 +1174,7 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     <FormattedMarkdown
                         id={`${id}-formatted-markdown`}
                         nodesList={chatOutput}
-                        style={highlighterTheme}
+                        style={darkMode ? atelierDuneDark : a11yLight}
                         wrapLongLines={shouldWrapOutput}
                     />
                     {isAwaitingLlm && (
@@ -1237,8 +1229,10 @@ export const ChatCommon: FC<ChatCommonProps> = ({
                     placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
                     ref={chatInputRef}
                     sx={{
+                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                         border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
                         borderRadius: "var(--bs-border-radius)",
+                        color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                         display: "flex",
                         flexGrow: 1,
                         fontSize: "smaller",

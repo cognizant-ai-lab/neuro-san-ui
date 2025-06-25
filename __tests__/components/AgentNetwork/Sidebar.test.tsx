@@ -66,6 +66,7 @@ describe("SideBar", () => {
         if (url) {
             await user.type(urlInput, url)
         }
+
         return {settingsButton, urlInput}
     }
 

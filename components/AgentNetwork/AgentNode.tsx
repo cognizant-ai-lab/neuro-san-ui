@@ -39,12 +39,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         .includes(agentId)
 
     let backgroundColor: string
-    let textColor: string
+    let color: string
     const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
 
     if (isActiveAgent) {
         backgroundColor = "var(--bs-green)"
-        textColor = "var(--bs-white)"
+        color = "var(--bs-white)"
     } else if (isHeatmap) {
         const agentCount = agentCounts.has(agentId) ? agentCounts.get(agentId) : 0
 
@@ -52,40 +52,42 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         const colorIndex = Math.floor((agentCount / maxAgentCount) * (HEATMAP_COLORS.length - 1))
         backgroundColor = HEATMAP_COLORS[colorIndex]
         const isDarkBackground = colorIndex >= BACKGROUND_COLORS_DARK_IDX
-        textColor = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
+        color = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
     } else {
         const colorIndex = depth % BACKGROUND_COLORS.length
         backgroundColor = BACKGROUND_COLORS[colorIndex]
         const isDarkBackground = colorIndex >= BACKGROUND_COLORS_DARK_IDX
-        textColor = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
+        color = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
     }
 
     // Animation style for making active agent glow and pulse
     // TODO: more idiomatic MUI/style= way of doing this?
     const glowAnimation = isActiveAgent
         ? `@keyframes glow {
-                0% { box-shadow: 0 0 5px var(--bs-primary) ; opacity: 0.50; }
-                50% { box-shadow: 0 0 20px var(--bs-primary); opacity: 0.75 }
-                100% { box-shadow: 0 0 5px var(--bs-primary); opacity: 1.0 }
+            0% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 0.60; }
+            50% { box-shadow: 0 0 30px 12px ${backgroundColor}; opacity: 0.90; }
+            100% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 1.0; }
             }`
         : "none"
+    const boxShadow = isActiveAgent ? "0 0 30px 12px var(--bs-primary), 0 0 60px 24px var(--bs-primary)" : undefined
 
     return (
         <div
             id={agentId}
             style={{
                 alignItems: "center",
+                animation: isActiveAgent ? "glow 2.0s infinite" : "none",
                 backgroundColor,
                 borderRadius: "50%",
+                boxShadow,
                 borderWidth: !isFrontman && isActiveAgent ? 4 : 1,
-                color: textColor,
+                color,
                 display: "flex",
                 height: NODE_HEIGHT,
                 justifyContent: "center",
+                shapeOutside: "circle(50%)",
                 textAlign: "center",
                 width: NODE_WIDTH,
-                animation: isActiveAgent ? "glow 2.0s infinite" : "none",
-                shapeOutside: "circle(50%)",
             }}
         >
             <style id={`${agentId}-glow-animation`}>{glowAnimation}</style>

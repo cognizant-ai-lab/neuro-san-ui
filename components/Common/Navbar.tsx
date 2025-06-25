@@ -3,14 +3,16 @@
  */
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
-import {IconButton, Menu, MenuItem, Typography} from "@mui/material"
+import DarkModeIcon from "@mui/icons-material/DarkMode"
+import {IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {ReactElement, MouseEvent as ReactMouseEvent, useState} from "react"
+import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "./confirmationModal"
+import {LoadingSpinner} from "./LoadingSpinner"
 import {
     ALL_BUILD_TARGET,
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
@@ -19,6 +21,7 @@ import {
     UNILEAF_VERSION,
 } from "../../const"
 import useEnvironmentStore from "../../state/environment"
+import {usePreferences} from "../../state/Preferences"
 import useUserInfoStore from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 
@@ -72,6 +75,16 @@ function Navbar(props: NavbarProps): ReactElement {
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
+    // Dark mode
+    const {darkMode, toggleDarkMode} = usePreferences()
+
+    // Gate to make sure we only attempt to render after NextJS has completed its rehydration
+    const [hydrated, setHydrated] = useState(false)
+
+    useEffect(() => {
+        // Indicate that the component has been hydrated
+        setHydrated(true)
+    }, [])
     async function handleSignOut() {
         // Clear our state storage variables
         setCurrentUser(undefined)
@@ -101,7 +114,7 @@ function Navbar(props: NavbarProps): ReactElement {
         setExploreMenuAnchorEl(null)
     }
 
-    return (
+    return hydrated ? (
         <Grid
             id="nav-bar-container"
             container={true}
@@ -403,7 +416,26 @@ function Navbar(props: NavbarProps): ReactElement {
                     </Menu>
                 </Grid>
             ) : null}
+            <Tooltip
+                id="dark-mode-toggle"
+                title="Toggle dark mode (experimental)"
+            >
+                <DarkModeIcon
+                    id="dark-mode-icon"
+                    sx={{
+                        marginRight: "1rem",
+                        fontSize: "1rem",
+                        cursor: "pointer",
+                        color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)",
+                    }}
+                    onClick={() => {
+                        toggleDarkMode()
+                    }}
+                />
+            </Tooltip>
         </Grid>
+    ) : (
+        <LoadingSpinner id="navbar-loading-spinner" />
     )
 }
 

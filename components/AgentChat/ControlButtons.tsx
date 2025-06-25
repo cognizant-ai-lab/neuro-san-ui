@@ -49,6 +49,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
                 <DeleteOutline
                     fontSize="small"
                     id="stop-button-icon"
+                    sx={{color: "var(--bs-white)"}}
                 />
             </SmallLlmChatButton>
         )}
@@ -66,6 +67,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
                 <StopCircle
                     fontSize="small"
                     id="stop-button-icon"
+                    sx={{color: "var(--bs-white)"}}
                 />
             </SmallLlmChatButton>
         )}
@@ -83,6 +85,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
                 <Loop
                     fontSize="small"
                     id="generate-icon"
+                    sx={{color: "var(--bs-white)"}}
                 />
             </SmallLlmChatButton>
         )}

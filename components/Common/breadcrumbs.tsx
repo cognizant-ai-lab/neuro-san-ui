@@ -15,7 +15,6 @@ const NeuroAIBreadcrumbs = () => {
             id="nav-bar-breadcrumbs-row"
             container={true}
             sx={{
-                backgroundColor: "var(--bs-white)",
                 justifyContent: "flex-start",
                 width: "100%",
             }}
@@ -36,9 +35,6 @@ const NeuroAIBreadcrumbs = () => {
                 <Link
                     id="breadcrumb-link-home"
                     href="/"
-                    style={{
-                        color: "var(--bs-black)",
-                    }}
                 >
                     Home
                 </Link>
@@ -49,7 +45,6 @@ const NeuroAIBreadcrumbs = () => {
                             key={urlPath}
                             id={`breadcrumb-link__${urlPath}`}
                             style={{
-                                color: "var(--bs-black)",
                                 textDecoration: "underlined",
                             }}
                             href={`/${redirectPath}`}
@@ -58,12 +53,7 @@ const NeuroAIBreadcrumbs = () => {
                         </Link>
                     )
                 })}
-                <Typography
-                    id="breadcrumb-link__current"
-                    sx={{color: "var(--bs-gray-dark"}}
-                >
-                    {startCase(urlPaths?.at(-1))}
-                </Typography>
+                <Typography id="breadcrumb-link__current">{startCase(urlPaths?.at(-1))}</Typography>
             </Breadcrumbs>
         </Grid>
     )

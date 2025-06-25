@@ -4,8 +4,7 @@ import "../styles/updatenode.css"
 import "../styles/globals.css"
 import "../styles/rundialog.css"
 
-import {Container, CssBaseline, ThemeProvider} from "@mui/material"
-import CircularProgress from "@mui/material/CircularProgress"
+import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
 import {AppProps} from "next/app"
 import Head from "next/head"
@@ -22,9 +21,11 @@ import {Snackbar} from "../components/Common/Snackbar"
 import ErrorBoundary from "../components/ErrorPage/ErrorBoundary"
 import {ALL_BUILD_TARGET, LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
+import {usePreferences} from "../state/Preferences"
 import useUserInfoStore from "../state/UserInfo"
-import {APP_THEME} from "../theme"
+import {APP_THEME, BRAND_COLORS} from "../theme"
 import {UserInfoResponse} from "./api/userInfo/types"
+import {LoadingSpinner} from "../components/Common/LoadingSpinner"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -66,6 +67,24 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
     const isContainedInViewport = Component.isContainedInViewport ?? false
+
+    // Dark mode
+    const {darkMode} = usePreferences()
+
+    const theme = createTheme({
+        ...APP_THEME,
+        palette: {
+            ...APP_THEME.palette,
+            mode: darkMode ? "dark" : "light",
+            background: {
+                default: darkMode ? BRAND_COLORS["bs-dark-mode-dim"] : BRAND_COLORS["bs-white"],
+            },
+            text: {
+                primary: darkMode ? BRAND_COLORS["bs-white"] : BRAND_COLORS["bs-primary"],
+                secondary: darkMode ? BRAND_COLORS["bs-gray-light"] : BRAND_COLORS["bs-gray-medium-dark"],
+            },
+        },
+    })
 
     useEffect(() => {
         async function getEnvironment() {
@@ -138,24 +157,6 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
 
     let body: JSX.Element | ReactFragment
 
-    function getLoadingSpinner() {
-        return (
-            <h3 id="loading-header">
-                <CircularProgress
-                    id="main-page-loading-spinner"
-                    sx={{color: "var(--bs-primary)"}}
-                    size={35}
-                />
-                <span
-                    id="main-page-loading-span"
-                    style={{marginLeft: "1em"}}
-                >
-                    Loading...
-                </span>
-            </h3>
-        )
-    }
-
     /**
      * Gets the outer container of the app.
      * This is a transition function to allow a smooth migration to ALB authentication. For now, this function
@@ -167,25 +168,20 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     function getAppComponent() {
         // Haven't figured out whether we have ALB headers yet
         if (currentUser === undefined || !backendApiUrl || !backendNeuroSanApiUrl) {
-            debug("Rendering loading spinner")
-            return getLoadingSpinner()
+            return <LoadingSpinner id="loading-header" />
         }
 
         if (currentUser != null) {
             // We got the ALB headers
-            debug("Rendering ALB authentication case")
-
             return backendApiUrl && backendNeuroSanApiUrl && currentUser ? (
                 <Component
                     id="body-non-auth-component"
                     {...pageProps}
                 />
             ) : (
-                getLoadingSpinner()
+                <LoadingSpinner id="loading-header" />
             )
         } else {
-            debug("Rendering NextAuth authentication case")
-
             return Component.authRequired ? (
                 <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 >
@@ -281,7 +277,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                 />
             </Head>
             <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                theme={APP_THEME}
+                theme={theme}
             >
                 {body}
             </ThemeProvider>

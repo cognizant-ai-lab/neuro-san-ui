@@ -12,9 +12,11 @@
     --bs-tertiary-blue: #e0f7fa; /* Not in the original file from brand team */
     --bs-green: #2db81f;
     --bs-black: var(--bs-primary);
+    --bs-dark-mode-dim: #161e27; /* Not in the original file from brand team */
     --bs-pink: #f221b8;
     --bs-white: #ffffff;
     --bs-dark: var(--bs-primary);
+    --bs-gray-background: #fafafa; /* Not in the original file from brand team */
     --bs-gray-lightest: #f5f5f2;
     --bs-gray-lighter: #e8e8e6;
     --bs-gray-light: #d0d0ce;
@@ -415,4 +417,17 @@ button[id*="prescriptoredge"] {
 #project-description {
     font-family: "Gellix", sans-serif;
     white-space: pre-wrap;
+}
+
+/* React-flow dark mode support for the attribution logo */
+/* Light mode */
+.react-flow__panel.react-flow__attribution {
+    background: var(--bs-white);
+    color: var(--bs-dark-mode-dim);
+}
+
+/* Dark mode */
+.dark .react-flow__panel.react-flow__attribution {
+    background: var(--bs-dark-mode-dim);
+    color: var(--bs-white);
 }

@@ -28,6 +28,7 @@ export const SendButton: React.FC<SendButtonProps> = ({enableSendButton, id, onC
         <SendIcon
             fontSize="small"
             id="stop-button-icon" // Could update this but it would impact QA
+            sx={{color: "var(--bs-white)"}}
         />
     </LlmChatButton>
 )

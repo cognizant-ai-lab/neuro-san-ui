@@ -24,6 +24,7 @@ import {
 
 import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import useEnvironmentStore from "../../state/environment"
+import {usePreferences} from "../../state/Preferences"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
@@ -83,6 +84,9 @@ const Sidebar: FC<SidebarProps> = ({
     const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
+
+    // Dark mode
+    const {darkMode} = usePreferences()
 
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
@@ -173,7 +177,7 @@ const Sidebar: FC<SidebarProps> = ({
                 <h2
                     id={`${id}-heading`}
                     style={{
-                        backgroundColor: "white",
+                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                         borderBottomColor: "var(--bs-gray-light)",
                         borderBottomStyle: "solid",
                         borderBottomWidth: "1px",
