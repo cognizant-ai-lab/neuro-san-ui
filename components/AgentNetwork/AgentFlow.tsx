@@ -358,7 +358,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
             >
-                {!isAwaitingLlm && agentsInNetwork?.length && getLegend()}
+                {!isAwaitingLlm && agentsInNetwork?.length ? getLegend() : null}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"
