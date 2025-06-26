@@ -312,7 +312,7 @@ const Sidebar: FC<SidebarProps> = ({
                     onClick={() => handleSettingsClose(true)}
                     variant="contained"
                 >
-                    Cancel
+                    {urlInput === backendNeuroSanApiUrl ? "OK" : "Cancel"}
                 </PrimaryButton>
                 <Button
                     id="agent-network-settings-default-btn"
