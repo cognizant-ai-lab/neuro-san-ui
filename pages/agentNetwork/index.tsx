@@ -172,7 +172,6 @@ export default function AgentNetworkPage() {
                         id="multi-agent-accelerator-agent-flow"
                         originInfo={originInfo}
                         selectedNetwork={selectedNetwork}
-                        isAwaitingLlm={isAwaitingLlm}
                         agentCounts={agentCountsRef.current}
                     />
                 </ReactFlowProvider>

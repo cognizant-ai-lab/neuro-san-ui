@@ -42,25 +42,17 @@ import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 // #region: Types
 interface AgentFlowProps {
-    agentsInNetwork: ConnectivityInfo[]
-    id: string
-    originInfo?: Origin[]
-    selectedNetwork: string
-    isAwaitingLlm?: boolean
-    agentCounts?: Map<string, number>
+    readonly agentsInNetwork: ConnectivityInfo[]
+    readonly id: string
+    readonly originInfo?: Origin[]
+    readonly selectedNetwork: string
+    readonly agentCounts?: Map<string, number>
 }
 
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({
-    agentsInNetwork,
-    id,
-    originInfo,
-    selectedNetwork,
-    isAwaitingLlm,
-    agentCounts,
-}) => {
+const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selectedNetwork, agentCounts}) => {
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -358,7 +350,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
             >
-                {!isAwaitingLlm && agentsInNetwork?.length ? getLegend() : null}
+                {agentsInNetwork?.length ? getLegend() : null}
                 <Background id={`${id}-background`} />
                 <Controls
                     id="react-flow-controls"
