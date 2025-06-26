@@ -312,6 +312,7 @@ const Sidebar: FC<SidebarProps> = ({
                     onClick={() => handleSettingsClose(true)}
                     variant="contained"
                 >
+                    {/* Change button to "OK" or "Cancel", depending if the default URL is specified. */}
                     {urlInput === backendNeuroSanApiUrl ? "OK" : "Cancel"}
                 </PrimaryButton>
                 <Button
