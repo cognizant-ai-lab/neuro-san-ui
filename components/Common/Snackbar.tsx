@@ -5,6 +5,8 @@ import IconButton from "@mui/material/IconButton"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef} from "react"
 
+import {usePreferences} from "../../state/Preferences"
+
 // #region: Styled Components
 const IconBox = styled(Box)({
     position: "relative",
@@ -42,6 +44,14 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         const handleCloseSnackbar = () => closeSnackbar(id)
         const icon = iconVariant[variant]
 
+        const {darkMode} = usePreferences()
+
+        // Temporary styling for implementation of dark mode
+        const darkModeStyling = {
+            backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+            color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
+        }
+
         return (
             // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
             <SnackbarContent
@@ -52,7 +62,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                     className={`${variant}-snackbar-notification`}
                     id={`${id}-snackbar-box`}
                     sx={{
-                        background: "var(--bs-white)",
+                        ...darkModeStyling,
                         borderColor: "transparent",
                         borderRadius: "var(--bs-border-radius)",
                         borderWidth: "1px",
