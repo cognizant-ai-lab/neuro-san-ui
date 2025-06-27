@@ -420,7 +420,7 @@ button[id*="prescriptoredge"] {
 }
 
 /* React-flow dark mode hacks. Newer versions of react-flow support built-in dark mode but we're on an older version. */
-.dark .react-flow__panel.react-flow__attribution, 
+.dark .react-flow__panel.react-flow__attribution,
 .dark .react-flow__panel,
 .dark .react-flow__controls-button {
     background-color: var(--bs-dark-mode-dim);
