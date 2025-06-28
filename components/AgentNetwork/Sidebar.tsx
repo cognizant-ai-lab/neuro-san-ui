@@ -30,14 +30,20 @@ import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Styled Components
 
-const PrimaryButton = styled(Button)({
+const PrimaryButton = styled(Button, {
+    shouldForwardProp: (prop) => prop !== "darkMode",
+})<{darkMode?: boolean}>(({darkMode}) => ({
     backgroundColor: "var(--bs-primary)",
     marginLeft: "0.5rem",
     marginTop: "2px",
     "&:hover": {
         backgroundColor: "var(--bs-primary)",
     },
-})
+    "&.Mui-disabled": {
+        color: darkMode ? "rgba(255, 255, 255, 0.25)" : undefined,
+        backgroundColor: undefined,
+    },
+}))
 
 // #endregion: Styled Components
 
@@ -295,11 +301,11 @@ const Sidebar: FC<SidebarProps> = ({
                     }}
                 />
                 <PrimaryButton
-                    // Disable "Test" if the URL input is empty
                     disabled={!urlInput}
                     id="agent-network-settings-test-btn"
                     onClick={handleTestConnection}
                     variant="contained"
+                    darkMode={darkMode}
                 >
                     Test
                 </PrimaryButton>
@@ -308,6 +314,7 @@ const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-save-btn"
                     onClick={handleSaveSettings}
                     variant="contained"
+                    darkMode={darkMode}
                 >
                     Save
                 </PrimaryButton>
@@ -315,6 +322,7 @@ const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-cancel-btn"
                     onClick={() => handleSettingsClose(true)}
                     variant="contained"
+                    darkMode={darkMode}
                 >
                     Cancel
                 </PrimaryButton>
@@ -324,6 +332,7 @@ const Sidebar: FC<SidebarProps> = ({
                     sx={{
                         marginLeft: "0.35rem",
                         marginTop: "2px",
+                        color: darkMode ? "var(--bs-dark-mode-link)" : undefined,
                     }}
                     variant="text"
                 >
