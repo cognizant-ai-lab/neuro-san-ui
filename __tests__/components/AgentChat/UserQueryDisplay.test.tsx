@@ -30,8 +30,6 @@ describe("UserQueryDisplay", () => {
     withStrictMocks()
 
     it("renders user query and image", () => {
-        // mockUsePreferences.mockReturnValue({darkMode: false})
-
         render(<UserQueryDisplay {...defaultProps} />)
 
         expect(screen.getByText(defaultProps.userQuery)).toBeInTheDocument()
@@ -41,8 +39,6 @@ describe("UserQueryDisplay", () => {
     })
 
     it("uses DEFAULT_USER_IMAGE if userImage is empty", () => {
-        // mockUsePreferences.mockReturnValue({darkMode: false})
-
         render(
             <UserQueryDisplay
                 {...defaultProps}
