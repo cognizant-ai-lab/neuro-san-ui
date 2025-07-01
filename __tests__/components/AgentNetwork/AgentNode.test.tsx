@@ -27,7 +27,6 @@ describe("AgentNode", () => {
                 data={{
                     agentName,
                     getOriginInfo: () => [],
-                    isFrontman: false,
                     depth: 1,
                     agentCounts: new Map([["testNode", 42]]),
                 }}
@@ -60,7 +59,6 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     getOriginInfo: () => [],
-                    isFrontman: true,
                     depth: 3,
                 }}
             />
@@ -91,7 +89,6 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
-                    isFrontman: false,
                     depth: 3,
                 }}
             />

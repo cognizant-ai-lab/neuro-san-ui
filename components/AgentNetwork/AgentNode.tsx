@@ -9,7 +9,6 @@ import {Origin} from "../../generated/neuro-san/OpenAPITypes"
 export interface AgentNodeProps {
     readonly agentName: string
     readonly getOriginInfo: () => Origin[]
-    readonly isFrontman: boolean
     readonly depth: number
     readonly agentCounts?: Map<string, number>
 }
@@ -25,7 +24,7 @@ export const NODE_WIDTH = 80
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentName, getOriginInfo, isFrontman, depth, agentCounts} = data
+    const {agentName, getOriginInfo, depth, agentCounts} = data
 
     const maxAgentCount = agentCounts ? Math.max(...Array.from(agentCounts.values())) : 0
 
@@ -79,8 +78,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                 animation: isActiveAgent ? "glow 2.0s infinite" : "none",
                 backgroundColor,
                 borderRadius: "50%",
+                // no border
                 boxShadow,
-                borderWidth: !isFrontman && isActiveAgent ? 4 : 1,
                 color,
                 display: "flex",
                 height: NODE_HEIGHT,

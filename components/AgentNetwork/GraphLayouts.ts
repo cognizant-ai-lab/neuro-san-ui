@@ -145,7 +145,6 @@ export const layoutRadial = (
                 data: {
                     agentName: cleanUpAgentName(nodeId),
                     getOriginInfo,
-                    isFrontman,
                     depth,
                     agentCounts,
                 },
@@ -182,7 +181,6 @@ export const layoutLinear = (
             data: {
                 agentName: cleanUpAgentName(originOfNode),
                 getOriginInfo,
-                isFrontman,
                 agentCounts,
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},

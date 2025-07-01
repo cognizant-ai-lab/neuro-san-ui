@@ -26,7 +26,6 @@ import {
 
 import "reactflow/dist/style.css"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {AnimatedEdge} from "./AnimatedEdge"
 import {
     BACKGROUND_COLORS,
     BACKGROUND_COLORS_DARK_IDX,
@@ -37,6 +36,7 @@ import {
     LEVEL_SPACING,
 } from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
+import {PlasmaEdge} from "./PlasmaEdge"
 import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import {usePreferences} from "../../state/Preferences"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
@@ -48,12 +48,20 @@ interface AgentFlowProps {
     readonly originInfo?: Origin[]
     readonly selectedNetwork: string
     readonly agentCounts?: Map<string, number>
+    readonly isAwaitingLlm?: boolean
 }
 
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selectedNetwork, agentCounts}) => {
+const AgentFlow: FC<AgentFlowProps> = ({
+    agentsInNetwork,
+    id,
+    originInfo,
+    selectedNetwork,
+    agentCounts,
+    isAwaitingLlm,
+}) => {
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -140,6 +148,8 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
                     style: {
                         strokeWidth: originTools.includes(edge.target) ? 3 : undefined,
                         stroke: originTools.includes(edge.target) ? "var(--bs-primary)" : undefined,
+                        // Hide edge between active nodes to avoid clashing with plasma animation
+                        display: !isAwaitingLlm || originTools.includes(edge.target) ? "block" : "none",
                     },
                     markerEnd: originTools.includes(edge.target)
                         ? {
@@ -171,9 +181,9 @@ const AgentFlow: FC<AgentFlowProps> = ({agentsInNetwork, id, originInfo, selecte
 
     const edgeTypes: EdgeTypes = useMemo(
         () => ({
-            animatedEdge: AnimatedEdge,
+            animatedEdge: PlasmaEdge,
         }),
-        [AnimatedEdge]
+        [PlasmaEdge]
     )
 
     // Figure out the maximum depth of the network

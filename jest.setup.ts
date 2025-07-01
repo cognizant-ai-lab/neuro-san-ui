@@ -134,6 +134,29 @@ jest.mock("pretty-bytes", () => jest.fn((bytes) => `${bytes} bytes`))
 // Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
 window.HTMLElement.prototype.scrollIntoView = jest.fn()
 
+// Polyfill SVGPathElement for testing SVG stuff
+if (global.SVGPathElement === undefined) {
+    class FakeSVGPathElement {
+        // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+        getTotalLength(): number {
+            return 100
+        }
+
+        getPointAtLength(len: number): DOMPoint {
+            return {
+                x: len,
+                y: len,
+                z: 0,
+                w: 1,
+                matrixTransform: () => this as unknown as DOMPoint,
+                toJSON: () => ({x: len, y: len, z: 0, w: 1}),
+            }
+        }
+    }
+
+    global.SVGPathElement = FakeSVGPathElement as unknown as typeof SVGPathElement
+}
+
 // Make tests fail if any output is sent to the console
 failOnConsole({
     shouldFailOnAssert: true,
