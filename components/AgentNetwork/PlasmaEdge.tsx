@@ -64,7 +64,7 @@ function createFunnelParticleOnPath(
         ctx.restore()
     }
 
-    const isAlive = () => remainingLife > 0
+    const isAlive = () => progress * totalLength < totalLength * 0.98
     return {update, draw, isAlive}
 }
 
