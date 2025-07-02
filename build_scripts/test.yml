@@ -52,6 +52,7 @@ steps:
     image: node:${{NODEJS_VERSION}}-alpine
     working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
     commands:
+      - ls
       #- npx tsx ./build_scripts/GenerateOpenAPITypes.ts
 
   run_eslint:
