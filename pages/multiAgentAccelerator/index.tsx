@@ -210,7 +210,7 @@ export default function MultiAgentAcceleratorPage() {
 
 MultiAgentAcceleratorPage.authRequired = true
 MultiAgentAcceleratorPage.isContainedInViewport = true
-MultiAgentAcceleratorPage.pageContext = `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an Agent
-    Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
+MultiAgentAcceleratorPage.pageContext = `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an
+    Agent Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
     connect and collaborate to complete tasks. A chat panel on the right allows users to ask questions and receive
     answers.`
