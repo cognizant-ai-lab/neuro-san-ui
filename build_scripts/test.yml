@@ -64,6 +64,14 @@ steps:
       # Run test
       - ./build_scripts/run_eslint.sh
 
+  run_shellcheck:
+    title: Run shellcheck on shell scripts
+    image: node:${{NODEJS_VERSION}}-alpine
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
+    fail_fast: false
+    commands:
+      - ./build_scripts/run_shellcheck.sh
+
   run_prettier:
     title: Run prettier (code formatting checker)
     image: node:${{NODEJS_VERSION}}-alpine
