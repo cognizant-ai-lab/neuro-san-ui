@@ -5,6 +5,7 @@ import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
 import {Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
     readonly agentName: string
@@ -68,7 +69,6 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
             100% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 1.0; }
         }`
         : "none"
-    const boxShadow = isActiveAgent ? "0 0 30px 12px var(--bs-primary), 0 0 60px 24px var(--bs-primary)" : undefined
 
     const boxShadow = isActiveAgent ? "0 0 30px 12px var(--bs-primary), 0 0 60px 24px var(--bs-primary)" : undefined
 
@@ -90,8 +90,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     shapeOutside: "circle(50%)",
                     textAlign: "center",
                     width: NODE_WIDTH,
-                    zIndex: 0, // Ensure node is below the text
-                    position: "relative", // Add this line
+                    zIndex: ZIndexLayers.LAYER_1,
+                    position: "relative",
                 }}
             >
                 <style id={`${agentId}-glow-animation`}>{glowAnimation}</style>
@@ -110,7 +110,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                 id={`${agentId}-tooltip`}
                 title={agentName}
                 placement="top"
-                disableInteractive // helps ensure hover works over clipped text
+                disableInteractive
             >
                 <Typography
                     id={`${agentId}-name`}
@@ -128,8 +128,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                         whiteSpace: "normal",
                         width: `${NODE_WIDTH}px`,
                         wordBreak: "normal",
-                        zIndex: 10, // Ensure text is above the node
-                        position: "relative", // Add this line
+                        zIndex: 10,
+                        position: "relative",
                     }}
                 >
                     {agentName}

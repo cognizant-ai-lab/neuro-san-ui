@@ -204,6 +204,7 @@ export default function AgentNetworkPage() {
                             originInfo={originInfo}
                             selectedNetwork={selectedNetwork}
                             agentCounts={agentCountsRef.current}
+                            isAwaitingLlm={isAwaitingLlm}
                         />
                     </Box>
                 </ReactFlowProvider>
