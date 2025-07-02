@@ -91,10 +91,12 @@ export const APP_THEME = createTheme({
     typography: {
         // Initially just force MUI to use our corporate font.
         fontFamily: "var(--bs-body-font-family)",
+
         // Undo MUI's urge to upper case everything
         button: {
             textTransform: "none",
         },
+
         h3: {
             fontSize: "2rem",
             fontWeight: 400,
