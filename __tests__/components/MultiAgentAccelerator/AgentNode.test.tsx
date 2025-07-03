@@ -1,6 +1,6 @@
 import {render, screen} from "@testing-library/react"
 
-import {AgentNode} from "../../../components/AgentNetwork/AgentNode"
+import {AgentNode} from "../../../components/MultiAgentAccelerator/AgentNode"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock the Handle component since we don't want to invite react-flow to this party

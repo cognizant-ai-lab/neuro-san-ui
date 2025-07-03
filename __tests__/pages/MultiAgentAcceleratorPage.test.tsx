@@ -3,7 +3,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 
-import AgentNetworkPage from "../../pages/agentNetwork"
+import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
 import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../testUtils"
@@ -56,10 +56,10 @@ jest.mock("../../components/AgentChat/ChatCommon", () => ({
 
 window.fetch = mockFetch({})
 
-const renderAgentNetworkPage = () =>
+const renderMultiAgentAcceleratorPage = () =>
     render(
         <SnackbarProvider>
-            <AgentNetworkPage />
+            <MultiAgentAcceleratorPage />
         </SnackbarProvider>
     )
 
@@ -95,7 +95,7 @@ describe("Agent Network Page", () => {
     })
 
     it("should render elements on the page and change the page on click of sidebar item", async () => {
-        renderAgentNetworkPage()
+        renderMultiAgentAcceleratorPage()
 
         // Ensure Math Guy (default network) element is rendered.
         await waitFor(() => {
@@ -133,7 +133,7 @@ describe("Agent Network Page", () => {
         const mockGetAgentNetworks = jest.requireMock("../../controller/agent/Agent").getAgentNetworks
         mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch agent networks"))
 
-        renderAgentNetworkPage()
+        renderMultiAgentAcceleratorPage()
 
         // Assert the console.debug call
         await waitFor(() => {
@@ -152,7 +152,7 @@ describe("Agent Network Page", () => {
         const mockGetAgentNetworks = jest.requireMock("../../controller/agent/Agent").getConnectivity
         mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch connectivity"))
 
-        renderAgentNetworkPage()
+        renderMultiAgentAcceleratorPage()
 
         // Assert the console.debug call
         await waitFor(() => {

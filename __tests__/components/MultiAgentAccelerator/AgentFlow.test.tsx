@@ -3,7 +3,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import AgentFlow from "../../../components/AgentNetwork/AgentFlow"
+import AgentFlow from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ConnectivityInfo} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
 
@@ -11,7 +11,7 @@ const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
-jest.mock("../../../components/AgentNetwork/PlasmaEdge", () => ({
+jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid="mock-plasma-edge" />,
 }))
 

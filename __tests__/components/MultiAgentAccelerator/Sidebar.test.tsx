@@ -3,7 +3,7 @@ import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import Sidebar from "../../../components/AgentNetwork/Sidebar"
+import Sidebar from "../../../components/MultiAgentAccelerator/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import useEnvironmentStore from "../../../state/environment"
 import {withStrictMocks} from "../../common/strictMocks"
