@@ -1,7 +1,7 @@
 import {StopCircle} from "@mui/icons-material"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid2"
-import Grow from "@mui/material/Grow"
+import Slide from "@mui/material/Slide"
 import {useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
@@ -58,7 +58,7 @@ export default function AgentNetworkPage() {
     }
 
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
-    const chatRef = useRef<ChatCommonHandle>(null)
+    const chatRef = useRef<ChatCommonHandle | null>(null)
 
     // Handle external stop button click during zen mode
     const handleExternalStop = () => {
@@ -86,7 +86,7 @@ export default function AgentNetworkPage() {
             }
         }
 
-        getNetworks()
+        void getNetworks()
     }, [neuroSanURL])
 
     useEffect(() => {
@@ -156,35 +156,19 @@ export default function AgentNetworkPage() {
         setOriginInfo([])
     }
 
-    return (
-        <Grid
-            id="multi-agent-accelerator-grid"
-            container
-            columns={18}
-            sx={{
-                border: "solid 1px #CFCFDC",
-                borderRadius: "var(--bs-border-radius)",
-                display: "flex",
-                flex: 1,
-                height: "85%",
-                marginTop: "1rem",
-                overflow: "hidden",
-                padding: "1rem",
-                background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
-                justifyContent: isAwaitingLlm ? "center" : "unset",
-                position: "relative",
-            }}
-        >
-            <Grow // eslint-disable-line enforce-ids-in-jsx/missing-ids
+    const GROW_ANIMATION_TIME_MS = 500
+
+    const getLeftPanel = () => {
+        return (
+            <Slide // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 in={!isAwaitingLlm}
-                timeout={800}
+                direction="right"
+                timeout={GROW_ANIMATION_TIME_MS}
             >
                 <Grid
                     id="multi-agent-accelerator-grid-sidebar"
                     size={3.25}
                     sx={{
-                        display: isAwaitingLlm ? "none" : "block",
                         height: "100%",
                     }}
                 >
@@ -198,11 +182,15 @@ export default function AgentNetworkPage() {
                         setSelectedNetwork={setSelectedNetwork}
                     />
                 </Grid>
-            </Grow>
+            </Slide>
+        )
+    }
 
+    const getCenterPanel = () => {
+        return (
             <Grid
                 id="multi-agent-accelerator-grid-agent-flow"
-                size={isAwaitingLlm ? 18 : 8.25}
+                size={isAwaitingLlm ? 8.25 : 8.25}
                 sx={{
                     height: "100%",
                     flexGrow: isAwaitingLlm ? 1 : 0,
@@ -236,10 +224,14 @@ export default function AgentNetworkPage() {
                     </Box>
                 </ReactFlowProvider>
             </Grid>
-
-            <Grow // eslint-disable-line enforce-ids-in-jsx/missing-ids
+        )
+    }
+    const getRightPanel = () => {
+        return (
+            <Slide // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 in={!isAwaitingLlm}
-                timeout={800}
+                direction="left"
+                timeout={GROW_ANIMATION_TIME_MS}
             >
                 <Grid
                     id="multi-agent-accelerator-grid-agent-chat-common"
@@ -264,33 +256,66 @@ export default function AgentNetworkPage() {
                         backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
                     />
                 </Grid>
-            </Grow>
-            {isAwaitingLlm && (
-                <Box
-                    id="stop-button-container"
-                    sx={{
-                        position: "absolute",
-                        bottom: "1rem",
-                        right: "1rem",
-                        zIndex: 10,
-                    }}
-                >
-                    <SmallLlmChatButton
-                        aria-label="Stop"
-                        disabled={!isAwaitingLlm}
-                        id="stop-output-button"
-                        onClick={handleExternalStop}
-                        posBottom={8}
-                        posRight={23}
+            </Slide>
+        )
+    }
+
+    const getStopButton = () => {
+        return (
+            <>
+                {isAwaitingLlm && (
+                    <Box
+                        id="stop-button-container"
+                        sx={{
+                            position: "absolute",
+                            bottom: "1rem",
+                            right: "1rem",
+                            zIndex: 10,
+                        }}
                     >
-                        <StopCircle
-                            fontSize="small"
-                            id="stop-button-icon"
-                            sx={{color: "var(--bs-white)"}}
-                        />
-                    </SmallLlmChatButton>
-                </Box>
-            )}
+                        <SmallLlmChatButton
+                            aria-label="Stop"
+                            disabled={!isAwaitingLlm}
+                            id="stop-output-button"
+                            onClick={handleExternalStop}
+                            posBottom={8}
+                            posRight={23}
+                        >
+                            <StopCircle
+                                fontSize="small"
+                                id="stop-button-icon"
+                                sx={{color: "var(--bs-white)"}}
+                            />
+                        </SmallLlmChatButton>
+                    </Box>
+                )}
+            </>
+        )
+    }
+    return (
+        <Grid
+            id="multi-agent-accelerator-grid"
+            container
+            columns={18}
+            sx={{
+                border: "solid 1px #CFCFDC",
+                borderRadius: "var(--bs-border-radius)",
+                display: "flex",
+                flex: 1,
+                height: "85%",
+                marginTop: "1rem",
+                overflow: "hidden",
+                padding: "1rem",
+                background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
+                justifyContent: isAwaitingLlm ? "center" : "unset",
+                position: "relative",
+            }}
+        >
+            {getLeftPanel()}
+            {getCenterPanel()}
+            {getRightPanel()}
+            {getStopButton()}
         </Grid>
     )
 }
