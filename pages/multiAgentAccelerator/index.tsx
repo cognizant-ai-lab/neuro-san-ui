@@ -8,9 +8,9 @@ import {ReactFlowProvider} from "reactflow"
 import {ChatCommon, ChatCommonHandle} from "../../components/AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../../components/AgentChat/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName} from "../../components/AgentChat/Utils"
-import AgentFlow from "../../components/AgentNetwork/AgentFlow"
-import Sidebar from "../../components/AgentNetwork/Sidebar"
 import {closeNotification, NotificationType, sendNotification} from "../../components/Common/notification"
+import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
+import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import useEnvironmentStore from "../../state/environment"
@@ -21,7 +21,7 @@ import {useLocalStorage} from "../../utils/use_local_storage"
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
-export default function AgentNetworkPage() {
+export default function MultiAgentAcceleratorPage() {
     // For access to logged in session and current user name
     const {
         user: {image: userImage, name: userName},
@@ -333,9 +333,9 @@ export default function AgentNetworkPage() {
     )
 }
 
-AgentNetworkPage.authRequired = true
-AgentNetworkPage.isContainedInViewport = true
-AgentNetworkPage.pageContext = `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an Agent
-    Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
+MultiAgentAcceleratorPage.authRequired = true
+MultiAgentAcceleratorPage.isContainedInViewport = true
+MultiAgentAcceleratorPage.pageContext = `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an
+    Agent Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
     connect and collaborate to complete tasks. A chat panel on the right allows users to ask questions and receive
     answers.`

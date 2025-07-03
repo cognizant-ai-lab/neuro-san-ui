@@ -127,7 +127,7 @@ describe("navbar", () => {
     it("renders the Navbar with the provided logo (Neuro® AI Multi-Agent Accelerator)", async () => {
         // Temporarily pathname for this test
         Object.assign(mockRouterValues, {
-            pathname: "/agentNetwork",
+            pathname: "/multiAgentAccelerator",
         })
 
         render(defaultNavbar)

@@ -34,6 +34,7 @@ const config: Config.InitialOptions = {
         "!**/generated/**",
         "!jest*.ts",
         "!next-env.d.ts",
+        "!next.config.ts",
     ],
     coverageReporters: ["text-summary"],
 

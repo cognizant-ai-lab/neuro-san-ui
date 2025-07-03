@@ -1,7 +1,7 @@
 import {render} from "@testing-library/react"
 import {Position} from "reactflow"
 
-import {PlasmaEdge} from "../../../components/AgentNetwork/PlasmaEdge"
+import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Capture the *real* createElement before it's mocked

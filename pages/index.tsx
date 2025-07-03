@@ -239,7 +239,7 @@ export default function Index(): ReactElement {
                             <Link
                                 id="agent-network-link"
                                 // Use the URL object form of `href` to pass along the query string
-                                href={`/agentNetwork?${buildQueryString()}`}
+                                href={`/multiAgentAccelerator?${buildQueryString()}`}
                                 /* eslint-disable-next-line @typescript-eslint/no-deprecated */
                                 legacyBehavior={true}
                                 passHref
