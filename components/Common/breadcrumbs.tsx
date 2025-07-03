@@ -10,11 +10,6 @@ const NeuroAIBreadcrumbs = () => {
     const pathname: string = usePathname()
     const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
 
-    let pageName = startCase(urlPaths?.at(-1))
-    if (pageName === "Multi Agent Accelerator") {
-        pageName = "Multi-Agent Accelerator"
-    }
-
     return (
         <Grid
             id="nav-bar-breadcrumbs-row"
