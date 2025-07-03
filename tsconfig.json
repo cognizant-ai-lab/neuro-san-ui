@@ -39,7 +39,7 @@
     "strict": true,
     "strictNullChecks": false,
     "target": "es2022",
-    "useUnknownInCatchVariables": true
+    "useUnknownInCatchVariables": true,
   },
   "include": [
     "next-env.d.ts",
