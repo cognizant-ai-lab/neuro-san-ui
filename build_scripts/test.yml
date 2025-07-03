@@ -60,9 +60,17 @@ steps:
     working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
-      - apk add --quiet --no-progress --upgrade bash
-      # Run test
+      - apk add --quiet --no-progress --upgrade --no-cache bash
       - ./build_scripts/run_eslint.sh
+
+  run_shellcheck:
+    title: Run shellcheck on shell scripts
+    image: bash:5.2.37
+    working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
+    fail_fast: false
+    commands:
+      - apk add --quiet --no-progress --upgrade --no-cache shellcheck
+      - ./build_scripts/run_shellcheck.sh
 
   run_prettier:
     title: Run prettier (code formatting checker)
@@ -129,4 +137,5 @@ steps:
             steps.run_depcheck.result == 'failure' ||
             steps.run_ts_compilation.result == 'failure' ||
             steps.run_ts_prune.result == 'failure' ||
+            steps.run_shellcheck.result == 'failure' ||
             steps.generate_typescript_api_stubs.result == 'failure'
