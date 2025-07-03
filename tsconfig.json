@@ -39,15 +39,14 @@
     "strict": true,
     "strictNullChecks": false,
     "target": "es2022",
-    "useUnknownInCatchVariables": true,
-    "incremental": true
+    "useUnknownInCatchVariables": true
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
-    "**/*.mjs"
+    "**/*.mjs",
   ],
   "exclude": [
     "node_modules",
