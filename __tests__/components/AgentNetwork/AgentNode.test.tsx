@@ -41,37 +41,17 @@ describe("AgentNode", () => {
         const parentDiv = pElement.closest("div")
         expect(parentDiv).toBeInTheDocument()
 
-        // Regular node should not have animation
-        const style = window.getComputedStyle(parentDiv)
-        expect(style.animation).toBe("")
-    })
+        // Check the background color of the associated node (the circle div)
+        const nodeDiv = Array.from(parentDiv.children).find((el) => el.tagName === "DIV") as HTMLDivElement
+        expect(nodeDiv).toBeInTheDocument()
+        const style = window.getComputedStyle(nodeDiv)
 
-    it("Should render in a different color if frontman", async () => {
-        render(
-            <AgentNode
-                id="testNode"
-                type="test"
-                selected={false}
-                zIndex={0}
-                isConnectable={false}
-                xPos={0}
-                yPos={0}
-                dragging={false}
-                data={{
-                    agentName: "testAgent",
-                    getOriginInfo: () => [],
-                    depth: 3,
-                }}
-            />
-        )
+        // Heatmap color should be applied based on agent count. No other agents so it should be the last color
+        // in the palette, #041c45 = "rgb(4, 28, 69)"
+        expect(style.backgroundColor).toBe("rgb(4, 28, 69)")
 
-        // locate parent div
-        const pElement = screen.getByText("testAgent")
-        const parentDiv = pElement.closest("div")
-        expect(parentDiv).toBeInTheDocument()
-
-        const style = window.getComputedStyle(parentDiv)
-        expect(style.backgroundColor).toBe("rgb(158, 202, 225)")
+        // Non-active node should not have animation
+        expect(style.animation).toBe("none")
     })
 
     it("Should render animation if active agent", async () => {

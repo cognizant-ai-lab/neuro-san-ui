@@ -115,8 +115,7 @@ describe("ChatCommon", () => {
         expect(await screen.findByRole("button", {name: "Stop"})).toBeEnabled()
 
         // "Send" button should be disabled while awaiting LLM response
-        // TODO: Revise this once we update the chat component to not only be supporting MAA UI
-        expect(screen.queryByRole("button", {name: "Send"})).not.toBeInTheDocument()
+        expect(await screen.findByRole("button", {name: "Send"})).toBeDisabled()
 
         // "Clear Chat" button should not be in the document while awaiting LLM response
         expect(screen.queryByRole("button", {name: "Clear Chat"})).not.toBeInTheDocument()

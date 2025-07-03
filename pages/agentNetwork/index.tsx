@@ -28,7 +28,7 @@ export default function AgentNetworkPage() {
     } = useAuthentication().data
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
-    const [isAwaitingLlm, setIsAwaitingLlm] = useState(true)
+    const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
     const [networks, setNetworks] = useState<string[]>([])
 

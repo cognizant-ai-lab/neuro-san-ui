@@ -2,6 +2,7 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
+import {forwardRef, Ref} from "react"
 
 import AgentNetworkPage from "../../pages/agentNetwork"
 import useEnvironmentStore from "../../state/environment"
@@ -46,12 +47,17 @@ jest.mock("../../controller/agent/Agent", () => ({
 // Mock ChatCommon component
 const chatCommonMock = jest.fn()
 
-// Mock ChatCommon to call the mock function with props
+// Mock ChatCommon to call the mock function with props and support refs
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
-    ChatCommon: (props: Record<string, unknown>) => {
+    ChatCommon: forwardRef((props: Record<string, unknown>, ref) => {
         chatCommonMock(props)
-        return <div id="test-chat-common" />
-    },
+        return (
+            <div
+                id="test-chat-common"
+                ref={ref as Ref<HTMLDivElement>}
+            />
+        )
+    }),
 }))
 
 window.fetch = mockFetch({})
