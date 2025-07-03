@@ -56,12 +56,10 @@ steps:
 
   run_eslint:
     title: Run eslint on Typescript sources
-    image: node:${{NODEJS_VERSION}}-alpine
+    image: bash:5.2.37
     working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
-      - apk add --quiet --no-progress --upgrade bash
-      # Run test
       - ./build_scripts/run_eslint.sh
 
   run_shellcheck:
@@ -70,6 +68,7 @@ steps:
     working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: false
     commands:
+      - apk add --quiet --no-progress --upgrade --no-cache shellcheck
       - ./build_scripts/run_shellcheck.sh
 
   run_prettier:
