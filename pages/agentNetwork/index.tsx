@@ -38,6 +38,8 @@ export default function AgentNetworkPage() {
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
+    const [hideOuterPanels, setHideOuterPanels] = useState<boolean>(false)
+
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
@@ -63,6 +65,7 @@ export default function AgentNetworkPage() {
     // Handle external stop button click during zen mode
     const handleExternalStop = () => {
         chatRef.current?.handleStop()
+        setHideOuterPanels(false)
     }
 
     useEffect(() => {
@@ -125,6 +128,13 @@ export default function AgentNetworkPage() {
         return () => window.removeEventListener("keydown", onKeyDown)
     }, [isAwaitingLlm, handleExternalStop])
 
+    // Effect to reset the hideOuterPanels state when isAwaitingLlm changes
+    useEffect(() => {
+        if (!isAwaitingLlm) {
+            setHideOuterPanels(false)
+        }
+    }, [isAwaitingLlm])
+
     const onChunkReceived = (chunk: string) => {
         // Obtain origin info if present
         const chatMessage = chatMessageFromChunk(chunk)
@@ -164,10 +174,13 @@ export default function AgentNetworkPage() {
                 in={!isAwaitingLlm}
                 direction="right"
                 timeout={GROW_ANIMATION_TIME_MS}
+                onExited={() => {
+                    setHideOuterPanels(true)
+                }}
             >
                 <Grid
                     id="multi-agent-accelerator-grid-sidebar"
-                    size={3.25}
+                    size={hideOuterPanels ? 0 : 3.25}
                     sx={{
                         height: "100%",
                     }}
@@ -190,13 +203,9 @@ export default function AgentNetworkPage() {
         return (
             <Grid
                 id="multi-agent-accelerator-grid-agent-flow"
-                size={isAwaitingLlm ? 8.25 : 8.25}
+                size={hideOuterPanels ? 18 : 8.25}
                 sx={{
                     height: "100%",
-                    flexGrow: isAwaitingLlm ? 1 : 0,
-                    maxWidth: isAwaitingLlm ? "100%" : undefined,
-                    display: "flex",
-                    justifyContent: "center",
                 }}
             >
                 {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
@@ -226,16 +235,20 @@ export default function AgentNetworkPage() {
             </Grid>
         )
     }
+
     const getRightPanel = () => {
         return (
             <Slide // eslint-disable-line enforce-ids-in-jsx/missing-ids
                 in={!isAwaitingLlm}
                 direction="left"
                 timeout={GROW_ANIMATION_TIME_MS}
+                onExited={() => {
+                    setHideOuterPanels(true)
+                }}
             >
                 <Grid
                     id="multi-agent-accelerator-grid-agent-chat-common"
-                    size={6.5}
+                    size={hideOuterPanels ? 0 : 6.5}
                     sx={{
                         height: "100%",
                     }}
