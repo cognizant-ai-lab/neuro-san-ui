@@ -6,12 +6,13 @@ import "../styles/rundialog.css"
 
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
+import {startCase} from "lodash"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, ReactFragment, useEffect, useMemo} from "react"
+import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
 import {Auth} from "../components/Authentication/auth"
 import {ChatBot} from "../components/ChatBot/ChatBot"
@@ -26,6 +27,7 @@ import useUserInfoStore from "../state/UserInfo"
 import {APP_THEME, BRAND_COLORS} from "../theme"
 import {UserInfoResponse} from "./api/userInfo/types"
 import {LoadingSpinner} from "../components/Common/LoadingSpinner"
+import {getTitleBase} from "../utils/title"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -42,6 +44,8 @@ type ExtendedAppProps = AppProps & {
 }
 
 const debug = debugModule("app")
+
+const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
@@ -63,6 +67,8 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     const {currentUser, setCurrentUser, picture, setPicture, setOidcProvider} = useUserInfoStore()
 
     const {pathname} = useRouter()
+
+    const [pageTitle, setPageTitle] = useState<string>(DEFAULT_APP_NAME)
 
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
@@ -89,6 +95,22 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             }),
         [darkMode]
     )
+
+    useEffect(() => {
+        const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
+        const pageName = startCase(urlPaths?.at(-1))
+
+        // If we are on the spash screen, set the page title to the default
+        if (urlPaths.length === 0) {
+            setPageTitle(DEFAULT_APP_NAME)
+        }
+
+        // If there is just one URL path, set the page title. This prevents overriding Project, Experiement and
+        // DMS pages, which directly set the page title to document.title.
+        if (urlPaths.length === 1) {
+            setPageTitle(`${getTitleBase()} | ${pageName}`)
+        }
+    }, [pathname])
 
     useEffect(() => {
         async function getEnvironment() {
@@ -268,7 +290,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             {/* 2/6/23 DEF - Head does not have an id property when compiling */}
             <Head // eslint-disable-line enforce-ids-in-jsx/missing-ids
             >
-                <title id="unileaf-title">Cognizant Neuro® AI</title>
+                <title id="unileaf-title">{pageTitle}</title>
                 <meta
                     id="unileaf-description"
                     name="description"

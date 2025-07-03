@@ -3,7 +3,7 @@ import Box from "@mui/material/Box"
 import NextImage from "next/legacy/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {ReactElement, useEffect, useState} from "react"
+import {ReactElement, useState} from "react"
 
 import {ConfirmationModal} from "../components/Common/confirmationModal"
 import {
@@ -13,7 +13,6 @@ import {
     LOGO,
 } from "../const"
 import useEnvironmentStore from "../state/environment"
-import {getTitleBase} from "../utils/title"
 
 // #region: Styled Components
 const OuterContainer = styled("div")({
@@ -160,11 +159,6 @@ export default function Index(): ReactElement {
 
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState<boolean>(false)
-
-    // Dynamically set the title to the current host
-    useEffect(() => {
-        document.title = getTitleBase()
-    }, [])
 
     // Function to build the query string from the current route
     const buildQueryString = () => {
