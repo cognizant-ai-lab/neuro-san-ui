@@ -60,7 +60,6 @@ import {
 } from "../../generated/neuro_san/api/grpc/chat"
 import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
-import {getTitleBase} from "../../utils/title"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
@@ -309,8 +308,6 @@ export const ChatCommon: FC<ChatCommonProps> = ({
     }, [autoScrollEnabled])
 
     useEffect(() => {
-        document.title = `${getTitleBase()} | Agent Chat`
-
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
     }, [])
