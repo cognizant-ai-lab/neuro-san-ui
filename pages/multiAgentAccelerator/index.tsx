@@ -22,6 +22,9 @@ import {useLocalStorage} from "../../utils/use_local_storage"
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function MultiAgentAcceleratorPage() {
+    // Animation time for the left and right panels to slide in or out when launching the animation
+    const GROW_ANIMATION_TIME_MS = 800
+
     // For access to logged in session and current user name
     const {
         user: {image: userImage, name: userName},
@@ -165,8 +168,6 @@ export default function MultiAgentAcceleratorPage() {
     const onStreamingComplete = (): void => {
         setOriginInfo([])
     }
-
-    const GROW_ANIMATION_TIME_MS = 500
 
     const getLeftPanel = () => {
         return (
