@@ -31,16 +31,9 @@ import {
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {MAX_AGENT_RETRIES} from "./const"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
-import {chatMessageFromChunkNeuroSanIndirect, tryParseJsonNeuroSanIndirect} from "./NeuroSanIndirect/Utils"
-import {SendButton} from "./SendButton"
-import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
-import {CombinedAgentType, isLegacyAgentType} from "./Types"
-import {UserQueryDisplay} from "./UserQueryDisplay"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendChatQueryLegacyNeuroSanIndirect} from "../../controller/agent/NeuroSanIndirect/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
@@ -65,6 +58,12 @@ import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
+import {chatMessageFromChunkNeuroSanIndirect, tryParseJsonNeuroSanIndirect} from "./NeuroSanIndirect/Utils"
+import {SendButton} from "./SendButton"
+import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
+import {CombinedAgentType, isLegacyAgentType} from "./Types"
+import {UserQueryDisplay} from "./UserQueryDisplay"
+import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
 
 interface ChatCommonProps {
     /**
@@ -172,6 +171,10 @@ const EMPTY = {}
 
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
+
+// How many times to retry the entire agent interaction process. Some networks have a well-defined success condition.
+// For others it's just "whenever the stream is done".
+const MAX_AGENT_RETRIES = 3
 
 // Type for forward ref to expose the handleStop function
 export type ChatCommonHandle = {

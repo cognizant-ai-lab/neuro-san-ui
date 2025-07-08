@@ -2,7 +2,7 @@ import {StopCircle} from "@mui/icons-material"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid2"
 import Slide from "@mui/material/Slide"
-import {useEffect, useRef, useState} from "react"
+import {useCallback, useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {ChatCommon, ChatCommonHandle} from "../../components/AgentChat/ChatCommon"
@@ -43,6 +43,9 @@ export default function MultiAgentAcceleratorPage() {
 
     const [hideOuterPanels, setHideOuterPanels] = useState<boolean>(false)
 
+    // Track whether we've shown the info popup so we don't keep bugging the user with it
+    const [haveShownPopup, setHaveShownPopup] = useState<boolean>(false)
+
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
@@ -57,19 +60,22 @@ export default function MultiAgentAcceleratorPage() {
     // Dark mode
     const {darkMode} = usePreferences()
 
-    const customURLCallback = (url: string) => {
-        setNeuroSanURL(url || backendNeuroSanApiUrl)
-        setCustomURLLocalStorage(url === "" ? null : url)
-    }
+    const customURLCallback = useCallback(
+        (url: string) => {
+            setNeuroSanURL(url || backendNeuroSanApiUrl)
+            setCustomURLLocalStorage(url === "" ? null : url)
+        },
+        [backendNeuroSanApiUrl, setCustomURLLocalStorage]
+    )
 
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
     // Handle external stop button click during zen mode
-    const handleExternalStop = () => {
+    const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
         setHideOuterPanels(false)
-    }
+    }, [])
 
     useEffect(() => {
         async function getNetworks() {
@@ -138,36 +144,43 @@ export default function MultiAgentAcceleratorPage() {
         }
     }, [isAwaitingLlm])
 
-    const onChunkReceived = (chunk: string) => {
-        // Obtain origin info if present
-        const chatMessage = chatMessageFromChunk(chunk)
-        if (chatMessage && chatMessage.origin?.length > 0) {
-            setOriginInfo([...chatMessage.origin])
+    const onChunkReceived = useCallback(
+        (chunk: string) => {
+            // Obtain origin info if present
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (chatMessage && chatMessage.origin?.length > 0) {
+                setOriginInfo([...chatMessage.origin])
 
-            // Update agent counts.
-            // Note: we increment an agent's count each time it appears in the origin info, but another strategy would
-            // be to only count an agent when it is the "end destination" of the chain. Needs some thought to determine
-            // which is more useful.
-            const agentCounts = agentCountsRef.current
-            for (const agent of chatMessage.origin) {
-                // If the agent is not already in the counts map, initialize it to 0 aka "upsert"
-                agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
+                // Update agent counts.
+                // Note: we increment an agent's count each time it appears in the origin info, but another strategy
+                // would be to only count an agent when it is the "end destination" of the chain. Needs some thought to
+                // determine which is more useful.
+                const agentCounts = agentCountsRef.current
+                for (const agent of chatMessage.origin) {
+                    // If the agent is not already in the counts map, initialize it to 0 aka "upsert"
+                    agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
+                }
             }
-        }
 
-        return true
-    }
+            return true
+        },
+        [setOriginInfo, agentCountsRef]
+    )
 
-    const onStreamingStarted = (): void => {
+    const onStreamingStarted = useCallback((): void => {
         // reset agent counts when a new streaming starts
         agentCountsRef.current = new Map<string, number>()
 
-        sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
-    }
+        // Show info popup only once per session
+        if (!haveShownPopup) {
+            sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
+            setHaveShownPopup(true)
+        }
+    }, [setHaveShownPopup, haveShownPopup])
 
-    const onStreamingComplete = (): void => {
+    const onStreamingComplete = useCallback((): void => {
         setOriginInfo([])
-    }
+    }, [setOriginInfo])
 
     const getLeftPanel = () => {
         return (

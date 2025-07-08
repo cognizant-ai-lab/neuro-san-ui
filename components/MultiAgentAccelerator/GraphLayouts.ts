@@ -169,7 +169,7 @@ export const layoutLinear = (
     agentsInNetwork: ConnectivityInfo[],
     getOriginInfo: () => Origin[],
     agentCounts: Map<string, number>,
-    isAwaitingLlm
+    isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
