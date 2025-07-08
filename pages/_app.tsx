@@ -56,6 +56,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
         backendNeuroSanApiUrl,
         setBackendApiUrl,
         setBackendNeuroSanApiUrl,
+        setOppFinderAgentUrl,
         setAuth0ClientId,
         setAuth0Domain,
         setEnableAuthorizeAPI,
@@ -139,6 +140,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             setSupportEmailAddress(data.supportEmailAddress)
             setEnableAuthorizeAPI(data.enableAuthorizeAPI)
             setBuildTarget(data.buildTarget || ALL_BUILD_TARGET)
+            setOppFinderAgentUrl(data?.oppFinderAgentUrl)
         }
 
         void getEnvironment()

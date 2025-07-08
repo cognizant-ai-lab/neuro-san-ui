@@ -299,6 +299,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     }
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
+
     // Hide/show existing accordions based on showThinking state
     useEffect(() => {
         setChatOutput((currentOutput) =>
@@ -609,8 +610,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             let agentFunction: GrpcFunctionResponse | FunctionResponse
 
             // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
-            if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
-                // Opportunity Finder shouldn't need connectivity, so return
+            if (isIndirectOppFinderPipeline) {
+                // Legacy Opportunity Finder path via pmdserver doesn't support function or connectivity query,
+                // so return
                 return
             } else {
                 // It is a Neuro-san agent, so get the function and connectivity info
@@ -725,6 +727,10 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
+    // Migration logic: if we have the neuroSanURL, we use that. If not, fall back to the legacy indirect
+    // pmdserver path.
+    const isIndirectOppFinderPipeline = targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE && !neuroSanURL
+
     /**
      * Extract the final answer from the response from a legacy agent
      * @param response The response from the legacy agent
@@ -734,9 +740,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.finalAnswerText
 
     const handleChunk = (chunk: string): void => {
-        // Check if it's the Opportunity Finder pipeline. If so, we need to use the indirect Neuro-san API
-        const isOppFinderPipeline = targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE
-
         // Give container a chance to process the chunk first
         const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
         succeeded.current = succeeded.current || onChunkReceivedResult
@@ -757,7 +760,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         let chatMessage: GrpcChatMessage | ChatMessage
 
         // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
-        if (isOppFinderPipeline) {
+        if (isIndirectOppFinderPipeline) {
             chatMessage = chatMessageFromChunkNeuroSanIndirect(chunk)
             if (!chatMessage) {
                 // This is an error since Neuro-san agents should send us ChatMessage structures.
@@ -806,7 +809,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         let parsedResult: null | object | string
 
         // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
-        if (isOppFinderPipeline) {
+        if (isIndirectOppFinderPipeline) {
             parsedResult = tryParseJsonNeuroSanIndirect(chunk)
             // For all other agents, use the latest Neuro-san API
         } else {
@@ -815,7 +818,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
         if (typeof parsedResult === "string") {
             // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this later.
-            if (isOppFinderPipeline) {
+            if (isIndirectOppFinderPipeline) {
                 updateOutput(
                     processLogLineNeuroSanIndirect(
                         parsedResult,
@@ -844,7 +847,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this
                 // later.
                 // eslint-disable-next-line no-lonely-if
-                if (isOppFinderPipeline) {
+                if (isIndirectOppFinderPipeline) {
                     updateOutput(
                         processLogLineNeuroSanIndirect(
                             chatMessage.text,
@@ -881,7 +884,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
                     // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to remove this
                     // later.
-                    if (targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE) {
+                    if (isIndirectOppFinderPipeline) {
                         // Send the chat query to the server. This will block until the stream ends from the server
                         await sendChatQueryLegacyNeuroSanIndirect(
                             controller?.current.signal,
@@ -1031,7 +1034,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         {
                             // For now, Opportunity Finder needs to use the indirect Neuro-san API. We will want to
                             // remove this later.
-                            targetAgent === AgentType.OPPORTUNITY_FINDER_PIPELINE
+                            isIndirectOppFinderPipeline
                                 ? processLogLineNeuroSanIndirect(
                                       lastAIMessage.current,
                                       "Final Answer",

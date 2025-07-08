@@ -16,6 +16,10 @@ interface EnvironmentStore {
     backendNeuroSanApiUrl: string
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => void
 
+    // URL for neuro-san Opportunity Finder agent
+    oppFinderAgentUrl?: string
+    setOppFinderAgentUrl: (oppFinderAgentUrl: string) => void
+
     // Auth0 client ID
     auth0ClientId: string
     setAuth0ClientId: (auth0ClientId: string) => void
@@ -46,6 +50,9 @@ const useEnvironmentStore = create<EnvironmentStore>((set) => ({
 
     backendNeuroSanApiUrl: null,
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => set(() => ({backendNeuroSanApiUrl})),
+
+    oppFinderAgentUrl: null,
+    setOppFinderAgentUrl: (oppFinderAgentUrl: string) => set(() => ({oppFinderAgentUrl})),
 
     auth0ClientId: null,
     setAuth0ClientId: (auth0ClientId: string) => set(() => ({auth0ClientId})),
