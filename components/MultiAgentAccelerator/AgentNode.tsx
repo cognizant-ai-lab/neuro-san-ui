@@ -73,6 +73,9 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     const boxShadow = isActiveAgent ? "0 0 30px 12px var(--bs-primary), 0 0 60px 24px var(--bs-primary)" : undefined
 
+    // Hide handles when awaiting LLM response ("zen mode")
+    const handleVisibility = isAwaitingLlm ? "none" : "block"
+
     return (
         <>
             <div
@@ -82,7 +85,6 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     animation: isActiveAgent ? "glow 2.0s infinite" : "none",
                     backgroundColor,
                     borderRadius: "50%",
-                    // no border
                     boxShadow,
                     color,
                     display: "flex",
@@ -100,15 +102,25 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     id={`${agentId}-left-handle`}
                     position={Position.Left}
                     type="source"
-                    // Hide handles when awaiting LLM response ("zen mode")
-                    style={{display: isAwaitingLlm ? "none" : "block"}}
+                    style={{display: handleVisibility}}
                 />
                 <Handle
                     id={`${agentId}-right-handle`}
                     position={Position.Right}
                     type="source"
-                    // Hide handles when awaiting LLM response ("zen mode")
-                    style={{display: isAwaitingLlm ? "none" : "block"}}
+                    style={{display: handleVisibility}}
+                />
+                <Handle
+                    id={`${agentId}-top-handle`}
+                    position={Position.Top}
+                    type="source"
+                    style={{display: handleVisibility}}
+                />
+                <Handle
+                    id={`${agentId}-bottom-handle`}
+                    position={Position.Bottom}
+                    type="source"
+                    style={{display: handleVisibility}}
                 />
             </div>
             <Tooltip

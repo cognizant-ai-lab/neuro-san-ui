@@ -128,14 +128,30 @@ export const layoutRadial = (
 
             if (parentNode) {
                 // Determine if the agent is left or right of its parent node for symmetrical layout
-                const isLeftOfParent = x < parentNode.position.x
+                const dx = x - parentNode.position.x
+                const dy = y - parentNode.position.y
+
+                let sourceHandle: string
+                let targetHandle: string
+
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    // More horizontal: use left/right handles
+                    const isLeftOfParent = dx < 0
+                    sourceHandle = isLeftOfParent ? `${parentNode.id}-left-handle` : `${parentNode.id}-right-handle`
+                    targetHandle = isLeftOfParent ? `${nodeId}-right-handle` : `${nodeId}-left-handle`
+                } else {
+                    // More vertical: use top/bottom handles
+                    const isAboveParent = dy < 0
+                    sourceHandle = isAboveParent ? `${parentNode.id}-top-handle` : `${parentNode.id}-bottom-handle`
+                    targetHandle = isAboveParent ? `${nodeId}-bottom-handle` : `${nodeId}-top-handle`
+                }
 
                 edgesInNetwork.push({
                     id: `${nodeId}-edge`,
                     source: parentNode.id,
-                    sourceHandle: isLeftOfParent ? `${parentNode.id}-left-handle` : `${parentNode.id}-right-handle`,
+                    sourceHandle,
                     target: nodeId,
-                    targetHandle: isLeftOfParent ? `${nodeId}-right-handle` : `${nodeId}-left-handle`,
+                    targetHandle,
                     animated: false,
                 })
             }
