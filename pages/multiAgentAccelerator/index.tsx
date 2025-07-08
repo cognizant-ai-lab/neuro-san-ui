@@ -105,7 +105,11 @@ export default function MultiAgentAcceleratorPage() {
         ;(async () => {
             if (selectedNetwork) {
                 try {
-                    const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, selectedNetwork)
+                    const connectivity: ConnectivityResponse = await getConnectivity(
+                        neuroSanURL,
+                        selectedNetwork,
+                        userName
+                    )
                     const agentsInNetworkSorted: ConnectivityInfo[] = connectivity.connectivity_info
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))

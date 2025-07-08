@@ -13,6 +13,7 @@ import {BaseMessage} from "@langchain/core/messages"
  * @param params Arbitrary parameters to send to the server.
  * @param userQuery The user query to send to the server (sometimes part of chat history instead).
  * @param chatHistory The chat history to be sent to the server. Contains user requests and server responses.
+ * @param userId Current user ID in the session.
  * @returns Either the JSON result of the call, or, if a callback is provided, nothing, but tokens are streamed
  * to the callback as they are received from the server.
  */
@@ -22,13 +23,15 @@ export async function sendLlmRequest(
     fetchUrl: string,
     params: Record<string, unknown>,
     userQuery?: string,
-    chatHistory?: BaseMessage[]
+    chatHistory?: BaseMessage[],
+    userId?: string
 ) {
     const res = await fetch(fetchUrl, {
         method: "POST",
         headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            ...(userId && {user_id: userId}), // Only include user query if it exists (optional)
         },
         body: JSON.stringify({
             ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)

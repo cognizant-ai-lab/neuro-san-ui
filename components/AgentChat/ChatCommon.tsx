@@ -615,7 +615,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             } else {
                 // It is a Neuro-san agent, so get the function and connectivity info
                 try {
-                    agentFunction = await getAgentFunction(neuroSanURL, targetAgent)
+                    agentFunction = await getAgentFunction(neuroSanURL, targetAgent, currentUser)
                 } catch {
                     // For now, just return. May be a legacy agent without a functional description in Neuro-san.
                     return
@@ -623,7 +623,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             }
 
             try {
-                const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent)
+                const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent, currentUser)
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
@@ -902,7 +902,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                             targetAgent,
                             handleChunk,
                             chatContext.current,
-                            slyData.current
+                            slyData.current,
+                            currentUser
                         )
                     }
                 } else {
