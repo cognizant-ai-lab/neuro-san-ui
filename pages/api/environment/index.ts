@@ -9,7 +9,7 @@ interface EnvironmentResponse {
     readonly auth0Domain: string
     readonly backendApiUrl: string
     readonly backendNeuroSanApiUrl: string
-    readonly oppFinderAgentUrl?: string
+    readonly unileafAgentServerUrl?: string
     readonly buildTarget: string
     readonly enableAuthorizeAPI: boolean
     readonly enableProjectSharing: boolean
@@ -29,7 +29,7 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
 
     const backendApiUrl = process.env.MD_SERVER_URL
     const backendNeuroSanApiUrl = process.env.NEURO_SAN_SERVER_URL
-    const oppFinderAgentUrl = process.env.OPPORTUNITY_FINDER_AGENT_URL
+    const unileafAgentServerUrl = process.env.UNILEAF_AGENT_SERVER_URL
     const auth0ClientId = process.env.AUTH0_CLIENT_ID
     const auth0Domain = process.env.AUTH0_DOMAIN
     const supportEmailAddress = process.env.SUPPORT_EMAIL_ADDRESS
@@ -39,7 +39,7 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
     res.status(httpStatus.OK).json({
         backendApiUrl,
         backendNeuroSanApiUrl,
-        oppFinderAgentUrl,
+        unileafAgentServerUrl,
         auth0ClientId,
         auth0Domain,
         enableProjectSharing,
