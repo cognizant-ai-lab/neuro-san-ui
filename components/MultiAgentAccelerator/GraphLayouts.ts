@@ -23,7 +23,7 @@ const AGENT_NODE_TYPE_NAME = "agentNode"
  *
  * @param node Node ID for which to find parents
  * @param parentAgents Full list of parent agents in the network
- * @returns The IDs of the immediate parent nodes for the given node or the frontman if the node is not a child.
+ * @returns The IDs of the immediate parent nodes for the given node or empty array if no parents are found (frontman)
  */
 const getParents = (node: string, parentAgents: ConnectivityInfo[]): string[] => {
     return parentAgents.filter((agent) => agent.tools.includes(node)).map((parentNode) => parentNode.origin)
@@ -44,8 +44,10 @@ const getChildAgents = (parentAgents: ConnectivityInfo[]): Set<string> => {
     return childAgentsSet
 }
 
-// Frontman is defined as the agent that has no parent. There should be only one in the graph. Frontman is one of the
-// parent agents.
+// Frontman is defined as the agent that has no parent. There should be only one in the graph.
+// Frontman is one of the parent agents.
+// There is no explicit field that tells us which agent is the frontman, so we determine it by checking
+// which parent agent does not appear in the set of child agents.
 const getFrontman = (parentAgents: ConnectivityInfo[], childAgents: Set<string>): ConnectivityInfo =>
     parentAgents.find((agent) => !childAgents.has(agent.origin))
 
@@ -83,11 +85,10 @@ export const layoutRadial = (
         const {id: currentNodeId, depth} = queue.shift()
 
         agentsInNetwork.forEach(({origin: nodeId}) => {
-            // For each node, check if its parent matches the current node in the queue. If so, the node being tested
-            // is a child of the current node so set its depth to the depth of the current node + 1.
+            // For each node, check if it is a direct child of the  current node in the queue.
             const parentIds = getParents(nodeId, parentAgents)
-            if (parentIds?.[0] === currentNodeId && !nodeDepths.has(nodeId)) {
-                // If the child node's parent matches the current node, set its depth and enqueue it.
+            if (parentIds?.includes(currentNodeId) && !nodeDepths.has(nodeId)) {
+                // It's a child of the current node so set its depth to the depth of the current node + 1.
                 nodeDepths.set(nodeId, depth + 1)
                 queue.push({id: nodeId, depth: depth + 1})
             }
@@ -104,7 +105,7 @@ export const layoutRadial = (
         nodesByDepth.get(depth).push(nodeId)
     })
 
-    // Step 3: Assign positions based on depth & spread angles per level
+    // Assign layout positions based on depth & spread angles per level
     nodesByDepth.forEach((nodeIds, depth) => {
         const radius = BASE_RADIUS + depth * LEVEL_SPACING
         const angleStep = (2 * Math.PI) / nodeIds.length // Divide full circle among nodes at this level
@@ -202,7 +203,7 @@ export const layoutLinear = (
 
         const frontman = getFrontman(parentAgents, childAgents)
 
-        const parentId = getParents(originOfNode, parentAgents)
+        const parentIds = getParents(originOfNode, parentAgents)
         const isFrontman = frontman?.origin === originOfNode
 
         nodesInNetwork.push({
@@ -225,15 +226,17 @@ export const layoutLinear = (
         })
 
         if (!isFrontman) {
-            // Add edge from parent to node
-            edgesInNetwork.push({
-                id: `${originOfNode}-edge`,
-                source: parentId,
-                sourceHandle: `${parentId}-right-handle`,
-                target: originOfNode,
-                targetHandle: `${originOfNode}-left-handle`,
-                animated: false,
-            })
+            for (const parentNode of parentIds) {
+                // Add edges from parents to node
+                edgesInNetwork.push({
+                    id: `${originOfNode}-edge-${parentNode}`,
+                    source: parentNode,
+                    sourceHandle: `${parentNode}-right-handle`,
+                    target: originOfNode,
+                    targetHandle: `${originOfNode}-left-handle`,
+                    animated: false,
+                })
+            }
         }
     })
 
