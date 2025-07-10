@@ -36,7 +36,7 @@ const config: Config.InitialOptions = {
         "!next-env.d.ts",
         "!next.config.ts",
     ],
-    // coverageReporters: ["text-summary"],
+    coverageReporters: ["text-summary"],
 
     // Prevent Jest from trying to parse CSS files. Reference: https://stackoverflow.com/a/43813992
     moduleNameMapper: {"\\.(css|less)$": "<rootDir>/__tests__/__mocks__/styleMock.js"},
