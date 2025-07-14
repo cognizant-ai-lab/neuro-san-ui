@@ -215,6 +215,7 @@ export const layoutLinear = (
                 getOriginInfo,
                 agentCounts,
                 isAwaitingLlm,
+                displayAs: agentsInNetwork.find((a) => a.origin === originOfNode)?.display_as,
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {

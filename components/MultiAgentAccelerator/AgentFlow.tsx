@@ -138,6 +138,11 @@ const AgentFlow: FC<AgentFlowProps> = ({
 
         layoutResult.nodes && setNodes(layoutResult.nodes)
         setEdges(edgesToSet)
+
+        // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
+        setTimeout(() => {
+            fitView()
+        }, 50)
     }, [agentsInNetwork, layout, originInfo, coloringOption])
 
     const onNodesChange = useCallback(
