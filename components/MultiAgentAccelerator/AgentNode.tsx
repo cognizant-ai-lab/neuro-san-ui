@@ -33,6 +33,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const data: AgentNodeProps = props.data
     const {agentName, getOriginInfo, depth, agentCounts, isAwaitingLlm, displayAs} = data
 
+    const isFrontman = depth === 0
+
     const maxAgentCount = agentCounts ? Math.max(...Array.from(agentCounts.values())) : 0
 
     // Unpack the node-specific id
@@ -81,10 +83,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Hide handles when awaiting LLM response ("zen mode")
     const handleVisibility = isAwaitingLlm ? "none" : "block"
 
+    // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
         const fontSize = "2.25rem"
         const id = `${agentId}-icon`
-        if (depth === 0) {
+
+        if (isFrontman) {
             return (
                 // Use special icon and larger size for Frontman
                 <PersonIcon
@@ -94,13 +98,6 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
             )
         }
         switch (displayAs) {
-            case "llm_agent":
-                return (
-                    <AutoAwesomeIcon
-                        id={id}
-                        sx={{fontSize}}
-                    />
-                )
             case "external_agent":
                 return (
                     <TravelExploreIcon
@@ -115,8 +112,14 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                         sx={{fontSize}}
                     />
                 )
+            case "llm_agent":
             default:
-                return null
+                return (
+                    <AutoAwesomeIcon
+                        id={id}
+                        sx={{fontSize}}
+                    />
+                )
         }
     }
 

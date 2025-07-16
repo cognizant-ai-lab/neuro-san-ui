@@ -6,7 +6,12 @@ import {withStrictMocks} from "../../common/strictMocks"
 // Mock the Handle component since we don't want to invite react-flow to this party
 jest.mock("reactflow", () => ({
     ...jest.requireActual("reactflow"),
-    Handle: jest.fn((id) => <div data-testid={id.id} />),
+    Handle: (props) => (
+        <div
+            data-testid={`handle-${props.type}-${props.id}`}
+            style={props.style}
+        />
+    ),
 }))
 
 describe("AgentNode", () => {
@@ -30,11 +35,15 @@ describe("AgentNode", () => {
                     getOriginInfo: () => [],
                     depth: 1,
                     agentCounts: new Map([[agentId, 42]]),
+                    displayAs: "llm_agent",
                 }}
             />
         )
 
         expect(screen.getByText(agentName)).toBeInTheDocument()
+
+        // Should "display as" an "LLM agent"
+        await screen.findByTestId("AutoAwesomeIcon")
 
         // locate parent div
         const pElement = screen.getByText(agentName)
@@ -83,5 +92,64 @@ describe("AgentNode", () => {
         // Active node should have animation
         const style = window.getComputedStyle(parentDiv)
         expect(style.animation).not.toBe("none")
+    })
+
+    test.each([
+        [false, "block", "handles should display in regular mode"],
+        [true, "none", "handles should not display in Zen mode"],
+    ])("%s", async (isAwaitingLlm, expectedDisplay) => {
+        const agentName = "Test Agent"
+        render(
+            <AgentNode
+                id={agentName}
+                type="test"
+                selected={false}
+                zIndex={0}
+                isConnectable={false}
+                xPos={0}
+                yPos={0}
+                dragging={false}
+                data={{
+                    agentName: "testAgent",
+                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
+                    depth: 3,
+                    isAwaitingLlm,
+                }}
+            />
+        )
+
+        const positions = ["left", "right", "top", "bottom"]
+        for (const pos of positions) {
+            const handle = await screen.findByTestId(`handle-source-Test Agent-${pos}-handle`)
+            expect(handle).toBeInTheDocument()
+            expect(handle).toHaveStyle({display: expectedDisplay})
+        }
+    })
+
+    test.each([
+        ["llm_agent", "AutoAwesomeIcon"],
+        ["external_agent", "TravelExploreIcon"],
+        ["coded_tool", "HandymanIcon"],
+        ["unknown_display_as_value", "AutoAwesomeIcon"],
+    ])("renders correct icon for displayAs=%s", async (displayAs, expectedTestId) => {
+        render(
+            <AgentNode
+                id="testNode"
+                type="test"
+                selected={false}
+                zIndex={0}
+                isConnectable={false}
+                xPos={0}
+                yPos={0}
+                dragging={false}
+                data={{
+                    agentName: "Test Agent",
+                    getOriginInfo: () => [],
+                    depth: 1,
+                    displayAs,
+                }}
+            />
+        )
+        await screen.findByTestId(expectedTestId)
     })
 })
