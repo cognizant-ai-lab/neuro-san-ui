@@ -50,8 +50,6 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro-san/OpenAPITypes"
-import {FunctionResponse as GrpcFunctionResponse} from "../../generated/neuro_san/api/grpc/agent"
-import {ChatContext as GrpcChatContext, ChatMessage as GrpcChatMessage} from "../../generated/neuro_san/api/grpc/chat"
 import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
@@ -265,7 +263,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
     */
     const chatContext = useRef<ChatContext>(null)
-    const grpcChatContext = useRef<GrpcChatContext>(null)
 
     const slyData = useRef<Record<string, never>>({})
 
@@ -498,7 +495,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             if (clearChatOnNewAgent) {
                 // New agent, so clear chat context if desired
                 chatContext.current = null
-                grpcChatContext.current = null
                 currentResponse.current = ""
                 slyData.current = null
                 setChatOutput([])
@@ -512,7 +508,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 return
             }
 
-            let agentFunction: GrpcFunctionResponse | FunctionResponse
+            let agentFunction: FunctionResponse
 
             // It is a Neuro-san agent, so get the function and connectivity info
             try {
@@ -656,7 +652,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         }
 
         // For Neuro-san agents, we expect a ChatMessage structure in the chunk.
-        const chatMessage: GrpcChatMessage | ChatMessage | null = chatMessageFromChunk(chunk)
+        const chatMessage: ChatMessage | null = chatMessageFromChunk(chunk)
         if (!chatMessage) {
             // This is an error since Neuro-san agents should send us ChatMessage structures.
             // But don't want to spam output by logging errors for every bad message.
@@ -1063,7 +1059,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         setChatOutput([])
                         chatHistory.current = []
                         chatContext.current = null
-                        grpcChatContext.current = null
                         setPreviousUserQuery("")
                         currentResponse.current = ""
                         lastAIMessage.current = ""

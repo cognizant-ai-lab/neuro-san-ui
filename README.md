@@ -32,7 +32,7 @@ Note: Previously the project was known as UniLEAF and that name is still used in
         - `yarn generate` will generate the necessary files in the `generated` directory.
     - To view the files: `ls generated`
 - In your project root directory, create a file named `.env` which contains the following keys.  
-  Ask a current UI developer for the redacted values or get them self-serve from the leaf-team-vault server (see below).
+  Ask a current UI developer for the your_value values or get them self-serve from the leaf-team-vault server (see below).
 
 ```bash
 # Determines which backend API server to access. This one is for the Dev environment -- change as necessary.
@@ -41,19 +41,22 @@ MD_SERVER_URL=https://neuro-ai-dev.evolution.ml
 # Determines which backend neuro-san server to access. This one is for the Dev environment -- change as necessary.
 NEURO_SAN_SERVER_URL=https://neuro-san-dev.decisionai.ml
 
+# Determines which backend Opportunity Finder Pipeline uses. This one is for the Dev environment -- change as necessary.
+UNILEAF_AGENT_SERVER_URL=https://unileaf-agent-dev.evolution.ml
+
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=<redacted>
+NEXTAUTH_SECRET=<your_value>
 
-GITHUB_ID=<redacted>
-GITHUB_SECRET=<redacted>
+GITHUB_ID=<your_value>
+GITHUB_SECRET=<your_value>
 
-AUTH0_CLIENT_ID=<redacted>
-AUTH0_CLIENT_SECRET=<redacted>
+AUTH0_CLIENT_ID=<your_value>
+AUTH0_CLIENT_SECRET=<your_value>
 AUTH0_ISSUER=https://cognizant-ai.auth0.com/authorize
 AUTH0_DOMAIN=cognizant-ai.auth0.com
 
 # Next items are only needed if you're working on the LLM features of the UI such as the ChatBot or DMS assistant.
-OPENAI_API_KEY=<redacted>
+OPENAI_API_KEY=<your_value>
 
 # Model names for the LLM features of the UI. Different models can be used for different features.
 DMS_CHAT_MODEL_NAME=gpt-4o
@@ -65,19 +68,22 @@ LANGCHAIN_API_KEY=<your langsmith API key>
 LANGCHAIN_TRACING_V2=<set to true to enable>
 LANGCHAIN_PROJECT=<choose any project name you want>
 
-PINECONE_API_KEY=<redacted>
+# For Chatbot RAG support
+PINECONE_API_KEY=<your_value>
 PINECONE_INDEX=prod
 PINECONE_ENVIRONMENT=us-east-1-aws
 
+# Can be anything
+# Can be anything
 SUPPORT_EMAIL_ADDRESS=test@example.com
 
 # Next item is if you want to use Bing search in Opportunity Finder
-BingApiKey=<redacted>
+BingApiKey=<your_value>
 
 ```
 
 - Instructions for generating NEXTAUTH_SECRET are [here](https://next-auth.js.org/configuration/options#secret).
-- Values for most of the redacted items can be obtained from the `leaf-team-vault` server with these commands. Note:
+- Values for most of the your_value items can be obtained from the `leaf-team-vault` server with these commands. Note:
   this assumes you have the vault cli installed and configured to talk to the `leaf-team-vault` server.
 
     ```bash

@@ -3,7 +3,6 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-        "about:dev": "echo 'Starts the UI in dev mode on port 3000 on the local system'",
         "dev": "next dev --hostname 0.0.0.0 --port 3000",
         "lint": "next lint",
         "lint-summary": "next lint --format summary",
@@ -12,9 +11,9 @@
         "start": "next start",
         "unit_test": "jest '__tests__/components' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts",
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
-        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test ; yarn run depcheck",
+        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
         "check-format": "prettier --check .",
-        "generate": "build_scripts/do_typescript_generate.sh; build_scripts/do_openapi_generate.sh; npx tsx build_scripts/GenerateOpenAPITypes.ts;"
+        "generate": "build_scripts/do_typescript_generate.sh; build_scripts/do_openapi_generate.sh; npx tsx build_scripts/GenerateOpenAPITypes.ts"
     },
     "dependencies": {
         "@emotion/react": "11.13.3",
