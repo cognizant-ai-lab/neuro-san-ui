@@ -7,7 +7,7 @@ import {ChatMessage, ChatResponse} from "../../generated/neuro-san/OpenAPITypes"
 // We ignore any messages that are not of these types
 const KNOWN_MESSAGE_TYPES = [ChatMessageType.AI, ChatMessageType.AGENT, ChatMessageType.AGENT_FRAMEWORK]
 
-export const chatMessageFromChunk = (chunk: string): ChatMessage => {
+export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     let chatResponse: ChatResponse
     try {
         chatResponse = JSON.parse(chunk)
@@ -35,7 +35,12 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage => {
  * (2) a JSON object if we were able to parse it as such or (3) plain text if all else fails.
  * @throws If we failed to parse JSON but got anything other than a SyntaxError, we rethrow it as-is.
  */
-export const tryParseJson: (chatMessage: ChatMessage) => null | object | string = (chatMessage) => {
+export const tryParseJson: (chatMessage: ChatMessage | null) => null | object | string = (chatMessage) => {
+    if (!chatMessage?.text) {
+        // If we don't have a chat message or it has no text, return null
+        return null
+    }
+
     const chatMessageText = chatMessage.text
 
     // LLM sometimes wraps the JSON in markdown code blocks, so we need to remove them before parsing
@@ -56,7 +61,7 @@ export const tryParseJson: (chatMessage: ChatMessage) => null | object | string 
 }
 
 export const checkError: (chatMessageJson: object) => string | null = (chatMessageJson: object) => {
-    if ("error" in chatMessageJson) {
+    if (chatMessageJson && "error" in chatMessageJson) {
         const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
         return (
             `Error occurred. Error: "${agentError.error}", ` +
