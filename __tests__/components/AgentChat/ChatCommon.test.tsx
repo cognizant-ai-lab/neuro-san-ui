@@ -3,7 +3,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
-import {AgentErrorProps, CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
+import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
@@ -209,6 +209,7 @@ describe("ChatCommon", () => {
                 type: ChatMessageType.AGENT_FRAMEWORK,
                 text: testResponseText,
                 origin: [{tool: "testTool", instantiation_index: 1}],
+                sly_data: {answer: 42} as unknown as Record<string, never>,
             },
         }
 
@@ -300,26 +301,35 @@ describe("ChatCommon", () => {
         expect(screen.queryByText(/Error occurred:/u)).not.toBeInTheDocument()
     })
 
-    it("Should correctly detect an error chunk from Neuro-san", async () => {
+    test.each([
+        [
+            "with error in text field",
+            {
+                response: {
+                    type: ChatMessageType.AI,
+                    text: JSON.stringify({
+                        error: "Error message from LLM",
+                        traceback: "test tracebook",
+                        tool: "test tool",
+                    }),
+                },
+            },
+        ],
+        [
+            "with error in structure field",
+            {
+                response: {
+                    type: ChatMessageType.AI,
+                    structure: {
+                        error: "Error message from LLM",
+                        traceback: "test tracebook",
+                        tool: "test tool",
+                    },
+                },
+            },
+        ],
+    ])("Should correctly detect an error chunk from Neuro-san (%s)", async (_desc, chatResponse) => {
         renderChatCommonComponent()
-
-        const errorMessage = "Error message from LLM"
-
-        const testResponseText = JSON.stringify({
-            error: errorMessage,
-            traceback: "test tracebook",
-            tool: "test tool",
-        } as AgentErrorProps)
-
-        const successMessage: ChatMessage = {
-            type: ChatMessageType.AI,
-            text: testResponseText,
-        }
-
-        const chatResponse: ChatResponse = {
-            response: successMessage,
-        }
-
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponse))
         })
