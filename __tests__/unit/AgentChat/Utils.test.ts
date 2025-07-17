@@ -63,6 +63,30 @@ describe("AgentChat/Utils/tryParseJson", () => {
         expect(typeof chatMessage).toBe("string")
         expect(chatMessage).toEqual("This is a test string with embedded newline \n and escaped double quote '")
     })
+
+    it("should rethrow non-SyntaxError from JSON.parse", () => {
+        const message: ChatMessage = {type: ChatMessageType.AGENT, text: "{not: 'json'}"}
+        const customError = new TypeError("Custom error")
+        const spy = jest.spyOn(JSON, "parse").mockImplementation(() => {
+            throw customError
+        })
+
+        try {
+            expect(() => tryParseJson(message)).toThrow(customError)
+        } finally {
+            spy.mockRestore()
+        }
+    })
+
+    it("should return null if chat message missing or has no 'text' property", () => {
+        const message: ChatMessage | null = null
+        const chatMessage = tryParseJson(message)
+        expect(chatMessage).toBeNull()
+
+        const emptyMessage: ChatMessage = {type: ChatMessageType.AGENT, text: ""}
+        const emptyChatMessage = tryParseJson(emptyMessage)
+        expect(emptyChatMessage).toBeNull()
+    })
 })
 
 describe("AgentChat/Utils/checkError", () => {
