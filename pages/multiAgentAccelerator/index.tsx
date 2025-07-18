@@ -190,7 +190,8 @@ export default function MultiAgentAcceleratorPage() {
 
     const getLeftPanel = () => {
         return (
-            <Slide // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <Slide
+                id="multi-agent-accelerator-grid-sidebar-slide"
                 in={!isAwaitingLlm}
                 direction="right"
                 timeout={GROW_ANIMATION_TIME_MS}
@@ -258,7 +259,8 @@ export default function MultiAgentAcceleratorPage() {
 
     const getRightPanel = () => {
         return (
-            <Slide // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <Slide
+                id="multi-agent-accelerator-grid-agent-chat-common-slide"
                 in={!isAwaitingLlm}
                 direction="left"
                 timeout={GROW_ANIMATION_TIME_MS}

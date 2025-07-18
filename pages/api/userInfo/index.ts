@@ -12,9 +12,9 @@ const EXPECTED_NUMBER_OF_JWT_HEADERS = 3
 export default async function handler(req: NextApiRequest, res: NextApiResponse<UserInfoResponse>) {
     // Fetch user info from ALB or your backend service
     const userInfo = fetchUserInfoFromALB(req)
-    if (!userInfo) {
+    if (userInfo.oidcHeaderFound && !userInfo.oidcHeaderValid) {
         // We found the header, but couldn't parse it
-        res.status(httpStatus.UNAUTHORIZED).json({oidcHeaderFound: false})
+        res.status(httpStatus.UNAUTHORIZED).json({oidcHeaderFound: true, oidcHeaderValid: false})
         return
     }
 
@@ -40,14 +40,14 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
     // We expect the OIDC data header to be two parts, separated by a period
     if (!oidcDataHeader.includes(".")) {
         debug("OIDC header does not contain a period")
-        return {oidcHeaderFound: false}
+        return {oidcHeaderFound: true, oidcHeaderValid: false}
     }
 
     // Split the header into two parts
     const jwtHeaders = oidcDataHeader.split(".")
     if (!jwtHeaders || jwtHeaders.length !== EXPECTED_NUMBER_OF_JWT_HEADERS) {
         debug("OIDC header is not in the expected format", jwtHeaders)
-        return {oidcHeaderFound: false}
+        return {oidcHeaderFound: true, oidcHeaderValid: false}
     }
 
     // now base64 decode jwtheader
@@ -81,6 +81,7 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
         username,
         picture,
         oidcHeaderFound: true,
+        oidcHeaderValid: true,
         oidcProvider,
     }
 }

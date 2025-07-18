@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from "@testing-library/react"
+import {act, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
@@ -47,13 +47,17 @@ jest.mock("../../controller/agent/Agent", () => ({
 // Mock ChatCommon component
 const chatCommonMock = jest.fn()
 
+let setIsAwaitingLlm: (val: boolean) => void
+
 // Mock ChatCommon to call the mock function with props and support refs
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
     ChatCommon: forwardRef((props: Record<string, unknown>, ref) => {
         chatCommonMock(props)
+        setIsAwaitingLlm = props.setIsAwaitingLlm as typeof setIsAwaitingLlm
         return (
             <div
                 id="test-chat-common"
+                data-testid="test-chat-common"
                 ref={ref as Ref<HTMLDivElement>}
             />
         )
@@ -104,9 +108,7 @@ describe("Agent Network Page", () => {
         renderMultiAgentAcceleratorPage()
 
         // Ensure Math Guy (default network) element is rendered.
-        await waitFor(() => {
-            expect(screen.getAllByText(TEST_AGENT_MATH_GUY)).toHaveLength(1)
-        })
+        await screen.findByText(TEST_AGENT_MATH_GUY)
 
         // Find sidebar. Will fail if <> 1 found
         await screen.findByText("Agent Networks")
@@ -118,9 +120,7 @@ describe("Agent Network Page", () => {
         await user.click(musicNerdItem)
 
         // Music Nerd is selected now. Make sure we see it.
-        await waitFor(() => {
-            expect(screen.getAllByText(TEST_AGENT_MUSIC_NERD)).toHaveLength(1)
-        })
+        await screen.findByText(TEST_AGENT_MUSIC_NERD)
 
         // Make sure the page rendered ChatCommon with expected props
         expect(chatCommonMock).toHaveBeenCalledWith(
@@ -169,5 +169,45 @@ describe("Agent Network Page", () => {
                 )
             )
         })
+    })
+
+    it("should handle Zen mode animation correctly", async () => {
+        render(
+            <SnackbarProvider>
+                <MultiAgentAcceleratorPage />
+            </SnackbarProvider>
+        )
+        await screen.findByText("Agent Networks")
+
+        // Left panel: Make sure sidebar is visible
+        await waitFor(() => {
+            expect(document.getElementById("multi-agent-accelerator-sidebar-sidebar")).toBeVisible()
+        })
+
+        // Center panel: Agent Flow
+        await waitFor(() => {
+            expect(document.getElementById("multi-agent-accelerator-agent-flow-container")).toBeVisible()
+        })
+
+        // Right panel: Chat window
+        expect(await screen.findByTestId("test-chat-common")).toBeVisible()
+
+        // Force Zen mode by setting isAwaitingLlm to true
+        await act(async () => {
+            setIsAwaitingLlm(true)
+        })
+
+        // Left panel: should be hidden in Zen mode
+        await waitFor(() => {
+            expect(document.getElementById("multi-agent-accelerator-sidebar-sidebar")).not.toBeVisible()
+        })
+
+        // Center panel: Agent Flow. Should still be visible in Zen mode
+        await waitFor(() => {
+            expect(document.getElementById("multi-agent-accelerator-agent-flow-container")).toBeVisible()
+        })
+
+        // Right panel: Chat window should be hidden in Zen mode
+        expect(await screen.findByTestId("test-chat-common")).not.toBeVisible()
     })
 })

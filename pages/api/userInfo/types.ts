@@ -14,5 +14,6 @@ export type UserInfoResponse = {
     readonly username?: string
     readonly picture?: string
     readonly oidcHeaderFound: boolean
+    readonly oidcHeaderValid?: boolean
     readonly oidcProvider?: OidcProvider
 }
