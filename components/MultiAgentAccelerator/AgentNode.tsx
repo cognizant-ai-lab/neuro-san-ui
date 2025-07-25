@@ -12,10 +12,11 @@ import {Origin} from "../../generated/neuro-san/OpenAPITypes"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
-    readonly agentName: string
-    readonly getOriginInfo: () => Origin[]
-    readonly depth: number
     readonly agentCounts?: Map<string, number>
+    readonly agentName: string
+    readonly depth: number
+    readonly getIncludedAgentIds: () => string[]
+    readonly getOriginInfo: () => Origin[]
     readonly isAwaitingLlm?: boolean
     readonly displayAs?: string
 }
@@ -31,7 +32,7 @@ export const NODE_WIDTH = 100
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentName, getOriginInfo, depth, agentCounts, isAwaitingLlm, displayAs} = data
+    const {agentCounts, agentName, depth, displayAs, getIncludedAgentIds, getOriginInfo, isAwaitingLlm} = data
 
     const isFrontman = depth === 0
 
@@ -41,10 +42,13 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const agentId = props.id
 
     // "Active" agents are those at either end of the current communication from the incoming chat messages.
-    // We highlight them with a red background.
-    const isActiveAgent = getOriginInfo()
-        .map((originItem) => originItem.tool)
-        .includes(agentId)
+    // We highlight them with a green background. Check included agent IDs as well as origin info in order
+    // to display edges properly.
+    const isActiveAgent =
+        getIncludedAgentIds().includes(agentId) ||
+        getOriginInfo()
+            .map((originItem) => originItem.tool)
+            .includes(agentId)
 
     let backgroundColor: string
     let color: string

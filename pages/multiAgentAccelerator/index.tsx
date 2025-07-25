@@ -12,6 +12,7 @@ import {closeNotification, NotificationType, sendNotification} from "../../compo
 import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
 import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
+import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
@@ -35,8 +36,6 @@ export default function MultiAgentAcceleratorPage() {
 
     const [networks, setNetworks] = useState<string[]>([])
 
-    const [originInfo, setOriginInfo] = useState<Origin[]>([])
-
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
@@ -54,6 +53,12 @@ export default function MultiAgentAcceleratorPage() {
     const [neuroSanURL, setNeuroSanURL] = useState<string>(
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
+
+    // Included agent IDs are used to highlight active edges in the graph
+    const [includedAgentIds, setIncludedAgentIds] = useState<string[]>([])
+
+    // Origin info is used to highlight active agents in the graph
+    const [originInfo, setOriginInfo] = useState<Origin[]>([])
 
     const agentCountsRef = useRef<Map<string, number>>(new Map<string, number>())
 
@@ -154,9 +159,8 @@ export default function MultiAgentAcceleratorPage() {
         (chunk: string) => {
             // Obtain origin info if present
             const chatMessage = chatMessageFromChunk(chunk)
-            if (chatMessage && chatMessage.origin?.length > 0) {
-                setOriginInfo([...chatMessage.origin])
 
+            if (chatMessage?.origin?.length > 0) {
                 // Update agent counts.
                 // Note: we increment an agent's count each time it appears in the origin info, but another strategy
                 // would be to only count an agent when it is the "end destination" of the chain. Needs some thought to
@@ -166,11 +170,40 @@ export default function MultiAgentAcceleratorPage() {
                     // If the agent is not already in the counts map, initialize it to 0 aka "upsert"
                     agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
                 }
+
+                // Track all active edges
+                setIncludedAgentIds((prev) => {
+                    const activeEdges = new Set(prev)
+                    const isAgentFinalResponse = chatMessage.structure?.total_tokens
+                    const isCodedToolFinalResponse = chatMessage.text?.startsWith("Got result:")
+                    const isFinalResponse = isAgentFinalResponse || isCodedToolFinalResponse
+
+                    if (chatMessage.type === ChatMessageType.AGENT && isFinalResponse) {
+                        chatMessage.origin.forEach((originData) => {
+                            if (originData.tool) {
+                                activeEdges.delete(originData.tool)
+                            }
+                        })
+                        return Array.from(activeEdges)
+                    } else {
+                        // Set origin info for the current chat message, we want both AGENT and AI messages for this
+                        // due to not knowing which agents are being invoked except my looking at the origin info.
+                        setOriginInfo([...chatMessage.origin])
+
+                        chatMessage.origin.forEach((originData) => {
+                            if (originData.tool) {
+                                // Add active edges
+                                activeEdges.add(originData.tool)
+                            }
+                        })
+                        return Array.from(activeEdges)
+                    }
+                })
             }
 
             return true
         },
-        [setOriginInfo, agentCountsRef]
+        [agentCountsRef, setOriginInfo]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -185,8 +218,10 @@ export default function MultiAgentAcceleratorPage() {
     }, [setHaveShownPopup, haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
+        // When streaming is complete, reset the included agent IDs and origin info
+        setIncludedAgentIds([])
         setOriginInfo([])
-    }, [setOriginInfo])
+    }, [isAwaitingLlm, setIncludedAgentIds, setOriginInfo])
 
     const getLeftPanel = () => {
         return (
@@ -246,6 +281,7 @@ export default function MultiAgentAcceleratorPage() {
                         <AgentFlow
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
+                            includedAgentIds={includedAgentIds}
                             originInfo={originInfo}
                             selectedNetwork={selectedNetwork}
                             agentCounts={agentCountsRef.current}

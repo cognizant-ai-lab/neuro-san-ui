@@ -42,24 +42,26 @@ import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 // #region: Types
 interface AgentFlowProps {
+    readonly agentCounts?: Map<string, number>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly id: string
+    readonly includedAgentIds: string[]
+    readonly isAwaitingLlm?: boolean
     readonly originInfo?: Origin[]
     readonly selectedNetwork: string
-    readonly agentCounts?: Map<string, number>
-    readonly isAwaitingLlm?: boolean
 }
 
 type Layout = "radial" | "linear"
 // #endregion: Types
 
 const AgentFlow: FC<AgentFlowProps> = ({
+    agentCounts,
     agentsInNetwork,
     id,
+    isAwaitingLlm,
+    includedAgentIds,
     originInfo,
     selectedNetwork,
-    agentCounts,
-    isAwaitingLlm,
 }) => {
     const {fitView} = useReactFlow()
 
@@ -81,6 +83,8 @@ const AgentFlow: FC<AgentFlowProps> = ({
 
     const getOriginInfo = useCallback<() => Origin[]>(() => originInfoRef.current, [originInfoRef.current])
 
+    const getIncludedAgentIds = useCallback<() => string[]>(() => includedAgentIds, [includedAgentIds])
+
     const [nodes, setNodes] = useState<RFNode<AgentNodeProps>[]>([])
     const [edges, setEdges] = useState<Edge<EdgeProps>[]>([])
 
@@ -95,15 +99,17 @@ const AgentFlow: FC<AgentFlowProps> = ({
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
 
-    // Create the flow layout depending on user preference
     useEffect(() => {
+        // Create the flow layout depending on user preference
         let layoutResult: {nodes: RFNode<AgentNodeProps>[]; edges: Edge<EdgeProps>[]}
         switch (layout) {
             case "linear": {
                 layoutResult = layoutLinear(
-                    agentsInNetwork,
-                    getOriginInfo,
+                    // agentCounts key is optional, we add it if the heatmap is selected
                     coloringOption === "heatmap" ? agentCounts : undefined,
+                    agentsInNetwork,
+                    getIncludedAgentIds,
+                    getOriginInfo,
                     isAwaitingLlm
                 )
                 break
@@ -111,39 +117,44 @@ const AgentFlow: FC<AgentFlowProps> = ({
             case "radial":
             default: {
                 layoutResult = layoutRadial(
-                    agentsInNetwork,
-                    getOriginInfo,
+                    // agentCounts key is optional, we add it if the heatmap is selected
                     coloringOption === "heatmap" ? agentCounts : undefined,
+                    agentsInNetwork,
+                    getIncludedAgentIds,
+                    getOriginInfo,
                     isAwaitingLlm
                 )
                 break
             }
         }
 
-        // Animate active edges, which are those connecting active agents as defined by originInfo.
+        // Set nodes
+        layoutResult.nodes && setNodes(layoutResult.nodes)
+
+        // Animate active edges, which are those connecting active agents as defined by includedAgentIdsRef.
         let edgesToSet = layoutResult.edges || []
-        if (originInfo) {
-            const originTools = originInfo.map((originItem) => originItem.tool)
-            edgesToSet = edgesToSet.map((edge: Edge<EdgeProps>) => ({
+        edgesToSet = edgesToSet.map((edge: Edge<EdgeProps>) => {
+            // Check edges that should be active, checking the target and the source
+            const edgeIncluded = includedAgentIds.includes(edge.target) && includedAgentIds.includes(edge.source)
+
+            return {
                 ...edge,
                 style: {
-                    strokeWidth: originTools.includes(edge.target) ? 3 : undefined,
-                    stroke: originTools.includes(edge.target) ? "var(--bs-primary)" : undefined,
                     // Hide edge between active nodes to avoid clashing with plasma animation
-                    display: !isAwaitingLlm || originTools.includes(edge.target) ? "block" : "none",
+                    display: !isAwaitingLlm || edgeIncluded ? "block" : "none",
                 },
-                type: originTools.includes(edge.target) ? "animatedEdge" : undefined,
-            }))
-        }
+                type: edgeIncluded ? "animatedEdge" : undefined,
+            }
+        })
 
-        layoutResult.nodes && setNodes(layoutResult.nodes)
+        // Set edges
         setEdges(edgesToSet)
 
         // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
         setTimeout(() => {
             fitView()
         }, 50)
-    }, [agentsInNetwork, layout, originInfo, coloringOption])
+    }, [agentsInNetwork, coloringOption, layout, includedAgentIds, isAwaitingLlm])
 
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
@@ -347,7 +358,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
-    const shouldShowRadialGuides = enableRadialGuides && !isAwaitingLlm && layout === "radial" && maxDepth > 1
+    const shouldShowRadialGuides = enableRadialGuides && layout === "radial" && maxDepth > 1
 
     // Generate the control bar for the flow, including layout and radial guides toggles
     const getControls = () => {

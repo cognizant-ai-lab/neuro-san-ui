@@ -57,7 +57,7 @@ import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
 
-interface ChatCommonProps {
+export interface ChatCommonProps {
     /**
      * HTML id to use for the outer component
      */
@@ -660,7 +660,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         }
 
         // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
-        if (String(chatMessage.type) === "AGENT_FRAMEWORK" && chatMessage.chat_context) {
+        if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
             // Save the chat context, potentially overwriting any previous ones we received during this session.
             // We only care about the last one received.
             chatContext.current = chatMessage.chat_context

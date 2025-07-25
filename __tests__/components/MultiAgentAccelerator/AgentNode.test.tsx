@@ -31,11 +31,12 @@ describe("AgentNode", () => {
                 yPos={0}
                 dragging={false}
                 data={{
-                    agentName,
-                    getOriginInfo: () => [],
-                    depth: 1,
                     agentCounts: new Map([[agentId, 42]]),
+                    agentName,
+                    depth: 1,
                     displayAs: "llm_agent",
+                    getIncludedAgentIds: () => [],
+                    getOriginInfo: () => [],
                 }}
             />
         )
@@ -78,8 +79,9 @@ describe("AgentNode", () => {
                 dragging={false}
                 data={{
                     agentName: "testAgent",
-                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
                     depth: 3,
+                    getIncludedAgentIds: () => [],
+                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
                 }}
             />
         )
@@ -111,8 +113,9 @@ describe("AgentNode", () => {
                 dragging={false}
                 data={{
                     agentName: "testAgent",
-                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
                     depth: 3,
+                    getIncludedAgentIds: () => [],
+                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
                     isAwaitingLlm,
                 }}
             />
@@ -144,9 +147,10 @@ describe("AgentNode", () => {
                 dragging={false}
                 data={{
                     agentName: "Test Agent",
-                    getOriginInfo: () => [],
                     depth: 1,
                     displayAs,
+                    getIncludedAgentIds: () => [],
+                    getOriginInfo: () => [],
                 }}
             />
         )

@@ -42,6 +42,13 @@ describe("Index Page", () => {
         await screen.findByText("Platform")
         await screen.findByText(/for building grounded decisioning agents,/u)
         await screen.findByText("using agents.")
+        await screen.findByText("About")
+        await screen.findByText("Contact Us")
+        await screen.findByText("AI Innovation Studios")
+        await screen.findByText("Neuro IT Ops")
+        await screen.findByText("Flowsource")
+        await screen.findByText("Skygrade")
+        await screen.findByText("Cognizant Ignition")
     })
 
     it("opens the email dialog when 'Contact Us' is clicked", async () => {

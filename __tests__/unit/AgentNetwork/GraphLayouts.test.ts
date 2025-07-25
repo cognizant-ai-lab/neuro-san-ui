@@ -45,7 +45,7 @@ describe("GraphLayouts", () => {
     ]
 
     it("Should generate a linear layout", async () => {
-        const {nodes, edges} = layoutLinear(threeAgentNetwork, jest.fn(), new Map(), false)
+        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, jest.fn(), jest.fn(), false)
 
         expect(nodes).toHaveLength(3)
         expect(edges).toHaveLength(2)
@@ -71,7 +71,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should generate a radial layout", async () => {
-        const {nodes, edges} = layoutRadial(sevenAgentNetwork, jest.fn(), new Map(), false)
+        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, jest.fn(), jest.fn(), false)
 
         expect(nodes).toHaveLength(7)
         expect(edges).toHaveLength(6)
@@ -117,7 +117,7 @@ describe("GraphLayouts", () => {
         const agent3 = nodes.find((node) => node.id === "agent3")
         expect(agent3.position.x).toBeLessThan(DEFAULT_FRONTMAN_X_POS)
 
-        // agent6 should be left of  frontman
+        // agent6 should be left of frontman
         const agent6 = nodes.find((node) => node.id === "agent6")
         expect(agent6.position.x).toBeLessThan(DEFAULT_FRONTMAN_X_POS)
 
@@ -136,11 +136,11 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle cycles in the graph", async () => {
-        const {nodes, edges} = layoutRadial(networkWithCycles, jest.fn(), new Map(), false)
+        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, jest.fn(), jest.fn(), false)
 
         expect(nodes).toHaveLength(4)
 
-        // Should have 3 edges: agent1 -> angent2, agent1 -> agent4, agent2 -> agent3
+        // Should have 3 edges: agent1 -> agent2, agent1 -> agent4, agent2 -> agent3
         // Should _not_ have the cycle agent3 -> agent2 nor the self-loop agent4 -> agent4
         expect(edges).toHaveLength(3)
 
@@ -163,7 +163,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle direct and transitive dependencies in the graph", async () => {
-        const {nodes, edges} = layoutRadial(transitiveGraph, jest.fn(), new Map(), false)
+        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, jest.fn(), jest.fn(), false)
 
         // Check nodes
         expect(nodes).toHaveLength(3)
@@ -186,7 +186,7 @@ describe("GraphLayouts", () => {
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
     ])("Should handle a degenerate single-node graph in $name layout", async ({layoutFunction}) => {
-        const {nodes, edges} = layoutFunction(singleNodeNetwork, jest.fn(), new Map(), false)
+        const {nodes, edges} = layoutFunction(new Map(), singleNodeNetwork, jest.fn(), jest.fn(), false)
 
         expect(nodes).toHaveLength(1)
         expect(edges).toHaveLength(0)
@@ -200,7 +200,7 @@ describe("GraphLayouts", () => {
     ])("Should handle a disconnected graph in $name layout", async ({layoutFunction}) => {
         // We don't really support this case; "should never happen". This test is to make sure we at least
         // don't crash. This also exercises the (invalid) "multiple frontmen" case
-        const {nodes, edges} = layoutFunction(disconnectedGraph, jest.fn(), new Map(), false)
+        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, jest.fn(), jest.fn(), false)
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input

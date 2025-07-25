@@ -245,7 +245,7 @@ export default function Index(): ReactElement {
                                 passHref
                             >
                                 <a
-                                    id="of-link-anchor"
+                                    id="explore-agent-networks-link-anchor"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     href={`/projects?${buildQueryString()}`}
@@ -277,7 +277,7 @@ export default function Index(): ReactElement {
                                         passHref
                                     >
                                         <ActionLink
-                                            id="of-link-anchor"
+                                            id="platform-link-anchor"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             href={`/projects?${buildQueryString()}`}

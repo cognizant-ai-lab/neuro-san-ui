@@ -1,8 +1,9 @@
+import type {ChatCommonHandle, ChatCommonProps} from "../../components/AgentChat/ChatCommon"
 import {act, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {forwardRef, Ref} from "react"
+import {forwardRef} from "react"
 
 import {testConnection} from "../../controller/agent/Agent"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
@@ -23,20 +24,24 @@ const mockUseSession = useSession as jest.Mock
 // Mock dependencies
 jest.mock("next-auth/react")
 
-jest.mock("../../controller/agent/Agent")
-
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = jest.fn()
+const handleStopMock = jest.fn()
+
 let setIsAwaitingLlm: (val: boolean) => void
+
+jest.mock("../../controller/agent/Agent")
+
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
-    ChatCommon: forwardRef((props: Record<string, unknown>, ref) => {
+    ChatCommon: forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
         chatCommonMock(props)
         setIsAwaitingLlm = props.setIsAwaitingLlm as typeof setIsAwaitingLlm
+        // handleStop ref
+        ;(ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
         return (
             <div
                 id="test-chat-common"
                 data-testid="test-chat-common"
-                ref={ref as Ref<HTMLDivElement>}
             />
         )
     }),
@@ -151,11 +156,8 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     it("should handle Zen mode animation correctly", async () => {
-        render(
-            <SnackbarProvider>
-                <MultiAgentAcceleratorPage />
-            </SnackbarProvider>
-        )
+        renderMultiAgentAcceleratorPage()
+
         await screen.findByText("Agent Networks")
 
         // Left panel: Make sure sidebar is visible
@@ -171,10 +173,16 @@ describe("Multi Agent Accelerator Page", () => {
         // Right panel: Chat window
         expect(await screen.findByTestId("test-chat-common")).toBeVisible()
 
+        // Make sure Stop button is not in document
+        expect(screen.queryByLabelText("Stop")).not.toBeInTheDocument()
+
         // Force Zen mode by setting isAwaitingLlm to true
         await act(async () => {
             setIsAwaitingLlm(true)
         })
+
+        // Stop button should be in document in Zen mode
+        await screen.findByLabelText("Stop")
 
         // Left panel: should be hidden in Zen mode
         await waitFor(() => {
@@ -188,5 +196,18 @@ describe("Multi Agent Accelerator Page", () => {
 
         // Right panel: Chat window should be hidden in Zen mode
         expect(await screen.findByTestId("test-chat-common")).not.toBeVisible()
+    })
+
+    it("calls handleStopMock on Escape key when isAwaitingLlm is true", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        await act(async () => {
+            setIsAwaitingLlm(true)
+        })
+
+        // Simulate Escape key
+        await userEvent.keyboard("{Escape}")
+
+        expect(handleStopMock).toHaveBeenCalledTimes(1)
     })
 })

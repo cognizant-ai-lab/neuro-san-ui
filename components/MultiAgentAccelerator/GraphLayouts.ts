@@ -52,9 +52,10 @@ const getFrontman = (parentAgents: ConnectivityInfo[], childAgents: Set<string>)
     parentAgents.find((agent) => !childAgents.has(agent.origin))
 
 export const layoutRadial = (
-    agentsInNetwork: ConnectivityInfo[],
-    getOriginInfo: () => Origin[],
     agentCounts: Map<string, number>,
+    agentsInNetwork: ConnectivityInfo[],
+    getIncludedAgentIds: () => string[],
+    getOriginInfo: () => Origin[],
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -165,12 +166,13 @@ export const layoutRadial = (
                 id: nodeId,
                 type: AGENT_NODE_TYPE_NAME,
                 data: {
-                    agentName: cleanUpAgentName(nodeId),
-                    getOriginInfo,
-                    depth,
                     agentCounts,
-                    isAwaitingLlm,
+                    agentName: cleanUpAgentName(nodeId),
+                    depth,
                     displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
+                    getIncludedAgentIds,
+                    getOriginInfo,
+                    isAwaitingLlm,
                 },
                 position: isFrontman ? {x: centerX, y: centerY} : {x, y},
                 style: {
@@ -188,9 +190,10 @@ export const layoutRadial = (
 }
 
 export const layoutLinear = (
-    agentsInNetwork: ConnectivityInfo[],
-    getOriginInfo: () => Origin[],
     agentCounts: Map<string, number>,
+    agentsInNetwork: ConnectivityInfo[],
+    getIncludedAgentIds: () => string[],
+    getOriginInfo: () => Origin[],
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -211,11 +214,12 @@ export const layoutLinear = (
             id: originOfNode,
             type: AGENT_NODE_TYPE_NAME,
             data: {
-                agentName: cleanUpAgentName(originOfNode),
-                getOriginInfo,
                 agentCounts,
-                isAwaitingLlm,
+                agentName: cleanUpAgentName(originOfNode),
                 displayAs: agentsInNetwork.find((a) => a.origin === originOfNode)?.display_as,
+                getIncludedAgentIds,
+                getOriginInfo,
+                isAwaitingLlm,
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {
