@@ -21,7 +21,7 @@ Note: Previously the project was known as UniLEAF and that name is still used in
     - For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
     - Make sure that the yarn executable is in your path. You can do this by typing `yarn --version`.
 - Clone the repository:
-    - `git clone git@github.com:leaf-ai/neuro-ui.git`
+    - `git clone git@github.com:leaf-ai/neuro-san-ui.git`
 - Install all dependencies including dev dependencies
     - `yarn install`
 - [Create](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) a classic Personal Access Token (classic) in GitHub
