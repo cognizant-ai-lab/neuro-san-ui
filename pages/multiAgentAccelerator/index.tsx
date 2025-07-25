@@ -179,24 +179,23 @@ export default function MultiAgentAcceleratorPage() {
                     const isFinalResponse = isAgentFinalResponse || isCodedToolFinalResponse
 
                     if (chatMessage.type === ChatMessageType.AGENT && isFinalResponse) {
-                        chatMessage.origin.forEach((originData) => {
-                            if (originData.tool) {
-                                activeEdges.delete(originData.tool)
-                            }
-                        })
-                        return Array.from(activeEdges)
+                        const toolsToRemove = chatMessage.origin
+                            .filter((originData) => originData.tool)
+                            .map((originData) => originData.tool)
+                        return Array.from(activeEdges).filter((edgeId) => !toolsToRemove.includes(edgeId))
                     } else {
                         // Set origin info for the current chat message, we want both AGENT and AI messages for this
                         // due to not knowing which agents are being invoked except my looking at the origin info.
                         setOriginInfo([...chatMessage.origin])
 
-                        chatMessage.origin.forEach((originData) => {
-                            if (originData.tool) {
-                                // Add active edges
-                                activeEdges.add(originData.tool)
-                            }
-                        })
-                        return Array.from(activeEdges)
+                        return Array.from(
+                            new Set([
+                                ...prev,
+                                ...chatMessage.origin
+                                    .filter((origin) => Boolean(origin.tool))
+                                    .map((origin) => origin.tool),
+                            ])
+                        )
                     }
                 })
             }
