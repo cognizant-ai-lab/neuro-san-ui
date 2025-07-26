@@ -51,6 +51,28 @@ const getChildAgents = (parentAgents: ConnectivityInfo[]): Set<string> => {
 const getFrontman = (parentAgents: ConnectivityInfo[], childAgents: Set<string>): ConnectivityInfo =>
     parentAgents.find((agent) => !childAgents.has(agent.origin))
 
+// Generates the properties for an edge in the graph.
+// Common for both radial and linear layouts.
+const getEdgesProperties = (
+    sourceId: string,
+    targetId: string,
+    sourceHandle: string,
+    targetHandle: string,
+    isAnimated: boolean
+) => {
+    return {
+        animated: false,
+        id: `${targetId}-edge-${sourceId}`,
+        key: `${targetId}-edge-${sourceId}`,
+        markerEnd: {type: MarkerType.ArrowClosed, width: 30, height: 30},
+        source: sourceId,
+        sourceHandle,
+        target: targetId,
+        targetHandle,
+        type: isAnimated ? "animatedEdge" : undefined,
+    }
+}
+
 export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
@@ -61,9 +83,6 @@ export const layoutRadial = (
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
 } => {
-    const centerX = DEFAULT_FRONTMAN_X_POS
-    const centerY = DEFAULT_FRONTMAN_Y_POS
-
     const nodesInNetwork = []
     const edgesInNetwork = []
 
@@ -113,8 +132,8 @@ export const layoutRadial = (
 
         nodeIds.forEach((nodeId, index) => {
             const angle = index * angleStep // Spread nodes evenly in their depth level
-            const x = centerX + radius * Math.cos(angle)
-            const y = centerY + radius * Math.sin(angle)
+            const x = DEFAULT_FRONTMAN_X_POS + radius * Math.cos(angle)
+            const y = DEFAULT_FRONTMAN_Y_POS + radius * Math.sin(angle)
 
             const isFrontman = frontman?.origin === nodeId
 
@@ -144,21 +163,15 @@ export const layoutRadial = (
                         targetHandle = isAboveParent ? `${nodeId}-bottom-handle` : `${nodeId}-top-handle`
                     }
 
+                    const edgeIncluded =
+                        getIncludedAgentIds().includes(nodeId) && getIncludedAgentIds().includes(graphNode.id)
+
                     // Add edge from parent to node
-                    edgesInNetwork.push({
-                        id: `${nodeId}-edge-${graphNode.id}`,
-                        key: `${nodeId}-edge-${graphNode.id}`,
-                        source: graphNode.id,
-                        sourceHandle,
-                        target: nodeId,
-                        targetHandle,
-                        animated: false,
-                        markerEnd: {
-                            type: MarkerType.ArrowClosed,
-                            width: 30,
-                            height: 30,
-                        },
-                    })
+                    if (!isAwaitingLlm || edgeIncluded) {
+                        edgesInNetwork.push(
+                            getEdgesProperties(graphNode.id, nodeId, sourceHandle, targetHandle, edgeIncluded)
+                        )
+                    }
                 }
             }
 
@@ -174,7 +187,7 @@ export const layoutRadial = (
                     getOriginInfo,
                     isAwaitingLlm,
                 },
-                position: isFrontman ? {x: centerX, y: centerY} : {x, y},
+                position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
                 style: {
                     border: "none",
                     background: "transparent",
@@ -234,14 +247,20 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                edgesInNetwork.push({
-                    id: `${originOfNode}-edge-${parentNode}`,
-                    source: parentNode,
-                    sourceHandle: `${parentNode}-right-handle`,
-                    target: originOfNode,
-                    targetHandle: `${originOfNode}-left-handle`,
-                    animated: false,
-                })
+                const edgeIncluded =
+                    getIncludedAgentIds().includes(parentNode) && getIncludedAgentIds().includes(originOfNode)
+
+                // Include all edges here, since dagre needs them to compute the layout correctly.
+                // We will filter them later if we're in "awaiting LLM" mode.
+                edgesInNetwork.push(
+                    getEdgesProperties(
+                        parentNode,
+                        originOfNode,
+                        `${parentNode}-right-handle`,
+                        `${originOfNode}-left-handle`,
+                        edgeIncluded
+                    )
+                )
             }
         }
     })
@@ -259,10 +278,12 @@ export const layoutLinear = (
         dagreGraph.setNode(node.id, {width: NODE_WIDTH, height: NODE_HEIGHT})
     })
 
+    // Add edges to the dagre graph
     edgesInNetwork.forEach((edge) => {
         dagreGraph.setEdge(edge.source, edge.target)
     })
 
+    // Compute the layout using dagre
     dagre.layout(dagreGraph)
 
     // Get x positions for the nodes in nodesTmp. Keep only unique values and sort numerically
@@ -283,5 +304,12 @@ export const layoutLinear = (
         node.data.depth = xPositions.indexOf(nodeWithPosition.x)
     })
 
-    return {nodes: nodesTmp, edges: edgesInNetwork}
+    // If we're in "awaiting LLM" mode, we filter edges to only include those that are between included nodes.
+    const filteredEdges = isAwaitingLlm
+        ? edgesInNetwork.filter(
+              (edge) => getIncludedAgentIds().includes(edge.source) && getIncludedAgentIds().includes(edge.target)
+          )
+        : edgesInNetwork
+
+    return {nodes: nodesTmp, edges: filteredEdges}
 }

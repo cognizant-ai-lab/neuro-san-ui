@@ -283,7 +283,6 @@ export default function MultiAgentAcceleratorPage() {
                             id="multi-agent-accelerator-agent-flow"
                             includedAgentIds={includedAgentIds}
                             originInfo={originInfo}
-                            selectedNetwork={selectedNetwork}
                             agentCounts={agentCountsRef.current}
                             isAwaitingLlm={isAwaitingLlm}
                         />

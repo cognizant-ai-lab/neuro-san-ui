@@ -8,7 +8,6 @@ import {ConnectivityInfo} from "../../../generated/neuro-san/OpenAPITypes"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../common/strictMocks"
 
-const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
 jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
@@ -50,7 +49,6 @@ describe("AgentFlow", () => {
         id: "test-flow-id",
         includedAgentIds: [], // No active agents for the default test
         originInfo: [{tool: "agent1", instantiation_index: 1}],
-        selectedNetwork: TEST_AGENT_MATH_GUY,
     }
 
     const renderAgentFlowComponent = (overrides = {}) => {
@@ -145,7 +143,6 @@ describe("AgentFlow", () => {
                         {tool: "agent1", instantiation_index: 1},
                         {tool: "agent3", instantiation_index: 1},
                     ]}
-                    selectedNetwork={TEST_AGENT_MUSIC_NERD_PRO}
                 />
             </ReactFlowProvider>
         )
@@ -237,7 +234,6 @@ describe("AgentFlow", () => {
                     id="test-flow-id"
                     includedAgentIds={[]}
                     originInfo={[{tool: "agent3", instantiation_index: 1}]}
-                    selectedNetwork={TEST_AGENT_MATH_GUY}
                 />
             </ReactFlowProvider>
         )
