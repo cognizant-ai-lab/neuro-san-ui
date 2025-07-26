@@ -45,7 +45,7 @@ describe("GraphLayouts", () => {
     ]
 
     it("Should generate a linear layout", async () => {
-        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, jest.fn(), jest.fn(), false)
+        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, () => [], jest.fn(), false)
 
         expect(nodes).toHaveLength(3)
         expect(edges).toHaveLength(2)
@@ -71,7 +71,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should generate a radial layout", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, jest.fn(), jest.fn(), false)
+        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, () => [], jest.fn(), false)
 
         expect(nodes).toHaveLength(7)
         expect(edges).toHaveLength(6)
@@ -136,7 +136,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle cycles in the graph", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, jest.fn(), jest.fn(), false)
+        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, () => [], jest.fn(), false)
 
         expect(nodes).toHaveLength(4)
 
@@ -163,7 +163,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle direct and transitive dependencies in the graph", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, jest.fn(), jest.fn(), false)
+        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, () => [], jest.fn(), false)
 
         // Check nodes
         expect(nodes).toHaveLength(3)
@@ -200,7 +200,7 @@ describe("GraphLayouts", () => {
     ])("Should handle a disconnected graph in $name layout", async ({layoutFunction}) => {
         // We don't really support this case; "should never happen". This test is to make sure we at least
         // don't crash. This also exercises the (invalid) "multiple frontmen" case
-        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, jest.fn(), jest.fn(), false)
+        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, () => [], jest.fn(), false)
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
