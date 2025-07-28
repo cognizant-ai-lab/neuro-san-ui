@@ -97,8 +97,10 @@ const config = [
                 version: "detect",
             },
             "import/resolver": {
-                typescript: true,
                 node: true,
+                typescript: {
+                    project: "./tsconfig.json",
+                },
             },
         },
 
