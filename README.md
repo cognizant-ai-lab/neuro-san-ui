@@ -6,7 +6,7 @@ to the code locally, without deploying anything to the hosted services.
 
 You will configure your local environment to connect to the Neuro️ SAN backend services.
 
-Note: Previous names for this project were UniLEAF or NeuroAI, and those names are still used in some places.
+Note: Previous names for this project were UniLEAF and NeuroAI, and those names are still used in some places.
 
 ## Set Up Prerequisites
 
