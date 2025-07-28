@@ -1,10 +1,10 @@
 # UI Developer Start Guide
 
-This README is intended to help a new UI developer get up to speed toward making changes to the NeuroAI️ UI code.
+This README is intended to help a new UI developer get up to speed toward making changes to the Neuro SAN UI code.
 By following these instructions, you will be able to run the UI locally on your development machine and make changes
 to the code locally, without deploying anything to the hosted services.
 
-You will configure your local environment to connect to the NeuroAI️ backend services.
+You will configure your local environment to connect to the Neuro️ SAN backend services.
 
 Note: Previously the project was known as UniLEAF and that name is still used in some places.
 
