@@ -68,11 +68,6 @@ LANGCHAIN_API_KEY=<your langsmith API key>
 LANGCHAIN_TRACING_V2=<set to true to enable>
 LANGCHAIN_PROJECT=<choose any project name you want>
 
-# For Chatbot RAG support
-PINECONE_API_KEY=<your_value>
-PINECONE_INDEX=prod
-PINECONE_ENVIRONMENT=us-east-1-aws
-
 # Can be anything
 # Can be anything
 SUPPORT_EMAIL_ADDRESS=test@example.com
@@ -94,9 +89,6 @@ BingApiKey=<your_value>
 
 - Instructions on generating OPENAI_API_KEY are [here](https://platform.openai.com/account/api-keys).  
   You will need an active account with OpenAI to generate this key. This is only needed if you are working on the  
-  LLM features of the UI.
-- Instructions on generating PINECONE_API_KEY are [here](https://docs.pinecone.io/docs/authentication).  
-  You will need an active account with Pinecone to generate this key. This is only needed if you are working on the  
   LLM features of the UI.
 - Be sure to chmod 600 this .env file to keep secret values secret
 
