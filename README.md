@@ -124,7 +124,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Now you've made it this far, try a simple change within the UI. Here's an example:
 
-1. Navigate to the MAUI page `http://localhost:3000/multiAgentAccelerator`.
+1. Navigate to the MAUI page `http://localhost:3000/multiAgentAccelerator`
 1. Open `./pages/multiAgentAccelerator/index.tsx`
 1. Add a message, such as `Hello world!`, at the appropriate place in the tsx file (somewhere within the `<Grid>` in the last `return` statement).
 1. Your change appears immediately in the UI for MAUI, without relaunching any services or recompiling,
