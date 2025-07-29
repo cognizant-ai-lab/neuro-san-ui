@@ -25,6 +25,11 @@ export interface AgentNodeProps {
 export const NODE_HEIGHT = 100
 export const NODE_WIDTH = 100
 
+// Icon sizes
+// These are used to set the size of the icons displayed in the agent nodes.
+const AGENT_ICON_SIZE = "2.25rem"
+const FRONTMAN_ICON_SIZE = "4.5rem"
+
 /**
  * A node representing an agent in the network for use in react-flow.
  * @param props See AgentNodeProps
@@ -89,15 +94,13 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
-        const fontSize = "2.25rem"
         const id = `${agentId}-icon`
-
         if (isFrontman) {
             return (
                 // Use special icon and larger size for Frontman
                 <PersonIcon
                     id={id}
-                    sx={{fontSize: "2.75rem"}}
+                    sx={{fontSize: FRONTMAN_ICON_SIZE}}
                 />
             )
         }
@@ -106,14 +109,14 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                 return (
                     <TravelExploreIcon
                         id={id}
-                        sx={{fontSize}}
+                        sx={{fontSize: AGENT_ICON_SIZE}}
                     />
                 )
             case "coded_tool":
                 return (
                     <HandymanIcon
                         id={id}
-                        sx={{fontSize}}
+                        sx={{fontSize: AGENT_ICON_SIZE}}
                     />
                 )
             case "llm_agent":
@@ -121,7 +124,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                 return (
                     <AutoAwesomeIcon
                         id={id}
-                        sx={{fontSize}}
+                        sx={{fontSize: AGENT_ICON_SIZE}}
                     />
                 )
         }
@@ -139,11 +142,11 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     boxShadow,
                     color,
                     display: "flex",
-                    height: NODE_HEIGHT,
+                    height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     justifyContent: "center",
                     shapeOutside: "circle(50%)",
                     textAlign: "center",
-                    width: NODE_WIDTH,
+                    width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: ZIndexLayers.LAYER_1,
                     position: "relative",
                 }}
