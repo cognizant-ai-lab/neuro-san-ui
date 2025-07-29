@@ -146,7 +146,7 @@ describe("navbar", () => {
         const helpToggle = await screen.findByText("Help")
         await user.click(helpToggle)
 
-        const userGuide = await screen.findByText("Contact Us")
+        const userGuide = await screen.findByText("User guide")
         expect(userGuide).toBeVisible()
     })
 
