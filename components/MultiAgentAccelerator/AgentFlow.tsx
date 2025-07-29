@@ -12,12 +12,9 @@ import {
     ConnectionMode,
     ControlButton,
     Controls,
-    Edge,
-    EdgeProps,
     EdgeTypes,
     NodeChange,
     ReactFlow,
-    Node as RFNode,
     NodeTypes as RFNodeTypes,
     useReactFlow,
     useStore,
@@ -48,7 +45,6 @@ interface AgentFlowProps {
     readonly includedAgentIds: string[]
     readonly isAwaitingLlm?: boolean
     readonly originInfo?: Origin[]
-    readonly selectedNetwork: string
 }
 
 type Layout = "radial" | "linear"
@@ -61,7 +57,6 @@ const AgentFlow: FC<AgentFlowProps> = ({
     isAwaitingLlm,
     includedAgentIds,
     originInfo,
-    selectedNetwork,
 }) => {
     const {fitView} = useReactFlow()
 
@@ -85,9 +80,6 @@ const AgentFlow: FC<AgentFlowProps> = ({
 
     const getIncludedAgentIds = useCallback<() => string[]>(() => includedAgentIds, [includedAgentIds])
 
-    const [nodes, setNodes] = useState<RFNode<AgentNodeProps>[]>([])
-    const [edges, setEdges] = useState<Edge<EdgeProps>[]>([])
-
     const [layout, setLayout] = useState<Layout>("radial")
 
     const [coloringOption, setColoringOption] = useState<"depth" | "heatmap">("depth")
@@ -99,75 +91,67 @@ const AgentFlow: FC<AgentFlowProps> = ({
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
 
+    const isHeatmap = coloringOption === "heatmap"
+
+    // Create the flow layout depending on user preference
+    // Memoize layoutResult so it only recalculates when relevant data changes
+    const layoutResult = useMemo(
+        () =>
+            layout === "linear"
+                ? layoutLinear(
+                      // agentCounts key is optional, so we check if it's defined
+                      isHeatmap ? agentCounts : undefined,
+                      agentsInNetwork,
+                      getIncludedAgentIds,
+                      getOriginInfo,
+                      isAwaitingLlm
+                  )
+                : layoutRadial(
+                      // agentCounts key is optional, so we check if it's defined
+                      isHeatmap ? agentCounts : undefined,
+                      agentsInNetwork,
+                      getIncludedAgentIds,
+                      getOriginInfo,
+                      isAwaitingLlm
+                  ),
+        [
+            layout,
+            coloringOption,
+            agentCounts,
+            agentsInNetwork,
+            includedAgentIds,
+            originInfo,
+            isAwaitingLlm,
+            getIncludedAgentIds,
+            getOriginInfo,
+        ]
+    )
+
+    const [nodes, setNodes] = useState(layoutResult.nodes)
+
+    // Sync up the nodes with the layout result
     useEffect(() => {
-        // Create the flow layout depending on user preference
-        let layoutResult: {nodes: RFNode<AgentNodeProps>[]; edges: Edge<EdgeProps>[]}
-        switch (layout) {
-            case "linear": {
-                layoutResult = layoutLinear(
-                    // agentCounts key is optional, we add it if the heatmap is selected
-                    coloringOption === "heatmap" ? agentCounts : undefined,
-                    agentsInNetwork,
-                    getIncludedAgentIds,
-                    getOriginInfo,
-                    isAwaitingLlm
-                )
-                break
-            }
-            case "radial":
-            default: {
-                layoutResult = layoutRadial(
-                    // agentCounts key is optional, we add it if the heatmap is selected
-                    coloringOption === "heatmap" ? agentCounts : undefined,
-                    agentsInNetwork,
-                    getIncludedAgentIds,
-                    getOriginInfo,
-                    isAwaitingLlm
-                )
-                break
-            }
-        }
+        setNodes(layoutResult.nodes)
+    }, [layoutResult.nodes])
 
-        // Set nodes
-        layoutResult.nodes && setNodes(layoutResult.nodes)
+    const edges = layoutResult.edges
 
-        // Animate active edges, which are those connecting active agents as defined by includedAgentIdsRef.
-        let edgesToSet = layoutResult.edges || []
-        edgesToSet = edgesToSet.map((edge: Edge<EdgeProps>) => {
-            // Check edges that should be active, checking the target and the source
-            const edgeIncluded = includedAgentIds.includes(edge.target) && includedAgentIds.includes(edge.source)
-
-            return {
-                ...edge,
-                style: {
-                    // Hide edge between active nodes to avoid clashing with plasma animation
-                    display: !isAwaitingLlm || edgeIncluded ? "block" : "none",
-                },
-                type: edgeIncluded ? "animatedEdge" : undefined,
-            }
-        })
-
-        // Set edges
-        setEdges(edgesToSet)
-
+    useEffect(() => {
         // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
         setTimeout(() => {
             fitView()
         }, 50)
-    }, [agentsInNetwork, coloringOption, layout, includedAgentIds, isAwaitingLlm])
+    }, [agentsInNetwork, layout])
 
-    const onNodesChange = useCallback(
-        (changes: NodeChange[]) => {
-            setNodes((ns) =>
-                applyNodeChanges<AgentNodeProps>(
-                    // For now we only allow dragging, no updates
-                    changes.filter((c) => c.type === "position"),
-                    ns
-                )
+    const onNodesChange = useCallback((changes: NodeChange[]) => {
+        setNodes((ns) =>
+            applyNodeChanges<AgentNodeProps>(
+                // For now we only allow dragging, no updates
+                changes.filter((c) => c.type === "position"),
+                ns
             )
-        },
-        [selectedNetwork]
-    )
+        )
+    }, [])
 
     const transform = useStore((state) => state.transform)
 
@@ -232,10 +216,9 @@ const AgentFlow: FC<AgentFlowProps> = ({
 
     // Generate Legend for depth or heatmap colors
     function getLegend() {
-        const showHeatmap = coloringOption === "heatmap"
-        const palette = showHeatmap ? HEATMAP_COLORS : BACKGROUND_COLORS
-        const title = showHeatmap ? "Heat" : "Depth"
-        const length = showHeatmap ? HEATMAP_COLORS.length : Math.min(maxDepth, BACKGROUND_COLORS.length)
+        const palette = isHeatmap ? HEATMAP_COLORS : BACKGROUND_COLORS
+        const title = isHeatmap ? "Heat" : "Depth"
+        const length = isHeatmap ? HEATMAP_COLORS.length : Math.min(maxDepth, BACKGROUND_COLORS.length)
         return (
             <Box
                 id={`${id}-legend`}
@@ -334,8 +317,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                             fontSize: "0.5rem",
                             height: "1rem",
                             color: darkMode ? "var(--bs-white)" : "var(--bs-black)",
-                            backgroundColor:
-                                darkMode && coloringOption === "heatmap" ? "var(--bs-gray-medium)" : undefined,
+                            backgroundColor: darkMode && isHeatmap ? "var(--bs-gray-medium)" : undefined,
                         }}
                     >
                         <Typography
