@@ -276,6 +276,16 @@ function Navbar(props: NavbarProps): ReactElement {
                     onClose={handleCloseHelpMenu}
                 >
                     <MenuItem
+                        id="user-guide"
+                        key="user-guide"
+                        component="a"
+                        href="/userguide"
+                        target="_blank"
+                        sx={{...DISABLE_OUTLINE_PROPS}}
+                    >
+                        User guide
+                    </MenuItem>
+                    <MenuItem
                         href={null}
                         id="contact-us-help"
                         key="contact-us-help"

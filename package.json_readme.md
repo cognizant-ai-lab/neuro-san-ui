@@ -2,8 +2,6 @@
 
 Comments aren't allowed in JSON files, so this file is for documenting package.json.
 
-1. Why do we need echarts-gl? ECharts depends on it for 3D plots (but for some reason doesn't declare it as a dependency)
-   Link (use Google translate!) https://blog.csdn.net/RubyLinT/article/details/109100726
 1. "sharp" -- required by NextJS. See: https://nextjs.org/docs/messages/sharp-missing-in-production
 1. "csstype": "<3.1.3" -- see https://github.com/emotion-js/emotion/issues/3136 and
    https://github.com/frenic/csstype/issues/189 for the issues with version 3.1.3 of this library
