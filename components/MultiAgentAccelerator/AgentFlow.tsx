@@ -127,17 +127,17 @@ const AgentFlow: FC<AgentFlowProps> = ({
         ]
     )
 
+    const [nodes, setNodes] = useState(layoutResult.nodes)
+
     // Sync up the nodes with the layout result
     useEffect(() => {
         setNodes(layoutResult.nodes)
     }, [layoutResult.nodes])
 
-    const [nodes, setNodes] = useState(layoutResult.nodes)
-
     const edges = layoutResult.edges
 
     useEffect(() => {
-        // // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
+        // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
         setTimeout(() => {
             fitView()
         }, 50)
