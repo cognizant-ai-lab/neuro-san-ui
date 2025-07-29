@@ -119,17 +119,8 @@ jest.mock(
         ({children}) =>
             createElement("div", null, children)
 )
-jest.mock(
-    "remark-gfm",
-    () =>
-        ({children}) =>
-            createElement("div", null, children)
-)
 
 /* eslint-enable react/display-name, react/no-multi-comp */
-
-// Doesn't play nicely with jest
-jest.mock("pretty-bytes", () => jest.fn((bytes) => `${bytes} bytes`))
 
 // Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
 window.HTMLElement.prototype.scrollIntoView = jest.fn()

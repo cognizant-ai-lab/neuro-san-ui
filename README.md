@@ -1,12 +1,12 @@
 # UI Developer Start Guide
 
-This README is intended to help a new UI developer get up to speed toward making changes to the NeuroAI️ UI code.
+This README is intended to help a new UI developer get up to speed toward making changes to the Neuro SAN UI code.
 By following these instructions, you will be able to run the UI locally on your development machine and make changes
 to the code locally, without deploying anything to the hosted services.
 
-You will configure your local environment to connect to the NeuroAI️ backend services.
+You will configure your local environment to connect to the Neuro️ SAN backend services.
 
-Note: Previously the project was known as UniLEAF and that name is still used in some places.
+Note: Previous names for this project were UniLEAF and NeuroAI, and those names are still used in some places.
 
 ## Set Up Prerequisites
 
@@ -21,7 +21,7 @@ Note: Previously the project was known as UniLEAF and that name is still used in
     - For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
     - Make sure that the yarn executable is in your path. You can do this by typing `yarn --version`.
 - Clone the repository:
-    - `git clone git@github.com:leaf-ai/neuro-ui.git`
+    - `git clone git@github.com:leaf-ai/neuro-san-ui.git`
 - Install all dependencies including dev dependencies
     - `yarn install`
 - [Create](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) a classic Personal Access Token (classic) in GitHub
@@ -74,7 +74,6 @@ PINECONE_INDEX=prod
 PINECONE_ENVIRONMENT=us-east-1-aws
 
 # Can be anything
-# Can be anything
 SUPPORT_EMAIL_ADDRESS=test@example.com
 
 # Next item is if you want to use Bing search in Opportunity Finder
@@ -125,16 +124,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Now you've made it this far, try a simple change within the UI. Here's an example:
 
-1. Navigate to the page for any Project within Neuro AI, using the `http://localhost:3000` URL mentioned above.
-1. Open `./pages/projects/[projectID]/index.tsx`
-1. Add a message at the appropriate place in the tsx file (somewhere within the `return` statement, inside the `<>`  
-   fragment).
-    ```typescript
-    {
-        ;`Hello world! The current project ID is ${projectId}`
-    }
-    ```
-1. Your change appears immediately in the UI for the Project page, without relaunching any services or recompiling,
+1. Navigate to the MAUI page `http://localhost:3000/multiAgentAccelerator`
+1. Open `./pages/multiAgentAccelerator/index.tsx`
+1. Add a message, such as `Hello world!`, at the appropriate place in the tsx file (somewhere within the `<Grid>` in the last `return` statement).
+1. Your change appears immediately in the UI for MAUI, without relaunching any services or recompiling,
    thanks to [Hot Module Replacement](https://webpack.js.org/guides/hot-module-replacement/) in Webpack which is used
    by NextJS. If you don't see your change, try holding down `Shift` and clicking the browser refresh button --
    this bypasses the browser cache.
