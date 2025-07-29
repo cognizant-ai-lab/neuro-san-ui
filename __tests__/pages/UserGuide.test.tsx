@@ -12,7 +12,7 @@ describe("User Guide", () => {
         window.fetch = originalFetch
     })
 
-    it("renders the User Guide correctly", async () => {
+    it("Renders the User Guide correctly", async () => {
         const userGuideContent = "Sample User Guide Content"
         window.fetch = jest.fn().mockImplementation(() => {
             return Promise.resolve({
@@ -25,7 +25,7 @@ describe("User Guide", () => {
         await screen.findByText(userGuideContent)
     })
 
-    it("Diplays an error message when failing to fetch the User Guide", async () => {
+    it("Displays an error message when failing to fetch the User Guide", async () => {
         window.fetch = jest.fn().mockImplementation(() => {
             return Promise.resolve({
                 ok: false,
