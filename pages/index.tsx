@@ -6,12 +6,7 @@ import {useRouter} from "next/router"
 import {ReactElement, useState} from "react"
 
 import {ConfirmationModal} from "../components/Common/confirmationModal"
-import {
-    ALL_BUILD_TARGET,
-    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
-    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
-    LOGO,
-} from "../const"
+import {CONTACT_US_CONFIRMATION_DIALOG_TEXT, CONTACT_US_CONFIRMATION_DIALOG_TITLE, LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 
 // #region: Styled Components
@@ -155,7 +150,7 @@ export default function Index(): ReactElement {
     const router = useRouter()
 
     // Access environment info
-    const {buildTarget, supportEmailAddress} = useEnvironmentStore()
+    const {supportEmailAddress} = useEnvironmentStore()
 
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState<boolean>(false)
@@ -254,59 +249,6 @@ export default function Index(): ReactElement {
                                 </a>
                             </Link>
                         </NeuroAIToolsContainer>
-                        {buildTarget === ALL_BUILD_TARGET && (
-                            <>
-                                <SubHeaderTitle
-                                    id="neuro-ai-maa-box"
-                                    sx={{
-                                        borderTop:
-                                            "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
-                                        marginTop: "2.5rem",
-                                        paddingTop: "2.5rem",
-                                    }}
-                                >
-                                    Decisioning
-                                </SubHeaderTitle>
-                                <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                                    <Link
-                                        id="orchestrator-link"
-                                        // Use the URL object form of `href` to pass along the query string
-                                        href={`/projects?${buildQueryString()}`}
-                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                        legacyBehavior={true}
-                                        passHref
-                                    >
-                                        <ActionLink
-                                            id="platform-link-anchor"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            href={`/projects?${buildQueryString()}`}
-                                            style={{marginRight: "0.3rem"}}
-                                        >
-                                            Platform
-                                        </ActionLink>
-                                    </Link>
-                                    for building grounded decisioning agents,
-                                    <Link
-                                        id="of-link"
-                                        href={`/opportunityFinder?${buildQueryString()}`}
-                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                        legacyBehavior={true} // Need this so we can "open in new tab"
-                                        passHref
-                                    >
-                                        <ActionLink
-                                            id="of-link-anchor"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            href={`/of?${buildQueryString()}`}
-                                            style={{marginLeft: "0.25rem"}}
-                                        >
-                                            using agents.
-                                        </ActionLink>
-                                    </Link>
-                                </NeuroAIDescriptionBox>
-                            </>
-                        )}
                     </div>
                 </BodyContent>
                 <footer

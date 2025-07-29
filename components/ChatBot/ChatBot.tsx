@@ -3,9 +3,7 @@ import Box from "@mui/material/Box"
 import Grow from "@mui/material/Grow"
 import {FC, useState} from "react"
 
-import {ALL_BUILD_TARGET} from "../../const"
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
-import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
 import {useAuthentication} from "../../utils/Authentication"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
@@ -40,83 +38,81 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
     const {
         user: {name: currentUser},
     } = useAuthentication().data
-    const {buildTarget} = useEnvironmentStore()
+
     const {darkMode} = usePreferences()
 
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
 
     return (
-        buildTarget === ALL_BUILD_TARGET && (
-            <>
-                <Grow
-                    id={`chatbot-window-animation-${id}`}
-                    in={chatOpen}
-                    timeout={300}
-                    style={{transformOrigin: "bottom right"}}
-                    easing="ease-in-out"
+        <>
+            <Grow
+                id={`chatbot-window-animation-${id}`}
+                in={chatOpen}
+                timeout={300}
+                style={{transformOrigin: "bottom right"}}
+                easing="ease-in-out"
+            >
+                <Box
+                    id={id}
+                    sx={{
+                        position: "fixed",
+                        bottom: 50,
+                        right: "2rem",
+                        height: "60%",
+                        maxWidth: 400,
+                        background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                        boxShadow: `0 0px 2px 0 rgba(${shadowColor}, 0.15)`,
+                        borderRadius: "var(--bs-border-radius)",
+                        borderWidth: 1,
+                        borderColor: darkMode ? "var(--bs-white)" : "var(--bs-gray-light)",
+                        zIndex: ZIndexLayers.LAYER_2,
+                    }}
                 >
-                    <Box
-                        id={id}
-                        sx={{
-                            position: "fixed",
-                            bottom: 50,
-                            right: "2rem",
-                            height: "60%",
-                            maxWidth: 400,
-                            background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                            boxShadow: `0 0px 2px 0 rgba(${shadowColor}, 0.15)`,
-                            borderRadius: "var(--bs-border-radius)",
-                            borderWidth: 1,
-                            borderColor: darkMode ? "var(--bs-white)" : "var(--bs-gray-light)",
-                            zIndex: ZIndexLayers.LAYER_2,
-                        }}
-                    >
-                        <ChatCommon
-                            id="chatbot-window"
-                            currentUser={currentUser}
-                            setIsAwaitingLlm={setIsAwaitingLlm}
-                            isAwaitingLlm={isAwaitingLlm}
-                            targetAgent={LegacyAgentType.ChatBot}
-                            userImage={userAvatar}
-                            legacyAgentEndpoint={CHATBOT_ENDPOINT}
-                            extraParams={{pageContext}}
-                            backgroundColor={darkMode ? "var(--bs-gray-dark)" : "var(--bs-tertiary-blue)"}
-                            title="Cognizant Neuro AI Assistant"
-                            onClose={() => setChatOpen(false)}
-                        />
-                    </Box>
-                </Grow>
-                {!chatOpen && (
-                    <Box
-                        id={`chatbot-icon-${id}`}
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                            borderRadius: "50%",
-                            bottom: 16,
-                            // For now mimic MUI's default box shadow but change color based on dark mode.
-                            // Eventually we should use MUI's theme system.
-                            boxShadow: `
+                    <ChatCommon
+                        id="chatbot-window"
+                        currentUser={currentUser}
+                        setIsAwaitingLlm={setIsAwaitingLlm}
+                        isAwaitingLlm={isAwaitingLlm}
+                        targetAgent={LegacyAgentType.ChatBot}
+                        userImage={userAvatar}
+                        legacyAgentEndpoint={CHATBOT_ENDPOINT}
+                        extraParams={{pageContext}}
+                        backgroundColor={darkMode ? "var(--bs-gray-dark)" : "var(--bs-tertiary-blue)"}
+                        title="Cognizant Neuro AI Assistant"
+                        onClose={() => setChatOpen(false)}
+                    />
+                </Box>
+            </Grow>
+            {!chatOpen && (
+                <Box
+                    id={`chatbot-icon-${id}`}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                        borderRadius: "50%",
+                        bottom: 16,
+                        // For now mimic MUI's default box shadow but change color based on dark mode.
+                        // Eventually we should use MUI's theme system.
+                        boxShadow: `
                               0px 2px 4px -1px rgba(${shadowColor}, 0.2),
                               0px 4px 5px 0px rgba(${shadowColor}, 0.14),
                               0px 1px 10px 0px rgba(${shadowColor}, 0.12)
                             `,
-                            cursor: "pointer",
-                            height: 40,
-                            justifyContent: "center",
-                            maxWidth: 40,
-                            padding: "1rem",
-                            position: "fixed",
-                            right: 16,
-                        }}
-                        onClick={() => setChatOpen(true)}
-                    >
-                        <ContactSupportIcon id={`chatbot-icon-${id}`} />
-                    </Box>
-                )}
-            </>
-        )
+                        cursor: "pointer",
+                        height: 40,
+                        justifyContent: "center",
+                        maxWidth: 40,
+                        padding: "1rem",
+                        position: "fixed",
+                        right: 16,
+                    }}
+                    onClick={() => setChatOpen(true)}
+                >
+                    <ContactSupportIcon id={`chatbot-icon-${id}`} />
+                </Box>
+            )}
+        </>
     )
 }

@@ -65,11 +65,7 @@ steps:
               VERSION="${{UNILEAF_VERSION}}"
           fi
 
-          if [ -z "${{BUILD_TARGET}}" ] || [ "${{BUILD_TARGET}}" = "all" ]; then
-            export TAG="${VERSION}"
-          else
-            export TAG="${VERSION}-${{BUILD_TARGET}}"
-          fi
+          export TAG="${VERSION}"
           cf_export TAG
 
     ui-node-build:

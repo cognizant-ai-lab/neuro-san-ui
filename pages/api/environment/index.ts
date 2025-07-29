@@ -1,8 +1,6 @@
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-import {ALL_BUILD_TARGET} from "../../../const"
-
 // Possible values returned by this API. Note that not all will necessarily be set
 interface EnvironmentResponse {
     readonly auth0ClientId: string
@@ -34,7 +32,6 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
     const auth0Domain = process.env.AUTH0_DOMAIN
     const supportEmailAddress = process.env.SUPPORT_EMAIL_ADDRESS
     const enableProjectSharing = Boolean(process.env.ENABLE_PROJECT_SHARING || false)
-    const buildTarget = process.env.BUILD_TARGET || ALL_BUILD_TARGET
 
     res.status(httpStatus.OK).json({
         backendApiUrl,
@@ -45,6 +42,5 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
         enableProjectSharing,
         supportEmailAddress,
         enableAuthorizeAPI: Boolean(process.env.ENABLE_AUTHORIZE_API),
-        buildTarget,
     })
 }

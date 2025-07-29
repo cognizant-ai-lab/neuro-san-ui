@@ -20,8 +20,3 @@ export const CONTACT_US_CONFIRMATION_DIALOG_TEXT =
  * The default user image to use when the user does not have a profile picture.
  */
 export const DEFAULT_USER_IMAGE = "https://www.gravatar.com/avatar/?d=mp"
-
-/**
- * The default build of the application if the user does not specify a build.
- */
-export const ALL_BUILD_TARGET = "all"
