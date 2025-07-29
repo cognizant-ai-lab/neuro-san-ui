@@ -6,6 +6,8 @@ import {SnackbarProvider} from "notistack"
 import {forwardRef} from "react"
 
 import {testConnection} from "../../controller/agent/Agent"
+import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatResponse} from "../../generated/neuro-san/OpenAPITypes"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
 import {withStrictMocks} from "../common/strictMocks"
@@ -24,18 +26,33 @@ const mockUseSession = useSession as jest.Mock
 // Mock dependencies
 jest.mock("next-auth/react")
 
+jest.mock("../../controller/agent/Agent")
+
+// AgentFlow mock
+const includedAgentIdsMock = jest.fn()
+const originInfoMock = jest.fn()
+
+jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
+    __esModule: true,
+    default: (props) => {
+        includedAgentIdsMock(props.includedAgentIds)
+        originInfoMock(props.originInfo)
+        return <div data-testid="mock-agent-flow" />
+    },
+}))
+
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = jest.fn()
 const handleStopMock = jest.fn()
 
 let setIsAwaitingLlm: (val: boolean) => void
-
-jest.mock("../../controller/agent/Agent")
+let onChunkReceived: (chunk: string) => void
 
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
     ChatCommon: forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
         chatCommonMock(props)
-        setIsAwaitingLlm = props.setIsAwaitingLlm as typeof setIsAwaitingLlm
+        setIsAwaitingLlm = props.setIsAwaitingLlm
+        onChunkReceived = props.onChunkReceived
         // handleStop ref
         ;(ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
         return (
@@ -55,6 +72,14 @@ const renderMultiAgentAcceleratorPage = () =>
             <MultiAgentAcceleratorPage />
         </SnackbarProvider>
     )
+
+const CONVERSATION_MESSAGE: ChatResponse = {
+    response: {
+        type: ChatMessageType.AI,
+        text: "This is a test message",
+        origin: [{tool: TEST_AGENT_MATH_GUY}],
+    },
+}
 
 describe("Multi Agent Accelerator Page", () => {
     withStrictMocks()
@@ -209,5 +234,69 @@ describe("Multi Agent Accelerator Page", () => {
         await userEvent.keyboard("{Escape}")
 
         expect(handleStopMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("should handle receiving an agent conversation chat message", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        // Simulate receiving a chat message
+        const mockChunk = JSON.stringify(CONVERSATION_MESSAGE)
+
+        await act(async () => {
+            onChunkReceived(mockChunk)
+        })
+
+        expect(chatCommonMock).toHaveBeenCalled()
+        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
+        expect(originInfoMock).toHaveBeenCalledWith([{tool: TEST_AGENT_MATH_GUY}])
+    })
+
+    it("should handle receiving an end of conversation chat message", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        // Set up one active agent
+        const activeAgentChunk = JSON.stringify(CONVERSATION_MESSAGE)
+        await act(async () => {
+            onChunkReceived(activeAgentChunk)
+        })
+
+        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
+
+        includedAgentIdsMock.mockClear()
+
+        // End of conversation message for unrelated agent
+        const endOfConversationDifferentAgent: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT,
+                text: "This is a test message",
+                // One of "hints" for end of conversation is having a structure field containing total_tokens
+                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                origin: [{tool: "Definitely not math guy"}],
+            },
+        }
+        await act(async () => {
+            onChunkReceived(JSON.stringify(endOfConversationDifferentAgent))
+        })
+
+        // Math guy conversation should still be active
+        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
+
+        includedAgentIdsMock.mockClear()
+
+        // Now the end of conversation message for the active agent
+        const chatMessage: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT,
+                text: "This is a test message",
+                // One of "hints" for end of conversation is having a structure field containing total_tokens
+                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                origin: [{tool: TEST_AGENT_MATH_GUY}],
+            },
+        }
+        await act(async () => {
+            onChunkReceived(JSON.stringify(chatMessage))
+        })
+
+        expect(includedAgentIdsMock).toHaveBeenCalledWith([])
     })
 })
