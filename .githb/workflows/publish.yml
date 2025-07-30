@@ -1,3 +1,5 @@
+# This workflow publishes the package to GitHub Packages when a release is published.
+
 name: Publish Package
 
 on:
@@ -13,7 +15,7 @@ jobs:
             - name: Use Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 22
                   registry-url: https://npm.pkg.github.com/
                   scope: "@cognizant-ai-lab"
 
