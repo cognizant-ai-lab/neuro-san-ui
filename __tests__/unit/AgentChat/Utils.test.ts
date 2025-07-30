@@ -1,7 +1,7 @@
 import {AgentErrorProps} from "../../../components/AgentChat/Types"
-import {chatMessageFromChunk, checkError, tryParseJson} from "../../../components/AgentChat/Utils"
+import {chatMessageFromChunk, checkError} from "../../../components/AgentChat/Utils"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {ChatMessage, ChatResponse} from "../../../generated/neuro-san/OpenAPITypes"
+import {ChatResponse} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {
@@ -31,61 +31,6 @@ describe("AgentChat/Utils/chatMessageFromChunk", () => {
 
         expect(chatMessage.type).toEqual(ChatMessageType.AI)
         expect(chatMessage.text).toEqual("This is a test message")
-    })
-})
-
-describe("AgentChat/Utils/tryParseJson", () => {
-    withStrictMocks()
-
-    it("Should return an object for valid JSON", () => {
-        const message: ChatMessage = {
-            type: ChatMessageType.AGENT,
-            text: JSON.stringify({foo: 42}),
-        }
-
-        const chatMessage = tryParseJson(message)
-        expect(chatMessage).not.toBeNull()
-
-        // make sure it's an object
-        expect(typeof chatMessage).toBe("object")
-
-        expect(chatMessage).toEqual({foo: 42})
-    })
-
-    it("Should return text cleaned up for non-JSON", () => {
-        const message: ChatMessage = {
-            type: ChatMessageType.AGENT,
-            text: 'This is a test string with embedded newline \\n and escaped double quote \\"',
-        }
-
-        const chatMessage = tryParseJson(message)
-        expect(chatMessage).not.toBeNull()
-        expect(typeof chatMessage).toBe("string")
-        expect(chatMessage).toEqual("This is a test string with embedded newline \n and escaped double quote '")
-    })
-
-    it("should rethrow non-SyntaxError from JSON.parse", () => {
-        const message: ChatMessage = {type: ChatMessageType.AGENT, text: "{not: 'json'}"}
-        const customError = new TypeError("Custom error")
-        const spy = jest.spyOn(JSON, "parse").mockImplementation(() => {
-            throw customError
-        })
-
-        try {
-            expect(() => tryParseJson(message)).toThrow(customError)
-        } finally {
-            spy.mockRestore()
-        }
-    })
-
-    it("should return null if chat message missing or has no 'text' property", () => {
-        const message: ChatMessage | null = null
-        const chatMessage = tryParseJson(message)
-        expect(chatMessage).toBeNull()
-
-        const emptyMessage: ChatMessage = {type: ChatMessageType.AGENT, text: ""}
-        const emptyChatMessage = tryParseJson(emptyMessage)
-        expect(emptyChatMessage).toBeNull()
     })
 })
 
