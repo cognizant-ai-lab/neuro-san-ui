@@ -301,34 +301,18 @@ describe("ChatCommon", () => {
         expect(screen.queryByText(/Error occurred:/u)).not.toBeInTheDocument()
     })
 
-    test.each([
-        [
-            "with error in text field",
-            {
-                response: {
-                    type: ChatMessageType.AI,
-                    text: JSON.stringify({
-                        error: "Error message from LLM",
-                        traceback: "test tracebook",
-                        tool: "test tool",
-                    }),
+    it("Should correctly handle a chunk with an error block in the structure field", async () => {
+        const chatResponse = {
+            response: {
+                type: ChatMessageType.AI,
+                structure: {
+                    error: "Error message from LLM",
+                    traceback: "test tracebook",
+                    tool: "test tool",
                 },
             },
-        ],
-        [
-            "with error in structure field",
-            {
-                response: {
-                    type: ChatMessageType.AI,
-                    structure: {
-                        error: "Error message from LLM",
-                        traceback: "test tracebook",
-                        tool: "test tool",
-                    },
-                },
-            },
-        ],
-    ])("Should correctly detect an error chunk from Neuro-san (%s)", async (_desc, chatResponse) => {
+        }
+
         renderChatCommonComponent()
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponse))

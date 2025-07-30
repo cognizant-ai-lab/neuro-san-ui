@@ -38,7 +38,7 @@ import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
+import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
@@ -659,12 +659,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             slyData.current = {...slyData.current, ...chatMessage.sly_data}
         }
 
-        // Agent name is the last tool in the origin array. If it's not there, use a default name.
-        const agentName =
-            chatMessage.origin?.length > 0
-                ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
-                : "Agent message"
-
         // Check if there is an error block in the "structure" field of the chat message.
         if (chatMessage.structure) {
             // If there is an error block, we should display it as an alert.
@@ -679,35 +673,16 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </MUIAlert>
                 )
                 succeeded.current = false
-                return // No need to process further if there is an error
             }
-        }
-
-        // Legacy path: check for a string or object in the chat message "text" field.
-        const parsedResult: null | object | string = tryParseJson(chatMessage)
-
-        if (typeof parsedResult === "string") {
-            if (parsedResult.trim() !== "") {
-                updateOutput(processLogLine(parsedResult, agentName, chatMessage?.type))
-            }
-        } else if (typeof parsedResult === "object") {
-            // Does it have the error block?
-            const errorMessage = checkError(parsedResult)
-            if (errorMessage) {
-                updateOutput(
-                    <MUIAlert
-                        id="retry-message-alert"
-                        severity="warning"
-                    >
-                        {errorMessage}
-                    </MUIAlert>
-                )
-                succeeded.current = false
-            } else if (chatMessage?.text?.trim() !== "") {
-                // Not an error, so output it if it has text. The backend sometimes sends messages with no
-                // text content and we don't want to display those to the user.
-                updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
-            }
+        } else if (chatMessage?.text?.trim() !== "") {
+            // Not an error, so output it if it has text. The backend sometimes sends messages with no
+            // text content and we don't want to display those to the user.
+            // Agent name is the last tool in the origin array. If it's not there, use a default name.
+            const agentName =
+                chatMessage.origin?.length > 0
+                    ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
+                    : "Agent message"
+            updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
         }
     }
 
