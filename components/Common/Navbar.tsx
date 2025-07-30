@@ -222,28 +222,26 @@ function Navbar(props: NavbarProps): ReactElement {
                     open={exploreMenuOpen}
                     onClose={handleCloseExploreMenu}
                 >
-                    {[
-                        <MenuItem
-                            id="explore-neuro-san-studio"
-                            key="explore-neuro-san-studio"
-                            component="a"
-                            href="https://github.com/cognizant-ai-lab/neuro-san-studio"
-                            target="_blank"
-                            sx={{...DISABLE_OUTLINE_PROPS}}
-                        >
-                            Neuro-san studio (examples)
-                        </MenuItem>,
-                        <MenuItem
-                            id="explore-neuro-san"
-                            key="explore-neuro-san"
-                            component="a"
-                            href="https://github.com/cognizant-ai-lab/neuro-san"
-                            target="_blank"
-                            sx={{...DISABLE_OUTLINE_PROPS}}
-                        >
-                            Neuro-san (core)
-                        </MenuItem>,
-                    ]}
+                    <MenuItem
+                        id="explore-neuro-san-studio"
+                        key="explore-neuro-san-studio"
+                        component="a"
+                        href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                        target="_blank"
+                        sx={{...DISABLE_OUTLINE_PROPS}}
+                    >
+                        Neuro-san studio (examples)
+                    </MenuItem>
+                    <MenuItem
+                        id="explore-neuro-san"
+                        key="explore-neuro-san"
+                        component="a"
+                        href="https://github.com/cognizant-ai-lab/neuro-san"
+                        target="_blank"
+                        sx={{...DISABLE_OUTLINE_PROPS}}
+                    >
+                        Neuro-san (core)
+                    </MenuItem>
                 </Menu>
             </Grid>
 
