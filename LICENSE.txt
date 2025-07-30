@@ -108,7 +108,7 @@ and thus to each and every part regardless of who wrote it. (If the same,
 independent sections are distributed as part of a package that is otherwise
 reliant on, or is based on the Program, then the distribution of the whole
 package, including but not restricted to the independent section, must be on the
-unmodified terms of this License, regadless of who the author of the included
+unmodified terms of this License, regardless of who the author of the included
 sections was.)
 
 Thus, it is not the intent of this section to claim rights or contest your
