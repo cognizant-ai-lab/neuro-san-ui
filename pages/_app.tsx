@@ -1,6 +1,5 @@
 import "reactflow/dist/style.css"
 
-import "../styles/updatenode.css"
 import "../styles/globals.css"
 
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
