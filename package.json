@@ -2,6 +2,7 @@
     "name": "@cognizant-ai-lab/neuro-san-ui",
     "version": "1.0.0",
     "private": false,
+    "license": "See LICENSE.txt",
     "scripts": {
         "dev": "next dev --hostname 0.0.0.0 --port 3000",
         "lint": "next lint",
