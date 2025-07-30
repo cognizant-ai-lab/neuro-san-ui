@@ -50,9 +50,9 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // We highlight them with a green background. Check included agent IDs as well as origin info in order
     // to display edges properly.
     const isInActiveConversations = getIncludedAgentIds().includes(agentId)
-    const isInCurrentOriginInfo =  getOriginInfo()
-            .map((originItem) => originItem.tool)
-            .includes(agentId)
+    const isInCurrentOriginInfo = getOriginInfo()
+        .map((originItem) => originItem.tool)
+        .includes(agentId)
 
     const isActiveAgent = isInActiveConversations || isInCurrentOriginInfo
 
