@@ -49,11 +49,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // "Active" agents are those at either end of the current communication from the incoming chat messages.
     // We highlight them with a green background. Check included agent IDs as well as origin info in order
     // to display edges properly.
-    const isActiveAgent =
-        getIncludedAgentIds().includes(agentId) ||
-        getOriginInfo()
+    const isInActiveConversations = getIncludedAgentIds().includes(agentId)
+    const isInCurrentOriginInfo =  getOriginInfo()
             .map((originItem) => originItem.tool)
             .includes(agentId)
+
+    const isActiveAgent = isInActiveConversations || isInCurrentOriginInfo
 
     let backgroundColor: string
     let color: string
