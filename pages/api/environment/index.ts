@@ -6,7 +6,6 @@ interface EnvironmentResponse {
     readonly auth0ClientId: string
     readonly auth0Domain: string
     readonly backendNeuroSanApiUrl: string
-    readonly enableProjectSharing: boolean
     readonly supportEmailAddress: string
     readonly error?: string
 }
@@ -25,13 +24,11 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Parti
     const auth0ClientId = process.env.AUTH0_CLIENT_ID
     const auth0Domain = process.env.AUTH0_DOMAIN
     const supportEmailAddress = process.env.SUPPORT_EMAIL_ADDRESS
-    const enableProjectSharing = Boolean(process.env.ENABLE_PROJECT_SHARING || false)
 
     res.status(httpStatus.OK).json({
         backendNeuroSanApiUrl,
         auth0ClientId,
         auth0Domain,
-        enableProjectSharing,
         supportEmailAddress,
     })
 }
