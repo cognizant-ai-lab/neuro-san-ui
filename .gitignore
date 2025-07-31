@@ -21,3 +21,6 @@ proto/
 # VS Code
 *.code-workspace
 .vscode/
+
+# Build stuff
+dist/
