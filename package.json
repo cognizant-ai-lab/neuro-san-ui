@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.0",
+    "version": "1.0.4",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "scripts": {
@@ -108,5 +108,8 @@
     "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/"
-    }
+    },
+    "files": [
+        "dist"
+    ]
 }
