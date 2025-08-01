@@ -53,7 +53,7 @@
   "exclude": [
     ".next",
     "coverage",
-    "dist"
+    "dist",
     "embed",
     "node_modules",
   ]

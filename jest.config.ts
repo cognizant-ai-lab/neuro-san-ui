@@ -41,8 +41,11 @@ const config: Config.InitialOptions = {
     // Prevent Jest from trying to parse CSS files. Reference: https://stackoverflow.com/a/43813992
     moduleNameMapper: {"\\.(css|less)$": "<rootDir>/__tests__/__mocks__/styleMock.js"},
 
+    // Don't look for modules in these directories
+    modulePathIgnorePatterns: ["<rootDir>/dist", "/.next/"],
+
     // Exclude these files from Jest scanning
-    testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+    testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
 }
 
 // Required for Jest to function so tell ts-prune to ignore it

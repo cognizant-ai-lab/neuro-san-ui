@@ -6,7 +6,7 @@ import Link from "next/link"
 import {usePathname} from "next/navigation"
 import {FaChevronRight} from "react-icons/fa6"
 
-const NeuroAIBreadcrumbs = () => {
+export const NeuroAIBreadcrumbs = () => {
     const pathname: string = usePathname()
     const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
     const pageName = startCase(urlPaths?.at(-1))
@@ -59,5 +59,3 @@ const NeuroAIBreadcrumbs = () => {
         </Grid>
     )
 }
-
-export default NeuroAIBreadcrumbs

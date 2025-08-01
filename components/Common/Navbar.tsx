@@ -50,7 +50,7 @@ const DISABLE_OUTLINE_PROPS = {
     },
 }
 
-function Navbar(props: NavbarProps): ReactElement {
+export const Navbar = (props: NavbarProps): ReactElement => {
     /*
     This component is responsible for rendering the navbar component.
     */
@@ -407,5 +407,3 @@ function Navbar(props: NavbarProps): ReactElement {
         <LoadingSpinner id="navbar-loading-spinner" />
     )
 }
-
-export default Navbar
