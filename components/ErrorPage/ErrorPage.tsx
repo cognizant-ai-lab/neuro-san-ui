@@ -2,8 +2,8 @@ import Box from "@mui/material/Box"
 import {ReactElement} from "react"
 
 import {LOGO} from "../../const"
-import NeuroAIBreadcrumbs from "../Common/breadcrumbs"
-import Navbar from "../Common/Navbar"
+import {NeuroAIBreadcrumbs} from "../Common/breadcrumbs"
+import {Navbar} from "../Common/Navbar"
 
 /**
  * This is the page that will be shown to users when the outer error boundary is triggered

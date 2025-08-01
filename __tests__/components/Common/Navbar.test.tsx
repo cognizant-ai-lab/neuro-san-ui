@@ -6,7 +6,7 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 
-import Navbar from "../../../components/Common/Navbar"
+import {Navbar} from "../../../components/Common/Navbar"
 import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
 import {withStrictMocks} from "../../common/strictMocks"
 

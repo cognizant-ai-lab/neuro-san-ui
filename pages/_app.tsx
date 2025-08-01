@@ -13,10 +13,10 @@ import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
 import {Auth} from "../components/Authentication/auth"
-import NeuroAIBreadcrumbs from "../components/Common/breadcrumbs"
-import Navbar from "../components/Common/Navbar"
+import {NeuroAIBreadcrumbs} from "../components/Common/breadcrumbs"
+import {Navbar} from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
-import ErrorBoundary from "../components/ErrorPage/ErrorBoundary"
+import {ErrorBoundary} from "../components/ErrorPage/ErrorBoundary"
 import {LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 import {usePreferences} from "../state/Preferences"
@@ -93,7 +93,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             setPageTitle(DEFAULT_APP_NAME)
         }
 
-        // If there is just one URL path, set the page title. This prevents overriding Project, Experiement and
+        // If there is just one URL path, set the page title. This prevents overriding Project, Experiment and
         // DMS pages, which directly set the page title to document.title.
         if (urlPaths.length === 1) {
             setPageTitle(`${getTitleBase()} | ${pageName}`)
