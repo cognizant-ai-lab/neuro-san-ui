@@ -37,7 +37,6 @@ describe("Main App Component", () => {
 
     beforeEach(() => {
         window.fetch = mockFetch({
-            backendApiUrl: "dummyURL",
             backendNeuroSanApiUrl: "dummyNeuroSanURL",
             auth0ClientId: "dummyClientId",
             auth0Domain: "dummyDomain",

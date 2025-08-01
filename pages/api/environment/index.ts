@@ -1,18 +1,11 @@
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-import {ALL_BUILD_TARGET} from "../../../const"
-
 // Possible values returned by this API. Note that not all will necessarily be set
 interface EnvironmentResponse {
     readonly auth0ClientId: string
     readonly auth0Domain: string
-    readonly backendApiUrl: string
     readonly backendNeuroSanApiUrl: string
-    readonly unileafAgentServerUrl?: string
-    readonly buildTarget: string
-    readonly enableAuthorizeAPI: boolean
-    readonly enableProjectSharing: boolean
     readonly supportEmailAddress: string
     readonly error?: string
 }
@@ -27,24 +20,15 @@ interface EnvironmentResponse {
 export default function handler(_req: NextApiRequest, res: NextApiResponse<Partial<EnvironmentResponse>>) {
     res.setHeader("Content-Type", "application/json")
 
-    const backendApiUrl = process.env.MD_SERVER_URL
     const backendNeuroSanApiUrl = process.env.NEURO_SAN_SERVER_URL
-    const unileafAgentServerUrl = process.env.UNILEAF_AGENT_SERVER_URL
     const auth0ClientId = process.env.AUTH0_CLIENT_ID
     const auth0Domain = process.env.AUTH0_DOMAIN
     const supportEmailAddress = process.env.SUPPORT_EMAIL_ADDRESS
-    const enableProjectSharing = Boolean(process.env.ENABLE_PROJECT_SHARING || false)
-    const buildTarget = process.env.BUILD_TARGET || ALL_BUILD_TARGET
 
     res.status(httpStatus.OK).json({
-        backendApiUrl,
         backendNeuroSanApiUrl,
-        unileafAgentServerUrl,
         auth0ClientId,
         auth0Domain,
-        enableProjectSharing,
         supportEmailAddress,
-        enableAuthorizeAPI: Boolean(process.env.ENABLE_AUTHORIZE_API),
-        buildTarget,
     })
 }

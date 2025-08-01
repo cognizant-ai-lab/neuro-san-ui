@@ -2,6 +2,5 @@
 .swc
 .vscode
 __tests__
-embed
 node_modules
 build_scripts/GenerateOpenAPITypes.ts

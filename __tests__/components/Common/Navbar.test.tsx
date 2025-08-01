@@ -7,7 +7,7 @@ import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 
 import Navbar from "../../../components/Common/Navbar"
-import {ALL_BUILD_TARGET, CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
+import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
 import {withStrictMocks} from "../../common/strictMocks"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
@@ -16,7 +16,6 @@ const MOCK_USER = "mock-user"
 const mockUseSession = useSession as jest.Mock
 
 const mockEnvironment = {
-    buildTarget: ALL_BUILD_TARGET,
     supportEmailAddress: MOCK_EMAIL_ADDRESS,
     auth0ClientId: "mock-auth0-client-id",
 }

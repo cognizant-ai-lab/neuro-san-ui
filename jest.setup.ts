@@ -86,7 +86,6 @@ Object.defineProperties(global.HTMLElement.prototype, {
 jest.mock("next/config", () => () => ({
     publicRuntimeConfig: {
         enableAuthentication: false,
-        buildTarget: "all", // Can't use ALL_BUILD_TARGET here due to circular dependency
     },
 }))
 
@@ -115,6 +114,13 @@ jest.mock(
 )
 jest.mock(
     "rehype-slug",
+    () =>
+        ({children}) =>
+            createElement("div", null, children)
+)
+
+jest.mock(
+    "remark-toc",
     () =>
         ({children}) =>
             createElement("div", null, children)

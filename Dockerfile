@@ -33,10 +33,6 @@ COPY . .
 ARG UNILEAF_VERSION
 ENV UNILEAF_VERSION ${UNILEAF_VERSION}
 
-# Extract build target
-ARG BUILD_TARGET
-ENV BUILD_TARGET ${BUILD_TARGET}
-
 RUN yarn build
 
 # Production image, copy all the files and run next

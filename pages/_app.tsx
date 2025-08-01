@@ -1,8 +1,6 @@
 import "reactflow/dist/style.css"
 
-import "../styles/updatenode.css"
 import "../styles/globals.css"
-import "../styles/rundialog.css"
 
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
@@ -19,7 +17,7 @@ import NeuroAIBreadcrumbs from "../components/Common/breadcrumbs"
 import Navbar from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
 import ErrorBoundary from "../components/ErrorPage/ErrorBoundary"
-import {ALL_BUILD_TARGET, LOGO} from "../const"
+import {LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 import {usePreferences} from "../state/Preferences"
 import useUserInfoStore from "../state/UserInfo"
@@ -50,18 +48,8 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function NeuroAI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
-    const {
-        backendApiUrl,
-        backendNeuroSanApiUrl,
-        setBackendApiUrl,
-        setBackendNeuroSanApiUrl,
-        setUnileafAgentServerUrl,
-        setAuth0ClientId,
-        setAuth0Domain,
-        setEnableAuthorizeAPI,
-        setSupportEmailAddress,
-        setBuildTarget,
-    } = useEnvironmentStore()
+    const {backendNeuroSanApiUrl, setBackendNeuroSanApiUrl, setAuth0ClientId, setAuth0Domain, setSupportEmailAddress} =
+        useEnvironmentStore()
 
     // access user info store
     const {currentUser, setCurrentUser, setPicture, setOidcProvider} = useUserInfoStore()
@@ -132,14 +120,10 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             const data = await res.json()
 
             // Save env vars in zustand store
-            setBackendApiUrl(data.backendApiUrl)
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             setAuth0ClientId(data.auth0ClientId)
             setAuth0Domain(data.auth0Domain)
             setSupportEmailAddress(data.supportEmailAddress)
-            setEnableAuthorizeAPI(data.enableAuthorizeAPI)
-            setBuildTarget(data.buildTarget || ALL_BUILD_TARGET)
-            setUnileafAgentServerUrl(data.unileafAgentServerUrl)
         }
 
         void getEnvironment()
@@ -194,13 +178,13 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
      */
     function getAppComponent() {
         // Haven't figured out whether we have ALB headers yet
-        if (currentUser === undefined || !backendApiUrl || !backendNeuroSanApiUrl) {
+        if (currentUser === undefined || !backendNeuroSanApiUrl) {
             return <LoadingSpinner id="loading-header" />
         }
 
         if (currentUser != null) {
             // We got the ALB headers
-            return backendApiUrl && backendNeuroSanApiUrl && currentUser ? (
+            return backendNeuroSanApiUrl && currentUser ? (
                 <Component
                     id="body-non-auth-component"
                     {...pageProps}
