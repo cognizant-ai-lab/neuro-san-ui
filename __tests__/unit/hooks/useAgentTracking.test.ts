@@ -18,6 +18,9 @@ describe("useAgentTracking", () => {
     it("should initialize with default state", () => {
         const {result} = renderHook(() => useAgentTracking())
 
+        expect(result.current.conversations).toBeInstanceOf(Map)
+        expect(result.current.conversations.size).toBe(0)
+        expect(result.current.currentConversation).toBeNull()
         expect(result.current.includedAgentIds).toEqual([])
         expect(result.current.originInfo).toEqual([])
         expect(result.current.agentCounts).toBeInstanceOf(Map)
@@ -33,10 +36,15 @@ describe("useAgentTracking", () => {
             result.current.onStreamingStarted()
         })
 
+        expect(result.current.conversations.size).toBe(1)
+        expect(result.current.currentConversation).not.toBeNull()
+
         act(() => {
             result.current.resetTracking()
         })
 
+        expect(result.current.conversations.size).toBe(0)
+        expect(result.current.currentConversation).toBeNull()
         expect(result.current.includedAgentIds).toEqual([])
         expect(result.current.originInfo).toEqual([])
         expect(result.current.agentCounts.size).toBe(0)
@@ -83,6 +91,12 @@ describe("useAgentTracking", () => {
         expect(result.current.originInfo).toEqual(mockOrigin)
         expect(result.current.agentCounts.get("agent1")).toBe(1)
         expect(result.current.agentCounts.get("agent2")).toBe(1)
+
+        // Check conversation state
+        expect(result.current.currentConversation).not.toBeNull()
+        expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
+        expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
+        expect(result.current.currentConversation?.isActive).toBe(true)
     })
 
     it("should handle final agent response and remove from active list", () => {
@@ -135,6 +149,9 @@ describe("useAgentTracking", () => {
 
         expect(result.current.isProcessing).toBe(true)
         expect(result.current.agentCounts.size).toBe(0)
+        expect(result.current.conversations.size).toBe(1)
+        expect(result.current.currentConversation).not.toBeNull()
+        expect(result.current.currentConversation?.isActive).toBe(true)
 
         // Complete streaming
         act(() => {
@@ -142,8 +159,14 @@ describe("useAgentTracking", () => {
         })
 
         expect(result.current.isProcessing).toBe(false)
+        expect(result.current.currentConversation).toBeNull()
         expect(result.current.includedAgentIds).toEqual([])
         expect(result.current.originInfo).toEqual([])
+
+        // Conversation should still exist but be inactive
+        expect(result.current.conversations.size).toBe(1)
+        const conversationEntries = Array.from(result.current.conversations.values())
+        expect(conversationEntries[0].isActive).toBe(false)
     })
 
     it("should handle errors gracefully", () => {

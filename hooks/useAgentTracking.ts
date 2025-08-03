@@ -4,12 +4,33 @@ import {chatMessageFromChunk} from "../components/AgentChat/Utils"
 import {ChatMessageType} from "../generated/neuro-san/NeuroSanClient"
 import {Origin} from "../generated/neuro-san/OpenAPITypes"
 
+// Core domain types
+interface Conversation {
+    // The set of agents involved in this conversation
+    agents: Set<string>
+    // Timestamp when the conversation started
+    startedAt: Date
+    // Current origin information for active agents
+    currentOrigins: Origin[]
+    // Type of conversation (could evolve to include different conversation types)
+    // TODO: Could be enum
+    type: "agent-network"
+    // Whether this conversation is currently active
+    isActive: boolean
+}
+
 interface UseAgentTrackingReturn {
     // State
-    includedAgentIds: string[]
-    originInfo: Origin[]
+    conversations: Map<Date, Conversation>
+    currentConversation: Conversation | null
     agentCounts: Map<string, number>
     isProcessing: boolean
+
+    // Computed properties for UI compatibility
+    // TODO: Update other areas to use conversations
+    includedAgentIds: string[]
+    originInfo: Origin[]
+
     // Actions
     onChunkReceived: (chunk: string) => boolean
     onStreamingStarted: () => void
@@ -24,23 +45,62 @@ const isFinalMessage = (chatMessage: {structure?: {total_tokens?: number}; text?
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-// Helper function to extract tool names from origin data
-const extractToolNames = (origins: readonly Origin[]): string[] => {
-    return origins.filter((originItem) => Boolean(originItem.tool)).map((originItem) => originItem.tool)
-}
-
 export function useAgentTracking(): UseAgentTrackingReturn {
-    const [includedAgentIds, setIncludedAgentIds] = useState<string[]>([])
-    const [originInfo, setOriginInfo] = useState<Origin[]>([])
+    const [conversations, setConversations] = useState<Map<Date, Conversation>>(new Map())
+    const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null)
     const [isProcessing, setIsProcessing] = useState<boolean>(false)
     const agentCountsRef = useRef<Map<string, number>>(new Map())
 
+    // Helper function to create a new conversation
+    const createConversation = useCallback((): Conversation => {
+        return {
+            agents: new Set<string>(),
+            startedAt: new Date(),
+            currentOrigins: [],
+            type: "agent-network",
+            isActive: true,
+        }
+    }, [])
+
+    // Helper function to update agent counts
     const updateAgentCounts = useCallback((origins: readonly Origin[]) => {
         const agentCounts = agentCountsRef.current
         for (const agent of origins) {
             if (agent.tool) {
                 agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
             }
+        }
+    }, [])
+
+    // Helper function to add agents to current conversation
+    const addAgentsToConversation = useCallback((conversation: Conversation, origins: readonly Origin[]) => {
+        const newAgents = new Set(conversation.agents)
+        origins.forEach((originData) => {
+            if (originData.tool) {
+                newAgents.add(originData.tool)
+            }
+        })
+        return {
+            ...conversation,
+            agents: newAgents,
+            currentOrigins: [...origins],
+        }
+    }, [])
+
+    // Helper function to remove completed agents from conversation
+    const removeCompletedAgents = useCallback((conversation: Conversation, completedOrigins: readonly Origin[]) => {
+        const remainingAgents = new Set(conversation.agents)
+        completedOrigins.forEach((originData) => {
+            if (originData.tool) {
+                remainingAgents.delete(originData.tool)
+            }
+        })
+        return {
+            ...conversation,
+            agents: remainingAgents,
+            currentOrigins: conversation.currentOrigins.filter(
+                (originData) => !completedOrigins.some((completed) => completed.tool === originData.tool)
+            ),
         }
     }, [])
 
@@ -58,21 +118,21 @@ export function useAgentTracking(): UseAgentTrackingReturn {
                 // Update agent counts
                 updateAgentCounts(chatMessage.origin)
 
-                // Track active edges
-                setIncludedAgentIds((prev) => {
+                // Ensure we have a current conversation
+                setCurrentConversation((prevConversation) => {
+                    let conversation = prevConversation
+                    if (!conversation) {
+                        conversation = createConversation()
+                    }
+
                     const isFinal = isFinalMessage(chatMessage)
 
                     if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-                        // Remove completed agents from active list
-                        const toolsToRemove = extractToolNames(chatMessage.origin)
-                        return prev.filter((agentId) => !toolsToRemove.includes(agentId))
+                        // Remove completed agents from conversation
+                        return removeCompletedAgents(conversation, chatMessage.origin)
                     } else {
-                        // Set origin info for the current chat message
-                        setOriginInfo([...chatMessage.origin])
-
-                        // Add new active agents
-                        const newToolNames = extractToolNames(chatMessage.origin)
-                        return Array.from(new Set([...prev, ...newToolNames]))
+                        // Add new agents to conversation
+                        return addAgentsToConversation(conversation, chatMessage.origin)
                     }
                 })
 
@@ -84,36 +144,69 @@ export function useAgentTracking(): UseAgentTrackingReturn {
                 setIsProcessing(false)
             }
         },
-        [updateAgentCounts]
+        [updateAgentCounts, createConversation, addAgentsToConversation, removeCompletedAgents]
     )
 
     const onStreamingStarted = useCallback(() => {
         agentCountsRef.current = new Map<string, number>()
         setIsProcessing(true)
-    }, [])
+        // Create a new conversation for the new streaming session
+        const newConversation = createConversation()
+        setCurrentConversation(newConversation)
+        setConversations((prev) => {
+            const newConversations = new Map(prev)
+            newConversations.set(newConversation.startedAt, newConversation)
+            return newConversations
+        })
+    }, [createConversation])
 
     const onStreamingComplete = useCallback(() => {
-        setIncludedAgentIds([])
-        setOriginInfo([])
         setIsProcessing(false)
+        // Mark current conversation as inactive
+        setCurrentConversation((prev) => {
+            if (prev) {
+                const completedConversation = {...prev, isActive: false}
+                setConversations((conversationData) => {
+                    const updated = new Map(conversationData)
+                    updated.set(prev.startedAt, completedConversation)
+                    return updated
+                })
+                return null
+            }
+            return prev
+        })
     }, [])
 
     const resetTracking = useCallback(() => {
-        setIncludedAgentIds([])
-        setOriginInfo([])
+        setCurrentConversation(null)
+        setConversations(new Map())
         agentCountsRef.current = new Map<string, number>()
         setIsProcessing(false)
     }, [])
+
+    // Computed properties for UI compatibility (derived from conversations)
+    const includedAgentIds = useMemo(() => {
+        return currentConversation ? Array.from(currentConversation.agents) : []
+    }, [currentConversation])
+
+    const originInfo = useMemo(() => {
+        return currentConversation ? currentConversation.currentOrigins : []
+    }, [currentConversation])
 
     // Memoize the agent counts to prevent unnecessary re-renders
     const agentCounts = useMemo(() => agentCountsRef.current, [agentCountsRef.current])
 
     return {
-        // State
-        includedAgentIds,
-        originInfo,
+        // Domain state
+        conversations,
+        currentConversation,
         agentCounts,
         isProcessing,
+
+        // UI compatibility layer
+        includedAgentIds,
+        originInfo,
+
         // Actions
         onChunkReceived,
         onStreamingStarted,
