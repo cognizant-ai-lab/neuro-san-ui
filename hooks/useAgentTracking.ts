@@ -28,7 +28,6 @@ interface UseAgentTrackingReturn {
 
     // Computed properties for UI compatibility
     // TODO: Update other areas to use conversations
-    includedAgentIds: string[]
     originInfo: Origin[]
 
     // Actions
@@ -185,10 +184,6 @@ export function useAgentTracking(): UseAgentTrackingReturn {
     }, [])
 
     // Computed properties for UI compatibility (derived from conversations)
-    const includedAgentIds = useMemo(() => {
-        return currentConversation ? Array.from(currentConversation.agents) : []
-    }, [currentConversation])
-
     const originInfo = useMemo(() => {
         return currentConversation ? currentConversation.currentOrigins : []
     }, [currentConversation])
@@ -204,7 +199,6 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         isProcessing,
 
         // UI compatibility layer
-        includedAgentIds,
         originInfo,
 
         // Actions

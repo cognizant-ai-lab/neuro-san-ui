@@ -56,7 +56,7 @@ export default function MultiAgentAcceleratorPage() {
 
     // Agent tracking state and actions using custom hook
     const {
-        includedAgentIds,
+        currentConversation,
         originInfo,
         agentCounts,
         isProcessing,
@@ -232,7 +232,7 @@ export default function MultiAgentAcceleratorPage() {
                         <AgentFlow
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
-                            includedAgentIds={includedAgentIds}
+                            includedAgentIds={currentConversation ? Array.from(currentConversation.agents) : []}
                             originInfo={originInfo}
                             agentCounts={agentCounts}
                             isAwaitingLlm={isAwaitingLlm || isProcessing}
