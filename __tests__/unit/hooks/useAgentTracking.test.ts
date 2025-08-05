@@ -89,13 +89,13 @@ describe("useAgentTracking", () => {
         expect(result.current.originInfo).toEqual(mockOrigin)
         expect(result.current.agentCounts.get("agent1")).toBe(1)
         expect(result.current.agentCounts.get("agent2")).toBe(1)
-        
+
         // Check conversation state
         expect(result.current.currentConversation).not.toBeNull()
         expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
         expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
         expect(result.current.currentConversation?.isActive).toBe(true)
-    });
+    })
 
     it("should handle final agent response and remove from active list", () => {
         const {result} = renderHook(() => useAgentTracking())

@@ -5,6 +5,11 @@ import {ChatMessageType} from "../generated/neuro-san/NeuroSanClient"
 import {Origin} from "../generated/neuro-san/OpenAPITypes"
 
 // Core domain types
+enum ConversationType {
+    AGENT_TO_AGENT = "agent-to-agent",
+    AGENT_TO_TOOL = "agent-to-tool",
+}
+
 interface Conversation {
     // The set of agents involved in this conversation
     agents: Set<string>
@@ -13,8 +18,7 @@ interface Conversation {
     // Current origin information for active agents
     currentOrigins: Origin[]
     // Type of conversation (could evolve to include different conversation types)
-    // TODO: Could be enum
-    type: "agent-network"
+    type: ConversationType
     // Whether this conversation is currently active
     isActive: boolean
 }
@@ -56,7 +60,7 @@ export function useAgentTracking(): UseAgentTrackingReturn {
             agents: new Set<string>(),
             startedAt: new Date(),
             currentOrigins: [],
-            type: "agent-network",
+            type: ConversationType.AGENT_TO_AGENT,
             isActive: true,
         }
     }, [])
