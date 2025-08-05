@@ -77,7 +77,7 @@ export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
     getIncludedAgentIds: () => string[],
-    getOriginInfo: () => Origin[],
+    getCurrentConversation: () => Origin[],
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -184,7 +184,7 @@ export const layoutRadial = (
                     depth,
                     displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
                     getIncludedAgentIds,
-                    getOriginInfo,
+                    getCurrentConversation,
                     isAwaitingLlm,
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
@@ -206,7 +206,7 @@ export const layoutLinear = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
     getIncludedAgentIds: () => string[],
-    getOriginInfo: () => Origin[],
+    getCurrentConversation: () => Origin[],
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -231,7 +231,7 @@ export const layoutLinear = (
                 agentName: cleanUpAgentName(originOfNode),
                 displayAs: agentsInNetwork.find((a) => a.origin === originOfNode)?.display_as,
                 getIncludedAgentIds,
-                getOriginInfo,
+                getCurrentConversation,
                 isAwaitingLlm,
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},

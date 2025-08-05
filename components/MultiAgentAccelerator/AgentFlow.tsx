@@ -41,10 +41,10 @@ import {ZIndexLayers} from "../../utils/zIndexLayers"
 interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentsInNetwork: ConnectivityInfo[]
+    readonly currentConversation?: Origin[]
     readonly id: string
     readonly includedAgentIds: string[]
     readonly isAwaitingLlm?: boolean
-    readonly originInfo?: Origin[]
 }
 
 type Layout = "radial" | "linear"
@@ -53,10 +53,10 @@ type Layout = "radial" | "linear"
 const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
     agentsInNetwork,
+    currentConversation,
     id,
     isAwaitingLlm,
     includedAgentIds,
-    originInfo,
 }) => {
     const {fitView} = useReactFlow()
 
@@ -70,13 +70,16 @@ const AgentFlow: FC<AgentFlowProps> = ({
     }, [handleResize])
 
     // Save this as a mutable ref so child nodes see updates
-    const originInfoRef = useRef<Origin[]>(originInfo)
+    const currentConversationRef = useRef<Origin[]>(currentConversation)
 
     useEffect(() => {
-        originInfoRef.current = originInfo
-    }, [originInfo])
+        currentConversationRef.current = currentConversation
+    }, [currentConversation])
 
-    const getOriginInfo = useCallback<() => Origin[]>(() => originInfoRef.current, [originInfoRef.current])
+    const getCurrentConversation = useCallback<() => Origin[]>(
+        () => currentConversationRef.current,
+        [currentConversationRef.current]
+    )
 
     const getIncludedAgentIds = useCallback<() => string[]>(() => includedAgentIds, [includedAgentIds])
 
@@ -103,7 +106,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                       isHeatmap ? agentCounts : undefined,
                       agentsInNetwork,
                       getIncludedAgentIds,
-                      getOriginInfo,
+                      getCurrentConversation,
                       isAwaitingLlm
                   )
                 : layoutRadial(
@@ -111,7 +114,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
                       isHeatmap ? agentCounts : undefined,
                       agentsInNetwork,
                       getIncludedAgentIds,
-                      getOriginInfo,
+                      getCurrentConversation,
                       isAwaitingLlm
                   ),
         [
@@ -120,10 +123,10 @@ const AgentFlow: FC<AgentFlowProps> = ({
             agentCounts,
             agentsInNetwork,
             includedAgentIds,
-            originInfo,
+            currentConversation,
             isAwaitingLlm,
             getIncludedAgentIds,
-            getOriginInfo,
+            getCurrentConversation,
         ]
     )
 

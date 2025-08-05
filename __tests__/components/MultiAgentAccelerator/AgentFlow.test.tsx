@@ -48,7 +48,7 @@ describe("AgentFlow", () => {
         agentsInNetwork: network,
         id: "test-flow-id",
         includedAgentIds: [], // No active agents for the default test
-        originInfo: [{tool: "agent1", instantiation_index: 1}],
+        currentConversation: [{tool: "agent1", instantiation_index: 1}],
     }
 
     const renderAgentFlowComponent = (overrides = {}) => {
@@ -139,7 +139,7 @@ describe("AgentFlow", () => {
                     agentsInNetwork={network}
                     id="test-flow-id"
                     includedAgentIds={["agent1", "agent3"]}
-                    originInfo={[
+                    currentConversation={[
                         {tool: "agent1", instantiation_index: 1},
                         {tool: "agent3", instantiation_index: 1},
                     ]}
@@ -181,7 +181,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle an empty agent list", async () => {
-        const {container} = renderAgentFlowComponent({agentsInNetwork: [], originInfo: []})
+        const {container} = renderAgentFlowComponent({agentsInNetwork: [], currentConversation: []})
 
         const nodes = container.getElementsByClassName("react-flow__node")
         expect(nodes).toHaveLength(0)
@@ -200,7 +200,7 @@ describe("AgentFlow", () => {
     it("Should handle a Frontman-only network", async () => {
         const {container} = renderAgentFlowComponent({
             agentsInNetwork: [network[2]],
-            originInfo: [{tool: "agent3", instantiation_index: 1}],
+            currentConversation: [{tool: "agent3", instantiation_index: 1}],
         })
 
         const nodes = container.getElementsByClassName("react-flow__node")
@@ -233,7 +233,7 @@ describe("AgentFlow", () => {
                     agentsInNetwork={[network[2]]}
                     id="test-flow-id"
                     includedAgentIds={[]}
-                    originInfo={[{tool: "agent3", instantiation_index: 1}]}
+                    currentConversation={[{tool: "agent3", instantiation_index: 1}]}
                 />
             </ReactFlowProvider>
         )

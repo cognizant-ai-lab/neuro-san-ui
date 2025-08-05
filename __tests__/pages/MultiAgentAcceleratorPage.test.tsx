@@ -30,13 +30,13 @@ jest.mock("../../controller/agent/Agent")
 
 // AgentFlow mock
 const includedAgentIdsMock = jest.fn()
-const originInfoMock = jest.fn()
+const currentConversationMock = jest.fn()
 
 jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
     default: (props) => {
         includedAgentIdsMock(props.includedAgentIds)
-        originInfoMock(props.originInfo)
+        currentConversationMock(props.currentConversation)
         return <div data-testid="mock-agent-flow" />
     },
 }))
@@ -248,7 +248,7 @@ describe("Multi Agent Accelerator Page", () => {
 
         expect(chatCommonMock).toHaveBeenCalled()
         expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
-        expect(originInfoMock).toHaveBeenCalledWith([{tool: TEST_AGENT_MATH_GUY}])
+        expect(currentConversationMock).toHaveBeenCalledWith([{tool: TEST_AGENT_MATH_GUY}])
     })
 
     it("should handle receiving an end of conversation chat message", async () => {

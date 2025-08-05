@@ -30,10 +30,6 @@ interface UseAgentTrackingReturn {
     agentCounts: Map<string, number>
     isProcessing: boolean
 
-    // Computed properties for UI compatibility
-    // TODO: Update other areas to use conversations
-    originInfo: Origin[]
-
     // Actions
     onChunkReceived: (chunk: string) => boolean
     onStreamingStarted: () => void
@@ -187,11 +183,6 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         setIsProcessing(false)
     }, [])
 
-    // Computed properties for UI compatibility (derived from conversations)
-    const originInfo = useMemo(() => {
-        return currentConversation ? currentConversation.currentOrigins : []
-    }, [currentConversation])
-
     // Memoize the agent counts to prevent unnecessary re-renders
     const agentCounts = useMemo(() => agentCountsRef.current, [agentCountsRef.current])
 
@@ -201,9 +192,6 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         currentConversation,
         agentCounts,
         isProcessing,
-
-        // UI compatibility layer
-        originInfo,
 
         // Actions
         onChunkReceived,

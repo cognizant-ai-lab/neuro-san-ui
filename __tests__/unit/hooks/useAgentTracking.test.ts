@@ -21,7 +21,6 @@ describe("useAgentTracking", () => {
         expect(result.current.conversations).toBeInstanceOf(Map)
         expect(result.current.conversations.size).toBe(0)
         expect(result.current.currentConversation).toBeNull()
-        expect(result.current.originInfo).toEqual([])
         expect(result.current.agentCounts).toBeInstanceOf(Map)
         expect(result.current.agentCounts.size).toBe(0)
         expect(result.current.isProcessing).toBe(false)
@@ -44,7 +43,7 @@ describe("useAgentTracking", () => {
 
         expect(result.current.conversations.size).toBe(0)
         expect(result.current.currentConversation).toBeNull()
-        expect(result.current.originInfo).toEqual([])
+        expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
         expect(result.current.agentCounts.size).toBe(0)
         expect(result.current.isProcessing).toBe(false)
     })
@@ -63,7 +62,7 @@ describe("useAgentTracking", () => {
 
         expect(returnValue).toBe(true)
         expect(result.current.currentConversation).toBeNull()
-        expect(result.current.originInfo).toEqual([])
+        expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
     })
 
     it("should process agent chunk with origin info", () => {
@@ -86,7 +85,7 @@ describe("useAgentTracking", () => {
 
         expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
         expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
-        expect(result.current.originInfo).toEqual(mockOrigin)
+        expect(result.current.currentConversation?.currentOrigins).toEqual(mockOrigin)
         expect(result.current.agentCounts.get("agent1")).toBe(1)
         expect(result.current.agentCounts.get("agent2")).toBe(1)
 
@@ -158,8 +157,7 @@ describe("useAgentTracking", () => {
 
         expect(result.current.isProcessing).toBe(false)
         expect(result.current.currentConversation).toBeNull()
-        expect(result.current.currentConversation).toBeNull()
-        expect(result.current.originInfo).toEqual([])
+        expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
 
         // Conversation should still exist but be inactive
         expect(result.current.conversations.size).toBe(1)
