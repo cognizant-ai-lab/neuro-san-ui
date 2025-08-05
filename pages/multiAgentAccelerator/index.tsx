@@ -56,12 +56,12 @@ export default function MultiAgentAcceleratorPage() {
 
     // Agent tracking state and actions using custom hook
     const {
-        currentConversation,
         agentCounts,
+        currentConversation,
         isProcessing,
         onChunkReceived,
-        onStreamingStarted: agentTrackingStreamingStarted,
         onStreamingComplete: agentTrackingStreamingComplete,
+        onStreamingStarted: agentTrackingStreamingStarted,
     } = useAgentTracking()
 
     // Dark mode

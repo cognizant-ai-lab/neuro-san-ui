@@ -28,8 +28,8 @@ interface UseAgentTrackingReturn {
     currentConversation: Conversation | null
     isProcessing: boolean
     onChunkReceived: (chunk: string) => boolean
-    onStreamingStarted: () => void
     onStreamingComplete: () => void
+    onStreamingStarted: () => void
     resetTracking: () => void
 }
 
@@ -188,8 +188,8 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         currentConversation,
         isProcessing,
         onChunkReceived,
-        onStreamingStarted,
         onStreamingComplete,
+        onStreamingStarted,
         resetTracking,
     }
 }
