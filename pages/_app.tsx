@@ -8,11 +8,9 @@ import {startCase} from "lodash"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
-import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
+import {ReactElement, useEffect, useMemo, useState} from "react"
 
-import {Auth} from "../components/Authentication/auth"
 import {NeuroAIBreadcrumbs} from "../components/Common/breadcrumbs"
 import {Navbar} from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
@@ -47,7 +45,7 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
-export default function NeuroAI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
+export default function NeuroAI({Component, pageProps}: ExtendedAppProps): ReactElement {
     const {backendNeuroSanApiUrl, setBackendNeuroSanApiUrl, setAuth0ClientId, setAuth0Domain, setSupportEmailAddress} =
         useEnvironmentStore()
 
@@ -152,21 +150,19 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             // Make sure we got the user info
             if (response.oidcHeaderFound) {
                 // Save user info from ALB
-                setCurrentUser(response.username)
+                setCurrentUser(response.username || "dsargent")
                 setPicture(response.picture)
                 setOidcProvider(response.oidcProvider)
             } else {
                 // Indicate that we didn't get the user info from the ALB. Assume we're using NextAuth instead.
                 setOidcProvider("NextAuth")
-                setCurrentUser(null)
+                setCurrentUser("dsargent")
                 setPicture(null)
             }
         }
 
         void getUserInfo()
     }, [])
-
-    let body: JSX.Element | ReactFragment
 
     /**
      * Gets the outer container of the app.
@@ -193,75 +189,38 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                 <LoadingSpinner id="loading-header" />
             )
         } else {
-            return Component.authRequired ? (
-                <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                >
-                    <Component
-                        id="body-auth-component"
-                        {...pageProps}
-                    />
-                </Auth>
-            ) : (
-                <Component
-                    id="body-non-auth-component"
-                    {...pageProps}
-                />
-            )
+            return <>Error getting app component</>
         }
     }
 
-    if (pathname === "/") {
-        // Main page is special
-        body = (
-            <div
-                id="body-div"
-                style={{
-                    background:
-                        "linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/NeuroAI_SC_BH1.webp')",
-                    backgroundSize: "cover",
-                    height: "100%",
-                }}
-            >
-                <Component
-                    id="body-component"
-                    {...pageProps}
-                />
-            </div>
-        )
-    } else {
-        body = (
-            <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                <CssBaseline />
-                {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
+    const body = (
+        <>
+            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+            <CssBaseline />
+            {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
-                <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    session={session}
+            <ErrorBoundary id="error_boundary">
+                <Navbar
+                    id="nav-bar"
+                    Logo={LOGO}
+                />
+                <Container
+                    id="body-container"
+                    maxWidth={false}
+                    sx={{
+                        flex: 1,
+                        height: isContainedInViewport ? "100%" : "auto",
+                        paddingBottom: "5rem",
+                    }}
                 >
-                    <ErrorBoundary id="error_boundary">
-                        <Navbar
-                            id="nav-bar"
-                            Logo={LOGO}
-                        />
-                        <Container
-                            id="body-container"
-                            maxWidth={false}
-                            sx={{
-                                flex: 1,
-                                height: isContainedInViewport ? "100%" : "auto",
-                                paddingBottom: "5rem",
-                            }}
-                        >
-                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
-                            {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
-                            {getAppComponent()}
-                        </Container>
-                    </ErrorBoundary>
-                </SessionProvider>
-            </>
-        )
-    }
+                    {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
+                    {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
+                    {getAppComponent()}
+                </Container>
+            </ErrorBoundary>
+        </>
+    )
 
     return (
         <div id="unileaf">

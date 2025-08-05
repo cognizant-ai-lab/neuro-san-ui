@@ -1,6 +1,6 @@
 // See main function comment for more details.
 
-import {signOut, useSession} from "next-auth/react"
+import {signOut} from "next-auth/react"
 
 import {OidcProvider} from "../pages/api/userInfo/types"
 import useUserInfoStore from "../state/UserInfo"
@@ -16,7 +16,6 @@ export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
  * of NextAuth's useSession hook.
  */
 export function useAuthentication() {
-    const {data: session} = useSession()
     const {currentUser: albUser, picture: albPicture} = useUserInfoStore()
 
     // Return the user data in the same format as NextAuth's useSession hook. We prioritize the ALB info if we have
@@ -24,8 +23,8 @@ export function useAuthentication() {
     return {
         data: {
             user: {
-                name: albUser || session?.user?.name,
-                image: albPicture || session?.user?.image,
+                name: albUser,
+                image: albPicture,
             },
         },
     }

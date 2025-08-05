@@ -42,13 +42,14 @@
     "strictNullChecks": false,
     "target": "es2022",
     "useUnknownInCatchVariables": true,
+    "incremental": true
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
-    "**/*.mjs",
+    "**/*.mjs"
   ],
   "exclude": [
     ".next",
