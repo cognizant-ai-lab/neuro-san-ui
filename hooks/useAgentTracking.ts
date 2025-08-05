@@ -4,7 +4,6 @@ import {chatMessageFromChunk} from "../components/AgentChat/Utils"
 import {ChatMessageType} from "../generated/neuro-san/NeuroSanClient"
 import {Origin} from "../generated/neuro-san/OpenAPITypes"
 
-// Core domain types
 enum ConversationType {
     AGENT_TO_AGENT = "agent-to-agent",
     AGENT_TO_TOOL = "agent-to-tool",
@@ -24,13 +23,10 @@ interface Conversation {
 }
 
 interface UseAgentTrackingReturn {
-    // State
+    agentCounts: Map<string, number>
     conversations: Map<Date, Conversation>
     currentConversation: Conversation | null
-    agentCounts: Map<string, number>
     isProcessing: boolean
-
-    // Actions
     onChunkReceived: (chunk: string) => boolean
     onStreamingStarted: () => void
     onStreamingComplete: () => void
@@ -187,13 +183,10 @@ export function useAgentTracking(): UseAgentTrackingReturn {
     const agentCounts = useMemo(() => agentCountsRef.current, [agentCountsRef.current])
 
     return {
-        // Domain state
+        agentCounts,
         conversations,
         currentConversation,
-        agentCounts,
         isProcessing,
-
-        // Actions
         onChunkReceived,
         onStreamingStarted,
         onStreamingComplete,
