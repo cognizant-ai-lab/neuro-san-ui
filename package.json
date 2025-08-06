@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.9",
+    "version": "1.0.0",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
@@ -29,7 +29,7 @@
         "jsonrepair": "3.8.0",
         "lodash": "4.17.21",
         "next": "15.3.0",
-        "next-auth": "4.24.9",
+        "next-auth": "5.0.0-beta.20",
         "notistack": "3.0.1",
         "react": "18.2.0",
         "react-dom": "18.2.0",
