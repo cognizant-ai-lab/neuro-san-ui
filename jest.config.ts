@@ -3,28 +3,29 @@
 // This file initially cargo culted from here:
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
-import path from "path"
 
 /** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 
-    // Voodoo to speed up Jest, from here: https://stackoverflow.com/a/60905543
+    preset: "ts-jest/presets/default-esm",
+    extensionsToTreatAsEsm: [".ts", ".tsx"],
+    transformIgnorePatterns: ["/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime)"],
     transform: {
-        "^.+\\.tsx?$": [
+        "^.+\\.(ts|tsx)$": [
             "ts-jest",
             {
-                // Doc: https://kulshekhar.github.io/ts-jest/docs/getting-started/options/isolatedModules/
-                isolatedModules: true,
-                // Can't use ESM with Jest yet, so use CJS format for __dirname
-                // eslint-disable-next-line unicorn/prefer-module
-                tsconfig: path.resolve(__dirname, "tsconfig.test.json"),
+                useESM: true,
+                tsconfig: {
+                    jsx: "react-jsx",
+                },
             },
         ],
     },
+
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-    testEnvironment: "jest-environment-jsdom",
+    testEnvironment: "jsdom",
     collectCoverage: true,
     collectCoverageFrom: [
         "**/*.{js,jsx,ts,tsx}",

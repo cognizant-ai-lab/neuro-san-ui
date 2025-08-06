@@ -110,7 +110,7 @@ describe("MUIAccordion", () => {
         const title2 = screen.getByText("Title 2")
 
         await expect(user.click(title2)).rejects.toThrow(
-            "Unable to perform pointer interaction as the element inherits `pointer-events: none`"
+            "Unable to perform pointer interaction as the element has `pointer-events: none`"
         )
 
         expect(screen.getByText("Content 2")).not.toBeVisible()

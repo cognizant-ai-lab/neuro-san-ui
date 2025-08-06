@@ -98,8 +98,6 @@ const nextConfig: import("next").NextConfig = {
     sassOptions: {
         includePaths: [path.join(__dirname, "styles")],
     },
-
-    transpilePackages: ["echarts", "echarts-gl", "zrender"],
 }
 
 // Seems to need to be exported for NextJS to pick it up
