@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 
 import {LOGO} from "../../const"
-import NeuroAI from "../../pages/_app"
+import NeuroSanUI from "../../pages/_app"
 import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../common/testUtils"
 
@@ -52,7 +52,7 @@ describe("Main App Component", () => {
 
     it("Should render correctly", async () => {
         render(
-            <NeuroAI
+            <NeuroSanUI
                 Component={() => <div>Test Component to Render</div>}
                 pageProps={{url: "TestComponentURL", session: {user: {}}}}
                 router={jest.requireMock("next/router").useRouter()}

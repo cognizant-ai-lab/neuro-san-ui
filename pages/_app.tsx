@@ -47,7 +47,7 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
-export default function NeuroAI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
+export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
     const {backendNeuroSanApiUrl, setBackendNeuroSanApiUrl, setAuth0ClientId, setAuth0Domain, setSupportEmailAddress} =
         useEnvironmentStore()
 
