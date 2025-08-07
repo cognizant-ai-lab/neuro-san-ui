@@ -54,7 +54,7 @@ export default function MultiAgentAcceleratorPage() {
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
 
-    // Agent tracking state and actions using custom hook
+    // Agent tracking custom hook
     const {
         agentCounts,
         currentConversations,
