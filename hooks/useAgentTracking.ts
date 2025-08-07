@@ -20,7 +20,6 @@ interface UseAgentTrackingReturn {
     onStreamingStarted: () => void
 }
 
-// Helper function to determine if a message is a final response
 const isFinalMessage = (chatMessage: {structure?: {total_tokens?: number}; text?: string}): boolean => {
     const isAgentFinalResponse = chatMessage.structure?.total_tokens
     const isCodedToolFinalResponse = chatMessage.text?.startsWith("Got result:")
