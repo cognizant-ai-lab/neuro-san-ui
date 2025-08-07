@@ -26,28 +26,6 @@ describe("useAgentTracking", () => {
         expect(result.current.isProcessing).toBe(false)
     })
 
-    it("should reset tracking when resetTracking is called", () => {
-        const {result} = renderHook(() => useAgentTracking())
-
-        // Set some initial state
-        act(() => {
-            result.current.onStreamingStarted()
-        })
-
-        expect(result.current.conversations.size).toBe(1)
-        expect(result.current.currentConversation).not.toBeNull()
-
-        act(() => {
-            result.current.resetTracking()
-        })
-
-        expect(result.current.conversations.size).toBe(0)
-        expect(result.current.currentConversation).toBeNull()
-        expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
-        expect(result.current.agentCounts.size).toBe(0)
-        expect(result.current.isProcessing).toBe(false)
-    })
-
     it("should handle chunk without origin info", () => {
         const {result} = renderHook(() => useAgentTracking())
 
@@ -93,7 +71,6 @@ describe("useAgentTracking", () => {
         expect(result.current.currentConversation).not.toBeNull()
         expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
         expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
-        expect(result.current.currentConversation?.isActive).toBe(true)
     })
 
     it("should handle final agent response and remove from active list", () => {
@@ -148,7 +125,6 @@ describe("useAgentTracking", () => {
         expect(result.current.agentCounts.size).toBe(0)
         expect(result.current.conversations.size).toBe(1)
         expect(result.current.currentConversation).not.toBeNull()
-        expect(result.current.currentConversation?.isActive).toBe(true)
 
         // Complete streaming
         act(() => {
@@ -158,11 +134,6 @@ describe("useAgentTracking", () => {
         expect(result.current.isProcessing).toBe(false)
         expect(result.current.currentConversation).toBeNull()
         expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
-
-        // Conversation should still exist but be inactive
-        expect(result.current.conversations.size).toBe(1)
-        const conversationEntries = Array.from(result.current.conversations.values())
-        expect(conversationEntries[0].isActive).toBe(false)
     })
 
     it("should handle errors gracefully", () => {

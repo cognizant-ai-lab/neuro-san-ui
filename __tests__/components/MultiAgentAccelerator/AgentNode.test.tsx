@@ -85,7 +85,6 @@ describe("AgentNode", () => {
                         startedAt: new Date(),
                         currentOrigins: [{tool: agentName, instantiationIndex: 1}],
                         type: ConversationType.AGENT_TO_AGENT,
-                        isActive: true,
                     }),
                 }}
             />
@@ -124,7 +123,6 @@ describe("AgentNode", () => {
                         startedAt: new Date(),
                         currentOrigins: [{tool: agentName, instantiationIndex: 1}],
                         type: ConversationType.AGENT_TO_AGENT,
-                        isActive: true,
                     }),
                     isAwaitingLlm,
                 }}

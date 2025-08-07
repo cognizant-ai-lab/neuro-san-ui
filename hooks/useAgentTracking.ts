@@ -18,8 +18,6 @@ export interface Conversation {
     currentOrigins: Origin[]
     // Type of conversation (could evolve to include different conversation types)
     type: ConversationType
-    // Whether this conversation is currently active
-    isActive: boolean
 }
 
 interface UseAgentTrackingReturn {
@@ -30,7 +28,6 @@ interface UseAgentTrackingReturn {
     onChunkReceived: (chunk: string) => boolean
     onStreamingComplete: () => void
     onStreamingStarted: () => void
-    resetTracking: () => void
 }
 
 // Helper function to determine if a message is a final response
@@ -53,7 +50,6 @@ export function useAgentTracking(): UseAgentTrackingReturn {
             startedAt: new Date(),
             currentOrigins: [],
             type: ConversationType.AGENT_TO_AGENT,
-            isActive: true,
         }
     }, [])
 
@@ -154,23 +150,6 @@ export function useAgentTracking(): UseAgentTrackingReturn {
     }, [createConversation])
 
     const onStreamingComplete = useCallback(() => {
-        setIsProcessing(false)
-        // Mark current conversation as inactive
-        setCurrentConversation((prev) => {
-            if (prev) {
-                const completedConversation = {...prev, isActive: false}
-                setConversations((conversationData) => {
-                    const updated = new Map(conversationData)
-                    updated.set(prev.startedAt.getTime(), completedConversation)
-                    return updated
-                })
-                return null
-            }
-            return prev
-        })
-    }, [])
-
-    const resetTracking = useCallback(() => {
         setCurrentConversation(null)
         setConversations(new Map())
         agentCountsRef.current = new Map<string, number>()
@@ -185,6 +164,5 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         onChunkReceived,
         onStreamingComplete,
         onStreamingStarted,
-        resetTracking,
     }
 }

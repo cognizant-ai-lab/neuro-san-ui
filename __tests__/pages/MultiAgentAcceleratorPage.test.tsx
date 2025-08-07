@@ -251,7 +251,6 @@ describe("Multi Agent Accelerator Page", () => {
             expect.objectContaining({
                 agents: expect.any(Set),
                 currentOrigins: [{tool: TEST_AGENT_MATH_GUY}],
-                isActive: true,
             })
         )
 

@@ -53,7 +53,6 @@ describe("AgentFlow", () => {
             startedAt: new Date(),
             currentOrigins: [{tool: "agent1", instantiation_index: 1}],
             type: ConversationType.AGENT_TO_AGENT,
-            isActive: true,
         },
     }
 
@@ -152,7 +151,6 @@ describe("AgentFlow", () => {
                             {tool: "agent3", instantiation_index: 1},
                         ],
                         type: ConversationType.AGENT_TO_AGENT,
-                        isActive: true,
                     }}
                 />
             </ReactFlowProvider>
@@ -216,7 +214,6 @@ describe("AgentFlow", () => {
                 startedAt: new Date(),
                 currentOrigins: [{tool: "agent3", instantiation_index: 1}],
                 type: ConversationType.AGENT_TO_AGENT,
-                isActive: true,
             },
         })
 
@@ -254,7 +251,6 @@ describe("AgentFlow", () => {
                         startedAt: new Date(),
                         currentOrigins: [{tool: "agent3", instantiation_index: 1}],
                         type: ConversationType.AGENT_TO_AGENT,
-                        isActive: true,
                     }}
                 />
             </ReactFlowProvider>
