@@ -229,10 +229,10 @@ export default function MultiAgentAcceleratorPage() {
                         }}
                     >
                         <AgentFlow
+                            agentCounts={agentCounts}
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
                             currentConversation={currentConversation}
-                            agentCounts={agentCounts}
                             isAwaitingLlm={isAwaitingLlm || isProcessing}
                         />
                     </Box>
