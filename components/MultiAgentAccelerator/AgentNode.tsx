@@ -8,14 +8,14 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
-import {Conversation} from "../../hooks/useAgentTracking"
+import {AgentConversations} from "../../hooks/useAgentTracking"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
     readonly depth: number
-    readonly getConversation: () => Conversation | null
+    readonly getConversations: () => AgentConversations | null
     readonly isAwaitingLlm?: boolean
     readonly displayAs?: string
 }
@@ -36,7 +36,7 @@ const FRONTMAN_ICON_SIZE = "4.5rem"
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getConversation, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
 
     const isFrontman = depth === 0
 
@@ -47,12 +47,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // "Active" agents are those at either end of the current communication from the incoming chat messages.
     // We highlight them with a green background.
-    const conversation = getConversation()
-    const isInActiveConversations = conversation?.agents?.has(agentId) ?? false
-    const isInCurrentOrigins =
-        conversation?.currentOrigins?.map((currentOrigin) => currentOrigin.tool).includes(agentId) ?? false
-
-    const isActiveAgent = isInActiveConversations || isInCurrentOrigins
+    const conversations = getConversations()
+    const isActiveAgent = conversations?.agents?.has(agentId) ?? false
 
     let backgroundColor: string
     let color: string

@@ -1,7 +1,6 @@
 import {render, screen} from "@testing-library/react"
 
 import {AgentNode} from "../../../components/MultiAgentAccelerator/AgentNode"
-import {ConversationType} from "../../../hooks/useAgentTracking"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock the Handle component since we don't want to invite react-flow to this party
@@ -36,7 +35,7 @@ describe("AgentNode", () => {
                     agentName,
                     depth: 1,
                     displayAs: "llm_agent",
-                    getConversation: () => null,
+                    getConversations: () => null,
                 }}
             />
         )
@@ -80,11 +79,9 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     depth: 3,
-                    getConversation: () => ({
+                    getConversations: () => ({
                         agents: new Set<string>(),
                         startedAt: new Date(),
-                        currentOrigins: [{tool: agentName, instantiationIndex: 1}],
-                        type: ConversationType.AGENT_TO_AGENT,
                     }),
                 }}
             />
@@ -118,11 +115,9 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     depth: 3,
-                    getConversation: () => ({
+                    getConversations: () => ({
                         agents: new Set<string>(),
                         startedAt: new Date(),
-                        currentOrigins: [{tool: agentName, instantiationIndex: 1}],
-                        type: ConversationType.AGENT_TO_AGENT,
                     }),
                     isAwaitingLlm,
                 }}
@@ -157,7 +152,7 @@ describe("AgentNode", () => {
                     agentName: "Test Agent",
                     depth: 1,
                     displayAs,
-                    getConversation: () => null,
+                    getConversations: () => null,
                 }}
             />
         )

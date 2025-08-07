@@ -57,7 +57,7 @@ export default function MultiAgentAcceleratorPage() {
     // Agent tracking state and actions using custom hook
     const {
         agentCounts,
-        currentConversation,
+        currentConversations,
         isProcessing,
         onChunkReceived,
         onStreamingComplete: agentTrackingStreamingComplete,
@@ -232,7 +232,7 @@ export default function MultiAgentAcceleratorPage() {
                             agentCounts={agentCounts}
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
-                            currentConversation={currentConversation}
+                            currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm || isProcessing}
                         />
                     </Box>

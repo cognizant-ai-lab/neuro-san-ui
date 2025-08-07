@@ -18,9 +18,7 @@ describe("useAgentTracking", () => {
     it("should initialize with default state", () => {
         const {result} = renderHook(() => useAgentTracking())
 
-        expect(result.current.conversations).toBeInstanceOf(Map)
-        expect(result.current.conversations.size).toBe(0)
-        expect(result.current.currentConversation).toBeNull()
+        expect(result.current.currentConversations).toBeNull()
         expect(result.current.agentCounts).toBeInstanceOf(Map)
         expect(result.current.agentCounts.size).toBe(0)
         expect(result.current.isProcessing).toBe(false)
@@ -39,8 +37,7 @@ describe("useAgentTracking", () => {
         })
 
         expect(returnValue).toBe(true)
-        expect(result.current.currentConversation).toBeNull()
-        expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
+        expect(result.current.currentConversations).toBeNull()
     })
 
     it("should process agent chunk with origin info", () => {
@@ -61,16 +58,15 @@ describe("useAgentTracking", () => {
             result.current.onChunkReceived("test chunk")
         })
 
-        expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
-        expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
-        expect(result.current.currentConversation?.currentOrigins).toEqual(mockOrigin)
+        expect(result.current.currentConversations?.agents.has("agent1")).toBe(true)
+        expect(result.current.currentConversations?.agents.has("agent2")).toBe(true)
         expect(result.current.agentCounts.get("agent1")).toBe(1)
         expect(result.current.agentCounts.get("agent2")).toBe(1)
 
         // Check conversation state
-        expect(result.current.currentConversation).not.toBeNull()
-        expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
-        expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
+        expect(result.current.currentConversations).not.toBeNull()
+        expect(result.current.currentConversations?.agents.has("agent1")).toBe(true)
+        expect(result.current.currentConversations?.agents.has("agent2")).toBe(true)
     })
 
     it("should handle final agent response and remove from active list", () => {
@@ -92,8 +88,8 @@ describe("useAgentTracking", () => {
             result.current.onChunkReceived("start chunk")
         })
 
-        expect(result.current.currentConversation?.agents.has("agent1")).toBe(true)
-        expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
+        expect(result.current.currentConversations?.agents.has("agent1")).toBe(true)
+        expect(result.current.currentConversations?.agents.has("agent2")).toBe(true)
 
         // Now send a final response for agent1
         const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
@@ -109,8 +105,8 @@ describe("useAgentTracking", () => {
             result.current.onChunkReceived("final chunk")
         })
 
-        expect(result.current.currentConversation?.agents.has("agent1")).toBe(false)
-        expect(result.current.currentConversation?.agents.has("agent2")).toBe(true)
+        expect(result.current.currentConversations?.agents.has("agent1")).toBe(false)
+        expect(result.current.currentConversations?.agents.has("agent2")).toBe(true)
     })
 
     it("should handle streaming lifecycle", () => {
@@ -123,8 +119,7 @@ describe("useAgentTracking", () => {
 
         expect(result.current.isProcessing).toBe(true)
         expect(result.current.agentCounts.size).toBe(0)
-        expect(result.current.conversations.size).toBe(1)
-        expect(result.current.currentConversation).not.toBeNull()
+        expect(result.current.currentConversations).not.toBeNull()
 
         // Complete streaming
         act(() => {
@@ -132,8 +127,7 @@ describe("useAgentTracking", () => {
         })
 
         expect(result.current.isProcessing).toBe(false)
-        expect(result.current.currentConversation).toBeNull()
-        expect(result.current.currentConversation?.currentOrigins ?? []).toEqual([])
+        expect(result.current.currentConversations).toBeNull()
     })
 
     it("should handle errors gracefully", () => {

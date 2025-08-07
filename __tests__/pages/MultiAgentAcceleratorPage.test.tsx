@@ -34,7 +34,7 @@ const conversationMock = jest.fn()
 jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
     default: (props) => {
-        conversationMock(props.currentConversation)
+        conversationMock(props.currentConversations)
         return <div data-testid="mock-agent-flow" />
     },
 }))
@@ -250,7 +250,6 @@ describe("Multi Agent Accelerator Page", () => {
         expect(conversationMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 agents: expect.any(Set),
-                currentOrigins: [{tool: TEST_AGENT_MATH_GUY}],
             })
         )
 
