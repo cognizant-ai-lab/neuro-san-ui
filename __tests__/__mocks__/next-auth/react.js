@@ -1,3 +1,4 @@
 const signOut = jest.fn()
+const useSession = jest.fn()
 
-module.exports = {signOut}
+module.exports = {signOut, useSession}
