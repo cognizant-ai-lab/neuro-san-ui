@@ -24,7 +24,7 @@ export interface Conversation {
 
 interface UseAgentTrackingReturn {
     agentCounts: Map<string, number>
-    conversations: Map<Date, Conversation>
+    conversations: Map<number, Conversation>
     currentConversation: Conversation | null
     isProcessing: boolean
     onChunkReceived: (chunk: string) => boolean
@@ -41,7 +41,7 @@ const isFinalMessage = (chatMessage: {structure?: {total_tokens?: number}; text?
 }
 
 export function useAgentTracking(): UseAgentTrackingReturn {
-    const [conversations, setConversations] = useState<Map<Date, Conversation>>(new Map())
+    const [conversations, setConversations] = useState<Map<number, Conversation>>(new Map())
     const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null)
     const [isProcessing, setIsProcessing] = useState<boolean>(false)
     const agentCountsRef = useRef<Map<string, number>>(new Map())
@@ -157,7 +157,7 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         setCurrentConversation(newConversation)
         setConversations((prev) => {
             const newConversations = new Map(prev)
-            newConversations.set(newConversation.startedAt, newConversation)
+            newConversations.set(newConversation.startedAt.getTime(), newConversation)
             return newConversations
         })
     }, [createConversation])
@@ -170,7 +170,7 @@ export function useAgentTracking(): UseAgentTrackingReturn {
                 const completedConversation = {...prev, isActive: false}
                 setConversations((conversationData) => {
                     const updated = new Map(conversationData)
-                    updated.set(prev.startedAt, completedConversation)
+                    updated.set(prev.startedAt.getTime(), completedConversation)
                     return updated
                 })
                 return null

@@ -5,6 +5,7 @@ import {ReactFlowProvider} from "reactflow"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import AgentFlow from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ConnectivityInfo} from "../../../generated/neuro-san/OpenAPITypes"
+import {ConversationType} from "../../../hooks/useAgentTracking"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../common/strictMocks"
 
@@ -51,7 +52,7 @@ describe("AgentFlow", () => {
             agents: new Set(["agent1"]),
             startedAt: new Date(),
             currentOrigins: [{tool: "agent1", instantiation_index: 1}],
-            type: "agent-to-agent" as const,
+            type: ConversationType.AGENT_TO_AGENT,
             isActive: true,
         },
     }
@@ -150,7 +151,7 @@ describe("AgentFlow", () => {
                             {tool: "agent1", instantiation_index: 1},
                             {tool: "agent3", instantiation_index: 1},
                         ],
-                        type: "agent-to-agent" as const,
+                        type: ConversationType.AGENT_TO_AGENT,
                         isActive: true,
                     }}
                 />
@@ -214,7 +215,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent3"]),
                 startedAt: new Date(),
                 currentOrigins: [{tool: "agent3", instantiation_index: 1}],
-                type: "agent-to-agent" as const,
+                type: ConversationType.AGENT_TO_AGENT,
                 isActive: true,
             },
         })
@@ -252,7 +253,7 @@ describe("AgentFlow", () => {
                         agents: new Set(["agent3"]),
                         startedAt: new Date(),
                         currentOrigins: [{tool: "agent3", instantiation_index: 1}],
-                        type: "agent-to-agent" as const,
+                        type: ConversationType.AGENT_TO_AGENT,
                         isActive: true,
                     }}
                 />
