@@ -305,7 +305,7 @@ describe("Multi Agent Accelerator Page", () => {
             onChunkReceived(JSON.stringify(chatMessage))
         })
 
-        // Conversation should now be empty/null since agent completed
+        // Conversation should now be empty/null since it is complete
         expect(conversationMock).toHaveBeenCalledWith(null)
     })
 })
