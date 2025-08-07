@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useRef, useState} from "react"
+import {useCallback, useRef, useState} from "react"
 
 import {chatMessageFromChunk} from "../components/AgentChat/Utils"
 import {ChatMessageType} from "../generated/neuro-san/NeuroSanClient"
@@ -186,11 +186,8 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         setIsProcessing(false)
     }, [])
 
-    // Memoize the agent counts to prevent unnecessary re-renders
-    const agentCounts = useMemo(() => agentCountsRef.current, [agentCountsRef.current])
-
     return {
-        agentCounts,
+        agentCounts: agentCountsRef.current,
         conversations,
         currentConversation,
         isProcessing,
