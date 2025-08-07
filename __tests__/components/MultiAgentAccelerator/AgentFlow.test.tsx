@@ -47,8 +47,13 @@ describe("AgentFlow", () => {
     const defaultProps = {
         agentsInNetwork: network,
         id: "test-flow-id",
-        includedAgentIds: [], // No active agents for the default test
-        currentConversation: [{tool: "agent1", instantiation_index: 1}],
+        currentConversation: {
+            agents: new Set(["agent1"]),
+            startedAt: new Date(),
+            currentOrigins: [{tool: "agent1", instantiation_index: 1}],
+            type: "agent-to-agent" as const,
+            isActive: true,
+        },
     }
 
     const renderAgentFlowComponent = (overrides = {}) => {
@@ -138,11 +143,16 @@ describe("AgentFlow", () => {
                 <AgentFlow
                     agentsInNetwork={network}
                     id="test-flow-id"
-                    includedAgentIds={["agent1", "agent3"]}
-                    currentConversation={[
-                        {tool: "agent1", instantiation_index: 1},
-                        {tool: "agent3", instantiation_index: 1},
-                    ]}
+                    currentConversation={{
+                        agents: new Set(["agent1", "agent3"]),
+                        startedAt: new Date(),
+                        currentOrigins: [
+                            {tool: "agent1", instantiation_index: 1},
+                            {tool: "agent3", instantiation_index: 1},
+                        ],
+                        type: "agent-to-agent" as const,
+                        isActive: true,
+                    }}
                 />
             </ReactFlowProvider>
         )
@@ -181,7 +191,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle an empty agent list", async () => {
-        const {container} = renderAgentFlowComponent({agentsInNetwork: [], currentConversation: []})
+        const {container} = renderAgentFlowComponent({agentsInNetwork: [], currentConversation: null})
 
         const nodes = container.getElementsByClassName("react-flow__node")
         expect(nodes).toHaveLength(0)
@@ -200,7 +210,13 @@ describe("AgentFlow", () => {
     it("Should handle a Frontman-only network", async () => {
         const {container} = renderAgentFlowComponent({
             agentsInNetwork: [network[2]],
-            currentConversation: [{tool: "agent3", instantiation_index: 1}],
+            currentConversation: {
+                agents: new Set(["agent3"]),
+                startedAt: new Date(),
+                currentOrigins: [{tool: "agent3", instantiation_index: 1}],
+                type: "agent-to-agent" as const,
+                isActive: true,
+            },
         })
 
         const nodes = container.getElementsByClassName("react-flow__node")
@@ -232,8 +248,13 @@ describe("AgentFlow", () => {
                 <AgentFlow
                     agentsInNetwork={[network[2]]}
                     id="test-flow-id"
-                    includedAgentIds={[]}
-                    currentConversation={[{tool: "agent3", instantiation_index: 1}]}
+                    currentConversation={{
+                        agents: new Set(["agent3"]),
+                        startedAt: new Date(),
+                        currentOrigins: [{tool: "agent3", instantiation_index: 1}],
+                        type: "agent-to-agent" as const,
+                        isActive: true,
+                    }}
                 />
             </ReactFlowProvider>
         )

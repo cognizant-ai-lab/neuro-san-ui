@@ -231,8 +231,7 @@ export default function MultiAgentAcceleratorPage() {
                         <AgentFlow
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
-                            includedAgentIds={currentConversation ? Array.from(currentConversation.agents) : []}
-                            currentConversation={currentConversation?.currentOrigins ?? []}
+                            currentConversation={currentConversation}
                             agentCounts={agentCounts}
                             isAwaitingLlm={isAwaitingLlm || isProcessing}
                         />

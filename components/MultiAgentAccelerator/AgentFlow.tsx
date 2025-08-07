@@ -33,7 +33,8 @@ import {
 } from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
-import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {ConnectivityInfo} from "../../generated/neuro-san/OpenAPITypes"
+import {Conversation} from "../../hooks/useAgentTracking"
 import {usePreferences} from "../../state/Preferences"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
@@ -41,23 +42,15 @@ import {ZIndexLayers} from "../../utils/zIndexLayers"
 interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentsInNetwork: ConnectivityInfo[]
-    readonly currentConversation?: Origin[]
+    readonly currentConversation?: Conversation | null
     readonly id: string
-    readonly includedAgentIds: string[]
     readonly isAwaitingLlm?: boolean
 }
 
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({
-    agentCounts,
-    agentsInNetwork,
-    currentConversation,
-    id,
-    isAwaitingLlm,
-    includedAgentIds,
-}) => {
+const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentConversation, id, isAwaitingLlm}) => {
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -70,18 +63,16 @@ const AgentFlow: FC<AgentFlowProps> = ({
     }, [handleResize])
 
     // Save this as a mutable ref so child nodes see updates
-    const currentConversationRef = useRef<Origin[]>(currentConversation)
+    const conversationRef = useRef<Conversation | null>(currentConversation)
 
     useEffect(() => {
-        currentConversationRef.current = currentConversation
+        conversationRef.current = currentConversation
     }, [currentConversation])
 
-    const getCurrentConversation = useCallback<() => Origin[]>(
-        () => currentConversationRef.current,
-        [currentConversationRef.current]
+    const getConversation = useCallback<() => Conversation | null>(
+        () => conversationRef.current,
+        [conversationRef.current]
     )
-
-    const getIncludedAgentIds = useCallback<() => string[]>(() => includedAgentIds, [includedAgentIds])
 
     const [layout, setLayout] = useState<Layout>("radial")
 
@@ -105,29 +96,17 @@ const AgentFlow: FC<AgentFlowProps> = ({
                       // agentCounts key is optional, so we check if it's defined
                       isHeatmap ? agentCounts : undefined,
                       agentsInNetwork,
-                      getIncludedAgentIds,
-                      getCurrentConversation,
+                      getConversation,
                       isAwaitingLlm
                   )
                 : layoutRadial(
                       // agentCounts key is optional, so we check if it's defined
                       isHeatmap ? agentCounts : undefined,
                       agentsInNetwork,
-                      getIncludedAgentIds,
-                      getCurrentConversation,
+                      getConversation,
                       isAwaitingLlm
                   ),
-        [
-            layout,
-            coloringOption,
-            agentCounts,
-            agentsInNetwork,
-            includedAgentIds,
-            currentConversation,
-            isAwaitingLlm,
-            getIncludedAgentIds,
-            getCurrentConversation,
-        ]
+        [layout, coloringOption, agentCounts, agentsInNetwork, currentConversation, isAwaitingLlm, getConversation]
     )
 
     const [nodes, setNodes] = useState(layoutResult.nodes)

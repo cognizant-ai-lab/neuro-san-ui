@@ -7,7 +7,8 @@ import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
-import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {ConnectivityInfo} from "../../generated/neuro-san/OpenAPITypes"
+import {Conversation} from "../../hooks/useAgentTracking"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Constants
@@ -76,8 +77,7 @@ const getEdgesProperties = (
 export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
-    getIncludedAgentIds: () => string[],
-    getCurrentConversation: () => Origin[],
+    getConversation: () => Conversation | null,
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -163,8 +163,8 @@ export const layoutRadial = (
                         targetHandle = isAboveParent ? `${nodeId}-bottom-handle` : `${nodeId}-top-handle`
                     }
 
-                    const edgeIncluded =
-                        getIncludedAgentIds().includes(nodeId) && getIncludedAgentIds().includes(graphNode.id)
+                    const conversation = getConversation()
+                    const edgeIncluded = conversation?.agents?.has(nodeId) && conversation?.agents?.has(graphNode.id)
 
                     // Add edge from parent to node
                     if (!isAwaitingLlm || edgeIncluded) {
@@ -183,8 +183,7 @@ export const layoutRadial = (
                     agentName: cleanUpAgentName(nodeId),
                     depth,
                     displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
-                    getIncludedAgentIds,
-                    getCurrentConversation,
+                    getConversation,
                     isAwaitingLlm,
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
@@ -205,8 +204,7 @@ export const layoutRadial = (
 export const layoutLinear = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
-    getIncludedAgentIds: () => string[],
-    getCurrentConversation: () => Origin[],
+    getConversation: () => Conversation | null,
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -230,8 +228,7 @@ export const layoutLinear = (
                 agentCounts,
                 agentName: cleanUpAgentName(originOfNode),
                 displayAs: agentsInNetwork.find((a) => a.origin === originOfNode)?.display_as,
-                getIncludedAgentIds,
-                getCurrentConversation,
+                getConversation,
                 isAwaitingLlm,
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
@@ -247,8 +244,8 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const edgeIncluded =
-                    getIncludedAgentIds().includes(parentNode) && getIncludedAgentIds().includes(originOfNode)
+                const conversation = getConversation()
+                const edgeIncluded = conversation?.agents?.has(parentNode) && conversation?.agents?.has(originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
@@ -304,10 +301,11 @@ export const layoutLinear = (
         node.data.depth = xPositions.indexOf(nodeWithPosition.x)
     })
 
-    // If we're in "awaiting LLM" mode, we filter edges to only include those that are between included nodes.
+    // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
+    const conversation = getConversation()
     const filteredEdges = isAwaitingLlm
         ? edgesInNetwork.filter(
-              (edge) => getIncludedAgentIds().includes(edge.source) && getIncludedAgentIds().includes(edge.target)
+              (edge) => conversation?.agents?.has(edge.source) && conversation?.agents?.has(edge.target)
           )
         : edgesInNetwork
 

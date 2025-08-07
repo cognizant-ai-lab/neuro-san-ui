@@ -4,12 +4,12 @@ import {chatMessageFromChunk} from "../components/AgentChat/Utils"
 import {ChatMessageType} from "../generated/neuro-san/NeuroSanClient"
 import {Origin} from "../generated/neuro-san/OpenAPITypes"
 
-enum ConversationType {
+export enum ConversationType {
     AGENT_TO_AGENT = "agent-to-agent",
     AGENT_TO_TOOL = "agent-to-tool",
 }
 
-interface Conversation {
+export interface Conversation {
     // The set of agents involved in this conversation
     agents: Set<string>
     // Timestamp when the conversation started
@@ -124,7 +124,14 @@ export function useAgentTracking(): UseAgentTrackingReturn {
 
                     if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
                         // Remove completed agents from conversation
-                        return removeCompletedAgents(conversation, chatMessage.origin)
+                        const updatedConversation = removeCompletedAgents(conversation, chatMessage.origin)
+
+                        // If no agents remain, set conversation to null
+                        if (updatedConversation.agents.size === 0) {
+                            return null
+                        }
+
+                        return updatedConversation
                     } else {
                         // Add new agents to conversation
                         return addAgentsToConversation(conversation, chatMessage.origin)

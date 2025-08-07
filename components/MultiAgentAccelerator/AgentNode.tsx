@@ -8,15 +8,14 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
-import {Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {Conversation} from "../../hooks/useAgentTracking"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
     readonly depth: number
-    readonly getIncludedAgentIds: () => string[]
-    readonly getCurrentConversation: () => Origin[]
+    readonly getConversation: () => Conversation | null
     readonly isAwaitingLlm?: boolean
     readonly displayAs?: string
 }
@@ -37,7 +36,7 @@ const FRONTMAN_ICON_SIZE = "4.5rem"
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getIncludedAgentIds, getCurrentConversation, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, displayAs, getConversation, isAwaitingLlm} = data
 
     const isFrontman = depth === 0
 
@@ -47,12 +46,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const agentId = props.id
 
     // "Active" agents are those at either end of the current communication from the incoming chat messages.
-    // We highlight them with a green background. Check included agent IDs as well as origin info in order
+    // We highlight them with a green background. Check conversation agents as well as origin info in order
     // to display edges properly.
-    const isInActiveConversations = getIncludedAgentIds().includes(agentId)
-    const isInCurrentOriginInfo = getCurrentConversation()
-        .map((originItem) => originItem.tool)
-        .includes(agentId)
+    const conversation = getConversation()
+    const isInActiveConversations = conversation?.agents?.has(agentId) ?? false
+    const isInCurrentOriginInfo =
+        conversation?.currentOrigins?.map((originItem) => originItem.tool).includes(agentId) ?? false
 
     const isActiveAgent = isInActiveConversations || isInCurrentOriginInfo
 

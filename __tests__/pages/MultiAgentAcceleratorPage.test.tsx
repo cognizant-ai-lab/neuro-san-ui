@@ -29,14 +29,12 @@ jest.mock("next-auth/react")
 jest.mock("../../controller/agent/Agent")
 
 // AgentFlow mock
-const includedAgentIdsMock = jest.fn()
-const currentConversationMock = jest.fn()
+const conversationMock = jest.fn()
 
 jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
     default: (props) => {
-        includedAgentIdsMock(props.includedAgentIds)
-        currentConversationMock(props.currentConversation)
+        conversationMock(props.currentConversation)
         return <div data-testid="mock-agent-flow" />
     },
 }))
@@ -247,8 +245,19 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         expect(chatCommonMock).toHaveBeenCalled()
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
-        expect(currentConversationMock).toHaveBeenCalledWith([{tool: TEST_AGENT_MATH_GUY}])
+
+        // Verify that the conversation object was passed with the correct agent
+        expect(conversationMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                agents: expect.any(Set),
+                currentOrigins: [{tool: TEST_AGENT_MATH_GUY}],
+                isActive: true,
+            })
+        )
+
+        // Verify the agents Set contains the expected agent
+        const conversationCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
+        expect(Array.from(conversationCall.agents)).toContain(TEST_AGENT_MATH_GUY)
     })
 
     it("should handle receiving an end of conversation chat message", async () => {
@@ -260,9 +269,9 @@ describe("Multi Agent Accelerator Page", () => {
             onChunkReceived(activeAgentChunk)
         })
 
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
-
-        includedAgentIdsMock.mockClear()
+        // Verify agent is in conversation
+        expect(conversationMock).toHaveBeenCalled()
+        conversationMock.mockClear()
 
         // End of conversation message for unrelated agent
         const endOfConversationDifferentAgent: ChatResponse = {
@@ -279,9 +288,8 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         // Math guy conversation should still be active
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
-
-        includedAgentIdsMock.mockClear()
+        expect(conversationMock).toHaveBeenCalled()
+        conversationMock.mockClear()
 
         // Now the end of conversation message for the active agent
         const chatMessage: ChatResponse = {
@@ -297,6 +305,7 @@ describe("Multi Agent Accelerator Page", () => {
             onChunkReceived(JSON.stringify(chatMessage))
         })
 
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([])
+        // Conversation should now be empty/null since agent completed
+        expect(conversationMock).toHaveBeenCalledWith(null)
     })
 })
