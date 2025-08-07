@@ -50,10 +50,10 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // to display edges properly.
     const conversation = getConversation()
     const isInActiveConversations = conversation?.agents?.has(agentId) ?? false
-    const isInCurrentOriginInfo =
+    const isInCurrentOrigins =
         conversation?.currentOrigins?.map((originItem) => originItem.tool).includes(agentId) ?? false
 
-    const isActiveAgent = isInActiveConversations || isInCurrentOriginInfo
+    const isActiveAgent = isInActiveConversations || isInCurrentOrigins
 
     let backgroundColor: string
     let color: string
