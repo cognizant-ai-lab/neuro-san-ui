@@ -60,41 +60,32 @@ export function useAgentTracking(): UseAgentTrackingReturn {
     // Helper function to update agent counts
     const updateAgentCounts = useCallback((origins: readonly Origin[]) => {
         const agentCounts = agentCountsRef.current
-        for (const agent of origins) {
-            if (agent.tool) {
-                agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
-            }
-        }
+        origins
+            .map((originData) => originData.tool)
+            .reduce((_, tool) => {
+                agentCounts.set(tool, (agentCounts.get(tool) || 0) + 1)
+                return agentCounts
+            }, agentCounts)
     }, [])
 
     // Helper function to add agents to current conversation
     const addAgentsToConversation = useCallback((conversation: Conversation, origins: readonly Origin[]) => {
-        const newAgents = new Set(conversation.agents)
-        origins.forEach((originData) => {
-            if (originData.tool) {
-                newAgents.add(originData.tool)
-            }
-        })
+        const newTools = origins.map((originData) => originData.tool).filter(Boolean)
         return {
             ...conversation,
-            agents: newAgents,
+            agents: new Set([...conversation.agents, ...newTools]),
             currentOrigins: [...origins],
         }
     }, [])
 
     // Helper function to remove completed agents from conversation
     const removeCompletedAgents = useCallback((conversation: Conversation, completedOrigins: readonly Origin[]) => {
-        const remainingAgents = new Set(conversation.agents)
-        completedOrigins.forEach((originData) => {
-            if (originData.tool) {
-                remainingAgents.delete(originData.tool)
-            }
-        })
+        const completedTools = new Set(completedOrigins.map((completedOrigin) => completedOrigin.tool).filter(Boolean))
         return {
             ...conversation,
-            agents: remainingAgents,
+            agents: new Set([...conversation.agents].filter((agent) => !completedTools.has(agent))),
             currentOrigins: conversation.currentOrigins.filter(
-                (originData) => !completedOrigins.some((completed) => completed.tool === originData.tool)
+                (currentOrigin) => !completedTools.has(currentOrigin.tool)
             ),
         }
     }, [])
