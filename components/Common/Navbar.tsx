@@ -23,6 +23,7 @@ import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
 import useUserInfoStore from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {navigateToUrl} from "../../utils/BrowserNavigation"
 
 // Declare the Props Interface
 interface NavbarProps {
@@ -303,7 +304,7 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                         setEmailDialogOpen(false)
                     }}
                     handleOk={() => {
-                        window.location.href = `mailto:${supportEmailAddress}`
+                        navigateToUrl(`mailto:${supportEmailAddress}`)
                         setEmailDialogOpen(false)
                     }}
                     title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}

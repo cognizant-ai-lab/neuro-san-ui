@@ -8,6 +8,8 @@ import {useSession} from "next-auth/react"
 
 import {Navbar} from "../../../components/Common/Navbar"
 import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
+import * as BrowserNavigation from "../../../utils/BrowserNavigation"
+import {navigateToUrl} from "../../../utils/BrowserNavigation"
 import {withStrictMocks} from "../../common/strictMocks"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
@@ -56,7 +58,9 @@ jest.mock("../../../state/environment", () => ({
     default: () => mockEnvironment,
 }))
 
-describe("navbar", () => {
+describe("NavBar", () => {
+    withStrictMocks()
+
     let user: UserEvent
 
     const defaultNavbar = (
@@ -66,26 +70,14 @@ describe("navbar", () => {
         />
     )
 
-    const windowLocation = window.location
-
-    withStrictMocks()
-
     beforeEach(() => {
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
-        // https://www.joshmcarthur.com/til/2022/01/19/assert-windowlocation-properties-with-jest.html
-        Object.defineProperty(window, "location", {
-            value: new URL(window.location.href),
-            configurable: true,
-        })
+        jest.spyOn(BrowserNavigation, "navigateToUrl")
+        ;(navigateToUrl as jest.Mock).mockImplementation()
         user = userEvent.setup()
     })
 
     afterEach(() => {
-        Object.defineProperty(window, "location", {
-            value: windowLocation,
-            configurable: true,
-        })
-
         Object.assign(mockRouterValues, {
             pathname: "/projects",
         })
@@ -113,7 +105,7 @@ describe("navbar", () => {
         const confirmButton = await screen.findByText("Confirm")
         await user.click(confirmButton)
 
-        expect(window.location.href).toEqual(`mailto:${MOCK_EMAIL_ADDRESS}`)
+        expect(navigateToUrl).toHaveBeenCalledWith(`mailto:${MOCK_EMAIL_ADDRESS}`)
     })
 
     it("renders the Navbar with the provided logo (Neuro® AI Decisioning)", async () => {

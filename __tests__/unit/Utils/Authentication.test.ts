@@ -1,7 +1,8 @@
 import {signOut} from "next-auth/react"
 
-import {AD_TENANT_ID, navigateToUrl, smartSignOut} from "../../../utils/Authentication"
-import * as Authentication from "../../../utils/Authentication"
+import {AD_TENANT_ID, smartSignOut} from "../../../utils/Authentication"
+import * as BrowserNavigation from "../../../utils/BrowserNavigation"
+import {navigateToUrl} from "../../../utils/BrowserNavigation"
 import {withStrictMocks} from "../../common/strictMocks"
 import {mockFetch} from "../../common/testUtils"
 
@@ -17,8 +18,8 @@ describe("useAuthentication", () => {
     let oldFetch: typeof window.fetch
 
     beforeEach(() => {
-        jest.spyOn(Authentication, "navigateToUrl")
-        ;(Authentication.navigateToUrl as jest.Mock).mockImplementation()
+        jest.spyOn(BrowserNavigation, "navigateToUrl")
+        ;(navigateToUrl as jest.Mock).mockImplementation()
 
         oldFetch = window.fetch
         window.fetch = mockFetch({})

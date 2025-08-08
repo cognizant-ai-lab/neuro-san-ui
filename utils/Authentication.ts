@@ -2,6 +2,7 @@
 
 import {signOut, useSession} from "next-auth/react"
 
+import {navigateToUrl} from "./BrowserNavigation"
 import {OidcProvider} from "../pages/api/userInfo/types"
 import useUserInfoStore from "../state/UserInfo"
 
@@ -29,14 +30,6 @@ export function useAuthentication() {
             },
         },
     }
-}
-
-/**
- * Navigate to the specified URL by setting window.location.href
- * @param url The URL to navigate to
- */
-export const navigateToUrl = (url: string): void => {
-    window.location.href = url
 }
 
 /**
