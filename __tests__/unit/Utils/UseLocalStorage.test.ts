@@ -10,13 +10,13 @@ describe("useLocalStorage", () => {
         window.localStorage.clear()
     })
 
-    test("should return initial value if localStorage is empty", () => {
+    it("should return initial value if localStorage is empty", () => {
         const initialValue = "init"
         const {result} = renderHook(() => useLocalStorage("key", initialValue))
         expect(result.current[0]).toBe(initialValue)
     })
 
-    test("should return value from localStorage if present", () => {
+    it("should return value from localStorage if present", () => {
         const storedValue = "stored"
         const itemKey = "key"
         window.localStorage.setItem(itemKey, JSON.stringify(storedValue))
@@ -24,7 +24,7 @@ describe("useLocalStorage", () => {
         expect(result.current[0]).toBe(storedValue)
     })
 
-    test("should update localStorage when setValue is called", () => {
+    it("should update localStorage when setValue is called", () => {
         const itemKey = "key"
         const {result} = renderHook(() => useLocalStorage(itemKey, "init"))
         const newValue = "newValue"
@@ -35,7 +35,7 @@ describe("useLocalStorage", () => {
         expect(result.current[0]).toBe(newValue)
     })
 
-    test("should support functional updates", () => {
+    it("should support functional updates", () => {
         const itemKey = "key"
         const initialValue = 1
         const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
