@@ -16,11 +16,8 @@ import reactHooks from "eslint-plugin-react-hooks"
 import testingLibrary from "eslint-plugin-testing-library"
 import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
-import path from "node:path"
-import {fileURLToPath} from "node:url"
 
-const ___filename = fileURLToPath(import.meta.url)
-const ___dirname = path.dirname(___filename)
+const ___dirname = import.meta.dirname
 const compat = new FlatCompat({
     baseDirectory: ___dirname,
     recommendedConfig: js.configs.recommended,
@@ -30,7 +27,7 @@ const compat = new FlatCompat({
 const config = [
     eslintPluginUnicorn.configs.all,
     {
-        ignores: [".next", "coverage", "generated", "embed"],
+        ignores: [".next", "coverage", "generated", "embed", "dist"],
     },
     ...fixupConfigRules(
         compat.extends(
@@ -61,7 +58,7 @@ const config = [
             "react-hooks": fixupPluginRules(reactHooks),
             import: fixupPluginRules(eslintPluginImport),
             jest: fixupPluginRules(jest),
-            next: fixupPluginRules(next),
+            next,
             react: fixupPluginRules(eslintPluginReact),
         },
         linterOptions: {

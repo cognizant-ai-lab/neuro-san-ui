@@ -4,11 +4,9 @@
 // See: https://nextjs.org/docs/basic-features/typescript
 
 import path from "path"
-import {fileURLToPath} from "url"
 
 /* eslint-disable no-shadow */
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __dirname = import.meta.dirname
 /* eslint-enable no-shadow */
 
 // Extra headers to be returned
