@@ -27,5 +27,8 @@ const config: NextAuthConfig = {
 
 const {handlers} = NextAuth(config)
 
+// ts-prune-ignore-next
 export const GET = handlers.GET
+
+// ts-prune-ignore-next
 export const POST = handlers.POST

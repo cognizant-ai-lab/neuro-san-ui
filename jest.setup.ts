@@ -15,8 +15,9 @@ Object.defineProperties(globalThis, {
     ReadableStream: {value: ReadableStream},
 })
 
-global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
+// Use the Node.js TextEncoder for Jest, with a type cast to satisfy TypeScript
+global.TextEncoder = TextEncoder as unknown as typeof global.TextEncoder
+global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder
 
 // End of hack
 

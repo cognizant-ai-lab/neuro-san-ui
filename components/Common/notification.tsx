@@ -14,6 +14,7 @@ const ERROR_WARNING_NOTIFICATION_DURATION_MS = 15_000
 // Display info notification popups for this many seconds
 const SUCCESS_NOTIFICATION_DURATION_MS = 5000
 
+// ts-prune-ignore-next (false positive)
 export function closeNotification(snackbarId?: SnackbarKey) {
     closeSnackbar(snackbarId)
 }
