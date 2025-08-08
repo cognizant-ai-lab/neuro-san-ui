@@ -47,12 +47,14 @@ const handleStopMock = jest.fn()
 
 let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => void
+let onStreamingStarted: () => void
 
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
     ChatCommon: forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
         chatCommonMock(props)
         setIsAwaitingLlm = props.setIsAwaitingLlm
         onChunkReceived = props.onChunkReceived
+        onStreamingStarted = props.onStreamingStarted
         // handleStop ref
         ;(ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
         return (
@@ -236,6 +238,19 @@ describe("Multi Agent Accelerator Page", () => {
         expect(handleStopMock).toHaveBeenCalledTimes(1)
     })
 
+    it("ignores presses of keys other than Escape", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        await act(async () => {
+            setIsAwaitingLlm(true)
+        })
+
+        // Simulate Escape key
+        await userEvent.keyboard("{Enter}")
+
+        expect(handleStopMock).not.toHaveBeenCalled()
+    })
+
     it("should handle receiving an agent conversation chat message", async () => {
         renderMultiAgentAcceleratorPage()
 
@@ -298,5 +313,20 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         expect(includedAgentIdsMock).toHaveBeenCalledWith([])
+    })
+
+    it("should show a popup when onStreamingStarted is called", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+
+        await act(async () => {
+            onStreamingStarted()
+        })
+
+        const expectedPopupText = "Agents working"
+        await screen.findByText(expectedPopupText)
+
+        expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedPopupText))
     })
 })
