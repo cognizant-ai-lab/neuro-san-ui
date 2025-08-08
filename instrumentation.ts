@@ -9,7 +9,7 @@
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
  * exit with an error message.
  */
-const REQUIRED_ENV_VARS = [
+export const REQUIRED_ENV_VARS = [
     "AUTH0_CLIENT_ID",
     "AUTH0_CLIENT_SECRET",
     "AUTH0_DOMAIN",
