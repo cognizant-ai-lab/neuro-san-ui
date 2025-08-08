@@ -32,6 +32,14 @@ export function useAuthentication() {
 }
 
 /**
+ * Navigate to the specified URL by setting window.location.href
+ * @param url The URL to navigate to
+ */
+export const navigateToUrl = (url: string): void => {
+    window.location.href = url
+}
+
+/**
  * Create the logout URL for Auth0.
  * @param oidcProvider The OIDC provider. See OIDC doc for more details.
  * @param auth0Domain The Auth0 domain. See Auth0 doc for more details.
@@ -89,6 +97,6 @@ export async function smartSignOut(
             },
         }))
 
-        window.location.href = createAuth0LogoutUrl(oidcProvider, auth0Domain, auth0ClientId)
+        navigateToUrl(createAuth0LogoutUrl(oidcProvider, auth0Domain, auth0ClientId))
     }
 }
