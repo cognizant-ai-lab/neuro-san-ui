@@ -1,13 +1,18 @@
 import {render, screen} from "@testing-library/react"
+import {ReactNode} from "react"
 
 import {LOGO} from "../../const"
 import NeuroSanUI from "../../pages/_app"
+import * as Authentication from "../../utils/Authentication"
 import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../common/testUtils"
 
 const originalFetch = window.fetch
 
-// mock next/router
+jest.mock("next-auth/react", () => ({
+    SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
+}))
+
 jest.mock("next/router", () => ({
     useRouter() {
         return {
@@ -43,6 +48,10 @@ describe("Main App Component", () => {
             supportEmailAddress: "test@example.com",
             oidcHeaderFound: true,
             username: "testUser",
+        })
+
+        jest.spyOn(Authentication, "useAuthentication").mockReturnValue({
+            data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
     })
 
