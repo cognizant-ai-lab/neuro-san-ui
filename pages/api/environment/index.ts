@@ -20,10 +20,10 @@ interface EnvironmentResponse {
 export default function handler(_req: NextApiRequest, res: NextApiResponse<Partial<EnvironmentResponse>>) {
     res.setHeader("Content-Type", "application/json")
 
-    const backendNeuroSanApiUrl = process.env.NEURO_SAN_SERVER_URL
-    const auth0ClientId = process.env.AUTH0_CLIENT_ID
-    const auth0Domain = process.env.AUTH0_DOMAIN
-    const supportEmailAddress = process.env.SUPPORT_EMAIL_ADDRESS
+    const backendNeuroSanApiUrl = process.env["NEURO_SAN_SERVER_URL"]
+    const auth0ClientId = process.env["AUTH0_CLIENT_ID"]
+    const auth0Domain = process.env["AUTH0_DOMAIN"]
+    const supportEmailAddress = process.env["SUPPORT_EMAIL_ADDRESS"]
 
     res.status(httpStatus.OK).json({
         backendNeuroSanApiUrl,

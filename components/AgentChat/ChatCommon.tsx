@@ -616,7 +616,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
      * @returns The final answer from the agent, if it exists or null if it doesn't
      */
     const extractFinalAnswer = (response: string) =>
-        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.finalAnswerText
+        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
     const handleChunk = (chunk: string): void => {
         // Give container a chance to process the chunk first

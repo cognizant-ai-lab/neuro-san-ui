@@ -11,9 +11,9 @@ import Auth0 from "next-auth/providers/auth0"
 const config: NextAuthConfig = {
     providers: [
         Auth0({
-            clientId: process.env.AUTH0_CLIENT_ID,
-            clientSecret: process.env.AUTH0_CLIENT_SECRET,
-            issuer: `https://${process.env.AUTH0_DOMAIN}`,
+            clientId: process.env["AUTH0_CLIENT_ID"],
+            clientSecret: process.env["AUTH0_CLIENT_SECRET"],
+            issuer: `https://${process.env["AUTH0_DOMAIN"]}`,
         }),
     ],
     session: {strategy: "jwt"},

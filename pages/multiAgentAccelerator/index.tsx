@@ -174,7 +174,7 @@ export default function MultiAgentAcceleratorPage() {
                 // Track all active edges
                 setIncludedAgentIds((prev) => {
                     const activeEdges = new Set(prev)
-                    const isAgentFinalResponse = chatMessage.structure?.total_tokens
+                    const isAgentFinalResponse = chatMessage.structure?.["total_tokens"]
                     const isCodedToolFinalResponse = chatMessage.text?.startsWith("Got result:")
                     const isFinalResponse = isAgentFinalResponse || isCodedToolFinalResponse
 

@@ -7,12 +7,9 @@
     "allowJs": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "alwaysStrict": true,
     "checkJs": true,
     "declaration": true,
-    "emitDeclarationOnly": false,
     "esModuleInterop": true,
-    "exactOptionalPropertyTypes": false,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -22,19 +19,17 @@
       "es2022"
     ],
     "module": "esnext",
-    "moduleDetection": "force",
+    "moduleDetection": "auto",
     "moduleResolution": "node",
-    "noEmit": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
-    "noPropertyAccessFromIndexSignature": false,
+    "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "outDir": "dist",
-    "pretty": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
@@ -46,14 +41,14 @@
       {
         "name": "next"
       }
-    ]
+    ],
   },
   "include": [
     "**/*.js",
     "**/*.mjs",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
     "next-env.d.ts",
   ],
   "exclude": [
