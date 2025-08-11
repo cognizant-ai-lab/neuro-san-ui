@@ -5,13 +5,14 @@ import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {forwardRef} from "react"
 
+import {AgentFlowProps} from "../../components/MultiAgentAccelerator/AgentFlow"
 import {testConnection} from "../../controller/agent/Agent"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {ChatResponse} from "../../generated/neuro-san/OpenAPITypes"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
 import {withStrictMocks} from "../common/strictMocks"
-import {mockFetch} from "../common/testUtils"
+import {mockFetch} from "../common/TestUtils"
 
 const MOCK_USER = "mock-user"
 
@@ -34,7 +35,7 @@ const originInfoMock = jest.fn()
 
 jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
-    default: (props) => {
+    default: (props: AgentFlowProps) => {
         includedAgentIdsMock(props.includedAgentIds)
         originInfoMock(props.originInfo)
         return <div data-testid="mock-agent-flow" />

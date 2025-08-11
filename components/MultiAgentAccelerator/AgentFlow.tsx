@@ -38,7 +38,7 @@ import {usePreferences} from "../../state/Preferences"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 // #region: Types
-interface AgentFlowProps {
+export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly id: string
@@ -167,7 +167,7 @@ const AgentFlow: FC<AgentFlowProps> = ({
 
     const edgeTypes: EdgeTypes = useMemo(
         () => ({
-            animatedEdge: PlasmaEdge,
+            plasmaEdge: PlasmaEdge,
         }),
         [PlasmaEdge]
     )
@@ -180,7 +180,6 @@ const AgentFlow: FC<AgentFlowProps> = ({
     // Generate radial guides for the network to guide the eye in the radial layout
     const getRadialGuides = () => {
         const circles = Array.from({length: maxDepth}).map((_, i) => (
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
             <circle
                 id={`radial-guide-${BASE_RADIUS + (i + 1) * LEVEL_SPACING}`}
                 key={`radial-guide-${BASE_RADIUS + (i + 1) * LEVEL_SPACING}`}

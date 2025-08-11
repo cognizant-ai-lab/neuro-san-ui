@@ -5,7 +5,7 @@ import {LOGO} from "../../const"
 import NeuroSanUI from "../../pages/_app"
 import * as Authentication from "../../utils/Authentication"
 import {withStrictMocks} from "../common/strictMocks"
-import {mockFetch} from "../common/testUtils"
+import {mockFetch} from "../common/TestUtils"
 
 const originalFetch = window.fetch
 
@@ -24,8 +24,8 @@ jest.mock("next/router", () => ({
                 on: jest.fn(),
                 off: jest.fn(),
             },
-            beforePopState: jest.fn(() => null),
-            prefetch: jest.fn(() => null),
+            beforePopState: jest.fn((): null => null),
+            prefetch: jest.fn((): null => null),
             isReady: true,
             query: {
                 projectID: "1",

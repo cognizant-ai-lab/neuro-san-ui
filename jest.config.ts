@@ -33,6 +33,7 @@ const config: Config.InitialOptions = {
         "!.next/**",
         "!**/coverage/**",
         "!**/generated/**",
+        "!**/dist/**",
         "!jest*.ts",
         "!next-env.d.ts",
         "!next.config.ts",

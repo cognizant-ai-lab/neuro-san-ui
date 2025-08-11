@@ -264,7 +264,6 @@ export default function MultiAgentAcceleratorPage() {
                     height: "100%",
                 }}
             >
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <ReactFlowProvider>
                     <Box
                         id="multi-agent-accelerator-agent-flow-container"

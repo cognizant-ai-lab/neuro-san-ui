@@ -43,7 +43,7 @@ export const FormattedMarkdown = ({
     nodesList,
     style,
     wrapLongLines = false,
-}): ReactElement<FormattedMarkdownProps, "div"> => {
+}: FormattedMarkdownProps): ReactElement => {
     /**
      * Get the formatted output for a given string. The string is assumed to be in markdown format.
      * @param stringToFormat The string to format.
@@ -51,7 +51,6 @@ export const FormattedMarkdown = ({
      * @returns The formatted markdown.
      */
     const getFormattedMarkdown = (stringToFormat: string, index: number): JSX.Element => (
-        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
         <ReactMarkdown
             key={`${hashString(stringToFormat)}-${index}`}
             rehypePlugins={[rehypeRaw, rehypeSlug]}
@@ -60,7 +59,6 @@ export const FormattedMarkdown = ({
                     const {children, className, ...rest} = codeProps
                     const match = /language-(?<language>\w+)/u.exec(className || "")
                     return match ? (
-                        // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                         <SyntaxHighlighter
                             id={`syntax-highlighter-${match.groups.language}`}
                             PreTag="div"
@@ -127,7 +125,6 @@ export const FormattedMarkdown = ({
             // Not a string node. Add the node as-is
             const key = getNodeKey(node, i)
 
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
             formattedOutput.push(<Fragment key={key}>{node}</Fragment>)
         }
     }

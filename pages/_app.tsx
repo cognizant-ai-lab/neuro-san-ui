@@ -12,7 +12,7 @@ import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
-import {Auth} from "../components/Authentication/auth"
+import {Auth} from "../components/Authentication/Auth"
 import {NeuroAIBreadcrumbs} from "../components/Common/breadcrumbs"
 import {Navbar} from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
@@ -194,8 +194,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
             )
         } else {
             return Component.authRequired ? (
-                <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                >
+                <Auth>
                     <Component
                         id="body-auth-component"
                         {...pageProps}
@@ -231,14 +230,11 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
     } else {
         body = (
             <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <CssBaseline />
                 {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
-                <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    session={session}
-                >
+                <SessionProvider session={session}>
                     <ErrorBoundary id="error_boundary">
                         <Navbar
                             id="nav-bar"
@@ -253,7 +249,6 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                                 paddingBottom: "5rem",
                             }}
                         >
-                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
                             {getAppComponent()}
                         </Container>
@@ -266,8 +261,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
     return (
         <div id="unileaf">
             {/* 2/6/23 DEF - Head does not have an id property when compiling */}
-            <Head // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            >
+            <Head>
                 <title id="unileaf-title">{pageTitle}</title>
                 <meta
                     id="unileaf-description"
@@ -280,12 +274,8 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                theme={theme}
-            >
-                {body}
-            </ThemeProvider>
-            <SnackbarProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <ThemeProvider theme={theme}>{body}</ThemeProvider>
+            <SnackbarProvider
                 Components={{
                     info: Snackbar,
                     success: Snackbar,

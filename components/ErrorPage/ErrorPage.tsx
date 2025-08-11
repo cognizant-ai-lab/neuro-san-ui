@@ -5,12 +5,17 @@ import {LOGO} from "../../const"
 import {NeuroAIBreadcrumbs} from "../Common/breadcrumbs"
 import {Navbar} from "../Common/Navbar"
 
+interface ErrorPageProps {
+    id: string
+    errorText: string
+}
+
 /**
  * This is the page that will be shown to users when the outer error boundary is triggered
  * @param id HTML id for the <code>div</code> for this page
  * @param errorText Error text to be displayed
  */
-export default function ErrorPage({id, errorText}): ReactElement {
+export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement {
     return (
         <>
             <Navbar
@@ -21,7 +26,6 @@ export default function ErrorPage({id, errorText}): ReactElement {
                 id={id}
                 sx={{marginLeft: "1rem"}}
             >
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <NeuroAIBreadcrumbs />
                 <h4
                     id="error-header"

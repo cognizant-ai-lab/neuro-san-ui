@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return {hasError: true, error}
     }
 
-    constructor(props) {
+    constructor(props: ErrorBoundaryProps) {
         super(props)
 
         // Define a state variable to track whether is an error or not

@@ -1,4 +1,4 @@
-import {useEffect, useRef} from "react"
+import {FC, useEffect, useRef} from "react"
 import {EdgeProps, getBezierPath} from "reactflow"
 
 function createFunnelParticleOnPath(
@@ -65,7 +65,14 @@ function createFunnelParticleOnPath(
     return {update, draw, isAlive}
 }
 
-export const PlasmaEdge = ({sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition}: EdgeProps) => {
+export const PlasmaEdge: FC<EdgeProps> = ({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
+}: EdgeProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const pathRef = useRef<SVGPathElement>(null)
     const animationRef = useRef<number>()
