@@ -22,7 +22,7 @@ const config: NextAuthConfig = {
         brandColor: "0033a0",
         logo: "https://neuro-ai.evolution.ml/cognizantfavicon.ico",
     },
-    debug: true,
+    debug: process.env.NODE_ENV === "development",
 }
 
 const {handlers} = NextAuth(config)
