@@ -53,23 +53,22 @@ const getFrontman = (parentAgents: ConnectivityInfo[], childAgents: Set<string>)
 
 // Generates the properties for an edge in the graph.
 // Common for both radial and linear layouts.
-const getEdgesProperties = (
+const getEdgeProperties = (
     sourceId: string,
     targetId: string,
     sourceHandle: string,
     targetHandle: string,
     isAnimated: boolean
-) => {
+): Edge<EdgeProps> => {
     return {
         animated: false,
         id: `${targetId}-edge-${sourceId}`,
-        key: `${targetId}-edge-${sourceId}`,
         markerEnd: {type: MarkerType.ArrowClosed, width: 30, height: 30},
         source: sourceId,
         sourceHandle,
         target: targetId,
         targetHandle,
-        type: isAnimated ? "animatedEdge" : undefined,
+        type: isAnimated ? "plasmaEdge" : undefined,
     }
 }
 
@@ -83,8 +82,22 @@ export const layoutRadial = (
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
 } => {
-    const nodesInNetwork = []
-    const edgesInNetwork = []
+    const nodesInNetwork: {
+        id: string
+        type: string
+        data: {
+            agentCounts: Map<string, number>
+            agentName: string
+            depth: number
+            displayAs: string
+            getIncludedAgentIds: () => string[]
+            getOriginInfo: () => Origin[]
+            isAwaitingLlm: boolean
+        }
+        position: {x: number; y: number}
+        style: {border: string; background: string; boxShadow: string; padding: number; margin: number}
+    }[] = []
+    const edgesInNetwork: Edge<EdgeProps>[] = []
 
     // Compute depth of each node using breadth-first traversal
     const nodeDepths = new Map<string, number>()
@@ -169,7 +182,7 @@ export const layoutRadial = (
                     // Add edge from parent to node
                     if (!isAwaitingLlm || edgeIncluded) {
                         edgesInNetwork.push(
-                            getEdgesProperties(graphNode.id, nodeId, sourceHandle, targetHandle, edgeIncluded)
+                            getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, edgeIncluded)
                         )
                     }
                 }
@@ -212,8 +225,8 @@ export const layoutLinear = (
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
 } => {
-    const nodesInNetwork = []
-    const edgesInNetwork = []
+    const nodesInNetwork: RFNode<AgentNodeProps>[] = []
+    const edgesInNetwork: Edge<EdgeProps>[] = []
     agentsInNetwork.forEach(({origin: originOfNode}) => {
         const parentAgents = getParentAgents(agentsInNetwork)
         const childAgents = getChildAgents(parentAgents)
@@ -233,6 +246,7 @@ export const layoutLinear = (
                 getIncludedAgentIds,
                 getOriginInfo,
                 isAwaitingLlm,
+                depth: undefined, // Depth will be computed later
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {
@@ -253,7 +267,7 @@ export const layoutLinear = (
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
                 edgesInNetwork.push(
-                    getEdgesProperties(
+                    getEdgeProperties(
                         parentNode,
                         originOfNode,
                         `${parentNode}-right-handle`,
@@ -301,7 +315,11 @@ export const layoutLinear = (
         }
 
         // Depth is index of x position in xPositions array
-        node.data.depth = xPositions.indexOf(nodeWithPosition.x)
+        // Create a new data object with updated depth
+        node.data = {
+            ...node.data,
+            depth: xPositions.indexOf(nodeWithPosition.x),
+        }
     })
 
     // If we're in "awaiting LLM" mode, we filter edges to only include those that are between included nodes.

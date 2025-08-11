@@ -2,7 +2,7 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
 
-import {Snackbar} from "../../../components/Common/Snackbar"
+import {Snackbar, SnackbarProps} from "../../../components/Common/Snackbar"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock useSnackbar hook
@@ -16,9 +16,10 @@ describe("Snackbar Component", () => {
 
     const mockCloseSnackbar = jest.fn()
 
-    const renderSnackbar = (props?) =>
+    const renderSnackbar = (props?: Partial<SnackbarProps>) =>
         render(
             <Snackbar
+                variant="info"
                 anchorOrigin={{
                     vertical: "top",
                     horizontal: "right",

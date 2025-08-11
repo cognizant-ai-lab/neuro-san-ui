@@ -1,6 +1,6 @@
 import {render, screen} from "@testing-library/react"
 
-import {PageLoader} from "../../../components/Common/pageLoader"
+import {PageLoader} from "../../../components/Common/PageLoader"
 import {withStrictMocks} from "../../common/strictMocks"
 
 describe("PageLoader", () => {

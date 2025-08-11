@@ -6,7 +6,6 @@ import typescriptEslint from "@typescript-eslint/eslint-plugin"
 // @ts-expect-error: parser has no types, but works
 import tsParser from "@typescript-eslint/parser"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
-import enforceIdsInJsx from "eslint-plugin-enforce-ids-in-jsx"
 import eslintPluginImport from "eslint-plugin-import"
 // eslint-disable-next-line no-shadow
 import jest from "eslint-plugin-jest"
@@ -53,7 +52,6 @@ const config = [
     {
         plugins: {
             "@typescript-eslint": fixupPluginRules(typescriptEslint),
-            "enforce-ids-in-jsx": enforceIdsInJsx,
             "jest-dom": fixupPluginRules(jestDom),
             "react-hooks": fixupPluginRules(reactHooks),
             import: fixupPluginRules(eslintPluginImport),
@@ -102,13 +100,6 @@ const config = [
         },
 
         rules: {
-            // Want to enforce this on all compoments, which the default setting does not do.
-            "enforce-ids-in-jsx/missing-ids": [
-                "warn",
-                {
-                    target: ["all"],
-                },
-            ],
             // Turn on some optional, stricter settings for this rule
             "react/jsx-key": [
                 "error",
@@ -370,7 +361,6 @@ const config = [
             "arrow-body-style": "off",
             "capitalized-comments": "off",
             complexity: "off",
-            "enforce-ids-in-jsx/unique-ids": "off",
             "func-names": "off",
             "func-style": "off",
             "id-length": "off",
@@ -493,7 +483,6 @@ const config = [
 
             // Don't care about these rules in tests
             "@next/next/no-img-element": "off",
-            "enforce-ids-in-jsx/missing-ids": "off",
             "react/display-name": "off",
             "react/no-array-index-key": "off",
         },

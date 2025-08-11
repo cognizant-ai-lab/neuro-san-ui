@@ -4,7 +4,7 @@ import {AD_TENANT_ID, smartSignOut} from "../../../utils/Authentication"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 import {navigateToUrl} from "../../../utils/BrowserNavigation"
 import {withStrictMocks} from "../../common/strictMocks"
-import {mockFetch} from "../../common/testUtils"
+import {mockFetch} from "../../common/TestUtils"
 
 // Mock the next-auth/react module
 jest.mock("next-auth/react")

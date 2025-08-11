@@ -3,7 +3,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import AgentFlow from "../../../components/MultiAgentAccelerator/AgentFlow"
+import AgentFlow, {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ConnectivityInfo} from "../../../generated/neuro-san/OpenAPITypes"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../common/strictMocks"
@@ -44,10 +44,10 @@ describe("AgentFlow", () => {
         },
     ]
 
-    const defaultProps = {
+    const defaultProps: AgentFlowProps = {
         agentsInNetwork: network,
         id: "test-flow-id",
-        includedAgentIds: [], // No active agents for the default test
+        includedAgentIds: [] as string[], // No active agents for the default test
         originInfo: [{tool: "agent1", instantiation_index: 1}],
     }
 

@@ -12,6 +12,7 @@ describe("FormattedMarkdown component tests", () => {
                 id="test-markdown"
                 nodesList={["# Heading\n\nSome **bold** text."]}
                 style={{}}
+                wrapLongLines={true}
             />
         )
 
@@ -25,6 +26,7 @@ describe("FormattedMarkdown component tests", () => {
                 id="test-aggregate"
                 nodesList={["First part. ", "Second part. ", "Third part."]}
                 style={{}}
+                wrapLongLines={false}
             />
         )
 
@@ -37,6 +39,7 @@ describe("FormattedMarkdown component tests", () => {
                 id="test-non-string"
                 nodesList={["Text before.", <span key="1">Non-string node</span>, "Text after."]}
                 style={{}}
+                wrapLongLines={false}
             />
         )
         expect(container.querySelector("span")).toBeInTheDocument()
@@ -57,6 +60,7 @@ describe("FormattedMarkdown component tests", () => {
                     <span key="2">Another non-string node</span>,
                 ]}
                 style={{}}
+                wrapLongLines={false}
             />
         )
 
@@ -71,6 +75,7 @@ describe("FormattedMarkdown component tests", () => {
                 id="test-keys"
                 nodesList={["Text 1. ", <div key="" />, "Text 1. "]}
                 style={{}}
+                wrapLongLines={false}
             />
         )
 

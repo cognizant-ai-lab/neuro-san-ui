@@ -158,7 +158,8 @@ export interface ChatCommonProps {
     readonly neuroSanURL?: string
 }
 
-const EMPTY = {}
+// Define fancy EMPTY constant to avoid linter error about using object literals as default props
+const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
@@ -411,7 +412,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                                         {repairedJson}
                                     </SyntaxHighlighter>
                                 ) : (
-                                    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                                     <ReactMarkdown key={hashString(logLine)}>
                                         {logLine || "No further details"}
                                     </ReactMarkdown>
@@ -438,7 +438,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
      */
     const introduceAgent = () => {
         updateOutput(
-            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <UserQueryDisplay
                 userQuery={cleanUpAgentName(targetAgent)}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
@@ -451,7 +451,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     }
 
     const renderConnectivityInfo = (connectivityInfo: ConnectivityInfo[]) => (
-        /* eslint-disable enforce-ids-in-jsx/missing-ids */
         <>
             {connectivityInfo
                 .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
@@ -478,7 +477,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </li>
                 ))}
         </>
-        /* eslint-enable enforce-ids-in-jsx/missing-ids */
     )
 
     useEffect(() => {
@@ -800,7 +798,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf of the
         // user but currently we do for orchestration.
         updateOutput(
-            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <UserQueryDisplay
                 userQuery={query}
                 title={currentUser}
                 userImage={userImage}
@@ -809,7 +807,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
         // Add ID block for agent
         updateOutput(
-            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <UserQueryDisplay
                 userQuery={cleanUpAgentName(targetAgent)}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
@@ -1041,7 +1039,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     )}
                 </Box>
 
-                <ControlButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                <ControlButtons
                     clearChatOnClickCallback={() => {
                         setChatOutput([])
                         chatHistory.current = []

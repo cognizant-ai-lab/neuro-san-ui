@@ -28,12 +28,12 @@ const IconBox = styled(Box)({
 // #endregion: Styled Components
 
 // #region: Types
-interface SnackbarProps extends CustomContentProps {
+export interface SnackbarProps extends CustomContentProps {
     description: string
 }
 // #endregion: Types
 
-// Pssing Snackbar callback as a function because if we use an arrow function here we'd have to set displayName
+// Passing Snackbar callback as a function because if we use an arrow function here we'd have to set displayName
 export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
     // eslint-disable-next-line prefer-arrow-callback
     function Snackbar(
@@ -53,7 +53,6 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         }
 
         return (
-            // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
             <SnackbarContent
                 ref={ref}
                 role="alert"

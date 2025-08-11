@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 import {SessionContextValue, signIn, useSession} from "next-auth/react"
 
-import {Auth} from "../../../components/Authentication/auth"
+import {Auth} from "../../../components/Authentication/Auth"
 import {withStrictMocks} from "../../common/strictMocks"
 
 const AUTH_CHILDREN_TEXT = "Mock Auth"
