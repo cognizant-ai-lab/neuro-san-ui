@@ -82,21 +82,7 @@ export const layoutRadial = (
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
 } => {
-    const nodesInNetwork: {
-        id: string
-        type: string
-        data: {
-            agentCounts: Map<string, number>
-            agentName: string
-            depth: number
-            displayAs: string
-            getIncludedAgentIds: () => string[]
-            getOriginInfo: () => Origin[]
-            isAwaitingLlm: boolean
-        }
-        position: {x: number; y: number}
-        style: {border: string; background: string; boxShadow: string; padding: number; margin: number}
-    }[] = []
+    const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
 
     // Compute depth of each node using breadth-first traversal

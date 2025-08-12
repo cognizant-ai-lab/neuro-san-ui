@@ -21,7 +21,7 @@
     "module": "esnext",
     "moduleDetection": "auto",
     "moduleResolution": "node",
-    "noEmit": true,
+    "noEmit": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitOverride": true,
