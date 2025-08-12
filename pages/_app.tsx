@@ -260,7 +260,6 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     return (
         <div id="unileaf">
-            {/* 2/6/23 DEF - Head does not have an id property when compiling */}
             <Head>
                 <title id="unileaf-title">{pageTitle}</title>
                 <meta
