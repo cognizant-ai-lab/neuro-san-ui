@@ -1,4 +1,4 @@
-import {Fragment, ReactElement, ReactNode} from "react"
+import {Fragment, ReactNode} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighter"
 import rehypeRaw from "rehype-raw"
@@ -43,7 +43,7 @@ export const FormattedMarkdown = ({
     nodesList,
     style,
     wrapLongLines = false,
-}: FormattedMarkdownProps): ReactElement => {
+}: FormattedMarkdownProps): JSX.Element => {
     /**
      * Get the formatted output for a given string. The string is assumed to be in markdown format.
      * @param stringToFormat The string to format.

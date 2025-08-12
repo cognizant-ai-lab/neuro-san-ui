@@ -114,7 +114,8 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
             // Check result
             if (!res.ok) {
-                throw new Error(`Failed to fetch environment variables: ${res.status} ${res.statusText}`)
+                console.error(`Failed to fetch environment variables: ${res.status} ${res.statusText}`)
+                return
             }
 
             const data = await res.json()
@@ -143,8 +144,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
             // Check result
             if (!res.ok) {
                 // This is bad: it means we saw the ALB header but it's not in the right format so we're stuck
-                debug("Failed to fetch user info")
-                throw new Error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
+                console.error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
             }
 
             const response: UserInfoResponse = await res.json()
