@@ -13,7 +13,7 @@ steps:
       image: node:${{NODEJS_VERSION}}-alpine
       working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
       commands:
-        - apk add --quiet --no-progress --upgrade bash protobuf-dev git
+        - apk add --quiet --no-progress --upgrade bash git
         - yarn install
         - ./build_scripts/do_openapi_generate.sh
 
