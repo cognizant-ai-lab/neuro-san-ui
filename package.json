@@ -15,7 +15,7 @@
         "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
         "check-format": "prettier --check .",
-        "generate": "build_scripts/do_typescript_generate.sh; build_scripts/do_openapi_generate.sh; npx tsx build_scripts/GenerateOpenAPITypes.ts"
+        "generate": "build_scripts/do_openapi_generate.sh; npx tsx build_scripts/GenerateOpenAPITypes.ts"
     },
     "dependencies": {
         "@emotion/react": "11.13.3",
@@ -41,7 +41,6 @@
         "rehype-slug": "6.0.0",
         "remark-toc": "9.0.0",
         "sharp": "0.33.2",
-        "ts-proto": "1.172.0",
         "zustand": "4.4.7"
     },
     "devDependencies": {

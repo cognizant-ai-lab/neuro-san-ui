@@ -43,8 +43,7 @@ steps:
     working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
     fail_fast: true
     commands:
-      - apk add --quiet --no-progress --upgrade bash protobuf-dev git
-      - ./build_scripts/do_typescript_generate.sh
+      - apk add --quiet --no-progress --upgrade bash git
       - ./build_scripts/do_openapi_generate.sh
 
   generate_openapi_types:

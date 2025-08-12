@@ -4,39 +4,23 @@ steps:
     main_clone:
         title: "Cloning repository"
         type: "git-clone"
-        repo: "leaf-ai/neuro-ui"
+        repo: "leaf-ai/neuro-san-ui"
         git: "github"
         revision: ${{UNILEAF_VERSION}}
-
-    create-temp-git-creds-from-vault:
-        title: "Get ephemeral GitHub creds"
-        description: "Get temporary git credentials from vault server."
-        type: "freestyle"
-        image: "vault:1.12.0"
-        commands:
-            # Login into Vault only once
-            - >-
-                vault login -address=${{VAULT}} -method=github token=${{VAULT_LOGIN}}
-                | grep -Ev "(token |token_accessor)"
-            
-            - EPHEMERAL_TOKEN=$(vault read -address=${{VAULT}} -field=token /github-secrets/token/repo-read)
-            - cf_export EPHEMERAL_LEAF_SOURCE_CREDENTIALS="x-access-token:${EPHEMERAL_TOKEN}" --mask
-            - cf_export LEAF_SOURCE_CREDENTIALS="${EPHEMERAL_TOKEN}" --mask
             
     generate_typescript_api_stubs:
       title: Generate Typescript stubs for APIs
       image: node:${{NODEJS_VERSION}}-alpine
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
       commands:
         - apk add --quiet --no-progress --upgrade bash protobuf-dev git
         - yarn install
-        - ./build_scripts/do_typescript_generate.sh
         - ./build_scripts/do_openapi_generate.sh
 
     generate_openapi_types:
       title: Generate Typescript types for OpenAPI
       image: node:${{NODEJS_VERSION}}-alpine
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
       commands:
         - yarn install
         - npx tsx ./build_scripts/GenerateOpenAPITypes.ts
@@ -45,7 +29,7 @@ steps:
       title: Run prebuild step for custom build
       description: Pare down the code to build sub-sets of the ui
       image: alpine:3.21.3
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-ui
+      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
       commands:
         - apk --quiet --no-progress add bash git coreutils
         - ./build_scripts/customBuilds/prepare_custom_build.sh
@@ -70,7 +54,7 @@ steps:
 
     ui-node-build:
       title: Build ui-node Docker image
-      image_name: "leaf/unileaf-ui-node"
+      image_name: "leaf/neuro-san-ui"
       type: build
       buildkit: true
       progress: "plain"

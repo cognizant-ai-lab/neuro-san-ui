@@ -35,9 +35,6 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
   Ask a current UI developer for the your_value values or get them self-serve from the leaf-team-vault server (see below).
 
 ```bash
-# Determines which backend API server to access. This one is for the Dev environment -- change as necessary.
-MD_SERVER_URL=https://neuro-ai-dev.evolution.ml
-
 # Determines which backend neuro-san server to access. This one is for the Dev environment -- change as necessary.
 NEURO_SAN_SERVER_URL=https://neuro-san-dev.decisionai.ml
 
@@ -55,30 +52,8 @@ AUTH0_CLIENT_SECRET=<your_value>
 AUTH0_ISSUER=https://cognizant-ai.auth0.com/authorize
 AUTH0_DOMAIN=cognizant-ai.auth0.com
 
-# Next items are only needed if you're working on the LLM features of the UI such as the ChatBot or DMS assistant.
-OPENAI_API_KEY=<your_value>
-
-# Model names for the LLM features of the UI. Different models can be used for different features.
-DMS_CHAT_MODEL_NAME=gpt-4o
-OF_MODEL_NAME=gpt-4o
-OPEN_AI_MODEL_NAME=gpt-4o
-
-# Next items are for tracing langchain calls via langsmith: https://smith.langchain.com/
-LANGCHAIN_API_KEY=<your langsmith API key>
-LANGCHAIN_TRACING_V2=<set to true to enable>
-LANGCHAIN_PROJECT=<choose any project name you want>
-
-# For Chatbot RAG support
-PINECONE_API_KEY=<your_value>
-PINECONE_INDEX=prod
-PINECONE_ENVIRONMENT=us-east-1-aws
-
 # Can be anything
 SUPPORT_EMAIL_ADDRESS=test@example.com
-
-# Next item is if you want to use Bing search in Opportunity Finder
-BingApiKey=<your_value>
-
 ```
 
 - Instructions for generating NEXTAUTH_SECRET are [here](https://next-auth.js.org/configuration/options#secret).
