@@ -15,7 +15,6 @@ export const REQUIRED_ENV_VARS = [
     "AUTH0_DOMAIN",
     "AUTH0_ISSUER",
     "NEURO_SAN_SERVER_URL",
-    "OPENAI_API_KEY",
     "SUPPORT_EMAIL_ADDRESS",
 ]
 

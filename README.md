@@ -14,8 +14,6 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
     - Example on mac: `brew install node@22`
     - For Ubuntu, see this link: https://joshtronic.com/2024/05/26/ubuntu-nodejs-22-install/
     - Make sure that the node executable is in your path. You can do this by typing `node --version`.
-- Install the protobuf compiler. This is needed to generate the protocol buffer files for the UI.
-  Instructions for various platforms are [here](https://grpc.io/docs/protoc-installation/).
 - Install `yarn` on your development host. Instructions for all platforms are [here](https://classic.yarnpkg.com/lang/en/docs)
     - Example using current version on mac: `brew install yarn`
     - For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
@@ -24,13 +22,16 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
     - `git clone git@github.com:leaf-ai/neuro-san-ui.git`
 - Install all dependencies including dev dependencies
     - `yarn install`
-- [Create](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) a classic Personal Access Token (classic) in GitHub
-- Generate the protocol buffer files for the UI. This is done by running the following commands in the project root
+- Generate the Neuro-san OpenAPI types for the UI. This is done by running the following commands in the project root
   directory:
-    - `export LEAF_SOURCE_CREDENTIALS=<github PAT>`
     - `yarn generate`
         - `yarn generate` will generate the necessary files in the `generated` directory.
-    - To view the files: `ls generated`
+    - To view the files: `ls generated/neuro-san`. Sample response:
+
+```bash
+NeuroSanClient.ts  OpenAPITypes.ts
+```
+
 - In your project root directory, create a file named `.env` which contains the following keys.  
   Ask a current UI developer for the your_value values or get them self-serve from the leaf-team-vault server (see below).
 
@@ -57,34 +58,22 @@ SUPPORT_EMAIL_ADDRESS=test@example.com
 ```
 
 - Instructions for generating NEXTAUTH_SECRET are [here](https://next-auth.js.org/configuration/options#secret).
-- Values for most of the your_value items can be obtained from the `leaf-team-vault` server with these commands. Note:
-  this assumes you have the vault cli installed and configured to talk to the `leaf-team-vault` server.
-
-    ```bash
-    vault kv get /secret/auth0/unileaf-dev
-    vault kv get /secret/github-app/authorize-unileaf-dev
-    vault kv get /secret/nextauth/unileaf-dev
-    ```
-
 - Instructions on generating OPENAI_API_KEY are [here](https://platform.openai.com/account/api-keys).  
   You will need an active account with OpenAI to generate this key. This is only needed if you are working on the  
-  LLM features of the UI.
-- Instructions on generating PINECONE_API_KEY are [here](https://docs.pinecone.io/docs/authentication).  
-  You will need an active account with Pinecone to generate this key. This is only needed if you are working on the  
   LLM features of the UI.
 - Be sure to chmod 600 this .env file to keep secret values secret
 
 ## Run the development server:
 
 ```bash
-# By setting the UNILEAF_VERSION value, the ui will display your current branch in the header after Build:
-export UNILEAF_VERSION=$(git branch --show-current) && yarn run dev
+# By setting the NEURO_SAN_UI_VERSION value, the ui will display your current branch in the header after Build:
+export NEURO_SAN_UI_VERSION=$(git branch --show-current) && yarn run dev
 ```
 
 To run with verbose debugging:
 
 ```bash
-DEBUG='*,-send,-compression,-babel,-next:*' UNILEAF_VERSION=$(git branch --show-current) && yarn run dev
+DEBUG='*,-send,-compression,-babel,-next:*' NEURO_SAN_UI_VERSION=$(git branch --show-current) && yarn run dev
 ```
 
 You can also set the `DEBUG` variable to a list of modules to only see output for those modules, for example:
