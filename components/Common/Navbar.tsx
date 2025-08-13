@@ -17,7 +17,7 @@ import {
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     DEFAULT_USER_IMAGE,
-    UNILEAF_VERSION,
+    NEURO_SAN_UI_VERSION,
 } from "../../const"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
@@ -191,7 +191,7 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                     id="build-text"
                     sx={{...MENU_ITEM_TEXT_PROPS}}
                 >
-                    Build: <strong id="build-strong">{UNILEAF_VERSION}</strong>
+                    Build: <strong id="build-strong">{NEURO_SAN_UI_VERSION}</strong>
                 </Typography>
             </Grid>
 
