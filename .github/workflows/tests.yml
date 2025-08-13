@@ -24,6 +24,11 @@ jobs:
         run: |
           apt-get update && apt-get install -y shellcheck
           apk add --quiet --no-progress --upgrade bash shellcheck
+          
+      - name: Install Node.js dependencies
+        run: |
+          yarn --version
+          yarn install
       
       - name: Generate OpenAPI types
         run: |
