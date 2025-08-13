@@ -23,6 +23,7 @@ const config: NextAuthConfig = {
         logo: "https://neuro-ai.evolution.ml/cognizantfavicon.ico",
     },
     debug: process.env.NODE_ENV === "development",
+    trustHost: true,
 }
 
 const {handlers} = NextAuth(config)
