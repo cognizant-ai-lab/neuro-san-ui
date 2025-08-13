@@ -1,8 +1,5 @@
 name: Test
 
-env:
-  NODEJS_VERSION: '20'
-  
 on:
   push:
     branches:
@@ -14,7 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: node:${{ env.NODEJS_VERSION }}-alpine
+      image: node:22-alpine
     if: >
       (github.event_name == 'push' && github.ref != 'refs/heads/main') ||
       (github.event_name == 'pull_request' && github.base_ref == 'main')
