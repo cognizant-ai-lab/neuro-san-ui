@@ -48,7 +48,7 @@ const nextConfig: import("next").NextConfig = {
     },
 
     publicRuntimeConfig: {
-        unileafVersion: process.env["NEURO_SAN_UI_VERSION"] || "unknown",
+        neuroSanUIVersion: process.env["NEURO_SAN_UI_VERSION"] || "unknown",
     },
 
     output: "standalone",
