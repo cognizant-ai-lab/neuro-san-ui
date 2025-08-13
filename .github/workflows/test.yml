@@ -64,6 +64,14 @@ jobs:
                   yarn list --depth=0 --pattern ts-prune
                   yarn ts-prune --error
 
+            - name: Troubleshoot
+              run: |
+                  echo "Node.js version: $(node --version)"
+                  echo "Yarn version: $(yarn --version)"
+                  echo "Current directory: $(pwd)"
+                  echo "Directory contents:"
+                  ls -la
+
             - name: Run tests
               run: |
                   yarn unit_test --version
