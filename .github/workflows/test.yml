@@ -3,8 +3,8 @@
 name: Tests and linting
 
 permissions:
-  contents: read
-  
+    contents: read
+
 on:
     pull_request:
         branches:
@@ -71,20 +71,20 @@ jobs:
               if: success()
               uses: slackapi/slack-github-action@v1.24.0
               with:
-                payload: |
-                  {
-                    "text": "✅ *Tests Passed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
-                  }
+                  payload: |
+                      {
+                        "text": "✅ *Tests Passed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
+                      }
               env:
-                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      
+                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
             - name: Notify Slack on failure
               if: failure()
               uses: slackapi/slack-github-action@v1.24.0
               with:
-                payload: |
-                  {
-                    "text": "❌ *Tests Failed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
-                  }
+                  payload: |
+                      {
+                        "text": "❌ *Tests Failed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
+                      }
               env:
-                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
