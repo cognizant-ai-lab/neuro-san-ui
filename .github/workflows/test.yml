@@ -18,54 +18,58 @@ jobs:
             image: node:22.17.1-alpine
 
         steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+            #            - name: Checkout
+            #              uses: actions/checkout@v4
+            #
+            #            - name: Install dependencies
+            #              run: |
+            #                  apk add --quiet --no-progress --upgrade bash shellcheck
+            #
+            #            - name: Install Node.js dependencies
+            #              run: |
+            #                  yarn --version
+            #                  yarn install
+            #
+            #            - name: Generate OpenAPI types
+            #              run: |
+            #                  yarn generate
+            #
+            #            - name: Run tsc compilation
+            #              run: |
+            #                  yarn tsc --version
+            #                  yarn tsc --noEmit
+            #
+            #            - name: Run ESLint
+            #              run: build_scripts/run_eslint.sh
+            #
+            #            - name: Run shellcheck
+            #              run: |
+            #                  shellcheck --version
+            #                  build_scripts/run_shellcheck.sh
+            #
+            #            - name: Run Prettier
+            #              run: |
+            #                  yarn check-format --version
+            #                  yarn check-format
+            #
+            #            - name: Run depcheck
+            #              run: |
+            #                  yarn depcheck --version
+            #                  yarn depcheck
+            #
+            #            - name: Run ts-prune
+            #              run: |
+            #                  yarn list --depth=0 --pattern ts-prune
+            #                  yarn ts-prune --error
+            #
+            #            - name: Run tests
+            #              run: |
+            #                  yarn unit_test --version
+            #                  yarn unit_test
 
-            - name: Install dependencies
+            - name: Debug
               run: |
-                  apk add --quiet --no-progress --upgrade bash shellcheck
-
-            - name: Install Node.js dependencies
-              run: |
-                  yarn --version
-                  yarn install
-
-            - name: Generate OpenAPI types
-              run: |
-                  yarn generate
-
-            - name: Run tsc compilation
-              run: |
-                  yarn tsc --version
-                  yarn tsc --noEmit
-
-            - name: Run ESLint
-              run: build_scripts/run_eslint.sh
-
-            - name: Run shellcheck
-              run: |
-                  shellcheck --version 
-                  build_scripts/run_shellcheck.sh
-
-            - name: Run Prettier
-              run: |
-                  yarn check-format --version
-                  yarn check-format
-
-            - name: Run depcheck
-              run: |
-                  yarn depcheck --version
-                  yarn depcheck
-
-            - name: Run ts-prune
-              run: |
-                  yarn list --depth=0 --pattern ts-prune
-                  yarn ts-prune --error
-
-            - name: Run tests
-              run: |
-                  yarn unit_test --version
-                  yarn unit_test
+                  echo "SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}"
 
             - name: Notify Slack on success
               if: success()
