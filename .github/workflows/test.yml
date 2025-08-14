@@ -12,10 +12,10 @@ on:
 jobs:
     test:
         runs-on: ubuntu-latest
+        if: github.base_ref == 'main'
         container:
             # Specific version. 22.18+ is bad due to https://github.com/nodejs/node/issues/59364 and breaks tests.
             image: node:22.17.1-alpine
-        if: github.base_ref == 'main'
 
         steps:
             - name: Checkout
@@ -75,8 +75,7 @@ jobs:
                       {
                         "text": "✅ *Tests Passed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
                       }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+                  webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 
             - name: Notify Slack on failure
               if: failure()
@@ -86,5 +85,4 @@ jobs:
                       {
                         "text": "❌ *Tests Failed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
                       }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+                  webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
