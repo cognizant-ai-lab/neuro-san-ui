@@ -1,7 +1,10 @@
 # This pipeline runs the lint and unit tests on the ui code.
 
-name: Test
+name: Tests and linting
 
+permissions:
+  contents: read
+  
 on:
     pull_request:
         branches:
