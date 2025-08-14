@@ -450,11 +450,19 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         updateOutput(greeting)
     }
 
+    /**
+     * Render the connectivity info as a list of origins and their tools
+     * @param connectivityInfo The connectivity info to render
+     * @returns A ReactNode representing the connectivity info with agents and their tools
+     */
     const renderConnectivityInfo = (connectivityInfo: ConnectivityInfo[]) => (
         <>
             {connectivityInfo
+                // Don't show connection to self
                 .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
+                // Sort by origin name
                 .sort((a, b) => a.origin.localeCompare(b.origin))
+                // Render each origin and its tools
                 .map((info) => (
                     <li
                         id={info.origin}
@@ -534,6 +542,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                                     <ul
                                         key="item-2"
                                         id="connectivity-list"
+                                        aria-labelledby="connectivity-header"
                                         style={{marginTop: "1rem"}}
                                     >
                                         {renderConnectivityInfo(connectivity?.connectivity_info.concat())}
