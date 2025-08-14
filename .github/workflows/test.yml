@@ -74,7 +74,7 @@ jobs:
                   webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
                   webhook-type: incoming-webhook
                   payload: |
-                  text: "✅ *Tests Passed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
+                    text: "✅ *Tests Passed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
 
             - name: Notify Slack on failure
               if: failure()
@@ -83,4 +83,4 @@ jobs:
                   webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
                   webhook-type: incoming-webhook
                   payload: |
-                  text: "❌ *Tests Failed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
+                    text: "❌ *Tests Failed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
