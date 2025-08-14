@@ -39,7 +39,7 @@ interface ErrorBoundaryProps {
  * those in UniLEAF are) so we take the approach of wrapping all components in our app with this class component that
  * handles the error boundary.
  */
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     // This is the key override called by ReactJS when an unhandled error is thrown. And this is why you cannot
     // create error boundaries in functional components -- no way to override this method.
     static getDerivedStateFromError(error: unknown) {
@@ -47,7 +47,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         return {hasError: true, error}
     }
 
-    constructor(props) {
+    constructor(props: ErrorBoundaryProps) {
         super(props)
 
         // Define a state variable to track whether is an error or not
@@ -98,5 +98,3 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         return this.props.children
     }
 }
-
-export default ErrorBoundary

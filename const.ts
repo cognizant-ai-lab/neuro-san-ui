@@ -6,7 +6,7 @@ const {publicRuntimeConfig} = getConfig()
 export const LOGO: string = "Neuro® AI"
 
 // Build version (passed in from build system)
-export const UNILEAF_VERSION: string = publicRuntimeConfig.unileafVersion
+export const NEURO_SAN_UI_VERSION: string = publicRuntimeConfig.neuroSanUIVersion
 
 export const CONTACT_US_CONFIRMATION_DIALOG_TITLE = "Contact Us"
 

@@ -17,12 +17,13 @@ import {
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     DEFAULT_USER_IMAGE,
-    UNILEAF_VERSION,
+    NEURO_SAN_UI_VERSION,
 } from "../../const"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
 import useUserInfoStore from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {navigateToUrl} from "../../utils/BrowserNavigation"
 
 // Declare the Props Interface
 interface NavbarProps {
@@ -50,7 +51,7 @@ const DISABLE_OUTLINE_PROPS = {
     },
 }
 
-function Navbar(props: NavbarProps): ReactElement {
+export const Navbar = (props: NavbarProps): ReactElement => {
     /*
     This component is responsible for rendering the navbar component.
     */
@@ -190,7 +191,7 @@ function Navbar(props: NavbarProps): ReactElement {
                     id="build-text"
                     sx={{...MENU_ITEM_TEXT_PROPS}}
                 >
-                    Build: <strong id="build-strong">{UNILEAF_VERSION}</strong>
+                    Build: <strong id="build-strong">{NEURO_SAN_UI_VERSION}</strong>
                 </Typography>
             </Grid>
 
@@ -303,7 +304,7 @@ function Navbar(props: NavbarProps): ReactElement {
                         setEmailDialogOpen(false)
                     }}
                     handleOk={() => {
-                        window.location.href = `mailto:${supportEmailAddress}`
+                        navigateToUrl(`mailto:${supportEmailAddress}`)
                         setEmailDialogOpen(false)
                     }}
                     title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}
@@ -407,5 +408,3 @@ function Navbar(props: NavbarProps): ReactElement {
         <LoadingSpinner id="navbar-loading-spinner" />
     )
 }
-
-export default Navbar

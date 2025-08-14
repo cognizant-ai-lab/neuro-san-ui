@@ -1,6 +1,6 @@
 import {useState} from "react"
 
-// Hook
+// ts-prune-ignore-next (false positive)
 export function useLocalStorage(key: string, initialValue: unknown) {
     // State to store our value
     // Pass initial state function to useState so logic is only executed once

@@ -12,11 +12,11 @@ import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
-import {Auth} from "../components/Authentication/auth"
-import NeuroAIBreadcrumbs from "../components/Common/breadcrumbs"
-import Navbar from "../components/Common/Navbar"
+import {Auth} from "../components/Authentication/Auth"
+import {NeuroAIBreadcrumbs} from "../components/Common/breadcrumbs"
+import {Navbar} from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
-import ErrorBoundary from "../components/ErrorPage/ErrorBoundary"
+import {ErrorBoundary} from "../components/ErrorPage/ErrorBoundary"
 import {LOGO} from "../const"
 import useEnvironmentStore from "../state/environment"
 import {usePreferences} from "../state/Preferences"
@@ -47,7 +47,7 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
-export default function NeuroAI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
+export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
     const {backendNeuroSanApiUrl, setBackendNeuroSanApiUrl, setAuth0ClientId, setAuth0Domain, setSupportEmailAddress} =
         useEnvironmentStore()
 
@@ -93,7 +93,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             setPageTitle(DEFAULT_APP_NAME)
         }
 
-        // If there is just one URL path, set the page title. This prevents overriding Project, Experiement and
+        // If there is just one URL path, set the page title. This prevents overriding Project, Experiment and
         // DMS pages, which directly set the page title to document.title.
         if (urlPaths.length === 1) {
             setPageTitle(`${getTitleBase()} | ${pageName}`)
@@ -114,7 +114,8 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
 
             // Check result
             if (!res.ok) {
-                throw new Error(`Failed to fetch environment variables: ${res.status} ${res.statusText}`)
+                console.error(`Failed to fetch environment variables: ${res.status} ${res.statusText}`)
+                return
             }
 
             const data = await res.json()
@@ -143,8 +144,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             // Check result
             if (!res.ok) {
                 // This is bad: it means we saw the ALB header but it's not in the right format so we're stuck
-                debug("Failed to fetch user info")
-                throw new Error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
+                console.error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
             }
 
             const response: UserInfoResponse = await res.json()
@@ -194,8 +194,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
             )
         } else {
             return Component.authRequired ? (
-                <Auth // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                >
+                <Auth>
                     <Component
                         id="body-auth-component"
                         {...pageProps}
@@ -231,14 +230,11 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
     } else {
         body = (
             <>
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <CssBaseline />
                 {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
-                <SessionProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                    session={session}
-                >
+                <SessionProvider session={session}>
                     <ErrorBoundary id="error_boundary">
                         <Navbar
                             id="nav-bar"
@@ -253,7 +249,6 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                                 paddingBottom: "5rem",
                             }}
                         >
-                            {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs />}
                             {getAppComponent()}
                         </Container>
@@ -265,9 +260,7 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
 
     return (
         <div id="unileaf">
-            {/* 2/6/23 DEF - Head does not have an id property when compiling */}
-            <Head // eslint-disable-line enforce-ids-in-jsx/missing-ids
-            >
+            <Head>
                 <title id="unileaf-title">{pageTitle}</title>
                 <meta
                     id="unileaf-description"
@@ -280,12 +273,8 @@ export default function NeuroAI({Component, pageProps: {session, ...pageProps}}:
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <ThemeProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
-                theme={theme}
-            >
-                {body}
-            </ThemeProvider>
-            <SnackbarProvider // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <ThemeProvider theme={theme}>{body}</ThemeProvider>
+            <SnackbarProvider
                 Components={{
                     info: Snackbar,
                     success: Snackbar,

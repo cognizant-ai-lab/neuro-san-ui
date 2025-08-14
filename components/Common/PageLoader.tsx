@@ -1,6 +1,10 @@
 import {CircularProgress, Typography} from "@mui/material"
 
-export const PageLoader = ({id}) => (
+interface PageLoaderProps {
+    id: string
+}
+
+export const PageLoader = ({id}: PageLoaderProps) => (
     <div
         id={`${id}__loader`}
         style={{

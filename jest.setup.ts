@@ -3,7 +3,7 @@ import "@testing-library/jest-dom"
 import failOnConsole from "jest-fail-on-console"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
-import {createElement} from "react"
+import {createElement, ReactNode} from "react"
 /*
 This next part is a hack to get around "ReferenceError: TextEncoder is not defined" errors when running Jest.
 See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-is-not-defined-in-jest
@@ -15,8 +15,9 @@ Object.defineProperties(globalThis, {
     ReadableStream: {value: ReadableStream},
 })
 
-global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
+// Use the Node.js TextEncoder for Jest, with a type cast to satisfy TypeScript
+global.TextEncoder = TextEncoder as unknown as typeof global.TextEncoder
+global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder
 
 // End of hack
 
@@ -103,26 +104,26 @@ global.structuredClone = (val: object) => JSON.parse(JSON.stringify(val))
 jest.mock(
     "react-markdown",
     () =>
-        ({children}) =>
+        ({children}: {children: ReactNode}) =>
             createElement("div", null, children)
 )
 jest.mock(
     "rehype-raw",
     () =>
-        ({children}) =>
+        ({children}: {children: ReactNode}) =>
             createElement("div", null, children)
 )
 jest.mock(
     "rehype-slug",
     () =>
-        ({children}) =>
+        ({children}: {children: ReactNode}) =>
             createElement("div", null, children)
 )
 
 jest.mock(
     "remark-toc",
     () =>
-        ({children}) =>
+        ({children}: {children: ReactNode}) =>
             createElement("div", null, children)
 )
 

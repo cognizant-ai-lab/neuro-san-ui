@@ -4,11 +4,9 @@
 // See: https://nextjs.org/docs/basic-features/typescript
 
 import path from "path"
-import {fileURLToPath} from "url"
 
 /* eslint-disable no-shadow */
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __dirname = import.meta.dirname
 /* eslint-enable no-shadow */
 
 // Extra headers to be returned
@@ -50,7 +48,7 @@ const nextConfig: import("next").NextConfig = {
     },
 
     publicRuntimeConfig: {
-        unileafVersion: process.env.UNILEAF_VERSION || "unknown",
+        neuroSanUIVersion: process.env["NEURO_SAN_UI_VERSION"] || "unknown",
     },
 
     output: "standalone",
@@ -86,20 +84,9 @@ const nextConfig: import("next").NextConfig = {
         ]
     },
 
-    // TODO: Remove this at some point
-    redirects: async () => [
-        {
-            source: "/agentNetwork",
-            destination: "/multiAgentAccelerator",
-            permanent: true,
-        },
-    ],
-
     sassOptions: {
         includePaths: [path.join(__dirname, "styles")],
     },
-
-    transpilePackages: ["echarts", "echarts-gl", "zrender"],
 }
 
 // Seems to need to be exported for NextJS to pick it up

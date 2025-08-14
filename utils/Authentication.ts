@@ -2,6 +2,7 @@
 
 import {signOut, useSession} from "next-auth/react"
 
+import {navigateToUrl} from "./BrowserNavigation"
 import {OidcProvider} from "../pages/api/userInfo/types"
 import useUserInfoStore from "../state/UserInfo"
 
@@ -89,6 +90,6 @@ export async function smartSignOut(
             },
         }))
 
-        window.location.href = createAuth0LogoutUrl(oidcProvider, auth0Domain, auth0ClientId)
+        navigateToUrl(createAuth0LogoutUrl(oidcProvider, auth0Domain, auth0ClientId))
     }
 }

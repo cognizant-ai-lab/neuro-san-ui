@@ -5,11 +5,8 @@
 import fs from "fs"
 import path from "path"
 import {Project} from "ts-morph"
-import {fileURLToPath} from "url"
 
-const {dirname} = path
-const currentFilePath = fileURLToPath(import.meta.url)
-const currentDirPath = dirname(currentFilePath)
+const currentDirPath = import.meta.dirname
 
 const autoGenComment = `
 /**

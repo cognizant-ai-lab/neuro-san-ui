@@ -9,9 +9,9 @@ import {
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 // eslint-disable-next-line camelcase
 import {ApiPaths, ChatFilterChat_filter_type, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {ChatRequest} from "../../../generated/neuro-san/OpenAPITypes"
+import {ChatHistory, ChatRequest} from "../../../generated/neuro-san/OpenAPITypes"
 import {withStrictMocks} from "../../common/strictMocks"
-import {mockFetch} from "../../common/testUtils"
+import {mockFetch} from "../../common/TestUtils"
 
 jest.mock("../../../controller/llm/LlmChat")
 
@@ -75,7 +75,7 @@ describe("Controller/Agent/sendChatQuery", () => {
 
     const testQuery = "test query with special characters: !@#$%^&*()_+"
     const testUser = "test user"
-    const chatContext = {chat_histories: []}
+    const chatContext = {chat_histories: [] as ChatHistory[]}
     // TODO: ugly cast due to how openapi-typescript generates object types. What to do here?
     const slyData = {login: testUser} as unknown as Record<string, never>
 

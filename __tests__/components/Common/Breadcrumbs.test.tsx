@@ -1,6 +1,6 @@
 import {render, screen} from "@testing-library/react"
 
-import NeuroAIBreadcrumbs from "../../../components/Common/breadcrumbs"
+import {NeuroAIBreadcrumbs} from "../../../components/Common/breadcrumbs"
 
 const MOCK_PATHNAME = "mockPath1/mockPath2/mockPath3/mockPath4"
 jest.mock("next/navigation", () => {

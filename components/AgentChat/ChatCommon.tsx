@@ -38,7 +38,7 @@ import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, tryParseJson} from "./Utils"
+import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
@@ -158,7 +158,8 @@ export interface ChatCommonProps {
     readonly neuroSanURL?: string
 }
 
-const EMPTY = {}
+// Define fancy EMPTY constant to avoid linter error about using object literals as default props
+const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 
 // Avatar to use for agents in chat
 const AGENT_IMAGE = "/agent.svg"
@@ -411,7 +412,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                                         {repairedJson}
                                     </SyntaxHighlighter>
                                 ) : (
-                                    // eslint-disable-next-line enforce-ids-in-jsx/missing-ids
                                     <ReactMarkdown key={hashString(logLine)}>
                                         {logLine || "No further details"}
                                     </ReactMarkdown>
@@ -438,7 +438,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
      */
     const introduceAgent = () => {
         updateOutput(
-            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <UserQueryDisplay
                 userQuery={cleanUpAgentName(targetAgent)}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
@@ -450,12 +450,19 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         updateOutput(greeting)
     }
 
+    /**
+     * Render the connectivity info as a list of origins and their tools
+     * @param connectivityInfo The connectivity info to render
+     * @returns A ReactNode representing the connectivity info with agents and their tools
+     */
     const renderConnectivityInfo = (connectivityInfo: ConnectivityInfo[]) => (
-        /* eslint-disable enforce-ids-in-jsx/missing-ids */
         <>
             {connectivityInfo
+                // Don't show connection to self
                 .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
+                // Sort by origin name
                 .sort((a, b) => a.origin.localeCompare(b.origin))
+                // Render each origin and its tools
                 .map((info) => (
                     <li
                         id={info.origin}
@@ -478,7 +485,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </li>
                 ))}
         </>
-        /* eslint-enable enforce-ids-in-jsx/missing-ids */
     )
 
     useEffect(() => {
@@ -536,6 +542,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                                     <ul
                                         key="item-2"
                                         id="connectivity-list"
+                                        aria-labelledby="connectivity-header"
                                         style={{marginTop: "1rem"}}
                                     >
                                         {renderConnectivityInfo(connectivity?.connectivity_info.concat())}
@@ -618,7 +625,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
      * @returns The final answer from the agent, if it exists or null if it doesn't
      */
     const extractFinalAnswer = (response: string) =>
-        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.finalAnswerText
+        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
     const handleChunk = (chunk: string): void => {
         // Give container a chance to process the chunk first
@@ -661,12 +668,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             slyData.current = {...slyData.current, ...chatMessage.sly_data}
         }
 
-        // Agent name is the last tool in the origin array. If it's not there, use a default name.
-        const agentName =
-            chatMessage.origin?.length > 0
-                ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
-                : "Agent message"
-
         // Check if there is an error block in the "structure" field of the chat message.
         if (chatMessage.structure) {
             // If there is an error block, we should display it as an alert.
@@ -681,35 +682,16 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </MUIAlert>
                 )
                 succeeded.current = false
-                return // No need to process further if there is an error
             }
-        }
-
-        // Legacy path: check for a string or object in the chat message "text" field.
-        const parsedResult: null | object | string = tryParseJson(chatMessage)
-
-        if (typeof parsedResult === "string") {
-            if (parsedResult.trim() !== "") {
-                updateOutput(processLogLine(parsedResult, agentName, chatMessage?.type))
-            }
-        } else if (typeof parsedResult === "object") {
-            // Does it have the error block?
-            const errorMessage = checkError(parsedResult)
-            if (errorMessage) {
-                updateOutput(
-                    <MUIAlert
-                        id="retry-message-alert"
-                        severity="warning"
-                    >
-                        {errorMessage}
-                    </MUIAlert>
-                )
-                succeeded.current = false
-            } else if (chatMessage?.text?.trim() !== "") {
-                // Not an error, so output it if it has text. The backend sometimes sends messages with no
-                // text content and we don't want to display those to the user.
-                updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
-            }
+        } else if (chatMessage?.text?.trim() !== "") {
+            // Not an error, so output it if it has text. The backend sometimes sends messages with no
+            // text content and we don't want to display those to the user.
+            // Agent name is the last tool in the origin array. If it's not there, use a default name.
+            const agentName =
+                chatMessage.origin?.length > 0
+                    ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
+                    : "Agent message"
+            updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
         }
     }
 
@@ -800,7 +782,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf of the
         // user but currently we do for orchestration.
         updateOutput(
-            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <UserQueryDisplay
                 userQuery={query}
                 title={currentUser}
                 userImage={userImage}
@@ -809,7 +791,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
         // Add ID block for agent
         updateOutput(
-            <UserQueryDisplay // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <UserQueryDisplay
                 userQuery={cleanUpAgentName(targetAgent)}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
@@ -1041,7 +1023,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     )}
                 </Box>
 
-                <ControlButtons // eslint-disable-line enforce-ids-in-jsx/missing-ids
+                <ControlButtons
                     clearChatOnClickCallback={() => {
                         setChatOutput([])
                         chatHistory.current = []

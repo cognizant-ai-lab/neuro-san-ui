@@ -44,8 +44,7 @@ export default function UserGuide() {
 
     return (
         <StyledMarkdownContainer id="user-guide-container">
-            {/* 2/6/23 DEF - ReactMarkdown does not have an id property when compiling */}
-            <ReactMarkdown // eslint-disable-line enforce-ids-in-jsx/missing-ids
+            <ReactMarkdown
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
             >

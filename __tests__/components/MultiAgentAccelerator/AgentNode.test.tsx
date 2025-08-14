@@ -1,4 +1,5 @@
 import {render, screen} from "@testing-library/react"
+import {CSSProperties} from "react"
 
 import {AgentNode} from "../../../components/MultiAgentAccelerator/AgentNode"
 import {withStrictMocks} from "../../common/strictMocks"
@@ -6,7 +7,7 @@ import {withStrictMocks} from "../../common/strictMocks"
 // Mock the Handle component since we don't want to invite react-flow to this party
 jest.mock("reactflow", () => ({
     ...jest.requireActual("reactflow"),
-    Handle: (props) => (
+    Handle: (props: {type: unknown; id: unknown; style: CSSProperties}) => (
         <div
             data-testid={`handle-${props.type}-${props.id}`}
             style={props.style}
@@ -98,9 +99,9 @@ describe("AgentNode", () => {
     })
 
     test.each([
-        [false, "block", "handles should display in regular mode"],
-        [true, "none", "handles should not display in Zen mode"],
-    ])("%s", async (isAwaitingLlm, expectedDisplay) => {
+        ["handles should display in regular mode", false, "block"],
+        ["handles should not display in Zen mode", true, "none"],
+    ])("%s", async (_description, isAwaitingLlm, expectedDisplay) => {
         const agentName = "Test Agent"
         render(
             <AgentNode

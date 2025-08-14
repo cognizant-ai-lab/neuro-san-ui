@@ -3,28 +3,29 @@
 // This file initially cargo culted from here:
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
-import path from "path"
 
 /** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 
-    // Voodoo to speed up Jest, from here: https://stackoverflow.com/a/60905543
+    preset: "ts-jest/presets/default-esm",
+    extensionsToTreatAsEsm: [".ts", ".tsx"],
+    transformIgnorePatterns: ["/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime)"],
     transform: {
-        "^.+\\.tsx?$": [
+        "^.+\\.(ts|tsx)$": [
             "ts-jest",
             {
-                // Doc: https://kulshekhar.github.io/ts-jest/docs/getting-started/options/isolatedModules/
-                isolatedModules: true,
-                // Can't use ESM with Jest yet, so use CJS format for __dirname
-                // eslint-disable-next-line unicorn/prefer-module
-                tsconfig: path.resolve(__dirname, "tsconfig.test.json"),
+                useESM: true,
+                tsconfig: {
+                    jsx: "react-jsx",
+                },
             },
         ],
     },
+
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-    testEnvironment: "jest-environment-jsdom",
+    testEnvironment: "jsdom",
     collectCoverage: true,
     collectCoverageFrom: [
         "**/*.{js,jsx,ts,tsx}",
@@ -32,6 +33,7 @@ const config: Config.InitialOptions = {
         "!.next/**",
         "!**/coverage/**",
         "!**/generated/**",
+        "!**/dist/**",
         "!jest*.ts",
         "!next-env.d.ts",
         "!next.config.ts",
@@ -41,8 +43,11 @@ const config: Config.InitialOptions = {
     // Prevent Jest from trying to parse CSS files. Reference: https://stackoverflow.com/a/43813992
     moduleNameMapper: {"\\.(css|less)$": "<rootDir>/__tests__/__mocks__/styleMock.js"},
 
+    // Don't look for modules in these directories
+    modulePathIgnorePatterns: ["<rootDir>/dist", "/.next/"],
+
     // Exclude these files from Jest scanning
-    testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+    testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
 }
 
 // Required for Jest to function so tell ts-prune to ignore it

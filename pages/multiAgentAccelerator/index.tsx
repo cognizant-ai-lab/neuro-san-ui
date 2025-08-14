@@ -122,12 +122,12 @@ export default function MultiAgentAcceleratorPage() {
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
                 } catch (e) {
-                    const agentName = cleanUpAgentName(selectedNetwork)
+                    const networkName = cleanUpAgentName(selectedNetwork)
                     sendNotification(
                         NotificationType.error,
                         "Connection error",
                         // eslint-disable-next-line max-len
-                        `Unable to get agent list for "${agentName}". Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                        `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
                     )
                     setAgentsInNetwork([])
                 }
@@ -214,7 +214,6 @@ export default function MultiAgentAcceleratorPage() {
                     height: "100%",
                 }}
             >
-                {/* eslint-disable-next-line enforce-ids-in-jsx/missing-ids */}
                 <ReactFlowProvider>
                     <Box
                         id="multi-agent-accelerator-agent-flow-container"

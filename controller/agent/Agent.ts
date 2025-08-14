@@ -16,14 +16,14 @@ import {sendLlmRequest} from "../llm/LlmChat"
 
 /**
  * Insert the target agent name into the path. The paths Api enum contains values like:
- * <code>"/api/v1/:agent_name/connectivity"</code> so unfortunately we need to do a replace() to insert the target
+ * <code>"/api/v1/{agent_name}/connectivity"</code> so unfortunately we need to do a replace() to insert the target
  * agent.
  * @param agent The agent to send the request to.
  * @param path The API path to insert the target agent into.
  * @returns The path with the target agent name inserted.
  */
 const insertTargetAgent = (agent: string, path: string) => {
-    return path.replace(":agent_name", agent)
+    return path.replace("{agent_name}", agent)
 }
 
 export interface TestConnectionResult {

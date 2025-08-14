@@ -1,11 +1,11 @@
-import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {sendChatQuery} from "../../../controller/agent/Agent"
+import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {ChatContext, ChatMessage, ChatResponse} from "../../../generated/neuro-san/OpenAPITypes"
@@ -29,6 +29,10 @@ const TEST_USER = "testUser"
 const TEST_AGENT_MATH_GUY = "Math Guy"
 const TEST_AGENT_MUSIC_NERD = "Music Nerd"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
+const TEST_TOOL_SPOTIFY = "spotify_tool"
+const TEST_TOOL_LAST_FM = "last_fm_tool"
+const TEST_TOOL_SOLVER = "math_solver_tool"
+const TEST_TOOL_CALCULATOR = "calculator_tool"
 
 function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
     return {
@@ -73,6 +77,20 @@ describe("ChatCommon", () => {
     beforeEach(() => {
         user = userEvent.setup()
         mockedUsePreferences.mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
+
+        // Mock getConnectivity to return dummy connectivity info
+        ;(getConnectivity as jest.Mock).mockResolvedValue({
+            connectivity_info: [
+                {
+                    origin: TEST_AGENT_MUSIC_NERD,
+                    tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
+                },
+                {
+                    origin: TEST_AGENT_MATH_GUY,
+                    tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
+                },
+            ],
+        })
     })
 
     async function sendQuery(agent: CombinedAgentType, query: string) {
@@ -107,6 +125,30 @@ describe("ChatCommon", () => {
         expect(screen.getByRole("button", {name: "Clear Chat"})).toBeInTheDocument()
         expect(screen.getByRole("button", {name: "Regenerate"})).toBeInTheDocument()
         expect(screen.getByRole("button", {name: "Send"})).toBeInTheDocument()
+
+        // Check that connectivity info is rendered correctly
+        const connectivityList = document.getElementById("connectivity-list")
+        expect(connectivityList).toBeInTheDocument()
+
+        // Check that the expected agents are in the connectivity list
+        const musicNerdItem = within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD)
+        expect(musicNerdItem).toBeInTheDocument()
+
+        // Check that the tools for Music Nerd are listed
+        const musicNerdToolsList = document.getElementById(`${TEST_AGENT_MUSIC_NERD}-tools`)
+        expect(musicNerdToolsList).toBeInTheDocument()
+
+        // Verify specific tools are present in the list
+        ;[TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM].forEach((tool) => {
+            const toolElement = within(musicNerdToolsList).getByText(tool)
+            expect(toolElement).toBeInTheDocument()
+        })
+
+        // Now math guy
+        const mathGuyItem = within(connectivityList).queryByText(TEST_AGENT_MATH_GUY)
+
+        // Should not be present since we are chatting with Math Guy and we don't show agents connecting to themselves
+        expect(mathGuyItem).not.toBeInTheDocument()
     })
 
     it("Should behave correctly when awaiting the LLM response", async () => {
@@ -301,34 +343,18 @@ describe("ChatCommon", () => {
         expect(screen.queryByText(/Error occurred:/u)).not.toBeInTheDocument()
     })
 
-    test.each([
-        [
-            "with error in text field",
-            {
-                response: {
-                    type: ChatMessageType.AI,
-                    text: JSON.stringify({
-                        error: "Error message from LLM",
-                        traceback: "test tracebook",
-                        tool: "test tool",
-                    }),
+    it("Should correctly handle a chunk with an error block in the structure field", async () => {
+        const chatResponse = {
+            response: {
+                type: ChatMessageType.AI,
+                structure: {
+                    error: "Error message from LLM",
+                    traceback: "test tracebook",
+                    tool: "test tool",
                 },
             },
-        ],
-        [
-            "with error in structure field",
-            {
-                response: {
-                    type: ChatMessageType.AI,
-                    structure: {
-                        error: "Error message from LLM",
-                        traceback: "test tracebook",
-                        tool: "test tool",
-                    },
-                },
-            },
-        ],
-    ])("Should correctly detect an error chunk from Neuro-san (%s)", async (_desc, chatResponse) => {
+        }
+
         renderChatCommonComponent()
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponse))

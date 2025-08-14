@@ -1,12 +1,12 @@
+import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import {Typography} from "@mui/material"
 import Breadcrumbs from "@mui/material/Breadcrumbs"
 import Grid from "@mui/material/Grid2"
 import {startCase} from "lodash"
 import Link from "next/link"
 import {usePathname} from "next/navigation"
-import {FaChevronRight} from "react-icons/fa6"
 
-const NeuroAIBreadcrumbs = () => {
+export const NeuroAIBreadcrumbs = () => {
     const pathname: string = usePathname()
     const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
     const pageName = startCase(urlPaths?.at(-1))
@@ -27,7 +27,7 @@ const NeuroAIBreadcrumbs = () => {
                 id="breadcrumb-nav"
                 aria-label="breadcrumb"
                 separator={
-                    <FaChevronRight
+                    <ChevronRightIcon
                         id="breadcrumb-separator"
                         fontSize="small"
                     />
@@ -59,5 +59,3 @@ const NeuroAIBreadcrumbs = () => {
         </Grid>
     )
 }
-
-export default NeuroAIBreadcrumbs
