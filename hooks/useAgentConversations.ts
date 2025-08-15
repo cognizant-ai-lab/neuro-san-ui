@@ -11,7 +11,7 @@ export interface AgentConversations {
     startedAt: Date
 }
 
-interface UseAgentTrackingReturn {
+interface AgentConversationsState {
     agentCounts: Map<string, number>
     currentConversations: AgentConversations | null
     isProcessing: boolean
@@ -26,7 +26,7 @@ const isFinalMessage = (chatMessage: {structure?: {total_tokens?: number}; text?
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export function useAgentTracking(): UseAgentTrackingReturn {
+export function useAgentConversations(): AgentConversationsState {
     const [currentConversations, setCurrentConversations] = useState<AgentConversations | null>(null)
     const [isProcessing, setIsProcessing] = useState<boolean>(false)
     const agentCountsRef = useRef<Map<string, number>>(new Map())
@@ -38,26 +38,26 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         }
     }, [])
 
-    const updateAgentCounts = useCallback((origins: readonly Origin[]) => {
-        const agentCounts = agentCountsRef.current
-        origins
-            .map((originData) => originData.tool)
-            .reduce((_, tool) => {
-                agentCounts.set(tool, (agentCounts.get(tool) || 0) + 1)
-                return agentCounts
-            }, agentCounts)
+    const updateAgentCounts = useCallback((origins: readonly Origin[]): void => {
+        agentCountsRef.current = origins.reduce((acc, {tool}) => {
+            acc.set(tool, (acc.get(tool) || 0) + 1)
+            return acc
+        }, new Map(agentCountsRef.current))
     }, [])
 
-    const addAgentsToConversation = useCallback((conversations: AgentConversations, origins: readonly Origin[]) => {
-        const newTools = origins.map((originData) => originData.tool).filter(Boolean)
-        return {
-            ...conversations,
-            agents: new Set([...conversations.agents, ...newTools]),
-        }
-    }, [])
+    const conversationWithNewAgents = useCallback(
+        (conversations: AgentConversations, origins: readonly Origin[]): AgentConversations => {
+            const newTools = origins.map((originData) => originData.tool).filter(Boolean)
+            return {
+                ...conversations,
+                agents: new Set([...conversations.agents, ...newTools]),
+            }
+        },
+        []
+    )
 
-    const removeCompletedAgents = useCallback(
-        (conversations: AgentConversations, completedOrigins: readonly Origin[]) => {
+    const conversationWithRemainingAgents = useCallback(
+        (conversations: AgentConversations, completedOrigins: readonly Origin[]): AgentConversations => {
             const completedTools = new Set(
                 completedOrigins.map((completedOrigin) => completedOrigin.tool).filter(Boolean)
             )
@@ -91,8 +91,8 @@ export function useAgentTracking(): UseAgentTrackingReturn {
                     const isFinal = isFinalMessage(chatMessage)
 
                     if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-                        // Remove completed agents from conversation
-                        const updatedConversation = removeCompletedAgents(conversation, chatMessage.origin)
+                        // Updated conversation with remaining agents
+                        const updatedConversation = conversationWithRemainingAgents(conversation, chatMessage.origin)
 
                         // If no agents remain, set conversation to null
                         if (updatedConversation.agents.size === 0) {
@@ -101,8 +101,8 @@ export function useAgentTracking(): UseAgentTrackingReturn {
 
                         return updatedConversation
                     } else {
-                        // Add new agents to conversation
-                        return addAgentsToConversation(conversation, chatMessage.origin)
+                        // Updated conversation with new agents
+                        return conversationWithNewAgents(conversation, chatMessage.origin)
                     }
                 })
 
@@ -114,10 +114,10 @@ export function useAgentTracking(): UseAgentTrackingReturn {
                 setIsProcessing(false)
             }
         },
-        [updateAgentCounts, createConversation, addAgentsToConversation, removeCompletedAgents]
+        [conversationWithNewAgents, conversationWithRemainingAgents, createConversation, updateAgentCounts]
     )
 
-    const onStreamingStarted = useCallback(() => {
+    const onStreamingStarted = useCallback((): void => {
         agentCountsRef.current = new Map<string, number>()
         setIsProcessing(true)
         // Create a new conversation for the new streaming session
@@ -125,7 +125,7 @@ export function useAgentTracking(): UseAgentTrackingReturn {
         setCurrentConversations(newConversation)
     }, [createConversation])
 
-    const onStreamingComplete = useCallback(() => {
+    const onStreamingComplete = useCallback((): void => {
         setCurrentConversations(null)
         agentCountsRef.current = new Map<string, number>()
         setIsProcessing(false)

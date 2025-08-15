@@ -34,7 +34,7 @@ import {
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ConnectivityInfo} from "../../generated/neuro-san/OpenAPITypes"
-import {AgentConversations} from "../../hooks/useAgentTracking"
+import {AgentConversations} from "../../hooks/useAgentConversations"
 import {usePreferences} from "../../state/Preferences"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 

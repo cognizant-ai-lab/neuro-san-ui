@@ -2,7 +2,7 @@ import {act, renderHook} from "@testing-library/react"
 
 import {chatMessageFromChunk} from "../../../components/AgentChat/Utils"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {useAgentTracking} from "../../../hooks/useAgentTracking"
+import {useAgentConversations} from "../../../hooks/useAgentConversations"
 import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock the chatMessageFromChunk utility
@@ -16,7 +16,7 @@ describe("useAgentTracking", () => {
     withStrictMocks()
 
     it("should initialize with default state", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         expect(result.current.currentConversations).toBeNull()
         expect(result.current.agentCounts).toBeInstanceOf(Map)
@@ -25,7 +25,7 @@ describe("useAgentTracking", () => {
     })
 
     it("should handle chunk without origin info", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         mockChatMessageFromChunk.mockReturnValue({
             origin: [],
@@ -41,7 +41,7 @@ describe("useAgentTracking", () => {
     })
 
     it("should process agent chunk with origin info", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         const mockOrigin = [
             {tool: "agent1", instantiation_index: 0},
@@ -70,7 +70,7 @@ describe("useAgentTracking", () => {
     })
 
     it("should handle final agent response and remove from active list", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         // First, add some agents to the active list
         const mockOriginStart = [
@@ -110,7 +110,7 @@ describe("useAgentTracking", () => {
     })
 
     it("should handle streaming lifecycle", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         // Start streaming
         act(() => {
@@ -131,7 +131,7 @@ describe("useAgentTracking", () => {
     })
 
     it("should handle errors gracefully", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         // Spy on console.error for this specific test
         const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
@@ -154,7 +154,7 @@ describe("useAgentTracking", () => {
     })
 
     it("should increment agent counts correctly", () => {
-        const {result} = renderHook(() => useAgentTracking())
+        const {result} = renderHook(() => useAgentConversations())
 
         const mockOrigin = [{tool: "agent1", instantiation_index: 0}]
 

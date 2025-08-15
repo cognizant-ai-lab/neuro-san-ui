@@ -13,7 +13,7 @@ import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
 import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/OpenAPITypes"
-import {useAgentTracking} from "../../hooks/useAgentTracking"
+import {useAgentConversations} from "../../hooks/useAgentConversations"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
 import {useAuthentication} from "../../utils/Authentication"
@@ -62,7 +62,7 @@ export default function MultiAgentAcceleratorPage() {
         onChunkReceived,
         onStreamingComplete: agentTrackingStreamingComplete,
         onStreamingStarted: agentTrackingStreamingStarted,
-    } = useAgentTracking()
+    } = useAgentConversations()
 
     // Dark mode
     const {darkMode} = usePreferences()

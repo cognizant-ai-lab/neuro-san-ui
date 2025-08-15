@@ -8,7 +8,7 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
-import {AgentConversations} from "../../hooks/useAgentTracking"
+import {AgentConversations} from "../../hooks/useAgentConversations"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
