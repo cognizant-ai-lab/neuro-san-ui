@@ -163,12 +163,13 @@ export const layoutRadial = (
                     }
 
                     const conversations = getConversations()
-                    const edgeIncluded = conversations?.agents?.has(nodeId) && conversations?.agents?.has(graphNode.id)
+                    const isEdgeAnimated =
+                        conversations?.agents?.has(nodeId) && conversations?.agents?.has(graphNode.id)
 
                     // Add edge from parent to node
-                    if (!isAwaitingLlm || edgeIncluded) {
+                    if (!isAwaitingLlm || isEdgeAnimated) {
                         edgesInNetwork.push(
-                            getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, edgeIncluded)
+                            getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, isEdgeAnimated)
                         )
                     }
                 }
@@ -244,8 +245,9 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const conversation = getConversations()
-                const edgeIncluded = conversation?.agents?.has(parentNode) && conversation?.agents?.has(originOfNode)
+                const conversations = getConversations()
+                const isEdgeAnimated =
+                    conversations?.agents?.has(parentNode) && conversations?.agents?.has(originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
@@ -255,7 +257,7 @@ export const layoutLinear = (
                         originOfNode,
                         `${parentNode}-right-handle`,
                         `${originOfNode}-left-handle`,
-                        edgeIncluded
+                        isEdgeAnimated
                     )
                 )
             }

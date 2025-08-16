@@ -20,9 +20,12 @@ interface AgentConversationsState {
     onStreamingStarted: () => void
 }
 
-const isFinalMessage = (chatMessage: {structure?: {total_tokens?: number}; text?: string}): boolean => {
+const isFinalMessage = (chatMessage: {
+    structure?: {tool_end?: boolean; total_tokens?: number}
+    text?: string
+}): boolean => {
     const isAgentFinalResponse = chatMessage.structure?.total_tokens
-    const isCodedToolFinalResponse = chatMessage.text?.startsWith("Got result:")
+    const isCodedToolFinalResponse = chatMessage.structure?.tool_end
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
@@ -39,7 +42,12 @@ export function useAgentConversations(): AgentConversationsState {
     }, [])
 
     const updateAgentCounts = useCallback((origins: readonly Origin[]): void => {
+        // Update agent counts.
+        // Note: we increment an agent's count each time it appears in the origin info, but another strategy
+        // would be to only count an agent when it is the "end destination" of the chain. Needs some thought to
+        // determine which is more useful.
         agentCountsRef.current = origins.reduce((acc, {tool}) => {
+            // If the agent is not already in the counts map, initialize it to 0 aka "upsert"
             acc.set(tool, (acc.get(tool) || 0) + 1)
             return acc
         }, new Map(agentCountsRef.current))
@@ -74,6 +82,7 @@ export function useAgentConversations(): AgentConversationsState {
             setIsProcessing(true)
 
             try {
+                // Get chat message if it's a known message type
                 const chatMessage = chatMessageFromChunk(chunk)
 
                 if (!chatMessage?.origin?.length) {
@@ -82,6 +91,7 @@ export function useAgentConversations(): AgentConversationsState {
 
                 updateAgentCounts(chatMessage.origin)
 
+                // Track current conversations
                 setCurrentConversations((prevConversation) => {
                     let conversation = prevConversation
                     if (!conversation) {
@@ -90,6 +100,7 @@ export function useAgentConversations(): AgentConversationsState {
 
                     const isFinal = isFinalMessage(chatMessage)
 
+                    // Check if this is an AGENT message and if it's a final message, i.e. an end event
                     if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
                         // Updated conversation with remaining agents
                         const updatedConversation = conversationWithRemainingAgents(conversation, chatMessage.origin)
@@ -101,7 +112,7 @@ export function useAgentConversations(): AgentConversationsState {
 
                         return updatedConversation
                     } else {
-                        // Updated conversation with new agents
+                        // Updated conversation with newly added agents
                         return conversationWithNewAgents(conversation, chatMessage.origin)
                     }
                 })
