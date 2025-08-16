@@ -5,6 +5,8 @@ import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import AccountTreeIcon from "@mui/icons-material/AccountTree"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
+import MicNoneIcon from "@mui/icons-material/MicNone"
+import MicOffIcon from "@mui/icons-material/MicOff"
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
 import WrapTextIcon from "@mui/icons-material/WrapText"
 import {Box, Input} from "@mui/material"
@@ -34,11 +36,21 @@ import SyntaxHighlighter from "react-syntax-highlighter"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
+import {LlmChatButton} from "./LlmChatButton"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
 import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
+import {
+    checkSpeechSupport,
+    cleanup,
+    createSpeechRecognition,
+    speakMessage,
+    toggleListening,
+    VoiceChatConfig,
+    VoiceChatState,
+} from "./VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
@@ -263,6 +275,24 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
     const [showThinking, setShowThinking] = useState<boolean>(false)
 
+    const [isMicOn, setIsMicOn] = useState<boolean>(false)
+
+    const [voiceState, setVoiceState] = useState<VoiceChatState>({
+        isListening: false,
+        currentTranscript: "",
+        speechSupported: checkSpeechSupport(),
+        isSpeaking: false,
+        finalTranscript: "",
+    })
+
+    const voiceRefs = useRef<{
+        recognition: unknown | null
+        timers: {silenceTimer: ReturnType<typeof setTimeout> | null}
+    }>({
+        recognition: null,
+        timers: {silenceTimer: null},
+    })
+
     // Define styles based on user options (wrap setting)
     const divStyle: CSSProperties = shouldWrapOutput
         ? {
@@ -341,6 +371,63 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         currentResponse.current = ""
         setShowThinking(false)
     }, [neuroSanURL])
+
+    // Initialize voice recognition
+    useEffect(() => {
+        if (voiceState.speechSupported) {
+            const voiceConfig: VoiceChatConfig = {
+                onSendMessage: (message: string) => {
+                    handleSend(message)
+                },
+                onTranscriptChange: (transcript) => {
+                    setChatInput(transcript)
+                },
+                onSpeakingChange: (isSpeaking) => {
+                    setVoiceState((prev) => ({...prev, isSpeaking}))
+                },
+                onListeningChange: (isListening) => {
+                    setVoiceState((prev) => ({...prev, isListening}))
+                },
+                autoSpeakResponses: isMicOn,
+                silenceTimeout: 2500,
+            }
+            voiceRefs.current.recognition = createSpeechRecognition(
+                voiceConfig,
+                setVoiceState,
+                voiceRefs.current.timers
+            )
+        }
+        return () => {
+            const voiceConfig: VoiceChatConfig = {
+                onSendMessage: () => undefined,
+                onTranscriptChange: () => undefined,
+                onSpeakingChange: () => undefined,
+                onListeningChange: () => undefined,
+                autoSpeakResponses: false,
+                silenceTimeout: 2500,
+            }
+            cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState, voiceRefs.current.timers)
+        }
+    }, [isMicOn])
+
+    // Auto-speak final answer when voice mode is enabled
+    useEffect(() => {
+        if (isMicOn && voiceState.speechSupported && lastAIMessage.current && !isAwaitingLlm) {
+            const voiceConfig: VoiceChatConfig = {
+                onSendMessage: () => undefined,
+                onTranscriptChange: () => undefined,
+                onSpeakingChange: (isSpeaking) => {
+                    setVoiceState((prev) => ({...prev, isSpeaking}))
+                },
+                onListeningChange: () => undefined,
+                autoSpeakResponses: isMicOn,
+                silenceTimeout: 2500,
+            }
+            setTimeout(() => {
+                speakMessage(lastAIMessage.current, voiceConfig, setVoiceState)
+            }, 500)
+        }
+    }, [isMicOn, voiceState.speechSupported, lastAIMessage.current, isAwaitingLlm])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -485,6 +572,83 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </li>
                 ))}
         </>
+    )
+
+    const renderMicrophoneButton = () => (
+        <LlmChatButton
+            id="microphone-button"
+            onClick={async () => {
+                const newMicState = !isMicOn
+                setIsMicOn(newMicState)
+
+                if (newMicState) {
+                    // Starting voice mode - toggle listening
+                    const voiceConfig: VoiceChatConfig = {
+                        onSendMessage: (message: string) => {
+                            handleSend(message)
+                        },
+                        onTranscriptChange: (transcript) => {
+                            setChatInput(transcript)
+                        },
+                        onSpeakingChange: (isSpeaking) => {
+                            setVoiceState((prev) => ({...prev, isSpeaking}))
+                        },
+                        onListeningChange: (isListening) => {
+                            setVoiceState((prev) => ({...prev, isListening}))
+                        },
+                        autoSpeakResponses: newMicState,
+                        silenceTimeout: 2500,
+                    }
+
+                    await toggleListening(
+                        voiceRefs.current.recognition,
+                        voiceState,
+                        voiceConfig,
+                        setVoiceState,
+                        voiceRefs.current.timers
+                    )
+                } else {
+                    // Stopping voice mode
+                    const voiceConfig: VoiceChatConfig = {
+                        onSendMessage: () => {
+                            // No action needed when stopping voice mode
+                        },
+                        onTranscriptChange: () => {
+                            // No action needed when stopping voice mode
+                        },
+                        onSpeakingChange: () => {
+                            // No action needed when stopping voice mode
+                        },
+                        onListeningChange: () => {
+                            // No action needed when stopping voice mode
+                        },
+                        autoSpeakResponses: false,
+                        silenceTimeout: 2500,
+                    }
+
+                    cleanup(
+                        voiceRefs.current.recognition,
+                        voiceState,
+                        voiceConfig,
+                        setVoiceState,
+                        voiceRefs.current.timers
+                    )
+                }
+            }}
+            sx={{
+                padding: "0.5rem",
+                right: 70,
+                backgroundColor: isMicOn ? "var(--bs-success)" : "var(--bs-secondary)",
+                opacity: voiceState.speechSupported ? 1 : 0.5,
+            }}
+            disabled={!voiceState.speechSupported || isAwaitingLlm}
+        >
+            {voiceState.isListening ? (
+                <MicNoneIcon sx={{color: "var(--bs-white)"}} />
+            ) : (
+                <MicOffIcon sx={{color: "var(--bs-white)"}} />
+            )}
+        </LlmChatButton>
     )
 
     useEffect(() => {
@@ -1099,6 +1263,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         </InputAdornment>
                     }
                 />
+
+                {/* Microphone Button */}
+                {renderMicrophoneButton()}
 
                 {/* Send Button */}
                 <SendButton
