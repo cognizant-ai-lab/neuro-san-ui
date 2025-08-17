@@ -111,17 +111,11 @@ export const createSpeechRecognition = (
 
     recognition.onend = () => {
         setState((prev) => {
-            const shouldSendMessage = prev.finalTranscript.trim()
-            if (shouldSendMessage) {
-                config.onSendMessage(prev.finalTranscript.trim())
-            }
+            // Do not auto-send message, just stop listening and preserve transcript
             config.onListeningChange?.(false)
-            config.onTranscriptChange?.("")
             return {
                 ...prev,
                 isListening: false,
-                currentTranscript: "",
-                finalTranscript: "",
             }
         })
 
@@ -142,15 +136,8 @@ export const createSpeechRecognition = (
 
             config.onTranscriptChange?.(newCurrentTranscript)
 
-            // Handle silence timer
+            // No automatic timeout - only stop when user manually toggles the button
             clearSilenceTimer(timers)
-            if (newCurrentTranscript.trim()) {
-                timers.silenceTimer = setTimeout(() => {
-                    if (newFinalTranscript.trim()) {
-                        recognition?.stop()
-                    }
-                }, config.silenceTimeout || 2500)
-            }
 
             return {
                 ...prev,
@@ -254,13 +241,9 @@ export const toggleListening = async (
         if (recognition && typeof recognition === "object" && "stop" in recognition) {
             ;(recognition as {stop: () => void}).stop()
         }
-
-        // Send message immediately if we have content
-        if (state.finalTranscript.trim()) {
-            config.onSendMessage(state.finalTranscript.trim())
-            setState((prev) => ({...prev, currentTranscript: "", finalTranscript: ""}))
-            config.onTranscriptChange?.("")
-        }
+        // Immediately update state to reflect that we're no longer listening
+        setState((prev) => ({...prev, isListening: false}))
+        config.onListeningChange?.(false)
     } else {
         // Start listening
         setState((prev) => ({...prev, finalTranscript: "", currentTranscript: ""}))

@@ -158,7 +158,8 @@ describe("VoiceChat advanced", () => {
         const timers: {silenceTimer: ReturnType<typeof setTimeout> | null} = {silenceTimer: null}
         await toggleListening(recognition, state, config, setState, timers)
         expect(recognition.stop).toHaveBeenCalled()
-        expect(config.onSendMessage).toHaveBeenCalledWith("hi")
+        // Message sending is now handled by the onend handler, not immediately by toggleListening
+        expect(config.onSendMessage).not.toHaveBeenCalled()
         // Now test start
         const state2: VoiceChatState = {...state, isListening: false}
         await toggleListening(recognition, state2, config, setState, timers)
