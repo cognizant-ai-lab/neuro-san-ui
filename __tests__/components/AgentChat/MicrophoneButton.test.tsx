@@ -35,24 +35,12 @@ jest.mock("../../../components/AgentChat/LlmChatButton", () => ({
     ),
 }))
 
-// Mock MUI icons
-jest.mock("@mui/icons-material/MicNone", () => ({
-    __esModule: true,
-    default: () => <span data-testid="mic-on-icon">MicOn</span>,
-}))
-
-jest.mock("@mui/icons-material/MicOff", () => ({
-    __esModule: true,
-    default: () => <span data-testid="mic-off-icon">MicOff</span>,
-}))
-
 describe("MicrophoneButton", () => {
     const mockOnMicToggle = jest.fn()
     const mockSetVoiceState = jest.fn()
     const mockOnSendMessage = jest.fn()
     const mockOnTranscriptChange = jest.fn()
     const mockRecognition = {start: jest.fn(), stop: jest.fn()}
-    const mockTimers: {silenceTimer: ReturnType<typeof setTimeout> | null} = {silenceTimer: null}
 
     const defaultVoiceState: VoiceChatState = {
         isListening: false,
@@ -69,7 +57,6 @@ describe("MicrophoneButton", () => {
         setVoiceState: mockSetVoiceState,
         isAwaitingLlm: false,
         recognition: mockRecognition,
-        timers: mockTimers,
         onSendMessage: mockOnSendMessage,
         onTranscriptChange: mockOnTranscriptChange,
     }
@@ -82,8 +69,8 @@ describe("MicrophoneButton", () => {
     it("renders with mic off icon when not listening", () => {
         render(<MicrophoneButton {...defaultProps} />)
 
-        expect(screen.getByTestId("mic-off-icon")).toBeInTheDocument()
-        expect(screen.queryByTestId("mic-on-icon")).not.toBeInTheDocument()
+        expect(screen.getByTestId("MicOffIcon")).toBeInTheDocument()
+        expect(screen.queryByTestId("MicNoneIcon")).not.toBeInTheDocument()
     })
 
     it("renders with mic on icon when listening", () => {
@@ -95,8 +82,8 @@ describe("MicrophoneButton", () => {
             />
         )
 
-        expect(screen.getByTestId("mic-on-icon")).toBeInTheDocument()
-        expect(screen.queryByTestId("mic-off-icon")).not.toBeInTheDocument()
+        expect(screen.getByTestId("MicNoneIcon")).toBeInTheDocument()
+        expect(screen.queryByTestId("MicOffIcon")).not.toBeInTheDocument()
     })
 
     it("is disabled when speech is not supported", () => {
@@ -142,10 +129,8 @@ describe("MicrophoneButton", () => {
             expect.objectContaining({
                 onSendMessage: mockOnSendMessage,
                 onTranscriptChange: mockOnTranscriptChange,
-                autoSpeakResponses: true,
             }),
-            mockSetVoiceState,
-            mockTimers
+            mockSetVoiceState
         )
     })
 
@@ -168,10 +153,8 @@ describe("MicrophoneButton", () => {
             expect.objectContaining({
                 onSendMessage: mockOnSendMessage,
                 onTranscriptChange: mockOnTranscriptChange,
-                autoSpeakResponses: false,
             }),
-            mockSetVoiceState,
-            mockTimers
+            mockSetVoiceState
         )
     })
 
@@ -188,7 +171,6 @@ describe("MicrophoneButton", () => {
             onTranscriptChange: mockOnTranscriptChange,
             onSpeakingChange: expect.any(Function),
             onListeningChange: expect.any(Function),
-            autoSpeakResponses: true,
         })
     })
 
@@ -210,7 +192,6 @@ describe("MicrophoneButton", () => {
             onTranscriptChange: mockOnTranscriptChange,
             onSpeakingChange: expect.any(Function),
             onListeningChange: expect.any(Function),
-            autoSpeakResponses: false,
         })
     })
 

@@ -1,7 +1,6 @@
 import {
     checkSpeechSupport,
     cleanup,
-    clearSilenceTimer,
     createSpeechRecognition,
     speakMessage,
     stopSpeechSynthesis,
@@ -13,16 +12,6 @@ import {
 describe("VoiceChat utils", () => {
     it("checkSpeechSupport returns a boolean", () => {
         expect(typeof checkSpeechSupport()).toBe("boolean")
-    })
-
-    it("clearSilenceTimer clears a timer", () => {
-        const timers = {
-            silenceTimer: setTimeout(() => {
-                // Mock timer callback
-            }, 1000),
-        }
-        clearSilenceTimer(timers)
-        expect(timers.silenceTimer).toBeNull()
     })
 
     it("stopSpeechSynthesis does not throw", () => {
@@ -90,7 +79,7 @@ describe("VoiceChat advanced", () => {
             configurable: true,
             writable: true,
         })
-        await toggleListening({}, state, config, setState, {silenceTimer: null})
+        await toggleListening({}, state, config, setState)
         expect(config.onSendMessage as jest.Mock).not.toHaveBeenCalled()
     })
 
@@ -106,8 +95,7 @@ describe("VoiceChat advanced", () => {
         })
         const config = {onSendMessage: jest.fn()} as VoiceChatConfig
         const setState = jest.fn()
-        const timers: {silenceTimer: ReturnType<typeof setTimeout> | null} = {silenceTimer: null}
-        expect(createSpeechRecognition(config, setState, timers)).toBeUndefined()
+        expect(createSpeechRecognition(config, setState)).toBeUndefined()
         Object.defineProperty(window, "SpeechRecognition", {
             value: orig,
             configurable: true,
@@ -122,11 +110,6 @@ describe("VoiceChat advanced", () => {
             onSpeakingChange: jest.fn(),
             onListeningChange: jest.fn(),
         }
-        const timers: {silenceTimer: ReturnType<typeof setTimeout> | null} = {
-            silenceTimer: setTimeout(() => {
-                /* mock timer */
-            }, 1),
-        }
         const state: VoiceChatState = {
             isListening: true,
             currentTranscript: "foo",
@@ -135,12 +118,11 @@ describe("VoiceChat advanced", () => {
             finalTranscript: "bar",
         }
         const recognition = {stop: jest.fn()}
-        cleanup(recognition, state, config, setState, timers)
+        cleanup(recognition, state, config, setState)
         expect(setState).toHaveBeenCalled()
         expect(config.onListeningChange).toHaveBeenCalledWith(false)
         expect(config.onTranscriptChange).toHaveBeenCalledWith("")
         expect(config.onSpeakingChange).toHaveBeenCalledWith(false)
-        expect(timers.silenceTimer).toBeNull()
         expect(recognition.stop).toHaveBeenCalled()
     })
 
@@ -155,14 +137,13 @@ describe("VoiceChat advanced", () => {
         const setState = jest.fn()
         const config = {onSendMessage: jest.fn(), onTranscriptChange: jest.fn()}
         const recognition = {stop: jest.fn(), start: jest.fn()}
-        const timers: {silenceTimer: ReturnType<typeof setTimeout> | null} = {silenceTimer: null}
-        await toggleListening(recognition, state, config, setState, timers)
+        await toggleListening(recognition, state, config, setState)
         expect(recognition.stop).toHaveBeenCalled()
         // Message sending is now handled by the onend handler, not immediately by toggleListening
         expect(config.onSendMessage).not.toHaveBeenCalled()
         // Now test start
         const state2: VoiceChatState = {...state, isListening: false}
-        await toggleListening(recognition, state2, config, setState, timers)
+        await toggleListening(recognition, state2, config, setState)
         expect(recognition.start).toHaveBeenCalled()
     })
 

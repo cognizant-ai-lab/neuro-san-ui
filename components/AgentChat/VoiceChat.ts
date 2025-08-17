@@ -36,8 +36,6 @@ export interface VoiceChatConfig {
     onTranscriptChange?: (transcript: string) => void
     onSpeakingChange?: (isSpeaking: boolean) => void
     onListeningChange?: (isListening: boolean) => void
-    autoSpeakResponses?: boolean
-    silenceTimeout?: number
 }
 
 export interface VoiceChatState {
@@ -90,8 +88,7 @@ const requestMicrophonePermission = async (): Promise<boolean> => {
 // Factory function to create speech recognition
 export const createSpeechRecognition = (
     config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void,
-    timers: {silenceTimer: ReturnType<typeof setTimeout> | null}
+    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
 ) => {
     if (!checkSpeechSupport()) return undefined
 
@@ -118,8 +115,6 @@ export const createSpeechRecognition = (
                 isListening: false,
             }
         })
-
-        clearSilenceTimer(timers)
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -135,9 +130,6 @@ export const createSpeechRecognition = (
             const newCurrentTranscript = newFinalTranscript + interimTranscript
 
             config.onTranscriptChange?.(newCurrentTranscript)
-
-            // No automatic timeout - only stop when user manually toggles the button
-            clearSilenceTimer(timers)
 
             return {
                 ...prev,
@@ -173,14 +165,6 @@ const processRecognitionResult = (event: SpeechRecognitionEvent) => {
     return {interimTranscript, finalTranscript}
 }
 
-// Utility functions for timers
-export const clearSilenceTimer = (timers: {silenceTimer: ReturnType<typeof setTimeout> | null}) => {
-    if (timers.silenceTimer) {
-        clearTimeout(timers.silenceTimer)
-        timers.silenceTimer = null
-    }
-}
-
 // Pure function to stop speech synthesis
 export const stopSpeechSynthesis = () => {
     if ("speechSynthesis" in window) {
@@ -194,7 +178,7 @@ const createSpeechUtterance = (
     config: VoiceChatConfig,
     setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
 ) => {
-    if (!("speechSynthesis" in window) || !config.autoSpeakResponses) return null
+    if (!("speechSynthesis" in window)) return null
 
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
@@ -225,8 +209,7 @@ export const toggleListening = async (
     recognition: unknown,
     state: VoiceChatState,
     config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void,
-    timers: {silenceTimer: ReturnType<typeof setTimeout> | null}
+    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
 ) => {
     if (!state.speechSupported || !recognition) return
 
@@ -237,7 +220,6 @@ export const toggleListening = async (
 
     if (state.isListening) {
         // Stop listening
-        clearSilenceTimer(timers)
         if (recognition && typeof recognition === "object" && "stop" in recognition) {
             ;(recognition as {stop: () => void}).stop()
         }
@@ -269,13 +251,11 @@ export const cleanup = (
     recognition: unknown,
     _state: VoiceChatState,
     config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void,
-    timers: {silenceTimer: ReturnType<typeof setTimeout> | null}
+    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
 ) => {
     if (recognition && typeof recognition === "object" && "stop" in recognition) {
         ;(recognition as {stop: () => void}).stop()
     }
-    clearSilenceTimer(timers)
     stopSpeechSynthesis()
     setState((prev) => ({
         ...prev,

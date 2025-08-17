@@ -277,10 +277,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
     const voiceRefs = useRef<{
         recognition: unknown | null
-        timers: {silenceTimer: ReturnType<typeof setTimeout> | null}
     }>({
         recognition: null,
-        timers: {silenceTimer: null},
     })
 
     // Define styles based on user options (wrap setting)
@@ -362,9 +360,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         setShowThinking(false)
     }, [neuroSanURL])
 
-    // Initialize voice recognition
+    // Initialize voice recognition - only create once
     useEffect(() => {
-        if (voiceState.speechSupported) {
+        if (voiceState.speechSupported && !voiceRefs.current.recognition) {
             const voiceConfig: VoiceChatConfig = {
                 onSendMessage: (message: string) => {
                     handleSend(message)
@@ -378,25 +376,22 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 onListeningChange: (isListening) => {
                     setVoiceState((prev) => ({...prev, isListening}))
                 },
-                autoSpeakResponses: isMicOn,
             }
-            voiceRefs.current.recognition = createSpeechRecognition(
-                voiceConfig,
-                setVoiceState,
-                voiceRefs.current.timers
-            )
+            voiceRefs.current.recognition = createSpeechRecognition(voiceConfig, setVoiceState)
         }
         return () => {
-            const voiceConfig: VoiceChatConfig = {
-                onSendMessage: () => undefined,
-                onTranscriptChange: () => undefined,
-                onSpeakingChange: () => undefined,
-                onListeningChange: () => undefined,
-                autoSpeakResponses: false,
+            if (voiceRefs.current.recognition) {
+                const voiceConfig: VoiceChatConfig = {
+                    onSendMessage: () => undefined,
+                    onTranscriptChange: () => undefined,
+                    onSpeakingChange: () => undefined,
+                    onListeningChange: () => undefined,
+                }
+                cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState)
+                voiceRefs.current.recognition = null
             }
-            cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState, voiceRefs.current.timers)
         }
-    }, [isMicOn])
+    }, []) // Remove isMicOn dependency
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -551,7 +546,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             setVoiceState={setVoiceState}
             isAwaitingLlm={isAwaitingLlm}
             recognition={voiceRefs.current.recognition}
-            timers={voiceRefs.current.timers}
             onSendMessage={handleSend}
             onTranscriptChange={setChatInput}
         />

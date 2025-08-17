@@ -38,11 +38,6 @@ export interface MicrophoneButtonProps {
     recognition: unknown | null
 
     /**
-     * Timer references for voice recognition
-     */
-    timers: {silenceTimer: ReturnType<typeof setTimeout> | null}
-
-    /**
      * Callback when a message should be sent
      */
     onSendMessage: (message: string) => void
@@ -65,7 +60,6 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     setVoiceState,
     isAwaitingLlm,
     recognition,
-    timers,
     onSendMessage,
     onTranscriptChange,
 }) => {
@@ -73,49 +67,30 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
         const newMicState = !isMicOn
         onMicToggle(newMicState)
 
-        if (newMicState) {
-            // Starting voice mode - toggle listening
-            const voiceConfig: VoiceChatConfig = {
-                onSendMessage,
-                onTranscriptChange,
-                onSpeakingChange: (isSpeaking) => {
-                    setVoiceState((prev) => ({...prev, isSpeaking}))
-                },
-                onListeningChange: (isListening) => {
-                    setVoiceState((prev) => ({...prev, isListening}))
-                },
-                autoSpeakResponses: newMicState,
-            }
-
-            await toggleListening(recognition, voiceState, voiceConfig, setVoiceState, timers)
-        } else {
-            // Stopping voice mode - toggle listening off
-            const voiceConfig: VoiceChatConfig = {
-                onSendMessage,
-                onTranscriptChange,
-                onSpeakingChange: (isSpeaking) => {
-                    setVoiceState((prev) => ({...prev, isSpeaking}))
-                },
-                onListeningChange: (isListening) => {
-                    setVoiceState((prev) => ({...prev, isListening}))
-                },
-                autoSpeakResponses: false,
-            }
-
-            await toggleListening(recognition, voiceState, voiceConfig, setVoiceState, timers)
-
-            // Keep any transcript that was captured so user can review/edit before sending
+        const voiceConfig: VoiceChatConfig = {
+            onSendMessage,
+            onTranscriptChange,
+            onSpeakingChange: (isSpeaking) => {
+                setVoiceState((prev) => ({...prev, isSpeaking}))
+            },
+            onListeningChange: (isListening) => {
+                setVoiceState((prev) => ({...prev, isListening}))
+            },
         }
+
+        // Always call toggleListening - it will handle start/stop based on current state
+        await toggleListening(recognition, voiceState, voiceConfig, setVoiceState)
     }
 
     return (
         <LlmChatButton
             id="microphone-button"
+            data-testid="microphone-button"
             onClick={handleClick}
             sx={{
                 padding: "0.5rem",
                 right: 70,
-                backgroundColor: voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
+                backgroundColor: isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
                 opacity: voiceState.speechSupported ? 1 : 0.5,
             }}
             disabled={!voiceState.speechSupported || isAwaitingLlm}
