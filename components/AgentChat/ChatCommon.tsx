@@ -391,7 +391,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 voiceRefs.current.recognition = null
             }
         }
-    }, []) // Remove isMicOn dependency
+    }, [])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.

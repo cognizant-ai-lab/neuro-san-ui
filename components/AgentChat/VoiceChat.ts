@@ -46,7 +46,7 @@ export interface VoiceChatState {
     finalTranscript: string
 }
 
-// Pure function to check browser/platform support
+// Check browser/platform support
 export const checkSpeechSupport = (): boolean => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
         return false
@@ -59,7 +59,7 @@ export const checkSpeechSupport = (): boolean => {
     return isChrome && (isMacOS || isWindows)
 }
 
-// Pure function to request microphone permission
+// Request microphone permission
 const requestMicrophonePermission = async (): Promise<boolean> => {
     const isChrome = /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent)
     if (isChrome && "mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
@@ -148,7 +148,7 @@ export const createSpeechRecognition = (
     return recognition
 }
 
-// Pure function to process recognition results
+// Process speech results
 const processRecognitionResult = (event: SpeechRecognitionEvent) => {
     let interimTranscript = ""
     let finalTranscript = ""
@@ -165,7 +165,7 @@ const processRecognitionResult = (event: SpeechRecognitionEvent) => {
     return {interimTranscript, finalTranscript}
 }
 
-// Pure function to stop speech synthesis
+// Stop speech synthesis
 export const stopSpeechSynthesis = () => {
     if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel()
