@@ -5,17 +5,19 @@
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
-        "dev": "next dev --hostname 0.0.0.0 --port 3000",
-        "lint": "next lint",
-        "lint-summary": "next lint --format summary",
-        "lint-rules": "npx eslint --print-config jest.config.ts",
-        "build": "next build",
-        "start": "next start",
-        "unit_test": "jest '__tests__/components' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts",
-        "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
-        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
+        "build:app": "next build",
+        "build:lib": "yarn run clean && tsc --project tsconfig.build.json",
         "check-format": "prettier --check .",
+        "clean": "rm -rf dist",
+        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
+        "dev": "next dev --hostname 0.0.0.0 --port 3000",
         "generate": "build_scripts/do_openapi_generate.sh"
+        "integration_test": "jest '__tests__/integration' --config ./jest_integration.config.ts",
+        "lint": "next lint",
+        "lint-rules": "npx eslint --print-config jest.config.ts",
+        "lint-summary": "next lint --format summary",
+        "start": "next start",
+        "unit_test": "jest '__tests__/components' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts"
     },
     "dependencies": {
         "@emotion/react": "11.13.3",
