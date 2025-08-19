@@ -7,6 +7,6 @@
         "emitDeclarationOnly": false,
         "jsx": "react-jsx",
         "noEmit": false,
-        "outDir": "dist",
+        "outDir": "dist"
     }
 }
