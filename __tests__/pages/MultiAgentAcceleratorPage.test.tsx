@@ -262,16 +262,15 @@ describe("Multi Agent Accelerator Page", () => {
 
         expect(chatCommonMock).toHaveBeenCalled()
 
-        // Verify that the conversation object was passed with the correct agent
-        expect(conversationMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                agents: expect.any(Set),
-            })
-        )
+        // Verify that the conversation object was passed with the correct array
+        expect(conversationMock).toHaveBeenCalledWith(expect.any(Array))
 
-        // Verify the agents Set contains the expected agent
+        // Verify the conversations array contains the expected agent
         const conversationCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
-        expect(Array.from(conversationCall.agents)).toContain(TEST_AGENT_MATH_GUY)
+        const hasAgent = conversationCall.some((conv: {agents: Set<string>}) =>
+            Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY)
+        )
+        expect(hasAgent).toBe(true)
     })
 
     it("should handle receiving an end of conversation chat message", async () => {

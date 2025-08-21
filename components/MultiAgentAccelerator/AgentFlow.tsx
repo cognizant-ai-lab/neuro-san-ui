@@ -34,15 +34,15 @@ import {
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ConnectivityInfo} from "../../generated/neuro-san/OpenAPITypes"
-import {AgentConversations} from "../../hooks/useAgentConversations"
 import {usePreferences} from "../../state/Preferences"
+import {AgentConversation} from "../../utils/agentConversations"
 import {ZIndexLayers} from "../../utils/zIndexLayers"
 
 // #region: Types
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentsInNetwork: ConnectivityInfo[]
-    readonly currentConversations?: AgentConversations | null
+    readonly currentConversations?: AgentConversation[] | null
     readonly id: string
     readonly isAwaitingLlm?: boolean
 }
@@ -63,13 +63,13 @@ const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentCon
     }, [handleResize])
 
     // Save this as a mutable ref so child nodes see updates
-    const conversationsRef = useRef<AgentConversations | null>(currentConversations)
+    const conversationsRef = useRef<AgentConversation[] | null>(currentConversations)
 
     useEffect(() => {
         conversationsRef.current = currentConversations
     }, [currentConversations])
 
-    const getConversations = useCallback<() => AgentConversations | null>(
+    const getConversations = useCallback<() => AgentConversation[] | null>(
         () => conversationsRef.current,
         [conversationsRef.current]
     )

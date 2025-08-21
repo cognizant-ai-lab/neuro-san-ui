@@ -47,10 +47,13 @@ describe("AgentFlow", () => {
     const defaultProps: AgentFlowProps = {
         agentsInNetwork: network,
         id: "test-flow-id",
-        currentConversations: {
-            agents: new Set(["agent1"]),
-            startedAt: new Date(),
-        },
+        currentConversations: [
+            {
+                id: "test-conv-1",
+                agents: new Set(["agent1"]),
+                startedAt: new Date(),
+            },
+        ],
     }
 
     const renderAgentFlowComponent = (overrides = {}) => {
@@ -140,10 +143,13 @@ describe("AgentFlow", () => {
                 <AgentFlow
                     agentsInNetwork={network}
                     id="test-flow-id"
-                    currentConversations={{
-                        agents: new Set(["agent1", "agent3"]),
-                        startedAt: new Date(),
-                    }}
+                    currentConversations={[
+                        {
+                            id: "test-conv-2",
+                            agents: new Set(["agent1", "agent3"]),
+                            startedAt: new Date(),
+                        },
+                    ]}
                 />
             </ReactFlowProvider>
         )
@@ -201,10 +207,13 @@ describe("AgentFlow", () => {
     it("Should handle a Frontman-only network", async () => {
         const {container} = renderAgentFlowComponent({
             agentsInNetwork: [network[2]],
-            currentConversations: {
-                agents: new Set(["agent3"]),
-                startedAt: new Date(),
-            },
+            currentConversations: [
+                {
+                    id: "test-conv-frontman",
+                    agents: new Set(["agent3"]),
+                    startedAt: new Date(),
+                },
+            ],
         })
 
         const nodes = container.getElementsByClassName("react-flow__node")
@@ -236,10 +245,13 @@ describe("AgentFlow", () => {
                 <AgentFlow
                     agentsInNetwork={[network[2]]}
                     id="test-flow-id"
-                    currentConversations={{
-                        agents: new Set(["agent3"]),
-                        startedAt: new Date(),
-                    }}
+                    currentConversations={[
+                        {
+                            id: "test-conv-3",
+                            agents: new Set(["agent3"]),
+                            startedAt: new Date(),
+                        },
+                    ]}
                 />
             </ReactFlowProvider>
         )

@@ -8,8 +8,21 @@ import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ConnectivityInfo} from "../../generated/neuro-san/OpenAPITypes"
-import {AgentConversations} from "../../hooks/useAgentConversations"
+import {AgentConversation} from "../../utils/agentConversations"
 import {cleanUpAgentName} from "../AgentChat/Utils"
+
+// Helper function to check if two agents are in the same conversation
+const areAgentsInSameConversation = (
+    conversations: AgentConversation[] | null,
+    sourceAgent: string,
+    targetAgent: string
+): boolean => {
+    if (!conversations) return false
+
+    return conversations.some(
+        (conversation) => conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent)
+    )
+}
 
 // #region: Constants
 
@@ -76,7 +89,7 @@ const getEdgeProperties = (
 export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
-    getConversations: () => AgentConversations | null,
+    getConversations: () => AgentConversation[] | null,
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -163,8 +176,7 @@ export const layoutRadial = (
                     }
 
                     const conversations = getConversations()
-                    const isEdgeAnimated =
-                        conversations?.agents?.has(nodeId) && conversations?.agents?.has(graphNode.id)
+                    const isEdgeAnimated = areAgentsInSameConversation(conversations, nodeId, graphNode.id)
 
                     // Add edge from parent to node
                     if (!isAwaitingLlm || isEdgeAnimated) {
@@ -204,7 +216,7 @@ export const layoutRadial = (
 export const layoutLinear = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
-    getConversations: () => AgentConversations | null,
+    getConversations: () => AgentConversation[] | null,
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -246,8 +258,7 @@ export const layoutLinear = (
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
                 const conversations = getConversations()
-                const isEdgeAnimated =
-                    conversations?.agents?.has(parentNode) && conversations?.agents?.has(originOfNode)
+                const isEdgeAnimated = areAgentsInSameConversation(conversations, parentNode, originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
@@ -310,9 +321,7 @@ export const layoutLinear = (
     // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
     const conversations = getConversations()
     const filteredEdges = isAwaitingLlm
-        ? edgesInNetwork.filter(
-              (edge) => conversations?.agents?.has(edge.source) && conversations?.agents?.has(edge.target)
-          )
+        ? edgesInNetwork.filter((edge) => areAgentsInSameConversation(conversations, edge.source, edge.target))
         : edgesInNetwork
 
     return {nodes: nodesTmp, edges: filteredEdges}

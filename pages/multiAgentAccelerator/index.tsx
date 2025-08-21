@@ -13,9 +13,9 @@ import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
 import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/OpenAPITypes"
-import {useAgentConversations} from "../../hooks/useAgentConversations"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
+import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useAuthentication} from "../../utils/Authentication"
 import {useLocalStorage} from "../../utils/use_local_storage"
 
@@ -54,15 +54,11 @@ export default function MultiAgentAcceleratorPage() {
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
 
-    // Agent tracking custom hook
-    const {
-        agentCounts,
-        currentConversations,
-        isProcessing,
-        onChunkReceived,
-        onStreamingComplete: agentTrackingStreamingComplete,
-        onStreamingStarted: agentTrackingStreamingStarted,
-    } = useAgentConversations()
+    const agentCountsRef = useRef<Map<string, number>>(new Map())
+
+    const conversationsRef = useRef<AgentConversation[] | null>(null)
+
+    const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
 
     // Dark mode
     const {darkMode} = usePreferences()
@@ -157,21 +153,40 @@ export default function MultiAgentAcceleratorPage() {
         }
     }, [isAwaitingLlm])
 
-    const onStreamingStarted = useCallback((): void => {
-        // Reset agent tracking when streaming starts
-        agentTrackingStreamingStarted()
+    // Agent conversation event handlers
+    const onChunkReceived = useCallback(
+        (chunk: string): boolean => {
+            const result = processChatChunk(
+                chunk,
+                agentCountsRef.current,
+                (newCounts: Map<string, number>) => {
+                    agentCountsRef.current = newCounts
+                },
+                (newConversations: AgentConversation[] | null) => {
+                    conversationsRef.current = newConversations
+                    setCurrentConversations(newConversations) // Update state to trigger re-renders
+                },
+                conversationsRef.current
+            )
+            return result
+        },
+        [] // No dependencies - refs are stable
+    )
 
+    const onStreamingStarted = useCallback((): void => {
         // Show info popup only once per session
         if (!haveShownPopup) {
             sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
             setHaveShownPopup(true)
         }
-    }, [agentTrackingStreamingStarted, setHaveShownPopup, haveShownPopup])
+    }, [haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
-        // When streaming is complete, reset the tracking
-        agentTrackingStreamingComplete()
-    }, [agentTrackingStreamingComplete])
+        // When streaming is complete, clean up any refs and state
+        conversationsRef.current = null
+        agentCountsRef.current = new Map<string, number>()
+        setCurrentConversations(null)
+    }, [])
 
     const getLeftPanel = () => {
         return (
@@ -228,11 +243,11 @@ export default function MultiAgentAcceleratorPage() {
                         }}
                     >
                         <AgentFlow
-                            agentCounts={agentCounts}
+                            agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
-                            isAwaitingLlm={isAwaitingLlm || isProcessing}
+                            isAwaitingLlm={isAwaitingLlm}
                         />
                     </Box>
                 </ReactFlowProvider>

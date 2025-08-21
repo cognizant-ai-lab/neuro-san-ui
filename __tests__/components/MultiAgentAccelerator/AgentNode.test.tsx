@@ -80,10 +80,7 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     depth: 3,
-                    getConversations: () => ({
-                        agents: new Set<string>(),
-                        startedAt: new Date(),
-                    }),
+                    getConversations: () => [],
                 }}
             />
         )
@@ -116,10 +113,7 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     depth: 3,
-                    getConversations: () => ({
-                        agents: new Set<string>(),
-                        startedAt: new Date(),
-                    }),
+                    getConversations: () => [],
                     isAwaitingLlm,
                 }}
             />
