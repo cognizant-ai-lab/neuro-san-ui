@@ -99,9 +99,8 @@ const processAgentCompletion = (
     conversations: AgentConversation[],
     tools: string[],
     origins: readonly Origin[]
-): {updatedConversations: AgentConversation[]; conversationsChanged: boolean} => {
+): AgentConversation[] => {
     let updatedConversations = conversations
-    let conversationsChanged = false
 
     for (const tool of tools) {
         // Filter conversations with agent
@@ -123,12 +122,11 @@ const processAgentCompletion = (
                         updatedConversation
                     )
                 }
-                conversationsChanged = true
             }
         }
     }
 
-    return {updatedConversations, conversationsChanged}
+    return updatedConversations
 }
 
 export const processChatChunk = (
@@ -155,19 +153,9 @@ export const processChatChunk = (
 
         // Check if this is an AGENT message and if it's a final message, i.e. an end event
         if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-            const {updatedConversations, conversationsChanged} = processAgentCompletion(
-                currentConversations,
-                tools,
-                chatMessage.origin
-            )
+            const updatedConversations = processAgentCompletion(currentConversations, tools, chatMessage.origin)
 
-            // Always update conversations state to ensure UI re-renders
-            // If no changes were made, create a new array reference to trigger state update
-            const finalConversations =
-                !conversationsChanged && updatedConversations.length > 0
-                    ? [...updatedConversations]
-                    : updatedConversations
-            setCurrentConversations(finalConversations.length === 0 ? null : finalConversations)
+            setCurrentConversations(updatedConversations.length === 0 ? null : updatedConversations)
         } else {
             // Handle adding agents to conversations - each message creates a new conversation path
             let updatedConversations = [...(currentConversations || [])]
