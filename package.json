@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
@@ -33,8 +33,6 @@
         "next": "15.4.6",
         "next-auth": "5.0.0-beta.20",
         "notistack": "3.0.1",
-        "react": "18.2.0",
-        "react-dom": "18.2.0",
         "react-markdown": "9.0.1",
         "react-syntax-highlighter": "15.5.0",
         "reactflow": "11.10.2",
@@ -92,6 +90,7 @@
         "ts-prune": "0.10.3",
         "typescript": "5.9.2"
     },
+    "peerDependencies": {},
     "resolutions": {
         "@types/react": "18.2.0",
         "@types/react-dom": "18.2.18",
