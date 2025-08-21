@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
@@ -88,6 +88,7 @@
         "ts-jest": "29.4.1",
         "ts-node": "10.9.2",
         "ts-prune": "0.10.3",
+        "tsdown": "^0.14.1",
         "typescript": "5.9.2"
     },
     "peerDependencies": {},
