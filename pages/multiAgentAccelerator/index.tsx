@@ -170,7 +170,7 @@ export default function MultiAgentAcceleratorPage() {
             )
             return result
         },
-        [] // No dependencies - refs are stable
+        []
     )
 
     const onStreamingStarted = useCallback((): void => {

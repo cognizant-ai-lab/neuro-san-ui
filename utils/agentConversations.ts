@@ -94,7 +94,7 @@ export const addConversation = (
     return [...conversations, newConversation]
 }
 
-// Helper function to process agent completion and reduce nesting
+// Helper function to process agent completion
 const processAgentCompletion = (
     conversations: AgentConversation[],
     tools: string[],
@@ -104,8 +104,7 @@ const processAgentCompletion = (
     let conversationsChanged = false
 
     for (const tool of tools) {
-        // Remove this agent from ALL conversations it appears in
-        // This is important for the frontman which might be in multiple conversations
+        // Filter conversations with agent
         const conversationsWithAgent = updatedConversations.filter((conv) => conv.agents.has(tool))
 
         for (const conversation of conversationsWithAgent) {
@@ -137,7 +136,7 @@ export const processChatChunk = (
     agentCountsMap: Map<string, number>,
     setAgentCounts: (counts: Map<string, number>) => void,
     setCurrentConversations: (conversations: AgentConversation[] | null) => void,
-    currentConversations: AgentConversation[] = [] // last since this parameter has a default
+    currentConversations: AgentConversation[] = [] // default parameter, so needs to be last
 ): boolean => {
     try {
         // Get chat message if it's a known message type
