@@ -109,6 +109,12 @@
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/"
     },
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
     "files": [
         "dist"
     ],

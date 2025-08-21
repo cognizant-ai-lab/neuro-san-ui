@@ -67,7 +67,7 @@ interface SidebarProps {
 
 // #endregion: Types
 
-const Sidebar: FC<SidebarProps> = ({
+export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
     id,
@@ -397,5 +397,3 @@ const Sidebar: FC<SidebarProps> = ({
         </>
     )
 }
-
-export default Sidebar

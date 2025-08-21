@@ -50,7 +50,7 @@ export interface AgentFlowProps {
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentConversations, id, isAwaitingLlm}) => {
+export const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentConversations, id, isAwaitingLlm}) => {
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -440,5 +440,3 @@ const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentCon
         </Box>
     )
 }
-
-export default AgentFlow
