@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.15",
+    "version": "1.0.16",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
