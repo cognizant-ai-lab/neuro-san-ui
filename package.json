@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.17",
+    "version": "1.0.18",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
@@ -108,6 +108,10 @@
         "cross-spawn": "7.0.5"
     },
     "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cognizant-ai-lab/neuro-san-ui.git"
+    },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/"
     },
