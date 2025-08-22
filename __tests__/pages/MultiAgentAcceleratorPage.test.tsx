@@ -284,7 +284,9 @@ describe("Multi Agent Accelerator Page", () => {
 
         // Verify agent is in conversation
         expect(conversationMock).toHaveBeenCalled()
-        conversationMock.mockClear()
+
+        // Get the initial call count to track changes
+        const initialCallCount = conversationMock.mock.calls.length
 
         // End of conversation message for unrelated agent
         const endOfConversationDifferentAgent: ChatResponse = {
@@ -300,18 +302,28 @@ describe("Multi Agent Accelerator Page", () => {
             onChunkReceived(JSON.stringify(endOfConversationDifferentAgent))
         })
 
-        // Math guy conversation should still be active
-        // We should verify that Math Guy is still in the conversations, not just that the component rendered
-        const conversationCalls = conversationMock.mock.calls
-        if (conversationCalls.length > 0) {
-            const latestCall = conversationCalls[conversationCalls.length - 1][0]
-            if (latestCall && Array.isArray(latestCall)) {
-                const hasMathGuy = latestCall.some((conv: {agents: Set<string>}) =>
-                    conv.agents.has(TEST_AGENT_MATH_GUY)
-                )
-                expect(hasMathGuy).toBe(true)
-            }
+        // After processing unrelated agent's end-of-conversation, verify Math Guy is still active
+        // Force a component update by sending another Math Guy message to check current state
+        const verificationMessage: ChatResponse = {
+            response: {
+                type: ChatMessageType.AI,
+                text: "Verification message",
+                origin: [{tool: TEST_AGENT_MATH_GUY}],
+            },
         }
+
+        await act(async () => {
+            onChunkReceived(JSON.stringify(verificationMessage))
+        })
+
+        // Now we can verify Math Guy is still in the conversations
+        expect(conversationMock.mock.calls.length).toBeGreaterThan(initialCallCount)
+        const latestCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
+        expect(latestCall).toBeTruthy()
+        expect(Array.isArray(latestCall)).toBe(true)
+        const hasMathGuy = latestCall.some((conv: {agents: Set<string>}) => conv.agents.has(TEST_AGENT_MATH_GUY))
+        expect(hasMathGuy).toBe(true)
+
         conversationMock.mockClear()
 
         // Now the end of conversation message for the active agent
