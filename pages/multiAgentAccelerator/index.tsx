@@ -153,7 +153,6 @@ export default function MultiAgentAcceleratorPage() {
         }
     }, [isAwaitingLlm])
 
-    // Agent conversation event handlers
     const onChunkReceived = useCallback((chunk: string): boolean => {
         const result = processChatChunk(
             chunk,
