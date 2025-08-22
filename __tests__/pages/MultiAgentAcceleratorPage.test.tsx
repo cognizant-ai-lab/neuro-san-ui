@@ -7,8 +7,7 @@ import {forwardRef} from "react"
 
 import {AgentFlowProps} from "../../components/MultiAgentAccelerator/AgentFlow"
 import {testConnection} from "../../controller/agent/Agent"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {ChatResponse} from "../../generated/neuro-san/OpenAPITypes"
+import {ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
 import {withStrictMocks} from "../common/strictMocks"
@@ -309,7 +308,7 @@ describe("Multi Agent Accelerator Page", () => {
             response: {
                 type: ChatMessageType.AGENT,
                 text: "This is a test message",
-                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                structure: {total_tokens: 100},
                 origin: [{tool: TEST_AGENT_MATH_GUY}],
             },
         }

@@ -41,14 +41,14 @@ import {UserQueryDisplay} from "./UserQueryDisplay"
 import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {
     ChatContext,
     ChatMessage,
+    ChatMessageType,
     ConnectivityInfo,
     ConnectivityResponse,
     FunctionResponse,
-} from "../../generated/neuro-san/OpenAPITypes"
+} from "../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
@@ -256,7 +256,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     */
     const chatContext = useRef<ChatContext>(null)
 
-    const slyData = useRef<Record<string, never>>({})
+    const slyData = useRef<Record<string, unknown>>({})
 
     // Create a ref for the final answer element
     const finalAnswerRef = useRef<HTMLDivElement>(null)
@@ -723,10 +723,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     // It's a Neuro-san agent.
 
                     // Some coded tools (data generator...) expect the user name provided in slyData.
-                    const slyDataWithUserName = {...slyData.current, login: currentUser} as unknown as Record<
-                        string,
-                        never
-                    >
+                    const slyDataWithUserName = {...slyData.current, login: currentUser}
                     await sendChatQuery(
                         neuroSanURL,
                         controller?.current.signal,

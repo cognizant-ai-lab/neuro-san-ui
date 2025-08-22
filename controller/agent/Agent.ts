@@ -1,17 +1,20 @@
 /**
  * Controller module for interacting with the Agent LLM API.
  */
-// eslint-disable-next-line camelcase
-import {ApiPaths, ChatFilterChat_filter_type, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+
 import {
+    ApiPaths,
     ChatContext,
+    // eslint-disable-next-line camelcase
+    ChatFilterChat_filter_type,
     ChatMessage,
+    ChatMessageType,
     ChatRequest,
     ChatResponse,
     ConciergeResponse,
     ConnectivityResponse,
     FunctionResponse,
-} from "../../generated/neuro-san/OpenAPITypes"
+} from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest} from "../llm/LlmChat"
 
 /**
@@ -109,7 +112,7 @@ export async function sendChatQuery(
     targetAgent: string,
     callback: (chunk: string) => void,
     chatContext: ChatContext,
-    slyData: Record<string, never>,
+    slyData: Record<string, unknown>,
     userId: string
 ): Promise<ChatResponse> {
     // Create request
