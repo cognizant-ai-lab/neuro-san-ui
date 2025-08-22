@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
@@ -21,7 +21,11 @@
         "unit_test": "jest '__tests__/components' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts"
     },
     "dependencies": {
+        "@emotion/react": "11.13.3",
+        "@emotion/styled": "11.13.0",
         "@langchain/core": "0.2.36",
+        "@mui/icons-material": "6.1.9",
+        "@mui/material": "6.1.9",
         "dagre": "0.8.5",
         "debug": "4.3.4",
         "http-status": "1.7.3",
@@ -30,6 +34,8 @@
         "next": "15.4.6",
         "next-auth": "5.0.0-beta.20",
         "notistack": "3.0.1",
+        "react": "18.2.0",
+        "react-dom": "18.2.0",
         "react-markdown": "9.0.1",
         "react-syntax-highlighter": "15.5.0",
         "reactflow": "11.10.2",
@@ -75,6 +81,7 @@
         "eslint-plugin-react-hooks": "5.2.0",
         "eslint-plugin-testing-library": "7.6.3",
         "eslint-plugin-unicorn": "60.0.0",
+        "fix-esm-import-path": "^1.10.3",
         "globals": "16.3.0",
         "jest": "30.0.5",
         "jest-environment-jsdom": "30.0.5",
@@ -84,16 +91,8 @@
         "prettier": "3.6.2",
         "ts-jest": "29.4.1",
         "ts-node": "10.9.2",
-        "ts-prune": "0.10.3"
-    },
-    "peerDependencies": {
-        "@emotion/react": "^11.0.0",
-        "@emotion/styled": "^11.0.0",
-        "@mui/icons-material": "^6.0.0",
-        "@mui/material": "^6.0.0",
-        "react": "^18.0.0",
-        "react-dom": "^18.0.0",
-        "typescript": "^5.0.0"
+        "ts-prune": "0.10.3",
+        "typescript": "5.9.2"
     },
     "resolutions": {
         "@types/react": "18.2.0",
