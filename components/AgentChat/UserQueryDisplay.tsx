@@ -1,5 +1,4 @@
 import {styled} from "@mui/material"
-import NextImage from "next/image"
 
 import {DEFAULT_USER_IMAGE} from "../../const"
 import {usePreferences} from "../../state/Preferences"
@@ -41,14 +40,13 @@ export const UserQueryDisplay = ({
                 darkMode={darkMode}
                 id="user-query-container"
             >
-                <NextImage
+                <img
                     id="user-query-image"
                     src={userImage || DEFAULT_USER_IMAGE}
                     width={30}
                     height={30}
                     title={title}
                     alt=""
-                    unoptimized={true}
                 />
                 <span
                     id="user-query"

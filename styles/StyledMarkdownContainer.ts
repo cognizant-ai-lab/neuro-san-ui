@@ -1,5 +1,4 @@
-import {styled} from "@mui/material"
-import Box from "@mui/material/Box"
+import {Box, styled} from "@mui/material"
 
 export const StyledMarkdownContainer = styled(Box)(() => ({
     fontSize: "1rem",

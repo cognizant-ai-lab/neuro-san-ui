@@ -238,7 +238,18 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                     <ErrorBoundary id="error_boundary">
                         <Navbar
                             id="nav-bar"
-                            Logo={LOGO}
+                            logo={LOGO}
+                            query={undefined}
+                            pathname=""
+                            userInfo={{
+                                name: "",
+                                image: "",
+                            }}
+                            authenticationType=""
+                            signOut={function (): void {
+                                throw new Error("Function not implemented.")
+                            }}
+                            supportEmailAddress=""
                         />
                         <Container
                             id="body-container"

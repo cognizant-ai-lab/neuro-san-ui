@@ -5,7 +5,7 @@
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
-        "build:lib": "yarn run clean && tsc --project tsconfig.build.json && cp styles/globals.css dist/styles && yarn fix-esm-import-path dist",
+        "build:lib": "yarn run clean && tsc --project tsconfig.build.json && cp styles/globals.css dist/styles && yarn run fix-esm-import-path dist",
         "build:app": "next build",
         "build:lib": "yarn run clean && tsc --project tsconfig.build.json",
         "check-format": "prettier --check .",
@@ -81,7 +81,7 @@
         "eslint-plugin-react-hooks": "5.2.0",
         "eslint-plugin-testing-library": "7.6.3",
         "eslint-plugin-unicorn": "60.0.0",
-        "fix-esm-import-path": "^1.10.3",
+        "fix-esm-import-path": "1.10.3",
         "globals": "16.3.0",
         "jest": "30.0.5",
         "jest-environment-jsdom": "30.0.5",
