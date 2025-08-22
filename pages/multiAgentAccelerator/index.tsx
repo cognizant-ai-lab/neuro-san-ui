@@ -12,7 +12,7 @@ import {closeNotification, NotificationType, sendNotification} from "../../compo
 import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
 import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
-import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/OpenAPITypes"
+import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"

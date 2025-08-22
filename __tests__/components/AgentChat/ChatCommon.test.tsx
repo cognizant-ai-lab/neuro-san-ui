@@ -7,8 +7,7 @@ import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
-import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {ChatContext, ChatMessage, ChatResponse} from "../../../generated/neuro-san/OpenAPITypes"
+import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../common/strictMocks"
 
@@ -251,7 +250,7 @@ describe("ChatCommon", () => {
                 type: ChatMessageType.AGENT_FRAMEWORK,
                 text: testResponseText,
                 origin: [{tool: "testTool", instantiation_index: 1}],
-                sly_data: {answer: 42} as unknown as Record<string, never>,
+                sly_data: {answer: 42},
             },
         }
 

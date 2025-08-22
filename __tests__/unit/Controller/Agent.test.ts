@@ -7,9 +7,14 @@ import {
     TestConnectionResult,
 } from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
-// eslint-disable-next-line camelcase
-import {ApiPaths, ChatFilterChat_filter_type, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {ChatHistory, ChatRequest} from "../../../generated/neuro-san/OpenAPITypes"
+import {
+    ApiPaths,
+    // eslint-disable-next-line camelcase
+    ChatFilterChat_filter_type,
+    ChatHistory,
+    ChatMessageType,
+    ChatRequest,
+} from "../../../generated/neuro-san/NeuroSanClient"
 import {withStrictMocks} from "../../common/strictMocks"
 import {mockFetch} from "../../common/TestUtils"
 
@@ -77,7 +82,7 @@ describe("Controller/Agent/sendChatQuery", () => {
     const testUser = "test user"
     const chatContext = {chat_histories: [] as ChatHistory[]}
     // TODO: ugly cast due to how openapi-typescript generates object types. What to do here?
-    const slyData = {login: testUser} as unknown as Record<string, never>
+    const slyData = {login: testUser}
 
     const expectedRequestParams: ChatRequest = {
         chat_context: chatContext,

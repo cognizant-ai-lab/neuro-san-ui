@@ -226,7 +226,7 @@ describe("agentConversations", () => {
             mockChatMessageFromChunk.mockReturnValue({
                 type: ChatMessageType.AGENT,
                 origin: mockOriginFinal,
-                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                structure: {total_tokens: 100},
                 text: "",
             })
 
@@ -255,7 +255,7 @@ describe("agentConversations", () => {
             mockChatMessageFromChunk.mockReturnValue({
                 type: ChatMessageType.AGENT,
                 origin: mockOriginFinal,
-                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                structure: {total_tokens: 100},
                 text: "",
             })
 

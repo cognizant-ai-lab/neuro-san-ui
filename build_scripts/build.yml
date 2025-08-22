@@ -17,14 +17,6 @@ steps:
         - yarn install
         - ./build_scripts/do_openapi_generate.sh
 
-    generate_openapi_types:
-      title: Generate Typescript types for OpenAPI
-      image: node:${{NODEJS_VERSION}}-alpine
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
-      commands:
-        - yarn install
-        - npx tsx ./build_scripts/GenerateOpenAPITypes.ts
-
     prebuild:
       title: Run prebuild step for custom build
       description: Pare down the code to build sub-sets of the ui
