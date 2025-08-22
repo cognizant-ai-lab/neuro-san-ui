@@ -1,10 +1,11 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
+        "build:lib": "yarn run clean && tsc --project tsconfig.build.json",
         "build:app": "next build",
         "build:lib": "yarn run clean && tsc --project tsconfig.build.json",
         "check-format": "prettier --check .",
