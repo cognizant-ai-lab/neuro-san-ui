@@ -310,10 +310,9 @@ describe("agentConversations", () => {
             mockChatMessageFromChunk.mockReturnValue({
                 type: ChatMessageType.AGENT,
                 origin: [{tool: "frontman", instantiation_index: 0}],
-                text: "Task completed",
-                structure: {total_tokens: 150},
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any)
+                text: "",
+                structure: {total_tokens: 150} as unknown as Record<string, never>,
+            })
 
             processChatChunk(
                 "end chat chunk",
@@ -350,10 +349,9 @@ describe("agentConversations", () => {
             mockChatMessageFromChunk.mockReturnValue({
                 type: ChatMessageType.AGENT,
                 origin: [{tool: "frontman", instantiation_index: 0}],
-                text: "Task completed",
-                structure: {total_tokens: 150},
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any)
+                text: "",
+                structure: {total_tokens: 150} as unknown as Record<string, never>,
+            })
 
             processChatChunk(
                 "end chat chunk",

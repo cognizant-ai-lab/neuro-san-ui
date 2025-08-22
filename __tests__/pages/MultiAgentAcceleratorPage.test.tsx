@@ -44,6 +44,14 @@ jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
 const chatCommonMock = jest.fn()
 const handleStopMock = jest.fn()
 
+const MATH_GUY_MESSAGE: ChatResponse = {
+    response: {
+        type: ChatMessageType.AI,
+        text: "This is a test message",
+        origin: [{tool: TEST_AGENT_MATH_GUY}],
+    },
+}
+
 let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => void
 let onStreamingStarted: () => void
@@ -73,14 +81,6 @@ const renderMultiAgentAcceleratorPage = () =>
             <MultiAgentAcceleratorPage />
         </SnackbarProvider>
     )
-
-const CONVERSATION_MESSAGE: ChatResponse = {
-    response: {
-        type: ChatMessageType.AI,
-        text: "This is a test message",
-        origin: [{tool: TEST_AGENT_MATH_GUY}],
-    },
-}
 
 describe("Multi Agent Accelerator Page", () => {
     withStrictMocks()
@@ -254,16 +254,13 @@ describe("Multi Agent Accelerator Page", () => {
         renderMultiAgentAcceleratorPage()
 
         // Simulate receiving a chat message
-        const mockChunk = JSON.stringify(CONVERSATION_MESSAGE)
+        const mockChunk = JSON.stringify(MATH_GUY_MESSAGE)
 
         await act(async () => {
             onChunkReceived(mockChunk)
         })
 
         expect(chatCommonMock).toHaveBeenCalled()
-
-        // Verify that the conversation object was passed with the correct array
-        expect(conversationMock).toHaveBeenCalledWith(expect.any(Array))
 
         // Verify the conversations array contains the expected agent
         const conversationCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
@@ -277,16 +274,13 @@ describe("Multi Agent Accelerator Page", () => {
         renderMultiAgentAcceleratorPage()
 
         // Set up one active agent
-        const activeAgentChunk = JSON.stringify(CONVERSATION_MESSAGE)
+        const activeAgentChunk = JSON.stringify(MATH_GUY_MESSAGE)
         await act(async () => {
             onChunkReceived(activeAgentChunk)
         })
 
-        // Verify agent is in conversation
+        // Verify the conversation mock was called
         expect(conversationMock).toHaveBeenCalled()
-
-        // Get the initial call count to track changes
-        const initialCallCount = conversationMock.mock.calls.length
 
         // End of conversation message for unrelated agent
         const endOfConversationDifferentAgent: ChatResponse = {
@@ -298,29 +292,13 @@ describe("Multi Agent Accelerator Page", () => {
                 origin: [{tool: "Definitely not math guy"}],
             },
         }
+
         await act(async () => {
             onChunkReceived(JSON.stringify(endOfConversationDifferentAgent))
         })
 
-        // After processing unrelated agent's end-of-conversation, verify Math Guy is still active
-        // Force a component update by sending another Math Guy message to check current state
-        const verificationMessage: ChatResponse = {
-            response: {
-                type: ChatMessageType.AI,
-                text: "Verification message",
-                origin: [{tool: TEST_AGENT_MATH_GUY}],
-            },
-        }
-
-        await act(async () => {
-            onChunkReceived(JSON.stringify(verificationMessage))
-        })
-
-        // Now we can verify Math Guy is still in the conversations
-        expect(conversationMock.mock.calls.length).toBeGreaterThan(initialCallCount)
+        // Verify Math Guy is still in the conversations
         const latestCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
-        expect(latestCall).toBeTruthy()
-        expect(Array.isArray(latestCall)).toBe(true)
         const hasMathGuy = latestCall.some((conv: {agents: Set<string>}) => conv.agents.has(TEST_AGENT_MATH_GUY))
         expect(hasMathGuy).toBe(true)
 
@@ -331,11 +309,11 @@ describe("Multi Agent Accelerator Page", () => {
             response: {
                 type: ChatMessageType.AGENT,
                 text: "This is a test message",
-                // One of "hints" for end of conversation is having a structure field containing total_tokens
                 structure: {total_tokens: 100} as unknown as Record<string, never>,
                 origin: [{tool: TEST_AGENT_MATH_GUY}],
             },
         }
+
         await act(async () => {
             onChunkReceived(JSON.stringify(chatMessage))
         })
