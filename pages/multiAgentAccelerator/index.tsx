@@ -162,7 +162,7 @@ export default function MultiAgentAcceleratorPage() {
             },
             (newConversations: AgentConversation[] | null) => {
                 conversationsRef.current = newConversations
-                setCurrentConversations(newConversations) // Update state to trigger re-renders
+                setCurrentConversations(newConversations)
             },
             conversationsRef.current
         )
