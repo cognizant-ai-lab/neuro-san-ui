@@ -66,7 +66,7 @@ describe("NavBar", () => {
     const defaultNavbar = (
         <Navbar
             id="mock-id"
-            Logo="mock-title"
+            logo="mock-title"
         />
     )
 
