@@ -1,54 +1,54 @@
 #This pipeline is designed to automate the process of updating image versions within a kubernates YAML configuration file.
-#It takes advantage of command-line arguments to dynamically receive input parameters, 
-#including the path to the YAML file that needs updating, a Docker registry path, 
-#a JSON file containing a list of image names, and the new image version to be applied. 
-#The script operates in two main stages: parsing the input arguments to construct a configuration dictionary and 
+#It takes advantage of command-line arguments to dynamically receive input parameters,
+#including the path to the YAML file that needs updating, a Docker registry path,
+#a JSON file containing a list of image names, and the new image version to be applied.
+#The script operates in two main stages: parsing the input arguments to construct a configuration dictionary and
 #then using this configuration to update the specified image versions in the YAML file.
 
-version: '1.0'
+version: "1.0"
 steps:
-  clone:
-    title: "Cloning repository"
-    type: "git-clone"
-    repo: "leaf-ai/neuro-ui"
-    git: "github"
-    # Supply the tag, git sha or branch name via CF variable.
-    revision: ${{UNILEAF_VERSION}}
+    clone:
+        title: "Cloning repository"
+        type: "git-clone"
+        repo: "leaf-ai/neuro-ui"
+        git: "github"
+        # Supply the tag, git sha or branch name via CF variable.
+        revision: ${{UNILEAF_VERSION}}
 
-  clone_manifest:
-    title: "Cloning manifest repository"
-    type: "git-clone"
-    repo: "leaf-ai/manifest"
-    git: "github"
-    revision: "main"
+    clone_manifest:
+        title: "Cloning manifest repository"
+        type: "git-clone"
+        repo: "leaf-ai/manifest"
+        git: "github"
+        revision: "main"
 
-  update_deployment_manifest:
-    title: Deploy release to kubernetes
-    image: python:${{DEFAULT_NEUROAI_PYTHON_VERSION}}-slim
-    working_directory: ${{CF_VOLUME_PATH}}/${{MANIFEST_PATH}}
-    commands:
-        # The values for DEPLOY_ENV and UNILEAF_VERSION
-        # are passed in as pipeline variables from other
-        # pipelines or manually as needed.
-        # DEPLOY_ENV matches the naming convention of 
-        # values-* files as either
-        # dev, staging or prod
-        - pip install pyyaml
-        - >-
-          python3 deploy_to_cluster.py 
-          --file-path ../values-${{DEPLOY_ENV}}.yaml 
-          --tag-overwrite uiNode=${{UNILEAF_VERSION}}
+    update_deployment_manifest:
+        title: Deploy release to kubernetes
+        image: python:${{DEFAULT_NEUROAI_PYTHON_VERSION}}-slim
+        working_directory: ${{CF_VOLUME_PATH}}/${{MANIFEST_PATH}}
+        commands:
+            # The values for DEPLOY_ENV and UNILEAF_VERSION
+            # are passed in as pipeline variables from other
+            # pipelines or manually as needed.
+            # DEPLOY_ENV matches the naming convention of
+            # values-* files as either
+            # dev, staging or prod
+            - pip install pyyaml
+            - >-
+                python3 deploy_to_cluster.py 
+                --file-path ../values-${{DEPLOY_ENV}}.yaml 
+                --tag-overwrite uiNode=${{UNILEAF_VERSION}}
 
-  commit_and_push:
-    title: Commit changes and push
-    type: git-commit
-    arguments:
-      repo: "leaf-ai/manifest"
-      git: github
-      working_directory: '${{CF_VOLUME_PATH}}/manifest'
-      commit_message: "Update image version: ${{UNILEAF_VERSION}} from ${{CF_BUILD_ID}}"
-      git_user_name: nick-cognizant
-      git_user_email: hao.fu@cognizant.com
-      allow_empty: false
-      rebase: true
-      base_branch: main
+    commit_and_push:
+        title: Commit changes and push
+        type: git-commit
+        arguments:
+            repo: "leaf-ai/manifest"
+            git: github
+            working_directory: "${{CF_VOLUME_PATH}}/manifest"
+            commit_message: "Update image version: ${{UNILEAF_VERSION}} from ${{CF_BUILD_ID}}"
+            git_user_name: nick-cognizant
+            git_user_email: hao.fu@cognizant.com
+            allow_empty: false
+            rebase: true
+            base_branch: main

@@ -253,12 +253,7 @@ const config = [
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: [
-                        "__tests__/**",
-                        "jest*.*",
-                        "eslint.config.mjs",
-                        "build_scripts/GenerateOpenAPITypes.ts",
-                    ],
+                    devDependencies: ["__tests__/**", "jest*.*", "eslint.config.mjs"],
                 },
             ],
 
