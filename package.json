@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.22",
+    "version": "1.0.23",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
@@ -21,11 +21,13 @@
         "unit_test": "jest '__tests__/components' '__tests__/pages' '__tests__/unit' --config ./jest_unit.config.ts"
     },
     "dependencies": {
+        "@emotion/cache": "11.14.0",
         "@emotion/react": "11.13.3",
         "@emotion/styled": "11.13.0",
         "@langchain/core": "0.2.36",
-        "@mui/icons-material": "6.1.9",
+        "@mui/icons-material": "7.3.1",
         "@mui/material": "6.1.9",
+        "@mui/material-nextjs": "7.3.0",
         "dagre": "0.8.5",
         "debug": "4.3.4",
         "http-status": "1.7.3",
