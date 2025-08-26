@@ -4,7 +4,7 @@ import "../styles/globals.css"
 
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
-import {startCase} from "lodash"
+import startCase from "lodash-es/startCase.js"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"

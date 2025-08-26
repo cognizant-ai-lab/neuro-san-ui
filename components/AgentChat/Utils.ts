@@ -1,4 +1,5 @@
-import {capitalize, startCase} from "lodash"
+import capitalize from "lodash-es/capitalize.js"
+import startCase from "lodash-es/startCase.js"
 
 import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"

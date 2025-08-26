@@ -4,7 +4,7 @@
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
-import {Grid2 as Grid, IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
+import {Grid, IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
 import {MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "./confirmationModal"

@@ -67,6 +67,17 @@ describe("NavBar", () => {
         <Navbar
             id="mock-id"
             logo="mock-title"
+            query={undefined}
+            pathname={""}
+            userInfo={{
+                name: "",
+                image: "",
+            }}
+            authenticationType={""}
+            signOut={function (): void {
+                throw new Error("Function not implemented.")
+            }}
+            supportEmailAddress={""}
         />
     )
 

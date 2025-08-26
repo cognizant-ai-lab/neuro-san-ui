@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
-import {Breadcrumbs, Grid2 as Grid, Typography} from "@mui/material"
-import {startCase} from "lodash"
+import {Breadcrumbs, Grid, Typography} from "@mui/material"
+import startCase from "lodash-es/startCase.js"
 
 interface NeuroAIBreadcrumbsProps {
     readonly pathname?: string
