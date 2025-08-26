@@ -1,5 +1,7 @@
 import {StopCircle} from "@mui/icons-material"
-import {Box, Grid, Slide} from "@mui/material"
+import Box from "@mui/material/Box"
+import Grid from "@mui/material/Grid"
+import Slide from "@mui/material/Slide"
 import {useCallback, useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 

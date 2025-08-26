@@ -1,9 +1,9 @@
-import {Box} from "@mui/material"
+import Box from "@mui/material/Box"
 import {ReactElement} from "react"
 
-// import {LOGO} from "../../const"
-// import {NeuroAIBreadcrumbs} from "../Common/breadcrumbs"
-// import {Navbar} from "../Common/Navbar"
+import {LOGO} from "../../const"
+import {NeuroAIBreadcrumbs} from "../Common/breadcrumbs"
+import {Navbar} from "../Common/Navbar"
 
 interface ErrorPageProps {
     id: string
@@ -18,26 +18,26 @@ interface ErrorPageProps {
 export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement {
     return (
         <>
-            {/*<Navbar*/}
-            {/*    id="navbar-id"*/}
-            {/*    logo={LOGO}*/}
-            {/*    query={undefined}*/}
-            {/*    pathname=""*/}
-            {/*    userInfo={{*/}
-            {/*        name: "",*/}
-            {/*        image: "",*/}
-            {/*    }}*/}
-            {/*    authenticationType=""*/}
-            {/*    signOut={() => {*/}
-            {/*        // Do nothing: temp*/}
-            {/*    }}*/}
-            {/*    supportEmailAddress=""*/}
-            {/*/>*/}
+            <Navbar
+                id="navbar-id"
+                logo={LOGO}
+                query={undefined}
+                pathname=""
+                userInfo={{
+                    name: "",
+                    image: "",
+                }}
+                authenticationType=""
+                signOut={function (): void {
+                    throw new Error("Function not implemented.")
+                }}
+                supportEmailAddress=""
+            />
             <Box
                 id={id}
                 sx={{marginLeft: "1rem"}}
             >
-                {/*<NeuroAIBreadcrumbs />*/}
+                <NeuroAIBreadcrumbs />
                 <h4
                     id="error-header"
                     style={{color: "var(--bs-red)", marginTop: "1rem"}}

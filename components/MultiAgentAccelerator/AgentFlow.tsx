@@ -1,7 +1,10 @@
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
-import {Box, ToggleButton, ToggleButtonGroup, Tooltip, Typography} from "@mui/material"
+import {ToggleButton, ToggleButtonGroup} from "@mui/material"
+import Box from "@mui/material/Box"
+import Tooltip from "@mui/material/Tooltip"
+import Typography from "@mui/material/Typography"
 import {FC, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {
     applyNodeChanges,

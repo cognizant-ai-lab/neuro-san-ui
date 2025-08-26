@@ -2,14 +2,17 @@
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {
-    AccountTree as AccountTreeIcon,
-    Clear as ClearIcon,
-    Close as CloseIcon,
-    VerticalAlignBottom as VerticalAlignBottomIcon,
-    WrapText as WrapTextIcon,
-} from "@mui/icons-material"
-import {Box, CircularProgress, IconButton, Input, InputAdornment, Tooltip, Typography} from "@mui/material"
+import AccountTreeIcon from "@mui/icons-material/AccountTree"
+import ClearIcon from "@mui/icons-material/Clear"
+import CloseIcon from "@mui/icons-material/Close"
+import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
+import WrapTextIcon from "@mui/icons-material/WrapText"
+import {Box, Input} from "@mui/material"
+import CircularProgress from "@mui/material/CircularProgress"
+import IconButton from "@mui/material/IconButton"
+import InputAdornment from "@mui/material/InputAdornment"
+import Tooltip from "@mui/material/Tooltip"
+import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
 import {
     cloneElement,

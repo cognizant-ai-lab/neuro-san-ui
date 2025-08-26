@@ -1,5 +1,7 @@
 import CloseIcon from "@mui/icons-material/Close"
-import {Box, IconButton, styled} from "@mui/material"
+import {styled} from "@mui/material"
+import Box from "@mui/material/Box"
+import IconButton from "@mui/material/IconButton"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef} from "react"
 

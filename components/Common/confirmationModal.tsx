@@ -1,4 +1,6 @@
-import {Box, Button, styled} from "@mui/material"
+import {styled} from "@mui/material"
+import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
 import {FC, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"

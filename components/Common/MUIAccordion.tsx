@@ -1,15 +1,9 @@
 import ArrowForwardIosSharpIcon from "@mui/icons-material/ArrowForwardIosSharp"
-import {
-    AccordionProps,
-    accordionSummaryClasses,
-    AccordionSummaryProps,
-    Accordion as MuiAccordion,
-    AccordionDetails as MuiAccordionDetails,
-    AccordionSummary as MuiAccordionSummary,
-    styled,
-    SxProps,
-    Typography,
-} from "@mui/material"
+import {styled, SxProps} from "@mui/material"
+import MuiAccordion, {AccordionProps} from "@mui/material/Accordion"
+import MuiAccordionDetails from "@mui/material/AccordionDetails"
+import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} from "@mui/material/AccordionSummary"
+import Typography from "@mui/material/Typography"
 import {FC, ReactNode, SyntheticEvent, useCallback, useState} from "react"
 
 import {usePreferences} from "../../state/Preferences"
