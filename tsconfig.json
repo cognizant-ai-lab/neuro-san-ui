@@ -45,7 +45,6 @@
     "incremental": true
   },
   "include": [
-    "**/*.cjs",
     "**/*.js",
     "**/*.mjs",
     "**/*.ts",
