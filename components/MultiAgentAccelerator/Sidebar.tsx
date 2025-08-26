@@ -249,7 +249,11 @@ export const Sidebar: FC<SidebarProps> = ({
                         >
                             <ListItemText
                                 id={`${network}-text`}
-                                primaryTypographyProps={{fontSize: "0.75rem"}}
+                                slotProps={{
+                                    primary: {
+                                        fontSize: "0.75rem",
+                                    },
+                                }}
                                 primary={cleanUpAgentName(network)}
                             />
                         </ListItemButton>

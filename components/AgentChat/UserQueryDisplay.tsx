@@ -40,6 +40,7 @@ export const UserQueryDisplay = ({
                 darkMode={darkMode}
                 id="user-query-container"
             >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     id="user-query-image"
                     src={userImage || DEFAULT_USER_IMAGE}

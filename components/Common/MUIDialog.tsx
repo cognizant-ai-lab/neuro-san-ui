@@ -51,7 +51,9 @@ export const MUIDialog: FC<MUIDialogProps> = ({
         onClose={onClose}
         open={isOpen}
         className={className}
-        PaperProps={paperProps}
+        slotProps={{
+            paper: {sx: paperProps},
+        }}
     >
         <StyledDialogTitle id={`${id}-title`}>{title}</StyledDialogTitle>
         {closeable && (

@@ -10,4 +10,4 @@ export const HLJS_THEMES = {
     a11yLight,
     atelierDuneDark,
     docco,
-} as any
+}
