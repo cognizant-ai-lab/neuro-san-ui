@@ -84,7 +84,7 @@ export default function MultiAgentAcceleratorPage() {
         async function getNetworks() {
             try {
                 const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
-                const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
+                const sortedNetworks = networksTmp?.sort((a, b) => a.localeCompare(b))
                 setNetworks(sortedNetworks)
                 // Set the first network as the selected network
                 setSelectedNetwork(sortedNetworks[0])
@@ -154,7 +154,7 @@ export default function MultiAgentAcceleratorPage() {
     }, [isAwaitingLlm])
 
     const onChunkReceived = useCallback((chunk: string): boolean => {
-        const result = processChatChunk(
+        return processChatChunk(
             chunk,
             agentCountsRef.current,
             (newCounts: Map<string, number>) => {
@@ -166,7 +166,6 @@ export default function MultiAgentAcceleratorPage() {
             },
             conversationsRef.current
         )
-        return result
     }, [])
 
     const onStreamingStarted = useCallback((): void => {

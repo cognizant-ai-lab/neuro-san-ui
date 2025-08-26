@@ -6,7 +6,7 @@ import {SnackbarProvider} from "notistack"
 import {forwardRef} from "react"
 
 import {AgentFlowProps} from "../../components/MultiAgentAccelerator/AgentFlow"
-import {testConnection} from "../../controller/agent/Agent"
+import {getAgentNetworks, testConnection} from "../../controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
@@ -28,12 +28,11 @@ jest.mock("next-auth/react")
 
 jest.mock("../../controller/agent/Agent")
 
-// AgentFlow mock
 const conversationMock = jest.fn()
 
 jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
-    default: (props: AgentFlowProps) => {
+    AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
         return <div data-testid="mock-agent-flow" />
     },
@@ -56,6 +55,7 @@ let onChunkReceived: (chunk: string) => void
 let onStreamingStarted: () => void
 
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
+    __esModule: true,
     ChatCommon: forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
         chatCommonMock(props)
         setIsAwaitingLlm = props.setIsAwaitingLlm
@@ -92,9 +92,7 @@ describe("Multi Agent Accelerator Page", () => {
 
     beforeEach(() => {
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
-
-        const mockGetAgentNetworks = jest.requireMock("../../controller/agent/Agent").getAgentNetworks
-        mockGetAgentNetworks.mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
+        ;(getAgentNetworks as jest.Mock).mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
 
         const mockGetConnectivity = jest.requireMock("../../controller/agent/Agent").getConnectivity
         mockGetConnectivity.mockResolvedValue({

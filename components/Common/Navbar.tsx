@@ -73,7 +73,6 @@ export const Navbar = ({
     supportEmailAddress,
     userInfo,
 }: NavbarProps): JSX.Element => {
-    // Access environment info
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
@@ -161,7 +160,11 @@ export const Navbar = ({
                             bottom: "1px",
                             textDecoration: "none",
                         }}
-                        href={`/?${new URLSearchParams(query as Record<string, string>).toString()}`}
+                        href={
+                            Object.keys(query || {}).length > 0
+                                ? `/?${new URLSearchParams(query as Record<string, string>).toString()}`
+                                : "/"
+                        }
                     >
                         {logo} {pathname === "/multiAgentAccelerator" ? "Multi-Agent Accelerator" : "Decisioning"}
                     </a>

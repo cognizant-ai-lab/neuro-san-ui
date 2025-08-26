@@ -2,6 +2,7 @@
     "ignore-patterns": ["auth0/*", "generated/*"],
     "ignores": [
         "@babel/core",
+        "@babel/preset-env",
         "@jest/types",
         "@types/*",
         "depcheck",

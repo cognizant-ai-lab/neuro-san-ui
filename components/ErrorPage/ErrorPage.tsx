@@ -2,7 +2,7 @@ import Box from "@mui/material/Box"
 import {ReactElement} from "react"
 
 import {LOGO} from "../../const"
-import {NeuroAIBreadcrumbs} from "../Common/breadcrumbs"
+import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Navbar} from "../Common/Navbar"
 
 interface ErrorPageProps {

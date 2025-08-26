@@ -13,7 +13,7 @@ import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
 import {Auth} from "../components/Authentication/Auth"
-import {NeuroAIBreadcrumbs} from "../components/Common/breadcrumbs"
+import {NeuroAIBreadcrumbs} from "../components/Common/Breadcrumbs"
 import {Navbar} from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
 import {ErrorBoundary} from "../components/ErrorPage/ErrorBoundary"

@@ -48,6 +48,7 @@ export const UserQueryDisplay = ({
                     height={30}
                     title={title}
                     alt=""
+                    role="img"
                 />
                 <span
                     id="user-query"

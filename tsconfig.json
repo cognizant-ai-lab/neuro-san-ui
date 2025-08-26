@@ -42,14 +42,16 @@
         "name": "next"
       }
     ],
+    "incremental": true
   },
   "include": [
+    "**/*.cjs",
     "**/*.js",
     "**/*.mjs",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next-env.d.ts",
+    "next-env.d.ts"
   ],
   "exclude": [
     "node_modules",
