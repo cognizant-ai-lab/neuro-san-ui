@@ -5,9 +5,8 @@
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
-        "build:lib": "yarn run clean && tsc --project tsconfig.build.json && cp styles/globals.css dist/styles && yarn run fix-esm-import-path dist",
         "build:app": "next build",
-        "build:lib": "yarn run clean && tsc --project tsconfig.build.json",
+        "build:lib": "yarn run clean && tsc --project tsconfig.build.json && cp styles/globals.css dist/styles",
         "check-format": "prettier --check .",
         "clean": "rm -rf dist",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
