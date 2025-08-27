@@ -1,7 +1,11 @@
 import Box from "@mui/material/Box"
+import {useRouter} from "next/router"
 import {ReactElement} from "react"
 
 import {LOGO} from "../../const"
+import useEnvironmentStore from "../../state/environment"
+import useUserInfoStore from "../../state/UserInfo"
+import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Navbar} from "../Common/Navbar"
 
@@ -16,22 +20,38 @@ interface ErrorPageProps {
  * @param errorText Error text to be displayed
  */
 export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement {
+    const {auth0ClientId, auth0Domain, supportEmailAddress} = useEnvironmentStore()
+
+    // Access NextJS router
+    const router = useRouter()
+
+    // Access user info store
+    const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
+
+    // Infer authentication type
+    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
+
+    const {data: {user: userInfo} = {}} = useAuthentication()
+
+    async function handleSignOut() {
+        // Clear our state storage variables
+        setCurrentUser(undefined)
+        setPicture(undefined)
+
+        await smartSignOut(currentUser, auth0Domain, auth0ClientId, oidcProvider)
+    }
+
     return (
         <>
             <Navbar
-                id="navbar-id"
+                id="nav-bar"
                 logo={LOGO}
-                query={undefined}
-                pathname=""
-                userInfo={{
-                    name: "",
-                    image: "",
-                }}
-                authenticationType=""
-                signOut={function (): void {
-                    throw new Error("Function not implemented.")
-                }}
-                supportEmailAddress=""
+                query={router.query}
+                pathname={router.pathname}
+                authenticationType={authenticationType}
+                signOut={handleSignOut}
+                supportEmailAddress={supportEmailAddress}
+                userInfo={userInfo}
             />
             <Box
                 id={id}

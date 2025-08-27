@@ -20,7 +20,7 @@ import {usePreferences} from "../../state/Preferences"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 
 // Declare the Props Interface
-interface NavbarProps {
+export interface NavbarProps {
     // id is a string handle to the element used for testing
     readonly id: string
 

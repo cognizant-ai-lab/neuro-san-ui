@@ -14,7 +14,7 @@ import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
 import {Auth} from "../components/Authentication/Auth"
 import {NeuroAIBreadcrumbs} from "../components/Common/Breadcrumbs"
-import {Navbar} from "../components/Common/Navbar"
+import {Navbar, NavbarProps} from "../components/Common/Navbar"
 import {Snackbar} from "../components/Common/Snackbar"
 import {ErrorBoundary} from "../components/ErrorPage/ErrorBoundary"
 import {LOGO} from "../const"
@@ -22,6 +22,7 @@ import useEnvironmentStore from "../state/environment"
 import {usePreferences} from "../state/Preferences"
 import useUserInfoStore from "../state/UserInfo"
 import {APP_THEME, BRAND_COLORS} from "../theme"
+import {smartSignOut, useAuthentication} from "../utils/Authentication"
 import {UserInfoResponse} from "./api/userInfo/types"
 import {LoadingSpinner} from "../components/Common/LoadingSpinner"
 import {getTitleBase} from "../utils/title"
@@ -44,15 +45,47 @@ const debug = debugModule("app")
 
 const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 
+/**
+ * Utility component to pass user data along to Navbar. We have to make this a separate component because we need
+ * to use useAuthentication for this, and "rules of hooks" apply.
+ * @param props All props for Navbar except userInfo.
+ * @return Navbar with userInfo passed to it.
+ */
+function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
+    const {data} = useAuthentication()
+    const userInfo = data?.user
+    return (
+        <Navbar
+            {...props}
+            userInfo={userInfo}
+        />
+    )
+}
+
 // Main function.
 // Has to be export default for NextJS so tell ts-prune to ignore
 // ts-prune-ignore-next
+// eslint-disable-next-line react/no-multi-comp
 export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
-    const {backendNeuroSanApiUrl, setBackendNeuroSanApiUrl, setAuth0ClientId, setAuth0Domain, setSupportEmailAddress} =
-        useEnvironmentStore()
+    const {
+        auth0ClientId,
+        auth0Domain,
+        backendNeuroSanApiUrl,
+        setAuth0ClientId,
+        setAuth0Domain,
+        setBackendNeuroSanApiUrl,
+        setSupportEmailAddress,
+        supportEmailAddress,
+    } = useEnvironmentStore()
 
-    // access user info store
-    const {currentUser, setCurrentUser, setPicture, setOidcProvider} = useUserInfoStore()
+    // Access NextJS router
+    const router = useRouter()
+
+    // Access user info store
+    const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
+
+    // Infer authentication type
+    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
 
     const {pathname} = useRouter()
 
@@ -166,6 +199,14 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
         void getUserInfo()
     }, [])
 
+    async function handleSignOut() {
+        // Clear our state storage variables
+        setCurrentUser(undefined)
+        setPicture(undefined)
+
+        await smartSignOut(currentUser, auth0Domain, auth0ClientId, oidcProvider)
+    }
+
     let body: JSX.Element | ReactFragment
 
     /**
@@ -236,20 +277,14 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider session={session}>
                     <ErrorBoundary id="error_boundary">
-                        <Navbar
+                        <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
-                            query={undefined}
-                            pathname=""
-                            userInfo={{
-                                name: "",
-                                image: "",
-                            }}
-                            authenticationType=""
-                            signOut={function (): void {
-                                throw new Error("Function not implemented.")
-                            }}
-                            supportEmailAddress=""
+                            query={router.query}
+                            pathname={router.pathname}
+                            authenticationType={authenticationType}
+                            signOut={handleSignOut}
+                            supportEmailAddress={supportEmailAddress}
                         />
                         <Container
                             id="body-container"
