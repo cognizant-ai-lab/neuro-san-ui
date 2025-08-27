@@ -157,14 +157,14 @@ export default function MultiAgentAcceleratorPage() {
         const result = processChatChunk(
             chunk,
             agentCountsRef.current,
+            conversationsRef.current,
             (newCounts: Map<string, number>) => {
                 agentCountsRef.current = newCounts
             },
             (newConversations: AgentConversation[] | null) => {
                 conversationsRef.current = newConversations
                 setCurrentConversations(newConversations)
-            },
-            conversationsRef.current
+            }
         )
         return result
     }, [])
