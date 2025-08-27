@@ -33,9 +33,7 @@ describe("Navbar", () => {
                     image: "",
                 }}
                 authenticationType=""
-                signOut={function (): void {
-                    throw new Error("Function not implemented.")
-                }}
+                signOut={jest.fn()}
                 supportEmailAddress={MOCK_EMAIL_ADDRESS}
             />
         )
