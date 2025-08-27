@@ -83,7 +83,7 @@ const config = [
                     jsx: true,
                 },
 
-                project: ["./tsconfig.json"],
+                project: ["./tsconfig.base.json"],
             },
         },
 
@@ -94,7 +94,7 @@ const config = [
             "import/resolver": {
                 node: true,
                 typescript: {
-                    project: "./tsconfig.json",
+                    project: "./tsconfig.base.json",
                 },
             },
         },

@@ -1,4 +1,3 @@
-generated
-coverage
-proto
-dist
+**/generated/
+**/coverage/
+**/dist/
