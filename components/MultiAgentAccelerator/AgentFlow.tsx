@@ -20,7 +20,6 @@ import {
     useStore,
 } from "reactflow"
 
-import "reactflow/dist/style.css"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {
     BACKGROUND_COLORS,
@@ -50,7 +49,13 @@ export interface AgentFlowProps {
 type Layout = "radial" | "linear"
 // #endregion: Types
 
-const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentConversations, id, isAwaitingLlm}) => {
+export const AgentFlow: FC<AgentFlowProps> = ({
+    agentCounts,
+    agentsInNetwork,
+    currentConversations,
+    id,
+    isAwaitingLlm,
+}) => {
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -440,5 +445,3 @@ const AgentFlow: FC<AgentFlowProps> = ({agentCounts, agentsInNetwork, currentCon
         </Box>
     )
 }
-
-export default AgentFlow

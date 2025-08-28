@@ -1,17 +1,12 @@
 import {render, screen} from "@testing-library/react"
 
-import {NeuroAIBreadcrumbs} from "../../../components/Common/breadcrumbs"
+import {NeuroAIBreadcrumbs} from "../../../components/Common/Breadcrumbs"
 
 const MOCK_PATHNAME = "mockPath1/mockPath2/mockPath3/mockPath4"
-jest.mock("next/navigation", () => {
-    return {
-        usePathname: jest.fn(() => MOCK_PATHNAME),
-    }
-})
 
 describe("NeuroAIBreadcrumbs", () => {
     it("should render breadcrumbs with the correct redirect links", () => {
-        render(<NeuroAIBreadcrumbs />)
+        render(<NeuroAIBreadcrumbs pathname={MOCK_PATHNAME} />)
 
         const breadcrumb1 = screen.getByText("Mock Path 1")
         const breadcrumb2 = screen.getByText("Mock Path 2")

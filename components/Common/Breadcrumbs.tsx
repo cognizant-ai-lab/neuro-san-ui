@@ -1,13 +1,15 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import {Typography} from "@mui/material"
 import Breadcrumbs from "@mui/material/Breadcrumbs"
-import Grid from "@mui/material/Grid2"
-import {startCase} from "lodash"
-import Link from "next/link"
-import {usePathname} from "next/navigation"
+import Grid from "@mui/material/Grid"
+import startCase from "lodash-es/startCase.js"
 
-export const NeuroAIBreadcrumbs = () => {
-    const pathname: string = usePathname()
+interface NeuroAIBreadcrumbsProps {
+    readonly pathname?: string
+}
+
+export const NeuroAIBreadcrumbs = ({pathname}: NeuroAIBreadcrumbsProps): JSX.Element => {
     const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
     const pageName = startCase(urlPaths?.at(-1))
 
@@ -33,16 +35,16 @@ export const NeuroAIBreadcrumbs = () => {
                     />
                 }
             >
-                <Link
+                <a
                     id="breadcrumb-link-home"
                     href="/"
                 >
                     Home
-                </Link>
+                </a>
                 {urlPaths?.slice(0, -1).map((urlPath, idx) => {
                     const redirectPath = urlPaths.slice(0, idx + 1).join("/")
                     return (
-                        <Link
+                        <a
                             key={urlPath}
                             id={`breadcrumb-link__${urlPath}`}
                             style={{
@@ -51,7 +53,7 @@ export const NeuroAIBreadcrumbs = () => {
                             href={`/${redirectPath}`}
                         >
                             {startCase(urlPath)}
-                        </Link>
+                        </a>
                     )
                 })}
                 <Typography id="breadcrumb-link__current">{pageName}</Typography>

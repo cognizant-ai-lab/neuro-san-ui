@@ -3,7 +3,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import AgentFlow, {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../common/strictMocks"

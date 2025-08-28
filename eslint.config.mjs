@@ -26,7 +26,7 @@ const compat = new FlatCompat({
 const config = [
     eslintPluginUnicorn.configs.all,
     {
-        ignores: [".next", "coverage", "generated", "embed", "dist"],
+        ignores: [".next", "coverage", "generated", "embed", "dist", "babel.jest.config.cjs"],
     },
     ...fixupConfigRules(
         compat.extends(
@@ -480,6 +480,7 @@ const config = [
             "@next/next/no-img-element": "off",
             "react/display-name": "off",
             "react/no-array-index-key": "off",
+            "react/no-multi-comp": "off",
         },
     },
     eslintConfigPrettier,

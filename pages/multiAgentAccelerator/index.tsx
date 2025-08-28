@@ -1,6 +1,6 @@
 import {StopCircle} from "@mui/icons-material"
 import Box from "@mui/material/Box"
-import Grid from "@mui/material/Grid2"
+import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {useCallback, useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
@@ -9,8 +9,8 @@ import {ChatCommon, ChatCommonHandle} from "../../components/AgentChat/ChatCommo
 import {SmallLlmChatButton} from "../../components/AgentChat/LlmChatButton"
 import {cleanUpAgentName} from "../../components/AgentChat/Utils"
 import {closeNotification, NotificationType, sendNotification} from "../../components/Common/notification"
-import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
-import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
+import {AgentFlow} from "../../components/MultiAgentAccelerator/AgentFlow"
+import {Sidebar} from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import useEnvironmentStore from "../../state/environment"
@@ -84,7 +84,7 @@ export default function MultiAgentAcceleratorPage() {
         async function getNetworks() {
             try {
                 const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
-                const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
+                const sortedNetworks = networksTmp?.sort((a, b) => a.localeCompare(b))
                 setNetworks(sortedNetworks)
                 // Set the first network as the selected network
                 setSelectedNetwork(sortedNetworks[0])
@@ -154,7 +154,7 @@ export default function MultiAgentAcceleratorPage() {
     }, [isAwaitingLlm])
 
     const onChunkReceived = useCallback((chunk: string): boolean => {
-        const result = processChatChunk(
+        return processChatChunk(
             chunk,
             agentCountsRef.current,
             conversationsRef.current,
@@ -166,7 +166,6 @@ export default function MultiAgentAcceleratorPage() {
                 setCurrentConversations(newConversations)
             }
         )
-        return result
     }, [])
 
     const onStreamingStarted = useCallback((): void => {

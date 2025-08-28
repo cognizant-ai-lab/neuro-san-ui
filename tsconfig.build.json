@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "exclude": ["**/__tests__", "**jest**", ".next", "build_scripts", "coverage", "dist", "eslint*", "tsconfig.*"],
+    "compilerOptions": {
+        "declaration": true,
+        "declarationDir": "dist",
+        "emitDeclarationOnly": false,
+        "jsx": "react-jsx",
+        "module": "es2022",
+        "noEmit": false,
+        "outDir": "dist",
+        "sourceMap": false
+    }
+}

@@ -14,6 +14,14 @@ const config: NextAuthConfig = {
             clientId: process.env["AUTH0_CLIENT_ID"],
             clientSecret: process.env["AUTH0_CLIENT_SECRET"],
             issuer: `https://${process.env["AUTH0_DOMAIN"]}`,
+            profile(profile) {
+                return {
+                    id: profile.sub,
+                    name: profile.nickname,
+                    email: profile.email,
+                    image: profile.picture,
+                }
+            },
         }),
     ],
     session: {strategy: "jwt"},

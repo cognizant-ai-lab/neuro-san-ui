@@ -2,7 +2,7 @@
  * Graph layout algorithms and associated functions for the agent network.
  */
 import dagre from "dagre"
-import {cloneDeep} from "lodash"
+import cloneDeep from "lodash-es/cloneDeep.js"
 import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
