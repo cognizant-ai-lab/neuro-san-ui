@@ -2,7 +2,7 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import ErrorPage from "../../../../packages/ui-common/components/ErrorPage/ErrorPage"
-import {LOGO} from "../../../../const"
+import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import {smartSignOut, useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 

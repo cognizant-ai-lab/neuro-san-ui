@@ -15,7 +15,7 @@ import {
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     DEFAULT_USER_IMAGE,
     NEURO_SAN_UI_VERSION,
-} from "../../../../const"
+} from "../../const"
 import {usePreferences} from "../../state/Preferences"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 

@@ -17,7 +17,7 @@ import {NeuroAIBreadcrumbs} from "../../../packages/ui-common/components/Common/
 import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common/Navbar"
 import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
 import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
-import {LOGO} from "../../../const"
+import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import useEnvironmentStore from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"

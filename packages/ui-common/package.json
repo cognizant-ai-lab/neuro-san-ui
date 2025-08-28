@@ -1,5 +1,5 @@
 {
-    "name": "@cognizant-ai-lab/neuro-san-ui/ui-common",
+    "name": "@cognizant-ai-lab/ui-common",
     "version": "1.0.0",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
@@ -10,7 +10,6 @@
         "check-format": "prettier --check .",
         "clean": "rm -rf dist",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
-        "dev": "next dev --hostname 0.0.0.0 --prt 3000",
         "generate": "rm -rf generated && build_scripts/do_openapi_generate.sh",
         "lint": "next lint",
         "lint-rules": "npx eslint --print-config jest.config.ts",
@@ -122,7 +121,8 @@
         ".": {
             "import": "./dist/index.js",
             "types": "./dist/index.d.ts"
-        }
+        },
+        "./const": "./const.ts"
     },
     "files": [
         "dist"

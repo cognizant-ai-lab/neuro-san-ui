@@ -1,6 +1,6 @@
 import {styled} from "@mui/material"
 
-import {DEFAULT_USER_IMAGE} from "../../../../const"
+import {DEFAULT_USER_IMAGE} from "../../const"
 import {usePreferences} from "../../state/Preferences"
 
 // #region: Styled Components

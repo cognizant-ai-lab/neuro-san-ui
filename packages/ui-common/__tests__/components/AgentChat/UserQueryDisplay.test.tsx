@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 
 import {UserQueryDisplay} from "../../../components/AgentChat/UserQueryDisplay"
-import {DEFAULT_USER_IMAGE} from "../../../../../const"
+import {DEFAULT_USER_IMAGE} from "../../../const"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 // Mock dependencies

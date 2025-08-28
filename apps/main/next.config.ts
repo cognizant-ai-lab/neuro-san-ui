@@ -35,6 +35,8 @@ const securityHeaders = [
 ]
 
 const nextConfig: import("next").NextConfig = {
+    transpilePackages: ["@cognizant-ai-lab/ui-common"],
+
     typescript: {
         // Cause build to fail on Typescript transpilation errors
         ignoreBuildErrors: false,

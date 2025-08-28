@@ -2,7 +2,7 @@ import Box from "@mui/material/Box"
 import {useRouter} from "next/router.js"
 import {ReactElement} from "react"
 
-import {LOGO} from "../../../../const"
+import {LOGO} from "../../const"
 import useEnvironmentStore from "../../state/environment"
 import useUserInfoStore from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"

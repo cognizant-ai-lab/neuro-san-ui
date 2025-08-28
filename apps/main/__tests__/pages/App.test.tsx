@@ -1,7 +1,7 @@
 import {render, screen, waitFor} from "@testing-library/react"
 import {ReactNode} from "react"
 
-import {LOGO} from "../../../../const"
+import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import NeuroSanUI from "../../pages/_app"
 import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
 import * as Authentication from "../../../../packages/ui-common/utils/Authentication"

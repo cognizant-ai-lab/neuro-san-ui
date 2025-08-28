@@ -6,7 +6,7 @@ import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
 import {Navbar} from "../../../components/Common/Navbar"
-import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../../../const"
+import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 import {navigateToUrl} from "../../../utils/BrowserNavigation"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
