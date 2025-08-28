@@ -20,9 +20,9 @@ export const isFinalMessage = (chatMessage: {
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export const createConversation = (): AgentConversation => ({
+export const createConversation = (agents: string[] = []): AgentConversation => ({
     id: `conv_${Date.now()}_${Math.random()}`,
-    agents: new Set<string>(),
+    agents: new Set(agents),
     startedAt: new Date(),
 })
 
@@ -86,7 +86,7 @@ export const processChatChunk = (
     setCurrentConversations: (conversations: AgentConversation[] | null) => void
 ): boolean => {
     try {
-        const conversationsToUpdate = [...(currentConversations || [])]
+        const updatedConversations = [...(currentConversations || [])]
 
         // Get chat message if it's a known message type
         const chatMessage = chatMessageFromChunk(chunk)
@@ -102,21 +102,16 @@ export const processChatChunk = (
         setAgentCounts(updatedCounts)
 
         const isFinal = isFinalMessage(chatMessage)
-        const tools = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
+        const agents: string[] = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
 
         // Check if this is an AGENT message and if it's a final message, i.e. an end event
         if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-            const updatedConversations = processAgentCompletion(conversationsToUpdate, tools, chatMessage.origin)
-            setCurrentConversations(updatedConversations.length === 0 ? null : updatedConversations)
+            const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents, chatMessage.origin)
+            setCurrentConversations(currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate)
         } else {
             // Create a new conversation for this communication path
-            const newConversation = createConversation()
-            // Add agents to the conversation
-            const updatedConversation = {
-                ...newConversation,
-                agents: new Set([...newConversation.agents, ...tools]),
-            }
-            const updatedConversations = [...conversationsToUpdate, updatedConversation]
+            const newConversation = createConversation(agents)
+            updatedConversations.push(newConversation)
             setCurrentConversations(updatedConversations)
         }
 
