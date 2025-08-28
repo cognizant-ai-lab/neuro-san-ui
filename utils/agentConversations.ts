@@ -21,7 +21,10 @@ export const isFinalMessage = (chatMessage: {
 }
 
 export const createConversation = (agents: string[] = []): AgentConversation => ({
-    id: `conv_${Date.now()}_${Math.random()}`,
+    // Could use crypto.randomUUID, but it's only available under HTTPS.
+    // Don't want a different solution for HTTP on localhost.
+    // eslint-disable-next-line newline-per-chained-call
+    id: `conv_${Date.now()}${Math.random().toString(36).slice(2, 10)}`,
     agents: new Set(agents),
     startedAt: new Date(),
 })
@@ -41,41 +44,23 @@ export const updateAgentCounts = (
     }, new Map(agentCountsMap))
 }
 
-// Helper function to process agent completion
-const processAgentCompletion = (
-    conversations: AgentConversation[],
-    tools: string[],
-    origins: readonly Origin[]
-): AgentConversation[] => {
-    let updatedConversations = conversations
+const processAgentCompletion = (conversations: AgentConversation[], tools: string[]): AgentConversation[] => {
+    const toolsToRemove = new Set(tools)
 
-    for (const tool of tools) {
-        // Filter conversations with agent
-        const conversationsWithAgent = updatedConversations.filter((conv) => conv.agents.has(tool))
-
-        for (const conversation of conversationsWithAgent) {
-            // Create a proper Origin object for the tool
-            const toolOrigin = origins.find((originItem) => originItem.tool === tool)
-            if (toolOrigin) {
-                // Remove agents from the conversation
-                const toolsToRemove = new Set([toolOrigin.tool])
-                const updatedConversation = {
-                    ...conversation,
-                    agents: new Set([...conversation.agents].filter((agent) => !toolsToRemove.has(agent))),
-                }
-                // If no agents remain in this conversation, remove it entirely
-                if (updatedConversation.agents.size === 0) {
-                    updatedConversations = updatedConversations.filter((conv) => conv.id !== conversation.id)
-                } else {
-                    updatedConversations = updatedConversations.map((conv) =>
-                        conv.id === conversation.id ? updatedConversation : conv
-                    )
-                }
-            }
-        }
-    }
-
-    return updatedConversations
+    // For each conversation:
+    //   - Remove all agents whose tool is in toolsToRemove
+    //   - Only keep conversations that still have agents left
+    return (
+        conversations
+            .map((conv) => {
+                // Remove all matching tools from this conversation's agents
+                const updatedAgents = new Set([...conv.agents].filter((agent) => !toolsToRemove.has(agent)))
+                // Return a new conversation object with updated agents
+                return {...conv, agents: updatedAgents}
+            })
+            // Filter out conversations that have no agents left
+            .filter((conv) => conv.agents.size > 0)
+    )
 }
 
 export const processChatChunk = (
@@ -92,7 +77,6 @@ export const processChatChunk = (
         const chatMessage = chatMessageFromChunk(chunk)
 
         // If there are no origins in a chat message, return
-        // TODO: Is this a valid case to keep?
         if (!chatMessage?.origin?.length) {
             return true
         }
@@ -106,7 +90,7 @@ export const processChatChunk = (
 
         // Check if this is an AGENT message and if it's a final message, i.e. an end event
         if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-            const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents, chatMessage.origin)
+            const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents)
             setCurrentConversations(currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate)
         } else {
             // Create a new conversation for this communication path

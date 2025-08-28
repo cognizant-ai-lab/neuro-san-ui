@@ -25,7 +25,7 @@ describe("agentConversations", () => {
         it("should create a new conversation with empty agents", () => {
             const conversation = createConversation()
 
-            expect(conversation.id).toMatch(/^conv_\d+_[\d.]+$/u)
+            expect(conversation.id).toMatch(/^conv_\d+[a-z0-9]+$/u)
             expect(conversation.agents).toBeInstanceOf(Set)
             expect(conversation.agents.size).toBe(0)
             expect(conversation.startedAt).toBeInstanceOf(Date)
