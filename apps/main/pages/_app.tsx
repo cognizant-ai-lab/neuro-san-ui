@@ -2,6 +2,18 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
+import {
+    Auth,
+    ErrorBoundary,
+    LoadingSpinner,
+    Navbar,
+    NavbarProps,
+    NeuroAIBreadcrumbs,
+    smartSignOut,
+    Snackbar,
+    useAuthentication,
+} from "@cognizant-ai-lab/ui-common"
+import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
 import startCase from "lodash-es/startCase.js"
@@ -12,19 +24,11 @@ import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 
-import {Auth} from "../../../packages/ui-common/components/Authentication/Auth"
-import {NeuroAIBreadcrumbs} from "../../../packages/ui-common/components/Common/Breadcrumbs"
-import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common/Navbar"
-import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
-import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
-import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import useEnvironmentStore from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"
 import {APP_THEME, BRAND_COLORS} from "../theme"
-import {smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
 import {UserInfoResponse} from "./api/userInfo/types"
-import {LoadingSpinner} from "../../../packages/ui-common/components/Common/LoadingSpinner"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
