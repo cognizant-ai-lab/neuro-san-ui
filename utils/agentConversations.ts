@@ -1,4 +1,5 @@
 import {chatMessageFromChunk} from "../components/AgentChat/Utils"
+import {NotificationType, sendNotification} from "../components/Common/notification"
 import {ChatMessageType, Origin} from "../generated/neuro-san/NeuroSanClient"
 
 export interface AgentConversation {
@@ -19,9 +20,12 @@ export const isFinalMessage = (chatMessage: {
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export const createConversation = (): AgentConversation => ({
-    id: `conv_${Date.now()}_${Math.random()}`,
-    agents: new Set<string>(),
+export const createConversation = (agents: string[] = []): AgentConversation => ({
+    // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
+    // solution for HTTP on localhost.
+    // eslint-disable-next-line newline-per-chained-call
+    id: `conv_${Date.now()}${Math.random().toString(36).slice(2, 10)}`,
+    agents: new Set(agents),
     startedAt: new Date(),
 })
 
@@ -40,105 +44,39 @@ export const updateAgentCounts = (
     }, new Map(agentCountsMap))
 }
 
-export const addOrRemoveAgents = (
-    conversation: AgentConversation,
-    origins: readonly Origin[],
-    isAdd: boolean
-): AgentConversation => {
-    const tools = origins.map((originData) => originData.tool).filter(Boolean)
+const processAgentCompletion = (conversations: AgentConversation[], tools: string[]): AgentConversation[] => {
+    const toolsToRemove = new Set(tools)
 
-    if (isAdd) {
-        // Add agents to the conversation
-        return {
-            ...conversation,
-            agents: new Set([...conversation.agents, ...tools]),
-        }
-    } else {
-        // Remove agents from the conversation
-        const toolsToRemove = new Set(tools)
-        return {
-            ...conversation,
-            agents: new Set([...conversation.agents].filter((agent) => !toolsToRemove.has(agent))),
-        }
-    }
-}
-
-// Helper function to find which conversation an agent belongs to
-export const findConversationWithAgent = (
-    conversations: AgentConversation[],
-    agentTool: string
-): AgentConversation | null => {
-    return conversations.find((conv) => conv.agents.has(agentTool)) || null
-}
-
-// Helper function to update a specific conversation in the conversations array
-export const updateConversation = (
-    conversations: AgentConversation[],
-    conversationId: string,
-    updatedConversation: AgentConversation
-): AgentConversation[] => {
-    return conversations.map((conv) => (conv.id === conversationId ? updatedConversation : conv))
-}
-
-// Helper function to remove a conversation from the conversations array
-export const removeConversation = (conversations: AgentConversation[], conversationId: string): AgentConversation[] => {
-    return conversations.filter((conv) => conv.id !== conversationId)
-}
-
-// Helper function to add a new conversation to the conversations array
-export const addConversation = (
-    conversations: AgentConversation[],
-    newConversation: AgentConversation
-): AgentConversation[] => {
-    return [...conversations, newConversation]
-}
-
-// Helper function to process agent completion
-const processAgentCompletion = (
-    conversations: AgentConversation[],
-    tools: string[],
-    origins: readonly Origin[]
-): AgentConversation[] => {
-    let updatedConversations = conversations
-
-    for (const tool of tools) {
-        // Filter conversations with agent
-        const conversationsWithAgent = updatedConversations.filter((conv) => conv.agents.has(tool))
-
-        for (const conversation of conversationsWithAgent) {
-            // Create a proper Origin object for the tool
-            const toolOrigin = origins.find((originItem) => originItem.tool === tool)
-            if (toolOrigin) {
-                const updatedConversation = addOrRemoveAgents(conversation, [toolOrigin], false)
-
-                // If no agents remain in this conversation, remove it entirely
-                if (updatedConversation.agents.size === 0) {
-                    updatedConversations = removeConversation(updatedConversations, conversation.id)
-                } else {
-                    updatedConversations = updateConversation(
-                        updatedConversations,
-                        conversation.id,
-                        updatedConversation
-                    )
-                }
-            }
-        }
-    }
-
-    return updatedConversations
+    // For each conversation:
+    // 1) Remove all agents whose tool is in toolsToRemove
+    // 2) Only keep conversations that still have agents left
+    return (
+        conversations
+            .map((conv) => {
+                // Remove all matching tools from this conversation's agents
+                const updatedAgents = new Set([...conv.agents].filter((agent) => !toolsToRemove.has(agent)))
+                // Return a new conversation object with updated agents
+                return {...conv, agents: updatedAgents}
+            })
+            // Filter out conversations that have no agents left
+            .filter((conv) => conv.agents.size > 0)
+    )
 }
 
 export const processChatChunk = (
     chunk: string,
     agentCountsMap: Map<string, number>,
+    currentConversations: AgentConversation[] | null,
     setAgentCounts: (counts: Map<string, number>) => void,
-    setCurrentConversations: (conversations: AgentConversation[] | null) => void,
-    currentConversations: AgentConversation[] = [] // default parameter, so needs to be last
+    setCurrentConversations: (conversations: AgentConversation[] | null) => void
 ): boolean => {
     try {
+        const updatedConversations = [...(currentConversations || [])]
+
         // Get chat message if it's a known message type
         const chatMessage = chatMessageFromChunk(chunk)
 
+        // If there are no origins in a chat message, return
         if (!chatMessage?.origin?.length) {
             return true
         }
@@ -148,27 +86,23 @@ export const processChatChunk = (
         setAgentCounts(updatedCounts)
 
         const isFinal = isFinalMessage(chatMessage)
-        const tools = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
+        const agents: string[] = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
 
         // Check if this is an AGENT message and if it's a final message, i.e. an end event
         if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-            const updatedConversations = processAgentCompletion(currentConversations, tools, chatMessage.origin)
-
-            setCurrentConversations(updatedConversations.length === 0 ? null : updatedConversations)
+            const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents)
+            setCurrentConversations(currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate)
         } else {
-            // Handle adding agents to conversations - each message creates a new conversation path
-            let updatedConversations = [...(currentConversations || [])]
-
             // Create a new conversation for this communication path
-            const newConversation = createConversation()
-            const updatedConversation = addOrRemoveAgents(newConversation, chatMessage.origin, true)
-            updatedConversations = addConversation(updatedConversations, updatedConversation)
+            const newConversation = createConversation(agents)
+            updatedConversations.push(newConversation)
             setCurrentConversations(updatedConversations)
         }
 
         return true
     } catch (error) {
-        console.error("Error processing chunk in agent tracking:", error)
+        sendNotification(NotificationType.error, "Agent conversation error")
+        console.error("Agent conversation error:", error)
         return false
     }
 }

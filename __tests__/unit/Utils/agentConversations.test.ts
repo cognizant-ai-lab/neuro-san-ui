@@ -1,16 +1,11 @@
 import {chatMessageFromChunk} from "../../../components/AgentChat/Utils"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {
-    addConversation,
-    addOrRemoveAgents,
     AgentConversation,
     createConversation,
-    findConversationWithAgent,
     isFinalMessage,
     processChatChunk,
-    removeConversation,
     updateAgentCounts,
-    updateConversation,
 } from "../../../utils/agentConversations"
 import {withStrictMocks} from "../../common/strictMocks"
 
@@ -18,6 +13,8 @@ import {withStrictMocks} from "../../common/strictMocks"
 jest.mock("../../../components/AgentChat/Utils", () => ({
     chatMessageFromChunk: jest.fn(),
 }))
+
+jest.mock("../../../components/Common/notification")
 
 const mockChatMessageFromChunk = jest.mocked(chatMessageFromChunk)
 
@@ -28,7 +25,7 @@ describe("agentConversations", () => {
         it("should create a new conversation with empty agents", () => {
             const conversation = createConversation()
 
-            expect(conversation.id).toMatch(/^conv_\d+_[\d.]+$/u)
+            expect(conversation.id).toMatch(/^conv_\d+[a-z0-9]+$/u)
             expect(conversation.agents).toBeInstanceOf(Set)
             expect(conversation.agents.size).toBe(0)
             expect(conversation.startedAt).toBeInstanceOf(Date)
@@ -78,89 +75,6 @@ describe("agentConversations", () => {
         })
     })
 
-    describe("addOrRemoveAgents", () => {
-        it("should add agents to conversation", () => {
-            const conversation = createConversation()
-            const origins = [
-                {tool: "agent1", instantiation_index: 0},
-                {tool: "agent2", instantiation_index: 1},
-            ]
-
-            const updatedConversation = addOrRemoveAgents(conversation, origins, true)
-
-            expect(updatedConversation.agents.has("agent1")).toBe(true)
-            expect(updatedConversation.agents.has("agent2")).toBe(true)
-            expect(updatedConversation.agents.size).toBe(2)
-        })
-
-        it("should remove agents from conversation", () => {
-            const conversation = createConversation()
-            conversation.agents.add("agent1")
-            conversation.agents.add("agent2")
-            conversation.agents.add("agent3")
-
-            const origins = [{tool: "agent2", instantiation_index: 0}]
-
-            const updatedConversation = addOrRemoveAgents(conversation, origins, false)
-
-            expect(updatedConversation.agents.has("agent1")).toBe(true)
-            expect(updatedConversation.agents.has("agent2")).toBe(false)
-            expect(updatedConversation.agents.has("agent3")).toBe(true)
-            expect(updatedConversation.agents.size).toBe(2)
-        })
-    })
-
-    describe("conversation management", () => {
-        let conversations: AgentConversation[] = []
-        let conversation1: AgentConversation
-        let conversation2: AgentConversation
-
-        beforeEach(() => {
-            conversations = [] // Reset the array between tests
-            conversation1 = createConversation()
-            conversation1.agents.add("agent1")
-            conversation2 = createConversation()
-            conversation2.agents.add("agent2")
-
-            conversations = addConversation(conversations, conversation1)
-            conversations = addConversation(conversations, conversation2)
-        })
-
-        it("should find conversation with agent", () => {
-            const found = findConversationWithAgent(conversations, "agent1")
-            expect(found?.id).toBe(conversation1.id)
-
-            const notFound = findConversationWithAgent(conversations, "agent3")
-            expect(notFound).toBeNull()
-        })
-
-        it("should update conversation", () => {
-            const updatedConv1 = {...conversation1, agents: new Set(["agent1", "agent3"])}
-            const updated = updateConversation(conversations, conversation1.id, updatedConv1)
-
-            const found = findConversationWithAgent(updated, "agent3")
-            expect(found?.id).toBe(conversation1.id)
-        })
-
-        it("should remove conversation", () => {
-            const updated = removeConversation(conversations, conversation1.id)
-
-            expect(updated.length).toBe(1)
-            expect(findConversationWithAgent(updated, "agent1")).toBeNull()
-            expect(findConversationWithAgent(updated, "agent2")).not.toBeNull()
-        })
-
-        it("should add conversation", () => {
-            const newConv = createConversation()
-            newConv.agents.add("agent3")
-
-            const updated = addConversation(conversations, newConv)
-
-            expect(updated.length).toBe(3)
-            expect(findConversationWithAgent(updated, "agent3")?.id).toBe(newConv.id)
-        })
-    })
-
     describe("processChatChunk", () => {
         let agentCounts: Map<string, number>
         let currentConversations: AgentConversation[] | null
@@ -182,9 +96,9 @@ describe("agentConversations", () => {
             const result = processChatChunk(
                 "test chat chunk",
                 agentCounts,
+                currentConversations,
                 setAgentCounts,
-                setCurrentConversations,
-                currentConversations
+                setCurrentConversations
             )
 
             expect(result).toBe(true)
@@ -203,7 +117,7 @@ describe("agentConversations", () => {
                 text: "Processing...",
             })
 
-            processChatChunk("test chat chunk", agentCounts, setAgentCounts, setCurrentConversations, [])
+            processChatChunk("test chat chunk", agentCounts, [], setAgentCounts, setCurrentConversations)
 
             expect(setAgentCounts).toHaveBeenCalled()
             expect(setCurrentConversations).toHaveBeenCalled()
@@ -219,7 +133,7 @@ describe("agentConversations", () => {
             const conversation = createConversation()
             conversation.agents.add("agent1")
             conversation.agents.add("agent2")
-            const conversationsWithAgents = addConversation(conversations, conversation)
+            const conversationsWithAgents = [...conversations, conversation]
 
             const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
 
@@ -233,9 +147,9 @@ describe("agentConversations", () => {
             processChatChunk(
                 "final chat chunk",
                 agentCounts,
+                conversationsWithAgents,
                 setAgentCounts,
-                setCurrentConversations,
-                conversationsWithAgents
+                setCurrentConversations
             )
 
             const updatedConversations = setCurrentConversations.mock.calls[0][0]
@@ -248,7 +162,7 @@ describe("agentConversations", () => {
             const conversations: AgentConversation[] = []
             const conversation = createConversation()
             conversation.agents.add("agent1")
-            const conversationsWithAgent = addConversation(conversations, conversation)
+            const conversationsWithAgent = [...conversations, conversation]
 
             const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
 
@@ -262,9 +176,9 @@ describe("agentConversations", () => {
             processChatChunk(
                 "final chat chunk",
                 agentCounts,
+                conversationsWithAgent,
                 setAgentCounts,
-                setCurrentConversations,
-                conversationsWithAgent
+                setCurrentConversations
             )
 
             // Should set to null when no conversations remain
@@ -281,14 +195,13 @@ describe("agentConversations", () => {
             const result = processChatChunk(
                 "invalid chat chunk",
                 agentCounts,
+                currentConversations,
                 setAgentCounts,
-                setCurrentConversations,
-                currentConversations
+                setCurrentConversations
             )
 
             expect(result).toBe(false)
-            expect(consoleErrorSpy).toHaveBeenCalled()
-
+            expect(consoleErrorSpy).toHaveBeenCalledWith("Agent conversation error:", expect.any(Error))
             consoleErrorSpy.mockRestore()
         })
     })
