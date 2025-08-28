@@ -153,8 +153,8 @@ export default function MultiAgentAcceleratorPage() {
         }
     }, [isAwaitingLlm])
 
-    const onChunkReceived = useCallback((chunk: string): boolean => {
-        return processChatChunk(
+    const onChunkReceived = useCallback((chunk: string): boolean => (
+        processChatChunk(
             chunk,
             agentCountsRef.current,
             conversationsRef.current,
@@ -166,7 +166,7 @@ export default function MultiAgentAcceleratorPage() {
                 setCurrentConversations(newConversations)
             }
         )
-    }, [])
+    ), [])
 
     const onStreamingStarted = useCallback((): void => {
         // Show info popup only once per session

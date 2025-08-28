@@ -21,8 +21,8 @@ export const isFinalMessage = (chatMessage: {
 }
 
 export const createConversation = (agents: string[] = []): AgentConversation => ({
-    // Could use crypto.randomUUID, but it's only available under HTTPS.
-    // Don't want a different solution for HTTP on localhost.
+    // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
+    // solution for HTTP on localhost.
     // eslint-disable-next-line newline-per-chained-call
     id: `conv_${Date.now()}${Math.random().toString(36).slice(2, 10)}`,
     agents: new Set(agents),
@@ -48,8 +48,8 @@ const processAgentCompletion = (conversations: AgentConversation[], tools: strin
     const toolsToRemove = new Set(tools)
 
     // For each conversation:
-    //   - Remove all agents whose tool is in toolsToRemove
-    //   - Only keep conversations that still have agents left
+    // 1) Remove all agents whose tool is in toolsToRemove
+    // 2) Only keep conversations that still have agents left
     return (
         conversations
             .map((conv) => {

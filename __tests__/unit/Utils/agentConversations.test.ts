@@ -185,7 +185,7 @@ describe("agentConversations", () => {
             expect(setCurrentConversations).toHaveBeenCalledWith(null)
         })
 
-        it("should handle errors gracefully", async () => {
+        it("should handle errors gracefully", () => {
             const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
 
             mockChatMessageFromChunk.mockImplementation(() => {
