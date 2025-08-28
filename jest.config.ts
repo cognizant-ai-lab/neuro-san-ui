@@ -10,19 +10,17 @@ const config: Config.InitialOptions = {
 
     preset: "ts-jest/presets/default-esm",
     extensionsToTreatAsEsm: [".ts", ".tsx"],
-    transformIgnorePatterns: ["/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime)"],
+    transformIgnorePatterns: ["/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime|lodash-es)"],
     transform: {
         "^.+\\.(ts|tsx)$": [
             "ts-jest",
             {
                 useESM: true,
-                tsconfig: {
-                    jsx: "react-jsx",
-                },
+                tsconfig: "<rootDir>/tsconfig.test.json",
             },
         ],
+        "^.+\\.[jt]sx?$": ["babel-jest", {configFile: "./babel.jest.config.cjs"}],
     },
-
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
     testEnvironment: "jsdom",

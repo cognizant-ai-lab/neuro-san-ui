@@ -1,12 +1,7 @@
-import getConfig from "next/config"
-
-const {publicRuntimeConfig} = getConfig()
-
 // Name to use for application
 export const LOGO: string = "Neuro® AI"
 
-// Build version (passed in from build system)
-export const NEURO_SAN_UI_VERSION: string = publicRuntimeConfig.neuroSanUIVersion
+export const NEURO_SAN_UI_VERSION = process.env["NEXT_PUBLIC_NEURO_SAN_UI_VERSION"] ?? "Unknown Version"
 
 export const CONTACT_US_CONFIRMATION_DIALOG_TITLE = "Contact Us"
 

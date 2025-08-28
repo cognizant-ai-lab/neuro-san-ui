@@ -6,9 +6,8 @@ import {SnackbarProvider} from "notistack"
 import {forwardRef} from "react"
 
 import {AgentFlowProps} from "../../components/MultiAgentAccelerator/AgentFlow"
-import {testConnection} from "../../controller/agent/Agent"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {ChatResponse} from "../../generated/neuro-san/OpenAPITypes"
+import {getAgentNetworks, testConnection} from "../../controller/agent/Agent"
+import {ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
 import {withStrictMocks} from "../common/strictMocks"
@@ -29,15 +28,12 @@ jest.mock("next-auth/react")
 
 jest.mock("../../controller/agent/Agent")
 
-// AgentFlow mock
-const includedAgentIdsMock = jest.fn()
-const originInfoMock = jest.fn()
+const conversationMock = jest.fn()
 
 jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
-    default: (props: AgentFlowProps) => {
-        includedAgentIdsMock(props.includedAgentIds)
-        originInfoMock(props.originInfo)
+    AgentFlow: (props: AgentFlowProps) => {
+        conversationMock(props.currentConversations)
         return <div data-testid="mock-agent-flow" />
     },
 }))
@@ -46,11 +42,20 @@ jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
 const chatCommonMock = jest.fn()
 const handleStopMock = jest.fn()
 
+const MATH_GUY_MESSAGE: ChatResponse = {
+    response: {
+        type: ChatMessageType.AI,
+        text: "This is a test message",
+        origin: [{tool: TEST_AGENT_MATH_GUY}],
+    },
+}
+
 let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => void
 let onStreamingStarted: () => void
 
 jest.mock("../../components/AgentChat/ChatCommon", () => ({
+    __esModule: true,
     ChatCommon: forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
         chatCommonMock(props)
         setIsAwaitingLlm = props.setIsAwaitingLlm
@@ -76,14 +81,6 @@ const renderMultiAgentAcceleratorPage = () =>
         </SnackbarProvider>
     )
 
-const CONVERSATION_MESSAGE: ChatResponse = {
-    response: {
-        type: ChatMessageType.AI,
-        text: "This is a test message",
-        origin: [{tool: TEST_AGENT_MATH_GUY}],
-    },
-}
-
 describe("Multi Agent Accelerator Page", () => {
     withStrictMocks()
 
@@ -95,9 +92,7 @@ describe("Multi Agent Accelerator Page", () => {
 
     beforeEach(() => {
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
-
-        const mockGetAgentNetworks = jest.requireMock("../../controller/agent/Agent").getAgentNetworks
-        mockGetAgentNetworks.mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
+        ;(getAgentNetworks as jest.Mock).mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
 
         const mockGetConnectivity = jest.requireMock("../../controller/agent/Agent").getConnectivity
         mockGetConnectivity.mockResolvedValue({
@@ -256,29 +251,33 @@ describe("Multi Agent Accelerator Page", () => {
         renderMultiAgentAcceleratorPage()
 
         // Simulate receiving a chat message
-        const mockChunk = JSON.stringify(CONVERSATION_MESSAGE)
+        const mockChunk = JSON.stringify(MATH_GUY_MESSAGE)
 
         await act(async () => {
             onChunkReceived(mockChunk)
         })
 
         expect(chatCommonMock).toHaveBeenCalled()
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
-        expect(originInfoMock).toHaveBeenCalledWith([{tool: TEST_AGENT_MATH_GUY}])
+
+        // Verify the conversations array contains the expected agent
+        const conversationCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
+        const hasAgent = conversationCall.some((conv: {agents: Set<string>}) =>
+            Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY)
+        )
+        expect(hasAgent).toBe(true)
     })
 
     it("should handle receiving an end of conversation chat message", async () => {
         renderMultiAgentAcceleratorPage()
 
         // Set up one active agent
-        const activeAgentChunk = JSON.stringify(CONVERSATION_MESSAGE)
+        const activeAgentChunk = JSON.stringify(MATH_GUY_MESSAGE)
         await act(async () => {
             onChunkReceived(activeAgentChunk)
         })
 
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
-
-        includedAgentIdsMock.mockClear()
+        // Verify the conversation mock was called
+        expect(conversationMock).toHaveBeenCalled()
 
         // End of conversation message for unrelated agent
         const endOfConversationDifferentAgent: ChatResponse = {
@@ -290,30 +289,34 @@ describe("Multi Agent Accelerator Page", () => {
                 origin: [{tool: "Definitely not math guy"}],
             },
         }
+
         await act(async () => {
             onChunkReceived(JSON.stringify(endOfConversationDifferentAgent))
         })
 
-        // Math guy conversation should still be active
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([TEST_AGENT_MATH_GUY])
+        // Verify Math Guy is still in the conversations
+        const latestCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
+        const hasMathGuy = latestCall.some((conv: {agents: Set<string>}) => conv.agents.has(TEST_AGENT_MATH_GUY))
+        expect(hasMathGuy).toBe(true)
 
-        includedAgentIdsMock.mockClear()
+        conversationMock.mockClear()
 
         // Now the end of conversation message for the active agent
         const chatMessage: ChatResponse = {
             response: {
                 type: ChatMessageType.AGENT,
                 text: "This is a test message",
-                // One of "hints" for end of conversation is having a structure field containing total_tokens
-                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                structure: {total_tokens: 100},
                 origin: [{tool: TEST_AGENT_MATH_GUY}],
             },
         }
+
         await act(async () => {
             onChunkReceived(JSON.stringify(chatMessage))
         })
 
-        expect(includedAgentIdsMock).toHaveBeenCalledWith([])
+        // Conversation should now be empty/null since it is complete
+        expect(conversationMock).toHaveBeenCalledWith(null)
     })
 
     it("should show a popup when onStreamingStarted is called", async () => {

@@ -1,8 +1,8 @@
-import {capitalize, startCase} from "lodash"
+import capitalize from "lodash-es/capitalize.js"
+import startCase from "lodash-es/startCase.js"
 
 import {AgentErrorProps} from "./Types"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {ChatMessage, ChatResponse} from "../../generated/neuro-san/OpenAPITypes"
+import {ChatMessage, ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 
 // We ignore any messages that are not of these types
 const KNOWN_MESSAGE_TYPES = [ChatMessageType.AI, ChatMessageType.AGENT, ChatMessageType.AGENT_FRAMEWORK]

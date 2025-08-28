@@ -1,67 +1,67 @@
 # This pipeline is designed to be triggered by a github
 # merge to main event or a release event.
-# When that happens, the appropriate 
+# When that happens, the appropriate
 # values are passed to the generic 'build'
 # pipeline and then the generic 'deploy' pipeline.
 
-# The resulting behavior is: 
-# - A merge to main builds the image and deploys 
+# The resulting behavior is:
+# - A merge to main builds the image and deploys
 #   it to the  dev environment, with short git SHA as the version.
-# - A release builds the image and deploys it to the staging environment, with the user-friendly semantic version 
+# - A release builds the image and deploys it to the staging environment, with the user-friendly semantic version
 #  tag as the version.
 
-version: '1.0'
+version: "1.0"
 steps:
-  clone:
-    title: "Cloning repository"
-    type: "git-clone"
-    repo: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
-    git: "github"
-    revision: ${{CF_REVISION}}
+    clone:
+        title: "Cloning repository"
+        type: "git-clone"
+        repo: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
+        git: "github"
+        revision: ${{CF_REVISION}}
 
-  set_version_main_merge:
-    title: "Set the version for a main merge case"
-    image: alpine:3.13.1
-    commands:
-      # Merge to main goes to dev with short git sha
-      - cf_export UNILEAF_VERSION=${{CF_SHORT_REVISION}}
-      - cf_export DEPLOY_ENV=dev
+    set_version_main_merge:
+        title: "Set the version for a main merge case"
+        image: alpine:3.13.1
+        commands:
+            # Merge to main goes to dev with short git sha
+            - cf_export UNILEAF_VERSION=${{CF_SHORT_REVISION}}
+            - cf_export DEPLOY_ENV=dev
 
-  # When codefresh sets the CF_RELEASE_TAG, this task will run
-  # and switch the unileaf-version to release tag value.
-  set_version_release:
-    title: "Set the unileaf-version for the release case"
-    image: alpine:3.13.1
-    commands:
-      - cf_export UNILEAF_VERSION=${{CF_RELEASE_TAG}}
-      - cf_export DEPLOY_ENV=staging
-    when:
-      condition:
-        all:
-          # This is idiomatic Codefresh for detecting if ${{CF_RELEASE_TAG}} has a value.
-          deploy_tagged_builds_only: 'includes("${{CF_RELEASE_TAG}}", "{{CF_RELEASE_TAG}}") == false'
+    # When codefresh sets the CF_RELEASE_TAG, this task will run
+    # and switch the unileaf-version to release tag value.
+    set_version_release:
+        title: "Set the unileaf-version for the release case"
+        image: alpine:3.13.1
+        commands:
+            - cf_export UNILEAF_VERSION=${{CF_RELEASE_TAG}}
+            - cf_export DEPLOY_ENV=staging
+        when:
+            condition:
+                all:
+                    # This is idiomatic Codefresh for detecting if ${{CF_RELEASE_TAG}} has a value.
+                    deploy_tagged_builds_only: 'includes("${{CF_RELEASE_TAG}}", "{{CF_RELEASE_TAG}}") == false'
 
-  call_build_pipeline:
-    title: "Run build pipeline"
-    type: codefresh-run
-    arguments:
-      PIPELINE_ID: neuro-ui/build
-      VARIABLE:
-         # This value can be overridden at the build
-         # pipeline by running manually.
-         - UNILEAF_VERSION=${{UNILEAF_VERSION}}
-         # Tell the child pipeline it is a child pipeline. We need to differentiate
-         # the two trigger types (automated or manual) in the build process to support
-         # DISPLAY_VERSION
-         - CHILD_PIPELINE=true
+    call_build_pipeline:
+        title: "Run build pipeline"
+        type: codefresh-run
+        arguments:
+            PIPELINE_ID: neuro-ui/build
+            VARIABLE:
+                # This value can be overridden at the build
+                # pipeline by running manually.
+                - UNILEAF_VERSION=${{UNILEAF_VERSION}}
+                # Tell the child pipeline it is a child pipeline. We need to differentiate
+                # the two trigger types (automated or manual) in the build process to support
+                # DISPLAY_VERSION
+                - CHILD_PIPELINE=true
 
-  call_deploy_pipeline:
-    title: "Run deploy pipeline"
-    type: codefresh-run
-    arguments:
-      PIPELINE_ID: neuro-ui/deploy
-      VARIABLE:
-         # All of these values can be overridden at the deploy
-         # pipeline by running manually.
-         - UNILEAF_VERSION=${{UNILEAF_VERSION}}
-         - DEPLOY_ENV=${{DEPLOY_ENV}}
+    call_deploy_pipeline:
+        title: "Run deploy pipeline"
+        type: codefresh-run
+        arguments:
+            PIPELINE_ID: neuro-ui/deploy
+            VARIABLE:
+                # All of these values can be overridden at the deploy
+                # pipeline by running manually.
+                - UNILEAF_VERSION=${{UNILEAF_VERSION}}
+                - DEPLOY_ENV=${{DEPLOY_ENV}}

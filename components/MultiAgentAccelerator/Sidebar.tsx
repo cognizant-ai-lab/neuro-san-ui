@@ -67,7 +67,7 @@ interface SidebarProps {
 
 // #endregion: Types
 
-const Sidebar: FC<SidebarProps> = ({
+export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
     id,
@@ -249,7 +249,11 @@ const Sidebar: FC<SidebarProps> = ({
                         >
                             <ListItemText
                                 id={`${network}-text`}
-                                primaryTypographyProps={{fontSize: "0.75rem"}}
+                                slotProps={{
+                                    primary: {
+                                        fontSize: "0.75rem",
+                                    },
+                                }}
                                 primary={cleanUpAgentName(network)}
                             />
                         </ListItemButton>
@@ -397,5 +401,3 @@ const Sidebar: FC<SidebarProps> = ({
         </>
     )
 }
-
-export default Sidebar

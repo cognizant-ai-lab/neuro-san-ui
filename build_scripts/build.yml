@@ -1,4 +1,4 @@
-version: '1.0'
+version: "1.0"
 
 steps:
     main_clone:
@@ -7,60 +7,52 @@ steps:
         repo: "leaf-ai/neuro-san-ui"
         git: "github"
         revision: ${{UNILEAF_VERSION}}
-            
-    generate_typescript_api_stubs:
-      title: Generate Typescript stubs for APIs
-      image: node:${{NODEJS_VERSION}}-alpine
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
-      commands:
-        - apk add --quiet --no-progress --upgrade bash git
-        - yarn install
-        - ./build_scripts/do_openapi_generate.sh
 
-    generate_openapi_types:
-      title: Generate Typescript types for OpenAPI
-      image: node:${{NODEJS_VERSION}}-alpine
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
-      commands:
-        - yarn install
-        - npx tsx ./build_scripts/GenerateOpenAPITypes.ts
+    generate_typescript_api_stubs:
+        title: Generate Typescript stubs for APIs
+        image: node:${{NODEJS_VERSION}}-alpine
+        working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
+        commands:
+            - apk add --quiet --no-progress --upgrade bash git
+            - yarn install
+            - ./build_scripts/do_openapi_generate.sh
 
     prebuild:
-      title: Run prebuild step for custom build
-      description: Pare down the code to build sub-sets of the ui
-      image: alpine:3.21.3
-      working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
-      commands:
-        - apk --quiet --no-progress add bash git coreutils
-        - ./build_scripts/customBuilds/prepare_custom_build.sh
+        title: Run prebuild step for custom build
+        description: Pare down the code to build sub-sets of the ui
+        image: alpine:3.21.3
+        working_directory: ${{CF_VOLUME_PATH}}/neuro-san-ui
+        commands:
+            - apk --quiet --no-progress add bash git coreutils
+            - ./build_scripts/customBuilds/prepare_custom_build.sh
 
     set_tag:
-      title: Set Image Tag
-      description: Keep current tag the same for full builds, append for custom builds
-      image: alpine:3.21.3
-      shell: sh
-      commands:
-        - |
-          # Use DISPLAY_VERSION if set and not triggered as a child pipeline.
-          # Otherwise fallback to UNILEAF_VERSION.
-          if [ -n "${{DISPLAY_VERSION}}" ] && [ -z "${CHILD_PIPELINE}" ]; then
-              VERSION="${{DISPLAY_VERSION}}"
-          else
-              VERSION="${{UNILEAF_VERSION}}"
-          fi
+        title: Set Image Tag
+        description: Keep current tag the same for full builds, append for custom builds
+        image: alpine:3.21.3
+        shell: sh
+        commands:
+            - |
+                # Use DISPLAY_VERSION if set and not triggered as a child pipeline.
+                # Otherwise fallback to UNILEAF_VERSION.
+                if [ -n "${{DISPLAY_VERSION}}" ] && [ -z "${CHILD_PIPELINE}" ]; then
+                    VERSION="${{DISPLAY_VERSION}}"
+                else
+                    VERSION="${{UNILEAF_VERSION}}"
+                fi
 
-          export TAG="${VERSION}"
-          cf_export TAG
+                export TAG="${VERSION}"
+                cf_export TAG
 
     ui-node-build:
-      title: Build ui-node Docker image
-      image_name: "leaf/neuro-san-ui"
-      type: build
-      buildkit: true
-      progress: "plain"
-      dockerfile: ./Dockerfile
-      working_directory: ./
-      build_arguments:
-        - NODEJS_VERSION=${{NODEJS_VERSION}}
-        - UNILEAF_VERSION=${{TAG}}
-      tag: "${{TAG}}"
+        title: Build ui-node Docker image
+        image_name: "leaf/neuro-san-ui"
+        type: build
+        buildkit: true
+        progress: "plain"
+        dockerfile: ./Dockerfile
+        working_directory: ./
+        build_arguments:
+            - NODEJS_VERSION=${{NODEJS_VERSION}}
+            - UNILEAF_VERSION=${{TAG}}
+        tag: "${{TAG}}"

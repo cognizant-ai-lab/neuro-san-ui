@@ -1,7 +1,6 @@
 version: "1.0"
 
 steps:
-
     clone-repo:
         type: git-clone
         title: "Clone ${{CF_REPO_NAME}} repo"
@@ -15,4 +14,4 @@ steps:
         image: hadolint/hadolint:v2.12.1-beta-alpine
         working_directory: ${{CF_VOLUME_PATH}}/${{CF_REPO_NAME}}
         commands:
-          - find . -type f -name '*Dockerfile*' -exec hadolint {} \;
+            - find . -type f -name '*Dockerfile*' -exec hadolint {} \;

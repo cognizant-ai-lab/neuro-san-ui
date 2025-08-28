@@ -36,8 +36,7 @@ describe("AgentNode", () => {
                     agentName,
                     depth: 1,
                     displayAs: "llm_agent",
-                    getIncludedAgentIds: () => [],
-                    getOriginInfo: () => [],
+                    getConversations: () => null,
                 }}
             />
         )
@@ -81,8 +80,7 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     depth: 3,
-                    getIncludedAgentIds: () => [],
-                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
+                    getConversations: () => [],
                 }}
             />
         )
@@ -115,8 +113,7 @@ describe("AgentNode", () => {
                 data={{
                     agentName: "testAgent",
                     depth: 3,
-                    getIncludedAgentIds: () => [],
-                    getOriginInfo: () => [{tool: agentName, instantiationIndex: 1}],
+                    getConversations: () => [],
                     isAwaitingLlm,
                 }}
             />
@@ -150,8 +147,7 @@ describe("AgentNode", () => {
                     agentName: "Test Agent",
                     depth: 1,
                     displayAs,
-                    getIncludedAgentIds: () => [],
-                    getOriginInfo: () => [],
+                    getConversations: () => null,
                 }}
             />
         )

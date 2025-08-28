@@ -1,21 +1,21 @@
 import {StopCircle} from "@mui/icons-material"
 import Box from "@mui/material/Box"
-import Grid from "@mui/material/Grid2"
+import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {useCallback, useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {ChatCommon, ChatCommonHandle} from "../../components/AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../../components/AgentChat/LlmChatButton"
-import {chatMessageFromChunk, cleanUpAgentName} from "../../components/AgentChat/Utils"
+import {cleanUpAgentName} from "../../components/AgentChat/Utils"
 import {closeNotification, NotificationType, sendNotification} from "../../components/Common/notification"
-import AgentFlow from "../../components/MultiAgentAccelerator/AgentFlow"
-import Sidebar from "../../components/MultiAgentAccelerator/Sidebar"
+import {AgentFlow} from "../../components/MultiAgentAccelerator/AgentFlow"
+import {Sidebar} from "../../components/MultiAgentAccelerator/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {ConnectivityInfo, ConnectivityResponse, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
+import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useAuthentication} from "../../utils/Authentication"
 import {useLocalStorage} from "../../utils/use_local_storage"
 
@@ -54,13 +54,11 @@ export default function MultiAgentAcceleratorPage() {
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
 
-    // Included agent IDs are used to highlight active edges in the graph
-    const [includedAgentIds, setIncludedAgentIds] = useState<string[]>([])
+    const agentCountsRef = useRef<Map<string, number>>(new Map())
 
-    // Origin info is used to highlight active agents in the graph
-    const [originInfo, setOriginInfo] = useState<Origin[]>([])
+    const conversationsRef = useRef<AgentConversation[] | null>(null)
 
-    const agentCountsRef = useRef<Map<string, number>>(new Map<string, number>())
+    const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
 
     // Dark mode
     const {darkMode} = usePreferences()
@@ -86,7 +84,7 @@ export default function MultiAgentAcceleratorPage() {
         async function getNetworks() {
             try {
                 const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
-                const sortedNetworks = networksTmp.sort((a, b) => a.localeCompare(b))
+                const sortedNetworks = networksTmp?.sort((a, b) => a.localeCompare(b))
                 setNetworks(sortedNetworks)
                 // Set the first network as the selected network
                 setSelectedNetwork(sortedNetworks[0])
@@ -156,72 +154,36 @@ export default function MultiAgentAcceleratorPage() {
     }, [isAwaitingLlm])
 
     const onChunkReceived = useCallback(
-        (chunk: string) => {
-            // Obtain origin info if present
-            const chatMessage = chatMessageFromChunk(chunk)
-
-            if (chatMessage?.origin?.length > 0) {
-                // Update agent counts.
-                // Note: we increment an agent's count each time it appears in the origin info, but another strategy
-                // would be to only count an agent when it is the "end destination" of the chain. Needs some thought to
-                // determine which is more useful.
-                const agentCounts = agentCountsRef.current
-                for (const agent of chatMessage.origin) {
-                    // If the agent is not already in the counts map, initialize it to 0 aka "upsert"
-                    agentCounts.set(agent.tool, (agentCounts.get(agent.tool) || 0) + 1)
+        (chunk: string): boolean =>
+            processChatChunk(
+                chunk,
+                agentCountsRef.current,
+                conversationsRef.current,
+                (newCounts: Map<string, number>) => {
+                    agentCountsRef.current = newCounts
+                },
+                (newConversations: AgentConversation[] | null) => {
+                    conversationsRef.current = newConversations
+                    setCurrentConversations(newConversations)
                 }
-
-                // Track all active edges
-                setIncludedAgentIds((prev) => {
-                    const activeEdges = new Set(prev)
-                    const isAgentFinalResponse = chatMessage.structure?.["total_tokens"]
-                    const isCodedToolFinalResponse = chatMessage.text?.startsWith("Got result:")
-                    const isFinalResponse = isAgentFinalResponse || isCodedToolFinalResponse
-
-                    if (chatMessage.type === ChatMessageType.AGENT && isFinalResponse) {
-                        chatMessage.origin.forEach((originData) => {
-                            if (originData.tool) {
-                                activeEdges.delete(originData.tool)
-                            }
-                        })
-                        return Array.from(activeEdges)
-                    } else {
-                        // Set origin info for the current chat message, we want both AGENT and AI messages for this
-                        // due to not knowing which agents are being invoked except my looking at the origin info.
-                        setOriginInfo([...chatMessage.origin])
-
-                        chatMessage.origin.forEach((originData) => {
-                            if (originData.tool) {
-                                // Add active edges
-                                activeEdges.add(originData.tool)
-                            }
-                        })
-                        return Array.from(activeEdges)
-                    }
-                })
-            }
-
-            return true
-        },
-        [agentCountsRef, setOriginInfo]
+            ),
+        []
     )
 
     const onStreamingStarted = useCallback((): void => {
-        // reset agent counts when a new streaming starts
-        agentCountsRef.current = new Map<string, number>()
-
         // Show info popup only once per session
         if (!haveShownPopup) {
             sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
             setHaveShownPopup(true)
         }
-    }, [setHaveShownPopup, haveShownPopup])
+    }, [haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
-        // When streaming is complete, reset the included agent IDs and origin info
-        setIncludedAgentIds([])
-        setOriginInfo([])
-    }, [isAwaitingLlm, setIncludedAgentIds, setOriginInfo])
+        // When streaming is complete, clean up any refs and state
+        conversationsRef.current = null
+        agentCountsRef.current = new Map<string, number>()
+        setCurrentConversations(null)
+    }, [])
 
     const getLeftPanel = () => {
         return (
@@ -278,11 +240,10 @@ export default function MultiAgentAcceleratorPage() {
                         }}
                     >
                         <AgentFlow
+                            agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
                             id="multi-agent-accelerator-agent-flow"
-                            includedAgentIds={includedAgentIds}
-                            originInfo={originInfo}
-                            agentCounts={agentCountsRef.current}
+                            currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                         />
                     </Box>

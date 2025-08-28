@@ -8,7 +8,7 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "checkJs": true,
-    "declaration": true,
+    "declaration": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
@@ -21,7 +21,7 @@
     "module": "esnext",
     "moduleDetection": "force",
     "moduleResolution": "node",
-    "noEmit": false,
+    "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitOverride": true,
@@ -30,7 +30,6 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "outDir": "dist",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
@@ -43,6 +42,7 @@
         "name": "next"
       }
     ],
+    "incremental": true
   },
   "include": [
     "**/*.js",
@@ -50,7 +50,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next-env.d.ts",
+    "next-env.d.ts"
   ],
   "exclude": [
     "node_modules",

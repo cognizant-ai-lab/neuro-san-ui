@@ -10,7 +10,7 @@ type LLMChatGroupConfigBtnProps = {
 }
 
 export const LlmChatOptionsButton = styled(Button, {
-    shouldForwardProp: (prop) => prop !== "enabled" && prop !== "posRight",
+    shouldForwardProp: (prop) => prop !== "enabled" && prop !== "posRight" && prop !== "posBottom",
 })<LLMChatGroupConfigBtnProps>(({enabled, posRight}) => ({
     position: "absolute",
     top: 10,

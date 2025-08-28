@@ -5,11 +5,8 @@
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import {IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
-import Grid from "@mui/material/Grid2"
-import NextImage from "next/image"
-import Link from "next/link"
-import {useRouter} from "next/router"
-import {ReactElement, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
+import Grid from "@mui/material/Grid"
+import {MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "./confirmationModal"
 import {LoadingSpinner} from "./LoadingSpinner"
@@ -19,19 +16,34 @@ import {
     DEFAULT_USER_IMAGE,
     NEURO_SAN_UI_VERSION,
 } from "../../const"
-import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
-import useUserInfoStore from "../../state/UserInfo"
-import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 
 // Declare the Props Interface
-interface NavbarProps {
+export interface NavbarProps {
     // id is a string handle to the element used for testing
-    id: string
+    readonly id: string
 
     // Logo is the title of the NavBar
-    readonly Logo: string
+    readonly logo: string
+
+    // Query from the router, used to pass query parameters
+    readonly query: Record<string, string | string[]>
+
+    // Pathname is the path to the current page, used for navigation
+    readonly pathname: string
+
+    // Info about the currently authenticated user
+    readonly userInfo: {name: string; image: string}
+
+    // The type of authentication used (e.g., Auth0, OIDC, etc.)
+    readonly authenticationType: string
+
+    // Function to sign out the user
+    readonly signOut: () => void
+
+    // Support email address for contact us functionality
+    readonly supportEmailAddress: string
 }
 
 const MENU_ITEM_TEXT_PROPS = {
@@ -51,27 +63,16 @@ const DISABLE_OUTLINE_PROPS = {
     },
 }
 
-export const Navbar = (props: NavbarProps): ReactElement => {
-    /*
-    This component is responsible for rendering the navbar component.
-    */
-    const router = useRouter()
-
-    const {data: session} = useAuthentication()
-
-    const propsId = props.id
-
-    const userInfo = session.user
-    const userName = userInfo.name
-
-    // Access user info store
-    const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
-
-    // Access environment info
-    const {auth0ClientId, auth0Domain, supportEmailAddress} = useEnvironmentStore()
-
-    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
-
+export const Navbar = ({
+    authenticationType,
+    id,
+    logo,
+    pathname,
+    query,
+    signOut,
+    supportEmailAddress,
+    userInfo,
+}: NavbarProps): JSX.Element => {
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
@@ -85,13 +86,6 @@ export const Navbar = (props: NavbarProps): ReactElement => {
         // Indicate that the component has been hydrated
         setHydrated(true)
     }, [])
-    async function handleSignOut() {
-        // Clear our state storage variables
-        setCurrentUser(undefined)
-        setPicture(undefined)
-
-        await smartSignOut(currentUser, auth0Domain, auth0ClientId, oidcProvider)
-    }
 
     // Help menu wiring
     const [helpMenuAnchorEl, setHelpMenuAnchorEl] = useState<null | HTMLElement>(null)
@@ -125,7 +119,7 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                 padding: "0.25rem",
             }}
         >
-            <Link
+            <a
                 id="splash-logo-link"
                 href="https://www.cognizant.com/us/en"
                 style={{
@@ -133,18 +127,19 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                     paddingLeft: "0.15rem",
                 }}
                 target="_blank"
+                rel="noopener noreferrer"
             >
-                <NextImage
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                     id="logo-img"
                     width="200"
                     height="45"
-                    priority={true}
                     src="/cognizant-logo-white.svg"
                     alt="Cognizant Logo"
                 />
-            </Link>
+            </a>
             {/*App title*/}
-            <Grid id={propsId}>
+            <Grid id={id}>
                 <Typography
                     id="nav-bar-brand"
                     sx={{
@@ -155,7 +150,7 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                         fontWeight: "bold",
                     }}
                 >
-                    <Link
+                    <a
                         id="navbar-brand-link"
                         style={{
                             fontWeight: 500,
@@ -163,15 +158,16 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                             color: "var(--bs-white)",
                             position: "relative",
                             bottom: "1px",
+                            textDecoration: "none",
                         }}
-                        href={{
-                            pathname: "/",
-                            query: router.query,
-                        }}
+                        href={
+                            Object.keys(query || {}).length > 0
+                                ? `/?${new URLSearchParams(query as Record<string, string>).toString()}`
+                                : "/"
+                        }
                     >
-                        {props.Logo}{" "}
-                        {router.pathname === "/multiAgentAccelerator" ? "Multi-Agent Accelerator" : "Decisioning"}
-                    </Link>
+                        {logo} {pathname === "/multiAgentAccelerator" ? "Multi-Agent Accelerator" : "Decisioning"}
+                    </a>
                 </Typography>
             </Grid>
 
@@ -324,14 +320,14 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                             ...MENU_ITEM_TEXT_PROPS,
                         }}
                     >
-                        <NextImage
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                             id="user-image"
                             src={userInfo.image || DEFAULT_USER_IMAGE}
                             width={30}
                             height={30}
-                            title={userName}
+                            title={userInfo.name}
                             alt=""
-                            unoptimized={true}
                         />
                         <ArrowDropDownIcon
                             id="nav-user-dropdown-arrow"
@@ -360,7 +356,7 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                                 fontSize: "smaller",
                             }}
                         >
-                            {userName}
+                            {userInfo.name}
                         </MenuItem>
                         <MenuItem
                             id="auth-type-title"
@@ -379,7 +375,7 @@ export const Navbar = (props: NavbarProps): ReactElement => {
                         <MenuItem
                             id="user-sign-out"
                             sx={{...DISABLE_OUTLINE_PROPS, fontWeight: "bold"}}
-                            onClick={handleSignOut}
+                            onClick={signOut}
                         >
                             Sign out
                         </MenuItem>

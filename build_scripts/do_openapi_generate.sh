@@ -8,12 +8,13 @@ set -o errtrace
 set -o nounset
 set -o pipefail
 
-# TBD which one to use
-#export NEURO_SAN_SERVER_URL="https://neuro-san.decisionai.ml"
 export NEURO_SAN_SERVER_URL=https://neuro-san-dev.decisionai.ml
 
 yarn openapi-typescript "${NEURO_SAN_SERVER_URL}/api/v1/docs" \
-  --enum true \
-  --immutable true \
+  --enum \
+  --immutable \
   --make-paths-enum \
-  -o ./generated/neuro-san/NeuroSanClient.ts 
+  --empty-objects-unknown \
+  --root-types \
+  --root-types-no-schema-prefix \
+  --output ./generated/neuro-san/NeuroSanClient.ts 

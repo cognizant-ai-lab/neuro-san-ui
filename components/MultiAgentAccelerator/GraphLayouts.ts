@@ -2,13 +2,27 @@
  * Graph layout algorithms and associated functions for the agent network.
  */
 import dagre from "dagre"
-import {cloneDeep} from "lodash"
+import cloneDeep from "lodash-es/cloneDeep.js"
 import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
-import {ConnectivityInfo, Origin} from "../../generated/neuro-san/OpenAPITypes"
+import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {AgentConversation} from "../../utils/agentConversations"
 import {cleanUpAgentName} from "../AgentChat/Utils"
+
+// Helper function to check if two agents are in the same conversation
+const areAgentsInSameConversation = (
+    conversations: AgentConversation[] | null,
+    sourceAgent: string,
+    targetAgent: string
+): boolean => {
+    if (!conversations) return false
+
+    return conversations.some(
+        (conversation) => conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent)
+    )
+}
 
 // #region: Constants
 
@@ -75,8 +89,7 @@ const getEdgeProperties = (
 export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
-    getIncludedAgentIds: () => string[],
-    getOriginInfo: () => Origin[],
+    getConversations: () => AgentConversation[] | null,
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -162,13 +175,13 @@ export const layoutRadial = (
                         targetHandle = isAboveParent ? `${nodeId}-bottom-handle` : `${nodeId}-top-handle`
                     }
 
-                    const edgeIncluded =
-                        getIncludedAgentIds().includes(nodeId) && getIncludedAgentIds().includes(graphNode.id)
+                    const conversations = getConversations()
+                    const isEdgeAnimated = areAgentsInSameConversation(conversations, nodeId, graphNode.id)
 
                     // Add edge from parent to node
-                    if (!isAwaitingLlm || edgeIncluded) {
+                    if (!isAwaitingLlm || isEdgeAnimated) {
                         edgesInNetwork.push(
-                            getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, edgeIncluded)
+                            getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, isEdgeAnimated)
                         )
                     }
                 }
@@ -182,8 +195,7 @@ export const layoutRadial = (
                     agentName: cleanUpAgentName(nodeId),
                     depth,
                     displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
-                    getIncludedAgentIds,
-                    getOriginInfo,
+                    getConversations,
                     isAwaitingLlm,
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
@@ -204,8 +216,7 @@ export const layoutRadial = (
 export const layoutLinear = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
-    getIncludedAgentIds: () => string[],
-    getOriginInfo: () => Origin[],
+    getConversations: () => AgentConversation[] | null,
     isAwaitingLlm: boolean
 ): {
     nodes: RFNode<AgentNodeProps>[]
@@ -229,8 +240,7 @@ export const layoutLinear = (
                 agentCounts,
                 agentName: cleanUpAgentName(originOfNode),
                 displayAs: agentsInNetwork.find((a) => a.origin === originOfNode)?.display_as,
-                getIncludedAgentIds,
-                getOriginInfo,
+                getConversations,
                 isAwaitingLlm,
                 depth: undefined, // Depth will be computed later
             },
@@ -247,8 +257,8 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const edgeIncluded =
-                    getIncludedAgentIds().includes(parentNode) && getIncludedAgentIds().includes(originOfNode)
+                const conversations = getConversations()
+                const isEdgeAnimated = areAgentsInSameConversation(conversations, parentNode, originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
@@ -258,7 +268,7 @@ export const layoutLinear = (
                         originOfNode,
                         `${parentNode}-right-handle`,
                         `${originOfNode}-left-handle`,
-                        edgeIncluded
+                        isEdgeAnimated
                     )
                 )
             }
@@ -308,11 +318,10 @@ export const layoutLinear = (
         }
     })
 
-    // If we're in "awaiting LLM" mode, we filter edges to only include those that are between included nodes.
+    // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
+    const conversations = getConversations()
     const filteredEdges = isAwaitingLlm
-        ? edgesInNetwork.filter(
-              (edge) => getIncludedAgentIds().includes(edge.source) && getIncludedAgentIds().includes(edge.target)
-          )
+        ? edgesInNetwork.filter((edge) => areAgentsInSameConversation(conversations, edge.source, edge.target))
         : edgesInNetwork
 
     return {nodes: nodesTmp, edges: filteredEdges}

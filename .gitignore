@@ -2,14 +2,13 @@
 .env*
 .env.local
 .next
-embed/node_modules
 next-env.d.ts
 node_modules
 tsconfig.tsbuildinfo
 yarn-error.log
 
 # Coverage directory used by tools like lcov
-coverage
+coverage/
 
 # protobuf-related files
 generated/
