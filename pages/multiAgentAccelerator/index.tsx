@@ -153,20 +153,22 @@ export default function MultiAgentAcceleratorPage() {
         }
     }, [isAwaitingLlm])
 
-    const onChunkReceived = useCallback((chunk: string): boolean => (
-        processChatChunk(
-            chunk,
-            agentCountsRef.current,
-            conversationsRef.current,
-            (newCounts: Map<string, number>) => {
-                agentCountsRef.current = newCounts
-            },
-            (newConversations: AgentConversation[] | null) => {
-                conversationsRef.current = newConversations
-                setCurrentConversations(newConversations)
-            }
-        )
-    ), [])
+    const onChunkReceived = useCallback(
+        (chunk: string): boolean =>
+            processChatChunk(
+                chunk,
+                agentCountsRef.current,
+                conversationsRef.current,
+                (newCounts: Map<string, number>) => {
+                    agentCountsRef.current = newCounts
+                },
+                (newConversations: AgentConversation[] | null) => {
+                    conversationsRef.current = newConversations
+                    setCurrentConversations(newConversations)
+                }
+            ),
+        []
+    )
 
     const onStreamingStarted = useCallback((): void => {
         // Show info popup only once per session
