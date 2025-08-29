@@ -736,14 +736,14 @@ describe("VoiceChat utils", () => {
     it("stopSpeechSynthesis calls cancel when speechSynthesis is available", () => {
         const mockCancel = jest.fn()
         Object.defineProperty(window, "speechSynthesis", {
-            value: { cancel: mockCancel },
+            value: {cancel: mockCancel},
             configurable: true,
         })
 
         stopSpeechSynthesis()
         expect(mockCancel).toHaveBeenCalled()
     })
-    
+
     it("stopSpeechSynthesis should handle missing speechSynthesis gracefully", () => {
         // Remove speechSynthesis completely to test the "in" operator
         delete (window as unknown as Record<string, unknown>)["speechSynthesis"]
