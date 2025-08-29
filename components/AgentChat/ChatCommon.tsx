@@ -536,12 +536,27 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         </>
     )
 
+    // Track if this is the first transcript after starting voice mode
+    const isFirstTranscriptRef = useRef(true);
+    
     // Simple voice transcript handler that appends to existing input
     const handleVoiceTranscript = (transcript: string) => {
         if (transcript) {
-            setChatInput((prev) => `${prev}${transcript}`)
+            setChatInput((prev) => {
+                // Add space only on first transcript after starting voice mode, if there's existing content
+                const needsSpace = isFirstTranscriptRef.current && prev && !prev.endsWith(" ");
+                isFirstTranscriptRef.current = false; // Mark that we've received the first transcript
+                return prev + (needsSpace ? " " : "") + transcript;
+            });
         }
     }
+    
+    // Reset the first transcript flag when voice mode starts
+    useEffect(() => {
+        if (voiceState.isListening) {
+            isFirstTranscriptRef.current = true;
+        }
+    }, [voiceState.isListening]);
 
     /**
      * Render the microphone button, for voice input
