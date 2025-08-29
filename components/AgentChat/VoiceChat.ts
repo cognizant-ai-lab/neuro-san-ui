@@ -172,38 +172,6 @@ export const stopSpeechSynthesis = () => {
     }
 }
 
-// Factory function to create speech utterance
-const createSpeechUtterance = (
-    text: string,
-    config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
-) => {
-    if (!("speechSynthesis" in window)) return null
-
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = 0.9
-    utterance.pitch = 1
-    utterance.volume = 0.8
-
-    utterance.onstart = () => {
-        setState((prev) => ({...prev, isSpeaking: true}))
-        config.onSpeakingChange?.(true)
-    }
-
-    utterance.onend = () => {
-        setState((prev) => ({...prev, isSpeaking: false}))
-        config.onSpeakingChange?.(false)
-    }
-
-    utterance.addEventListener("error", () => {
-        setState((prev) => ({...prev, isSpeaking: false}))
-        config.onSpeakingChange?.(false)
-    })
-
-    return utterance
-}
-
 // Main voice chat functions
 export const toggleListening = async (
     recognition: unknown,
@@ -233,17 +201,6 @@ export const toggleListening = async (
         if (recognition && typeof recognition === "object" && "start" in recognition) {
             ;(recognition as {start: () => void}).start()
         }
-    }
-}
-
-export const speakMessage = (
-    text: string,
-    config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
-) => {
-    const utterance = createSpeechUtterance(text, config, setState)
-    if (utterance) {
-        window.speechSynthesis.speak(utterance)
     }
 }
 

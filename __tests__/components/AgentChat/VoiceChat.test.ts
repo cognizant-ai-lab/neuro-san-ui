@@ -2,7 +2,6 @@ import {
     checkSpeechSupport,
     cleanup,
     createSpeechRecognition,
-    speakMessage,
     stopSpeechSynthesis,
     toggleListening,
     VoiceChatConfig,
@@ -16,16 +15,6 @@ describe("VoiceChat utils", () => {
 
     it("stopSpeechSynthesis does not throw", () => {
         expect(() => stopSpeechSynthesis()).not.toThrow()
-    })
-
-    it("speakMessage does not throw with minimal config", () => {
-        const config: VoiceChatConfig = {
-            onSendMessage: () => {
-                // Mock send message callback
-            },
-        }
-        const setState = jest.fn()
-        expect(() => speakMessage("hello", config, setState)).not.toThrow()
     })
 })
 
