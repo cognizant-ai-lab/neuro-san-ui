@@ -267,8 +267,12 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
     const [isMicOn, setIsMicOn] = useState<boolean>(false)
 
+    // Track when speech is actively being processed (interim results detected)
+    // This is different from isListening - only true when user is speaking and API is processing
+    const [isProcessingSpeech, setIsProcessingSpeech] = useState<boolean>(false)
+
     const [voiceState, setVoiceState] = useState<VoiceChatState>({
-        isListening: false,
+        isListening: false, // Voice mode on/off (microphone button state)
         currentTranscript: "",
         speechSupported: checkSpeechSupport(),
         isSpeaking: false,
@@ -374,6 +378,10 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 onListeningChange: (isListening) => {
                     setVoiceState((prev) => ({...prev, isListening}))
                 },
+                onProcessingChange: (isProcessing) => {
+                    // Show spinner only when speech is actively being processed (interim results)
+                    setIsProcessingSpeech(isProcessing)
+                },
             }
             voiceRefs.current.recognition = createSpeechRecognition(voiceConfig, setVoiceState)
         }
@@ -384,6 +392,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     onTranscriptChange: () => undefined,
                     onSpeakingChange: () => undefined,
                     onListeningChange: () => undefined,
+                    onProcessingChange: () => undefined,
                 }
                 cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState)
                 voiceRefs.current.recognition = null
@@ -537,26 +546,27 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     )
 
     // Track if this is the first transcript after starting voice mode
-    const isFirstTranscriptRef = useRef(true);
+    const isFirstTranscriptRef = useRef(true)
     
     // Simple voice transcript handler that appends to existing input
     const handleVoiceTranscript = (transcript: string) => {
         if (transcript) {
+            setIsProcessingSpeech(false) // Hide spinner when text is received
             setChatInput((prev) => {
                 // Add space only on first transcript after starting voice mode, if there's existing content
-                const needsSpace = isFirstTranscriptRef.current && prev && !prev.endsWith(" ");
-                isFirstTranscriptRef.current = false; // Mark that we've received the first transcript
-                return prev + (needsSpace ? " " : "") + transcript;
-            });
+                const needsSpace = isFirstTranscriptRef.current && prev && !prev.endsWith(" ")
+                isFirstTranscriptRef.current = false // Mark that we've received the first transcript
+                return prev + (needsSpace ? " " : "") + transcript
+            })
         }
     }
     
     // Reset the first transcript flag when voice mode starts
     useEffect(() => {
         if (voiceState.isListening) {
-            isFirstTranscriptRef.current = true;
+            isFirstTranscriptRef.current = true
         }
-    }, [voiceState.isListening]);
+    }, [voiceState.isListening])
 
     /**
      * Render the microphone button, for voice input
@@ -1162,10 +1172,20 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     value={chatInput}
                     endAdornment={
                         <InputAdornment
-                            id="clear-input-adornment"
+                            id="input-adornments"
                             position="end"
                             disableTypography={true}
                         >
+                            {/* Voice processing spinner - shows only when actively speaking */}
+                            {isProcessingSpeech && (
+                                <CircularProgress
+                                    size={16}
+                                    sx={{
+                                        color: "var(--bs-primary)",
+                                        marginRight: "0.5rem",
+                                    }}
+                                />
+                            )}
                             <IconButton
                                 id="clear-input-button"
                                 onClick={() => {

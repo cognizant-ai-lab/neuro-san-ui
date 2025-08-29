@@ -36,6 +36,7 @@ export interface VoiceChatConfig {
     onTranscriptChange?: (transcript: string) => void
     onSpeakingChange?: (isSpeaking: boolean) => void
     onListeningChange?: (isListening: boolean) => void
+    onProcessingChange?: (isProcessing: boolean) => void
 }
 
 export interface VoiceChatState {
@@ -129,8 +130,15 @@ export const createSpeechRecognition = (
         })
 
         // Process results and send only final transcripts
-        const {finalTranscript} = processRecognitionResult(event)
+        const {interimTranscript, finalTranscript} = processRecognitionResult(event)
+        
+        // Show loading indicator when there's interim transcript (speech being processed)
+        if (interimTranscript && !finalTranscript) {
+            config.onProcessingChange?.(true)
+        }
+        
         if (finalTranscript) {
+            config.onProcessingChange?.(false)
             config.onTranscriptChange?.(finalTranscript)
         }
     }
