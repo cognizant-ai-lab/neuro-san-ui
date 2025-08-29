@@ -131,12 +131,12 @@ export const createSpeechRecognition = (
 
         // Process results and send only final transcripts
         const {interimTranscript, finalTranscript} = processRecognitionResult(event)
-        
+
         // Show loading indicator when there's interim transcript (speech being processed)
         if (interimTranscript && !finalTranscript) {
             config.onProcessingChange?.(true)
         }
-        
+
         if (finalTranscript) {
             config.onProcessingChange?.(false)
             config.onTranscriptChange?.(finalTranscript)

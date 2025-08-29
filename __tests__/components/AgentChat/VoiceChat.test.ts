@@ -30,6 +30,7 @@ describe("VoiceChat advanced", () => {
         originalMediaDevices = navigator.mediaDevices
         originalGetUserMedia = navigator.mediaDevices?.getUserMedia
     })
+
     afterAll(() => {
         ;((window as Window) && {SpeechRecognition: {}}).SpeechRecognition = originalSpeechRecognition
         window.speechSynthesis = originalSpeechSynthesis as SpeechSynthesis
@@ -98,6 +99,7 @@ describe("VoiceChat advanced", () => {
             onTranscriptChange: jest.fn(),
             onSpeakingChange: jest.fn(),
             onListeningChange: jest.fn(),
+            onProcessingChange: jest.fn(),
         }
         const state: VoiceChatState = {
             isListening: true,
@@ -124,10 +126,11 @@ describe("VoiceChat advanced", () => {
             finalTranscript: "hi",
         }
         const setState = jest.fn()
-        const config = {onSendMessage: jest.fn(), onTranscriptChange: jest.fn()}
+        const config = {onSendMessage: jest.fn(), onTranscriptChange: jest.fn(), onListeningChange: jest.fn()}
         const recognition = {stop: jest.fn(), start: jest.fn()}
         await toggleListening(recognition, state, config, setState)
         expect(recognition.stop).toHaveBeenCalled()
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
         // Message sending is now handled by the onend handler, not immediately by toggleListening
         expect(config.onSendMessage).not.toHaveBeenCalled()
         // Now test start
@@ -136,7 +139,140 @@ describe("VoiceChat advanced", () => {
         expect(recognition.start).toHaveBeenCalled()
     })
 
-    it("dummy test to avoid empty arrow function", () => {
-        expect(true).toBe(true)
+    it("speech recognition onresult handles interim and final transcripts", () => {
+        const config = {
+            onSendMessage: jest.fn(),
+            onTranscriptChange: jest.fn(),
+            onProcessingChange: jest.fn(),
+        }
+        const setState = jest.fn()
+
+        // Mock SpeechRecognition constructor
+        const mockRecognition = {
+            continuous: false,
+            interimResults: false,
+            lang: "",
+            onstart: null as (() => void) | null,
+            onresult: null as ((event: unknown) => void) | null,
+            onerror: null as ((event: unknown) => void) | null,
+            onend: null as (() => void) | null,
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+        }
+
+        // Mock the global SpeechRecognition and ensure checkSpeechSupport returns true
+        Object.defineProperty(window, "SpeechRecognition", {
+            value: jest.fn(() => mockRecognition),
+            configurable: true,
+        })
+
+        // Mock navigator.userAgent to ensure checkSpeechSupport returns true
+        Object.defineProperty(navigator, "userAgent", {
+            // eslint-disable-next-line max-len
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            configurable: true,
+        })
+
+        const recognition = createSpeechRecognition(config, setState)
+        expect(recognition).toBeDefined()
+
+        // Test interim results trigger processing state
+        const interimEvent = {
+            resultIndex: 0,
+            results: {
+                length: 1,
+                0: {
+                    isFinal: false,
+                    0: {transcript: "hello world"},
+                },
+            },
+        }
+
+        mockRecognition.onresult?.(interimEvent)
+        expect(config.onProcessingChange).toHaveBeenCalledWith(true)
+        expect(config.onTranscriptChange).not.toHaveBeenCalled()
+
+        // Test final results trigger transcript change and stop processing
+        const finalEvent = {
+            resultIndex: 0,
+            results: {
+                length: 1,
+                0: {
+                    isFinal: true,
+                    0: {transcript: "hello world"},
+                },
+            },
+        }
+
+        mockRecognition.onresult?.(finalEvent)
+        expect(config.onProcessingChange).toHaveBeenCalledWith(false)
+        expect(config.onTranscriptChange).toHaveBeenCalledWith("hello world")
+    })
+
+    it("speech recognition onstart and onend update state correctly", () => {
+        const config = {
+            onSendMessage: jest.fn(),
+            onListeningChange: jest.fn(),
+        }
+        // Mock setState to actually call the function it receives
+        const setState = jest.fn((updater) => {
+            if (typeof updater === "function") {
+                const mockPrevState = {
+                    isListening: false,
+                    currentTranscript: "",
+                    speechSupported: true,
+                    isSpeaking: false,
+                    finalTranscript: "",
+                }
+                updater(mockPrevState)
+            }
+        })
+
+        // Mock SpeechRecognition constructor
+        const mockRecognition = {
+            continuous: false,
+            interimResults: false,
+            lang: "",
+            onstart: null as (() => void) | null,
+            onresult: null as ((event: unknown) => void) | null,
+            onerror: null as ((event: unknown) => void) | null,
+            onend: null as (() => void) | null,
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+        }
+
+        Object.defineProperty(window, "SpeechRecognition", {
+            value: jest.fn(() => mockRecognition),
+            configurable: true,
+        })
+
+        // Mock navigator.userAgent to ensure checkSpeechSupport returns true
+        Object.defineProperty(navigator, "userAgent", {
+            // eslint-disable-next-line max-len
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            configurable: true,
+        })
+
+        createSpeechRecognition(config, setState)
+
+        // Clear any previous calls
+        config.onListeningChange.mockClear()
+        setState.mockClear()
+
+        // Test onstart
+        mockRecognition.onstart?.()
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(config.onListeningChange).toHaveBeenCalledWith(true)
+
+        // Clear calls again
+        config.onListeningChange.mockClear()
+        setState.mockClear()
+
+        // Test onend
+        mockRecognition.onend?.()
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
     })
 })
