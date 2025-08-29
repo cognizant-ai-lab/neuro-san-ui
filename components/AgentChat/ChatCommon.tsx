@@ -367,9 +367,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 onSendMessage: (message: string) => {
                     handleSend(message)
                 },
-                onTranscriptChange: (transcript) => {
-                    setChatInput(transcript)
-                },
+                onTranscriptChange: handleVoiceTranscript,
                 onSpeakingChange: (isSpeaking) => {
                     setVoiceState((prev) => ({...prev, isSpeaking}))
                 },
@@ -538,6 +536,17 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         </>
     )
 
+    // Simple voice transcript handler that appends to existing input
+    const handleVoiceTranscript = (transcript: string) => {
+        if (transcript) {
+            setChatInput((prev) => `${prev}${transcript}`)
+        }
+    }
+
+    /**
+     * Render the microphone button, for voice input
+     * @returns A ReactNode representing the microphone button
+     */
     const renderMicrophoneButton = () => (
         <MicrophoneButton
             isMicOn={isMicOn}
@@ -547,7 +556,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             isAwaitingLlm={isAwaitingLlm}
             recognition={voiceRefs.current.recognition}
             onSendMessage={handleSend}
-            onTranscriptChange={setChatInput}
+            onTranscriptChange={handleVoiceTranscript}
         />
     )
 

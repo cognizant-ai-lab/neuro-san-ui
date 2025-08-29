@@ -118,26 +118,21 @@ export const createSpeechRecognition = (
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+        // Stop speaking if we detect interruption
         setState((prev) => {
-            // Stop speaking if we detect interruption
             if (prev.isSpeaking) {
                 stopSpeechSynthesis()
                 config.onSpeakingChange?.(false)
+                return {...prev, isSpeaking: false}
             }
-
-            const {interimTranscript, finalTranscript} = processRecognitionResult(event)
-            const newFinalTranscript = prev.finalTranscript + finalTranscript
-            const newCurrentTranscript = newFinalTranscript + interimTranscript
-
-            config.onTranscriptChange?.(newCurrentTranscript)
-
-            return {
-                ...prev,
-                finalTranscript: newFinalTranscript,
-                currentTranscript: newCurrentTranscript,
-                isSpeaking: false,
-            }
+            return prev
         })
+
+        // Process results and send only final transcripts
+        const {finalTranscript} = processRecognitionResult(event)
+        if (finalTranscript) {
+            config.onTranscriptChange?.(finalTranscript)
+        }
     }
 
     recognition.addEventListener("error", () => {
@@ -197,7 +192,6 @@ export const toggleListening = async (
     } else {
         // Start listening
         setState((prev) => ({...prev, finalTranscript: "", currentTranscript: ""}))
-        config.onTranscriptChange?.("")
         if (recognition && typeof recognition === "object" && "start" in recognition) {
             ;(recognition as {start: () => void}).start()
         }
