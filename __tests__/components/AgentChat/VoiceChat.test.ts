@@ -40,16 +40,6 @@ const mockChromeBrowser = () => {
 }
 
 describe("VoiceChat utils", () => {
-    it("checkSpeechSupport returns a boolean", () => {
-        expect(typeof checkSpeechSupport()).toBe("boolean")
-    })
-
-    it("stopSpeechSynthesis does not throw", () => {
-        expect(() => stopSpeechSynthesis()).not.toThrow()
-    })
-})
-
-describe("VoiceChat advanced", () => {
     let originalSpeechRecognition: unknown
     let originalSpeechSynthesis: unknown
     let originalGetUserMedia: unknown
@@ -88,6 +78,10 @@ describe("VoiceChat advanced", () => {
                 })
             }
         }
+    })
+
+    it("checkSpeechSupport returns a boolean", () => {
+        expect(typeof checkSpeechSupport()).toBe("boolean")
     })
 
     it("toggleListening handles permission denied", async () => {
@@ -739,20 +733,17 @@ describe("VoiceChat advanced", () => {
         expect(config.onSpeakingChange).not.toHaveBeenCalled()
     })
 
-    it("stopSpeechSynthesis should work when speechSynthesis is available", () => {
-        // Mock speechSynthesis
+    it("stopSpeechSynthesis calls cancel when speechSynthesis is available", () => {
+        const mockCancel = jest.fn()
         Object.defineProperty(window, "speechSynthesis", {
-            value: {
-                cancel: jest.fn(),
-            },
+            value: { cancel: mockCancel },
             configurable: true,
         })
 
         stopSpeechSynthesis()
-
-        expect(window.speechSynthesis.cancel).toHaveBeenCalled()
+        expect(mockCancel).toHaveBeenCalled()
     })
-
+    
     it("stopSpeechSynthesis should handle missing speechSynthesis gracefully", () => {
         // Remove speechSynthesis completely to test the "in" operator
         delete (window as unknown as Record<string, unknown>)["speechSynthesis"]
