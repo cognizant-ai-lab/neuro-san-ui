@@ -246,4 +246,53 @@ describe("MicrophoneButton", () => {
         button = screen.getByTestId("microphone-button")
         expect(button).toHaveAttribute("id", "microphone-button")
     })
+
+    it("displays correct tooltip text when microphone is off", async () => {
+        const user = userEvent.setup()
+        render(<MicrophoneButton {...defaultProps} />)
+
+        const button = screen.getByTestId("microphone-button")
+        await user.hover(button)
+
+        expect(await screen.findByText("Turn microphone on")).toBeInTheDocument()
+    })
+
+    it("displays correct tooltip text when microphone is on", async () => {
+        const user = userEvent.setup()
+        render(
+            <MicrophoneButton
+                {...defaultProps}
+                isMicOn={true}
+            />
+        )
+
+        const button = screen.getByTestId("microphone-button")
+        await user.hover(button)
+
+        expect(await screen.findByText("Turn microphone off")).toBeInTheDocument()
+    })
+
+    it("updates tooltip text when isMicOn changes", async () => {
+        const user = userEvent.setup()
+        const {rerender} = render(<MicrophoneButton {...defaultProps} />)
+
+        const button = screen.getByTestId("microphone-button")
+
+        // Test initial state - microphone off
+        await user.hover(button)
+        expect(await screen.findByText("Turn microphone on")).toBeInTheDocument()
+
+        await user.unhover(button)
+
+        // Test updated state - microphone on
+        rerender(
+            <MicrophoneButton
+                {...defaultProps}
+                isMicOn={true}
+            />
+        )
+
+        await user.hover(button)
+        expect(await screen.findByText("Turn microphone off")).toBeInTheDocument()
+    })
 })

@@ -1,5 +1,6 @@
 import MicNoneIcon from "@mui/icons-material/MicNone"
 import MicOffIcon from "@mui/icons-material/MicOff"
+import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
 import {LlmChatButton} from "./LlmChatButton"
@@ -83,23 +84,28 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     }
 
     return (
-        <LlmChatButton
-            id="microphone-button"
-            data-testid="microphone-button"
-            onClick={handleClick}
-            sx={{
-                padding: "0.5rem",
-                right: 70,
-                backgroundColor: isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
-                opacity: voiceState.speechSupported ? 1 : 0.5,
-            }}
-            disabled={!voiceState.speechSupported || isAwaitingLlm}
-        >
-            {voiceState.isListening ? (
-                <MicNoneIcon sx={{color: "var(--bs-white)"}} />
-            ) : (
-                <MicOffIcon sx={{color: "var(--bs-white)"}} />
-            )}
-        </LlmChatButton>
+        <Tooltip title={isMicOn ? "Turn microphone off" : "Turn microphone on"}>
+            <span>
+                <LlmChatButton
+                    id="microphone-button"
+                    data-testid="microphone-button"
+                    onClick={handleClick}
+                    sx={{
+                        padding: "0.5rem",
+                        right: 70,
+                        backgroundColor:
+                            isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
+                        opacity: voiceState.speechSupported ? 1 : 0.5,
+                    }}
+                    disabled={!voiceState.speechSupported || isAwaitingLlm}
+                >
+                    {voiceState.isListening ? (
+                        <MicNoneIcon sx={{color: "var(--bs-white)"}} />
+                    ) : (
+                        <MicOffIcon sx={{color: "var(--bs-white)"}} />
+                    )}
+                </LlmChatButton>
+            </span>
+        </Tooltip>
     )
 }
