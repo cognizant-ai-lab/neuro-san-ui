@@ -1104,7 +1104,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             </Box>
             <Box
                 id="user-input-div"
-                style={{...divStyle, display: "flex", margin: "10px", alignItems: "center", position: "relative"}}
+                style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
             >
                 <Input
                     autoComplete="off"
@@ -1120,11 +1120,11 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         display: "flex",
                         flexGrow: 1,
                         fontSize: "smaller",
-                        marginRight: "0.5rem",
-                        paddingBottom: "7.5px",
-                        paddingTop: "7.5px",
-                        paddingLeft: "15px",
-                        paddingRight: "15px",
+                        marginRight: "4rem",
+                        paddingBottom: "0.5rem",
+                        paddingTop: "0.5rem",
+                        paddingLeft: "1rem",
+                        paddingRight: "1rem",
                     }}
                     onChange={(event) => {
                         setChatInput(event.target.value)
