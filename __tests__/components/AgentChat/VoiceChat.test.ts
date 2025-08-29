@@ -73,25 +73,6 @@ describe("VoiceChat advanced", () => {
         expect(config.onSendMessage as jest.Mock).not.toHaveBeenCalled()
     })
 
-    it("createSpeechRecognition returns undefined if not supported", () => {
-        const orig = (window as unknown as {[key: string]: unknown})["SpeechRecognition"]
-        Object.defineProperty(window, "SpeechRecognition", {
-            value: undefined,
-            configurable: true,
-        })
-        Object.defineProperty(window, "webkitSpeechRecognition", {
-            value: undefined,
-            configurable: true,
-        })
-        const config = {onSendMessage: jest.fn()} as VoiceChatConfig
-        const setState = jest.fn()
-        expect(createSpeechRecognition(config, setState)).toBeUndefined()
-        Object.defineProperty(window, "SpeechRecognition", {
-            value: orig,
-            configurable: true,
-        })
-    })
-
     it("cleanup resets state and calls callbacks", () => {
         const setState = jest.fn()
         const config = {
@@ -274,5 +255,113 @@ describe("VoiceChat advanced", () => {
         mockRecognition.onend?.()
         expect(setState).toHaveBeenCalledWith(expect.any(Function))
         expect(config.onListeningChange).toHaveBeenCalledWith(false)
+    })
+
+    it("should handle webkit speech recognition prefix", () => {
+        const config = {onSendMessage: jest.fn(), onListeningChange: jest.fn()} as VoiceChatConfig
+        const setState = jest.fn()
+
+        // Mock SpeechRecognition instance
+        const mockRecognition = {
+            start: jest.fn(),
+            stop: jest.fn(),
+            abort: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            onstart: null as (() => void) | null,
+            onend: null as (() => void) | null,
+            onerror: null as ((event: unknown) => void) | null,
+            onresult: null as ((event: unknown) => void) | null,
+        }
+
+        // Mock navigator.userAgent to ensure checkSpeechSupport returns true
+        Object.defineProperty(navigator, "userAgent", {
+            // eslint-disable-next-line max-len
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            configurable: true,
+        })
+
+        // Mock window.webkitSpeechRecognition instead of SpeechRecognition
+        Object.defineProperty(window, "SpeechRecognition", {
+            value: undefined,
+            configurable: true,
+        })
+        Object.defineProperty(window, "webkitSpeechRecognition", {
+            value: jest.fn(() => mockRecognition),
+            configurable: true,
+        })
+
+        const result = createSpeechRecognition(config, setState)
+
+        expect((window as unknown as Record<string, unknown>)["webkitSpeechRecognition"]).toHaveBeenCalled()
+        expect(result).toBe(mockRecognition)
+    })
+
+    it("should handle speech recognition errors", () => {
+        const config = {onSendMessage: jest.fn(), onListeningChange: jest.fn()} as VoiceChatConfig
+        const setState = jest.fn()
+
+        // Mock SpeechRecognition instance
+        const mockRecognition = {
+            start: jest.fn(),
+            stop: jest.fn(),
+            abort: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            onstart: null as (() => void) | null,
+            onend: null as (() => void) | null,
+            onerror: null as ((event: unknown) => void) | null,
+            onresult: null as ((event: unknown) => void) | null,
+        }
+
+        // Mock navigator.userAgent to ensure checkSpeechSupport returns true
+        Object.defineProperty(navigator, "userAgent", {
+            // eslint-disable-next-line max-len
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            configurable: true,
+        })
+
+        Object.defineProperty(window, "SpeechRecognition", {
+            value: jest.fn(() => mockRecognition),
+            configurable: true,
+        })
+
+        createSpeechRecognition(config, setState)
+
+        // Verify addEventListener was called for error handling
+        expect(mockRecognition.addEventListener).toHaveBeenCalledWith("error", expect.any(Function))
+
+        // Get the error handler and call it
+        const errorHandler = mockRecognition.addEventListener.mock.calls.find((call) => call[0] === "error")?.[1]
+
+        expect(errorHandler).toBeDefined()
+        errorHandler()
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
+    })
+
+    it("should return undefined when speech recognition is not supported", () => {
+        const config = {onSendMessage: jest.fn()} as VoiceChatConfig
+        const setState = jest.fn()
+
+        // Mock navigator.userAgent to make checkSpeechSupport return false
+        Object.defineProperty(navigator, "userAgent", {
+            value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/91.0",
+            configurable: true,
+        })
+
+        // Remove speech recognition support
+        Object.defineProperty(window, "SpeechRecognition", {
+            value: undefined,
+            configurable: true,
+        })
+        Object.defineProperty(window, "webkitSpeechRecognition", {
+            value: undefined,
+            configurable: true,
+        })
+
+        const result = createSpeechRecognition(config, setState)
+
+        expect(result).toBeUndefined()
     })
 })

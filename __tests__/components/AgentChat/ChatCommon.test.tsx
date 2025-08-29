@@ -550,4 +550,13 @@ describe("ChatCommon", () => {
         // Agent response should be in the DOM but with display: none
         expect(await screen.findByText(agentResponseText)).not.toBeVisible()
     })
+
+    it("should render microphone button", async () => {
+        renderChatCommonComponent()
+
+        await waitFor(() => {
+            const micButton = screen.queryByTestId("microphone-button")
+            expect(micButton).toBeInTheDocument()
+        })
+    })
 })
