@@ -366,6 +366,5 @@ describe("MicrophoneButton", () => {
 
         const button = screen.getByTestId("microphone-button")
         expect(button).toBeInTheDocument()
-        // The opacity styling is tested by verifying the component renders with unsupported speech
     })
 })
