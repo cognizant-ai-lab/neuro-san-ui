@@ -1,12 +1,12 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
         "build:app": "next build",
-        "build:lib": "yarn run clean && tsc --project tsconfig.build.json && cp styles/globals.css dist/styles && yarn run fix-esm-import-path dist",
+        "build:lib": "yarn run clean && yarn run generate && tsc --project tsconfig.build.json && cp styles/globals.css dist/styles && yarn run fix-esm-import-path dist",
         "check-format": "prettier --check .",
         "clean": "rm -rf dist generated",
         "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
