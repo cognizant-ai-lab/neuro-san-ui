@@ -42,8 +42,9 @@ export const usePreferences = () => {
 
         // Listen for cross-instance changes
         if (typeof window !== "undefined") {
-            window.addEventListener("preferences-sync", (event: any) => {
-                store?.setState(event.detail, true)
+            window.addEventListener("preferences-sync", (event: Event) => {
+                const customEvent = event as CustomEvent<UserPreferences>
+                store?.setState(customEvent.detail, true)
             })
         }
     }
