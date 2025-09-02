@@ -8,6 +8,7 @@
         "depcheck",
         "eslint-config-next",
         "eslint-formatter-summary",
+        "fix-esm-import-path",
         "jest",
         "jest-environment-jsdom",
         "openapi-typescript",

@@ -10,6 +10,7 @@ import {getAgentNetworks, testConnection} from "../../controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
+import {processChatChunk} from "../../utils/agentConversations"
 import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../common/TestUtils"
 
@@ -37,6 +38,8 @@ jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
         return <div data-testid="mock-agent-flow" />
     },
 }))
+
+jest.mock("../../utils/agentConversations")
 
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = jest.fn()
@@ -107,6 +110,11 @@ describe("Multi Agent Accelerator Page", () => {
             ],
         })
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
+
+        // make processChatChunk the real implementation
+        ;(processChatChunk as jest.Mock).mockImplementation(
+            jest.requireActual("../../utils/agentConversations").processChatChunk
+        )
 
         user = userEvent.setup()
     })
@@ -265,6 +273,36 @@ describe("Multi Agent Accelerator Page", () => {
             Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY)
         )
         expect(hasAgent).toBe(true)
+    })
+
+    it("should handle receiving a bad chunk", async () => {
+        // Make processChatChunk return success as false for this one test to simulate a critical error
+        ;(processChatChunk as jest.Mock).mockReturnValue({
+            success: false,
+            newCounts: new Map([[TEST_AGENT_MATH_GUY, 1]]),
+            newConversations: [{agents: new Set([TEST_AGENT_MATH_GUY])}],
+        })
+
+        renderMultiAgentAcceleratorPage()
+
+        // Simulate receiving a chat message
+        const mockChunk = JSON.stringify(MATH_GUY_MESSAGE)
+
+        await act(async () => {
+            onChunkReceived(mockChunk)
+        })
+
+        expect(chatCommonMock).toHaveBeenCalled()
+
+        // Verify the conversations array contains the expected agent
+        const calls = conversationMock.mock.calls
+
+        // Assert that none of the calls has TEST_AGENT_MATH_GUY
+        expect(
+            calls.some((call) =>
+                call[0]?.some((conv: {agents: Set<string>}) => Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY))
+            )
+        ).toBe(false)
     })
 
     it("should handle receiving an end of conversation chat message", async () => {

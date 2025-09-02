@@ -155,8 +155,7 @@ export default function MultiAgentAcceleratorPage() {
 
     const onChunkReceived = useCallback((chunk: string): boolean => {
         const result = processChatChunk(chunk, agentCountsRef.current, conversationsRef.current)
-
-        if (result) {
+        if (result.success) {
             agentCountsRef.current = result.newCounts
             conversationsRef.current = result.newConversations
             setCurrentConversations(result.newConversations)

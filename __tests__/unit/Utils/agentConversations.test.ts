@@ -76,33 +76,16 @@ describe("agentConversations", () => {
     })
 
     describe("processChatChunk", () => {
-        let agentCounts: Map<string, number>
-        let currentConversations: AgentConversation[] | null
-        let setAgentCounts: jest.Mock
-        let setCurrentConversations: jest.Mock
-
-        beforeEach(() => {
-            agentCounts = new Map()
-            currentConversations = null
-            setAgentCounts = jest.fn()
-            setCurrentConversations = jest.fn()
-        })
-
         it("should handle chunk without origin info", () => {
             mockChatMessageFromChunk.mockReturnValue({
                 origin: [],
             })
 
-            const result = processChatChunk(
-                "test chat chunk",
-                agentCounts,
-                currentConversations,
-                setAgentCounts,
-                setCurrentConversations
-            )
+            const result = processChatChunk("test chat chunk", new Map(), null)
 
-            expect(result).toBe(true)
-            expect(setCurrentConversations).not.toHaveBeenCalled()
+            expect(result.success).toBe(true)
+            expect(result.newConversations).toBeNull()
+            expect(result.newCounts).toEqual(new Map())
         })
 
         it("should create new conversation for new agents", () => {
@@ -117,15 +100,12 @@ describe("agentConversations", () => {
                 text: "Processing...",
             })
 
-            processChatChunk("test chat chunk", agentCounts, [], setAgentCounts, setCurrentConversations)
+            const result = processChatChunk("test chat chunk", new Map(), [])
 
-            expect(setAgentCounts).toHaveBeenCalled()
-            expect(setCurrentConversations).toHaveBeenCalled()
-
-            const newConversations = setCurrentConversations.mock.calls[0][0]
-            expect(newConversations).toHaveLength(1)
-            expect(newConversations[0].agents.has("agent1")).toBe(true)
-            expect(newConversations[0].agents.has("agent2")).toBe(true)
+            expect(result.success).toBe(true)
+            expect(result.newConversations).toHaveLength(1)
+            expect(result.newConversations[0].agents.has("agent1")).toBe(true)
+            expect(result.newConversations[0].agents.has("agent2")).toBe(true)
         })
 
         it("should remove agents on final message", () => {
@@ -144,18 +124,12 @@ describe("agentConversations", () => {
                 text: "",
             })
 
-            processChatChunk(
-                "final chat chunk",
-                agentCounts,
-                conversationsWithAgents,
-                setAgentCounts,
-                setCurrentConversations
-            )
+            const result = processChatChunk("final chat chunk", new Map(), conversationsWithAgents)
 
-            const updatedConversations = setCurrentConversations.mock.calls[0][0]
-            expect(updatedConversations).toHaveLength(1)
-            expect(updatedConversations[0].agents.has("agent1")).toBe(false)
-            expect(updatedConversations[0].agents.has("agent2")).toBe(true)
+            expect(result.success).toBe(true)
+            expect(result.newConversations).toHaveLength(1)
+            expect(result.newConversations[0].agents.has("agent1")).toBe(false)
+            expect(result.newConversations[0].agents.has("agent2")).toBe(true)
         })
 
         it("should remove empty conversations", () => {
@@ -173,16 +147,12 @@ describe("agentConversations", () => {
                 text: "",
             })
 
-            processChatChunk(
-                "final chat chunk",
-                agentCounts,
-                conversationsWithAgent,
-                setAgentCounts,
-                setCurrentConversations
-            )
+            const result = processChatChunk("final chat chunk", new Map(), conversationsWithAgent)
+
+            expect(result.success).toBe(true)
 
             // Should set to null when no conversations remain
-            expect(setCurrentConversations).toHaveBeenCalledWith(null)
+            expect(result.newConversations).toBeNull()
         })
 
         it("should handle errors gracefully", () => {
@@ -192,17 +162,10 @@ describe("agentConversations", () => {
                 throw new Error("Parsing error")
             })
 
-            const result = processChatChunk(
-                "invalid chat chunk",
-                agentCounts,
-                currentConversations,
-                setAgentCounts,
-                setCurrentConversations
-            )
+            const result = processChatChunk("invalid chat chunk", new Map(), null)
 
-            expect(result).toBe(false)
+            expect(result.success).toBe(false)
             expect(consoleErrorSpy).toHaveBeenCalledWith("Agent conversation error:", expect.any(Error))
-            consoleErrorSpy.mockRestore()
         })
     })
 })
