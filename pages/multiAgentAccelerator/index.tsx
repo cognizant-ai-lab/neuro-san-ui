@@ -20,13 +20,13 @@ import {useAuthentication} from "../../utils/Authentication"
 import {useLocalStorage} from "../../utils/use_local_storage"
 
 // Main function.
-// Has to be export default for NextJS so tell ts-prune to ignore
+// Has to be export default for Next.js so tell ts-prune to ignore
 // ts-prune-ignore-next
 export default function MultiAgentAcceleratorPage() {
     // Animation time for the left and right panels to slide in or out when launching the animation
     const GROW_ANIMATION_TIME_MS = 800
 
-    // For access to logged in session and current user name
+    // For access to logged-in session and current username
     const {
         user: {image: userImage, name: userName},
     } = useAuthentication().data
@@ -49,7 +49,7 @@ export default function MultiAgentAcceleratorPage() {
 
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
 
-    // An extra set of quotes is making it in the the string in local storage.
+    // An extra set of quotes is making it in the string in local storage.
     const [neuroSanURL, setNeuroSanURL] = useState<string>(
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
@@ -153,22 +153,16 @@ export default function MultiAgentAcceleratorPage() {
         }
     }, [isAwaitingLlm])
 
-    const onChunkReceived = useCallback(
-        (chunk: string): boolean =>
-            processChatChunk(
-                chunk,
-                agentCountsRef.current,
-                conversationsRef.current,
-                (newCounts: Map<string, number>) => {
-                    agentCountsRef.current = newCounts
-                },
-                (newConversations: AgentConversation[] | null) => {
-                    conversationsRef.current = newConversations
-                    setCurrentConversations(newConversations)
-                }
-            ),
-        []
-    )
+    const onChunkReceived = useCallback((chunk: string): boolean => {
+        const result = processChatChunk(chunk, agentCountsRef.current, conversationsRef.current)
+        if (result.success) {
+            agentCountsRef.current = result.newCounts
+            conversationsRef.current = result.newConversations
+            setCurrentConversations(result.newConversations)
+        }
+
+        return result.success
+    }, [])
 
     const onStreamingStarted = useCallback((): void => {
         // Show info popup only once per session

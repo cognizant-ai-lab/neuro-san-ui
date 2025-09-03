@@ -10,6 +10,8 @@ import {getAgentNetworks, testConnection} from "../../controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 import useEnvironmentStore from "../../state/environment"
+import {usePreferences} from "../../state/Preferences"
+import {processChatChunk} from "../../utils/agentConversations"
 import {withStrictMocks} from "../common/strictMocks"
 import {mockFetch} from "../common/TestUtils"
 
@@ -37,6 +39,12 @@ jest.mock("../../components/MultiAgentAccelerator/AgentFlow", () => ({
         return <div data-testid="mock-agent-flow" />
     },
 }))
+
+jest.mock("../../utils/agentConversations")
+
+// Mock Preferences state
+jest.mock("../../state/Preferences")
+const mockedUsePreferences = jest.mocked(usePreferences, {shallow: true})
 
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = jest.fn()
@@ -91,6 +99,7 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     beforeEach(() => {
+        mockedUsePreferences.mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
         ;(getAgentNetworks as jest.Mock).mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
 
@@ -108,37 +117,47 @@ describe("Multi Agent Accelerator Page", () => {
         })
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
 
+        // make processChatChunk the real implementation
+        ;(processChatChunk as jest.Mock).mockImplementation(
+            jest.requireActual("../../utils/agentConversations").processChatChunk
+        )
+
         user = userEvent.setup()
     })
 
-    it("should render elements on the page and change the page on click of sidebar item", async () => {
-        renderMultiAgentAcceleratorPage()
+    it.each([false, true])(
+        "should render elements on the page with darkMode=%s and change the page on click of sidebar item",
+        async (darkMode) => {
+            mockedUsePreferences.mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
 
-        // Ensure Math Guy (default network) element is rendered.
-        await screen.findByText(TEST_AGENT_MATH_GUY)
+            renderMultiAgentAcceleratorPage()
 
-        // Find sidebar. Will fail if <> 1 found
-        await screen.findByText("Agent Networks")
+            // Ensure Math Guy (default network) element is rendered.
+            await screen.findByText(TEST_AGENT_MATH_GUY)
 
-        // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
-        const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
+            // Find sidebar. Will fail if <> 1 found
+            await screen.findByText("Agent Networks")
 
-        // Click Music Nerd sidebar item
-        await user.click(musicNerdItem)
+            // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
+            const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
 
-        // Music Nerd is selected now. Make sure we see it.
-        await screen.findByText(TEST_AGENT_MUSIC_NERD)
+            // Click Music Nerd sidebar item
+            await user.click(musicNerdItem)
 
-        // Make sure the page rendered ChatCommon with expected props
-        expect(chatCommonMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                currentUser: MOCK_USER,
-                targetAgent: TEST_AGENT_MATH_GUY,
-                clearChatOnNewAgent: true,
-                neuroSanURL: NEURO_SAN_SERVER_URL,
-            })
-        )
-    })
+            // Music Nerd is selected now. Make sure we see it.
+            await screen.findByText(TEST_AGENT_MUSIC_NERD)
+
+            // Make sure the page rendered ChatCommon with expected props
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    currentUser: MOCK_USER,
+                    targetAgent: TEST_AGENT_MATH_GUY,
+                    clearChatOnNewAgent: true,
+                    neuroSanURL: NEURO_SAN_SERVER_URL,
+                })
+            )
+        }
+    )
 
     it("should display error toast when an error occurs for getAgentNetworks", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
@@ -265,6 +284,36 @@ describe("Multi Agent Accelerator Page", () => {
             Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY)
         )
         expect(hasAgent).toBe(true)
+    })
+
+    it("should handle receiving a bad chunk", async () => {
+        // Make processChatChunk return success as false for this one test to simulate a critical error
+        ;(processChatChunk as jest.Mock).mockReturnValue({
+            success: false,
+            newCounts: new Map([[TEST_AGENT_MATH_GUY, 1]]),
+            newConversations: [{agents: new Set([TEST_AGENT_MATH_GUY])}],
+        })
+
+        renderMultiAgentAcceleratorPage()
+
+        // Simulate receiving a chat message
+        const mockChunk = JSON.stringify(MATH_GUY_MESSAGE)
+
+        await act(async () => {
+            onChunkReceived(mockChunk)
+        })
+
+        expect(chatCommonMock).toHaveBeenCalled()
+
+        // Verify the conversations array contains the expected agent
+        const calls = conversationMock.mock.calls
+
+        // Assert that none of the calls has TEST_AGENT_MATH_GUY
+        expect(
+            calls.some((call) =>
+                call[0]?.some((conv: {agents: Set<string>}) => Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY))
+            )
+        ).toBe(false)
     })
 
     it("should handle receiving an end of conversation chat message", async () => {

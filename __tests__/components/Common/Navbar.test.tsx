@@ -120,4 +120,23 @@ describe("Navbar", () => {
         const neuroSanCoreItem = await screen.findByText("Neuro-san (core)")
         expect(neuroSanCoreItem).toBeVisible()
     })
+
+    it("toggles dark mode", async () => {
+        renderNavbar()
+
+        const helpToggle = await screen.findByText("Help")
+        await user.click(helpToggle)
+
+        const darkModeToggle = await screen.findByTestId("DarkModeIcon")
+        expect(darkModeToggle).toBeVisible()
+        expect(darkModeToggle).not.toBeChecked()
+
+        // Check initial color (light mode)
+        expect(darkModeToggle).toHaveStyle("color: var(--bs-gray-dark)")
+
+        await user.click(darkModeToggle)
+
+        // Check color after toggle (dark mode)
+        expect(darkModeToggle).toHaveStyle("color: var(--bs-yellow)")
+    })
 })

@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box"
-import {useRouter} from "next/router"
+import {useRouter} from "next/router.js"
 import {ReactElement} from "react"
 
 import {LOGO} from "../../const"

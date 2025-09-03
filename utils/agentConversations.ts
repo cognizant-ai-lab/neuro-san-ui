@@ -66,43 +66,58 @@ const processAgentCompletion = (conversations: AgentConversation[], tools: strin
 export const processChatChunk = (
     chunk: string,
     agentCountsMap: Map<string, number>,
-    currentConversations: AgentConversation[] | null,
-    setAgentCounts: (counts: Map<string, number>) => void,
-    setCurrentConversations: (conversations: AgentConversation[] | null) => void
-): boolean => {
+    currentConversations: AgentConversation[] | null
+): {
+    success: boolean
+    newCounts: Map<string, number>
+    newConversations: AgentConversation[] | null
+} => {
     try {
         const updatedConversations = [...(currentConversations || [])]
 
         // Get chat message if it's a known message type
         const chatMessage = chatMessageFromChunk(chunk)
 
-        // If there are no origins in a chat message, return
+        // If there are no origins in a chat message, return current state
         if (!chatMessage?.origin?.length) {
-            return true
+            return {
+                success: true,
+                newCounts: agentCountsMap,
+                newConversations: currentConversations,
+            }
         }
 
         // Update agent counts
         const updatedCounts = updateAgentCounts(agentCountsMap, chatMessage.origin)
-        setAgentCounts(updatedCounts)
 
         const isFinal = isFinalMessage(chatMessage)
         const agents: string[] = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
 
+        let finalConversations: AgentConversation[] | null
+
         // Check if this is an AGENT message and if it's a final message, i.e. an end event
         if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
             const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents)
-            setCurrentConversations(currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate)
+            finalConversations = currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate
         } else {
             // Create a new conversation for this communication path
             const newConversation = createConversation(agents)
             updatedConversations.push(newConversation)
-            setCurrentConversations(updatedConversations)
+            finalConversations = updatedConversations
         }
 
-        return true
+        return {
+            success: true,
+            newCounts: updatedCounts,
+            newConversations: finalConversations,
+        }
     } catch (error) {
         sendNotification(NotificationType.error, "Agent conversation error")
         console.error("Agent conversation error:", error)
-        return false
+        return {
+            success: false,
+            newCounts: agentCountsMap,
+            newConversations: currentConversations,
+        }
     }
 }
