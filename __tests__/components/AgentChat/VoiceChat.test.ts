@@ -806,4 +806,410 @@ describe("VoiceChat utils", () => {
         expect(config.onTranscriptChange).toHaveBeenCalledWith("")
         expect(config.onSpeakingChange).toHaveBeenCalledWith(false)
     })
+
+    it("should handle recognition onresult when speech synthesis is active", () => {
+        mockChromeBrowser()
+        
+        // Mock SpeechRecognition
+        const mockSpeechRecognition = jest.fn().mockImplementation(() => ({
+            continuous: false,
+            interimResults: false,
+            lang: "en-US",
+            onstart: null,
+            onresult: null,
+            onerror: null,
+            onend: null,
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+        }))
+        
+        Object.defineProperty(window, 'SpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        Object.defineProperty(window, 'webkitSpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+
+        const state: VoiceChatState = {
+            isListening: false,
+            currentTranscript: "",
+            speechSupported: true,
+            isSpeaking: true, // Key: speech synthesis is active
+            finalTranscript: "",
+        }
+        const setState = jest.fn()
+        const config = {
+            onSendMessage: jest.fn(),
+            onTranscriptChange: jest.fn(),
+            onSpeakingChange: jest.fn(),
+            onListeningChange: jest.fn(),
+            onProcessingChange: jest.fn(),
+        }
+
+        // Mock speechSynthesis to be available
+        Object.defineProperty(window, "speechSynthesis", {
+            value: { cancel: jest.fn() },
+            writable: true,
+        })
+
+        const recognition = createSpeechRecognition(config, setState)
+        expect(recognition).toBeDefined()
+
+        // Create an event with final transcript
+        const finalEvent = {
+            resultIndex: 0,
+            results: {
+                length: 1,
+                0: {
+                    isFinal: true,
+                    0: { transcript: "test final transcript" },
+                },
+            },
+        }
+
+        // Set state to indicate speech synthesis is active
+        setState.mockImplementation((updater) => {
+            const newState = updater(state)
+            // Should stop speech synthesis when user interrupts
+            expect(newState.isSpeaking).toBe(false)
+            return newState
+        })
+
+        // Trigger onresult with speech synthesis active
+        recognition!.onresult?.(finalEvent)
+
+        expect(config.onSpeakingChange).toHaveBeenCalledWith(false)
+        expect(config.onProcessingChange).toHaveBeenCalledWith(false)
+        expect(config.onTranscriptChange).toHaveBeenCalledWith("test final transcript")
+    })
+
+    it("should handle interim transcripts with processing indicator", () => {
+        mockChromeBrowser()
+        
+        // Mock SpeechRecognition
+        const mockSpeechRecognition = jest.fn().mockImplementation(() => ({
+            continuous: false,
+            interimResults: false,
+            lang: "en-US",
+            onstart: null,
+            onresult: null,
+            onerror: null,
+            onend: null,
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+        }))
+        
+        Object.defineProperty(window, 'SpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        Object.defineProperty(window, 'webkitSpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        
+        const setState = jest.fn()
+        const config = {
+            onSendMessage: jest.fn(),
+            onTranscriptChange: jest.fn(),
+            onSpeakingChange: jest.fn(),
+            onListeningChange: jest.fn(),
+            onProcessingChange: jest.fn(),
+        }
+
+        const recognition = createSpeechRecognition(config, setState)
+        expect(recognition).toBeDefined()
+
+        // Create an event with only interim transcript (no final)
+        const interimEvent = {
+            resultIndex: 0,
+            results: {
+                length: 1,
+                0: {
+                    isFinal: false, // Key: not final
+                    0: { transcript: "test interim" },
+                },
+            },
+        }
+
+        recognition!.onresult?.(interimEvent)
+
+        // Should show processing indicator for interim transcript
+        expect(config.onProcessingChange).toHaveBeenCalledWith(true)
+        // Should not call onTranscriptChange for interim results
+        expect(config.onTranscriptChange).not.toHaveBeenCalled()
+    })
+
+    it("should handle error event through addEventListener", () => {
+        mockChromeBrowser()
+        
+        // Mock SpeechRecognition
+        const mockSpeechRecognition = jest.fn().mockImplementation(() => ({
+            continuous: false,
+            interimResults: false,
+            lang: "en-US",
+            onstart: null,
+            onresult: null,
+            onerror: null,
+            onend: null,
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+        }))
+        
+        Object.defineProperty(window, 'SpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        Object.defineProperty(window, 'webkitSpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        
+        const setState = jest.fn()
+        const config = {
+            onSendMessage: jest.fn(),
+            onListeningChange: jest.fn(),
+        }
+
+        const recognition = createSpeechRecognition(config, setState)
+        expect(recognition).toBeDefined()
+
+        // Get the error event listener that was added
+        expect(recognition!.addEventListener).toHaveBeenCalledWith("error", expect.any(Function))
+        
+        // Extract the error callback and call it
+        const errorCallback = (recognition!.addEventListener as jest.Mock).mock.calls[0][1]
+        errorCallback()
+
+        expect(setState).toHaveBeenCalled()
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
+    })
+
+    it("should handle non-Chrome browser microphone permission", async () => {
+        // Test with Firefox (non-Chrome browser)
+        mockUserAgent(USER_AGENTS.FIREFOX_LINUX)
+        
+        const state: VoiceChatState = {
+            isListening: false,
+            currentTranscript: "",
+            speechSupported: true,
+            isSpeaking: false,
+            finalTranscript: "",
+        }
+        const setState = jest.fn()
+        const config = { onSendMessage: jest.fn(), onListeningChange: jest.fn() }
+        const recognition = { start: jest.fn(), stop: jest.fn() }
+
+        // For non-Chrome browsers, permission should default to true
+        await toggleListening(recognition, state, config, setState)
+
+        // Should start listening (permission is automatically granted for non-Chrome)
+        expect(recognition.start).toHaveBeenCalled()
+    })
+
+    it("should handle toggleListening stop path by calling setState", async () => {
+        mockChromeBrowser()
+        
+        const mockSpeechRecognition = jest.fn().mockImplementation(() => ({
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+            continuous: false,
+            interimResults: false,
+            lang: "en-US",
+        }))
+        
+        Object.defineProperty(window, 'SpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        
+        const mockRecognition = {
+            start: jest.fn(),
+            stop: jest.fn(),
+        }
+        
+        const state: VoiceChatState = {
+            isListening: true, // Currently listening, so will stop
+            currentTranscript: "test",
+            speechSupported: true,
+            isSpeaking: false,
+            finalTranscript: "final",
+        }
+        
+        // Create a mock setState that actually executes the updater function
+        const setState = jest.fn().mockImplementation((updater) => {
+            const newState = updater(state)
+            expect(newState.isListening).toBe(false)
+            return newState
+        })
+        
+        const config = {
+            onSendMessage: jest.fn(),
+            onListeningChange: jest.fn(),
+        }
+        
+        await toggleListening(mockRecognition, state, config, setState)
+        
+        // Should call setState to update isListening to false
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
+    })
+
+    it("should handle toggleListening start path by calling setState", async () => {
+        mockChromeBrowser()
+        
+        // Mock navigator.mediaDevices for permission success
+        Object.defineProperty(navigator, 'mediaDevices', {
+            value: {
+                getUserMedia: jest.fn().mockResolvedValue({
+                    getTracks: () => [{ stop: jest.fn() }]
+                })
+            },
+            writable: true
+        })
+        
+        const mockSpeechRecognition = jest.fn().mockImplementation(() => ({
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+            continuous: false,
+            interimResults: false,
+            lang: "en-US",
+        }))
+        
+        Object.defineProperty(window, 'SpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        
+        const mockRecognition = {
+            start: jest.fn(),
+            stop: jest.fn(),
+        }
+        
+        const state: VoiceChatState = {
+            isListening: false, // Not listening, so will start
+            currentTranscript: "test",
+            speechSupported: true,
+            isSpeaking: false,
+            finalTranscript: "final",
+        }
+        
+        // Create a mock setState that actually executes the updater function
+        const setState = jest.fn().mockImplementation((updater) => {
+            const newState = updater(state)
+            expect(newState.finalTranscript).toBe("")
+            expect(newState.currentTranscript).toBe("")
+            return newState
+        })
+        
+        const config = {
+            onSendMessage: jest.fn(),
+            onListeningChange: jest.fn(),
+        }
+        
+        await toggleListening(mockRecognition, state, config, setState)
+        
+        // Should call setState to clear transcripts when starting
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(mockRecognition.start).toHaveBeenCalled()
+    })
+
+    it("should handle cleanup setState function call", () => {
+        const mockRecognition = {
+            stop: jest.fn(),
+        }
+        
+        const state: VoiceChatState = {
+            isListening: true,
+            currentTranscript: "test",
+            speechSupported: true,
+            isSpeaking: true,
+            finalTranscript: "final",
+        }
+        
+        // Create a mock setState that actually executes the updater function
+        const setState = jest.fn().mockImplementation((updater) => {
+            const newState = updater(state)
+            expect(newState.isListening).toBe(false)
+            expect(newState.currentTranscript).toBe("")
+            expect(newState.finalTranscript).toBe("")
+            expect(newState.isSpeaking).toBe(false)
+            return newState
+        })
+        
+        const config = {
+            onSendMessage: jest.fn(),
+            onListeningChange: jest.fn(),
+            onTranscriptChange: jest.fn(),
+            onSpeakingChange: jest.fn(),
+        }
+        
+        cleanup(mockRecognition, state, config, setState)
+        
+        // Should call setState to reset all voice chat state
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
+        expect(config.onTranscriptChange).toHaveBeenCalledWith("")
+        expect(config.onSpeakingChange).toHaveBeenCalledWith(false)
+    })
+
+    it("should handle addEventListener error callback when triggered", () => {
+        mockChromeBrowser()
+        
+        const mockSpeechRecognition = jest.fn().mockImplementation(() => ({
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(),
+            continuous: false,
+            interimResults: false,
+            lang: "en-US",
+        }))
+        
+        Object.defineProperty(window, 'SpeechRecognition', {
+            writable: true,
+            value: mockSpeechRecognition
+        })
+        
+        const prevState: VoiceChatState = {
+            isListening: true,
+            currentTranscript: "test",
+            speechSupported: true,
+            isSpeaking: false,
+            finalTranscript: "final",
+        }
+        
+        // Create a mock setState that actually executes the updater function
+        const setState = jest.fn().mockImplementation((updater) => {
+            const newState = updater(prevState)
+            expect(newState.isListening).toBe(false)
+            return newState
+        })
+        
+        const config = {
+            onSendMessage: jest.fn(),
+            onListeningChange: jest.fn(),
+        }
+        
+        const recognition = createSpeechRecognition(config, setState)
+        expect(recognition).toBeDefined()
+        
+        // Get the addEventListener calls to find the error callback
+        const mockAddEventListener = recognition!.addEventListener as jest.Mock
+        expect(mockAddEventListener).toHaveBeenCalledWith("error", expect.any(Function))
+        
+        // Get the error callback function and call it
+        const errorCallback = mockAddEventListener.mock.calls[0][1]
+        errorCallback()
+        
+        // Should call setState to set isListening to false
+        expect(setState).toHaveBeenCalledWith(expect.any(Function))
+        expect(config.onListeningChange).toHaveBeenCalledWith(false)
+    })
 })
