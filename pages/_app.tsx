@@ -57,13 +57,14 @@ function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
     return (
         <Navbar
             {...props}
+            id="nav-bar"
             userInfo={userInfo}
         />
     )
 }
 
 // Main function.
-// Has to be export default for NextJS so tell ts-prune to ignore
+// Has to be export default for Next.js so tell ts-prune to ignore
 // ts-prune-ignore-next
 // eslint-disable-next-line react/no-multi-comp
 export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
