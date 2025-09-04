@@ -573,9 +573,6 @@ describe("ChatCommon", () => {
         // Get microphone button (test that it exists)
         const micButton = screen.getByTestId("microphone-button")
         expect(micButton).toBeInTheDocument()
-
-        // Note: The microphone button may be disabled by default due to voice permissions
-        // We test that the button exists and the voice transcript functionality is available
     })
 
     it("Should handle Clear Chat functionality", async () => {
@@ -952,5 +949,18 @@ describe("ChatCommon", () => {
         await waitFor(() => {
             expect(screen.getAllByText(/Error occurred:/u)).toHaveLength(3)
         })
+    })
+
+    it("clears input when clear button is clicked", async () => {
+        renderChatCommonComponent()
+        const input = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
+        await user.type(input, "hello")
+        // Find the clear input button by id (since it has no accessible name)
+        const clearBtn = document.getElementById("clear-input-button")
+        expect(clearBtn).toBeTruthy()
+        if (clearBtn) {
+            fireEvent.click(clearBtn)
+        }
+        expect(input).toHaveValue("")
     })
 })
