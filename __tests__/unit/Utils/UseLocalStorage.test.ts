@@ -1,6 +1,6 @@
 import {act, renderHook} from "@testing-library/react"
 
-import {useLocalStorage} from "../../../utils/use_local_storage"
+import {useLocalStorage} from "../../../utils/useLocalStorage"
 import {withStrictMocks} from "../../common/strictMocks"
 
 describe("useLocalStorage", () => {
