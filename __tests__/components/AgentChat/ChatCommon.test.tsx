@@ -553,9 +553,23 @@ describe("ChatCommon", () => {
 
     it("Should handle voice transcription correctly", async () => {
         // Store original values to restore later
-        const originalSpeechRecognition = (window as any).SpeechRecognition
-        const originalWebkitSpeechRecognition = (window as any).webkitSpeechRecognition
+        const originalSpeechRecognition = (window as unknown as Record<string, unknown>)["SpeechRecognition"]
+        const originalWebkitSpeechRecognition = (window as unknown as Record<string, unknown>)[
+            "webkitSpeechRecognition"
+        ]
         const originalUserAgent = navigator.userAgent
+
+        // Define proper types for speech recognition events
+        interface SpeechRecognitionEvent {
+            resultIndex: number
+            results: {
+                length: number
+                [index: number]: {
+                    isFinal: boolean
+                    [index: number]: {transcript: string}
+                }
+            }
+        }
 
         // Mock speech recognition to test actual voice transcription behavior
         const mockSpeechRecognition = {
@@ -563,8 +577,8 @@ describe("ChatCommon", () => {
             interimResults: true,
             lang: "en-US",
             onstart: null as (() => void) | null,
-            onresult: null as ((event: any) => void) | null,
-            onerror: null as ((event: any) => void) | null,
+            onresult: null as ((event: SpeechRecognitionEvent) => void) | null,
+            onerror: null as ((event: Event) => void) | null,
             onend: null as (() => void) | null,
             start: jest.fn(),
             stop: jest.fn(),
@@ -572,8 +586,14 @@ describe("ChatCommon", () => {
         }
 
         // Mock Chrome browser environment
+        const userAgentValue = [
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+            "AppleWebKit/537.36 (KHTML, like Gecko)",
+            "Chrome/91.0.4472.124 Safari/537.36",
+        ].join(" ")
+
         Object.defineProperty(navigator, "userAgent", {
-            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            value: userAgentValue,
             configurable: true,
         })
 
@@ -603,7 +623,7 @@ describe("ChatCommon", () => {
 
             // Simulate speech recognition providing a final transcript
             const mockTranscript = "from voice recognition"
-            const mockEvent = {
+            const mockEvent: SpeechRecognitionEvent = {
                 resultIndex: 0,
                 results: {
                     length: 1,
@@ -623,7 +643,7 @@ describe("ChatCommon", () => {
 
             // The transcript should be appended to existing text with proper spacing
             await waitFor(() => {
-                expect(userInput).toHaveValue("initial text " + mockTranscript)
+                expect(userInput).toHaveValue(`initial text ${mockTranscript}`)
             })
 
             // Test voice input on empty field (no extra space should be added)
@@ -659,7 +679,7 @@ describe("ChatCommon", () => {
                     configurable: true,
                 })
             } else {
-                delete (window as any).SpeechRecognition
+                delete (window as unknown as Record<string, unknown>)["SpeechRecognition"]
             }
 
             if (originalWebkitSpeechRecognition) {
@@ -668,7 +688,7 @@ describe("ChatCommon", () => {
                     configurable: true,
                 })
             } else {
-                delete (window as any).webkitSpeechRecognition
+                delete (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"]
             }
 
             Object.defineProperty(navigator, "userAgent", {
