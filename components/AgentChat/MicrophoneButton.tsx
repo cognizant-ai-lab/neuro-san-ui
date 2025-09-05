@@ -83,8 +83,18 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
         await toggleListening(recognition, voiceState, voiceConfig, setVoiceState)
     }
 
+    // Show a more descriptive tooltip if speech is not supported (i.e., not Chrome)
+    const tooltipText = !voiceState.speechSupported
+        ? "Voice input is only supported in Google Chrome on Mac or Windows."
+        : isMicOn
+          ? "Turn microphone off"
+          : "Turn microphone on"
+
+    if (!voiceState.speechSupported) {
+        return null
+    }
     return (
-        <Tooltip title={isMicOn ? "Turn microphone off" : "Turn microphone on"}>
+        <Tooltip title={tooltipText}>
             <span>
                 <LlmChatButton
                     id="microphone-button"
@@ -95,14 +105,20 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
                         right: 70,
                         backgroundColor:
                             isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
-                        opacity: voiceState.speechSupported ? 1 : 0.5,
+                        opacity: 1,
                     }}
-                    disabled={!voiceState.speechSupported || isAwaitingLlm}
+                    disabled={isAwaitingLlm}
                 >
                     {voiceState.isListening ? (
-                        <MicNoneIcon sx={{color: "var(--bs-white)"}} />
+                        <MicNoneIcon
+                            sx={{color: "var(--bs-white)"}}
+                            data-testid="MicNoneIcon"
+                        />
                     ) : (
-                        <MicOffIcon sx={{color: "var(--bs-white)"}} />
+                        <MicOffIcon
+                            sx={{color: "var(--bs-white)"}}
+                            data-testid="MicOffIcon"
+                        />
                     )}
                 </LlmChatButton>
             </span>

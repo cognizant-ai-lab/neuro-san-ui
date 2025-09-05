@@ -86,7 +86,7 @@ describe("MicrophoneButton", () => {
         expect(screen.queryByTestId("MicOffIcon")).not.toBeInTheDocument()
     })
 
-    it("is disabled when speech is not supported", () => {
+    it("does not render when speech is not supported", () => {
         const unsupportedVoiceState = {...defaultVoiceState, speechSupported: false}
         render(
             <MicrophoneButton
@@ -95,7 +95,7 @@ describe("MicrophoneButton", () => {
             />
         )
 
-        expect(screen.getByTestId("microphone-button")).toBeDisabled()
+        expect(screen.queryByTestId("microphone-button")).not.toBeInTheDocument()
     })
 
     it("is disabled when awaiting LLM response", () => {
@@ -355,7 +355,7 @@ describe("MicrophoneButton", () => {
         expect(button).toBeInTheDocument()
     })
 
-    it("applies reduced opacity when speech is not supported", () => {
+    it("does not render when speech is not supported (opacity test replaced)", () => {
         const unsupportedVoiceState = {...defaultVoiceState, speechSupported: false}
         render(
             <MicrophoneButton
@@ -364,7 +364,36 @@ describe("MicrophoneButton", () => {
             />
         )
 
-        const button = screen.getByTestId("microphone-button")
-        expect(button).toBeInTheDocument()
+        expect(screen.queryByTestId("microphone-button")).not.toBeInTheDocument()
+    })
+
+    it("does not render mic button or tooltip if not Chrome (speech not supported)", async () => {
+        // Mock user agent to Firefox
+        Object.defineProperty(navigator, "userAgent", {
+            value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/91.0",
+            configurable: true,
+        })
+
+        const unsupportedVoiceState = {
+            ...defaultVoiceState,
+            speechSupported: false,
+        }
+        render(
+            <MicrophoneButton
+                {...defaultProps}
+                voiceState={unsupportedVoiceState}
+            />
+        )
+
+        expect(screen.queryByTestId("microphone-button")).not.toBeInTheDocument()
+        expect(
+            screen.queryByText("Voice input is only supported in Google Chrome on Mac or Windows.")
+        ).not.toBeInTheDocument()
+
+        // Restore user agent
+        Object.defineProperty(navigator, "userAgent", {
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            configurable: true,
+        })
     })
 })

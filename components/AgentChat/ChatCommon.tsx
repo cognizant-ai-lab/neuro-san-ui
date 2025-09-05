@@ -1141,70 +1141,77 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 id="user-input-div"
                 style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
             >
-                <Input
-                    autoComplete="off"
-                    id="user-input"
-                    multiline={true}
-                    placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
-                    ref={chatInputRef}
-                    sx={{
-                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                        border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
-                        borderRadius: "var(--bs-border-radius)",
-                        color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
-                        display: "flex",
-                        flexGrow: 1,
-                        fontSize: "smaller",
-                        marginRight: "4rem",
-                        paddingBottom: "0.5rem",
-                        paddingTop: "0.5rem",
-                        paddingLeft: "1rem",
-                        paddingRight: "1rem",
-                    }}
-                    onChange={(event) => {
-                        setChatInput(event.target.value)
-                    }}
-                    onKeyDown={async (event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
-                            event.preventDefault()
-                            await handleSend(chatInput)
-                        }
-                    }}
-                    value={chatInput}
-                    endAdornment={
-                        <InputAdornment
-                            id="input-adornments"
-                            position="end"
-                            disableTypography={true}
-                        >
-                            {/* Voice processing spinner - shows only when actively speaking */}
-                            {isProcessingSpeech && (
-                                <CircularProgress
-                                    size={16}
-                                    sx={{
-                                        color: "var(--bs-primary)",
-                                        marginRight: "0.5rem",
-                                    }}
-                                />
-                            )}
-                            <IconButton
-                                id="clear-input-button"
-                                onClick={() => {
-                                    setChatInput("")
-                                }}
-                                sx={{
-                                    color: "var(--bs-primary)",
-                                    opacity: userInputEmpty ? "25%" : "100%",
-                                }}
-                                disabled={userInputEmpty}
-                                tabIndex={-1}
-                                edge="end"
-                            >
-                                <ClearIcon id="clear-input-icon" />
-                            </IconButton>
-                        </InputAdornment>
-                    }
-                />
+                {/* Determine if mic button will be rendered */}
+                {(() => {
+                    const micSupported = voiceState?.speechSupported
+                    return (
+                        <Input
+                            autoComplete="off"
+                            id="user-input"
+                            multiline={true}
+                            placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
+                            ref={chatInputRef}
+                            sx={{
+                                backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                                border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
+                                borderRadius: "var(--bs-border-radius)",
+                                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
+                                display: "flex",
+                                flexGrow: 1,
+                                fontSize: "smaller",
+                                marginRight: micSupported ? "4rem" : "0.55rem",
+                                paddingBottom: "0.5rem",
+                                paddingTop: "0.5rem",
+                                paddingLeft: "1rem",
+                                paddingRight: "1rem",
+                                transition: "margin-right 0.2s",
+                            }}
+                            onChange={(event) => {
+                                setChatInput(event.target.value)
+                            }}
+                            onKeyDown={async (event) => {
+                                if (event.key === "Enter" && !event.shiftKey) {
+                                    event.preventDefault()
+                                    await handleSend(chatInput)
+                                }
+                            }}
+                            value={chatInput}
+                            endAdornment={
+                                <InputAdornment
+                                    id="input-adornments"
+                                    position="end"
+                                    disableTypography={true}
+                                >
+                                    {/* Voice processing spinner - shows only when actively speaking */}
+                                    {isProcessingSpeech && (
+                                        <CircularProgress
+                                            size={16}
+                                            sx={{
+                                                color: "var(--bs-primary)",
+                                                marginRight: "0.5rem",
+                                            }}
+                                        />
+                                    )}
+                                    <IconButton
+                                        id="clear-input-button"
+                                        onClick={() => {
+                                            setChatInput("")
+                                        }}
+                                        sx={{
+                                            color: "var(--bs-primary)",
+                                            opacity: userInputEmpty ? "25%" : "100%",
+                                        }}
+                                        disabled={userInputEmpty}
+                                        tabIndex={-1}
+                                        edge="end"
+                                    >
+                                        <ClearIcon id="clear-input-icon" />
+                                    </IconButton>
+                                </InputAdornment>
+                            }
+                        />
+                    )
+                })()}
 
                 {/* Microphone Button */}
                 {renderMicrophoneButton()}

@@ -52,7 +52,9 @@ export const checkSpeechSupport = (): boolean => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
         return false
     }
-    const isChrome = /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent)
+    // Edge detection: Chromium Edge uses 'Edg/' in user agent, legacy Edge uses 'Edge/'
+    const isEdge = /Edg\//u.test(navigator.userAgent) || /Edge\//u.test(navigator.userAgent)
+    const isChrome = /Chrome/u.test(navigator.userAgent) && !isEdge
     const isMacOS =
         navigator.userAgent.includes("Macintosh") ||
         ((navigator as {platform?: string}).platform?.includes("Mac") ?? false)
