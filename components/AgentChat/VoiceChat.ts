@@ -210,13 +210,13 @@ export const cleanup = (
     recognition: unknown,
     _state: VoiceChatState,
     config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
+    setVoiceState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
 ) => {
     if (recognition && typeof recognition === "object" && "stop" in recognition) {
         ;(recognition as {stop: () => void}).stop()
     }
     stopSpeechSynthesis()
-    setState((prev) => ({
+    setVoiceState((prev) => ({
         ...prev,
         isListening: false,
         currentTranscript: "",
