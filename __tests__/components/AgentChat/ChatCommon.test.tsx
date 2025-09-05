@@ -551,28 +551,131 @@ describe("ChatCommon", () => {
         expect(await screen.findByText(agentResponseText)).not.toBeVisible()
     })
 
-    it("should render microphone button", async () => {
-        renderChatCommonComponent()
+    it("Should handle voice transcription correctly", async () => {
+        // Store original values to restore later
+        const originalSpeechRecognition = (window as any).SpeechRecognition
+        const originalWebkitSpeechRecognition = (window as any).webkitSpeechRecognition
+        const originalUserAgent = navigator.userAgent
 
-        await waitFor(() => {
-            const micButton = screen.queryByTestId("microphone-button")
-            expect(micButton).toBeInTheDocument()
+        // Mock speech recognition to test actual voice transcription behavior
+        const mockSpeechRecognition = {
+            continuous: true,
+            interimResults: true,
+            lang: "en-US",
+            onstart: null as (() => void) | null,
+            onresult: null as ((event: any) => void) | null,
+            onerror: null as ((event: any) => void) | null,
+            onend: null as (() => void) | null,
+            start: jest.fn(),
+            stop: jest.fn(),
+            addEventListener: jest.fn(), // Proper addEventListener mock
+        }
+
+        // Mock Chrome browser environment
+        Object.defineProperty(navigator, "userAgent", {
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            configurable: true,
         })
-    })
 
-    it("Should handle voice transcript correctly", async () => {
-        renderChatCommonComponent()
+        // Mock SpeechRecognition constructor
+        Object.defineProperty(window, "SpeechRecognition", {
+            value: jest.fn(() => mockSpeechRecognition),
+            configurable: true,
+        })
+        Object.defineProperty(window, "webkitSpeechRecognition", {
+            value: jest.fn(() => mockSpeechRecognition),
+            configurable: true,
+        })
 
-        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
+        try {
+            renderChatCommonComponent()
 
-        // Type some initial text
-        await user.type(userInput, "initial text")
-        expect(userInput).toHaveValue("initial text")
+            const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
+            const micButton = screen.getByTestId("microphone-button")
 
-        // Get microphone button (test that it exists)
-        const micButton = screen.getByTestId("microphone-button")
-        expect(micButton).toBeInTheDocument()
+            // Type some initial text
+            await user.type(userInput, "initial text")
+            expect(userInput).toHaveValue("initial text")
+
+            // Start voice recognition
+            await user.click(micButton)
+            expect(mockSpeechRecognition.start).toHaveBeenCalled()
+
+            // Simulate speech recognition providing a final transcript
+            const mockTranscript = "from voice recognition"
+            const mockEvent = {
+                resultIndex: 0,
+                results: {
+                    length: 1,
+                    0: {
+                        isFinal: true,
+                        0: {transcript: mockTranscript},
+                    },
+                },
+            }
+
+            // Trigger the onresult handler which should call handleVoiceTranscript
+            act(() => {
+                if (mockSpeechRecognition.onresult) {
+                    mockSpeechRecognition.onresult(mockEvent)
+                }
+            })
+
+            // The transcript should be appended to existing text with proper spacing
+            await waitFor(() => {
+                expect(userInput).toHaveValue("initial text " + mockTranscript)
+            })
+
+            // Test voice input on empty field (no extra space should be added)
+            await user.clear(userInput)
+
+            // Start voice recognition again and simulate new transcript
+            await user.click(micButton)
+
+            act(() => {
+                if (mockSpeechRecognition.onresult) {
+                    mockSpeechRecognition.onresult({
+                        resultIndex: 0,
+                        results: {
+                            length: 1,
+                            0: {
+                                isFinal: true,
+                                0: {transcript: "standalone voice input"},
+                            },
+                        },
+                    })
+                }
+            })
+
+            // Should not add extra space when input is empty
+            await waitFor(() => {
+                expect(userInput).toHaveValue("standalone voice input")
+            })
+        } finally {
+            // Cleanup: restore original values
+            if (originalSpeechRecognition) {
+                Object.defineProperty(window, "SpeechRecognition", {
+                    value: originalSpeechRecognition,
+                    configurable: true,
+                })
+            } else {
+                delete (window as any).SpeechRecognition
+            }
+
+            if (originalWebkitSpeechRecognition) {
+                Object.defineProperty(window, "webkitSpeechRecognition", {
+                    value: originalWebkitSpeechRecognition,
+                    configurable: true,
+                })
+            } else {
+                delete (window as any).webkitSpeechRecognition
+            }
+
+            Object.defineProperty(navigator, "userAgent", {
+                value: originalUserAgent,
+                configurable: true,
+            })
+        }
     })
 
     it("Should handle Clear Chat functionality", async () => {
@@ -868,41 +971,6 @@ describe("ChatCommon", () => {
         await sendQuery(LegacyAgentType.OpportunityFinder, "test query")
 
         expect(await screen.findByText("Legacy response with custom endpoint")).toBeInTheDocument()
-    })
-
-    it("Should handle voice transcript integration with existing text", async () => {
-        renderChatCommonComponent()
-
-        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-
-        // Type some existing text
-        await user.type(userInput, "existing text ")
-        expect(userInput).toHaveValue("existing text ")
-
-        // Simulate voice transcript being added
-        // This would test the handleVoiceTranscript function behavior
-        fireEvent.change(userInput, {target: {value: "existing text voice transcript added"}})
-
-        expect(userInput).toHaveValue("existing text voice transcript added")
-    })
-
-    it("Should disable send button during voice processing", async () => {
-        renderChatCommonComponent({isAwaitingLlm: false})
-
-        const sendButton = screen.getByRole("button", {name: "Send"})
-        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-
-        // With text, send should be enabled
-        await user.type(userInput, "test message")
-        expect(sendButton).toBeEnabled()
-
-        // Test that voice processing state would affect button availability
-        // This tests the interaction between voice state and UI controls
-        const micButton = screen.getByTestId("microphone-button")
-        expect(micButton).toBeInTheDocument()
-
-        // Verify UI components are properly connected
-        expect(sendButton).toBeEnabled()
     })
 
     it.each([
