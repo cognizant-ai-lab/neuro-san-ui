@@ -57,7 +57,7 @@ describe("ChatCommon", () => {
 
     const defaultProps = {
         currentUser: TEST_USER,
-        id: "",
+        id: "chat-common-test",
         isAwaitingLlm: false,
         onSend: jest.fn(),
         setIsAwaitingLlm: jest.fn(),
@@ -736,7 +736,8 @@ describe("ChatCommon", () => {
         // Check that title is rendered
         expect(screen.getByText(testTitle)).toBeInTheDocument()
 
-        // Note: Close button implementation may vary - this tests the props are passed
+        // Check that close button is rendered
+        expect(screen.getByTestId(`close-button-chat-common-test`)).toBeInTheDocument()
     })
 
     it("Should apply custom backgroundColor when provided", async () => {
