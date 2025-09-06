@@ -1,19 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "incremental": true,
     "module": "esnext"
   },
-  "module": "esnext",
   "include": [
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "**/*.ts",
-    "**/*.tsx"
+    "../../**/*.js",
+    "../../**/*.mjs",
+    "../../**/*.ts",
+    "../../**/*.tsx",
+    "../../.next/types/**/*.ts",
+    "../../next-env.d.ts",
+    ".next/types/**/*.ts"
   ]
 }

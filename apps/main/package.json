@@ -5,17 +5,7 @@
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
-        "build": "next build",
-        "check-format": "prettier --check .",
-        "clean": "rm -rf dist",
-        "commit-check": "yarn run tsc ; yarn run ts-prune --error ; yarn run depcheck ; yarn run check-format --write ; ./build_scripts/run_eslint.sh ; yarn run unit_test",
-        "dev": "next dev --hostname 0.0.0.0 --port 3000",
-        "generate": "rm -rf generated && build_scripts/do_openapi_generate.sh",
-        "lint": "next lint",
-        "lint-rules": "npx eslint --print-config jest.config.ts",
-        "lint-summary": "next lint --format summary",
-        "start": "next start",
-        "unit_test": "jest  'packages/ui-common/__tests__/components' '__tests__/pages' 'packages/ui-common/__tests__/unit' --config ./jest_unit.config.ts"
+        "dev": "next dev --hostname 0.0.0.0 --port 3000"
     },
     "dependencies": {
         "@cognizant-ai-lab/ui-common": "workspace:*",
@@ -42,15 +32,9 @@
     "devDependencies": {
         "@babel/core": "7.23.7",
         "@babel/preset-env": "7.28.3",
-        "@jest/types": "30.0.5",
-        "@testing-library/dom": "10.4.1",
-        "@testing-library/react": "16.3.0",
-        "@testing-library/user-event": "14.6.1",
         "@types/babel__core": "7.20.5",
         "@types/dagre": "0.7.53",
         "@types/debug": "4.1.12",
-        "@types/eslint": "9.6.1",
-        "@types/jest": "30.0.0",
         "@types/lodash": "4.17.12",
         "@types/lodash-es": "4.17.12",
         "@types/node": "20.11.5",
@@ -59,14 +43,6 @@
         "@types/react-dom": "18.2.18",
         "@types/react-syntax-highlighter": "15.5.11",
         "depcheck": "1.4.7",
-        "eslint-config-next": "15.4.6",
-        "eslint-formatter-summary": "2.0.2",
-        "eslint-plugin-import": "2.32.0",
-        "jest": "30.0.5",
-        "jest-environment-jsdom": "30.0.5",
-        "prettier": "3.6.2",
-        "ts-jest": "29.4.1",
-        "ts-node": "10.9.2",
-        "ts-prune": "0.10.3"
+        "ts-node": "10.9.2"
     }
 }

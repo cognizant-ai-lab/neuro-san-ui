@@ -12,8 +12,12 @@ import {
     smartSignOut,
     Snackbar,
     useAuthentication,
-} from "@cognizant-ai-lab/ui-common"
-import {LOGO} from "@cognizant-ai-lab/ui-common/const"
+} from "../../../packages/ui-common"
+import useEnvironmentStore from "../../../packages/ui-common/state/environment"
+import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"
+import {usePreferences} from "../../../packages/ui-common/state/Preferences"
+
+import {LOGO} from "../../../packages/ui-common/const"
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
 import debugModule from "debug"
 import startCase from "lodash-es/startCase.js"
@@ -23,13 +27,10 @@ import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
-
-import useEnvironmentStore from "../../../packages/ui-common/state/environment"
-import {usePreferences} from "../../../packages/ui-common/state/Preferences"
-import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"
-import {APP_THEME, BRAND_COLORS} from "../theme"
+import {APP_THEME} from "../theme"
+import {BRAND_COLORS} from "../theme"
+import {getTitleBase} from "../../../packages/ui-common"
 import {UserInfoResponse} from "./api/userInfo/types"
-import {getTitleBase} from "../../../packages/ui-common/utils/title"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -181,7 +182,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
             // Check result
             if (!res.ok) {
-                // This is bad: it means we saw the ALB header but it's not in the right format so we're stuck
+                // This is bad: it means we saw the ALB header, but it's not in the right format so we're stuck
                 console.error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
             }
 
