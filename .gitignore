@@ -5,6 +5,7 @@
 next-env.d.ts
 node_modules
 tsconfig.tsbuildinfo
+tsconfig.base.tsbuildinfo
 
 # Coverage directory used by tools like lcov
 coverage/
