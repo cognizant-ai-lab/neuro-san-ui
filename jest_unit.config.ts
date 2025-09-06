@@ -4,7 +4,6 @@ import type {Config} from "@jest/types"
 
 import sharedConfig from "./jest.config"
 
-/** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
     // Pull in shared config
     ...sharedConfig,
