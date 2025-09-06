@@ -7,6 +7,7 @@ import {
     VoiceChatConfig,
     VoiceChatState,
 } from "../../../components/AgentChat/VoiceChat"
+import {withStrictMocks} from "../../common/strictMocks"
 
 // User agent strings for testing
 const USER_AGENTS = {
@@ -44,6 +45,8 @@ describe("VoiceChat utils", () => {
     let originalSpeechSynthesis: unknown
     let originalGetUserMedia: unknown
     let originalMediaDevices: unknown
+
+    withStrictMocks()
 
     beforeAll(() => {
         originalSpeechRecognition = ((window as Window) && {SpeechRecognition: {}}).SpeechRecognition

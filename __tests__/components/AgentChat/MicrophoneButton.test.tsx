@@ -4,6 +4,7 @@ import {ReactNode} from "react"
 
 import {MicrophoneButton, MicrophoneButtonProps} from "../../../components/AgentChat/MicrophoneButton"
 import {toggleListening, VoiceChatState} from "../../../components/AgentChat/VoiceChat"
+import {withStrictMocks} from "../../common/strictMocks"
 
 // Mock the VoiceChat module
 jest.mock("../../../components/AgentChat/VoiceChat", () => ({
@@ -61,8 +62,9 @@ describe("MicrophoneButton", () => {
         onTranscriptChange: mockOnTranscriptChange,
     }
 
+    withStrictMocks()
+
     beforeEach(() => {
-        jest.clearAllMocks()
         ;(toggleListening as jest.Mock).mockResolvedValue(undefined)
     })
 
