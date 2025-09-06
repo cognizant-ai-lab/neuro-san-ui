@@ -1,5 +1,5 @@
 {
-    "name": "@cognizant-ai-lab/neuro-san-ui",
+    "name": "@cognizant-ai-lab/neuro-san-ui-app",
     "version": "1.0.0",
     "private": true,
     "license": "SEE LICENSE IN LICENSE.txt",
@@ -18,7 +18,7 @@
         "unit_test": "jest  'packages/ui-common/__tests__/components' '__tests__/pages' 'packages/ui-common/__tests__/unit' --config ./jest_unit.config.ts"
     },
     "dependencies": {
-        "@cognizant-ai-lab/ui-common": "1.0.0",
+        "@cognizant-ai-lab/ui-common": "workspace:*",
         "@emotion/react": "11.13.3",
         "@emotion/styled": "11.13.0",
         "@mui/icons-material": "7.3.1",
@@ -68,6 +68,5 @@
         "ts-jest": "29.4.1",
         "ts-node": "10.9.2",
         "ts-prune": "0.10.3"
-    },
-    "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
+    }
 }

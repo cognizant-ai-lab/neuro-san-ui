@@ -1,7 +1,6 @@
 {
     "name": "@cognizant-ai-lab/ui-common",
     "version": "1.0.0",
-    "private": false,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
@@ -15,7 +14,7 @@
         "lint-rules": "npx eslint --print-config jest.config.ts",
         "lint-summary": "next lint --format summary",
         "start": "next start",
-        "unit_test": "jest  'packages/ui-common/__tests__/components' '__tests__/pages' 'packages/ui-common/__tests__/unit' --config ./jest_unit.config.ts"
+        "unit_test": "jest 'packages/ui-common/__tests__/components' '__tests__/pages' 'packages/ui-common/__tests__/unit' --config ./jest_unit.config.ts"
     },
     "dependencies": {
         "@emotion/react": "11.13.3",
@@ -93,7 +92,6 @@
         "ts-prune": "0.10.3",
         "typescript": "5.9.2"
     },
-    "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/cognizant-ai-lab/neuro-san-ui.git"

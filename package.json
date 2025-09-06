@@ -1,7 +1,7 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
     "version": "1.1.1",
-    "private": false,
+    "private": true,
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "workspaces": [
@@ -21,7 +21,7 @@
         "start": "next start",
         "unit_test": "jest  'packages/ui-common/__tests__/components' 'apps/main/__tests__/pages' 'packages/ui-common/__tests__/unit' --config ./jest_unit.config.ts"
     },
-    "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
+    "packageManager": "yarn@4.9.4",
     "devDependencies": {
         "@babel/core": "7.23.7",
         "@babel/preset-env": "7.28.3",
