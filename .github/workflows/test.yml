@@ -26,6 +26,13 @@ jobs:
               run: |
                   apk add --quiet --no-progress --upgrade bash shellcheck
 
+            # Install yarn version from package.json packageManager field using corepack
+            - name: Set yarn version
+              run: |
+                  corepack enable
+                  corepack install 
+                  yarn --version
+
             - name: Install Node.js dependencies
               run: |
                   yarn --version
