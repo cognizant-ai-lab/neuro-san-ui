@@ -1,6 +1,7 @@
 {
     "name": "@cognizant-ai-lab/ui-common",
     "version": "1.0.2",
+    "private": false,
     "type": "module",
     "dependencies": {
         "@emotion/react": "11.13.3",
