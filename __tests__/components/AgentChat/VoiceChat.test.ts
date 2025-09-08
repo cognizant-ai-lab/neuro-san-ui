@@ -9,23 +9,21 @@ import {
 } from "../../../components/AgentChat/VoiceChat"
 import {withStrictMocks} from "../../common/strictMocks"
 
+/* eslint-disable max-len */
 // User agent strings for testing
 const USER_AGENTS = {
     CHROME_MAC:
-        // eslint-disable-next-line max-len
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
     CHROME_WINDOWS:
-        // eslint-disable-next-line max-len
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    EDGE_MODERN:
-        // eslint-disable-next-line max-len
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59",
-    EDGE_LEGACY:
-        // eslint-disable-next-line max-len
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edge/91.0.864.59",
-    FIREFOX_LINUX: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/91.0",
-    CHROME_UNKNOWN: "Mozilla/5.0 (Unknown) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    EDGE_MAC:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
+    EDGE_WINDOWS:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
+    FIREFOX_MAC: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0",
+    FIREFOX_WINDOWS: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0",
 } as const
+/* eslint-enable max-len */
 
 // Helper function to mock user agent
 const mockUserAgent = (userAgent: string) => {
@@ -371,88 +369,57 @@ describe("VoiceChat utils", () => {
         expect(config.onListeningChange).toHaveBeenCalledWith(false)
     })
 
-    it("should return undefined when speech recognition is not supported", () => {
+    it("should return undefined when speech recognition is not supported (Edge, Firefox)", () => {
         const config = {onSendMessage: jest.fn()} as VoiceChatConfig
         const setState = jest.fn()
 
-        // Mock navigator.userAgent to make checkSpeechSupport return false
-        mockUserAgent(USER_AGENTS.FIREFOX_LINUX)
+        const unsupportedAgents = [
+            USER_AGENTS.EDGE_MAC,
+            USER_AGENTS.EDGE_WINDOWS,
+            USER_AGENTS.FIREFOX_MAC,
+            USER_AGENTS.FIREFOX_WINDOWS,
+        ]
 
-        // Remove speech recognition support
-        Object.defineProperty(window, "SpeechRecognition", {
-            value: undefined,
-            configurable: true,
-        })
-        Object.defineProperty(window, "webkitSpeechRecognition", {
-            value: undefined,
-            configurable: true,
-        })
-
-        const result = createSpeechRecognition(config, setState)
-
-        expect(result).toBeUndefined()
+        for (const ua of unsupportedAgents) {
+            mockUserAgent(ua)
+            Object.defineProperty(window, "SpeechRecognition", {
+                value: undefined,
+                configurable: true,
+            })
+            Object.defineProperty(window, "webkitSpeechRecognition", {
+                value: undefined,
+                configurable: true,
+            })
+            const result = createSpeechRecognition(config, setState)
+            expect(result).toBeUndefined()
+        }
     })
 
-    it("checkSpeechSupport should handle Edge browser detection", () => {
-        // Mock Edge browser user agent (contains both Chrome and Edg)
-        mockUserAgent(USER_AGENTS.EDGE_MODERN)
-
+    it("checkSpeechSupport should handle browser detection for Edge, Firefox, and Chrome", () => {
         // Mock speech recognition support
         Object.defineProperty(window, "webkitSpeechRecognition", {
             value: jest.fn(),
             configurable: true,
         })
 
-        const result = checkSpeechSupport()
-        // The regex is !/Edge/u.test() which looks for "Edge" but Edge userAgent has "Edg"
-        // So we need to test with the string that actually contains "Edge"
-        expect(result).toBe(true) // Should return true because the userAgent contains "Edg" not "Edge"
-    })
+        const unsupportedAgents = [
+            USER_AGENTS.EDGE_MAC,
+            USER_AGENTS.EDGE_WINDOWS,
+            USER_AGENTS.FIREFOX_MAC,
+            USER_AGENTS.FIREFOX_WINDOWS,
+        ]
+        for (const ua of unsupportedAgents) {
+            mockUserAgent(ua)
+            expect(checkSpeechSupport()).toBe(false)
+        }
 
-    it("checkSpeechSupport should handle actual Edge browser string", () => {
-        // Mock Edge browser with actual "Edge" string
-        mockUserAgent(USER_AGENTS.EDGE_LEGACY)
+        // Chrome Mac
+        mockUserAgent(USER_AGENTS.CHROME_MAC)
+        expect(checkSpeechSupport()).toBe(true)
 
-        // Mock speech recognition support
-        Object.defineProperty(window, "webkitSpeechRecognition", {
-            value: jest.fn(),
-            configurable: true,
-        })
-
-        const result = checkSpeechSupport()
-        expect(result).toBe(false) // Should return false for Edge because regex excludes "Edge"
-    })
-
-    it("checkSpeechSupport should handle Windows detection", () => {
-        // Mock Chrome on Windows user agent
+        // Chrome Windows
         mockUserAgent(USER_AGENTS.CHROME_WINDOWS)
-
-        // Mock speech recognition support
-        Object.defineProperty(window, "webkitSpeechRecognition", {
-            value: jest.fn(),
-            configurable: true,
-        })
-
-        const result = checkSpeechSupport()
-        expect(result).toBe(true) // Should return true for Chrome on Windows
-    })
-
-    it("checkSpeechSupport should handle platform property for Mac detection", () => {
-        // Mock navigator with platform property
-        mockUserAgent(USER_AGENTS.CHROME_UNKNOWN)
-        Object.defineProperty(navigator, "platform", {
-            value: "MacIntel",
-            configurable: true,
-        })
-
-        // Mock speech recognition support
-        Object.defineProperty(window, "webkitSpeechRecognition", {
-            value: jest.fn(),
-            configurable: true,
-        })
-
-        const result = checkSpeechSupport()
-        expect(result).toBe(true) // Should return true for Chrome on Mac
+        expect(checkSpeechSupport()).toBe(true)
     })
 
     it("should handle microphone permission requests in Chrome", async () => {
@@ -991,28 +958,6 @@ describe("VoiceChat utils", () => {
 
         expect(setState).toHaveBeenCalled()
         expect(config.onListeningChange).toHaveBeenCalledWith(false)
-    })
-
-    it("should handle non-Chrome browser microphone permission", async () => {
-        // Test with Firefox (non-Chrome browser)
-        mockUserAgent(USER_AGENTS.FIREFOX_LINUX)
-
-        const state: VoiceChatState = {
-            isListening: false,
-            currentTranscript: "",
-            speechSupported: true,
-            isSpeaking: false,
-            finalTranscript: "",
-        }
-        const setState = jest.fn()
-        const config = {onSendMessage: jest.fn(), onListeningChange: jest.fn()}
-        const recognition = {start: jest.fn(), stop: jest.fn()}
-
-        // For non-Chrome browsers, permission should default to true
-        await toggleListening(recognition, state, config, setState)
-
-        // Should start listening (permission is automatically granted for non-Chrome)
-        expect(recognition.start).toHaveBeenCalled()
     })
 
     it("should handle toggleListening stop path by calling setState", async () => {

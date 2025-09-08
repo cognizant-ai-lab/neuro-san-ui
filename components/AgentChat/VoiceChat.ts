@@ -52,14 +52,11 @@ export const checkSpeechSupport = (): boolean => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
         return false
     }
-    // Edge detection: Chromium Edge uses 'Edg/' in user agent, legacy Edge uses 'Edge/'
-    const isEdge = /Edg\//u.test(navigator.userAgent) || /Edge\//u.test(navigator.userAgent)
-    const isChrome = /Chrome/u.test(navigator.userAgent) && !isEdge
-    const isMacOS =
-        navigator.userAgent.includes("Macintosh") ||
-        ((navigator as {platform?: string}).platform?.includes("Mac") ?? false)
-    const isWindows = navigator.userAgent.includes("Windows")
-    return isChrome && (isMacOS || isWindows)
+    const ua = navigator.userAgent
+    const isChrome = /Chrome/u.test(ua)
+    const isEdge = /Edg\//u.test(ua) || /Edge\//u.test(ua)
+    const isFirefox = /Firefox/u.test(ua)
+    return isChrome && !isEdge && !isFirefox
 }
 
 // Request microphone permission
