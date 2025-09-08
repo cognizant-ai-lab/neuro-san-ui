@@ -7,6 +7,10 @@
     "allowJs": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
+    "baseUrl": ".",
+    "paths": {
+      "@types/*": ["./packages/ui-common/types/*"]
+    },
     "checkJs": true,
     "declaration": false,
     "esModuleInterop": true,
@@ -53,7 +57,7 @@
   ],
   "exclude": [
     "node_modules",
-    "coverage",
-    "dist"
+    "**/coverage",
+    "**/dist"
   ]
 }
