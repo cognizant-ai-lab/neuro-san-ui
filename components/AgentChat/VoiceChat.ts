@@ -42,7 +42,6 @@ export interface VoiceChatConfig {
 export interface VoiceChatState {
     isListening: boolean
     currentTranscript: string
-    speechSupported: boolean
     isSpeaking: boolean
     finalTranscript: string
 }
@@ -52,12 +51,11 @@ export const checkSpeechSupport = (): boolean => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
         return false
     }
-    const isChrome = /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent)
-    const isMacOS =
-        navigator.userAgent.includes("Macintosh") ||
-        ((navigator as {platform?: string}).platform?.includes("Mac") ?? false)
-    const isWindows = navigator.userAgent.includes("Windows")
-    return isChrome && (isMacOS || isWindows)
+    const ua = navigator.userAgent
+    const isChrome = /Chrome/u.test(ua)
+    const isEdge = /Edg\//u.test(ua) || /Edge\//u.test(ua)
+    const isFirefox = /Firefox/u.test(ua)
+    return isChrome && !isEdge && !isFirefox
 }
 
 // Request microphone permission
@@ -180,9 +178,10 @@ export const toggleListening = async (
     recognition: unknown,
     state: VoiceChatState,
     config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
+    setVoiceState: (updater: (prev: VoiceChatState) => VoiceChatState) => void,
+    speechSupported: boolean
 ) => {
-    if (!state.speechSupported || !recognition) return
+    if (!speechSupported || !recognition) return
 
     if (!state.isListening) {
         const permissionGranted = await requestMicrophonePermission()
@@ -195,11 +194,11 @@ export const toggleListening = async (
             ;(recognition as {stop: () => void}).stop()
         }
         // Immediately update state to reflect that we're no longer listening
-        setState((prev) => ({...prev, isListening: false}))
+        setVoiceState((prev) => ({...prev, isListening: false}))
         config.onListeningChange?.(false)
     } else {
         // Start listening
-        setState((prev) => ({...prev, finalTranscript: "", currentTranscript: ""}))
+        setVoiceState((prev) => ({...prev, finalTranscript: "", currentTranscript: ""}))
         if (recognition && typeof recognition === "object" && "start" in recognition) {
             ;(recognition as {start: () => void}).start()
         }

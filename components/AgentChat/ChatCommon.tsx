@@ -25,6 +25,7 @@ import {
     SetStateAction,
     useEffect,
     useImperativeHandle,
+    useMemo,
     useRef,
     useState,
 } from "react"
@@ -181,6 +182,14 @@ export type ChatCommonHandle = {
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
 export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
+    const slyData = useRef<Record<string, unknown>>({})
+    // Voice state for microphone and speech recognition
+    const [voiceState, setVoiceState] = useState<VoiceChatState>({
+        isListening: false,
+        currentTranscript: "",
+        isSpeaking: false,
+        finalTranscript: "",
+    })
     const {
         id,
         currentUser,
@@ -257,27 +266,13 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
     */
     const chatContext = useRef<ChatContext>(null)
-
-    const slyData = useRef<Record<string, unknown>>({})
-
-    // Create a ref for the final answer element
     const finalAnswerRef = useRef<HTMLDivElement>(null)
-
     const [showThinking, setShowThinking] = useState<boolean>(false)
-
     const [isMicOn, setIsMicOn] = useState<boolean>(false)
-
-    // Track when speech is actively being processed (interim results detected)
-    // This is different from isListening - only true when user is speaking and API is processing
     const [isProcessingSpeech, setIsProcessingSpeech] = useState<boolean>(false)
 
-    const [voiceState, setVoiceState] = useState<VoiceChatState>({
-        isListening: false, // Voice mode on/off (microphone button state)
-        currentTranscript: "",
-        speechSupported: checkSpeechSupport(),
-        isSpeaking: false,
-        finalTranscript: "",
-    })
+    // Check speech support once at component mount
+    const speechSupported = useMemo(() => checkSpeechSupport(), [])
 
     const voiceRefs = useRef<{
         recognition: unknown | null
@@ -366,7 +361,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
     // Initialize voice recognition - only create once
     useEffect(() => {
-        if (voiceState.speechSupported && !voiceRefs.current.recognition) {
+        if (speechSupported && !voiceRefs.current.recognition) {
             const voiceConfig: VoiceChatConfig = {
                 onSendMessage: (message: string) => {
                     handleSend(message)
@@ -567,23 +562,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             isFirstTranscriptRef.current = true
         }
     }, [voiceState.isListening])
-
-    /**
-     * Render the microphone button, for voice input
-     * @returns A ReactNode representing the microphone button
-     */
-    const renderMicrophoneButton = () => (
-        <MicrophoneButton
-            isMicOn={isMicOn}
-            onMicToggle={setIsMicOn}
-            voiceState={voiceState}
-            setVoiceState={setVoiceState}
-            isAwaitingLlm={isAwaitingLlm}
-            recognition={voiceRefs.current.recognition}
-            onSendMessage={handleSend}
-            onTranscriptChange={handleVoiceTranscript}
-        />
-    )
 
     useEffect(() => {
         const newAgent = async () => {
@@ -1141,6 +1119,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 id="user-input-div"
                 style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
             >
+                {/* Determine if mic button will be rendered */}
                 <Input
                     autoComplete="off"
                     id="user-input"
@@ -1160,6 +1139,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         paddingTop: "0.5rem",
                         paddingLeft: "1rem",
                         paddingRight: "1rem",
+                        transition: "margin-right 0.2s",
                     }}
                     onChange={(event) => {
                         setChatInput(event.target.value)
@@ -1206,8 +1186,17 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     }
                 />
 
-                {/* Microphone Button */}
-                {renderMicrophoneButton()}
+                {/* Microphone Button handles its own tooltip logic */}
+                <MicrophoneButton
+                    isMicOn={isMicOn}
+                    onMicToggle={setIsMicOn}
+                    voiceState={voiceState}
+                    setVoiceState={setVoiceState}
+                    speechSupported={speechSupported}
+                    recognition={voiceRefs.current.recognition}
+                    onSendMessage={handleSend}
+                    onTranscriptChange={handleVoiceTranscript}
+                />
 
                 {/* Send Button */}
                 <SendButton
