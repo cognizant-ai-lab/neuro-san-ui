@@ -12,6 +12,7 @@ let store: ReturnType<typeof createPreferencesStore> | undefined
 const createPreferencesStore = () =>
     create<UserPreferences>()(
         subscribeWithSelector(
+            // persists to local storage by default
             persist(
                 (set) => ({
                     darkMode: false,

@@ -104,3 +104,5 @@ export const APP_THEME = createTheme({
         },
     },
 })
+
+APP_THEME.zIndex.modal = 1300

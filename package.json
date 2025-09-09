@@ -1,7 +1,8 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.1.1",
+    "version": "1.1.0",
     "private": true,
+    "description": "The root package for the Neuro-SAN UI monorepo, containing the MAA UI web app and common components.",
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "workspaces": [
@@ -14,7 +15,7 @@
         "check-format": "tbd: prettier --check .",
         "clean": "rm -rf dist generated",
         "commit-check": "yarn  tsc ; yarn  ts-pe --error ; yarn  depcheck ; yarn  check-format --write ; ./build_scripts/run_eslint.sh ; yarn  unit_test",
-        "dev": "yarn workspace @cognizant-ai-lab/neuro-san-ui-app run dev",
+        "dev": "yarn workspace @cognizant-ai-lab/neuro-san-web run dev",
         "generate": "rm -rf packages/ui-common/generated && cd packages/ui-common && ./build_scripts/do_openapi_generate.sh",
         "lint": "tbd",
         "lint-rules": "tbd",
@@ -64,7 +65,6 @@
         "eslint-plugin-react-hooks": "5.2.0",
         "eslint-plugin-testing-library": "7.6.3",
         "eslint-plugin-unicorn": "60.0.0",
-        "fix-esm-import-path": "1.10.3",
         "globals": "16.3.0",
         "jest": "30.0.5",
         "jest-environment-jsdom": "30.0.5",
@@ -75,5 +75,9 @@
         "ts-node": "10.9.2",
         "ts-prune": "0.10.3",
         "typescript": "5.9.2"
+    },
+    "resolutions": {
+        "@types/react": "18.2.0",
+        "@types/react-dom": "18.2.0"
     }
 }

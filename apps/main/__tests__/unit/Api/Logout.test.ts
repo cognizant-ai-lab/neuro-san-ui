@@ -1,6 +1,6 @@
 import {createMocks} from "node-mocks-http"
 
-import handler from "../../../../../apps/main/pages/api/logout"
+import handler from "../../../pages/api/logout"
 
 describe("Logout API handler", () => {
     it("clears ALB cookies and responds with success", async () => {

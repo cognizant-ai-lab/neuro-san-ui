@@ -4,7 +4,6 @@
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
 
-/** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 

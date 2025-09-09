@@ -2,7 +2,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import ClearIcon from "@mui/icons-material/Clear"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
-import {IconButton, InputAdornment, styled} from "@mui/material"
+import {IconButton, InputAdornment, styled, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import List from "@mui/material/List"
@@ -25,7 +25,7 @@ import {
 import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import useEnvironmentStore from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
-import {ZIndexLayers} from "../../utils/zIndexLayers"
+import {getZIndex} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
 // #region: Styled Components
@@ -91,7 +91,8 @@ export const Sidebar: FC<SidebarProps> = ({
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
 
-    // Dark mode
+    // Theming/Dark mode
+    const theme = useTheme()
     const {darkMode} = usePreferences()
 
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -206,7 +207,7 @@ export const Sidebar: FC<SidebarProps> = ({
                         paddingBottom: "0.75rem",
                         position: "sticky",
                         top: 0,
-                        zIndex: ZIndexLayers.LAYER_1,
+                        zIndex: getZIndex(1, theme),
                     }}
                 >
                     Agent Networks

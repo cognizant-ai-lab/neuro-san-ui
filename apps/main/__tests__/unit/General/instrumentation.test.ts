@@ -2,7 +2,7 @@
 Tests for instrumentation.ts NextJS startup file.
  */
 
-import {register, REQUIRED_ENV_VARS} from "../../../../../apps/main/instrumentation"
+import {register, REQUIRED_ENV_VARS} from "../../../instrumentation"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 describe("instrumentation", () => {

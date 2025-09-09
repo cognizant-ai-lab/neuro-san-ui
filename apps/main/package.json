@@ -1,5 +1,5 @@
 {
-    "name": "@cognizant-ai-lab/neuro-san-ui-app",
+    "name": "@cognizant-ai-lab/neuro-san-web",
     "version": "1.0.0",
     "private": true,
     "license": "SEE LICENSE IN LICENSE.txt",
@@ -40,9 +40,8 @@
         "@types/node": "20.11.5",
         "@types/prop-types": "15.7.11",
         "@types/react": "18.2.0",
-        "@types/react-dom": "18.2.18",
+        "@types/react-dom": "18.2.0",
         "@types/react-syntax-highlighter": "15.5.11",
-        "depcheck": "1.4.7",
         "ts-node": "10.9.2"
     },
     "peerDependencies": {

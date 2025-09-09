@@ -1,4 +1,5 @@
 import {closeSnackbar, enqueueSnackbar, SnackbarKey, SnackbarOrigin, VariantType} from "notistack"
+import {renderToString} from "react-dom/server"
 
 export enum NotificationType {
     "success",
@@ -29,7 +30,7 @@ export function closeNotification(snackbarId?: SnackbarKey) {
 export function sendNotification(
     variantType: NotificationType,
     message: string,
-    description: string = "",
+    description: string | JSX.Element = "",
     // eslint-disable-next-line unicorn/no-object-as-default-parameter
     placement: SnackbarOrigin = {
         vertical: "top",
@@ -37,7 +38,8 @@ export function sendNotification(
     }
 ): void {
     // Log a copy to the console for troubleshooting
-    console.debug(`Notification: Message: "${message}" Description: "${description}"`)
+    const descriptionAsString = typeof description === "string" ? description : renderToString(description)
+    console.debug(`Notification: Message: "${message}" Description: "${descriptionAsString}"`)
 
     // Show error and warnings for longer
     let duration: number

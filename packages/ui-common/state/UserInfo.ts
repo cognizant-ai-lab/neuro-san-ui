@@ -1,6 +1,6 @@
 import {create} from "zustand"
 
-import {OidcProvider} from "../../../apps/main/pages/api/userInfo/types"
+import {OidcProvider} from "../utils/types"
 
 /**
  * Zustand state store for "feature flags" like, "generic branding".

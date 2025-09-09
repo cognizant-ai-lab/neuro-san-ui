@@ -3,7 +3,7 @@
 import {signOut, useSession} from "next-auth/react"
 
 import {navigateToUrl} from "./BrowserNavigation"
-import {OidcProvider} from "../../../apps/main/pages/api/userInfo/types"
+import {OidcProvider} from "./types"
 import useUserInfoStore from "../state/UserInfo"
 
 /**

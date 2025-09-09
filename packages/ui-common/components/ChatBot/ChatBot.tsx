@@ -1,4 +1,5 @@
 import ContactSupportIcon from "@mui/icons-material/ContactSupport"
+import {useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Grow from "@mui/material/Grow"
 import {FC, useState} from "react"
@@ -6,7 +7,7 @@ import {FC, useState} from "react"
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
 import {usePreferences} from "../../state/Preferences"
 import {useAuthentication} from "../../utils/Authentication"
-import {ZIndexLayers} from "../../utils/zIndexLayers"
+import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon} from "../AgentChat/ChatCommon"
 import {LegacyAgentType} from "../AgentChat/Types"
 
@@ -28,7 +29,7 @@ interface ChatBotProps {
 }
 
 /**
- * Site-wide chat bot component.
+ * Site-wide Chatbot component.
  */
 // Temporarily disabled but will be used once we migrated the backend to use Neuro-san RAG.
 // ts-prune-ignore-next
@@ -39,6 +40,8 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
         user: {name: currentUser},
     } = useAuthentication().data
 
+    // MUI theme and dark mode
+    const theme = useTheme()
     const {darkMode} = usePreferences()
 
     // Shadow color for icon. TODO: use MUI theme system instead.
@@ -66,7 +69,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
                         borderRadius: "var(--bs-border-radius)",
                         borderWidth: 1,
                         borderColor: darkMode ? "var(--bs-white)" : "var(--bs-gray-light)",
-                        zIndex: ZIndexLayers.LAYER_2,
+                        zIndex: getZIndex(2, theme),
                     }}
                 >
                     <ChatCommon
