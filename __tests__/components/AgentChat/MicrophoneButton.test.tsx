@@ -6,6 +6,22 @@ import {MicrophoneButton, MicrophoneButtonProps} from "../../../components/Agent
 import {toggleListening, VoiceChatState} from "../../../components/AgentChat/VoiceChat"
 import {withStrictMocks} from "../../common/strictMocks"
 
+/* eslint-disable max-len */
+// User agent strings for testing
+const USER_AGENTS = {
+    CHROME_MAC:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    CHROME_WINDOWS:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    EDGE_MAC:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
+    EDGE_WINDOWS:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
+    FIREFOX_MAC: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0",
+    FIREFOX_WINDOWS: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0",
+} as const
+/* eslint-enable max-len */
+
 // Mock the VoiceChat module
 jest.mock("../../../components/AgentChat/VoiceChat", () => ({
     toggleListening: jest.fn(),
@@ -46,7 +62,6 @@ describe("MicrophoneButton", () => {
     const defaultVoiceState: VoiceChatState = {
         isListening: false,
         currentTranscript: "",
-        speechSupported: true,
         isSpeaking: false,
         finalTranscript: "",
     }
@@ -56,7 +71,7 @@ describe("MicrophoneButton", () => {
         onMicToggle: mockOnMicToggle,
         voiceState: defaultVoiceState,
         setVoiceState: mockSetVoiceState,
-        isAwaitingLlm: false,
+        speechSupported: true,
         recognition: mockRecognition,
         onSendMessage: mockOnSendMessage,
         onTranscriptChange: mockOnTranscriptChange,
@@ -88,29 +103,6 @@ describe("MicrophoneButton", () => {
         expect(screen.queryByTestId("MicOffIcon")).not.toBeInTheDocument()
     })
 
-    it("does not render when speech is not supported", () => {
-        const unsupportedVoiceState = {...defaultVoiceState, speechSupported: false}
-        render(
-            <MicrophoneButton
-                {...defaultProps}
-                voiceState={unsupportedVoiceState}
-            />
-        )
-
-        expect(screen.queryByTestId("microphone-button")).not.toBeInTheDocument()
-    })
-
-    it("is disabled when awaiting LLM response", () => {
-        render(
-            <MicrophoneButton
-                {...defaultProps}
-                isAwaitingLlm={true}
-            />
-        )
-
-        expect(screen.getByTestId("microphone-button")).toBeDisabled()
-    })
-
     it("is enabled when speech is supported and not awaiting LLM", () => {
         render(<MicrophoneButton {...defaultProps} />)
 
@@ -132,7 +124,8 @@ describe("MicrophoneButton", () => {
                 onSendMessage: mockOnSendMessage,
                 onTranscriptChange: mockOnTranscriptChange,
             }),
-            mockSetVoiceState
+            mockSetVoiceState,
+            true
         )
     })
 
@@ -156,7 +149,8 @@ describe("MicrophoneButton", () => {
                 onSendMessage: mockOnSendMessage,
                 onTranscriptChange: mockOnTranscriptChange,
             }),
-            mockSetVoiceState
+            mockSetVoiceState,
+            true
         )
     })
 
@@ -357,46 +351,47 @@ describe("MicrophoneButton", () => {
         expect(button).toBeInTheDocument()
     })
 
-    it("does not render when speech is not supported (opacity test replaced)", () => {
-        const unsupportedVoiceState = {...defaultVoiceState, speechSupported: false}
-        render(
-            <MicrophoneButton
-                {...defaultProps}
-                voiceState={unsupportedVoiceState}
-            />
-        )
+    it("mic button is disabled and tooltip is shown if not Chrome (speech not supported)", async () => {
+        const unsupportedAgents = [
+            USER_AGENTS.EDGE_MAC,
+            USER_AGENTS.EDGE_WINDOWS,
+            USER_AGENTS.FIREFOX_MAC,
+            USER_AGENTS.FIREFOX_WINDOWS,
+        ]
 
-        expect(screen.queryByTestId("microphone-button")).not.toBeInTheDocument()
-    })
+        for (const ua of unsupportedAgents) {
+            Object.defineProperty(navigator, "userAgent", {
+                value: ua,
+                configurable: true,
+            })
 
-    it("does not render mic button or tooltip if not Chrome (speech not supported)", async () => {
-        // Mock user agent to Firefox
-        Object.defineProperty(navigator, "userAgent", {
-            value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/91.0",
-            configurable: true,
-        })
+            const unsupportedVoiceState = {
+                ...defaultVoiceState,
+            }
+            const {unmount} = render(
+                <MicrophoneButton
+                    {...defaultProps}
+                    voiceState={unsupportedVoiceState}
+                    speechSupported={false}
+                />
+            )
 
-        const unsupportedVoiceState = {
-            ...defaultVoiceState,
-            speechSupported: false,
+            const button = screen.getByTestId("microphone-button")
+            expect(button).toBeInTheDocument()
+            expect(button).toBeDisabled()
+            const user = userEvent.setup()
+            await user.hover(button)
+            // MUI Tooltip renders in a portal, so check document.body
+            expect(
+                await screen.findByText(
+                    "Voice input is only supported in Google Chrome on Mac or Windows.",
+                    {},
+                    {container: document.body}
+                )
+            ).toBeInTheDocument()
+
+            // Clean up after each iteration to avoid side effects
+            unmount()
         }
-        render(
-            <MicrophoneButton
-                {...defaultProps}
-                voiceState={unsupportedVoiceState}
-            />
-        )
-
-        expect(screen.queryByTestId("microphone-button")).not.toBeInTheDocument()
-        expect(
-            screen.queryByText("Voice input is only supported in Google Chrome on Mac or Windows.")
-        ).not.toBeInTheDocument()
-
-        // Restore user agent
-        Object.defineProperty(navigator, "userAgent", {
-            // eslint-disable-next-line max-len
-            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            configurable: true,
-        })
     })
 })

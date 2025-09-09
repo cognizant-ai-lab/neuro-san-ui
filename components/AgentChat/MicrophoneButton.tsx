@@ -29,9 +29,9 @@ export interface MicrophoneButtonProps {
     setVoiceState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
 
     /**
-     * Whether the LLM is currently processing a request
+     * Whether speech recognition is supported in this browser
      */
-    isAwaitingLlm: boolean
+    speechSupported: boolean
 
     /**
      * Voice recognition object reference
@@ -59,7 +59,7 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     onMicToggle,
     voiceState,
     setVoiceState,
-    isAwaitingLlm,
+    speechSupported,
     recognition,
     onSendMessage,
     onTranscriptChange,
@@ -79,35 +79,30 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
             },
         }
 
-        // Always call toggleListening - it will handle start/stop based on current state
-        await toggleListening(recognition, voiceState, voiceConfig, setVoiceState)
+        await toggleListening(recognition, voiceState, voiceConfig, setVoiceState, speechSupported)
     }
 
-    // Show a more descriptive tooltip if speech is not supported (i.e., not Chrome)
-    const tooltipText = !voiceState.speechSupported
+    const isDisabled = !speechSupported
+    const tooltipText = !speechSupported
         ? "Voice input is only supported in Google Chrome on Mac or Windows."
         : isMicOn
           ? "Turn microphone off"
           : "Turn microphone on"
 
-    if (!voiceState.speechSupported) {
-        return null
-    }
     return (
         <Tooltip title={tooltipText}>
             <span>
                 <LlmChatButton
                     id="microphone-button"
                     data-testid="microphone-button"
-                    onClick={handleClick}
                     sx={{
                         padding: "0.5rem",
                         right: 70,
                         backgroundColor:
                             isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
-                        opacity: 1,
                     }}
-                    disabled={isAwaitingLlm}
+                    disabled={isDisabled}
+                    onClick={handleClick}
                 >
                     {voiceState.isListening ? (
                         <MicNoneIcon

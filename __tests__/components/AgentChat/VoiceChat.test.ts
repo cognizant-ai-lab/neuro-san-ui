@@ -89,7 +89,6 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
             isSpeaking: false,
             finalTranscript: "",
         }
@@ -102,7 +101,7 @@ describe("VoiceChat utils", () => {
             configurable: true,
             writable: true,
         })
-        await toggleListening({}, state, config, setState)
+        await toggleListening({}, state, config, setState, true)
         expect(config.onSendMessage as jest.Mock).not.toHaveBeenCalled()
     })
 
@@ -118,7 +117,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: true,
             currentTranscript: "foo",
-            speechSupported: true,
+
             isSpeaking: true,
             finalTranscript: "bar",
         }
@@ -135,21 +134,21 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: true,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "hi",
         }
         const setState = jest.fn()
         const config = {onSendMessage: jest.fn(), onTranscriptChange: jest.fn(), onListeningChange: jest.fn()}
         const recognition = {stop: jest.fn(), start: jest.fn()}
-        await toggleListening(recognition, state, config, setState)
+        await toggleListening(recognition, state, config, setState, true)
         expect(recognition.stop).toHaveBeenCalled()
         expect(config.onListeningChange).toHaveBeenCalledWith(false)
         // Message sending is now handled by the onend handler, not immediately by toggleListening
         expect(config.onSendMessage).not.toHaveBeenCalled()
         // Now test start
         const state2: VoiceChatState = {...state, isListening: false}
-        await toggleListening(recognition, state2, config, setState)
+        await toggleListening(recognition, state2, config, setState, true)
         expect(recognition.start).toHaveBeenCalled()
     })
 
@@ -234,7 +233,7 @@ describe("VoiceChat utils", () => {
                 const mockPrevState = {
                     isListening: false,
                     currentTranscript: "",
-                    speechSupported: true,
+
                     isSpeaking: false,
                     finalTranscript: "",
                 }
@@ -426,7 +425,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "",
         }
@@ -449,7 +448,7 @@ describe("VoiceChat utils", () => {
         })
 
         const recognition = {start: jest.fn(), stop: jest.fn()}
-        await toggleListening(recognition, state, config, setState)
+        await toggleListening(recognition, state, config, setState, true)
 
         expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
             audio: {
@@ -465,7 +464,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "",
         }
@@ -490,7 +489,7 @@ describe("VoiceChat utils", () => {
         })
 
         const recognition = {start: jest.fn(), stop: jest.fn()}
-        await toggleListening(recognition, state, config, setState)
+        await toggleListening(recognition, state, config, setState, true)
 
         expect(recognition.start).not.toHaveBeenCalled()
     })
@@ -499,7 +498,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "",
         }
@@ -521,7 +520,7 @@ describe("VoiceChat utils", () => {
         })
 
         const recognition = {start: jest.fn(), stop: jest.fn()}
-        await toggleListening(recognition, state, config, setState)
+        await toggleListening(recognition, state, config, setState, true)
 
         expect(recognition.start).not.toHaveBeenCalled()
     })
@@ -530,7 +529,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "",
         }
@@ -552,7 +551,7 @@ describe("VoiceChat utils", () => {
         })
 
         const recognition = {start: jest.fn(), stop: jest.fn()}
-        await toggleListening(recognition, state, config, setState)
+        await toggleListening(recognition, state, config, setState, true)
 
         expect(recognition.start).toHaveBeenCalled() // Should proceed despite other errors
     })
@@ -603,7 +602,7 @@ describe("VoiceChat utils", () => {
             const mockPrevState = {
                 isListening: false,
                 currentTranscript: "",
-                speechSupported: true,
+
                 isSpeaking: true, // This will trigger the speaking interruption logic
                 finalTranscript: "",
             }
@@ -676,7 +675,7 @@ describe("VoiceChat utils", () => {
             const mockPrevState = {
                 isListening: false,
                 currentTranscript: "",
-                speechSupported: true,
+
                 isSpeaking: false, // Not speaking, so no interruption
                 finalTranscript: "",
             }
@@ -725,14 +724,14 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: false, // Not supported
+
             isSpeaking: false,
             finalTranscript: "",
         }
         const setState = jest.fn()
         const config = {onSendMessage: jest.fn()} as VoiceChatConfig
 
-        await toggleListening(null, state, config, setState)
+        await toggleListening(null, state, config, setState, true)
 
         expect(setState).not.toHaveBeenCalled()
     })
@@ -741,14 +740,14 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "",
         }
         const setState = jest.fn()
         const config = {onSendMessage: jest.fn()} as VoiceChatConfig
 
-        await toggleListening(null, state, config, setState) // null recognition
+        await toggleListening(null, state, config, setState, true) // null recognition
 
         expect(setState).not.toHaveBeenCalled()
     })
@@ -764,7 +763,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: true,
             currentTranscript: "foo",
-            speechSupported: true,
+
             isSpeaking: true,
             finalTranscript: "bar",
         }
@@ -806,7 +805,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false,
             currentTranscript: "",
-            speechSupported: true,
+
             isSpeaking: true, // Key: speech synthesis is active
             finalTranscript: "",
         }
@@ -985,7 +984,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: true, // Currently listening, so will stop
             currentTranscript: "test",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "final",
         }
@@ -1002,7 +1001,7 @@ describe("VoiceChat utils", () => {
             onListeningChange: jest.fn(),
         }
 
-        await toggleListening(mockRecognition, state, config, setState)
+        await toggleListening(mockRecognition, state, config, setState, true)
 
         // Should call setState to update isListening to false
         expect(setState).toHaveBeenCalledWith(expect.any(Function))
@@ -1044,7 +1043,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: false, // Not listening, so will start
             currentTranscript: "test",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "final",
         }
@@ -1062,7 +1061,7 @@ describe("VoiceChat utils", () => {
             onListeningChange: jest.fn(),
         }
 
-        await toggleListening(mockRecognition, state, config, setState)
+        await toggleListening(mockRecognition, state, config, setState, true)
 
         // Should call setState to clear transcripts when starting
         expect(setState).toHaveBeenCalledWith(expect.any(Function))
@@ -1077,7 +1076,7 @@ describe("VoiceChat utils", () => {
         const state: VoiceChatState = {
             isListening: true,
             currentTranscript: "test",
-            speechSupported: true,
+
             isSpeaking: true,
             finalTranscript: "final",
         }
@@ -1128,7 +1127,7 @@ describe("VoiceChat utils", () => {
         const prevState: VoiceChatState = {
             isListening: true,
             currentTranscript: "test",
-            speechSupported: true,
+
             isSpeaking: false,
             finalTranscript: "final",
         }
