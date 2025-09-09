@@ -41,7 +41,7 @@
         "@types/prop-types": "15.7.11",
         "@types/react": "18.2.0",
         "@types/react-dom": "18.2.0",
-        "@types/react-syntax-highlighter": "15.5.11",
+        "node-mocks-http": "1.17.2",
         "ts-node": "10.9.2"
     },
     "peerDependencies": {

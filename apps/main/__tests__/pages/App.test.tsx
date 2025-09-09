@@ -1,4 +1,3 @@
-import {render, screen, waitFor} from "@testing-library/react"
 import {ReactNode} from "react"
 
 import {LOGO} from "@cognizant-ai-lab/ui-common/const"
@@ -7,6 +6,8 @@ import useEnvironmentStore from "../../../../packages/ui-common/state/environmen
 import * as Authentication from "../../../../packages/ui-common/utils/Authentication"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
+import {render, screen} from "@testing-library/react"
+import {waitFor} from "@testing-library/react"
 
 const originalFetch = window.fetch
 
