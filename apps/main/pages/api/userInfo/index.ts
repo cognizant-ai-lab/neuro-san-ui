@@ -2,7 +2,7 @@ import debugModule from "debug"
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-import {OidcProvider, UserInfoResponse} from "./types"
+import {OidcProvider, UserInfoResponse} from "../../../../../packages/ui-common/utils/types"
 
 const debug = debugModule("userInfo")
 

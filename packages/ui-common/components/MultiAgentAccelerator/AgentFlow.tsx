@@ -1,7 +1,7 @@
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
-import {ToggleButton, ToggleButtonGroup} from "@mui/material"
+import {ToggleButton, ToggleButtonGroup, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -35,7 +35,7 @@ import {PlasmaEdge} from "./PlasmaEdge"
 import {ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {AgentConversation} from "../../utils/agentConversations"
-import {ZIndexLayers} from "../../utils/zIndexLayers"
+import {getZIndex} from "../../utils/zIndexLayers"
 
 // #region: Types
 export interface AgentFlowProps {
@@ -56,6 +56,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     id,
     isAwaitingLlm,
 }) => {
+    const theme = useTheme()
+
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
@@ -217,7 +219,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     boxShadow: `0 0 5px rgba(${shadowColor}, 0.3)`,
                     display: "flex",
                     alignItems: "center",
-                    zIndex: ZIndexLayers.LAYER_2,
+                    zIndex: getZIndex(2, theme),
                 }}
             >
                 <Typography

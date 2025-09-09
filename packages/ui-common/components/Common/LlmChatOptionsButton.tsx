@@ -1,7 +1,7 @@
 import {styled} from "@mui/material"
 import Button from "@mui/material/Button"
 
-import {ZIndexLayers} from "../../utils/zIndexLayers"
+import {getZIndex} from "../../utils/zIndexLayers"
 
 type LLMChatGroupConfigBtnProps = {
     enabled?: boolean
@@ -15,7 +15,7 @@ export const LlmChatOptionsButton = styled(Button, {
     position: "absolute",
     top: 10,
     right: posRight || null,
-    zIndex: ZIndexLayers.LAYER_1, // Seems to only be needed on Analytics Chat, but apply to all.
+    zIndex: getZIndex(1, null), // Seems to only be needed on Analytics Chat, but apply to all.
     background: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
     borderColor: `${enabled ? "var(--bs-primary)" : "darkgray"} !important`,
     borderRadius: "var(--bs-border-radius)",

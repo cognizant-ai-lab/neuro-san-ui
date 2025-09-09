@@ -30,7 +30,7 @@ import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
 import {APP_THEME} from "../theme"
 import {BRAND_COLORS} from "../theme"
 import {getTitleBase} from "../../../packages/ui-common"
-import {UserInfoResponse} from "./api/userInfo/types"
+import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 

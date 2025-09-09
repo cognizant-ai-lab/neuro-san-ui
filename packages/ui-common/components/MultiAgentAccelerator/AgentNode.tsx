@@ -2,14 +2,14 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
-import {Tooltip} from "@mui/material"
+import {Tooltip, useTheme} from "@mui/material"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
 import {AgentConversation} from "../../utils/agentConversations"
-import {ZIndexLayers} from "../../utils/zIndexLayers"
+import {getZIndex} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
     readonly agentCounts?: Map<string, number>
@@ -34,6 +34,8 @@ const FRONTMAN_ICON_SIZE = "4.5rem"
  * @param props See AgentNodeProps
  */
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
+    const theme = useTheme()
+
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
     const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
@@ -142,7 +144,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     shapeOutside: "circle(50%)",
                     textAlign: "center",
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
-                    zIndex: ZIndexLayers.LAYER_1,
+                    zIndex: getZIndex(1, theme),
                     position: "relative",
                 }}
             >
