@@ -32,7 +32,7 @@ import {
 } from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
-import {ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"

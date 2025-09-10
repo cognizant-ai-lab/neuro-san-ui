@@ -4,7 +4,7 @@ import {ReactFlowProvider} from "reactflow"
 
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
-import {ConnectivityInfo} from "../../../../../generated/neuro-san/NeuroSanClient"
+import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 

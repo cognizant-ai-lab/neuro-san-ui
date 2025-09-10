@@ -26,7 +26,7 @@ const compat = new FlatCompat({
 const config = [
     eslintPluginUnicorn.configs.all,
     {
-        ignores: [".next", "coverage", "generated", "embed", "dist", "babel.jest.config.cjs"],
+        ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
     ...fixupConfigRules(
         compat.extends(

@@ -51,7 +51,7 @@ import {
     ConnectivityInfo,
     ConnectivityResponse,
     FunctionResponse,
-} from "../../../../generated/neuro-san/NeuroSanClient"
+} from "../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"

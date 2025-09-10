@@ -7,7 +7,7 @@
         "declarationDir": "./dist",
         "emitDeclarationOnly": false,
         "jsx": "react-jsx",
-        "module": "es2022",
+        "module": "esnext",
         "noEmit": false,
         "outDir": "./dist",
         "sourceMap": false

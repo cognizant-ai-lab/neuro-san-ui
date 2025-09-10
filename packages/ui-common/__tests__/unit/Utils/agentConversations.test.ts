@@ -1,5 +1,5 @@
 import {chatMessageFromChunk} from "../../../components/AgentChat/Utils"
-import {ChatMessageType} from "../../../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {
     AgentConversation,
     createConversation,

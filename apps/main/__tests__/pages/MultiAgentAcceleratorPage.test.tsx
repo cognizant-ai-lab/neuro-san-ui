@@ -7,14 +7,17 @@ import useEnvironmentStore from "../../../../packages/ui-common/state/environmen
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
-import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
-import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
-import {ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
-import {getAgentNetworks} from "../../../../packages/ui-common/controller/agent/Agent"
-import {testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
-import {processChatChunk} from "../../../../packages/ui-common/utils/agentConversations"
-import {ChatCommonHandle} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
-import {ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
+import {usePreferences} from "@cognizant-ai-lab/ui-common/state/Preferences"
+import {AgentFlowProps} from "@cognizant-ai-lab/ui-common"
+import {
+    ChatMessageType,
+    ChatResponse,
+} from "../../../../../neuro-san-ui/packages/ui-common/generated/neuro-san/NeuroSanClient"
+import {getAgentNetworks} from "@cognizant-ai-lab/ui-common"
+import {testConnection} from "@cognizant-ai-lab/ui-common"
+import {processChatChunk} from "@cognizant-ai-lab/ui-common"
+import {ChatCommonHandle} from "@cognizant-ai-lab/ui-common"
+import {ChatCommonProps} from "@cognizant-ai-lab/ui-common"
 
 const MOCK_USER = "mock-user"
 

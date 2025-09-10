@@ -1,7 +1,7 @@
-import {useAuthentication} from "../../../../packages/ui-common"
-import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
-import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
-import {MultiAgentAccelerator} from "../../../../packages/ui-common"
+import {useAuthentication} from "@cognizant-ai-lab/ui-common"
+import useEnvironmentStore from "@cognizant-ai-lab/ui-common/state/environment"
+import {usePreferences} from "@cognizant-ai-lab/ui-common/state/Preferences"
+import {MultiAgentAccelerator} from "@cognizant-ai-lab/ui-common"
 
 // Main function.
 // Has to be export default for Next.js so tell ts-prune to ignore

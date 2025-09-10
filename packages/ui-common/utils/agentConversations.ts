@@ -1,6 +1,6 @@
 import {chatMessageFromChunk} from "../components/AgentChat/Utils"
 import {NotificationType, sendNotification} from "../components/Common/notification"
-import {ChatMessageType, Origin} from "../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType, Origin} from "../generated/neuro-san/NeuroSanClient"
 
 export interface AgentConversation {
     // Unique identifier for the conversation

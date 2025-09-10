@@ -1,6 +1,6 @@
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
 import {layoutLinear, layoutRadial} from "../../../components/MultiAgentAccelerator/GraphLayouts"
-import {ConnectivityInfo} from "../../../../../generated/neuro-san/NeuroSanClient"
+import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 describe("GraphLayouts", () => {

@@ -14,7 +14,7 @@ import {
     ConciergeResponse,
     ConnectivityResponse,
     FunctionResponse,
-} from "../../../../generated/neuro-san/NeuroSanClient"
+} from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest} from "../llm/LlmChat"
 
 /**

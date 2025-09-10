@@ -3,18 +3,12 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
-import {
-    ChatContext,
-    ChatMessage,
-    ChatMessageType,
-    ChatResponse,
-} from "../../../../../generated/neuro-san/NeuroSanClient"
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
+import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 
 // Mock agent API
