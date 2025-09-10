@@ -3,7 +3,7 @@ import MicOffIcon from "@mui/icons-material/MicOff"
 import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
-import {LlmChatButton} from "./LlmChatButton"
+import {LlmChatButton} from "../LlmChatButton"
 import {toggleListening, VoiceChatConfig, VoiceChatState} from "./VoiceChat"
 
 // #region: Types

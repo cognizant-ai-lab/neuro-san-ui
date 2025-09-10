@@ -35,13 +35,19 @@ import SyntaxHighlighter from "react-syntax-highlighter"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
-import {MicrophoneButton} from "./MicrophoneButton"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
 import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
-import {checkSpeechSupport, cleanup, createSpeechRecognition, VoiceChatConfig, VoiceChatState} from "./VoiceChat"
+import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
+import {
+    checkSpeechSupport,
+    cleanup,
+    createSpeechRecognition,
+    VoiceChatConfig,
+    VoiceChatState,
+} from "./VoiceChat/VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {
@@ -1186,7 +1192,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     }
                 />
 
-                {/* Microphone Button handles its own tooltip logic */}
+                {/* Microphone Button */}
                 <MicrophoneButton
                     isMicOn={isMicOn}
                     onMicToggle={setIsMicOn}

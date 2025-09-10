@@ -565,10 +565,12 @@ describe("ChatCommon", () => {
 
     it("Should handle voice transcription correctly", async () => {
         // Store original values to restore later
-        const originalSpeechRecognition = (window as unknown as Record<string, unknown>)["SpeechRecognition"]
-        const originalWebkitSpeechRecognition = (window as unknown as Record<string, unknown>)[
-            "webkitSpeechRecognition"
-        ]
+        const win = window as Window & {
+            SpeechRecognition?: typeof Function
+            webkitSpeechRecognition?: typeof Function
+        }
+        const originalSpeechRecognition = win.SpeechRecognition
+        const originalWebkitSpeechRecognition = win.webkitSpeechRecognition
         const originalUserAgent = navigator.userAgent
 
         // Mock speech recognition to test actual voice transcription behavior
@@ -598,11 +600,11 @@ describe("ChatCommon", () => {
         })
 
         // Mock SpeechRecognition constructor
-        Object.defineProperty(window, "SpeechRecognition", {
+        Object.defineProperty(win, "SpeechRecognition", {
             value: jest.fn(() => mockSpeechRecognition),
             configurable: true,
         })
-        Object.defineProperty(window, "webkitSpeechRecognition", {
+        Object.defineProperty(win, "webkitSpeechRecognition", {
             value: jest.fn(() => mockSpeechRecognition),
             configurable: true,
         })
@@ -673,22 +675,22 @@ describe("ChatCommon", () => {
             })
         } finally {
             // Cleanup: restore original values
-            if (originalSpeechRecognition) {
-                Object.defineProperty(window, "SpeechRecognition", {
+            if (originalSpeechRecognition !== undefined) {
+                Object.defineProperty(win, "SpeechRecognition", {
                     value: originalSpeechRecognition,
                     configurable: true,
                 })
             } else {
-                delete (window as unknown as Record<string, unknown>)["SpeechRecognition"]
+                delete win.SpeechRecognition
             }
 
-            if (originalWebkitSpeechRecognition) {
-                Object.defineProperty(window, "webkitSpeechRecognition", {
+            if (originalWebkitSpeechRecognition !== undefined) {
+                Object.defineProperty(win, "webkitSpeechRecognition", {
                     value: originalWebkitSpeechRecognition,
                     configurable: true,
                 })
             } else {
-                delete (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"]
+                delete win.webkitSpeechRecognition
             }
 
             Object.defineProperty(navigator, "userAgent", {
