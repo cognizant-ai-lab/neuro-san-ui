@@ -33,6 +33,18 @@ const TEST_TOOL_LAST_FM = "last_fm_tool"
 const TEST_TOOL_SOLVER = "math_solver_tool"
 const TEST_TOOL_CALCULATOR = "calculator_tool"
 
+// Define proper types for speech recognition events. JSDOM doesn't have support for these natively.
+interface SpeechRecognitionEvent {
+    resultIndex: number
+    results: {
+        length: number
+        [index: number]: {
+            isFinal: boolean
+            [index: number]: {transcript: string}
+        }
+    }
+}
+
 function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
     return {
         type,
@@ -558,18 +570,6 @@ describe("ChatCommon", () => {
             "webkitSpeechRecognition"
         ]
         const originalUserAgent = navigator.userAgent
-
-        // Define proper types for speech recognition events
-        interface SpeechRecognitionEvent {
-            resultIndex: number
-            results: {
-                length: number
-                [index: number]: {
-                    isFinal: boolean
-                    [index: number]: {transcript: string}
-                }
-            }
-        }
 
         // Mock speech recognition to test actual voice transcription behavior
         const mockSpeechRecognition = {
