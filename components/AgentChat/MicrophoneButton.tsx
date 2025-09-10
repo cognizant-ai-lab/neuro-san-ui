@@ -91,18 +91,19 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
 
     return (
         <Tooltip title={tooltipText}>
-            <span>
+            <span style={{display: "inline-block", height: 50, width: 64}}>
                 <LlmChatButton
-                    id="microphone-button"
                     data-testid="microphone-button"
+                    disabled={isDisabled}
+                    id="microphone-button"
+                    onClick={handleClick}
                     sx={{
                         padding: "0.5rem",
                         right: 70,
                         backgroundColor:
                             isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
                     }}
-                    disabled={isDisabled}
-                    onClick={handleClick}
+                    tabIndex={0}
                 >
                     {voiceState.isListening ? (
                         <MicNoneIcon

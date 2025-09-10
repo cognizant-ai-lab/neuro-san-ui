@@ -17,13 +17,14 @@ interface SendButtonProps {
 export const SendButton: React.FC<SendButtonProps> = ({enableSendButton, id, onClickCallback}) => (
     <LlmChatButton
         aria-label="Send"
-        id={id}
         disabled={!enableSendButton}
+        id={id}
         onClick={onClickCallback}
         sx={{
             padding: "0.6rem",
             position: "relative",
         }}
+        tabIndex={0}
     >
         <SendIcon
             fontSize="small"
