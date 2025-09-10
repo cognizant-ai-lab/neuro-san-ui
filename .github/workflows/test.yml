@@ -72,8 +72,8 @@ jobs:
 
             - name: Run tests
               run: |
-                  yarn unit_test --version
-                  yarn unit_test
+                  yarn test --version
+                  yarn test
 
             - name: Notify Slack on success
               if: success()

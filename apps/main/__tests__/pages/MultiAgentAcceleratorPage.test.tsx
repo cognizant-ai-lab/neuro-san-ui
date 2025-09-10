@@ -41,10 +41,10 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
     },
 }))
 
-jest.mock("../../utils/agentConversations")
+jest.mock("../../../../packages/ui-common/utils/agentConversations")
 
 // Mock Preferences state
-jest.mock("../../state/Preferences")
+jest.mock("../../../../packages/ui-common/state/Preferences")
 const mockedUsePreferences = jest.mocked(usePreferences, {shallow: true})
 
 // Mock ChatCommon to call the mock function with props and support refs
@@ -122,7 +122,7 @@ describe("Multi Agent Accelerator Page", () => {
 
         // make processChatChunk the real implementation
         ;(processChatChunk as jest.Mock).mockImplementation(
-            jest.requireActual("../../utils/agentConversations").processChatChunk
+            jest.requireActual("../../../../packages/ui-common/utils/agentConversations").processChatChunk
         )
 
         user = userEvent.setup()

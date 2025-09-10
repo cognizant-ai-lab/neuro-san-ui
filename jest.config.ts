@@ -38,10 +38,17 @@ const config: Config.InitialOptions = {
     coverageReporters: ["text-summary"],
 
     // Prevent Jest from trying to parse CSS files. Reference: https://stackoverflow.com/a/43813992
-    moduleNameMapper: {"\\.(css|less)$": "<rootDir>/__tests__/__mocks__/styleMock.js"},
+    moduleNameMapper: {
+        "\\.(css|less)$": "<rootDir>/apps/main/__tests__/__mocks__/styleMock.js",
+    },
 
     // Don't look for modules in these directories
     modulePathIgnorePatterns: ["<rootDir>/dist", "/.next/"],
+
+    // By default, test any files in __tests__ folder
+    testMatch: ["<rootDir>/**/__tests__/**/*.(test).{ts,tsx}"],
+
+    // Which patterns Jest should match tests against
 
     // Exclude these files from Jest scanning
     testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
