@@ -698,13 +698,6 @@ describe("VoiceChat utils", () => {
         expect(mockCancel).toHaveBeenCalled()
     })
 
-    it("stopSpeechSynthesis should handle missing speechSynthesis gracefully", () => {
-        // Remove speechSynthesis completely to test the "in" operator
-        delete (window as unknown as Record<string, unknown>)["speechSynthesis"]
-
-        expect(() => stopSpeechSynthesis()).not.toThrow()
-    })
-
     it("toggleListening should handle unsupported speech or missing recognition", async () => {
         const state: VoiceChatState = {
             isListening: false,

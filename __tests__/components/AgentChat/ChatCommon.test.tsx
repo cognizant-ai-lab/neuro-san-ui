@@ -10,6 +10,7 @@ import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 import {withStrictMocks} from "../../common/strictMocks"
+import {USER_AGENTS} from "../../common/UserAgentTestUtils"
 
 // Mock agent API
 jest.mock("../../../controller/agent/Agent")
@@ -587,15 +588,8 @@ describe("ChatCommon", () => {
             addEventListener: jest.fn(), // Proper addEventListener mock
         }
 
-        // Mock Chrome browser environment
-        const userAgentValue = [
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-            "AppleWebKit/537.36 (KHTML, like Gecko)",
-            "Chrome/91.0.4472.124 Safari/537.36",
-        ].join(" ")
-
         Object.defineProperty(navigator, "userAgent", {
-            value: userAgentValue,
+            value: USER_AGENTS.CHROME_MAC,
             configurable: true,
         })
 
