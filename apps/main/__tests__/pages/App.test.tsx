@@ -1,15 +1,15 @@
+import {render, screen, waitFor} from "@testing-library/react"
 import {ReactNode} from "react"
 
-import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import NeuroSanUI from "../../pages/_app"
 import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
-import * as Authentication from "../../../../packages/ui-common/utils/Authentication"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
-import {render, screen} from "@testing-library/react"
-import {waitFor} from "@testing-library/react"
+import {useAuthentication} from "../../../../packages/ui-common"
 
 const originalFetch = window.fetch
+
+const COMPONENT_BODY = "Test Component to Render"
 
 jest.mock("next-auth/react", () => ({
     SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
@@ -39,9 +39,14 @@ jest.mock("next/router", () => ({
     },
 }))
 
+jest.mock("../../../../packages/ui-common", () => ({
+    ...jest.requireActual("../../../../packages/ui-common"),
+    useAuthentication: jest.fn(),
+}))
+
 const APP_COMPONENT = (
     <NeuroSanUI
-        Component={() => <div>Test Component to Render</div>}
+        Component={() => <div>{COMPONENT_BODY}</div>}
         pageProps={{url: "TestComponentURL", session: {user: {}}}}
         router={jest.requireMock("next/router").useRouter()}
     />
@@ -55,7 +60,7 @@ describe("Main App Component", () => {
     const testDomain = "testDomain"
     const testSupportEmailAddress = "test@example.com"
     beforeEach(() => {
-        jest.spyOn(Authentication, "useAuthentication").mockReturnValue({
+        ;(useAuthentication as jest.Mock).mockReturnValue({
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
 
@@ -84,7 +89,7 @@ describe("Main App Component", () => {
 
         render(APP_COMPONENT)
 
-        await screen.findByText(new RegExp(LOGO, "u"))
+        await screen.findByText(COMPONENT_BODY)
 
         // Assert that values were set in the zustand store
         const state = useEnvironmentStore.getState()

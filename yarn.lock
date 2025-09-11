@@ -1465,8 +1465,8 @@ __metadata:
     sharp: "npm:0.33.2"
     ts-node: "npm:10.9.2"
   peerDependencies:
-    react: ^18
-    react-dom: ^18
+    react: ^18.2.0
+    react-dom: ^18.2.0
     typescript: ^5.9.2
   languageName: unknown
   linkType: soft
