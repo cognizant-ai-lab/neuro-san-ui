@@ -41,7 +41,7 @@ interface SpeechRecognitionEvent {
         length: number
         [index: number]: {
             isFinal: boolean
-            [index: number]: {transcript: string}
+            transcript: string
         }
     }
 }
@@ -621,13 +621,12 @@ describe("ChatCommon", () => {
             const mockTranscript = "from voice recognition"
             const mockEvent: SpeechRecognitionEvent = {
                 resultIndex: 0,
-                results: {
-                    length: 1,
-                    0: {
+                results: [
+                    {
                         isFinal: true,
-                        0: {transcript: mockTranscript},
+                        transcript: mockTranscript,
                     },
-                },
+                ],
             }
 
             // Trigger the onresult handler which should call handleVoiceTranscript
@@ -652,13 +651,12 @@ describe("ChatCommon", () => {
                 if (mockSpeechRecognition.onresult) {
                     mockSpeechRecognition.onresult({
                         resultIndex: 0,
-                        results: {
-                            length: 1,
-                            0: {
+                        results: [
+                            {
                                 isFinal: true,
-                                0: {transcript: "standalone voice input"},
+                                transcript: "standalone voice input",
                             },
-                        },
+                        ],
                     })
                 }
             })

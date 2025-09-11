@@ -41,13 +41,7 @@ import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
 import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
 import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
-import {
-    checkSpeechSupport,
-    cleanup,
-    createSpeechRecognition,
-    VoiceChatConfig,
-    VoiceChatState,
-} from "./VoiceChat/VoiceChat"
+import {checkSpeechSupport, SpeechRecognition, useVoiceRecognition, VoiceChatState} from "./VoiceChat/VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {
@@ -281,7 +275,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     const speechSupported = useMemo(() => checkSpeechSupport(), [])
 
     const voiceRefs = useRef<{
-        recognition: unknown | null
+        recognition: SpeechRecognition | null
     }>({
         recognition: null,
     })
@@ -364,42 +358,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         currentResponse.current = ""
         setShowThinking(false)
     }, [neuroSanURL])
-
-    // Initialize voice recognition - only create once
-    useEffect(() => {
-        if (speechSupported && !voiceRefs.current.recognition) {
-            const voiceConfig: VoiceChatConfig = {
-                onSendMessage: (message: string) => {
-                    handleSend(message)
-                },
-                onTranscriptChange: handleVoiceTranscript,
-                onSpeakingChange: (isSpeaking) => {
-                    setVoiceState((prev) => ({...prev, isSpeaking}))
-                },
-                onListeningChange: (isListening) => {
-                    setVoiceState((prev) => ({...prev, isListening}))
-                },
-                onProcessingChange: (isProcessing) => {
-                    // Show spinner only when speech is actively being processed (interim results)
-                    setIsProcessingSpeech(isProcessing)
-                },
-            }
-            voiceRefs.current.recognition = createSpeechRecognition(voiceConfig, setVoiceState)
-        }
-        return () => {
-            if (voiceRefs.current.recognition) {
-                const voiceConfig: VoiceChatConfig = {
-                    onSendMessage: () => undefined,
-                    onTranscriptChange: () => undefined,
-                    onSpeakingChange: () => undefined,
-                    onListeningChange: () => undefined,
-                    onProcessingChange: () => undefined,
-                }
-                cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState)
-                voiceRefs.current.recognition = null
-            }
-        }
-    }, [])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -545,29 +503,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 ))}
         </>
     )
-
-    // Track if this is the first transcript after starting voice mode
-    const isFirstTranscriptRef = useRef(true)
-
-    // Simple voice transcript handler that appends to existing input
-    const handleVoiceTranscript = (transcript: string) => {
-        if (transcript) {
-            setIsProcessingSpeech(false) // Hide spinner when text is received
-            setChatInput((prev) => {
-                // Add space only on first transcript after starting voice mode, if there's existing content
-                const needsSpace = isFirstTranscriptRef.current && prev && !prev.endsWith(" ")
-                isFirstTranscriptRef.current = false // Mark that we've received the first transcript
-                return prev + (needsSpace ? " " : "") + transcript
-            })
-        }
-    }
-
-    // Reset the first transcript flag when voice mode starts
-    useEffect(() => {
-        if (voiceState.isListening) {
-            isFirstTranscriptRef.current = true
-        }
-    }, [voiceState.isListening])
 
     useEffect(() => {
         const newAgent = async () => {
@@ -945,6 +880,16 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         }
     }
 
+    useVoiceRecognition({
+        speechSupported,
+        voiceRefs,
+        voiceState,
+        setVoiceState,
+        handleSend,
+        setIsProcessingSpeech,
+        setChatInput,
+    })
+
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -1125,7 +1070,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 id="user-input-div"
                 style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
             >
-                {/* Determine if mic button will be rendered */}
                 <Input
                     autoComplete="off"
                     id="user-input"
@@ -1201,7 +1145,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     speechSupported={speechSupported}
                     recognition={voiceRefs.current.recognition}
                     onSendMessage={handleSend}
-                    onTranscriptChange={handleVoiceTranscript}
                 />
 
                 {/* Send Button */}

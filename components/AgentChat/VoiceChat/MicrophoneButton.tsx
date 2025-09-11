@@ -42,11 +42,6 @@ export interface MicrophoneButtonProps {
      * Callback when a message should be sent
      */
     onSendMessage: (message: string) => void
-
-    /**
-     * Callback when transcript changes
-     */
-    onTranscriptChange: (transcript: string) => void
 }
 // #endregion: Types
 
@@ -62,7 +57,6 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     speechSupported,
     recognition,
     onSendMessage,
-    onTranscriptChange,
 }) => {
     const handleClick = async () => {
         const newMicState = !isMicOn
@@ -70,7 +64,6 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
 
         const voiceConfig: VoiceChatConfig = {
             onSendMessage,
-            onTranscriptChange,
             onSpeakingChange: (isSpeaking) => {
                 setVoiceState((prev) => ({...prev, isSpeaking}))
             },

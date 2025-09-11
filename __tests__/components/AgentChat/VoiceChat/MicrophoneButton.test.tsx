@@ -41,7 +41,6 @@ describe("MicrophoneButton", () => {
     const mockOnMicToggle = jest.fn()
     const mockSetVoiceState = jest.fn()
     const mockOnSendMessage = jest.fn()
-    const mockOnTranscriptChange = jest.fn()
     const mockRecognition = {start: jest.fn(), stop: jest.fn()}
 
     const defaultVoiceState: VoiceChatState = {
@@ -59,7 +58,6 @@ describe("MicrophoneButton", () => {
         speechSupported: true,
         recognition: mockRecognition,
         onSendMessage: mockOnSendMessage,
-        onTranscriptChange: mockOnTranscriptChange,
     }
 
     withStrictMocks()
@@ -107,7 +105,6 @@ describe("MicrophoneButton", () => {
             defaultVoiceState,
             expect.objectContaining({
                 onSendMessage: mockOnSendMessage,
-                onTranscriptChange: mockOnTranscriptChange,
             }),
             mockSetVoiceState,
             true
@@ -132,7 +129,6 @@ describe("MicrophoneButton", () => {
             defaultVoiceState,
             expect.objectContaining({
                 onSendMessage: mockOnSendMessage,
-                onTranscriptChange: mockOnTranscriptChange,
             }),
             mockSetVoiceState,
             true
@@ -149,7 +145,6 @@ describe("MicrophoneButton", () => {
         const voiceConfigCall = (toggleListening as jest.Mock).mock.calls[0][2]
         expect(voiceConfigCall).toEqual({
             onSendMessage: mockOnSendMessage,
-            onTranscriptChange: mockOnTranscriptChange,
             onSpeakingChange: expect.any(Function),
             onListeningChange: expect.any(Function),
         })
@@ -170,7 +165,6 @@ describe("MicrophoneButton", () => {
         const voiceConfigCall = (toggleListening as jest.Mock).mock.calls[0][2]
         expect(voiceConfigCall).toEqual({
             onSendMessage: mockOnSendMessage,
-            onTranscriptChange: mockOnTranscriptChange,
             onSpeakingChange: expect.any(Function),
             onListeningChange: expect.any(Function),
         })

@@ -1,5 +1,22 @@
-// Basic SpeechRecognition interface
-interface SpeechRecognition {
+import {Dispatch, RefObject, SetStateAction, useEffect, useRef} from "react"
+
+// #region: Types
+
+export interface VoiceChatConfig {
+    onSendMessage: (message: string) => void
+    onTranscriptChange?: (transcript: string) => void
+    onSpeakingChange?: (isSpeaking: boolean) => void
+    onListeningChange?: (isListening: boolean) => void
+    onProcessingChange?: (isProcessing: boolean) => void
+}
+
+// ts-prune-ignore-next: Used for type safety in tests
+export interface SpeechRecognitionEvent {
+    resultIndex: number
+    results: SpeechRecognitionResultList
+}
+
+export interface SpeechRecognition {
     continuous: boolean
     interimResults: boolean
     lang: string
@@ -12,11 +29,6 @@ interface SpeechRecognition {
     addEventListener: (type: string, listener: () => void) => void
 }
 
-interface SpeechRecognitionEvent {
-    resultIndex: number
-    results: SpeechRecognitionResultList
-}
-
 interface SpeechRecognitionResultList {
     length: number
     [index: number]: SpeechRecognitionResult
@@ -24,19 +36,17 @@ interface SpeechRecognitionResultList {
 
 interface SpeechRecognitionResult {
     isFinal: boolean
-    [index: number]: SpeechRecognitionAlternative
-}
-
-interface SpeechRecognitionAlternative {
     transcript: string
 }
 
-export interface VoiceChatConfig {
-    onSendMessage: (message: string) => void
-    onTranscriptChange?: (transcript: string) => void
-    onSpeakingChange?: (isSpeaking: boolean) => void
-    onListeningChange?: (isListening: boolean) => void
-    onProcessingChange?: (isProcessing: boolean) => void
+interface UseVoiceRecognitionProps {
+    speechSupported: boolean
+    voiceRefs: RefObject<{recognition: SpeechRecognition | null}>
+    voiceState: VoiceChatState
+    setVoiceState: Dispatch<SetStateAction<VoiceChatState>>
+    handleSend: (message: string) => void
+    setIsProcessingSpeech: Dispatch<SetStateAction<boolean>>
+    setChatInput: Dispatch<SetStateAction<string>>
 }
 
 export interface VoiceChatState {
@@ -44,6 +54,74 @@ export interface VoiceChatState {
     currentTranscript: string
     isSpeaking: boolean
     finalTranscript: string
+}
+
+// #endregion: Types
+
+export function useVoiceRecognition({
+    speechSupported,
+    voiceRefs,
+    voiceState,
+    setVoiceState,
+    handleSend,
+    setIsProcessingSpeech,
+    setChatInput,
+}: UseVoiceRecognitionProps) {
+    const isFirstTranscriptRef = useRef(true)
+
+    useEffect(() => {
+        if (speechSupported && !voiceRefs.current.recognition) {
+            const voiceConfig: VoiceChatConfig = {
+                onSendMessage: (message: string) => {
+                    handleSend(message)
+                },
+                onSpeakingChange: (isSpeaking: boolean) => {
+                    setVoiceState((prev) => ({...prev, isSpeaking}))
+                },
+                onListeningChange: (isListening: boolean) => {
+                    setVoiceState((prev) => ({...prev, isListening}))
+                    if (isListening) {
+                        isFirstTranscriptRef.current = true
+                    }
+                },
+                onProcessingChange: (isProcessing: boolean) => {
+                    setVoiceState((prev) => ({...prev, isProcessingSpeech: isProcessing}))
+                    setIsProcessingSpeech(isProcessing)
+                },
+                onTranscriptChange: (transcript: string) => {
+                    if (typeof transcript === "string" && transcript.trim() !== "") {
+                        setIsProcessingSpeech(false)
+                        setChatInput((prev: string) => {
+                            const needsSpace = isFirstTranscriptRef.current && prev && !prev.endsWith(" ")
+                            isFirstTranscriptRef.current = false
+                            return prev + (needsSpace ? " " : "") + transcript
+                        })
+                    }
+                },
+            }
+            voiceRefs.current.recognition = createSpeechRecognition(voiceConfig, setVoiceState)
+        }
+        return () => {
+            if (voiceRefs.current.recognition) {
+                const voiceConfig: VoiceChatConfig = {
+                    onSendMessage: () => undefined,
+                    onTranscriptChange: () => undefined,
+                    onSpeakingChange: () => undefined,
+                    onListeningChange: () => undefined,
+                    onProcessingChange: () => undefined,
+                }
+                cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState)
+                voiceRefs.current.recognition = null
+            }
+        }
+    }, [])
+
+    // Reset the first transcript flag when voice mode starts
+    useEffect(() => {
+        if (voiceState.isListening) {
+            isFirstTranscriptRef.current = true
+        }
+    }, [voiceState.isListening])
 }
 
 // Check browser/platform support
@@ -154,9 +232,18 @@ const processRecognitionResult = (event: SpeechRecognitionEvent) => {
     let interimTranscript = ""
     let finalTranscript = ""
 
-    for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
+    let resultsArr
+    if (Array.isArray(event.results)) {
+        resultsArr = event.results
+    } else {
+        resultsArr = []
+        for (const item of Array.from({length: event.results.length}, (_, i) => event.results[i])) {
+            resultsArr.push(item)
+        }
+    }
+    for (const result of resultsArr.slice(event.resultIndex)) {
+        const transcript = result?.[0]?.transcript ?? result?.transcript ?? ""
+        if (result?.isFinal) {
             finalTranscript += transcript
         } else {
             interimTranscript += transcript
