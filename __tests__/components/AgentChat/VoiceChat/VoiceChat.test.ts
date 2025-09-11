@@ -74,23 +74,23 @@ describe("VoiceChat utils", () => {
                 configurable: true,
                 writable: true,
             })
-            mockUserAgent("Mozilla/5.0 Chrome/100.0.0.0")
+            mockUserAgent(USER_AGENTS.CHROME_MAC)
         })
         it("checkSpeechSupport returns a boolean", () => {
             expect(typeof checkSpeechSupport()).toBe("boolean")
         })
         it("detects Chrome and non-Chrome browsers", () => {
-            mockUserAgent("Mozilla/5.0 Chrome/100.0.0.0")
+            mockUserAgent(USER_AGENTS.CHROME_MAC)
             expect(checkSpeechSupport()).toBe(true)
-            mockUserAgent("Mozilla/5.0 Firefox/100.0.0.0")
+            mockUserAgent(USER_AGENTS.FIREFOX_MAC)
             expect(checkSpeechSupport()).toBe(false)
-            mockUserAgent("Mozilla/5.0 Edg/100.0.0.0")
+            mockUserAgent(USER_AGENTS.EDGE_WINDOWS)
             expect(checkSpeechSupport()).toBe(false)
-            mockUserAgent("Mozilla/5.0 Edge/100.0.0.0")
+            mockUserAgent(USER_AGENTS.EDGE_MAC)
             expect(checkSpeechSupport()).toBe(false)
         })
         it("returns false if SpeechRecognition is missing", () => {
-            mockUserAgent("Mozilla/5.0 Chrome/100.0.0.0")
+            mockUserAgent(USER_AGENTS.CHROME_MAC)
             delete (window as unknown as Record<string, unknown>)["SpeechRecognition"]
             delete (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"]
             expect("SpeechRecognition" in window).toBe(false)
@@ -168,7 +168,6 @@ describe("VoiceChat utils", () => {
             expect(recognition.start).toHaveBeenCalled()
         })
     })
-    // ...existing code...
 
     it("speech recognition onresult handles interim and final transcripts", () => {
         const config = {
@@ -304,9 +303,6 @@ describe("VoiceChat utils", () => {
         expect(setState).toHaveBeenCalledWith(expect.any(Function))
         expect(config.onListeningChange).toHaveBeenCalledWith(false)
     })
-})
-describe("Speech Recognition Features", () => {
-    // ...existing code for recognition, errors, browser detection, permissions, etc...
 })
 
 it("should handle webkit speech recognition prefix", () => {
