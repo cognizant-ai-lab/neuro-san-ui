@@ -66,7 +66,7 @@ export interface ChatCommonProps {
     readonly id: string
 
     /**
-     * The current user name of the logged in user. Used for fetching things from APIs mainly
+     * The current username of the logged-in user. Used for fetching things from APIs mainly
      */
     readonly currentUser: string
 
@@ -168,7 +168,7 @@ const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 const AGENT_IMAGE = "/agent.svg"
 
 // How many times to retry the entire agent interaction process. Some networks have a well-defined success condition.
-// For others it's just "whenever the stream is done".
+// For others, it's just "whenever the stream is done".
 const MAX_AGENT_RETRIES = 3
 
 // Type for forward ref to expose the handleStop function
@@ -226,7 +226,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     // Chat output window contents
     const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
 
-    // To accumulate current response, which will be different than the contents of the output window if there is a
+    // To accumulate current response, which will be different from the contents of the output window if there is a
     // chat session
     const currentResponse = useRef<string>("")
 
@@ -701,8 +701,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 succeeded.current = false
             }
         } else if (chatMessage?.text?.trim() !== "") {
-            // Not an error, so output it if it has text. The backend sometimes sends messages with no
-            // text content and we don't want to display those to the user.
+            // Not an error, so output it if it has text. The backend sometimes sends messages with no text content and
+            // we don't want to display those to the user.
             // Agent name is the last tool in the origin array. If it's not there, use a default name.
             const agentName =
                 chatMessage.origin?.length > 0
@@ -739,7 +739,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 } else {
                     // It's a Neuro-san agent.
 
-                    // Some coded tools (data generator...) expect the user name provided in slyData.
+                    // Some coded tools (data generator...) expect the username provided in slyData.
                     const slyDataWithUserName = {...slyData.current, login: currentUser}
                     await sendChatQuery(
                         neuroSanURL,
@@ -794,7 +794,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         // Always start output by echoing user query.
         // Note: we display the original user query, not the modified one. The modified one could be a monstrosity
         // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf of the
-        // user but currently we do for orchestration.
+        // user, but currently we do for orchestration.
         updateOutput(
             <UserQueryDisplay
                 userQuery={query}

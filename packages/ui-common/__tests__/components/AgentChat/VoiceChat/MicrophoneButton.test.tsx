@@ -2,10 +2,10 @@ import {render, screen} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {ReactNode} from "react"
 
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
 import {MicrophoneButton, MicrophoneButtonProps} from "../../../../components/AgentChat/VoiceChat/MicrophoneButton"
 import {toggleListening, VoiceChatState} from "../../../../components/AgentChat/VoiceChat/VoiceChat"
-import {withStrictMocks} from "../../../common/strictMocks"
-import {USER_AGENTS} from "../../../common/UserAgentTestUtils"
 
 // Mock the VoiceChat module
 jest.mock("../../../../components/AgentChat/VoiceChat/VoiceChat", () => ({
