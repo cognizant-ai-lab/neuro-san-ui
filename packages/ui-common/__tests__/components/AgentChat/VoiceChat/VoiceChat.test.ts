@@ -1,3 +1,4 @@
+import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
 import {
     checkSpeechSupport,
     cleanup,
@@ -7,7 +8,6 @@ import {
     VoiceChatConfig,
     VoiceChatState,
 } from "../../../../components/AgentChat/VoiceChat/VoiceChat"
-import {USER_AGENTS} from "../../../common/UserAgentTestUtils"
 
 const mockUserAgent = (userAgent: string) => {
     Object.defineProperty(navigator, "userAgent", {

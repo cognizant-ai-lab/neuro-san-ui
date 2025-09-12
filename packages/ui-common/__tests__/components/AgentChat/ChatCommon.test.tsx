@@ -3,6 +3,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
