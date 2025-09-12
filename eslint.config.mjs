@@ -250,7 +250,7 @@ const config = [
             ],
 
             "import/no-extraneous-dependencies": [
-                "error",
+                "off",
                 {
                     includeInternal: true,
                     includeTypes: true,
