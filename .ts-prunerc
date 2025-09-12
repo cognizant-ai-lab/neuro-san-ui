@@ -1,3 +1,0 @@
-{
-  "skip": "generated|dist|index.ts$|__tests__/__mocks__/next-auth/react.js"
-}

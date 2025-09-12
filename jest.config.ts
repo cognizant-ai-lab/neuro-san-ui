@@ -48,8 +48,6 @@ const config: Config.InitialOptions = {
     // By default, test any files in __tests__ folder
     testMatch: ["<rootDir>/**/__tests__/**/*.(test).{ts,tsx}"],
 
-    // Which patterns Jest should match tests against
-
     // Exclude these files from Jest scanning
     testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
 }

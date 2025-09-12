@@ -37,11 +37,6 @@
     "strictNullChecks": false,
     "target": "es2022",
     "useUnknownInCatchVariables": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "incremental": true
   },
   "include": [

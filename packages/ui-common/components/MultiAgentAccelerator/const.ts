@@ -22,8 +22,10 @@ export const BACKGROUND_COLORS = [
 ]
 
 // Zero-based index of the one where colors start to get dark. Used for displaying contrasting text colors.
+/** @knip-ignore */
 export const BACKGROUND_COLORS_DARK_IDX = 6 // Somewhat subjective
 
 // Palette for heatmap coloring of nodes
 // For now, use same palette as background colors
+/** @knip-ignore */
 export const HEATMAP_COLORS = BACKGROUND_COLORS

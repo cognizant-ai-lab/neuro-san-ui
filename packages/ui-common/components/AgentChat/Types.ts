@@ -1,3 +1,4 @@
+// knip:ignore
 export enum LegacyAgentType {
     OpportunityFinder = "OpportunityFinder",
     ScopingAgent = "ScopingAgent",

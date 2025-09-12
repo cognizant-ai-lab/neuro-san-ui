@@ -7,6 +7,7 @@ import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
+import {SpeechRecognitionEvent} from "../../../components/AgentChat/VoiceChat/VoiceChat"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
@@ -33,18 +34,6 @@ const TEST_TOOL_SPOTIFY = "spotify_tool"
 const TEST_TOOL_LAST_FM = "last_fm_tool"
 const TEST_TOOL_SOLVER = "math_solver_tool"
 const TEST_TOOL_CALCULATOR = "calculator_tool"
-
-// Define proper types for speech recognition events. JSDOM doesn't have support for these natively.
-interface SpeechRecognitionEvent {
-    resultIndex: number
-    results: {
-        length: number
-        [index: number]: {
-            isFinal: boolean
-            transcript: string
-        }
-    }
-}
 
 function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
     return {
@@ -159,7 +148,7 @@ describe("ChatCommon", () => {
         // Now math guy
         const mathGuyItem = within(connectivityList).queryByText(TEST_AGENT_MATH_GUY)
 
-        // Should not be present since we are chatting with Math Guy and we don't show agents connecting to themselves
+        // Should not be present since we are chatting with Math Guy, and we don't show agents connecting to themselves
         expect(mathGuyItem).not.toBeInTheDocument()
     })
 
@@ -361,7 +350,7 @@ describe("ChatCommon", () => {
                 type: ChatMessageType.AI,
                 structure: {
                     error: "Error message from LLM",
-                    traceback: "test tracebook",
+                    traceback: "test traceback",
                     tool: "test tool",
                 },
             },
@@ -529,14 +518,14 @@ describe("ChatCommon", () => {
             getResponseMessage(ChatMessageType.AI, aiResponseText),
         ]
 
-        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
-        const chatResponsesStringified = responseMessages.map((response) => ({
+        // Chunk handler expects messages to be a JSON object with a "response" field
+        const chatResponses = responseMessages.map((response) => ({
             response,
         }))
 
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
-            callback(JSON.stringify(chatResponsesStringified[0]))
-            callback(JSON.stringify(chatResponsesStringified[1]))
+            callback(JSON.stringify(chatResponses[0]))
+            callback(JSON.stringify(chatResponses[1]))
         })
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")

@@ -61,15 +61,10 @@ jobs:
                   yarn check-format --version
                   yarn check-format
 
-            - name: Run depcheck
+            - name: Run knip
               run: |
-                  yarn depcheck --version
-                  yarn depcheck
-
-            - name: Run ts-prune
-              run: |
-                  yarn list --depth=0 --pattern ts-prune
-                  yarn ts-prune --error
+                  yarn knip --version
+                  yarn knip
 
             - name: Run tests
               run: |
