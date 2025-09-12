@@ -1,8 +1,8 @@
 import {render, screen} from "@testing-library/react"
 
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {UserQueryDisplay} from "../../../components/AgentChat/UserQueryDisplay"
 import {DEFAULT_USER_IMAGE} from "../../../const"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 // Mock dependencies
 jest.mock("next/image", () => ({

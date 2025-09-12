@@ -2,9 +2,9 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useRouter} from "next/router"
 
-import Index from "../../pages"
-import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
+import Index from "../../pages"
 
 // Mock dependencies
 jest.mock("../../../../packages/ui-common/state/environment", () => ({

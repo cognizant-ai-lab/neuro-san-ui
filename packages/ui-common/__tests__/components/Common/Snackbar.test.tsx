@@ -2,8 +2,8 @@ import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
 
-import {Snackbar, SnackbarProps} from "../../../components/Common/Snackbar"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {Snackbar, SnackbarProps} from "../../../components/Common/Snackbar"
 
 // Mock useSnackbar hook
 jest.mock("notistack", () => ({

@@ -1,7 +1,7 @@
 import httpStatus from "http-status"
 
-import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 
 describe("LlmChat", () => {
     withStrictMocks()

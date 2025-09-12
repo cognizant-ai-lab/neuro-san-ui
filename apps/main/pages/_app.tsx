@@ -2,9 +2,19 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
+import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
+import startCase from "lodash-es/startCase.js"
+import {AppProps} from "next/app"
+import Head from "next/head"
+import {useRouter} from "next/router"
+import {SessionProvider} from "next-auth/react"
+import {SnackbarProvider} from "notistack"
+import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
+
 import {
     Auth,
     ErrorBoundary,
+    getTitleBase,
     LoadingSpinner,
     Navbar,
     NavbarProps,
@@ -13,24 +23,12 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
-import useEnvironmentStore from "../../../packages/ui-common/state/environment"
-import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"
-import {usePreferences} from "../../../packages/ui-common/state/Preferences"
-
 import {LOGO} from "../../../packages/ui-common/const"
-import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
-import debugModule from "debug"
-import startCase from "lodash-es/startCase.js"
-import {AppProps} from "next/app"
-import Head from "next/head"
-import {useRouter} from "next/router"
-import {SessionProvider} from "next-auth/react"
-import {SnackbarProvider} from "notistack"
-import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
-import {APP_THEME} from "../theme"
-import {BRAND_COLORS} from "../theme"
-import {getTitleBase} from "../../../packages/ui-common"
+import useEnvironmentStore from "../../../packages/ui-common/state/environment"
+import {usePreferences} from "../../../packages/ui-common/state/Preferences"
+import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
+import {APP_THEME, BRAND_COLORS} from "../theme"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -45,8 +43,6 @@ type ExtendedAppProps = AppProps & {
     // Extend Component with custom properties
     Component: BaseComponent & CustomPageProps
 }
-
-const debug = debugModule("app")
 
 const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 
@@ -171,7 +167,6 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getUserInfo() {
-            debug("Fetching user info from ALB")
             const res = await fetch("/api/userInfo", {
                 method: "GET",
                 headers: {

@@ -1,7 +1,6 @@
-import {useAuthentication} from "../../../../packages/ui-common"
+import {MultiAgentAccelerator,useAuthentication} from "../../../../packages/ui-common"
 import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
-import {MultiAgentAccelerator} from "../../../../packages/ui-common"
 
 // Main function.
 // Has to be export default for Next.js so tell ts-prune to ignore

@@ -1,7 +1,7 @@
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {AgentErrorProps} from "../../../components/AgentChat/Types"
 import {chatMessageFromChunk, checkError} from "../../../components/AgentChat/Utils"
 import {ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {
     withStrictMocks()

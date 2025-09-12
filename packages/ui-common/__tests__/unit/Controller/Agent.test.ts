@@ -1,3 +1,5 @@
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {
     getAgentFunction,
     getAgentNetworks,
@@ -15,8 +17,6 @@ import {
     ChatMessageType,
     ChatRequest,
 } from "../../../generated/neuro-san/NeuroSanClient"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 
 jest.mock("../../../controller/llm/LlmChat")
 

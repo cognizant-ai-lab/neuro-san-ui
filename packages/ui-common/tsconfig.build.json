@@ -1,5 +1,5 @@
 {
-    "extends": "../../tsconfig.base.json",
+    "extends": "../../tsconfig.json",
     "include": ["."],
     "exclude": ["__tests__", "**jest**", "build_scripts", "coverage", "dist", "eslint*", "tsconfig.*"],
     "compilerOptions": {

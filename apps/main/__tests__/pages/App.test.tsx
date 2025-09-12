@@ -1,11 +1,11 @@
 import {render, screen, waitFor} from "@testing-library/react"
 import {ReactNode} from "react"
 
-import NeuroSanUI from "../../pages/_app"
-import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {useAuthentication} from "../../../../packages/ui-common"
+import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
+import NeuroSanUI from "../../pages/_app"
 
 const originalFetch = window.fetch
 

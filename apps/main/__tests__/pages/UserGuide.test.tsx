@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 
-import UserGuide from "../../pages/userguide"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import UserGuide from "../../pages/userguide"
 
 const originalFetch = window.fetch
 

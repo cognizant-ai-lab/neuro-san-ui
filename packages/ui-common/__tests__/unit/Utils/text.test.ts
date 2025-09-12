@@ -1,5 +1,5 @@
-import {extractId, hashString} from "../../../utils/text"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {extractId, hashString} from "../../../utils/text"
 
 describe("removeLast", () => {
     withStrictMocks()

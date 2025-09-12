@@ -79,11 +79,8 @@ const config = [
             sourceType: "module",
 
             parserOptions: {
-                ecmaFeatures: {
-                    jsx: true,
-                },
-
-                project: ["./tsconfig.base.json"],
+                ecmaFeatures: {jsx: true},
+                project: ["./tsconfig.json", "./apps/*/tsconfig.json", "./packages/*/tsconfig.json"],
             },
         },
 
@@ -94,8 +91,12 @@ const config = [
             "import/resolver": {
                 node: true,
                 typescript: {
-                    project: "./tsconfig.base.json",
+                    noWarnOnMultipleProjects: true,
+                    project: ["./tsconfig.json", "./apps/*/tsconfig.json", "./packages/*/tsconfig.json"],
                 },
+            },
+            next: {
+                rootDir: ["apps/*/"],
             },
         },
 
@@ -143,7 +144,7 @@ const config = [
 
             // Some extra rules that are enabled by eslint:all but somehow end up getting disabled -- maybe conflict
             // with other plugins we're using?
-            // Also the place for rules we want to explicitly enable.
+            // Also, the place for rules we want to explicitly enable.
             //
             // How to see which rules are enabled: ./node_modules/.bin/eslint --print-config jest.config.ts
             // In any case, more rules keep us safe, so explicitly enable them here.
@@ -454,7 +455,7 @@ const config = [
     },
     {
         // Test-specific rule configuration
-        files: ["__tests__/**/*.{js,ts,jsx,tsx}"],
+        files: ["**/__tests__/**/*.{js,ts,jsx,tsx}"],
 
         // Pull in RTL plugin
         ...testingLibrary.configs["flat/react"],

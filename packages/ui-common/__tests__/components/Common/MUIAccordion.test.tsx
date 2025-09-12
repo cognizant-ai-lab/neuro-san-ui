@@ -1,8 +1,8 @@
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
-import {MUIAccordion} from "../../../components/Common/MUIAccordion"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {MUIAccordion} from "../../../components/Common/MUIAccordion"
 
 describe("MUIAccordion", () => {
     withStrictMocks()

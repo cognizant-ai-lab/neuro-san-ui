@@ -1,8 +1,8 @@
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
-import {MUIDialog} from "../../../components/Common/MUIDialog"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {MUIDialog} from "../../../components/Common/MUIDialog"
 
 describe("Dialog", () => {
     withStrictMocks()

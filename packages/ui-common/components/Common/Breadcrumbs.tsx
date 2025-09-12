@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
+ 
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import {Typography} from "@mui/material"
 import Breadcrumbs from "@mui/material/Breadcrumbs"

@@ -1,10 +1,7 @@
-import debugModule from "debug"
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
 import {OidcProvider, UserInfoResponse} from "../../../../../packages/ui-common/utils/types"
-
-const debug = debugModule("userInfo")
 
 const EXPECTED_NUMBER_OF_JWT_HEADERS = 3
 
@@ -26,12 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 const AWS_OIDC_HEADER = "x-amzn-oidc-data"
 
 function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
-    debug("Headers:", req.headers)
-
     const oidcDataHeader = req.headers[AWS_OIDC_HEADER] as string
 
     if (!oidcDataHeader) {
-        debug("OIDC header not found")
         return {
             oidcHeaderFound: false,
         }
@@ -39,25 +33,20 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
 
     // We expect the OIDC data header to be two parts, separated by a period
     if (!oidcDataHeader.includes(".")) {
-        debug("OIDC header does not contain a period")
         return {oidcHeaderFound: true, oidcHeaderValid: false}
     }
 
     // Split the header into two parts
     const jwtHeaders = oidcDataHeader.split(".")
     if (!jwtHeaders || jwtHeaders.length !== EXPECTED_NUMBER_OF_JWT_HEADERS) {
-        debug("OIDC header is not in the expected format", jwtHeaders)
         return {oidcHeaderFound: true, oidcHeaderValid: false}
     }
 
     // now base64 decode jwtheader
     const buff = Buffer.from(jwtHeaders[1], "base64")
     const decoded = buff.toString("utf8")
-    debug("Decoded JWT Header:", decoded)
 
     const userInfo = JSON.parse(decoded)
-
-    debug("User Info:", userInfo)
 
     // Determine the OIDC provider
     let picture: string = null

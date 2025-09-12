@@ -1,8 +1,8 @@
 import {render} from "@testing-library/react"
 import {Position} from "reactflow"
 
-import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 
 // Capture the *real* createElement before it's mocked
 // eslint-disable-next-line @typescript-eslint/no-deprecated

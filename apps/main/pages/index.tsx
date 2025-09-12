@@ -1,3 +1,8 @@
+import {
+    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
+    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
+    LOGO,
+} from "@cognizant-ai-lab/ui-common/const"
 import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
 import NextImage from "next/legacy/image"
@@ -6,11 +11,6 @@ import {useRouter} from "next/router"
 import {ReactElement, useState} from "react"
 
 import {ConfirmationModal} from "../../../packages/ui-common/components/Common/confirmationModal"
-import {
-    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
-    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
-    LOGO,
-} from "@cognizant-ai-lab/ui-common/const"
 import useEnvironmentStore from "../../../packages/ui-common/state/environment"
 
 // #region: Styled Components

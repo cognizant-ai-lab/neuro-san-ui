@@ -2,11 +2,11 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {Sidebar} from "../../../components/MultiAgentAccelerator/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import useEnvironmentStore from "../../../state/environment"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
 const AGENT_SERVER_ADDRESS = "Agent server address"

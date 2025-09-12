@@ -1,8 +1,8 @@
 import {render, screen} from "@testing-library/react"
 import {CSSProperties} from "react"
 
-import {AgentNode} from "../../../components/MultiAgentAccelerator/AgentNode"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {AgentNode} from "../../../components/MultiAgentAccelerator/AgentNode"
 
 // Mock the Handle component since we don't want to invite react-flow to this party
 jest.mock("reactflow", () => ({

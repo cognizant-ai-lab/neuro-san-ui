@@ -1,3 +1,4 @@
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {chatMessageFromChunk} from "../../../components/AgentChat/Utils"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {
@@ -7,7 +8,6 @@ import {
     processChatChunk,
     updateAgentCounts,
 } from "../../../utils/agentConversations"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 
 // Mock the chatMessageFromChunk utility
 jest.mock("../../../components/AgentChat/Utils", () => ({

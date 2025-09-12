@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 
-import {PageLoader} from "../../../components/Common/PageLoader"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {PageLoader} from "../../../components/Common/PageLoader"
 
 describe("PageLoader", () => {
     withStrictMocks()

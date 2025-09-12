@@ -1,8 +1,8 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 
-import {ControlButtons} from "../../../components/AgentChat/ControlButtons"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {ControlButtons} from "../../../components/AgentChat/ControlButtons"
 
 describe("ControlButtons", () => {
     withStrictMocks()

@@ -1,8 +1,8 @@
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
-import {ConfirmationModal} from "../../../components/Common/confirmationModal"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {ConfirmationModal} from "../../../components/Common/confirmationModal"
 
 describe("ConfirmationModal", () => {
     withStrictMocks()
