@@ -1,4 +1,4 @@
-import {MultiAgentAccelerator,useAuthentication} from "../../../../packages/ui-common"
+import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
 import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 

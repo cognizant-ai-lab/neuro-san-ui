@@ -12,7 +12,7 @@
     "scripts": {
         "build:app": "tbd",
         "build:lib": "yarn workspace @cognizant-ai-lab/ui-common build",
-        "check-format": "tbd: prettier --check .",
+        "check-format": "yarn prettier --check .",
         "clean": "rm -rf dist generated",
         "commit-check": "tsc; yarn  ts-prune --error; depcheck; check-format --write; ./build_scripts/run_eslint.sh; test",
         "dev": "yarn workspace @cognizant-ai-lab/neuro-san-web run dev",

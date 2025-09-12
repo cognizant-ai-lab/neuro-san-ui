@@ -1,17 +1,17 @@
 {
-  "extends": "../../tsconfig.json",
-  "plugins": [
-    {
-      "name": "next"
-    }
-  ],
-  "include": [
-    "../../**/*.js",
-    "../../**/*.mjs",
-    "../../**/*.ts",
-    "../../**/*.tsx",
-    "../../.next/types/**/*.ts",
-    "../../next-env.d.ts",
-    ".next/types/**/*.ts"
-  ]
+    "extends": "../../tsconfig.json",
+    "plugins": [
+        {
+            "name": "next"
+        }
+    ],
+    "include": [
+        "../../**/*.js",
+        "../../**/*.mjs",
+        "../../**/*.ts",
+        "../../**/*.tsx",
+        "../../.next/types/**/*.ts",
+        "../../next-env.d.ts",
+        ".next/types/**/*.ts"
+    ]
 }
