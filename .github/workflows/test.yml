@@ -27,6 +27,7 @@ jobs:
                   apk add --quiet --no-progress --upgrade bash shellcheck
 
             # Install yarn version from package.json packageManager field using corepack
+            # "corepack install" reads package.json and installs the right yarn version from the packageManager field
             - name: Set yarn version
               run: |
                   corepack enable
