@@ -1,7 +1,7 @@
 import {act, renderHook} from "@testing-library/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {useLocalStorage} from "../../../../../utils/useLocalStorage"
+import {useLocalStorage} from "../../../utils/useLocalStorage"
 
 describe("useLocalStorage", () => {
     withStrictMocks()
