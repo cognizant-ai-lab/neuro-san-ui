@@ -55,9 +55,6 @@ const config: KnipConfig = {
         // Used by Jest
         "babel-jest",
 
-        // Used in commit-check script
-        "jest-silent-reporter",
-
         // Used by eslint
         "eslint-config-next",
 

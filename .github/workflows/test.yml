@@ -34,7 +34,7 @@ jobs:
                   corepack install 
                   yarn --version
 
-            - name: Install Node.js dependencies
+            - name: Install dependencies
               run: |
                   yarn --version
                   yarn install
