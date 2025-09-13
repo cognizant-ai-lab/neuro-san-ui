@@ -5,7 +5,6 @@ import {OidcProvider, UserInfoResponse} from "../../../../../packages/ui-common/
 
 const EXPECTED_NUMBER_OF_JWT_HEADERS = 3
 
-// ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
 export default async function handler(req: NextApiRequest, res: NextApiResponse<UserInfoResponse>) {
     // Fetch user info from ALB or your backend service
     const userInfo = fetchUserInfoFromALB(req)

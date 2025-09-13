@@ -52,6 +52,4 @@ const config: Config.InitialOptions = {
     testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
 }
 
-// Required for Jest to function so tell ts-prune to ignore it
-// ts-prune-ignore-next
 export default config

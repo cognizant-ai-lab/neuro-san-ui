@@ -40,8 +40,11 @@ interface ErrorBoundaryProps {
  * handles the error boundary.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    // This is the key override called by ReactJS when an unhandled error is thrown. And this is why you cannot
-    // create error boundaries in functional components -- no way to override this method.
+    /**
+     * @public
+     * This is the key override called by ReactJS when an unhandled error is thrown. And this is why you cannot create
+     * error boundaries in functional components -- no way to override this method.
+     */
     static getDerivedStateFromError(error: unknown) {
         // Update state so the next render will show the fallback UI
         return {hasError: true, error}

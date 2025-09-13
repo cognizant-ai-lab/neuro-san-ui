@@ -6,9 +6,13 @@
 import type {KnipConfig} from "knip"
 
 const config: KnipConfig = {
-    entry: ["./packages/ui-common/index.ts"],
+    // From the doc:
+    // "By default, Knip does not report unused exports in entry files. When a repository (or workspace) is
+    // self-contained or private, you may want to include entry files when reporting unused exports:"
+    includeEntryExports: true,
 
-    project: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    // Treat hints as errors (will make exit code non-zero)
+    treatConfigHintsAsErrors: true,
 
     // Opt-in to all issues types
     include: [
@@ -36,10 +40,10 @@ const config: KnipConfig = {
         // Used in a sneaky way by jest
         "babel.jest.config.cjs",
 
-        // Duplicate export: revisit later
+        // Duplicate export: revisit later (legit issue)
         "packages/ui-common/components/MultiAgentAccelerator/const.ts",
 
-        // Temporarily exclude for transition to monorepo
+        // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Types.ts",
     ],
 
@@ -48,23 +52,17 @@ const config: KnipConfig = {
         "@babel/core",
         "@babel/preset-env",
 
-        // Used by multiple packages so needs to be in root package.json
-        "@emotion/react",
-        "@emotion/styled",
-        "@mui/icons-material",
-        "@mui/material",
-
         // Used by Jest
         "babel-jest",
+
+        // Used in commit-check script
+        "jest-silent-reporter",
 
         // Used by eslint
         "eslint-config-next",
 
         // Used by yarn lint-summary script
         "eslint-formatter-summary",
-
-        // "eslint-import-resolver-typescript",
-        "fix-esm-import-path",
 
         // Used internally by eslint
         "globals",
