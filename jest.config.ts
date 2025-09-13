@@ -25,6 +25,8 @@ const config: Config.InitialOptions = {
     testEnvironment: "jsdom",
     collectCoverage: true,
     collectCoverageFrom: [
+        "**/*.{js,jsx,ts,tsx}",
+        "!**/__tests__/**/*",
         "!**/coverage/**",
         "!**/dist/**",
         "!**/generated/**",
@@ -33,7 +35,6 @@ const config: Config.InitialOptions = {
         "!knip.config.ts",
         "!next-env.d.ts",
         "!next.config.ts",
-        "**/*.{js,jsx,ts,tsx}",
     ],
     coverageReporters: ["text-summary"],
 
