@@ -18,8 +18,6 @@ export const REQUIRED_ENV_VARS = [
     "SUPPORT_EMAIL_ADDRESS",
 ]
 
-// Has to be export default for NextJS so tell ts-prune to ignore
-// ts-prune-ignore-next
 export function register() {
     const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
 

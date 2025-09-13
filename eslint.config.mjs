@@ -527,5 +527,4 @@ const config = [
 ]
 
 // Has to be exported for ESLint to use it
-// ts-prune-ignore-next
 export default config

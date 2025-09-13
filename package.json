@@ -1,6 +1,6 @@
 {
     "name": "@cognizant-ai-lab/neuro-san-ui",
-    "version": "1.1.0",
+    "version": "1.0.0",
     "private": true,
     "description": "The root package for the Neuro-SAN UI monorepo, containing the MAA UI web app and common components.",
     "license": "SEE LICENSE IN LICENSE.txt",
@@ -14,10 +14,10 @@
         "build:lib": "yarn workspace @cognizant-ai-lab/ui-common build",
         "check-format": "yarn prettier --check --log-level warn .",
         "clean": "rm -rf dist generated",
-        "commit-check": "yarn tsc; yarn knip; yarn check-format; yarn lint; yarn test",
+        "commit-check": "echo 'tsc...'; yarn tsc; echo 'knip...'; yarn knip; echo 'prettier...'; yarn check-format; echo 'eslint...'; yarn lint; echo 'jest...'; yarn test --reporters=jest-silent-reporter --silent",
         "dev": "yarn workspace @cognizant-ai-lab/neuro-san-web run dev",
         "generate": "rm -rf packages/ui-common/generated && cd packages/ui-common && ./build_scripts/do_openapi_generate.sh",
-        "knip": "knip --no-config-hints",
+        "knip": "knip",
         "lint": "eslint",
         "lint-rules": "eslint --print-config jest.config.ts",
         "lint-summary": "eslint --format summary",
@@ -27,12 +27,6 @@
         "tsc": "tsc --project tsconfig.json"
     },
     "packageManager": "yarn@4.9.4",
-    "dependencies": {
-        "@emotion/react": "11.13.3",
-        "@emotion/styled": "11.13.0",
-        "@mui/icons-material": "7.3.1",
-        "@mui/material": "7.3.1"
-    },
     "devDependencies": {
         "@babel/core": "7.23.7",
         "@babel/preset-env": "7.28.3",
@@ -67,6 +61,7 @@
         "jest": "30.0.5",
         "jest-environment-jsdom": "30.0.5",
         "jest-fail-on-console": "3.3.1",
+        "jest-silent-reporter": "0.6.0",
         "knip": "5.63.1",
         "prettier": "3.6.2",
         "react": "18.2.0",

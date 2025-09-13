@@ -3,8 +3,6 @@ import useEnvironmentStore from "../../../../packages/ui-common/state/environmen
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 
 // Main function.
-// Has to be export default for Next.js so tell ts-prune to ignore
-// ts-prune-ignore-next
 export default function MultiAgentAcceleratorPage() {
     // Animation time for the left and right panels to slide in or out when launching the animation
     // For access to logged-in session and current username

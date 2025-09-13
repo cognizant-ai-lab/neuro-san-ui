@@ -8,7 +8,6 @@ const ALB_COOKIES = ["AWSALBAuthNonce", "AWSELBAuthSessionCookie-0", "AWSELBAuth
  * @param _req Not used
  * @param res Response object for signalling success
  */
-// ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
 export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
     res.setHeader(
         "Set-Cookie",

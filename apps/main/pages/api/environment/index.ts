@@ -16,7 +16,6 @@ interface EnvironmentResponse {
  * @param _req Request -- not used
  * @param res Response -- the response object. It is used to send the environment settings to the client.
  */
-// ts-prune-ignore-next  (has to be exported for NextJS to hook into it)
 export default function handler(_req: NextApiRequest, res: NextApiResponse<Partial<EnvironmentResponse>>) {
     res.setHeader("Content-Type", "application/json")
 

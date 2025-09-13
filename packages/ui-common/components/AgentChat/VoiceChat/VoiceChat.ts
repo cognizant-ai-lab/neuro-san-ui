@@ -10,7 +10,6 @@ export interface VoiceChatConfig {
     onProcessingChange?: (isProcessing: boolean) => void
 }
 
-// ts-prune-ignore-next: Used for type safety in tests
 export interface SpeechRecognitionEvent {
     resultIndex: number
     results: SpeechRecognitionResultList

@@ -32,7 +32,6 @@ interface ChatBotProps {
  * Site-wide Chatbot component.
  */
 // Temporarily disabled but will be used once we migrated the backend to use Neuro-san RAG.
-// ts-prune-ignore-next
 export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
     const [chatOpen, setChatOpen] = useState<boolean>(false)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState<boolean>(false)

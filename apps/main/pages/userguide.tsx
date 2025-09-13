@@ -10,8 +10,6 @@ import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
 const USER_GUIDE_PATH = "user_guide.md"
 
 // Main function.
-// Has to be export default for NextJS so tell ts-prune to ignore
-// ts-prune-ignore-next
 export default function UserGuide() {
     const [userGuide, setUserGuide] = useState(null)
 

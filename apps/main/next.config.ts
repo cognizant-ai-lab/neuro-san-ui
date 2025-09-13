@@ -92,5 +92,4 @@ const nextConfig: import("next").NextConfig = {
 }
 
 // Seems to need to be exported for Next.js to pick it up
-// ts-prune-ignore-next
 export default nextConfig
