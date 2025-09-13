@@ -1,8 +1,15 @@
+/**
+ * @fileoverview Knip configuration file to identify unused files and dependencies in the project.
+ *
+ */
+
 import type {KnipConfig} from "knip"
 
 const config: KnipConfig = {
     entry: ["./packages/ui-common/index.ts"],
+
     project: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+
     ignore: [
         // Temporarily unused pending migration from Pinecone to pgvector
         "packages/ui-common/components/ChatBot/ChatBot.tsx",
@@ -15,13 +22,44 @@ const config: KnipConfig = {
         "packages/ui-common/components/MultiAgentAccelerator/const.ts",
 
         // Temporarily exclude for transition to monorepo
-        ".github/**",
-        "apps/main/package.json",
-        "package.json",
         "packages/ui-common/components/AgentChat/Types.ts",
-        "packages/ui-common/package.json",
     ],
-    ignoreDependencies: ["sharp"], // Used by Next.js image optimization,
+
+    ignoreDependencies: [
+        // Used by jest
+        "@babel/core",
+        "@babel/preset-env",
+
+        // Used by multiple packages so needs to be in root package.json
+        "@emotion/react",
+        "@emotion/styled",
+        "@mui/icons-material",
+        "@mui/material",
+
+        // Used by Jest
+        "babel-jest",
+
+        // Used by eslint
+        "eslint-config-next",
+
+        // Used by yarn lint-summary script
+        "eslint-formatter-summary",
+
+        // "eslint-import-resolver-typescript",
+        "fix-esm-import-path",
+
+        // Used internally by eslint
+        "globals",
+
+        // Used by do_openapi_generate.sh
+        "openapi-typescript",
+
+        // Used by Next.js image optimization,
+        "sharp",
+
+        // Used by Jest for TS format config file
+        "ts-node",
+    ],
 }
 
 export default config

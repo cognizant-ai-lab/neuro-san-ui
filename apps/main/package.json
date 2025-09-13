@@ -5,8 +5,10 @@
     "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
+        "build": "next build",
         "dev": "next dev --hostname 0.0.0.0 --port 3000",
-        "lint": "next lint"
+        "lint": "next lint",
+        "start": "next start"
     },
     "dependencies": {
         "@cognizant-ai-lab/ui-common": "workspace:*",
@@ -31,8 +33,8 @@
         "@types/node": "20.11.5",
         "@types/react": "18.2.0",
         "@types/react-dom": "18.2.0",
-        "node-mocks-http": "1.17.2",
-        "ts-node": "10.9.2"
+        "eslint-config-next": "15.4.6",
+        "node-mocks-http": "1.17.2"
     },
     "peerDependencies": {
         "react": "^18.2.0",
