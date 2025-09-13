@@ -1391,11 +1391,7 @@ __metadata:
     "@testing-library/jest-dom": "npm:6.6.4"
     "@testing-library/react": "npm:16.3.0"
     "@testing-library/user-event": "npm:14.6.1"
-    "@types/babel__core": "npm:7.20.5"
-    "@types/eslint": "npm:9.6.1"
     "@types/jest": "npm:30.0.0"
-    "@types/lodash": "npm:4.17.12"
-    "@types/lodash-es": "npm:4.17.12"
     "@types/node": "npm:22.17.1"
     "@types/react": "npm:18.2.0"
     "@types/react-dom": "npm:18.2.0"
@@ -1403,7 +1399,6 @@ __metadata:
     "@typescript-eslint/parser": "npm:8.39.0"
     babel-jest: "npm:30.1.1"
     eslint: "npm:9.32.0"
-    eslint-config-next: "npm:15.4.6"
     eslint-config-prettier: "npm:10.1.8"
     eslint-formatter-summary: "npm:2.0.2"
     eslint-import-resolver-typescript: "npm:^4.4.4"
@@ -1440,6 +1435,7 @@ __metadata:
     "@types/node": "npm:20.11.5"
     "@types/react": "npm:18.2.0"
     "@types/react-dom": "npm:18.2.0"
+    eslint-config-next: "npm:15.4.6"
     http-status: "npm:1.7.3"
     lodash-es: "npm:4.17.21"
     next: "npm:15.4.6"
@@ -1452,7 +1448,6 @@ __metadata:
     rehype-slug: "npm:6.0.0"
     remark-toc: "npm:9.0.0"
     sharp: "npm:0.33.2"
-    ts-node: "npm:10.9.2"
   peerDependencies:
     react: ^18.2.0
     react-dom: ^18.2.0
@@ -1467,12 +1462,9 @@ __metadata:
     "@babel/core": "npm:7.23.7"
     "@babel/preset-env": "npm:7.28.3"
     "@langchain/core": "npm:0.2.36"
-    "@types/babel__core": "npm:7.20.5"
     "@types/dagre": "npm:0.7.53"
-    "@types/lodash": "npm:4.17.12"
     "@types/lodash-es": "npm:4.17.12"
     "@types/node": "npm:20.11.5"
-    "@types/prop-types": "npm:15.7.11"
     "@types/react": "npm:18.2.0"
     "@types/react-dom": "npm:18.2.0"
     "@types/react-syntax-highlighter": "npm:15.5.13"
@@ -1493,7 +1485,6 @@ __metadata:
     reactflow: "npm:11.10.2"
     rehype-raw: "npm:7.0.0"
     rehype-slug: "npm:6.0.0"
-    ts-node: "npm:10.9.2"
     zustand: "npm:4.4.7"
   peerDependencies:
     "@emotion/react": ^11
@@ -3474,7 +3465,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/babel__core@npm:7.20.5, @types/babel__core@npm:^7.20.5":
+"@types/babel__core@npm:^7.20.5":
   version: 7.20.5
   resolution: "@types/babel__core@npm:7.20.5"
   dependencies:
@@ -3810,16 +3801,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/eslint@npm:9.6.1":
-  version: 9.6.1
-  resolution: "@types/eslint@npm:9.6.1"
-  dependencies:
-    "@types/estree": "npm:*"
-    "@types/json-schema": "npm:*"
-  checksum: 10c0/69ba24fee600d1e4c5abe0df086c1a4d798abf13792d8cfab912d76817fe1a894359a1518557d21237fbaf6eda93c5ab9309143dee4c59ef54336d1b3570420e
-  languageName: node
-  linkType: hard
-
 "@types/estree-jsx@npm:^1.0.0":
   version: 1.0.5
   resolution: "@types/estree-jsx@npm:1.0.5"
@@ -3907,7 +3888,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/json-schema@npm:*, @types/json-schema@npm:^7.0.15":
+"@types/json-schema@npm:^7.0.15":
   version: 7.0.15
   resolution: "@types/json-schema@npm:7.0.15"
   checksum: 10c0/a996a745e6c5d60292f36731dd41341339d4eeed8180bb09226e5c8d23759067692b1d88e5d91d72ee83dfc00d3aca8e7bd43ea120516c17922cbcb7c3e252db
@@ -3934,13 +3915,6 @@ __metadata:
   version: 4.17.20
   resolution: "@types/lodash@npm:4.17.20"
   checksum: 10c0/98cdd0faae22cbb8079a01a3bb65aa8f8c41143367486c1cbf5adc83f16c9272a2a5d2c1f541f61d0d73da543c16ee1d21cf2ef86cb93cd0cc0ac3bced6dd88f
-  languageName: node
-  linkType: hard
-
-"@types/lodash@npm:4.17.12":
-  version: 4.17.12
-  resolution: "@types/lodash@npm:4.17.12"
-  checksum: 10c0/106008f628ea3c74ed7ee7842dee79e230c84e3721ac38c293700031adb5bd130113048c22f476dbde0d0c119506b0fc447d4bd62eca922682d11e00e1377967
   languageName: node
   linkType: hard
 
@@ -3998,13 +3972,6 @@ __metadata:
   version: 15.7.15
   resolution: "@types/prop-types@npm:15.7.15"
   checksum: 10c0/b59aad1ad19bf1733cf524fd4e618196c6c7690f48ee70a327eb450a42aab8e8a063fbe59ca0a5701aebe2d92d582292c0fb845ea57474f6a15f6994b0e260b2
-  languageName: node
-  linkType: hard
-
-"@types/prop-types@npm:15.7.11":
-  version: 15.7.11
-  resolution: "@types/prop-types@npm:15.7.11"
-  checksum: 10c0/e53423cf9d510515ef8b47ff42f4f1b65a7b7b37c8704e2dbfcb9a60defe0c0e1f3cb1acfdeb466bad44ca938d7c79bffdd51b48ffb659df2432169d0b27a132
   languageName: node
   linkType: hard
 
