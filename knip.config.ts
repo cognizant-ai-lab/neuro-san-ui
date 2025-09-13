@@ -10,6 +10,24 @@ const config: KnipConfig = {
 
     project: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
 
+    // Opt-in to all issues types
+    include: [
+        "binaries",
+        "classMembers",
+        "dependencies",
+        "devDependencies",
+        "duplicates",
+        "enumMembers",
+        "exports",
+        "files",
+        "nsExports",
+        "nsTypes",
+        "optionalPeerDependencies",
+        "types",
+        "unlisted",
+        "unresolved",
+    ],
+
     ignore: [
         // Temporarily unused pending migration from Pinecone to pgvector
         "packages/ui-common/components/ChatBot/ChatBot.tsx",
