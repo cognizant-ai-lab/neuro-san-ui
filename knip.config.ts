@@ -45,6 +45,8 @@ const config: KnipConfig = {
 
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Types.ts",
+
+        "**/dist/**",
     ],
 
     ignoreDependencies: [
