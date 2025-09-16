@@ -15,7 +15,7 @@ FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 ENV NODE_ENV production
 
 WORKDIR /app
-COPY ../../package.json yarn.lock ./
+COPY package.json yarn.lock ./
 COPY ../../generated ./generated
 RUN yarn install --production --silent --prefer-offline --frozen-lockfile --non-interactive
 
