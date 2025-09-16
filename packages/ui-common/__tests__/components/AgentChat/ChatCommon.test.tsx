@@ -4,13 +4,17 @@ import {createRef} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
+import {
+    ChatContext,
+    ChatMessage,
+    ChatMessageType,
+    ChatResponse,
+} from "../../../../../generated/neuro-san/NeuroSanClient"
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {SpeechRecognitionEvent} from "../../../components/AgentChat/VoiceChat/VoiceChat"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
-import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 
 // Mock agent API
@@ -641,18 +645,32 @@ describe("ChatCommon", () => {
 
             // Simulate speech recognition providing a final transcript
             const mockTranscript = "from voice recognition"
-            const mockEvent: SpeechRecognitionEvent = {
+            const mockEvent = {
                 resultIndex: 0,
                 results: {
                     length: 1,
+                    item(_index: number) {
+                        return mockEvent.results[_index]
+                    },
+                    *[Symbol.iterator]() {
+                        yield mockEvent.results[0]
+                    },
                     0: {
+                        length: 1,
                         isFinal: true,
+                        item(_index: number) {
+                            return mockEvent.results[0][_index]
+                        },
+                        *[Symbol.iterator]() {
+                            yield mockEvent.results[0][0]
+                        },
                         0: {
+                            confidence: 100,
                             transcript: mockTranscript,
                         },
                     },
                 },
-            }
+            } as unknown as SpeechRecognitionEvent
 
             // Trigger the onresult handler which should call handleVoiceTranscript
             act(() => {
@@ -678,14 +696,29 @@ describe("ChatCommon", () => {
                         resultIndex: 0,
                         results: {
                             length: 1,
+                            item() {
+                                return {
+                                    length: 1,
+                                    isFinal: true,
+                                    item() {
+                                        return {confidence: 100, transcript: "standalone voice input"}
+                                    },
+                                    0: {confidence: 100, transcript: "standalone voice input"},
+                                } as unknown as SpeechRecognitionResult
+                            },
                             0: {
+                                length: 1,
                                 isFinal: true,
+                                item() {
+                                    return {confidence: 100, transcript: "standalone voice input"}
+                                },
                                 0: {
+                                    confidence: 100,
                                     transcript: "standalone voice input",
                                 },
                             },
                         },
-                    })
+                    } as unknown as SpeechRecognitionEvent)
                 }
             })
 
