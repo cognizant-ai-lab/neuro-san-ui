@@ -30,7 +30,7 @@ export interface SpeechRecognitionState {
 
 // Check if browser is Chrome (excluding Edge). Only Chrome (on Mac OS and Windows) has full support for
 // SpeechRecognition. Also, tested that this will exclude Firefox and Safari.
-const isChromeDetection = (): boolean =>
+const isChrome = (): boolean =>
     /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent) && !/Edg\//u.test(navigator.userAgent)
 
 // Check browser/platform support
@@ -41,7 +41,7 @@ export const checkSpeechSupport = (): boolean => {
     const hasSpeechRecognition = "SpeechRecognition" in window
 
     // Only Chrome provides reliable speech recognition support
-    return hasSpeechRecognition && isChromeDetection()
+    return hasSpeechRecognition && isChrome()
 }
 
 // Handle speech recognition start
@@ -173,7 +173,7 @@ export const setupSpeechRecognition = (
 
 // Request microphone permission
 const requestMicrophonePermission = async (): Promise<boolean> => {
-    if (!isChromeDetection()) return false
+    if (!isChrome()) return false
 
     if ("mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
         try {
