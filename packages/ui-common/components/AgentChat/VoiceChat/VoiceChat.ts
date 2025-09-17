@@ -132,7 +132,7 @@ const setupVoiceRecognition = (eventHandlers: VoiceChatEventHandlers): SpeechRec
 
     recognition.continuous = true
     recognition.interimResults = true
-    recognition.lang = "en-US"
+    recognition.lang = navigator.language || "en-US"
 
     recognition.addEventListener("start", eventHandlers.onStart)
     recognition.addEventListener("end", eventHandlers.onEnd)
