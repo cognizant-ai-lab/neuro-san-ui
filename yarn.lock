@@ -1387,7 +1387,7 @@ __metadata:
     "@testing-library/jest-dom": "npm:6.6.4"
     "@testing-library/react": "npm:16.3.0"
     "@testing-library/user-event": "npm:14.6.1"
-    "@types/dom-speech-recognition": "npm:^0.0.6"
+    "@types/dom-speech-recognition": "npm:0.0.6"
     "@types/jest": "npm:30.0.0"
     "@types/node": "npm:22.17.1"
     "@types/react": "npm:18.2.0"
@@ -3784,7 +3784,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/dom-speech-recognition@npm:^0.0.6":
+"@types/dom-speech-recognition@npm:0.0.6":
   version: 0.0.6
   resolution: "@types/dom-speech-recognition@npm:0.0.6"
   checksum: 10c0/2483e59689b62c5be1d5da5168ee49be933d91e6866d5f60978b31aaf1f254d921c67f4c795c14a90442b0f86d51496cec88d26c810cf6e3124db1880f798c13
