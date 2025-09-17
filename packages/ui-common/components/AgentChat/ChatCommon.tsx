@@ -305,8 +305,10 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
     useEffect(() => {
+        // Set up speech recognition
         setupSpeechRecognition(setChatInput, setVoiceInputState, speechRecognitionRef)
 
+        // Clean up function
         return () => cleanupAndStopSpeechRecognition(setChatInput, setVoiceInputState, speechRecognitionRef)
     }, [])
 

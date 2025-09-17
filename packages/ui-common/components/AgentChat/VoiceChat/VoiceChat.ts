@@ -26,24 +26,12 @@ export interface SpeechRecognitionState {
     isProcessingSpeech: boolean
 }
 
-export interface SpeechRecognitionEventHandlers {
-    onEnd: () => void
-    onError: (event: SpeechRecognitionErrorEvent) => void
-    onResult: (event: SpeechRecognitionEvent) => void
-    onStart: () => void
-}
-
 // #endregion: Types
 
-// Check if browser is Chrome (excluding Edge)
-const isChromeDetection = (): boolean => {
-    // TODO: For tests, may update
-    if (typeof navigator === "undefined" || !navigator.userAgent) return false
-
-    return (
-        /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent) && !/Edg\//u.test(navigator.userAgent)
-    )
-}
+// Check if browser is Chrome (excluding Edge). Only Chrome (on Mac OS and Windows) has full support for
+// SpeechRecognition. Also, tested that this will exclude Firefox and Safari.
+const isChromeDetection = (): boolean =>
+    /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent) && !/Edg\//u.test(navigator.userAgent)
 
 // Check browser/platform support
 export const checkSpeechSupport = (): boolean => {
@@ -136,18 +124,16 @@ export const cleanupAndStopSpeechRecognition = (
     setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>,
     speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
 ): void => {
-    if (!speechRecognitionRef?.current) return
+    // If speech recognition ref or removeEventListener are null, return
+    if (!speechRecognitionRef?.current || typeof speechRecognitionRef.current.removeEventListener !== "function") return
 
-    // TODO: For tests, may update
-    if (typeof speechRecognitionRef.current.removeEventListener === "function") {
-        speechRecognitionRef.current.removeEventListener("end", handleRecognitionEnd(setVoiceInputState))
-        speechRecognitionRef.current.removeEventListener("error", handleRecognitionError(setVoiceInputState))
-        speechRecognitionRef.current.removeEventListener(
-            "result",
-            handleRecognitionResult(setVoiceInputState, setChatInput)
-        )
-        speechRecognitionRef.current.removeEventListener("start", handleRecognitionStart(setVoiceInputState))
-    }
+    speechRecognitionRef.current.removeEventListener("end", handleRecognitionEnd(setVoiceInputState))
+    speechRecognitionRef.current.removeEventListener("error", handleRecognitionError(setVoiceInputState))
+    speechRecognitionRef.current.removeEventListener(
+        "result",
+        handleRecognitionResult(setVoiceInputState, setChatInput)
+    )
+    speechRecognitionRef.current.removeEventListener("start", handleRecognitionStart(setVoiceInputState))
 
     try {
         speechRecognitionRef.current.stop()
