@@ -46,13 +46,13 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     speechSupported,
     recognitionRef,
 }) => {
-    const handleClick = () => {
+    const handleClick = async () => {
         const newMicState = !isMicOn
         onMicToggle(newMicState)
 
         if (!speechSupported) return
 
-        toggleListening(recognitionRef.current, voiceState, speechSupported)
+        await toggleListening(recognitionRef.current, voiceState, speechSupported)
     }
 
     const isDisabled = !speechSupported
