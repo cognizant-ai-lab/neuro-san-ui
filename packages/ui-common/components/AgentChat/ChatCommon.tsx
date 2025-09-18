@@ -25,7 +25,6 @@ import {
     SetStateAction,
     useEffect,
     useImperativeHandle,
-    useMemo,
     useRef,
     useState,
 } from "react"
@@ -41,7 +40,7 @@ import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
 import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
 import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
-import {checkSpeechSupport, SpeechRecognition, useVoiceRecognition, VoiceChatState} from "./VoiceChat/VoiceChat"
+import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "./VoiceChat/VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
 import {sendLlmRequest} from "../../controller/llm/LlmChat"
 import {
@@ -183,13 +182,7 @@ export type ChatCommonHandle = {
  */
 export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
     const slyData = useRef<Record<string, unknown>>({})
-    // Voice state for microphone and speech recognition
-    const [voiceState, setVoiceState] = useState<VoiceChatState>({
-        isListening: false,
-        currentTranscript: "",
-        isSpeaking: false,
-        finalTranscript: "",
-    })
+
     const {
         id,
         currentUser,
@@ -268,16 +261,19 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     const chatContext = useRef<ChatContext>(null)
     const finalAnswerRef = useRef<HTMLDivElement>(null)
     const [showThinking, setShowThinking] = useState<boolean>(false)
+
+    // Microphone state for voice input
     const [isMicOn, setIsMicOn] = useState<boolean>(false)
-    const [isProcessingSpeech, setIsProcessingSpeech] = useState<boolean>(false)
 
-    // Check speech support once at component mount
-    const speechSupported = useMemo(() => checkSpeechSupport(), [])
+    // Ref for speech recognition
+    const speechRecognitionRef = useRef<SpeechRecognition | null>(null)
 
-    const voiceRefs = useRef<{
-        recognition: SpeechRecognition | null
-    }>({
-        recognition: null,
+    // Voice state for speech recognition
+    const [voiceInputState, setVoiceInputState] = useState<SpeechRecognitionState>({
+        currentTranscript: "",
+        finalTranscript: "",
+        isListening: false,
+        isProcessingSpeech: false,
     })
 
     // Define styles based on user options (wrap setting)
@@ -307,6 +303,14 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     }
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
+
+    useEffect(() => {
+        // Set up speech recognition
+        const handlers = setupSpeechRecognition(setChatInput, setVoiceInputState, speechRecognitionRef)
+
+        // Clean up function
+        return () => cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
+    }, [])
 
     // Hide/show existing accordions based on showThinking state
     useEffect(() => {
@@ -880,16 +884,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         }
     }
 
-    useVoiceRecognition({
-        speechSupported,
-        voiceRefs,
-        voiceState,
-        setVoiceState,
-        handleSend,
-        setIsProcessingSpeech,
-        setChatInput,
-    })
-
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -1108,7 +1102,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                             disableTypography={true}
                         >
                             {/* Voice processing spinner - shows only when actively speaking */}
-                            {isProcessingSpeech && (
+                            {voiceInputState.isProcessingSpeech && (
                                 <CircularProgress
                                     size={16}
                                     sx={{
@@ -1140,11 +1134,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 <MicrophoneButton
                     isMicOn={isMicOn}
                     onMicToggle={setIsMicOn}
-                    voiceState={voiceState}
-                    setVoiceState={setVoiceState}
-                    speechSupported={speechSupported}
-                    recognition={voiceRefs.current.recognition}
-                    onSendMessage={handleSend}
+                    speechRecognitionRef={speechRecognitionRef}
+                    voiceInputState={voiceInputState}
+                    setVoiceInputState={setVoiceInputState}
                 />
 
                 {/* Send Button */}

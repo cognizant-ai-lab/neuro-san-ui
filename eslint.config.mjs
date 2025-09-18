@@ -72,6 +72,10 @@ const config = [
                 ...globals.jest,
                 React: "readonly",
                 JSX: "readonly",
+                // Speech Recognition API globals
+                SpeechRecognition: "readonly",
+                SpeechRecognitionEvent: "readonly",
+                SpeechRecognitionErrorEvent: "readonly",
             },
 
             parser: tsParser,

@@ -52,6 +52,9 @@ const config: KnipConfig = {
         "@babel/core",
         "@babel/preset-env",
 
+        // Used for Speech Recognition API types
+        "@types/dom-speech-recognition",
+
         // Used by Jest
         "babel-jest",
 

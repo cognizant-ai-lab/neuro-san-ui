@@ -7,7 +7,6 @@ import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {SpeechRecognitionEvent} from "../../../components/AgentChat/VoiceChat/VoiceChat"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
@@ -554,13 +553,11 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle voice transcription correctly", async () => {
-        // Store original values to restore later
+        // Store value to restore later
         const win = window as Window & {
-            SpeechRecognition?: typeof Function
-            webkitSpeechRecognition?: typeof Function
+            SpeechRecognition?: typeof SpeechRecognition
         }
         const originalSpeechRecognition = win.SpeechRecognition
-        const originalWebkitSpeechRecognition = win.webkitSpeechRecognition
         const originalUserAgent = navigator.userAgent
 
         // Mock speech recognition to test actual voice transcription behavior
@@ -574,7 +571,29 @@ describe("ChatCommon", () => {
             onend: null as (() => void) | null,
             start: jest.fn(),
             stop: jest.fn(),
-            addEventListener: jest.fn(), // Proper addEventListener mock
+            addEventListener: jest.fn((event: string, handler: (event?: unknown) => void) => {
+                // Store the handlers so we can call them in tests
+                switch (event) {
+                    case "result":
+                        mockSpeechRecognition.onresult = handler as (event: SpeechRecognitionEvent) => void
+                        break
+                    case "start":
+                        mockSpeechRecognition.onstart = handler as () => void
+                        break
+                    case "end":
+                        mockSpeechRecognition.onend = handler as () => void
+                        break
+                    case "error":
+                        // Intentionally mocking it this way
+                        // eslint-disable-next-line unicorn/prefer-add-event-listener
+                        mockSpeechRecognition.onerror = handler as (event: Event) => void
+                        break
+                    default:
+                        // Handle any other event types
+                        break
+                }
+            }),
+            removeEventListener: jest.fn(),
         }
 
         Object.defineProperty(navigator, "userAgent", {
@@ -582,12 +601,20 @@ describe("ChatCommon", () => {
             configurable: true,
         })
 
-        // Mock SpeechRecognition constructor
-        Object.defineProperty(win, "SpeechRecognition", {
-            value: jest.fn(() => mockSpeechRecognition),
+        // Mock getUserMedia for microphone permission
+        const mockGetUserMedia = jest.fn().mockResolvedValue({
+            getTracks: () => [{stop: jest.fn()}],
+        })
+
+        Object.defineProperty(navigator, "mediaDevices", {
+            value: {
+                getUserMedia: mockGetUserMedia,
+            },
             configurable: true,
         })
-        Object.defineProperty(win, "webkitSpeechRecognition", {
+
+        // Mock SpeechRecognition constructor
+        Object.defineProperty(win, "SpeechRecognition", {
             value: jest.fn(() => mockSpeechRecognition),
             configurable: true,
         })
@@ -608,15 +635,34 @@ describe("ChatCommon", () => {
 
             // Simulate speech recognition providing a final transcript
             const mockTranscript = "from voice recognition"
+            const mockAlternative: SpeechRecognitionAlternative = {
+                confidence: 100,
+                transcript: mockTranscript,
+            }
+
+            const mockResult: SpeechRecognitionResult = {
+                length: 1,
+                isFinal: true,
+                item() {
+                    return mockAlternative
+                },
+                [Symbol.iterator]: Array.prototype[Symbol.iterator].bind([mockAlternative]),
+                0: mockAlternative,
+            }
+
+            const mockResults: SpeechRecognitionResultList = {
+                length: 1,
+                item() {
+                    return mockResult
+                },
+                [Symbol.iterator]: Array.prototype[Symbol.iterator].bind([mockResult]),
+                0: mockResult,
+            }
+
             const mockEvent: SpeechRecognitionEvent = {
                 resultIndex: 0,
-                results: [
-                    {
-                        isFinal: true,
-                        transcript: mockTranscript,
-                    },
-                ],
-            }
+                results: mockResults,
+            } as SpeechRecognitionEvent
 
             // Trigger the onresult handler which should call handleVoiceTranscript
             act(() => {
@@ -638,15 +684,26 @@ describe("ChatCommon", () => {
 
             act(() => {
                 if (mockSpeechRecognition.onresult) {
-                    mockSpeechRecognition.onresult({
+                    const mockVoiceResult: Partial<SpeechRecognitionResult> = {
+                        length: 1,
+                        isFinal: true,
+                        item() {
+                            return {confidence: 100, transcript: "standalone voice input"}
+                        },
+                        0: {confidence: 100, transcript: "standalone voice input"},
+                    }
+                    const mockVoiceResults: Partial<SpeechRecognitionResultList> = {
+                        length: 1,
+                        item() {
+                            return mockVoiceResult as SpeechRecognitionResult
+                        },
+                        0: mockVoiceResult as SpeechRecognitionResult,
+                    }
+                    const mockVoiceEvent: Partial<SpeechRecognitionEvent> = {
                         resultIndex: 0,
-                        results: [
-                            {
-                                isFinal: true,
-                                transcript: "standalone voice input",
-                            },
-                        ],
-                    })
+                        results: mockVoiceResults as SpeechRecognitionResultList,
+                    }
+                    mockSpeechRecognition.onresult(mockVoiceEvent as SpeechRecognitionEvent)
                 }
             })
 
@@ -663,15 +720,6 @@ describe("ChatCommon", () => {
                 })
             } else {
                 delete win.SpeechRecognition
-            }
-
-            if (originalWebkitSpeechRecognition !== undefined) {
-                Object.defineProperty(win, "webkitSpeechRecognition", {
-                    value: originalWebkitSpeechRecognition,
-                    configurable: true,
-                })
-            } else {
-                delete win.webkitSpeechRecognition
             }
 
             Object.defineProperty(navigator, "userAgent", {

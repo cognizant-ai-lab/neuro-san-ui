@@ -1,144 +1,191 @@
-import {Dispatch, RefObject, SetStateAction, useEffect, useRef} from "react"
+import {Dispatch, SetStateAction} from "react"
 
 // #region: Types
 
-export interface VoiceChatConfig {
-    onSendMessage: (message: string) => void
-    onTranscriptChange?: (transcript: string) => void
-    onSpeakingChange?: (isSpeaking: boolean) => void
-    onListeningChange?: (isListening: boolean) => void
-    onProcessingChange?: (isProcessing: boolean) => void
-}
-
-export interface SpeechRecognitionEvent {
-    resultIndex: number
-    results: SpeechRecognitionResultList
-}
-
-export interface SpeechRecognition {
-    continuous: boolean
-    interimResults: boolean
-    lang: string
-    onstart: (() => void) | null
-    onresult: ((event: SpeechRecognitionEvent) => void) | null
-    onerror: ((event: unknown) => void) | null
-    onend: (() => void) | null
+interface SpeechRecognitionHandlers {
+    end: () => void
+    error: (event: SpeechRecognitionErrorEvent) => void
+    result: (event: SpeechRecognitionEvent) => void
     start: () => void
-    stop: () => void
-    addEventListener: (type: string, listener: () => void) => void
 }
 
-interface SpeechRecognitionResultList {
-    length: number
-    [index: number]: SpeechRecognitionResult
-}
-
-interface SpeechRecognitionResult {
-    isFinal: boolean
-    transcript: string
-}
-
-interface UseVoiceRecognitionProps {
-    speechSupported: boolean
-    voiceRefs: RefObject<{recognition: SpeechRecognition | null}>
-    voiceState: VoiceChatState
-    setVoiceState: Dispatch<SetStateAction<VoiceChatState>>
-    handleSend: (message: string) => void
-    setIsProcessingSpeech: Dispatch<SetStateAction<boolean>>
-    setChatInput: Dispatch<SetStateAction<string>>
-}
-
-export interface VoiceChatState {
-    isListening: boolean
+export interface SpeechRecognitionState {
+    /**
+     * currentTranscript holds the interim (live) speech recognition results as the user is speaking.
+     * This provides real-time feedback in the UI, showing what the system is currently hearing.
+     */
     currentTranscript: string
-    isSpeaking: boolean
+    /**
+     * finalTranscript contains the finalized speech recognition result for a segment.
+     * This is stable and ready to be used as chat input after the system is confident about what was said.
+     */
+
     finalTranscript: string
+    /**
+     * isListening indicates whether the system is actively listening for speech input.
+     * Used to control UI state and microphone activity.
+     */
+    isListening: boolean
+    /**
+     * isProcessingSpeech indicates whether the system is currently processing interim speech results.
+     * Used to show loading indicators or disable UI actions during processing.
+     */
+    isProcessingSpeech: boolean
 }
 
 // #endregion: Types
 
-export function useVoiceRecognition({
-    speechSupported,
-    voiceRefs,
-    voiceState,
-    setVoiceState,
-    handleSend,
-    setIsProcessingSpeech,
-    setChatInput,
-}: UseVoiceRecognitionProps) {
-    const isFirstTranscriptRef = useRef(true)
-
-    useEffect(() => {
-        if (speechSupported && !voiceRefs.current.recognition) {
-            const voiceConfig: VoiceChatConfig = {
-                onSendMessage: (message: string) => {
-                    handleSend(message)
-                },
-                onSpeakingChange: (isSpeaking: boolean) => {
-                    setVoiceState((prev) => ({...prev, isSpeaking}))
-                },
-                onListeningChange: (isListening: boolean) => {
-                    setVoiceState((prev) => ({...prev, isListening}))
-                    if (isListening) {
-                        isFirstTranscriptRef.current = true
-                    }
-                },
-                onProcessingChange: (isProcessing: boolean) => {
-                    setVoiceState((prev) => ({...prev, isProcessingSpeech: isProcessing}))
-                    setIsProcessingSpeech(isProcessing)
-                },
-                onTranscriptChange: (transcript: string) => {
-                    if (typeof transcript === "string" && transcript.trim() !== "") {
-                        setIsProcessingSpeech(false)
-                        setChatInput((prev: string) => {
-                            const needsSpace = isFirstTranscriptRef.current && prev && !prev.endsWith(" ")
-                            isFirstTranscriptRef.current = false
-                            return prev + (needsSpace ? " " : "") + transcript
-                        })
-                    }
-                },
-            }
-            voiceRefs.current.recognition = createSpeechRecognition(voiceConfig, setVoiceState)
-        }
-        return () => {
-            if (voiceRefs.current.recognition) {
-                const voiceConfig: VoiceChatConfig = {
-                    onSendMessage: () => undefined,
-                    onTranscriptChange: () => undefined,
-                    onSpeakingChange: () => undefined,
-                    onListeningChange: () => undefined,
-                    onProcessingChange: () => undefined,
-                }
-                cleanup(voiceRefs.current.recognition, voiceState, voiceConfig, setVoiceState)
-                voiceRefs.current.recognition = null
-            }
-        }
-    }, [])
-
-    // Reset the first transcript flag when voice mode starts
-    useEffect(() => {
-        if (voiceState.isListening) {
-            isFirstTranscriptRef.current = true
-        }
-    }, [voiceState.isListening])
-}
+// Check if browser is Chrome (excluding Edge). Only Chrome (on Mac OS and Windows) has full support for
+// SpeechRecognition. Also, tested that this will exclude Firefox and Safari.
+const isChrome = (): boolean =>
+    /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent) && !/Edg\//u.test(navigator.userAgent)
 
 // Check browser/platform support
 export const checkSpeechSupport = (): boolean => {
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-        return false
+    if (typeof window === "undefined") return false
+
+    // Check if browser supports SpeechRecognition
+    const hasSpeechRecognition = "SpeechRecognition" in window
+
+    // Only Chrome provides reliable speech recognition support
+    return hasSpeechRecognition && isChrome()
+}
+
+// Handle speech recognition start
+const handleRecognitionStart = (setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>) => (): void => {
+    setVoiceInputState((prev) => ({
+        ...prev,
+        currentTranscript: "",
+        isListening: true,
+    }))
+}
+
+// Handle speech recognition end
+const handleRecognitionEnd = (setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>) => (): void => {
+    setVoiceInputState((prev) => ({
+        ...prev,
+        isListening: false,
+        isProcessingSpeech: false,
+    }))
+}
+
+// Handle speech recognition results
+const handleRecognitionResult =
+    (
+        setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>,
+        setChatInput: Dispatch<SetStateAction<string>>
+    ) =>
+    (event: SpeechRecognitionEvent): void => {
+        // interimTranscript: accumulates live (non-final) results for real-time feedback (currentTranscript).
+        let interimTranscript = ""
+        // finalTranscript: accumulates finalized results for input (finalTranscript).
+        let finalTranscript = ""
+
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const transcript = event.results[i][0].transcript
+            if (event.results[i].isFinal) {
+                // Finalized segment, ready for input
+                finalTranscript += transcript
+            } else {
+                // Live segment, for real-time feedback
+                interimTranscript += transcript
+            }
+        }
+
+        setVoiceInputState((prev) => ({
+            ...prev,
+            currentTranscript: interimTranscript,
+            finalTranscript,
+            // Always show loading indicator while listening, until final transcript or recognition end
+            isProcessingSpeech: true,
+        }))
+
+        // Process final transcript
+        if (finalTranscript) {
+            setVoiceInputState((prev) => ({
+                ...prev,
+                isProcessingSpeech: false,
+            }))
+            setChatInput((prev: string) => {
+                const needsSpace = prev && !prev.endsWith(" ")
+                return prev + (needsSpace ? " " : "") + finalTranscript
+            })
+        }
     }
-    const ua = navigator.userAgent
-    const isChrome = /Chrome/u.test(ua)
-    const isEdge = /Edg\//u.test(ua) || /Edge\//u.test(ua)
-    const isFirefox = /Firefox/u.test(ua)
-    return isChrome && !isEdge && !isFirefox
+
+// Handle speech recognition errors
+const handleRecognitionError =
+    (setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>) =>
+    (event: SpeechRecognitionErrorEvent): void => {
+        console.error("Speech recognition error:", event.error)
+        setVoiceInputState((prev) => ({
+            ...prev,
+            isListening: false,
+            isProcessingSpeech: false,
+        }))
+    }
+
+// Remove speech recognition event handlers and stop speech recognition
+export function cleanupAndStopSpeechRecognition(
+    speechRecognitionRef: React.MutableRefObject<SpeechRecognition | null>,
+    handlers: SpeechRecognitionHandlers | null
+): void {
+    const speechRecognition = speechRecognitionRef.current
+    if (!speechRecognition || !handlers) return
+
+    speechRecognition.removeEventListener("end", handlers.end)
+    speechRecognition.removeEventListener("error", handlers.error)
+    speechRecognition.removeEventListener("result", handlers.result)
+    speechRecognition.removeEventListener("start", handlers.start)
+
+    try {
+        speechRecognition.stop()
+    } catch (error) {
+        console.warn("Error stopping speechRecognition:", error)
+    }
+    speechRecognitionRef.current = null
+}
+
+export function setupSpeechRecognition(
+    setChatInput: Dispatch<SetStateAction<string>>,
+    setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>,
+    speechRecognitionRef: React.MutableRefObject<SpeechRecognition | null>
+): SpeechRecognitionHandlers | null {
+    const speechSupported = checkSpeechSupport()
+
+    if (speechSupported) {
+        const speechRecognition = new SpeechRecognition()
+
+        speechRecognition.continuous = true
+        speechRecognition.interimResults = true
+        speechRecognition.lang = navigator.language || "en-US"
+
+        // Create handler references
+        const handlers: SpeechRecognitionHandlers = {
+            end: handleRecognitionEnd(setVoiceInputState),
+            error: handleRecognitionError(setVoiceInputState),
+            result: handleRecognitionResult(setVoiceInputState, setChatInput),
+            start: handleRecognitionStart(setVoiceInputState),
+        }
+
+        speechRecognition.addEventListener("end", handlers.end)
+        speechRecognition.addEventListener("error", handlers.error)
+        speechRecognition.addEventListener("result", handlers.result)
+        speechRecognition.addEventListener("start", handlers.start)
+
+        speechRecognitionRef.current = speechRecognition
+        return handlers
+    } else {
+        speechRecognitionRef.current = null
+        return null
+    }
 }
 
 // Request microphone permission
 const requestMicrophonePermission = async (): Promise<boolean> => {
-    const isChrome = /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent)
-    if (isChrome && "mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
+    if (!isChrome()) return false
+
+    if ("mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -156,159 +203,29 @@ const requestMicrophonePermission = async (): Promise<boolean> => {
             ) {
                 return false
             }
+            // For other errors, still allow recognition to proceed (Chrome supports it)
+            return true
         }
     }
-    return true
+    return false
 }
 
-// Factory function to create speech recognition
-export const createSpeechRecognition = (
-    config: VoiceChatConfig,
-    setState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
-) => {
-    if (!checkSpeechSupport()) return undefined
+// Toggle listening function
+export const toggleListening = async (isMicOn: boolean, recognition: SpeechRecognition | null): Promise<void> => {
+    if (!recognition) return
 
-    const SpeechRecognitionClass =
-        (window as unknown as Record<string, unknown>)["SpeechRecognition"] ||
-        (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"]
-    const recognition = new (SpeechRecognitionClass as new () => SpeechRecognition)()
-
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.lang = "en-US"
-
-    recognition.onstart = () => {
-        setState((prev) => ({...prev, isListening: true}))
-        config.onListeningChange?.(true)
-    }
-
-    recognition.onend = () => {
-        setState((prev) => {
-            // Do not auto-send message, just stop listening and preserve transcript
-            config.onListeningChange?.(false)
-            return {
-                ...prev,
-                isListening: false,
-            }
-        })
-    }
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-        // Stop speaking if we detect interruption
-        setState((prev) => {
-            if (prev.isSpeaking) {
-                stopSpeechSynthesis()
-                config.onSpeakingChange?.(false)
-                return {...prev, isSpeaking: false}
-            }
-            return prev
-        })
-
-        // Process results and send only final transcripts
-        const {interimTranscript, finalTranscript} = processRecognitionResult(event)
-
-        // Show loading indicator when there's interim transcript (speech being processed)
-        if (interimTranscript && !finalTranscript) {
-            config.onProcessingChange?.(true)
+    if (isMicOn) {
+        // Request microphone permission before starting
+        const hasPermission = await requestMicrophonePermission()
+        if (hasPermission) {
+            recognition.start()
         }
-
-        if (finalTranscript) {
-            config.onProcessingChange?.(false)
-            config.onTranscriptChange?.(finalTranscript)
-        }
-    }
-
-    recognition.addEventListener("error", () => {
-        setState((prev) => ({...prev, isListening: false}))
-        config.onListeningChange?.(false)
-    })
-
-    return recognition
-}
-
-// Process speech results
-const processRecognitionResult = (event: SpeechRecognitionEvent) => {
-    let interimTranscript = ""
-    let finalTranscript = ""
-
-    let resultsArr
-    if (Array.isArray(event.results)) {
-        resultsArr = event.results
     } else {
-        resultsArr = []
-        for (const item of Array.from({length: event.results.length}, (_, i) => event.results[i])) {
-            resultsArr.push(item)
+        // Stop recognition immediately
+        try {
+            recognition.stop()
+        } catch (error) {
+            console.warn("Error stopping speech recognition:", error)
         }
     }
-    for (const result of resultsArr.slice(event.resultIndex)) {
-        const transcript = result?.[0]?.transcript ?? result?.transcript ?? ""
-        if (result?.isFinal) {
-            finalTranscript += transcript
-        } else {
-            interimTranscript += transcript
-        }
-    }
-
-    return {interimTranscript, finalTranscript}
-}
-
-// Stop speech synthesis
-export const stopSpeechSynthesis = () => {
-    if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel()
-    }
-}
-
-// Main voice chat functions
-export const toggleListening = async (
-    recognition: unknown,
-    state: VoiceChatState,
-    config: VoiceChatConfig,
-    setVoiceState: (updater: (prev: VoiceChatState) => VoiceChatState) => void,
-    speechSupported: boolean
-) => {
-    if (!speechSupported || !recognition) return
-
-    if (!state.isListening) {
-        const permissionGranted = await requestMicrophonePermission()
-        if (!permissionGranted) return
-    }
-
-    if (state.isListening) {
-        // Stop listening
-        if (recognition && typeof recognition === "object" && "stop" in recognition) {
-            ;(recognition as {stop: () => void}).stop()
-        }
-        // Immediately update state to reflect that we're no longer listening
-        setVoiceState((prev) => ({...prev, isListening: false}))
-        config.onListeningChange?.(false)
-    } else {
-        // Start listening
-        setVoiceState((prev) => ({...prev, finalTranscript: "", currentTranscript: ""}))
-        if (recognition && typeof recognition === "object" && "start" in recognition) {
-            ;(recognition as {start: () => void}).start()
-        }
-    }
-}
-
-export const cleanup = (
-    recognition: unknown,
-    _state: VoiceChatState,
-    config: VoiceChatConfig,
-    setVoiceState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
-) => {
-    if (recognition && typeof recognition === "object" && "stop" in recognition) {
-        ;(recognition as {stop: () => void}).stop()
-    }
-    stopSpeechSynthesis()
-    setVoiceState((prev) => ({
-        ...prev,
-        isListening: false,
-        currentTranscript: "",
-        finalTranscript: "",
-        isSpeaking: false,
-    }))
-    config.onListeningChange?.(false)
-    config.onTranscriptChange?.("")
-    config.onSpeakingChange?.(false)
 }

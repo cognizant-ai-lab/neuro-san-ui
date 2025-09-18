@@ -38,6 +38,7 @@
         "@testing-library/jest-dom": "6.6.4",
         "@testing-library/react": "16.3.0",
         "@testing-library/user-event": "14.6.1",
+        "@types/dom-speech-recognition": "0.0.6",
         "@types/jest": "30.0.0",
         "@types/node": "22.17.1",
         "@types/react": "18.2.0",

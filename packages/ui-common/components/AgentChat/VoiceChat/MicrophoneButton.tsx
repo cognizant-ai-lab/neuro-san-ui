@@ -1,10 +1,10 @@
 import MicNoneIcon from "@mui/icons-material/MicNone"
 import MicOffIcon from "@mui/icons-material/MicOff"
 import Tooltip from "@mui/material/Tooltip"
-import {FC} from "react"
+import {Dispatch, FC, MutableRefObject, SetStateAction} from "react"
 
 import {LlmChatButton} from "../LlmChatButton"
-import {toggleListening, VoiceChatConfig, VoiceChatState} from "./VoiceChat"
+import {checkSpeechSupport, SpeechRecognitionState, toggleListening} from "./VoiceChat"
 
 // #region: Types
 export interface MicrophoneButtonProps {
@@ -19,29 +19,19 @@ export interface MicrophoneButtonProps {
     onMicToggle: (newState: boolean) => void
 
     /**
-     * Current voice recognition state
+     * Reference to the SpeechRecognition instance
      */
-    voiceState: VoiceChatState
+    speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
 
     /**
-     * Function to update voice state
+     * Current voice input state
      */
-    setVoiceState: (updater: (prev: VoiceChatState) => VoiceChatState) => void
+    voiceInputState: SpeechRecognitionState
 
     /**
-     * Whether speech recognition is supported in this browser
+     * Function to update voice input state
      */
-    speechSupported: boolean
-
-    /**
-     * Voice recognition object reference
-     */
-    recognition: unknown | null
-
-    /**
-     * Callback when a message should be sent
-     */
-    onSendMessage: (message: string) => void
+    setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>
 }
 // #endregion: Types
 
@@ -52,27 +42,28 @@ export interface MicrophoneButtonProps {
 export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     isMicOn,
     onMicToggle,
-    voiceState,
-    setVoiceState,
-    speechSupported,
-    recognition,
-    onSendMessage,
+    speechRecognitionRef,
+    voiceInputState,
+    setVoiceInputState,
 }) => {
+    const speechSupported = checkSpeechSupport()
+
     const handleClick = async () => {
         const newMicState = !isMicOn
         onMicToggle(newMicState)
 
-        const voiceConfig: VoiceChatConfig = {
-            onSendMessage,
-            onSpeakingChange: (isSpeaking) => {
-                setVoiceState((prev) => ({...prev, isSpeaking}))
-            },
-            onListeningChange: (isListening) => {
-                setVoiceState((prev) => ({...prev, isListening}))
-            },
+        if (!speechSupported) return
+
+        // If turning off the microphone, immediately update the voice state
+        if (!newMicState) {
+            setVoiceInputState((prev) => ({
+                ...prev,
+                isListening: false,
+                isProcessingSpeech: false,
+            }))
         }
 
-        await toggleListening(recognition, voiceState, voiceConfig, setVoiceState, speechSupported)
+        await toggleListening(newMicState, speechRecognitionRef.current)
     }
 
     const isDisabled = !speechSupported
@@ -94,11 +85,11 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
                         padding: "0.5rem",
                         right: 70,
                         backgroundColor:
-                            isMicOn && voiceState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
+                            isMicOn && voiceInputState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
                     }}
                     tabIndex={0}
                 >
-                    {voiceState.isListening ? (
+                    {voiceInputState.isListening ? (
                         <MicNoneIcon
                             sx={{color: "var(--bs-white)"}}
                             data-testid="MicNoneIcon"
