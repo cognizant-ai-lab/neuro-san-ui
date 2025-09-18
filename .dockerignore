@@ -1,0 +1,15 @@
+**/.next
+**/__tests__
+**/coverage/
+**/dist
+**/next-env.d.ts
+**/node_modules
+**/tsconfig.tsbuildinfo
+*.code-workspace
+.env*
+.env.local
+.idea
+.swc
+.vscode
+.yarn
+yarn-error.log

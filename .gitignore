@@ -1,16 +1,16 @@
 # Node/NextJS/dotenv things
 .env*
 .env.local
-.next
-next-env.d.ts
-node_modules
-tsconfig.tsbuildinfo
+**/.next
+**/next-env.d.ts
+**/node_modules
+**/tsconfig.tsbuildinfo
 
 # Coverage directory used by tools like lcov
-coverage/
+**/coverage/
 
 # generated files
-generated/
+**/generated/
 
 # IntelliJ IDE
 .idea
@@ -20,6 +20,6 @@ generated/
 .vscode/
 
 # Build stuff
-dist/
+**/dist/
 yarn-error.log
 .yarn

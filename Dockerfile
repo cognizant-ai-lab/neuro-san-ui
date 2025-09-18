@@ -17,7 +17,7 @@ ENV NODE_ENV production
 WORKDIR /app
 COPY package.json yarn.lock ./
 COPY ../../generated ./generated
-RUN yarn install --production --silent --prefer-offline --frozen-lockfile --non-interactive
+RUN corepack enable && corepack install && yarn --version && yarn install --immutable
 
 # Rebuild the source code only when needed
 FROM node:$NODEJS_VERSION-bookworm-slim AS builder
@@ -25,31 +25,31 @@ FROM node:$NODEJS_VERSION-bookworm-slim AS builder
 ENV NODE_ENV production
 
 WORKDIR /app
-COPY --from=deps /apps/main/app/node_modules ./node_modules
-COPY --from=deps /apps/main/app/generated ./generated
-COPY ../.. .
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
 # Extract build version
-ARG UNILEAF_VERSION
-ENV UNILEAF_VERSION ${UNILEAF_VERSION}
+ARG NEXT_PUBLIC_NEURO_SAN_UI_VERSION
+ENV NEXT_PUBLIC_NEURO_SAN_UI_VERSION ${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}
 
-RUN yarn build
+RUN corepack enable && corepack install && yarn build:app
 
 # Production image, copy all the files and run next
-FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12 AS runner
+FROM node:$NODEJS_VERSION-bookworm-slim AS runner
 
 WORKDIR /app
 ENV NODE_ENV production
 
-# You only need to copy next.config.js if you are NOT using the default configuration
-# COPY --from=builder /app/next.config.js ./
-COPY --from=builder /apps/main/app/public ./public
-COPY --from=builder /apps/main/app/package.json ./package.json
-
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nonroot:nonroot /apps/main/app/.next/standalone ./
-COPY --from=builder --chown=nonroot:nonroot /apps/main/app/.next/static ./.next/static
+
+
+#COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/standalone/ ./
+#COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/static ./.next/static
+
+COPY --from=builder /app/apps/main/public ./public
+COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/standalone /app/apps/main/
+COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/static /app/apps/main/.next/static
 
 # The "nonroot" non-privileged user is provided by the base image
 USER nonroot
@@ -58,6 +58,8 @@ EXPOSE 3000
 
 # Disable NextJS spyware
 ENV NEXT_TELEMETRY_DISABLED 1
+
+WORKDIR /app/apps/main
 
 # This "server.js" file is generated at compile time by NextJS magic.
 # See: https://nextjs.org/docs/advanced-features/output-file-tracing
