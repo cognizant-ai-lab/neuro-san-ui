@@ -250,12 +250,12 @@ describe("MicrophoneButton", () => {
     })
 
     it("applies secondary background color when microphone is on but not listening", () => {
-        const notlisteningVoiceInputState = {...defaultVoiceInputState, isListening: false}
+        const notListeningVoiceInputState = {...defaultVoiceInputState, isListening: false}
         render(
             <MicrophoneButton
                 {...defaultProps}
                 isMicOn={true}
-                voiceInputState={notlisteningVoiceInputState}
+                voiceInputState={notListeningVoiceInputState}
             />
         )
         const button = screen.getByTestId("microphone-button")
