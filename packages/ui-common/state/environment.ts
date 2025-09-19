@@ -28,7 +28,7 @@ interface EnvironmentStore {
 /**
  * The hook that lets apps use the store
  */
-const useEnvironmentStore = create<EnvironmentStore>((set) => ({
+export const useEnvironmentStore = create<EnvironmentStore>((set) => ({
     backendNeuroSanApiUrl: null,
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => set(() => ({backendNeuroSanApiUrl})),
 
@@ -41,5 +41,3 @@ const useEnvironmentStore = create<EnvironmentStore>((set) => ({
     supportEmailAddress: null,
     setSupportEmailAddress: (supportEmailAddress: string) => set(() => ({supportEmailAddress})),
 }))
-
-export default useEnvironmentStore

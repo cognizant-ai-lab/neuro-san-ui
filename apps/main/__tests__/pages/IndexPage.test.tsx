@@ -3,13 +3,13 @@ import {userEvent} from "@testing-library/user-event"
 import {useRouter} from "next/router"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
-import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
 import Index from "../../pages"
 
 // Mock dependencies
 jest.mock("../../../../packages/ui-common/state/environment", () => ({
     __esModule: true,
-    default: jest.fn(),
+    useEnvironmentStore: jest.fn(),
 }))
 
 jest.mock("next/router", () => ({

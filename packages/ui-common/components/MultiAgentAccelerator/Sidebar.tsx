@@ -23,7 +23,7 @@ import {
 } from "react"
 
 import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
-import useEnvironmentStore from "../../state/environment"
+import {useEnvironmentStore} from "../../state/environment"
 import {usePreferences} from "../../state/Preferences"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"

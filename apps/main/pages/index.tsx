@@ -11,7 +11,7 @@ import {useRouter} from "next/router"
 import {ReactElement, useState} from "react"
 
 import {ConfirmationModal} from "../../../packages/ui-common/components/Common/confirmationModal"
-import useEnvironmentStore from "../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 
 // #region: Styled Components
 const OuterContainer = styled("div")({

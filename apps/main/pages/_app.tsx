@@ -24,9 +24,9 @@ import {
     useAuthentication,
 } from "../../../packages/ui-common"
 import {LOGO} from "../../../packages/ui-common/const"
-import useEnvironmentStore from "../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
-import useUserInfoStore from "../../../packages/ui-common/state/UserInfo"
+import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {APP_THEME, BRAND_COLORS} from "../theme"
 

@@ -19,7 +19,7 @@ interface UserInfoStore {
 /**
  * The hook that lets apps use the store
  */
-const useUserInfoStore = create<UserInfoStore>((set) => ({
+export const useUserInfoStore = create<UserInfoStore>((set) => ({
     currentUser: undefined,
     setCurrentUser: (username: string) => set(() => ({currentUser: username})),
 
@@ -29,5 +29,3 @@ const useUserInfoStore = create<UserInfoStore>((set) => ({
     picture: undefined,
     setPicture: (picture: string) => set(() => ({picture})),
 }))
-
-export default useUserInfoStore

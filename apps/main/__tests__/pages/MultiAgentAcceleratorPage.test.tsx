@@ -10,7 +10,7 @@ import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
-import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 import {processChatChunk} from "../../../../packages/ui-common/utils/agentConversations"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
@@ -43,8 +43,10 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
 jest.mock("../../../../packages/ui-common/utils/agentConversations")
 
 // Mock Preferences state
-jest.mock("../../../../packages/ui-common/state/Preferences")
-const mockedUsePreferences = jest.mocked(usePreferences, {shallow: true})
+jest.mock("../../../../packages/ui-common/state/Preferences", () => ({
+    __esModule: true,
+    usePreferences: jest.fn(),
+}))
 
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = jest.fn()
@@ -99,7 +101,8 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     beforeEach(() => {
-        mockedUsePreferences.mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
+        ;(usePreferences as jest.Mock).mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
+
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
         ;(getAgentNetworks as jest.Mock).mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
 
@@ -130,7 +133,7 @@ describe("Multi Agent Accelerator Page", () => {
     it.each([false, true])(
         "should render elements on the page with darkMode=%s and change the page on click of sidebar item",
         async (darkMode) => {
-            mockedUsePreferences.mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
+            ;(usePreferences as jest.Mock).mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
 
             renderMultiAgentAcceleratorPage()
 

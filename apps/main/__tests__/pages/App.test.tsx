@@ -4,7 +4,7 @@ import {ReactNode} from "react"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {useAuthentication} from "../../../../packages/ui-common"
-import useEnvironmentStore from "../../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
 import NeuroSanUI from "../../pages/_app"
 
 const originalFetch = window.fetch
