@@ -15,8 +15,7 @@ FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 ENV NODE_ENV production
 
 WORKDIR /app
-COPY package.json yarn.lock ./
-COPY ../../generated ./generated
+COPY . .
 RUN corepack enable && corepack install && yarn --version && yarn install --immutable
 
 # Rebuild the source code only when needed
@@ -42,13 +41,9 @@ ENV NODE_ENV production
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-
-
-#COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/standalone/ ./
-#COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/static ./.next/static
-
-COPY --from=builder /app/apps/main/public ./public
-COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/standalone /app/apps/main/
+COPY --from=builder /app/apps/main/public /app/apps/main/public
+COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/standalone/apps/main/ /app/apps/main/
+COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/standalone/node_modules /app/apps/main/node_modules
 COPY --from=builder --chown=nonroot:nonroot /app/apps/main/.next/static /app/apps/main/.next/static
 
 # The "nonroot" non-privileged user is provided by the base image
