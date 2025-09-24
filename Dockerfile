@@ -34,7 +34,7 @@ ENV NEXT_PUBLIC_NEURO_SAN_UI_VERSION ${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}
 RUN corepack enable && corepack install && yarn build:app
 
 # Production image, copy all the files and run next
-FROM node:$NODEJS_VERSION-bookworm-slim AS runner
+FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12 AS runner
 
 WORKDIR /app
 ENV NODE_ENV production
