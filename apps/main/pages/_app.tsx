@@ -79,9 +79,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
     } = useEnvironmentStore()
 
     // Access NextJS router
-    const router = useRouter()
-
-    const {pathname} = router
+    const {pathname, query} = useRouter()
 
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
@@ -279,8 +277,8 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                         <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
-                            query={router.query}
-                            pathname={router.pathname}
+                            query={query}
+                            pathname={pathname}
                             authenticationType={authenticationType}
                             signOut={handleSignOut}
                             supportEmailAddress={supportEmailAddress}
