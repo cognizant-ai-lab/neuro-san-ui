@@ -34,9 +34,9 @@ export const NeuroAIBreadcrumbs = ({pathname}: NeuroAIBreadcrumbsProps): JSX.Ele
                     />
                 }
             >
-                <a
+                <a // eslint-disable-line @next/next/no-html-link-for-pages
                     id="breadcrumb-link-home"
-                    href="/public"
+                    href="/"
                 >
                     Home
                 </a>
