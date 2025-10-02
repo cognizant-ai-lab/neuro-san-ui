@@ -9,6 +9,8 @@ export interface AgentConversation {
     agents: Set<string>
     // Timestamp when the conversation started
     startedAt: Date
+    // The conversation text to display in thought bubbles
+    text?: string
 }
 
 export const isFinalMessage = (chatMessage: {
@@ -20,13 +22,14 @@ export const isFinalMessage = (chatMessage: {
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export const createConversation = (agents: string[] = []): AgentConversation => ({
+export const createConversation = (agents: string[] = [], text?: string): AgentConversation => ({
     // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
     // solution for HTTP on localhost.
     // eslint-disable-next-line newline-per-chained-call
     id: `conv_${Date.now()}${Math.random().toString(36).slice(2, 10)}`,
     agents: new Set(agents),
     startedAt: new Date(),
+    text,
 })
 
 export const updateAgentCounts = (
@@ -101,7 +104,7 @@ export const processChatChunk = (
             finalConversations = currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate
         } else {
             // Create a new conversation for this communication path
-            const newConversation = createConversation(agents)
+            const newConversation = createConversation(agents, chatMessage.text)
             updatedConversations.push(newConversation)
             finalConversations = updatedConversations
         }

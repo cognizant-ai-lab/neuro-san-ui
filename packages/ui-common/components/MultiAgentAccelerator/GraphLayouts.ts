@@ -90,7 +90,8 @@ export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
     getConversations: () => AgentConversation[] | null,
-    isAwaitingLlm: boolean
+    isAwaitingLlm: boolean,
+    showThoughtBubbles: "always" | "hover" = "always"
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
@@ -138,6 +139,7 @@ export const layoutRadial = (
     })
 
     // Assign layout positions based on depth & spread angles per level
+    const conversations = getConversations()
     nodesByDepth.forEach((nodeIds, depth) => {
         const radius = BASE_RADIUS + depth * LEVEL_SPACING
         const angleStep = (2 * Math.PI) / nodeIds.length // Divide full circle among nodes at this level
@@ -175,7 +177,6 @@ export const layoutRadial = (
                         targetHandle = isAboveParent ? `${nodeId}-bottom-handle` : `${nodeId}-top-handle`
                     }
 
-                    const conversations = getConversations()
                     const isEdgeAnimated = areAgentsInSameConversation(conversations, nodeId, graphNode.id)
 
                     // Add edge from parent to node
@@ -186,6 +187,33 @@ export const layoutRadial = (
                     }
                 }
             }
+
+            // Add thought bubble edges for this node
+            parentNodes.forEach((parentId) => {
+                const conversationWithText = conversations?.find(
+                    (conv) => 
+                        conv.text && 
+                        conv.agents.has(nodeId) && 
+                        conv.agents.has(parentId)
+                )
+
+                const isEdgeAnimated = areAgentsInSameConversation(conversations, nodeId, parentId)
+
+                if (conversationWithText?.text && (!isAwaitingLlm || isEdgeAnimated)) {
+                    edgesInNetwork.push({
+                        id: `${nodeId}-thought-bubble-${parentId}`,
+                        source: parentId,
+                        target: nodeId,
+                        type: "thoughtBubbleEdge",
+                        data: {
+                            text: conversationWithText.text,
+                            showAlways: showThoughtBubbles === "always",
+                            conversationId: conversationWithText.id,
+                        },
+                        style: { pointerEvents: "none" },
+                    } as Edge)
+                }
+            })
 
             nodesInNetwork.push({
                 id: nodeId,
@@ -217,19 +245,22 @@ export const layoutLinear = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
     getConversations: () => AgentConversation[] | null,
-    isAwaitingLlm: boolean
+    isAwaitingLlm: boolean,
+    showThoughtBubbles: "always" | "hover" = "always"
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
 } => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
+    
+    // Move repeated calculations outside the loop for efficiency
+    const parentAgents = getParentAgents(agentsInNetwork)
+    const childAgents = getChildAgents(parentAgents)
+    const frontman = getFrontman(parentAgents, childAgents)
+    const conversations = getConversations()
+    
     agentsInNetwork.forEach(({origin: originOfNode}) => {
-        const parentAgents = getParentAgents(agentsInNetwork)
-        const childAgents = getChildAgents(parentAgents)
-
-        const frontman = getFrontman(parentAgents, childAgents)
-
         const parentIds = getParents(originOfNode, parentAgents)
         const isFrontman = frontman?.origin === originOfNode
 
@@ -257,7 +288,6 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const conversations = getConversations()
                 const isEdgeAnimated = areAgentsInSameConversation(conversations, parentNode, originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
@@ -273,6 +303,31 @@ export const layoutLinear = (
                 )
             }
         }
+
+        // Add thought bubble edges for this node (merged with node creation)
+        parentIds.forEach((parentNode) => {
+            const conversationWithText = conversations?.find(
+                (conv) => 
+                    conv.text && 
+                    conv.agents.has(parentNode) && 
+                    conv.agents.has(originOfNode)
+            )
+
+            if (conversationWithText?.text) {
+                edgesInNetwork.push({
+                    id: `${originOfNode}-thought-bubble-${parentNode}`,
+                    source: parentNode,
+                    target: originOfNode,
+                    type: "thoughtBubbleEdge",
+                    data: {
+                        text: conversationWithText.text,
+                        showAlways: showThoughtBubbles === "always",
+                        conversationId: conversationWithText.id,
+                    },
+                    style: { pointerEvents: "none" },
+                } as Edge)
+            }
+        })
     })
 
     const dagreGraph = new dagre.graphlib.Graph()
@@ -319,7 +374,6 @@ export const layoutLinear = (
     })
 
     // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
-    const conversations = getConversations()
     const filteredEdges = isAwaitingLlm
         ? edgesInNetwork.filter((edge) => areAgentsInSameConversation(conversations, edge.source, edge.target))
         : edgesInNetwork

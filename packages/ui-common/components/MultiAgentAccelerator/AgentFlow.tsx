@@ -1,4 +1,5 @@
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import {ToggleButton, ToggleButtonGroup, useTheme} from "@mui/material"
@@ -32,6 +33,8 @@ import {
 } from "./const"
 import {layoutLinear, layoutRadial} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
+import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
+import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {AgentConversation} from "../../utils/agentConversations"
@@ -87,6 +90,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
+    const [showThoughtBubbles, setShowThoughtBubbles] = useState<"always" | "hover">("always")
+
     const {darkMode} = usePreferences()
 
     // Shadow color for icon. TODO: use MUI theme system instead.
@@ -104,16 +109,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       isHeatmap ? agentCounts : undefined,
                       agentsInNetwork,
                       getConversations,
-                      isAwaitingLlm
+                      isAwaitingLlm,
+                      showThoughtBubbles
                   )
                 : layoutRadial(
                       // agentCounts key is optional, so we check if it's defined
                       isHeatmap ? agentCounts : undefined,
                       agentsInNetwork,
                       getConversations,
-                      isAwaitingLlm
+                      isAwaitingLlm,
+                      showThoughtBubbles
                   ),
-        [layout, coloringOption, agentCounts, agentsInNetwork, currentConversations, isAwaitingLlm, getConversations]
+        [layout, coloringOption, agentCounts, agentsInNetwork, currentConversations, isAwaitingLlm, getConversations, showThoughtBubbles]
     )
 
     const [nodes, setNodes] = useState(layoutResult.nodes)
@@ -157,8 +164,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const edgeTypes: EdgeTypes = useMemo(
         () => ({
             plasmaEdge: PlasmaEdge,
+            thoughtBubbleEdge: ThoughtBubbleEdge,
         }),
-        [PlasmaEdge]
+        [PlasmaEdge, ThoughtBubbleEdge]
     )
 
     // Figure out the maximum depth of the network
@@ -408,6 +416,26 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </ControlButton>
                     </span>
                 </Tooltip>
+                <Tooltip
+                    id="thought-bubble-tooltip"
+                    title={`Toggle thought bubble visibility (${showThoughtBubbles})`}
+                    placement="right"
+                >
+                    <span id="thought-bubble-span">
+                        <ControlButton
+                            id="thought-bubble-button"
+                            onClick={() => setShowThoughtBubbles(showThoughtBubbles === "hover" ? "always" : "hover")}
+                            style={{
+                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles === "always"),
+                            }}
+                        >
+                            <ChatBubbleOutlineIcon
+                                id="thought-bubble-icon"
+                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
+                            />
+                        </ControlButton>
+                    </span>
+                </Tooltip>
             </Controls>
         )
     }
@@ -444,6 +472,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     </>
                 )}
             </ReactFlow>
+            <ThoughtBubbleOverlay
+                edges={edges}
+            />
         </Box>
     )
 }
