@@ -1,7 +1,7 @@
 import {FC} from "react"
 import {EdgeProps, getBezierPath} from "reactflow"
 
-export interface ThoughtBubbleEdgeProps extends EdgeProps {
+interface ThoughtBubbleEdgeProps extends EdgeProps {
     data?: {
         text?: string
         showAlways?: boolean

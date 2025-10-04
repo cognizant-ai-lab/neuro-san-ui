@@ -13,6 +13,7 @@ import {
     ConnectionMode,
     ControlButton,
     Controls,
+    Edge,
     EdgeTypes,
     NodeChange,
     ReactFlow,
@@ -31,7 +32,7 @@ import {
     HEATMAP_COLORS,
     LEVEL_SPACING,
 } from "./const"
-import {layoutLinear, layoutRadial} from "./GraphLayouts"
+import {addGlobalThoughtBubbleEdge, layoutLinear, layoutRadial, removeGlobalThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
@@ -39,18 +40,37 @@ import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
+import {parseInquiryFromText} from "../AgentChat/Utils"
 
 // #region: Types
+
+interface ActiveThoughtBubble {
+    text: string
+    agents: Set<string>
+    timestamp: number
+    conversationId: string
+}
+
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
     readonly isAwaitingLlm?: boolean
+    readonly isStreaming?: boolean
 }
 
 type Layout = "radial" | "linear"
+
 // #endregion: Types
+
+// #region: Constants
+
+const THOUGHT_BUBBLE_TIMEOUT_MS = 10000 // 10 seconds
+
+const MAX_THOUGHT_BUBBLES = 5
+
+// #endregion: Constants
 
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
@@ -58,6 +78,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     currentConversations,
     id,
     isAwaitingLlm,
+    isStreaming,
 }) => {
     const theme = useTheme()
 
@@ -72,6 +93,24 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => window.removeEventListener("resize", handleResize)
     }, [handleResize])
 
+    // Effect to clear all bubbles when streaming completes (currentConversations becomes null)
+    // Clear all bubbles EXCEPT the one being hovered (if any)
+    useEffect(() => {
+        if (currentConversations === null) {
+            setActiveThoughtBubbles((prevBubbles) => {
+                // Keep only the hovered bubble (if any)
+                if (hoveredBubbleIdRef.current) {
+                    const hoveredBubble = prevBubbles.find(
+                        (b) => `thought-bubble-${b.conversationId}` === hoveredBubbleIdRef.current
+                    )
+                    return hoveredBubble ? [hoveredBubble] : []
+                }
+                // Clear all bubbles if nothing is hovered
+                return []
+            })
+        }
+    }, [currentConversations])
+
     // Save this as a mutable ref so child nodes see updates
     const conversationsRef = useRef<AgentConversation[] | null>(currentConversations)
 
@@ -79,18 +118,182 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         conversationsRef.current = currentConversations
     }, [currentConversations])
 
-    const getConversations = useCallback<() => AgentConversation[] | null>(
-        () => conversationsRef.current,
-        [conversationsRef.current]
-    )
-
     const [layout, setLayout] = useState<Layout>("radial")
 
     const [coloringOption, setColoringOption] = useState<"depth" | "heatmap">("depth")
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
-    const [showThoughtBubbles, setShowThoughtBubbles] = useState<"always" | "hover">("always")
+    const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
+
+    // State for managing active thought bubbles with timers
+    const [activeThoughtBubbles, setActiveThoughtBubbles] = useState<ActiveThoughtBubble[]>([])
+
+    // Track which bubble is currently being hovered
+    const hoveredBubbleIdRef = useRef<string | null>(null)
+    const handleBubbleHoverChange = useCallback((bubbleId: string | null) => {
+        hoveredBubbleIdRef.current = bubbleId
+    }, [])
+
+    // Debug: track when bubble state changes unexpectedly and fix re-render issues
+    useEffect(() => {
+        // If bubbles are empty but processedTexts isn't, component was re-rendered/re-mounted
+        // Clear orphaned processedTexts to prevent blocking new bubbles
+        if (activeThoughtBubbles.length === 0 && processedTextsRef.current.size > 0) {
+            processedTextsRef.current.clear()
+        }
+    }, [activeThoughtBubbles])
+
+    // Track processed conversations to prevent duplicates across multiple effect calls
+    const processedTextsRef = useRef<Set<string>>(new Set())
+
+    // Effect to add new thought bubbles - only when we actually have conversations to process
+    useEffect(() => {
+        if (!currentConversations || currentConversations.length === 0) {
+            return // Skip processing when no conversations
+        }
+
+        setActiveThoughtBubbles((prevBubbles) => {
+            const now = Date.now()
+            const newBubbles: ActiveThoughtBubble[] = []
+
+            // Normalize parsed text for duplicate detection
+            const normalizeText = (text: string): string => {
+                // eslint-disable-next-line newline-per-chained-call
+                return text.toLowerCase().replace(/\s+/gu, " ").trim()
+            }
+
+            // Check against what user actually sees (parsed text)
+            const existingParsedTexts = new Set(prevBubbles.map((b) => normalizeText(parseInquiryFromText(b.text))))
+
+            // Only add bubbles for conversations with unique parsed content
+            for (const conv of currentConversations) {
+                if (conv.text) {
+                    const parsedText = parseInquiryFromText(conv.text)
+                    const normalizedParsedText = normalizeText(parsedText)
+
+                    if (
+                        !existingParsedTexts.has(normalizedParsedText) &&
+                        !processedTextsRef.current.has(normalizedParsedText)
+                    ) {
+                        // Mark this parsed text as processed
+                        processedTextsRef.current.add(normalizedParsedText)
+
+                        newBubbles.push({
+                            text: conv.text,
+                            agents: new Set(conv.agents),
+                            timestamp: now,
+                            conversationId: conv.id,
+                        })
+
+                        // Add corresponding edge to global cache
+                        const agentList = Array.from(conv.agents)
+                        if (agentList.length >= 2) {
+                            const sourceAgent = agentList[0]
+                            const targetAgent = agentList[1]
+                            const edge: Edge = {
+                                id: `thought-bubble-${conv.id}`,
+                                source: sourceAgent,
+                                target: targetAgent,
+                                type: "thoughtBubbleEdge",
+                                data: {
+                                    text: conv.text,
+                                    showAlways: showThoughtBubbles,
+                                    conversationId: conv.id,
+                                },
+                                style: {pointerEvents: "none" as const},
+                            }
+                            addGlobalThoughtBubbleEdge(conv.id, edge)
+                        }
+                    }
+                }
+            }
+
+            if (newBubbles.length === 0) {
+                return prevBubbles // No changes
+            }
+
+            const allBubbles = [...prevBubbles, ...newBubbles]
+            // If we're over the limit, remove the oldest bubbles
+            if (allBubbles.length > MAX_THOUGHT_BUBBLES) {
+                const sorted = allBubbles.sort((a, b) => a.timestamp - b.timestamp)
+                const kept = sorted.slice(-MAX_THOUGHT_BUBBLES)
+                const dropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
+
+                // Clean up dropped bubbles from processed texts and global cache
+                dropped.forEach((bubble) => {
+                    const parsedText = parseInquiryFromText(bubble.text)
+                    const normalized = normalizeText(parsedText)
+                    processedTextsRef.current.delete(normalized)
+                    removeGlobalThoughtBubbleEdge(bubble.conversationId)
+                })
+                return kept
+            }
+            return allBubbles
+        })
+    }, [currentConversations])
+
+    // Independent thought bubble cleanup - run timer only during streaming
+    useEffect(() => {
+        const cleanupInterval = setInterval(() => {
+            // Only clean up if we're currently streaming
+            if (!isStreaming) return
+
+            setActiveThoughtBubbles((prevBubbles) => {
+                if (prevBubbles.length === 0) return prevBubbles
+
+                const now = Date.now()
+
+                const normalizeText = (text: string): string => {
+                    // eslint-disable-next-line newline-per-chained-call
+                    return text.toLowerCase().replace(/\s+/gu, " ").trim()
+                }
+
+                const filteredBubbles = prevBubbles.filter((bubble) => {
+                    const age = now - bubble.timestamp
+                    const shouldKeep = age < THOUGHT_BUBBLE_TIMEOUT_MS
+
+                    // Keep bubble if it's being hovered, even if expired
+                    const isHovered = hoveredBubbleIdRef.current === `thought-bubble-${bubble.conversationId}`
+                    if (isHovered) {
+                        return true
+                    }
+
+                    // If bubble is expiring, remove its parsed text from processed set and global cache
+                    if (!shouldKeep) {
+                        const parsedText = parseInquiryFromText(bubble.text)
+                        const normalized = normalizeText(parsedText)
+                        processedTextsRef.current.delete(normalized)
+                        removeGlobalThoughtBubbleEdge(bubble.conversationId)
+                    }
+
+                    return shouldKeep
+                })
+
+                // Only update if there are changes to prevent unnecessary re-renders
+                if (filteredBubbles.length !== prevBubbles.length) {
+                    return filteredBubbles
+                }
+                return prevBubbles
+            })
+        }, 1000) // Check every second
+
+        return () => clearInterval(cleanupInterval)
+    }, []) // Empty dependency array - run once and keep interval going
+
+    // Memoize filtered conversations directly from activeThoughtBubbles
+    const filteredConversations = useMemo(() => {
+        if (activeThoughtBubbles.length === 0) return null
+        return activeThoughtBubbles.map((bubble) => ({
+            id: `bubble-${bubble.timestamp}`, // Unique ID based on timestamp
+            text: bubble.text,
+            agents: bubble.agents,
+            startedAt: new Date(bubble.timestamp), // Convert timestamp to Date
+        }))
+    }, [activeThoughtBubbles])
+
+    // Create stable callback for layout functions
+    // Removed unused getFilteredConversations
 
     const {darkMode} = usePreferences()
 
@@ -99,28 +302,55 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const isHeatmap = coloringOption === "heatmap"
 
+    // Merge agents from active thought bubbles with agentsInNetwork for layout
+    // This ensures bubble edges persist even when agents disappear from the network
+    const bubbleAgentIds = useMemo(() => {
+        const ids = new Set<string>()
+        activeThoughtBubbles.forEach((bubble) => {
+            bubble.agents.forEach((agentId) => ids.add(agentId))
+        })
+        return ids
+    }, [activeThoughtBubbles])
+
+    const mergedAgentsInNetwork = useMemo(() => {
+        // Add any missing agents from bubbles as minimal ConnectivityInfo
+        const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
+        const missing = Array.from(bubbleAgentIds).filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
+        const minimalAgents = missing.map((missingId) => ({
+            origin: missingId,
+            tools: [] as string[],
+            display_as: undefined as string | undefined,
+        }))
+        return [...agentsInNetwork, ...minimalAgents]
+    }, [agentsInNetwork, bubbleAgentIds])
+
     // Create the flow layout depending on user preference
     // Memoize layoutResult so it only recalculates when relevant data changes
     const layoutResult = useMemo(
         () =>
             layout === "linear"
                 ? layoutLinear(
-                      // agentCounts key is optional, so we check if it's defined
                       isHeatmap ? agentCounts : undefined,
-                      agentsInNetwork,
-                      getConversations,
-                      isAwaitingLlm,
-                      showThoughtBubbles
+                      mergedAgentsInNetwork,
+                      currentConversations,
+                      isAwaitingLlm
                   )
                 : layoutRadial(
-                      // agentCounts key is optional, so we check if it's defined
                       isHeatmap ? agentCounts : undefined,
-                      agentsInNetwork,
-                      getConversations,
-                      isAwaitingLlm,
-                      showThoughtBubbles
+                      mergedAgentsInNetwork,
+                      currentConversations,
+                      isAwaitingLlm
                   ),
-        [layout, coloringOption, agentCounts, agentsInNetwork, currentConversations, isAwaitingLlm, getConversations, showThoughtBubbles]
+        [
+            layout,
+            coloringOption,
+            agentCounts,
+            mergedAgentsInNetwork,
+            currentConversations,
+            filteredConversations,
+            isAwaitingLlm,
+            showThoughtBubbles,
+        ]
     )
 
     const [nodes, setNodes] = useState(layoutResult.nodes)
@@ -418,15 +648,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 </Tooltip>
                 <Tooltip
                     id="thought-bubble-tooltip"
-                    title={`Toggle thought bubble visibility (${showThoughtBubbles})`}
+                    title={`Toggle thought bubbles ${showThoughtBubbles ? "off" : "on"}`}
                     placement="right"
                 >
                     <span id="thought-bubble-span">
                         <ControlButton
                             id="thought-bubble-button"
-                            onClick={() => setShowThoughtBubbles(showThoughtBubbles === "hover" ? "always" : "hover")}
+                            onClick={() => setShowThoughtBubbles(!showThoughtBubbles)}
                             style={{
-                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles === "always"),
+                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
                             }}
                         >
                             <ChatBubbleOutlineIcon
@@ -473,7 +703,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 )}
             </ReactFlow>
             <ThoughtBubbleOverlay
+                nodes={nodes}
                 edges={edges}
+                showThoughtBubbles={showThoughtBubbles}
+                onBubbleHoverChange={handleBubbleHoverChange}
             />
         </Box>
     )
