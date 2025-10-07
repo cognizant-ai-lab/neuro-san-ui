@@ -1,0 +1,149 @@
+# ================================================================================
+# Build Workflow
+# ================================================================================
+# Purpose: Build Docker image and push to Amazon ECR
+#
+# Trigger Scenarios:
+# - Called by orchestrator workflow (automatic flow)
+# - Manual trigger: Allows building any arbitrary version/branch
+# ================================================================================
+
+name: Build
+
+on:
+    # Allow manual workflow dispatch
+    workflow_dispatch:
+        inputs:
+            revision:
+                description: "Git ref (tag/branch/SHA) to checkout"
+                required: false
+                type: string
+            DISPLAY_VERSION:
+                description: "Override display version for image tag"
+                required: false
+                type: string
+    # Allow being called by other workflows
+    workflow_call:
+        inputs:
+            revision:
+                required: false
+                type: string
+            DISPLAY_VERSION:
+                required: false
+                type: string
+        secrets:
+            LEAF_APP_PRIVATE_KEY:
+                required: true
+
+env:
+    # AWS info needed to push the image to ECR
+    AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+    AWS_SECRET_NAME: ${{ vars.AWS_SECRET_NAME || 'neuro-ui/github-token' }}
+    ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
+    ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-san/neuro-san-ui' }}
+    # and the nodejs version which is a repo-level variable
+    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  ref: ${{ inputs.revision || github.ref }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            # Why we need two github tokens:
+            # neuro-ui depends on the ui-common npm package, which requires a token with package read permissions.
+            # Unfortunately, GitHub’s built-in temporary tokens don’t support npm package access.
+            # Until that changes, we store a static token in AWS Secrets Manager and pull it in here.
+            #
+            # neuro-ui also depends on the unileaf repo. For that, we can use GitHub’s built-in action
+            # to generate a temporary token with the necessary repo access.
+            - name: Get GitHub token for NPM package from AWS Secrets Manager
+              uses: aws-actions/aws-secretsmanager-get-secrets@v2
+              with:
+                  secret-ids: |
+                      GITHUB_TOKEN_NPM_PACKAGE_READ, ${{ env.AWS_SECRET_NAME }}
+                  parse-json-secrets: false
+              env:
+                  ACTIONS_STEP_DEBUG: true
+
+            # Why writing the token to the env:
+            # do_typescript_generate.sh expects GITHUB_TOKEN_NPM_PACKAGE_READ as an env var.
+            - name: Extract GITHUB_TOKEN_NPM_PACKAGE_READ token from JSON
+              run: |
+                  TOKEN=$(jq -r .token <<< "$GITHUB_TOKEN_NPM_PACKAGE_READ")
+                  echo "GITHUB_TOKEN_NPM_PACKAGE_READ=$TOKEN" >> $GITHUB_ENV
+
+            # Why these two steps exist:
+            # We need a GitHub App token to read the private `cognizant-ai-lab/unileaf`
+            # repository during the "Generate Typescript API stubs" step below.
+            # The code generation script pulls artifacts from that repo; without this token,
+            # access would fail and the generation step would break.
+            - name: Create GitHub App token for UNILEAF Repo
+              id: leaf-token
+              uses: actions/create-github-app-token@v2
+              with:
+                  app-id: ${{ vars.LEAF_APP_ID }}
+                  private-key: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
+                  repositories: unileaf
+                  owner: cognizant-ai-lab
+
+            - name: Set LEAF_SOURCE_CREDENTIALS environment variable
+              run: |
+                  echo "LEAF_SOURCE_CREDENTIALS=${{ steps.leaf-token.outputs.token }}" >> $GITHUB_ENV
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODEJS_VERSION }}
+                  cache: yarn
+
+            - name: Configure .npmrc with debugging
+              run: |
+                  cp build_scripts/.npmrc .npmrc
+                  sed -i "s|\${GITHUB_TOKEN_NPM_PACKAGE_READ}|${GITHUB_TOKEN_NPM_PACKAGE_READ}|g" .npmrc
+
+            - name: Install dependencies
+              run: |
+                  yarn install
+
+            - name: Install prerequisites for code generation
+              run: |
+                  sudo apt-get update -y
+                  sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev bash shellcheck
+
+            - name: Generate Typescript API stubs
+              run: |
+                  ./build_scripts/do_typescript_generate.sh
+
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Build and push Docker image to ECR
+              run: |
+                  docker buildx build \
+                    --build-arg NODEJS_VERSION="${{ env.NODEJS_VERSION }}" \
+                    --build-arg NEXT_PUBLIC_NEURO_SAN_UI_VERSION="${{ inputs.DISPLAY_VERSION }}" \
+                    --progress=plain \
+                    --secret id=npmrc,src=.npmrc \
+                    -t "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}" \
+                    -f Dockerfile \
+                    --push \
+                    .
