@@ -22,8 +22,7 @@
         "lint-summary": "eslint --format summary",
         "publish": "yarn workspace @cognizant-ai-lab/ui-common npm publish",
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
-        "test": "jest --config ./jest_unit.config.ts",
-        "tsc": "tsc --project tsconfig.json"
+        "test": "jest --config ./jest_unit.config.ts"
     },
     "packageManager": "yarn@4.9.4",
     "devDependencies": {
@@ -49,8 +48,8 @@
         "eslint": "9.32.0",
         "eslint-config-prettier": "10.1.8",
         "eslint-formatter-summary": "2.0.2",
-        "eslint-import-resolver-typescript": "^4.4.4",
-        "eslint-plugin-import": "^2.32.0",
+        "eslint-import-resolver-typescript": "4.4.4",
+        "eslint-plugin-import": "2.32.0",
         "eslint-plugin-jest": "29.0.1",
         "eslint-plugin-jest-dom": "5.5.0",
         "eslint-plugin-react": "7.37.5",
