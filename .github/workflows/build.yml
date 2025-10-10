@@ -36,11 +36,6 @@ on:
                 required: true
 
     pull_request:
-        inputs:
-            DISPLAY_VERSION:
-                required: false
-                type: string
-                default: "ds_test"
 
 env:
     # AWS info needed to push the image to ECR
