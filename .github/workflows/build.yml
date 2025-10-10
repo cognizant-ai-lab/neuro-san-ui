@@ -97,7 +97,7 @@ jobs:
               with:
                   context: .
                   file: apps/main/Dockerfile
-                  push: false
+                  push: true
                   tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION || 'ds_test'}}
                   build-args: |
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
