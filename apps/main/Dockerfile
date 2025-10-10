@@ -35,20 +35,23 @@ FROM node:$NODEJS_VERSION-bookworm-slim AS builder
 ENV NODE_ENV=production
 
 WORKDIR /app
+
+# From deps stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/ui-common/node_modules ./packages/ui-common/node_modules
-COPY --from=deps /app/package.json ./package.json
-COPY --from=deps /app/apps/main/package.json ./apps/main/package.json
-COPY --from=deps /app/packages/ui-common/package.json ./packages/ui-common/package.json
 COPY --from=deps /app/yarn.lock ./
 
-# TODO: this is hacky, should only copy what we need
-COPY . .
+# Extra files from build context
+COPY package.json ./package.json
+COPY .yarnrc.yml ./.yarnrc.yml
+COPY apps/main ./apps/main
+COPY packages/ui-common ./packages/ui-common
+COPY tsconfig.json ./tsconfig.json
 
 # Extract build version
 ARG NEXT_PUBLIC_NEURO_SAN_UI_VERSION
 ENV NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}
 
+# Build the Next.js app
 RUN mount=type=cache,target=/root/.cache/yarn \
     corepack enable && \
     corepack install && \
