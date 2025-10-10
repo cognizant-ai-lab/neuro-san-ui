@@ -34,6 +34,8 @@ on:
         secrets:
             LEAF_APP_PRIVATE_KEY:
                 required: true
+                
+    pull_request:
 
 env:
     # AWS info needed to push the image to ECR
