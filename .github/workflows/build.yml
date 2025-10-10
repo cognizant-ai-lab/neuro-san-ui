@@ -1,0 +1,103 @@
+# ================================================================================
+# Build Workflow
+# ================================================================================
+# Purpose: Build Docker image and push to Amazon ECR
+#
+# Trigger Scenarios:
+# - Called by orchestrator workflow (automatic flow)
+# - Manual trigger: Allows building any arbitrary version/branch
+# ================================================================================
+
+name: Build
+
+on:
+    # Allow manual workflow dispatch
+    workflow_dispatch:
+        inputs:
+            revision:
+                description: "Git ref (tag/branch/SHA) to checkout"
+                required: false
+                type: string
+            DISPLAY_VERSION:
+                description: "Override display version for image tag"
+                required: false
+                type: string
+    # Allow being called by other workflows
+    workflow_call:
+        inputs:
+            revision:
+                required: false
+                type: string
+            DISPLAY_VERSION:
+                required: false
+                type: string
+        secrets:
+            LEAF_APP_PRIVATE_KEY:
+                required: true
+
+env:
+    # AWS info needed to push the image to ECR
+    AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+    ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
+    ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-ui' }}
+    # and the nodejs version which is a repo-level variable
+    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  ref: ${{ inputs.revision || github.ref }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            - name: Set up yarn version
+              run: |
+                  corepack enable
+                  corepack install  
+                  yarn --version
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODEJS_VERSION }}
+                  cache: yarn
+
+            - name: Install dependencies
+              run: |
+                  rm -rf node_modules
+                  yarn cache clean --all
+                  yarn install
+
+            - name: Generate Typescript API stubs
+              run: yarn generate
+
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2
+
+            - name: Build and push Docker image to ECR
+              uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+              env:
+                  BUILDKIT_PROGRESS: quiet
+              with:
+                  context: .
+                  file: apps/main/Dockerfile
+                  push: false
+                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}
+                  build-args: |
+                      NODEJS_VERSION=${{ env.NODEJS_VERSION }}
+                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
+                  provenance: false

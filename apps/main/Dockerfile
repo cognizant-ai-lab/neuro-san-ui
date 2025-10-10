@@ -14,14 +14,16 @@ FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 
 ENV NODE_ENV=production
 
+# Disable NextJS spyware
+ENV NEXT_TELEMETRY_DISABLED=1
+
 WORKDIR /app
 COPY .yarnrc.yml ./
-COPY package.json ./
-COPY apps/main/package.json ./apps/main/package.json
-COPY packages/ui-common/package.json ./packages/ui-common/package.json
-COPY yarn.lock ./
 COPY packages/ui-common/generated ./generated
-
+COPY package.json ./
+COPY packages/ui-common/package.json ./packages/ui-common/package.json
+COPY apps/main/package.json ./apps/main/package.json
+COPY yarn.lock ./
 
 # Install yarn dependencies
 RUN --mount=type=cache,target=/root/.cache/yarn \
@@ -34,6 +36,9 @@ FROM node:$NODEJS_VERSION-bookworm-slim AS builder
 
 ENV NODE_ENV=production
 
+# Disable NextJS spyware
+ENV NEXT_TELEMETRY_DISABLED=1
+
 WORKDIR /app
 
 # From deps stage
@@ -41,11 +46,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/yarn.lock ./
 
 # Extra files from build context
+COPY tsconfig.json ./tsconfig.json
 COPY package.json ./package.json
 COPY .yarnrc.yml ./.yarnrc.yml
-COPY apps/main ./apps/main
 COPY packages/ui-common ./packages/ui-common
-COPY tsconfig.json ./tsconfig.json
+COPY apps/main ./apps/main
 
 # Extract build version
 ARG NEXT_PUBLIC_NEURO_SAN_UI_VERSION
