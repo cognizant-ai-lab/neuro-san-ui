@@ -98,7 +98,7 @@ jobs:
                   context: .
                   file: apps/main/Dockerfile
                   push: false
-                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}
+                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION || 'ds_test'}}
                   build-args: |
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
                       NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION || 'ds_test' }}
