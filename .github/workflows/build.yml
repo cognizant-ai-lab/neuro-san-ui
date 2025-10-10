@@ -34,15 +34,20 @@ on:
         secrets:
             LEAF_APP_PRIVATE_KEY:
                 required: true
-                
+
     pull_request:
+        inputs:
+            DISPLAY_VERSION:
+                required: false
+                type: string
+                default: "ds_test"
 
 env:
     # AWS info needed to push the image to ECR
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
     ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
     ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-ui' }}
-    # and the nodejs version which is a repo-level variable
+    # and the Node.js version which is a repo-level variable
     NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
