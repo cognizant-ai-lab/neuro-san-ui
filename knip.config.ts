@@ -49,7 +49,7 @@ const config: KnipConfig = {
         "**/dist/**",
 
         // Used by CommitCheck script
-        "jest_quiet_config.ts", 
+        "jest_quiet_config.ts",
     ],
 
     ignoreDependencies: [
