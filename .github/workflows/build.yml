@@ -8,6 +8,9 @@
 # - Manual trigger: Allows building any arbitrary version/branch
 # ================================================================================
 
+# Note: this is basically copy-pasta from the same Action in neuro-ui :thumbsdown:
+# See: https://docs.github.com/en/actions/how-tos/reuse-automations/share-with-your-organization
+
 name: Build
 
 on:
@@ -34,8 +37,6 @@ on:
         secrets:
             LEAF_APP_PRIVATE_KEY:
                 required: true
-
-    pull_request:
 
 env:
     # AWS info needed to push the image to ECR
@@ -98,8 +99,8 @@ jobs:
                   context: .
                   file: apps/main/Dockerfile
                   push: true
-                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION || 'ds_test'}}
+                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION}}
                   build-args: |
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
-                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION || 'ds_test' }}
+                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION}}
                   provenance: false
