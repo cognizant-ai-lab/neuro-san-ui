@@ -57,7 +57,7 @@ ARG NEXT_PUBLIC_NEURO_SAN_UI_VERSION
 ENV NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}
 
 # Build the Next.js app
-RUN mount=type=cache,target=/root/.cache/yarn \
+RUN --mount=type=cache,target=/root/.cache/yarn \
     corepack enable && \
     corepack install && \
     yarn build:app 
