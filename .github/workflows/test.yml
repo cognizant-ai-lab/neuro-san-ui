@@ -111,7 +111,7 @@ jobs:
               id: hadolint
               continue-on-error: true
               with:
-                  dockerfile: Dockerfile
+                  dockerfile: apps/main/Dockerfile
                   recursive: true
                   failure-threshold: info
 
