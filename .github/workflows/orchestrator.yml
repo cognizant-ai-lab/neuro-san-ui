@@ -1,0 +1,79 @@
+# ================================================================================
+# Orchestrator Workflow
+# ================================================================================
+# Purpose: Orchestrate the CI/CD flow based on trigger type
+#
+# Trigger Scenarios:
+# - Push to any branch: Runs tests only (for development feedback)
+# - Push to main branch: Runs test → build → deploy to dev
+# - GitHub release: Runs test → build → deploy to staging
+# ================================================================================
+
+name: Orchestrator
+
+on:
+    # Trigger on pushes to any branch
+    push:
+        branches: ["**"]
+    # Trigger on GitHub release events
+    release:
+        types: [published]
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    setup:
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.version.outputs.version }}
+            deploy_env: ${{ steps.version.outputs.deploy_env }}
+            should_build: ${{ steps.version.outputs.should_build }}
+            should_deploy: ${{ steps.version.outputs.should_deploy }}
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Determine version and deployment environment
+              id: version
+              shell: bash
+              run: |
+                  ./build_scripts/determine_version.sh \
+                    "${{ github.event_name }}" \
+                    "${{ github.ref }}" \
+                    "${{ github.event.release.tag_name }}" \
+                    "${{ github.sha }}"
+
+    # Step 1: Always run tests
+    test:
+        uses: ./.github/workflows/test.yml
+        needs: setup
+        with:
+            revision: ${{ github.ref }}
+        secrets:
+            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
+
+    # Step 2: Build Docker image (only for main/release)
+    build:
+        uses: ./.github/workflows/build.yml
+        needs: [setup, test]
+        if: needs.test.result == 'success' && needs.setup.outputs.should_build == 'true'
+        with:
+            revision: ${{ github.ref }}
+            DISPLAY_VERSION: ${{ needs.setup.outputs.version }}
+        secrets:
+            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
+
+    # Step 3: Deploy to environment (only for main/release)
+    deploy:
+        uses: ./.github/workflows/deploy.yml
+        needs: [setup, build]
+        if: needs.build.result == 'success' && needs.setup.outputs.should_deploy == 'true'
+        with:
+            IMAGE_VERSION: ${{ needs.setup.outputs.version }}
+            DEPLOY_ENV: ${{ needs.setup.outputs.deploy_env }}
+        secrets:
+            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
