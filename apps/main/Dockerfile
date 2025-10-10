@@ -64,7 +64,7 @@ RUN mount=type=cache,target=/root/.cache/yarn \
 
 
 # Production image, copy all the files and run next
-FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12 AS runner
+FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12@sha256:1c481261b3b1c6ec601cc11d3cea0c7d02e551e5041f8dcd47e077029e57a6bc AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
