@@ -8,8 +8,8 @@
 # - Manual trigger: Allows building any arbitrary version/branch
 # ================================================================================
 
-# Note: this is basically copy-pasta from the same Action in neuro-ui :thumbsdown:
-# See: https://docs.github.com/en/actions/how-tos/reuse-automations/share-with-your-organization
+# Note: this is mostly copy-pasta from the same Action in neuro-ui :thumbsdown:
+# See: https://leaf-ai.atlassian.net/browse/UN-3573
 
 name: Build
 

@@ -9,7 +9,7 @@
 # ================================================================================
 
 # Note: this is mostly copy-pasta from the same Action in neuro-ui :thumbsdown:
-# See: https://docs.github.com/en/actions/how-tos/reuse-automations/share-with-your-organization
+# See: https://leaf-ai.atlassian.net/browse/UN-3573
 
 name: Test
 

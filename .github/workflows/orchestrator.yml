@@ -9,6 +9,9 @@
 # - GitHub release: Runs test → build → deploy to staging
 # ================================================================================
 
+# Note: this is mostly copy-pasta from the same Action in neuro-ui :thumbsdown:
+# See: https://leaf-ai.atlassian.net/browse/UN-3573
+
 name: Orchestrator
 
 on:
@@ -68,12 +71,4 @@ jobs:
             LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
 
     # Step 3: Deploy to environment (only for main/release)
-    deploy:
-        uses: ./.github/workflows/deploy.yml
-        needs: [setup, build]
-        if: needs.build.result == 'success' && needs.setup.outputs.should_deploy == 'true'
-        with:
-            IMAGE_VERSION: ${{ needs.setup.outputs.version }}
-            DEPLOY_ENV: ${{ needs.setup.outputs.deploy_env }}
-        secrets:
-            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
+    # Not yet implemented.
