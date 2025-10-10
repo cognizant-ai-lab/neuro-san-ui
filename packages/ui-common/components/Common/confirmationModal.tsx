@@ -1,7 +1,7 @@
 import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import {FC, ReactNode, useState} from "react"
+import {FC, JSX as ReactJSX, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"
 
@@ -57,7 +57,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
         try {
             if (handleOk) {
                 setIsLoading(true)
-                await handleOk()
+                handleOk()
             }
         } finally {
             setModalOpen(false)
@@ -65,7 +65,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
         }
     }
 
-    const Footer: JSX.Element = (
+    const Footer: ReactJSX.Element = (
         <>
             {handleCancel && ( // If there is no handleCancel passed, Cancel button will not be rendered
                 <StyledButton

@@ -9,7 +9,7 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, ReactFragment, useEffect, useMemo, useState} from "react"
+import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
 
 import {
     Auth,
@@ -204,7 +204,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
         await smartSignOut(currentUser, auth0Domain, auth0ClientId, oidcProvider)
     }
 
-    let body: JSX.Element | ReactFragment
+    let body: ReactJSX.Element | ReactNode
 
     /**
      * Gets the outer container of the app.

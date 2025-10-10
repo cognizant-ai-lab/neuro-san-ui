@@ -1,4 +1,5 @@
 import {closeSnackbar, enqueueSnackbar, SnackbarKey, SnackbarOrigin, VariantType} from "notistack"
+import {JSX as ReactJSX} from "react"
 import {renderToString} from "react-dom/server"
 
 export enum NotificationType {
@@ -29,7 +30,7 @@ export function closeNotification(snackbarId?: SnackbarKey) {
 export function sendNotification(
     variantType: NotificationType,
     message: string,
-    description: string | JSX.Element = "",
+    description: string | ReactJSX.Element = "",
     // eslint-disable-next-line unicorn/no-object-as-default-parameter
     placement: SnackbarOrigin = {
         vertical: "top",

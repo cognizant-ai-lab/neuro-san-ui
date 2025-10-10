@@ -2,7 +2,7 @@ import {StopCircle} from "@mui/icons-material"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
-import {useCallback, useEffect, useRef, useState} from "react"
+import {JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
 import {ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
@@ -32,7 +32,7 @@ export const MultiAgentAccelerator = ({
     backendNeuroSanApiUrl,
     darkMode,
     userInfo,
-}: MultiAgentAcceleratorProps): JSX.Element => {
+}: MultiAgentAcceleratorProps): ReactJSX.Element => {
     // Animation time for the left and right panels to slide in or out when launching the animation
     const GROW_ANIMATION_TIME_MS = 800
 

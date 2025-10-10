@@ -1,4 +1,4 @@
-import {Fragment, ReactNode} from "react"
+import {Fragment, JSX as ReactJSX, ReactNode} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighter"
 import rehypeRaw from "rehype-raw"
@@ -16,7 +16,7 @@ interface FormattedMarkdownProps {
     readonly id: string
 
     /**
-     * The list of nodes to format. Each node can be a string or a react node.
+     * The list of nodes to format. Each node can be a string or a React node.
      */
     readonly nodesList: ReactNode[]
 
@@ -43,14 +43,14 @@ export const FormattedMarkdown = ({
     nodesList,
     style,
     wrapLongLines = false,
-}: FormattedMarkdownProps): JSX.Element => {
+}: FormattedMarkdownProps): ReactJSX.Element => {
     /**
-     * Get the formatted output for a given string. The string is assumed to be in markdown format.
+     * Get the formatted output for a given string. The string is assumed to be in Markdown format.
      * @param stringToFormat The string to format.
      * @param index The index of the string in the nodes list. Used as "salt" to generate a unique key.
      * @returns The formatted markdown.
      */
-    const getFormattedMarkdown = (stringToFormat: string, index: number): JSX.Element => (
+    const getFormattedMarkdown = (stringToFormat: string, index: number): ReactJSX.Element => (
         <ReactMarkdown
             key={`${hashString(stringToFormat)}-${index}`}
             rehypePlugins={[rehypeRaw, rehypeSlug]}
