@@ -118,13 +118,8 @@ jobs:
             - name: Docker build check
               id: dockerbuild
               continue-on-error: true
-              uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
-              with:
-                  context: .
-                  file: apps/main/Dockerfile
-                  push: false
-                  build-args: |
-                      --check
+              run: |
+                  docker build --quiet --check --file apps/main/Dockerfile . > /dev/null
 
             - name: Run TypeScript compilation
               id: tsc
