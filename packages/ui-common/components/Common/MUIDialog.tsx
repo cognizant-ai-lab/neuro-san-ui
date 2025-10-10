@@ -5,7 +5,7 @@ import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
 import DialogTitle from "@mui/material/DialogTitle"
 import IconButton from "@mui/material/IconButton"
-import {FC, ReactNode} from "react"
+import {FC, JSX as ReactJSX, ReactNode} from "react"
 
 // #region: Styled Components
 const StyledDialogTitle = styled(DialogTitle)({
@@ -24,7 +24,7 @@ interface MUIDialogProps {
     className?: string
     closeable?: boolean
     contentSx?: SxProps
-    footer?: JSX.Element
+    footer?: ReactJSX.Element
     id: string
     isOpen: boolean
     onClose: () => void

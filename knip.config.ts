@@ -47,6 +47,9 @@ const config: KnipConfig = {
         "packages/ui-common/components/AgentChat/Types.ts",
 
         "**/dist/**",
+
+        // Used by CommitCheck script
+        "jest_quiet_config.ts", 
     ],
 
     ignoreDependencies: [
@@ -71,6 +74,9 @@ const config: KnipConfig = {
 
         // Used by do_openapi_generate.sh
         "openapi-typescript",
+
+        // Used by CommitCheck script
+        "jest-silent-reporter",
 
         // Used by Next.js image optimization,
         "sharp",

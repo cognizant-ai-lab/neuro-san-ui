@@ -15,7 +15,7 @@
         "build:docker": "docker build -f apps/main/Dockerfile -t neuro-san-ui .",
         "check-format": "yarn prettier --check --log-level warn .",
         "clean": "rm -rf dist generated",
-        "commit-check": "echo 'tsc...'; yarn tsc; echo 'knip...'; yarn knip; echo 'prettier...'; yarn check-format; echo 'eslint...'; yarn lint; echo 'jest...'; jest --config ./jest_quiet_config.ts",
+        "commit-check": "./build_scripts/CommitCheck.sh",
         "dev": "yarn workspace @cognizant-ai-lab/neuro-san-web run dev",
         "generate": "rm -rf packages/ui-common/generated && cd packages/ui-common && ./build_scripts/do_openapi_generate.sh",
         "lint": "eslint",

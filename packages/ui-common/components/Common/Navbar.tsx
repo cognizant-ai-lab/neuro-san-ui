@@ -6,7 +6,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import {IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
 import Grid from "@mui/material/Grid"
-import {MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
+import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "./confirmationModal"
 import {LoadingSpinner} from "./LoadingSpinner"
@@ -72,7 +72,7 @@ export const Navbar = ({
     signOut,
     supportEmailAddress,
     userInfo,
-}: NavbarProps): JSX.Element => {
+}: NavbarProps): ReactJSX.Element => {
     // For email dialog
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
