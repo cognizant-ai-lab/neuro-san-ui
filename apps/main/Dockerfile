@@ -1,0 +1,82 @@
+#
+# This is the Dockerfile for building the UI/NodeJS Docker image.
+#
+# Taken from here with slight modifications: https://github.com/vercel/next.js/blob/main/examples/with-docker/Dockerfile
+#
+# It uses multi-stage builds for a smaller resulting image 
+#
+
+# This is the major version of NodeJS we will enforce
+# Check in CI to see what the variable is set to if you want to see the official version of NodeJS we are targeting
+ARG NODEJS_VERSION=22
+
+FROM node:$NODEJS_VERSION-bookworm-slim AS deps
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+COPY .yarnrc.yml ./
+COPY package.json ./
+COPY apps/main/package.json ./apps/main/package.json
+COPY packages/ui-common/package.json ./packages/ui-common/package.json
+COPY yarn.lock ./
+COPY packages/ui-common/generated ./generated
+
+
+# Install yarn dependencies
+RUN --mount=type=cache,target=/root/.cache/yarn \
+    corepack enable && \
+    corepack install && \
+    yarn install --immutable
+
+# Rebuild the source code only when needed
+FROM node:$NODEJS_VERSION-bookworm-slim AS builder
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/ui-common/node_modules ./packages/ui-common/node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/apps/main/package.json ./apps/main/package.json
+COPY --from=deps /app/packages/ui-common/package.json ./packages/ui-common/package.json
+COPY --from=deps /app/yarn.lock ./
+
+# TODO: this is hacky, should only copy what we need
+COPY . .
+
+# Extract build version
+ARG NEXT_PUBLIC_NEURO_SAN_UI_VERSION
+ENV NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}
+
+RUN mount=type=cache,target=/root/.cache/yarn \
+    corepack enable && \
+    corepack install && \
+    yarn build:app 
+
+
+# Production image, copy all the files and run next
+FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12 AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder /app/apps/main/.next/standalone ./
+COPY --from=builder /app/apps/main/public ./apps/main/public
+COPY --from=builder /app/apps/main/.next/static ./apps/main/.next/static
+
+# The "nonroot" non-privileged user is provided by the base image
+USER nonroot
+
+EXPOSE 3000
+
+# Disable NextJS spyware
+ENV NEXT_TELEMETRY_DISABLED=1
+
+WORKDIR /app/apps/main
+
+# This "server.js" file is generated at compile time by NextJS magic.
+# See: https://nextjs.org/docs/advanced-features/output-file-tracing
+CMD ["server.js"]

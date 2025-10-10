@@ -12,6 +12,7 @@
     "scripts": {
         "build:app": "yarn workspace @cognizant-ai-lab/neuro-san-web build",
         "build:lib": "yarn workspace @cognizant-ai-lab/ui-common build",
+        "build:docker": "docker build -f apps/main/Dockerfile -t neuro-san-ui .",
         "check-format": "yarn prettier --check --log-level warn .",
         "clean": "rm -rf dist generated",
         "commit-check": "echo 'tsc...'; yarn tsc; echo 'knip...'; yarn knip; echo 'prettier...'; yarn check-format; echo 'eslint...'; yarn lint; echo 'jest...'; jest --config ./jest_quiet_config.ts",
@@ -69,7 +70,7 @@
         "typescript": "5.9.2"
     },
     "resolutions": {
-        "@types/react": "18.2.0",
-        "@types/react-dom": "18.2.0"
+        "@types/react": "18.2.18",
+        "@types/react-dom": "18.2.18"
     }
 }

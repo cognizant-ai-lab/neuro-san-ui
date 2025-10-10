@@ -38,8 +38,8 @@ const nextConfig: import("next").NextConfig = {
     transpilePackages: ["@cognizant-ai-lab/ui-common"],
 
     typescript: {
-        // Cause build to fail on Typescript transpilation errors
-        ignoreBuildErrors: false,
+        // We check this elsewhere so disable during build
+        ignoreBuildErrors: true,
     },
     eslint: {
         // We lint elsewhere so disable linting during build
