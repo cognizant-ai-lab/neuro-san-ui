@@ -1,10 +1,11 @@
+import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL} from "@cognizant-ai-lab/ui-common/const"
 import {render, screen, waitFor} from "@testing-library/react"
 import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
-import {useAuthentication} from "../../../../packages/ui-common"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
+import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import NeuroSanUI from "../../pages/_app"
 
 const originalFetch = window.fetch
@@ -15,9 +16,7 @@ jest.mock("next-auth/react", () => ({
     SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
 }))
 
-jest.mock("../../../../packages/ui-common/const", () => ({
-    ENABLE_AUTHENTICATION: true,
-}))
+jest.mock("../../../../packages/ui-common/const")
 
 jest.mock("next/router", () => ({
     useRouter() {
@@ -43,10 +42,7 @@ jest.mock("next/router", () => ({
     },
 }))
 
-jest.mock("../../../../packages/ui-common", () => ({
-    ...jest.requireActual("../../../../packages/ui-common"),
-    useAuthentication: jest.fn(),
-}))
+jest.mock("../../../../packages/ui-common/utils/Authentication")
 
 const APP_COMPONENT = (
     <NeuroSanUI
@@ -67,6 +63,7 @@ describe("Main App Component", () => {
         ;(useAuthentication as jest.Mock).mockReturnValue({
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
+        ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
 
         // Clear and reset the zustand store before each test
         useEnvironmentStore.setState({
@@ -101,6 +98,29 @@ describe("Main App Component", () => {
         expect(state.auth0ClientId).toBe(testClientId)
         expect(state.auth0Domain).toBe(testDomain)
         expect(state.supportEmailAddress).toBe(testSupportEmailAddress)
+    })
+
+    it("Should render correctly when authentication is disabled", async () => {
+        ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
+        window.fetch = mockFetch({
+            backendNeuroSanApiUrl: testNeuroSanURL,
+            auth0ClientId: testClientId,
+            auth0Domain: testDomain,
+            supportEmailAddress: testSupportEmailAddress,
+            oidcHeaderFound: true,
+            username: "testUser",
+        })
+
+        render(APP_COMPONENT)
+
+        await screen.findByText(COMPONENT_BODY)
+
+        // No authentication so values should be defaults
+        const state = useEnvironmentStore.getState()
+        expect(state.backendNeuroSanApiUrl).toBe(DEFAULT_NEURO_SAN_SERVER_URL)
+        expect(state.auth0ClientId).toBe("")
+        expect(state.auth0Domain).toBe("")
+        expect(state.supportEmailAddress).toBe("")
     })
 
     it("Should handle failure to fetch environment variables", async () => {

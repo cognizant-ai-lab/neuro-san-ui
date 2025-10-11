@@ -5,7 +5,7 @@
  * @see https://nextjs.org/docs/app/guides/instrumentation
  */
 
-import {ENABLE_AUTHENTICATION} from "@cognizant-ai-lab/ui-common/const"
+import {authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
 
 /**
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
@@ -21,7 +21,7 @@ export const REQUIRED_ENV_VARS = [
 ]
 
 export function register() {
-    if (ENABLE_AUTHENTICATION) {
+    if (authenticationEnabled()) {
         const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
 
         if (missingEnvVars.length > 0) {
