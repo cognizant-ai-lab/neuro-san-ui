@@ -1,4 +1,4 @@
-import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
+import {MultiAgentAccelerator, useUserInfoStore} from "../../../../packages/ui-common"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 
@@ -6,9 +6,7 @@ import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 export default function MultiAgentAcceleratorPage() {
     // Animation time for the left and right panels to slide in or out when launching the animation
     // For access to logged-in session and current username
-    const {
-        user: {image: userImage, name: userName},
-    } = useAuthentication().data
+    const {currentUser, picture} = useUserInfoStore()
 
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
@@ -17,7 +15,7 @@ export default function MultiAgentAcceleratorPage() {
 
     return (
         <MultiAgentAccelerator
-            userInfo={{userName, userImage}}
+            userInfo={{userName: currentUser, userImage: picture}}
             backendNeuroSanApiUrl={backendNeuroSanApiUrl}
             darkMode={darkMode}
         />

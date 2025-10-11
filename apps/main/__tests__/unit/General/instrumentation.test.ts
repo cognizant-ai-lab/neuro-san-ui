@@ -5,6 +5,10 @@ Tests for instrumentation.ts NextJS startup file.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {register, REQUIRED_ENV_VARS} from "../../../instrumentation"
 
+jest.mock("../../../../../packages/ui-common/const", () => ({
+    ENABLE_AUTHENTICATION: true,
+}))
+
 describe("instrumentation", () => {
     withStrictMocks()
 

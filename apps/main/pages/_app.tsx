@@ -23,7 +23,7 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
-import {LOGO} from "../../../packages/ui-common/const"
+import {DEFAULT_NEURO_SAN_SERVER_URL, ENABLE_AUTHENTICATION, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
@@ -55,6 +55,18 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
     const {data} = useAuthentication()
     const userInfo = data?.user
+    return (
+        <Navbar
+            {...props}
+            id="nav-bar"
+            userInfo={userInfo}
+        />
+    )
+}
+
+// eslint-disable-next-line react/no-multi-comp
+function NavbarWrapperNoAuth(props: Omit<NavbarProps, "userInfo">): ReactElement {
+    const userInfo = {name: "Guest", image: ""}
     return (
         <Navbar
             {...props}
@@ -133,6 +145,17 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getEnvironment() {
+            if (!ENABLE_AUTHENTICATION) {
+                // Authentication is disabled, so we don't need to get environment variables
+                setBackendNeuroSanApiUrl(
+                    process.env["NEXT_PUBLIC_NEURO_SAN_SERVER_URL"] ?? DEFAULT_NEURO_SAN_SERVER_URL
+                )
+                setAuth0ClientId("")
+                setAuth0Domain("")
+                setSupportEmailAddress(process.env["NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS"] ?? "support@example.com")
+                return
+            }
+
             // Fetch environment settings.
             // Save these in the zustand store so that subsequent pages will not need to fetch them again
             const res = await fetch("/api/environment", {
@@ -163,6 +186,14 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getUserInfo() {
+            if (!ENABLE_AUTHENTICATION) {
+                // Authentication is disabled, so we don't need to get user info
+                setCurrentUser("Guest")
+                setPicture(undefined)
+                setOidcProvider(undefined)
+                return
+            }
+
             const res = await fetch("/api/userInfo", {
                 method: "GET",
                 headers: {
@@ -274,15 +305,27 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider session={session}>
                     <ErrorBoundary id="error_boundary">
-                        <NavbarWrapper
-                            id="nav-bar"
-                            logo={LOGO}
-                            query={query}
-                            pathname={pathname}
-                            authenticationType={authenticationType}
-                            signOut={handleSignOut}
-                            supportEmailAddress={supportEmailAddress}
-                        />
+                        {ENABLE_AUTHENTICATION ? (
+                            <NavbarWrapper
+                                id="nav-bar"
+                                logo={LOGO}
+                                query={query}
+                                pathname={pathname}
+                                authenticationType={authenticationType}
+                                signOut={handleSignOut}
+                                supportEmailAddress={supportEmailAddress}
+                            />
+                        ) : (
+                            <NavbarWrapperNoAuth
+                                id="nav-bar"
+                                logo={LOGO}
+                                query={query}
+                                pathname={pathname}
+                                authenticationType="None"
+                                supportEmailAddress={supportEmailAddress}
+                                signOut={undefined}
+                            />
+                        )}
                         <Container
                             id="body-container"
                             maxWidth={false}

@@ -15,6 +15,10 @@ jest.mock("next-auth/react", () => ({
     SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
 }))
 
+jest.mock("../../../../packages/ui-common/const", () => ({
+    ENABLE_AUTHENTICATION: true,
+}))
+
 jest.mock("next/router", () => ({
     useRouter() {
         return {
