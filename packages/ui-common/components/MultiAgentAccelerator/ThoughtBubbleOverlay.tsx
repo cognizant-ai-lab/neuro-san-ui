@@ -1,5 +1,5 @@
 import {styled} from "@mui/material"
-import {FC, Fragment, useCallback, useMemo, useRef, useState} from "react"
+import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {Edge, Node as RFNode} from "reactflow"
 
 import {isTextMeaningful, parseInquiryFromText} from "../AgentChat/Utils"
@@ -14,6 +14,7 @@ interface ThoughtBubbleOverlayProps {
 }
 interface ThoughtBubbleProps {
     isHovered: boolean
+    isTruncated: boolean
     animationDelay: number
     bubbleScreenX: number
     bubbleScreenY: number
@@ -35,8 +36,8 @@ const OverlayContainer = styled("div")({
 
 const ThoughtBubble = styled("div", {
     shouldForwardProp: (prop) =>
-        !["isHovered", "animationDelay", "bubbleScreenX", "bubbleScreenY"].includes(prop as string),
-})<ThoughtBubbleProps>(({isHovered, animationDelay, bubbleScreenX, bubbleScreenY}) => ({
+        !["isHovered", "isTruncated", "animationDelay", "bubbleScreenX", "bubbleScreenY"].includes(prop as string),
+})<ThoughtBubbleProps>(({isHovered, isTruncated, animationDelay, bubbleScreenX, bubbleScreenY}) => ({
     position: "absolute",
     right: bubbleScreenX, // Position from right edge instead of left
     top: bubbleScreenY,
@@ -51,7 +52,8 @@ const ThoughtBubble = styled("div", {
     width: "260px",
     minWidth: "100px",
     minHeight: "auto", // Let height adjust to content
-    height: isHovered ? "78px" : "auto", // Fixed height (3 lines) when hovered, flexible when not
+    // Only expand height when hovered AND text is truncated
+    height: isHovered && isTruncated ? "78px" : "auto",
     maxHeight: "78px", // Max 3 lines always
     boxShadow: isHovered
         ? "0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)"
@@ -62,20 +64,21 @@ const ThoughtBubble = styled("div", {
     backdropFilter: "blur(12px)",
     WebkitBackdropFilter: "blur(12px)",
     transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
-    cursor: "pointer",
-    userSelect: isHovered ? "text" : "none",
+    cursor: isTruncated ? "pointer" : "default",
+    userSelect: isHovered && isTruncated ? "text" : "none",
     animation: `fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${animationDelay}ms both`,
     pointerEvents: "auto",
     wordBreak: "break-word",
     overflow: "hidden", // Always hide overflow
-    overflowY: isHovered ? "auto" : "hidden", // Enable vertical scrolling only when hovered
+    // Enable vertical scrolling only when hovered and truncated
+    overflowY: isHovered && isTruncated ? "auto" : "hidden",
     whiteSpace: "normal",
 }))
 
-const TruncatedText = styled("div")<{isHovered: boolean}>(({isHovered}) => ({
-    display: isHovered ? "block" : "-webkit-box",
-    WebkitLineClamp: isHovered ? "unset" : 3,
-    WebkitBoxOrient: isHovered ? "unset" : ("vertical" as const),
+const TruncatedText = styled("div")<{isHovered: boolean; isTruncated: boolean}>(({isHovered, isTruncated}) => ({
+    display: isHovered && isTruncated ? "block" : "-webkit-box",
+    WebkitLineClamp: isHovered && isTruncated ? "unset" : 3,
+    WebkitBoxOrient: isHovered && isTruncated ? "unset" : ("vertical" as const),
     overflow: "hidden",
     textOverflow: "ellipsis",
 }))
@@ -96,7 +99,9 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     })
 
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
+    const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
     const hoverTimeoutRef = useRef<number | null>(null)
+    const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
     // Find frontman node (depth === 0, same as isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
@@ -115,6 +120,33 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         )
         return [...frontmanEdges, ...otherEdges]
     }, [thoughtBubbleEdges, frontmanNode])
+
+    // Check truncation after render, but only when nothing is hovered
+    // (to avoid measuring expanded bubbles)
+    useEffect(() => {
+        // Skip truncation check if any bubble is hovered
+        if (hoveredBubbleId !== null) return
+
+        const newTruncated = new Set<string>()
+
+        textRefs.current.forEach((element, edgeId) => {
+            if (element && element.scrollHeight > element.clientHeight) {
+                newTruncated.add(edgeId)
+            }
+        })
+
+        setTruncatedBubbles((prev) => {
+            // Only update if something changed
+            if (prev.size !== newTruncated.size) return newTruncated
+
+            // Check if the contents are the same
+            for (const id of newTruncated) {
+                if (!prev.has(id)) return newTruncated
+            }
+
+            return prev
+        })
+    }, [sortedEdges, hoveredBubbleId]) // Re-check when edges change or hover state changes
 
     // Notify parent when hover state changes
     const handleHoverChange = useCallback(
@@ -197,6 +229,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 const animationDelay = index * 120
 
                 const isHovered = hoveredBubbleId === edge.id
+                const isTruncated = truncatedBubbles.has(edge.id)
 
                 // Calculate screen X from the right edge
                 // We'll use CSS right positioning in the component
@@ -211,13 +244,26 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                         {/* Thought bubble */}
                         <ThoughtBubble
                             isHovered={isHovered}
+                            isTruncated={isTruncated}
                             animationDelay={animationDelay}
                             bubbleScreenX={bubbleScreenX}
                             bubbleScreenY={bubbleScreenY}
                             onMouseEnter={() => handleHoverChange(edge.id)}
                             onMouseLeave={() => handleHoverChange(null)}
                         >
-                            <TruncatedText isHovered={isHovered}>{parsedText}</TruncatedText>
+                            <TruncatedText
+                                isHovered={isHovered}
+                                isTruncated={isTruncated}
+                                ref={(el: HTMLDivElement | null) => {
+                                    if (el) {
+                                        textRefs.current.set(edge.id, el)
+                                    } else {
+                                        textRefs.current.delete(edge.id)
+                                    }
+                                }}
+                            >
+                                {parsedText}
+                            </TruncatedText>
                         </ThoughtBubble>
                         {/* Triangle pointer - positioned on left (west) side of bubble, touching it */}
                         <div

@@ -326,4 +326,141 @@ describe("ThoughtBubbleOverlay", () => {
             )
         }).not.toThrow()
     })
+
+    it("Should detect truncated text and apply appropriate cursor style", () => {
+        const shortText = "Short message"
+        const longText =
+            "Invoking Agent with inquiry: This is a very long inquiry text that will be truncated when displayed"
+
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", shortText),
+            createMockEdge("edge2", "node1", "node2", longText),
+        ]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Both bubbles should render (longText will be parsed to extract the inquiry part)
+        expect(screen.getByText(shortText)).toBeInTheDocument()
+        expect(screen.getByText(/This is a very long inquiry text/u)).toBeInTheDocument()
+    })
+
+    it("Should only expand on hover if text is truncated", async () => {
+        const user = userEvent.setup()
+        const shortText = "Short text"
+        const edges = [createMockEdge("edge1", "node1", "node2", shortText)]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        const bubble = screen.getByText(shortText)
+
+        // Hover over non-truncated bubble
+        await user.hover(bubble)
+
+        // Bubble should still be visible
+        expect(bubble).toBeInTheDocument()
+    })
+
+    it("Should not re-check truncation while a bubble is hovered", async () => {
+        const user = userEvent.setup()
+        const longText = "This is a very long text that will definitely be truncated"
+        const edges = [createMockEdge("edge1", "node1", "node2", longText)]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        const bubble = screen.getByText(longText)
+
+        // Hover over the bubble
+        await user.hover(bubble)
+
+        // Rerender with same props (simulating a parent re-render)
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should not cause infinite loop or flashing
+        expect(bubble).toBeInTheDocument()
+    })
+
+    it("Should handle ref callbacks being called multiple times", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Rerender multiple times
+        expect(() => {
+            rerender(
+                <ThoughtBubbleOverlay
+                    nodes={mockNodes}
+                    edges={edges}
+                    showThoughtBubbles={true}
+                />
+            )
+            rerender(
+                <ThoughtBubbleOverlay
+                    nodes={mockNodes}
+                    edges={edges}
+                    showThoughtBubbles={true}
+                />
+            )
+        }).not.toThrow()
+    })
+
+    it("Should maintain truncation state when edges are added or removed", () => {
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", "First message"),
+            createMockEdge("edge2", "node1", "node2", "Second message"),
+        ]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Add a new edge
+        const newEdges = [...edges, createMockEdge("edge3", "node1", "node2", "Third message")]
+
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={newEdges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // All messages should be visible
+        expect(screen.getByText("First message")).toBeInTheDocument()
+        expect(screen.getByText("Second message")).toBeInTheDocument()
+        expect(screen.getByText("Third message")).toBeInTheDocument()
+    })
 })

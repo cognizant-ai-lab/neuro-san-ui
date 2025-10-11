@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatBot} from "../../../components/ChatBot/ChatBot"
+import {usePreferences} from "../../../state/Preferences"
+import {useAuthentication} from "../../../utils/Authentication"
 
 // Mock dependencies
 jest.mock("../../../state/Preferences", () => ({
@@ -14,25 +16,23 @@ jest.mock("../../../utils/Authentication", () => ({
     useAuthentication: jest.fn(),
 }))
 
-jest.mock("../../../components/AgentChat/ChatCommon", () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-    const ReactModule = require("react")
-    return {
-        ChatCommon: (props: {id: string; title: string; onClose: () => void; backgroundColor: string}) =>
-            ReactModule.createElement(
-                "div",
-                {"data-testid": "chat-common", id: props.id, style: {backgroundColor: props.backgroundColor}},
-                [
-                    ReactModule.createElement("div", {key: "title"}, props.title),
-                    ReactModule.createElement(
-                        "button",
-                        {key: "button", onClick: props.onClose, "data-testid": "close-button"},
-                        "Close"
-                    ),
-                ]
-            ),
-    }
-})
+jest.mock("../../../components/AgentChat/ChatCommon", () => ({
+    ChatCommon: (props: {id: string; title: string; onClose: () => void; backgroundColor: string}) => (
+        <div
+            data-testid="chat-common"
+            id={props.id}
+            style={{backgroundColor: props.backgroundColor}}
+        >
+            <div>{props.title}</div>
+            <button
+                onClick={props.onClose}
+                data-testid="close-button"
+            >
+                Close
+            </button>
+        </div>
+    ),
+}))
 
 // Mock MUI Grow to render children when `in` prop is true
 jest.mock("@mui/material/Grow", () => ({
@@ -40,10 +40,8 @@ jest.mock("@mui/material/Grow", () => ({
     default: ({children, in: inProp}: {children: unknown; in: boolean}) => (inProp ? children : null),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-const mockUsePreferences = require("../../../state/Preferences").usePreferences as jest.Mock
-// eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-const mockUseAuthentication = require("../../../utils/Authentication").useAuthentication as jest.Mock
+const mockUsePreferences = usePreferences as jest.Mock
+const mockUseAuthentication = useAuthentication as jest.Mock
 
 describe("ChatBot", () => {
     withStrictMocks()
