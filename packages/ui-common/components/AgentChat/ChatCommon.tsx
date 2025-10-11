@@ -918,7 +918,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </Typography>
                     {onClose && (
                         <IconButton
-                            data-testid={`close-button-${id}`}
+                            data-testid="close-button"
                             id={`close-button-${id}`}
                             onClick={onClose}
                         >

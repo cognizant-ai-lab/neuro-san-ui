@@ -57,6 +57,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
             >
                 <Box
                     id={id}
+                    data-testid="chatbot-container"
                     sx={{
                         position: "fixed",
                         bottom: 50,

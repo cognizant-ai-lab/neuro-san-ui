@@ -1,6 +1,14 @@
+import {Edge} from "reactflow"
+
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
-import {layoutLinear, layoutRadial} from "../../../components/MultiAgentAccelerator/GraphLayouts"
+import {
+    addGlobalThoughtBubbleEdge,
+    clearGlobalThoughtBubbleEdges,
+    layoutLinear,
+    layoutRadial,
+    removeGlobalThoughtBubbleEdge,
+} from "../../../components/MultiAgentAccelerator/GraphLayouts"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 
 describe("GraphLayouts", () => {
@@ -204,5 +212,116 @@ describe("GraphLayouts", () => {
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
+    })
+
+    describe("Thought Bubble Edge Management", () => {
+        beforeEach(() => {
+            clearGlobalThoughtBubbleEdges()
+        })
+
+        it("Should add and retrieve global thought bubble edges", () => {
+            const mockEdge = {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test message"},
+            } as Edge
+
+            addGlobalThoughtBubbleEdge("conv1", mockEdge)
+
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+
+            expect(thoughtBubbleEdges).toHaveLength(1)
+            expect(thoughtBubbleEdges[0]).toEqual(
+                expect.objectContaining({
+                    id: "edge1",
+                    source: "node1",
+                    target: "node2",
+                })
+            )
+        })
+
+        it("Should remove global thought bubble edges", () => {
+            const mockEdge = {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test message"},
+            } as Edge
+
+            addGlobalThoughtBubbleEdge("conv1", mockEdge)
+            removeGlobalThoughtBubbleEdge("conv1")
+
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+
+            expect(thoughtBubbleEdges).toHaveLength(0)
+        })
+
+        it("Should prevent duplicate thought bubble edges based on parsed text", () => {
+            const mockEdge1 = {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Invoking Agent with inquiry: Hello World"},
+            } as import("reactflow").Edge
+
+            const mockEdge2 = {
+                id: "edge2",
+                source: "node1",
+                target: "node2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Invoking Agent with inquiry:    hello world   "}, // Same parsed content
+            } as import("reactflow").Edge
+
+            addGlobalThoughtBubbleEdge("conv1", mockEdge1)
+            addGlobalThoughtBubbleEdge("conv2", mockEdge2)
+
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+
+            expect(thoughtBubbleEdges).toHaveLength(1) // Only one should be added due to duplicate detection
+        })
+
+        it("Should enforce max thought bubble limit", () => {
+            // Add more than MAX_GLOBAL_THOUGHT_BUBBLES (5) edges
+            for (let i = 0; i < 7; i += 1) {
+                const mockEdge = {
+                    id: `edge${i}`,
+                    source: "node1",
+                    target: "node2",
+                    type: "thoughtBubbleEdge",
+                    data: {text: `Unique message ${i}`},
+                } as import("reactflow").Edge
+                addGlobalThoughtBubbleEdge(`conv${i}`, mockEdge)
+            }
+
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+
+            expect(thoughtBubbleEdges).toHaveLength(5) // Should be limited to MAX_GLOBAL_THOUGHT_BUBBLES
+        })
+
+        it("Should clear all global thought bubble edges", () => {
+            const mockEdge = {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test message"},
+            } as import("reactflow").Edge
+
+            addGlobalThoughtBubbleEdge("conv1", mockEdge)
+            clearGlobalThoughtBubbleEdges()
+
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+
+            expect(thoughtBubbleEdges).toHaveLength(0)
+        })
     })
 })
