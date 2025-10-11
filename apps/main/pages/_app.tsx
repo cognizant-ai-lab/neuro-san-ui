@@ -23,7 +23,7 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
-import {DEFAULT_NEURO_SAN_SERVER_URL, ENABLE_AUTHENTICATION, LOGO} from "../../../packages/ui-common/const"
+import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
@@ -145,14 +145,14 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getEnvironment() {
-            if (!ENABLE_AUTHENTICATION) {
+            if (!authenticationEnabled()) {
                 // Authentication is disabled, so we don't need to get environment variables
                 setBackendNeuroSanApiUrl(
                     process.env["NEXT_PUBLIC_NEURO_SAN_SERVER_URL"] ?? DEFAULT_NEURO_SAN_SERVER_URL
                 )
                 setAuth0ClientId("")
                 setAuth0Domain("")
-                setSupportEmailAddress(process.env["NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS"] ?? "support@example.com")
+                setSupportEmailAddress(process.env["NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS"] ?? "")
                 return
             }
 
@@ -186,7 +186,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getUserInfo() {
-            if (!ENABLE_AUTHENTICATION) {
+            if (!authenticationEnabled()) {
                 // Authentication is disabled, so we don't need to get user info
                 setCurrentUser("Guest")
                 setPicture(undefined)
@@ -305,7 +305,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider session={session}>
                     <ErrorBoundary id="error_boundary">
-                        {ENABLE_AUTHENTICATION ? (
+                        {authenticationEnabled() ? (
                             <NavbarWrapper
                                 id="nav-bar"
                                 logo={LOGO}
