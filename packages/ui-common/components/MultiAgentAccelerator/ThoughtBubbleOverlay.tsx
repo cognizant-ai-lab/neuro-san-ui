@@ -159,12 +159,13 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             if (bubbleId === null) {
                 // Delay clearing the hover state when mouse leaves to prevent accidental unhover
-                hoverTimeoutRef.current = setTimeout(() => {
+                // "window." to satisfy typescript
+                hoverTimeoutRef.current = window.setTimeout(() => {
                     setHoveredBubbleId(null)
                     if (onBubbleHoverChange) {
                         onBubbleHoverChange(null)
                     }
-                }, 200) as unknown as number // 200ms delay before clearing hover
+                }, 200) // 200ms delay before clearing hover
             } else {
                 // Immediately set hover when mouse enters
                 setHoveredBubbleId(bubbleId)
