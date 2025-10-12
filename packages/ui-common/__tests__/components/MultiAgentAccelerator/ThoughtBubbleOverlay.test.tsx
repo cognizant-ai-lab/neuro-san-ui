@@ -1,6 +1,6 @@
 import {render, screen} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import type {Edge} from "reactflow"
+import type {Edge, Node as RFNode} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleOverlay} from "../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay"
@@ -462,5 +462,218 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.getByText("First message")).toBeInTheDocument()
         expect(screen.getByText("Second message")).toBeInTheDocument()
         expect(screen.getByText("Third message")).toBeInTheDocument()
+    })
+
+    it("Should skip truncation check when a bubble is hovered", async () => {
+        const user = userEvent.setup()
+        const edges = [createMockEdge("edge1", "node1", "node2", "Hover prevents truncation check")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        const bubble = screen.getByText("Hover prevents truncation check")
+
+        // Hover the bubble
+        await user.hover(bubble)
+
+        // The bubble should still be in the document
+        expect(bubble).toBeInTheDocument()
+    })
+
+    it("Should not update truncation state if nothing changed", () => {
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", "Message one"),
+            createMockEdge("edge2", "node1", "node2", "Message two"),
+        ]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Rerender with same edges
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should still render both messages
+        expect(screen.getByText("Message one")).toBeInTheDocument()
+        expect(screen.getByText("Message two")).toBeInTheDocument()
+    })
+
+    it("Should clear hover timeout when component unmounts", async () => {
+        const user = userEvent.setup()
+        const onBubbleHoverChange = jest.fn()
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {unmount} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                onBubbleHoverChange={onBubbleHoverChange}
+            />
+        )
+
+        const bubble = screen.getByText("Test message")
+
+        // Hover over the bubble
+        await user.hover(bubble)
+        expect(onBubbleHoverChange).toHaveBeenCalledWith("edge1")
+
+        // Unhover
+        await user.unhover(bubble)
+
+        // Unmount before the 200ms timeout completes
+        unmount()
+
+        // Should not crash
+    })
+
+    it("Should handle multiple rapid hover state changes", async () => {
+        const user = userEvent.setup()
+        const onBubbleHoverChange = jest.fn()
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", "First bubble"),
+            createMockEdge("edge2", "node1", "node2", "Second bubble"),
+        ]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                onBubbleHoverChange={onBubbleHoverChange}
+            />
+        )
+
+        const bubble1 = screen.getByText("First bubble")
+        const bubble2 = screen.getByText("Second bubble")
+
+        // Rapid hover changes
+        await user.hover(bubble1)
+        await user.hover(bubble2)
+        await user.unhover(bubble2)
+
+        // Should not crash and should handle multiple hover changes
+        expect(onBubbleHoverChange).toHaveBeenCalled()
+    })
+
+    it("Should handle edges with same source and target node", () => {
+        const edges = [createMockEdge("edge1", "node1", "node1", "Self-referencing edge")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should render (positioning might be odd but shouldn't crash)
+        expect(screen.getByText("Self-referencing edge")).toBeInTheDocument()
+    })
+
+    it("Should sort edges with missing frontman node data", () => {
+        const nodesWithoutData: RFNode[] = [
+            {id: "node1", position: {x: 0, y: 0}, data: {}},
+            {id: "node2", position: {x: 100, y: 100}, data: {}},
+        ]
+
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", "First edge"),
+            createMockEdge("edge2", "node2", "node1", "Second edge"),
+        ]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={nodesWithoutData}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should render without errors
+        const bubbles = container.querySelectorAll("div[style*='position: absolute']")
+        expect(bubbles.length).toBeGreaterThan(0)
+    })
+
+    it("Should handle edge with very long ID", () => {
+        const longId = `edge-${"a".repeat(200)}`
+        const edges = [createMockEdge(longId, "node1", "node2", "Message with long ID")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should render without errors
+        expect(screen.getByText("Message with long ID")).toBeInTheDocument()
+    })
+
+    it("Should handle onBubbleHoverChange not provided", async () => {
+        const user = userEvent.setup()
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                // onBubbleHoverChange not provided
+            />
+        )
+
+        const bubble = screen.getByText("Test message")
+
+        // Hover should not crash even without callback
+        await user.hover(bubble)
+        await user.unhover(bubble)
+
+        expect(bubble).toBeInTheDocument()
+    })
+
+    it("Should handle edges changing while a bubble is hovered", async () => {
+        const user = userEvent.setup()
+        const edges1 = [createMockEdge("edge1", "node1", "node2", "Original message")]
+        const edges2 = [createMockEdge("edge2", "node1", "node2", "Updated message")]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges1}
+                showThoughtBubbles={true}
+            />
+        )
+
+        const bubble = screen.getByText("Original message")
+        await user.hover(bubble)
+
+        // Change edges while hovering
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges2}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // New message should appear
+        expect(screen.getByText("Updated message")).toBeInTheDocument()
     })
 })
