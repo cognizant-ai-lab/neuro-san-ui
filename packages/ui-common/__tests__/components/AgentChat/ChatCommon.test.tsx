@@ -768,7 +768,7 @@ describe("ChatCommon", () => {
         expect(screen.getByText(testTitle)).toBeInTheDocument()
 
         // Check that close button is rendered
-        expect(screen.getByTestId("close-button")).toBeInTheDocument()
+        expect(screen.getByTestId("close-button-chat-common-test")).toBeInTheDocument()
     })
 
     it("Should apply custom backgroundColor when provided", async () => {

@@ -14,6 +14,14 @@ jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid="mock-plasma-edge" />,
 }))
 
+jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleEdge", () => ({
+    ThoughtBubbleEdge: () => <g data-testid="mock-thought-bubble-edge" />,
+}))
+
+jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay", () => ({
+    ThoughtBubbleOverlay: () => <div data-testid="mock-thought-bubble-overlay" />,
+}))
+
 // Mock Preferences state
 jest.mock("../../../state/Preferences")
 const mockedUsePreferences = jest.mocked(usePreferences, {shallow: true})
@@ -54,6 +62,8 @@ describe("AgentFlow", () => {
                 startedAt: new Date(),
             },
         ],
+        isAwaitingLlm: false,
+        isStreaming: false,
     }
 
     const renderAgentFlowComponent = (overrides = {}) => {
@@ -252,11 +262,83 @@ describe("AgentFlow", () => {
                             startedAt: new Date(),
                         },
                     ]}
+                    isAwaitingLlm={false}
+                    isStreaming={false}
                 />
             </ReactFlowProvider>
         )
 
         // Should not show radial guides SVG with only one node
         expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+    })
+
+    it("Should render ThoughtBubbleOverlay component", () => {
+        const {container} = renderAgentFlowComponent()
+
+        expect(container.querySelector('[data-testid="mock-thought-bubble-overlay"]')).toBeInTheDocument()
+    })
+
+    it("Should have a thought bubble toggle button", async () => {
+        const {container} = renderAgentFlowComponent()
+
+        const thoughtBubbleButton = container.querySelector("#thought-bubble-button")
+        expect(thoughtBubbleButton).toBeInTheDocument()
+
+        // Click to toggle thought bubbles off
+        await user.click(thoughtBubbleButton)
+
+        // Button should still be there
+        expect(thoughtBubbleButton).toBeInTheDocument()
+    })
+
+    it("Should handle isAwaitingLlm prop correctly", () => {
+        const {container} = renderAgentFlowComponent({isAwaitingLlm: true})
+
+        // When awaiting LLM, legend and controls should not be rendered
+        expect(container.querySelector("#test-flow-id-legend")).not.toBeInTheDocument()
+        expect(container.querySelector("#radial-layout-button")).not.toBeInTheDocument()
+    })
+
+    it("Should render legend and controls when not awaiting LLM", () => {
+        const {container} = renderAgentFlowComponent({isAwaitingLlm: false})
+
+        // When not awaiting LLM, legend and controls should be rendered
+        expect(container.querySelector("#test-flow-id-legend")).toBeInTheDocument()
+        expect(container.querySelector("#radial-layout-button")).toBeInTheDocument()
+    })
+
+    it("Should handle conversations with text for thought bubbles", () => {
+        const conversationsWithText = [
+            {
+                id: "test-conv-with-text",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "What is the weather today?",
+            },
+        ]
+
+        const {container} = renderAgentFlowComponent({
+            currentConversations: conversationsWithText,
+            isStreaming: true,
+        })
+
+        // Component should render successfully with conversation text
+        expect(container).toBeInTheDocument()
+    })
+
+    it("Should handle null currentConversations", () => {
+        const {container} = renderAgentFlowComponent({currentConversations: null})
+
+        // Should render without errors
+        expect(container).toBeInTheDocument()
+        verifyAgentNodes(container)
+    })
+
+    it("Should render with isStreaming prop", () => {
+        const {container} = renderAgentFlowComponent({isStreaming: true})
+
+        // Should render without errors
+        expect(container).toBeInTheDocument()
+        verifyAgentNodes(container)
     })
 })
