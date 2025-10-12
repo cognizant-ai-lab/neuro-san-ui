@@ -62,7 +62,7 @@ export const removeGlobalThoughtBubbleEdge = (conversationId: string) => {
     globalThoughtBubbleEdges.delete(conversationId)
 }
 
-const getGlobalThoughtBubbleEdges = (): Edge<EdgeProps>[] => {
+export const getGlobalThoughtBubbleEdges = (): Edge<EdgeProps>[] => {
     return Array.from(globalThoughtBubbleEdges.values()).map((item) => item.edge)
 }
 
