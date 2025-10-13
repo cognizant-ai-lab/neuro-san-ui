@@ -27,9 +27,6 @@ on:
             revision:
                 required: false
                 type: string
-        secrets:
-            LEAF_APP_PRIVATE_KEY:
-                required: true
 
 env:
     # AWS info needed to push the image to ECR

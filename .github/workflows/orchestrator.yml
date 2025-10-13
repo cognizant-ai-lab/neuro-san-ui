@@ -56,8 +56,6 @@ jobs:
         needs: setup
         with:
             revision: ${{ github.ref }}
-        secrets:
-            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
 
     # Step 2: Build Docker image (only for main/release)
     build:
@@ -67,8 +65,6 @@ jobs:
         with:
             revision: ${{ github.ref }}
             DISPLAY_VERSION: ${{ needs.setup.outputs.version }}
-        secrets:
-            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
 
     # Step 3: Deploy to environment (only for main/release)
     # Not yet implemented.
