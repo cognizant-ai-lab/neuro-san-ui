@@ -135,7 +135,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         hoveredBubbleIdRef.current = bubbleId
     }, [])
 
-    // Debug: track when bubble state changes unexpectedly and fix re-render issues
     useEffect(() => {
         // If bubbles are empty but processedTexts isn't, component was re-rendered/re-mounted
         // Clear orphaned processedTexts to prevent blocking new bubbles
