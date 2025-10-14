@@ -163,7 +163,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
             // Check against what user actually sees (parsed text) from both bubbles and edges
             const existingParsedTexts = new Set(prevBubbles.map((b) => normalizeText(parseInquiryFromText(b.text))))
-            
+
             // Also check existing edges to avoid duplicates
             thoughtBubbleEdges.forEach((edgeData) => {
                 const edgeText = (edgeData.edge.data as {text?: string})?.text

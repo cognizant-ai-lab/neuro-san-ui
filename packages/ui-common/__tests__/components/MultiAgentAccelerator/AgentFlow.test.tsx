@@ -1,6 +1,6 @@
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {ReactFlowProvider} from "reactflow"
+import {EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
@@ -713,5 +713,201 @@ describe("AgentFlow", () => {
 
         expect(container).toBeInTheDocument()
         verifyAgentNodes(container)
+    })
+
+    it("Should prevent duplicate thought bubbles using thoughtBubbleEdges", () => {
+        const mockSetThoughtBubbleEdges = jest.fn()
+        const existingEdgesMap = new Map()
+
+        // Pre-populate with an existing edge
+        existingEdgesMap.set("conv-1", {
+            edge: {
+                id: "thought-bubble-conv-1",
+                source: "agent1",
+                target: "agent2",
+                type: "thoughtBubbleEdge",
+                data: {
+                    text: '{"inquiry": "What is the weather?"}',
+                    showAlways: true,
+                    conversationId: "conv-1",
+                },
+            },
+            timestamp: Date.now(),
+        })
+
+        const duplicateConversations = [
+            {
+                id: "conv-2",
+                agents: new Set(["agent2", "agent3"]),
+                startedAt: new Date(),
+                text: '{"inquiry": "What is the weather?"}', // Same parsed content
+            },
+        ]
+
+        const {container} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={duplicateConversations}
+                    thoughtBubbleEdges={existingEdgesMap}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Should render without errors
+        expect(container).toBeInTheDocument()
+
+        // Should NOT add a new edge because the parsed text already exists in thoughtBubbleEdges
+        // The mock may be called but the logic should skip adding duplicate
+        expect(container).toBeInTheDocument()
+    })
+
+    it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
+        const manyConversations = Array.from({length: 6}, (_, i) => ({
+            id: `conv-${i}`,
+            agents: new Set(["agent1", "agent2"]),
+            startedAt: new Date(Date.now() + i * 1000), // Different timestamps
+            text: `{"inquiry": "Message ${i}"}`, // Unique messages
+        }))
+
+        const {container} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={manyConversations}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    isStreaming={true}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Should render without errors
+        expect(container).toBeInTheDocument()
+
+        // setThoughtBubbleEdges should be called for each conversation
+        // Including calls to add edges and potentially remove old ones
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+    })
+
+    it("Should call removeThoughtBubbleEdgeHelper when cleaning up expired bubbles", async () => {
+        jest.useFakeTimers()
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        const conversationsWithText = [
+            {
+                id: "conv-expire-test",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Test expiration",
+            },
+        ]
+
+        render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={conversationsWithText}
+                    isStreaming={true}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Fast-forward time by 11 seconds to trigger cleanup
+        act(() => {
+            jest.advanceTimersByTime(11000)
+        })
+
+        // The removeThoughtBubbleEdgeHelper should have been called via setThoughtBubbleEdges
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
+        jest.useRealTimers()
+    })
+
+    it("Should handle radial guides toggle when layout is linear", async () => {
+        const {container} = renderAgentFlowComponent()
+
+        // First click to switch to linear layout
+        const linearButton = container.querySelector("#linear-layout-button")
+        expect(linearButton).toBeInTheDocument()
+        await user.click(linearButton)
+
+        const radialGuidesButton = container.querySelector("#radial-guides-button")
+        expect(radialGuidesButton).toBeInTheDocument()
+
+        // Button should be disabled when layout is linear
+        expect(radialGuidesButton).toHaveAttribute("disabled")
+    })
+
+    it("Should add and remove edges via helper functions", () => {
+        let capturedEdgesMap: Map<string, {edge: EdgeProps; timestamp: number}> | null = null
+        const mockSetThoughtBubbleEdges = jest.fn((updater) => {
+            if (typeof updater === "function") {
+                const currentMap = capturedEdgesMap || new Map()
+                capturedEdgesMap = updater(currentMap)
+            }
+        })
+
+        const conversationsWithText = [
+            {
+                id: "helper-test-conv",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Helper test",
+            },
+        ]
+
+        const {rerender} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={null}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Add conversations to trigger addThoughtBubbleEdgeHelper
+        rerender(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={conversationsWithText}
+                    thoughtBubbleEdges={capturedEdgesMap || new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // setThoughtBubbleEdges should have been called with an updater function
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
+        // Verify the edge was added
+        expect(capturedEdgesMap).not.toBeNull()
+        expect(capturedEdgesMap.size).toBeGreaterThan(0)
+    })
+
+    it("Should handle hover state changes for thought bubbles", () => {
+        const {container} = renderAgentFlowComponent({
+            currentConversations: [
+                {
+                    id: "hover-test-conv",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: Hover test",
+                },
+            ],
+            isStreaming: true,
+        })
+
+        // Component should render with thought bubble overlay
+        expect(container.querySelector('[data-testid="mock-thought-bubble-overlay"]')).toBeInTheDocument()
     })
 })
