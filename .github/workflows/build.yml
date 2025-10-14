@@ -38,8 +38,8 @@ on:
 env:
     # AWS info needed to push the image to ECR
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
-    ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
-    ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-san/neuro-san-ui' }}
+    ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+    ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
     # and the Node.js version which is a repo-level variable
     NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
