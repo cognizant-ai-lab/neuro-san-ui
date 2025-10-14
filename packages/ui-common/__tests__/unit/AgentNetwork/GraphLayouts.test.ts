@@ -79,7 +79,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should generate a radial layout", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, null, false)
+        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, null, false, new Map())
 
         expect(nodes).toHaveLength(7)
         expect(edges).toHaveLength(6)
@@ -144,7 +144,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle cycles in the graph", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, null, false)
+        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, null, false, new Map())
 
         expect(nodes).toHaveLength(4)
 
@@ -171,7 +171,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle direct and transitive dependencies in the graph", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, null, false)
+        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, null, false, new Map())
 
         // Check nodes
         expect(nodes).toHaveLength(3)
@@ -209,7 +209,7 @@ describe("GraphLayouts", () => {
             },
         ]
 
-        const params: Parameters<typeof layoutLinear> = [agentCounts, agents, conversations, true]
+        const params: Parameters<typeof layoutLinear> = [agentCounts, agents, conversations, true, new Map()]
         const {edges} = layoutLinear(...params)
 
         // There should be at least one edge since a->b is a conversation agent edge
@@ -220,7 +220,7 @@ describe("GraphLayouts", () => {
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
     ])("Should handle a degenerate single-node graph in $name layout", async ({layoutFunction}) => {
-        const {nodes, edges} = layoutFunction(new Map(), singleNodeNetwork, null, false)
+        const {nodes, edges} = layoutFunction(new Map(), singleNodeNetwork, null, false, new Map())
 
         expect(nodes).toHaveLength(1)
         expect(edges).toHaveLength(0)
@@ -234,7 +234,7 @@ describe("GraphLayouts", () => {
     ])("Should handle a disconnected graph in $name layout", async ({layoutFunction}) => {
         // We don't really support this case; "should never happen". This test is to make sure we at least
         // don't crash. This also exercises the (invalid) "multiple frontmen" case
-        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, null, false)
+        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, null, false, new Map())
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input

@@ -64,6 +64,8 @@ describe("AgentFlow", () => {
         ],
         isAwaitingLlm: false,
         isStreaming: false,
+        thoughtBubbleEdges: new Map(),
+        setThoughtBubbleEdges: jest.fn(),
     }
 
     const renderAgentFlowComponent = (overrides = {}) => {
@@ -160,6 +162,8 @@ describe("AgentFlow", () => {
                             startedAt: new Date(),
                         },
                     ]}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={jest.fn()}
                 />
             </ReactFlowProvider>
         )
@@ -264,6 +268,8 @@ describe("AgentFlow", () => {
                     ]}
                     isAwaitingLlm={false}
                     isStreaming={false}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={jest.fn()}
                 />
             </ReactFlowProvider>
         )
