@@ -31,10 +31,6 @@ jest.mock("next-auth/react")
 
 jest.mock("../../../../packages/ui-common/controller/agent/Agent")
 
-jest.mock("../../../../packages/ui-common/const", () => ({
-    ENABLE_AUTHENTICATION: true,
-}))
-
 const conversationMock = jest.fn()
 
 jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow", () => ({
