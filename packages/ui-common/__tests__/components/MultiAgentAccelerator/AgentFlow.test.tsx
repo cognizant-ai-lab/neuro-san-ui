@@ -1152,4 +1152,83 @@ describe("AgentFlow", () => {
         // Should render without errors (conversation without text should be skipped)
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
     })
+
+    it("Should not add duplicate conversations with same ID", () => {
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        const conversation = {
+            id: "conv-duplicate-id",
+            agents: new Set(["agent1", "agent2"]),
+            startedAt: new Date(),
+            text: "Invoking Agent with inquiry: Duplicate ID test",
+        }
+
+        render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={[conversation, conversation]} // Same conversation twice
+                    isStreaming={true}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Should only add once despite being in the array twice
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalledTimes(1)
+    })
+
+    it("Should handle clearing thoughtBubbleEdges map", () => {
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        const conversation1 = {
+            id: "conv-clear-test",
+            agents: new Set(["agent1", "agent2"]),
+            startedAt: new Date(),
+            text: "Invoking Agent with inquiry: Clear test",
+        }
+
+        // Render with edges present (non-empty map)
+        const edgesMap = new Map()
+        edgesMap.set("edge-1", {
+            edge: {
+                id: "test-edge-1",
+                source: "agent1",
+                target: "agent2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test"},
+            },
+            timestamp: Date.now(),
+        })
+
+        const {rerender} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={[conversation1]}
+                    thoughtBubbleEdges={edgesMap}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Verify it renders with non-empty map (covers thoughtBubbleEdges.size !== 0 branch)
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
+        // Now clear the edges map
+        rerender(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={[conversation1]}
+                    thoughtBubbleEdges={new Map()} // Empty map
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Should render without errors when edges are cleared (covers thoughtBubbleEdges.size === 0 branch)
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+    })
 })

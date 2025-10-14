@@ -191,7 +191,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     const normalizedParsedText = normalizeText(parsedText)
 
                     // Skip if we've already processed this conversation ID or if the text is a duplicate
-                    if (!existingParsedTexts.has(normalizedParsedText) && !processedConversationIdsRef.current.has(conv.id)) {
+                    if (
+                        !existingParsedTexts.has(normalizedParsedText) &&
+                        !processedConversationIdsRef.current.has(conv.id)
+                    ) {
                         // Create an AgentConversation object representing the active thought bubble.
                         // Use the conversation id from the incoming conversation and set startedAt
                         // to "now" so the bubble timeout is measured from when the bubble appeared.
