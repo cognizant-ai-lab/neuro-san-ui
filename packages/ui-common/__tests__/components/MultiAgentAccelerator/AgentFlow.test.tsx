@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react"
+import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "reactflow"
 
@@ -496,7 +496,6 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle window resize events", async () => {
-        const {act} = await import("react-dom/test-utils")
         const {container} = renderAgentFlowComponent()
 
         // Trigger resize wrapped in act
@@ -606,6 +605,112 @@ describe("AgentFlow", () => {
         const {container} = renderAgentFlowComponent({currentConversations: specialCharsConv})
 
         // Should render without errors
+        expect(container).toBeInTheDocument()
+        verifyAgentNodes(container)
+    })
+
+    it("Should call setThoughtBubbleEdges when conversations with text are added", () => {
+        const mockSetThoughtBubbleEdges = jest.fn()
+        const conversationsWithText = [
+            {
+                id: "conv-with-text",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Test message",
+            },
+        ]
+
+        const {rerender} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={null}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Update with conversations that have text
+        rerender(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={conversationsWithText}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Should have called setThoughtBubbleEdges to add the thought bubble
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+    })
+
+    it("Should handle thought bubble edges in the layout", () => {
+        const thoughtBubbleEdgesMap = new Map()
+        thoughtBubbleEdgesMap.set("test-edge", {
+            edge: {
+                id: "thought-bubble-test",
+                source: "agent1",
+                target: "agent2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test thought bubble"},
+            },
+            timestamp: Date.now(),
+        })
+
+        const {container} = renderAgentFlowComponent({
+            thoughtBubbleEdges: thoughtBubbleEdgesMap,
+        })
+
+        // Should render successfully with thought bubble edges
+        expect(container).toBeInTheDocument()
+        verifyAgentNodes(container)
+    })
+
+    it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", async () => {
+        jest.useFakeTimers()
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        const conversationsWithText = [
+            {
+                id: "conv-timeout-test",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Test timeout message",
+            },
+        ]
+
+        render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={conversationsWithText}
+                    isStreaming={true}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
+        act(() => {
+            jest.advanceTimersByTime(11000)
+        })
+
+        // The cleanup should have been triggered
+        // Note: The actual cleanup logic depends on the effect firing
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
+        jest.useRealTimers()
+    })
+
+    it("Should handle empty thought bubble edges map", () => {
+        const {container} = renderAgentFlowComponent({
+            thoughtBubbleEdges: new Map(),
+        })
+
         expect(container).toBeInTheDocument()
         verifyAgentNodes(container)
     })
