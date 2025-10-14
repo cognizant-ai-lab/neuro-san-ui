@@ -301,9 +301,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }))
     }, [activeThoughtBubbles])
 
-    // Create stable callback for layout functions
-    // Removed unused getFilteredConversations
-
     const {darkMode} = usePreferences()
 
     // Shadow color for icon. TODO: use MUI theme system instead.
