@@ -78,7 +78,7 @@ describe("GraphLayouts", () => {
         expect(nodes[1].position.x).toBeLessThan(nodes[2].position.x)
     })
 
-    it("Should generate a radial layout", async () => {
+    it("Should generate a radial layout", () => {
         const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, null, false, new Map())
 
         expect(nodes).toHaveLength(7)
@@ -143,7 +143,7 @@ describe("GraphLayouts", () => {
         expect(agent7.position.x).toBeLessThan(agent4.position.x)
     })
 
-    it("Should handle cycles in the graph", async () => {
+    it("Should handle cycles in the graph", () => {
         const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, null, false, new Map())
 
         expect(nodes).toHaveLength(4)
@@ -231,7 +231,7 @@ describe("GraphLayouts", () => {
     test.each([
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
-    ])("Should handle a disconnected graph in $name layout", async ({layoutFunction}) => {
+    ])("Should handle a disconnected graph in $name layout", ({layoutFunction}) => {
         // We don't really support this case; "should never happen". This test is to make sure we at least
         // don't crash. This also exercises the (invalid) "multiple frontmen" case
         const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, null, false, new Map())
