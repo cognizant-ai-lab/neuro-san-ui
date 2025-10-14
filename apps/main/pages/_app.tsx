@@ -23,13 +23,17 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
-import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL, LOGO} from "../../../packages/ui-common/const"
+import {
+    authenticationEnabled,
+    DEFAULT_NEURO_SAN_SERVER_URL,
+    DEFAULT_USER_IMAGE,
+    LOGO,
+} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {APP_THEME, BRAND_COLORS} from "../theme"
-import {DEFAULT_USER_IMAGE} from "../../../packages/ui-common/const"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -67,7 +71,7 @@ function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
 
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
-export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
+export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): ReactElement {
     const {
         auth0ClientId,
         auth0Domain,
