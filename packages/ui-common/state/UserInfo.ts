@@ -5,7 +5,7 @@ import {OidcProvider} from "../utils/types"
 /**
  * Zustand state store for "feature flags" like, "generic branding".
  */
-interface UserInfoStore {
+export interface UserInfoStore {
     currentUser: string | undefined
     setCurrentUser: (username: string) => void
 
