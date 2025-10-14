@@ -5,7 +5,7 @@ import {ReactElement} from "react"
 import {LOGO} from "../../const"
 import {useEnvironmentStore} from "../../state/environment"
 import {useUserInfoStore} from "../../state/UserInfo"
-import {smartSignOut} from "../../utils/Authentication"
+import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Navbar} from "../Common/Navbar"
 
@@ -26,10 +26,12 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
     const router = useRouter()
 
     // Access user info store
-    const {currentUser, setCurrentUser, picture, setPicture, oidcProvider} = useUserInfoStore()
+    const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 
     // Infer authentication type
     const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
+
+    const {data: {user: userInfo} = {}} = useAuthentication()
 
     async function handleSignOut() {
         // Clear our state storage variables
@@ -49,7 +51,7 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
                 authenticationType={authenticationType}
                 signOut={handleSignOut}
                 supportEmailAddress={supportEmailAddress}
-                userInfo={{name: currentUser, image: picture}}
+                userInfo={userInfo}
             />
             <Box
                 id={id}

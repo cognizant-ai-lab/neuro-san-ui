@@ -25,8 +25,8 @@ export function useAuthentication() {
     return {
         data: {
             user: {
-                name: albUser || session?.user?.name || "Guest",
-                image: albPicture || session?.user?.image || undefined,
+                name: albUser || session?.user?.name,
+                image: albPicture || session?.user?.image,
             },
         },
     }

@@ -5,7 +5,7 @@
 /**
  * The OIDC provider types we know about
  */
-export type OidcProvider = "Github" | "AD" | "NextAuth"
+export type OidcProvider = "Github" | "AD" | "NextAuth" | "None"
 
 /**
  * Response from the userInfo API

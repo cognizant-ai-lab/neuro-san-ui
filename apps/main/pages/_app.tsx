@@ -29,6 +29,7 @@ import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {APP_THEME, BRAND_COLORS} from "../theme"
+import {DEFAULT_USER_IMAGE} from "../../../packages/ui-common/const"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -64,18 +65,6 @@ function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
     )
 }
 
-// eslint-disable-next-line react/no-multi-comp
-function NavbarWrapperNoAuth(props: Omit<NavbarProps, "userInfo">): ReactElement {
-    const userInfo = {name: "Guest", image: ""}
-    return (
-        <Navbar
-            {...props}
-            id="nav-bar"
-            userInfo={userInfo}
-        />
-    )
-}
-
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
 export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
@@ -97,7 +86,11 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
+    const authenticationType = authenticationEnabled()
+        ? currentUser
+            ? `ALB using ${oidcProvider}`
+            : "NextAuth"
+        : "None"
 
     const [pageTitle, setPageTitle] = useState<string>(DEFAULT_APP_NAME)
 
@@ -189,8 +182,8 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
             if (!authenticationEnabled()) {
                 // Authentication is disabled, so we don't need to get user info
                 setCurrentUser("Guest")
-                setPicture(undefined)
-                setOidcProvider(undefined)
+                setPicture(DEFAULT_USER_IMAGE)
+                setOidcProvider("None")
                 return
             }
 
@@ -262,7 +255,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 <LoadingSpinner id="loading-header" />
             )
         } else {
-            return Component.authRequired ? (
+            return authenticationEnabled() && Component.authRequired ? (
                 <Auth>
                     <Component
                         id="body-auth-component"
@@ -303,29 +296,17 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
-                <SessionProvider session={session}>
+                <SessionProvider>
                     <ErrorBoundary id="error_boundary">
-                        {authenticationEnabled() ? (
-                            <NavbarWrapper
-                                id="nav-bar"
-                                logo={LOGO}
-                                query={query}
-                                pathname={pathname}
-                                authenticationType={authenticationType}
-                                signOut={handleSignOut}
-                                supportEmailAddress={supportEmailAddress}
-                            />
-                        ) : (
-                            <NavbarWrapperNoAuth
-                                id="nav-bar"
-                                logo={LOGO}
-                                query={query}
-                                pathname={pathname}
-                                authenticationType="None"
-                                supportEmailAddress={supportEmailAddress}
-                                signOut={undefined}
-                            />
-                        )}
+                        <NavbarWrapper
+                            id="nav-bar"
+                            logo={LOGO}
+                            query={query}
+                            pathname={pathname}
+                            authenticationType={authenticationType}
+                            signOut={handleSignOut}
+                            supportEmailAddress={supportEmailAddress}
+                        />
                         <Container
                             id="body-container"
                             maxWidth={false}
