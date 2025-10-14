@@ -1,94 +1,172 @@
-# This pipeline runs the lint and unit tests on the ui code.
+# ================================================================================
+# Test Workflow
+# ================================================================================
+# Purpose: Run comprehensive code quality checks and unit tests
+#
+# Trigger Scenarios:
+# - Called by orchestrator workflow (automatic flow)
+# - Manual trigger: Allows testing any arbitrary version/branch
+# ================================================================================
 
-name: Tests and linting
+# Note: this is mostly copy-pasta from the same Action in neuro-ui :thumbsdown:
+# See: https://leaf-ai.atlassian.net/browse/UN-3573
+
+name: Test
+
+on:
+    # Allow manual workflow dispatch
+    workflow_dispatch:
+        inputs:
+            revision:
+                description: "Git ref (tag/branch/SHA) to checkout"
+                required: false
+                type: string
+    # Allow being called by other workflows
+    workflow_call:
+        inputs:
+            revision:
+                required: false
+                type: string
+
+env:
+    # AWS info needed to push the image to ECR
+    AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+    # and the nodejs version which is a repo-level variable
+    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
     contents: read
 
-on:
-    pull_request:
-        branches:
-            - main
 jobs:
     test:
         runs-on: ubuntu-latest
-        if: github.base_ref == 'main'
-        environment: test
-        container:
-            # Specific version. 22.18+ is bad due to https://github.com/nodejs/node/issues/59364 and breaks tests.
-            image: node:22.17.1-alpine
-
         steps:
-            - name: Checkout
+            - name: Checkout repository
               uses: actions/checkout@v4
-
-            - name: Install dependencies
-              run: |
-                  apk add --quiet --no-progress --upgrade bash shellcheck
+              with:
+                  fetch-depth: 0
+                  ref: ${{ inputs.revision || github.ref }}
 
             # Install yarn version from package.json packageManager field using corepack
             # "corepack install" reads package.json and installs the right yarn version from the packageManager field
-            - name: Set yarn version
+            - name: Set up yarn version
               run: |
                   corepack enable
                   corepack install 
                   yarn --version
 
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  # Specific version. 22.18+ is bad due to https://github.com/nodejs/node/issues/59364 and breaks tests.
+                  node-version: 22.17.1
+                  cache: yarn
+
             - name: Install dependencies
               run: |
-                  yarn --version
+                  rm -rf node_modules
+                  yarn cache clean --all
                   yarn install
 
-            - name: Generate OpenAPI types
+            - name: Install prerequisites for code generation
               run: |
-                  yarn generate
+                  sudo apt-get update -y > /dev/null
+                  sudo apt-get install -y --no-install-recommends --no-install-suggests \
+                    bash shellcheck > /dev/null
 
-            - name: Run tsc compilation
-              run: |
-                  yarn tsc --version
-                  yarn tsc --noEmit
+            - name: Generate OpenAPI types
+              run: yarn generate
 
             - name: Run ESLint
-              run: build_scripts/run_eslint.sh
-
-            - name: Run shellcheck
+              id: eslint
+              continue-on-error: true
               run: |
-                  shellcheck --version
-                  build_scripts/run_shellcheck.sh
+                  ./build_scripts/run_eslint.sh
 
-            - name: Run Prettier
+            - name: Run ShellCheck
+              id: shellcheck
+              continue-on-error: true
+              run: |
+                  ./build_scripts/run_shellcheck.sh
+
+            - name: Run Prettier (formatting check)
+              id: prettier
+              continue-on-error: true
               run: |
                   yarn check-format --version
                   yarn check-format
 
-            - name: Run knip
+            - name: Run knip (unused dependencies/exports check)
+              id: knip
+              continue-on-error: true
               run: |
                   yarn knip --version
                   yarn knip
 
-            - name: Run tests
+            - name: Lint Dockerfiles (hadolint)
+              uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5
+              id: hadolint
+              continue-on-error: true
+              with:
+                  dockerfile: apps/main/Dockerfile
+                  recursive: true
+                  failure-threshold: info
+
+            - name: Docker build check
+              id: dockerbuild
+              continue-on-error: true
               run: |
+                  docker build --quiet --check --file apps/main/Dockerfile . > /dev/null
+
+            - name: Run TypeScript compilation
+              id: tsc
+              continue-on-error: true
+              run: |
+                  yarn tsc --version
+                  yarn tsc
+
+            - name: Run unit tests
+              id: unit
+              continue-on-error: true
+              run: |
+                  node --version
                   yarn test --version
                   yarn test
 
-            - name: Notify Slack on success
-              if: success()
-              uses: slackapi/slack-github-action@v2.1.1
-              with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-                  webhook-type: incoming-webhook
-                  payload: |
-                      {
-                          "text": "✅ *Tests Passed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
-                      }
+            - name: Roll up QA results and set final job status
+              if: always()
+              env:
+                  STATUS_eslint: ${{ steps.eslint.outcome }}
+                  STATUS_shellcheck: ${{ steps.shellcheck.outcome }}
+                  STATUS_prettier: ${{ steps.prettier.outcome }}
+                  STATUS_knip: ${{ steps.knip.outcome }}
+                  STATUS_hadolint: ${{ steps.hadolint.outcome }}
+                  STATUS_dockerbuild: ${{ steps.dockerbuild.outcome }}
+                  STATUS_tsc: ${{ steps.tsc.outcome }}
+                  STATUS_unit: ${{ steps.unit.outcome }}
+              run: |
+                  failures=()
+                  summarize() {
+                    step_id="$1"; step_name="$2"
+                    status_var="STATUS_${step_id}"
+                    status_value="${!status_var:-unknown}"
+                    if [ "$status_value" = "failure" ] || [ "$status_value" = "cancelled" ]; then
+                      failures+=("$step_name")
+                    fi
+                    echo "- ${step_name}: ${status_value}" >> "$GITHUB_STEP_SUMMARY"
+                  }
 
-            - name: Notify Slack on failure
-              if: failure()
-              uses: slackapi/slack-github-action@v2.1.1
-              with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-                  webhook-type: incoming-webhook
-                  payload: |
-                      {
-                          "text": "❌ *Tests Failed* for `${{ github.repository }}` on `${{ github.ref_name }}`"
-                      }
+                  echo "### Quality and Test Results" >> "$GITHUB_STEP_SUMMARY"
+                  summarize eslint "ESLint"
+                  summarize shellcheck "ShellCheck"
+                  summarize prettier "Prettier"
+                  summarize hadolint "hadolint"
+                  summarize dockerbuild "dockerbuild"
+                  summarize knip "knip"
+                  summarize tsc "TypeScript Compile"
+                  summarize unit "Unit Tests"
+
+                  if [ ${#failures[@]} -gt 0 ]; then
+                    echo "Failures detected: ${failures[*]}" >> "$GITHUB_STEP_SUMMARY"
+                    exit 1
+                  fi

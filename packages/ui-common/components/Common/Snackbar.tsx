@@ -3,7 +3,7 @@ import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
-import {ForwardedRef, forwardRef} from "react"
+import {ForwardedRef, forwardRef, JSX as ReactJSX} from "react"
 
 import {usePreferences} from "../../state/Preferences"
 
@@ -39,7 +39,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
     function Snackbar(
         {description, hideIconVariant = false, iconVariant, id, message, variant}: SnackbarProps,
         ref: ForwardedRef<HTMLDivElement>
-    ): JSX.Element {
+    ): ReactJSX.Element {
         const {closeSnackbar} = useSnackbar()
         const handleCloseSnackbar = () => closeSnackbar(id)
         const icon = iconVariant[variant]

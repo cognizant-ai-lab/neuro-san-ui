@@ -3,12 +3,13 @@ import {Typography} from "@mui/material"
 import Breadcrumbs from "@mui/material/Breadcrumbs"
 import Grid from "@mui/material/Grid"
 import startCase from "lodash-es/startCase.js"
+import {JSX as ReactJSX} from "react"
 
 interface NeuroAIBreadcrumbsProps {
     readonly pathname?: string
 }
 
-export const NeuroAIBreadcrumbs = ({pathname}: NeuroAIBreadcrumbsProps): JSX.Element => {
+export const NeuroAIBreadcrumbs = ({pathname}: NeuroAIBreadcrumbsProps): ReactJSX.Element => {
     const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
     const pageName = startCase(urlPaths?.at(-1))
 
