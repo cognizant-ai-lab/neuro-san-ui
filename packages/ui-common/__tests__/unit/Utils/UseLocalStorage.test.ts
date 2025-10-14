@@ -3,6 +3,8 @@ import {act, renderHook} from "@testing-library/react"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {useLocalStorage} from "../../../utils/useLocalStorage"
 
+type Cyclic = {self?: Cyclic}
+
 describe("useLocalStorage", () => {
     withStrictMocks()
 
@@ -44,5 +46,65 @@ describe("useLocalStorage", () => {
         })
         expect(window.localStorage.getItem(itemKey)).toBe(JSON.stringify(initialValue + 1))
         expect(result.current[0]).toBe(2)
+    })
+
+    it("should return initial value and not throw when localStorage contains invalid JSON", () => {
+        const itemKey = "bad-json"
+        const initialValue = {a: 1}
+        // Put invalid JSON into localStorage
+        window.localStorage.setItem(itemKey, "not-a-json")
+
+        const spy = jest.spyOn(console, "error").mockImplementation()
+        const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
+        expect(result.current[0]).toEqual(initialValue)
+        spy.mockRestore()
+    })
+
+    it("should return initial value when window is undefined (server-side)", () => {
+        const itemKey = "ssr-key"
+        const initialValue = "server"
+
+        // Temporarily remove global window to simulate SSR
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const realWindow = global.window
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        global.window = undefined
+
+        try {
+            const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
+            expect(result.current[0]).toBe(initialValue)
+        } finally {
+            // Restore window
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            global.window = realWindow
+        }
+    })
+
+    it("should catch and log when localStorage.setItem throws during setValue", () => {
+        const itemKey = "throw-set"
+        const initialValue = "init"
+
+        // Use a cyclic value so JSON.stringify will throw and the catch block runs
+        const consoleSpy = jest.spyOn(console, "error").mockImplementation()
+
+        const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
+
+        const cyclic: Cyclic = {}
+        cyclic.self = cyclic
+
+        act(() => {
+            // This will set state but JSON.stringify(cyclic) will throw, hitting the catch
+            result.current[1](cyclic)
+        })
+
+        // state should update to the cyclic object (stored in memory)
+        expect(result.current[0]).toBe(cyclic)
+        // console.error should have been called because JSON.stringify threw
+        expect(consoleSpy).toHaveBeenCalled()
+
+        consoleSpy.mockRestore()
     })
 })
