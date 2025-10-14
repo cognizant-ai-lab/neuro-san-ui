@@ -91,14 +91,10 @@ export const parseInquiryFromText = (text: string): string => {
             }
         }
 
-        // Try to parse direct JSON format
+        // Try to parse direct JSON format. Both "inquiry" and "Inquiry" keys can be present.
+        // If inquiry not found, return cleaned text.
         const parsed = JSON.parse(cleaned)
-        // Both "inquiry" and "Inquiry" keys can be present
-        if (parsed.inquiry) return parsed.inquiry
-        if (parsed.Inquiry) return parsed.Inquiry
-
-        // If inquiry not found, return cleaned text
-        return cleaned
+        return parsed.inquiry || parsed.Inquiry || cleaned
     } catch {
         // If not JSON, try to extract a readable line
         const inquiryRegex = /inquiry\s*[:=]\s*["']?(?<inquiryVal>[^\n"']+)["']?/iu

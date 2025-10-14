@@ -145,17 +145,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         hoveredBubbleIdRef.current = bubbleId
     }, [])
 
-    useEffect(() => {
-        // If bubbles are empty but processedTexts isn't, component was re-rendered/re-mounted
-        // Clear orphaned processedTexts to prevent blocking new bubbles
-        if (activeThoughtBubbles.length === 0 && processedTextsRef.current.size > 0) {
-            processedTextsRef.current.clear()
-        }
-    }, [activeThoughtBubbles])
-
-    // Track processed conversations to prevent duplicates across multiple effect calls
-    const processedTextsRef = useRef<Set<string>>(new Set())
-
     // Effect to add new thought bubbles - only when we actually have conversations to process
     useEffect(() => {
         if (!currentConversations || currentConversations.length === 0) {
@@ -172,8 +161,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 return text.toLowerCase().replace(/\s+/gu, " ").trim()
             }
 
-            // Check against what user actually sees (parsed text)
+            // Check against what user actually sees (parsed text) from both bubbles and edges
             const existingParsedTexts = new Set(prevBubbles.map((b) => normalizeText(parseInquiryFromText(b.text))))
+            
+            // Also check existing edges to avoid duplicates
+            thoughtBubbleEdges.forEach((edgeData) => {
+                const edgeText = (edgeData.edge.data as {text?: string})?.text
+                if (edgeText) {
+                    const parsedText = parseInquiryFromText(edgeText)
+                    existingParsedTexts.add(normalizeText(parsedText))
+                }
+            })
 
             // Only add bubbles for conversations with unique parsed content
             for (const conv of currentConversations) {
@@ -181,13 +179,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     const parsedText = parseInquiryFromText(conv.text)
                     const normalizedParsedText = normalizeText(parsedText)
 
-                    if (
-                        !existingParsedTexts.has(normalizedParsedText) &&
-                        !processedTextsRef.current.has(normalizedParsedText)
-                    ) {
-                        // Mark this parsed text as processed
-                        processedTextsRef.current.add(normalizedParsedText)
-
+                    if (!existingParsedTexts.has(normalizedParsedText)) {
                         newBubbles.push({
                             text: conv.text,
                             agents: new Set(conv.agents),
@@ -229,11 +221,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 const kept = sorted.slice(-MAX_THOUGHT_BUBBLES)
                 const dropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
 
-                // Clean up dropped bubbles from processed texts and cache
+                // Clean up dropped bubbles from edge cache
                 dropped.forEach((bubble) => {
-                    const parsedText = parseInquiryFromText(bubble.text)
-                    const normalized = normalizeText(parsedText)
-                    processedTextsRef.current.delete(normalized)
                     removeThoughtBubbleEdgeHelper(bubble.conversationId)
                 })
                 return kept
@@ -253,11 +242,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
                 const now = Date.now()
 
-                const normalizeText = (text: string): string => {
-                    // eslint-disable-next-line newline-per-chained-call
-                    return text.toLowerCase().replace(/\s+/gu, " ").trim()
-                }
-
                 const filteredBubbles = prevBubbles.filter((bubble) => {
                     const age = now - bubble.timestamp
                     const shouldKeep = age < THOUGHT_BUBBLE_TIMEOUT_MS
@@ -268,11 +252,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         return true
                     }
 
-                    // If bubble is expiring, remove its parsed text from processed set and cache
+                    // If bubble is expiring, remove it from the edge cache
                     if (!shouldKeep) {
-                        const parsedText = parseInquiryFromText(bubble.text)
-                        const normalized = normalizeText(parsedText)
-                        processedTextsRef.current.delete(normalized)
                         removeThoughtBubbleEdgeHelper(bubble.conversationId)
                     }
 
