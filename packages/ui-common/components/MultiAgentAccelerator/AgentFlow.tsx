@@ -45,10 +45,9 @@ import {parseInquiryFromText} from "../AgentChat/Utils"
 
 // #region: Types
 
-interface ActiveThoughtBubble {
-    text: string
-    agents: Set<string>
-    timestamp: number
+// ActiveThoughtBubble mirrors AgentConversation but uses `conversationId` instead of `id`
+// to make it explicit that this bubble maps back to an originating conversation.
+interface ActiveThoughtBubble extends Omit<AgentConversation, "id"> {
     conversationId: string
 }
 
@@ -136,7 +135,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
 
-    // State for managing active thought bubbles with timers
+    // State for managing active thought bubbles with timers. Use ActiveThoughtBubble which
+    // references the original conversation via `conversationId`.
     const [activeThoughtBubbles, setActiveThoughtBubbles] = useState<ActiveThoughtBubble[]>([])
 
     // Track which bubble is currently being hovered
@@ -152,7 +152,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
 
         setActiveThoughtBubbles((prevBubbles) => {
-            const now = Date.now()
             const newBubbles: ActiveThoughtBubble[] = []
 
             // Normalize parsed text for duplicate detection
@@ -162,7 +161,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             }
 
             // Check against what user actually sees (parsed text) from both bubbles and edges
-            const existingParsedTexts = new Set(prevBubbles.map((b) => normalizeText(parseInquiryFromText(b.text))))
+            const existingParsedTexts = new Set(
+                prevBubbles.map((b) => normalizeText(parseInquiryFromText(b.text || "")))
+            )
 
             // Also check existing edges to avoid duplicates
             thoughtBubbleEdges.forEach((edgeData) => {
@@ -180,11 +181,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     const normalizedParsedText = normalizeText(parsedText)
 
                     if (!existingParsedTexts.has(normalizedParsedText)) {
+                        // Create an AgentConversation object representing the active thought bubble.
+                        // Use the conversation id from the incoming conversation and set startedAt
+                        // to "now" so the bubble timeout is measured from when the bubble appeared.
                         newBubbles.push({
+                            conversationId: conv.id,
                             text: conv.text,
                             agents: new Set(conv.agents),
-                            timestamp: now,
-                            conversationId: conv.id,
+                            startedAt: new Date(),
                         })
 
                         // Add corresponding edge to global cache
@@ -217,7 +221,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             const allBubbles = [...prevBubbles, ...newBubbles]
             // If we're over the limit, remove the oldest bubbles
             if (allBubbles.length > MAX_THOUGHT_BUBBLES) {
-                const sorted = allBubbles.sort((a, b) => a.timestamp - b.timestamp)
+                const sorted = allBubbles.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
                 const kept = sorted.slice(-MAX_THOUGHT_BUBBLES)
                 const dropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
 
@@ -243,7 +247,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 const now = Date.now()
 
                 const filteredBubbles = prevBubbles.filter((bubble) => {
-                    const age = now - bubble.timestamp
+                    const age = now - bubble.startedAt.getTime()
                     const shouldKeep = age < THOUGHT_BUBBLE_TIMEOUT_MS
 
                     // Keep bubble if it's being hovered, even if expired
@@ -272,13 +276,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, []) // Empty dependency array - run once and keep interval going
 
     // Memoize filtered conversations directly from activeThoughtBubbles
-    const filteredConversations = useMemo(() => {
-        if (activeThoughtBubbles.length === 0) return null
-        return activeThoughtBubbles.map((bubble) => ({
-            id: `bubble-${bubble.timestamp}`, // Unique ID based on timestamp
+    const filteredConversations: AgentConversation[] | null = useMemo(() => {
+        // Map ActiveThoughtBubble back to AgentConversation
+        return activeThoughtBubbles.map((bubble: ActiveThoughtBubble) => ({
+            id: bubble.conversationId,
             text: bubble.text,
             agents: bubble.agents,
-            startedAt: new Date(bubble.timestamp), // Convert timestamp to Date
+            startedAt: bubble.startedAt,
         }))
     }, [activeThoughtBubbles])
 
