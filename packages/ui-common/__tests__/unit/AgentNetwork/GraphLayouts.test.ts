@@ -52,7 +52,7 @@ describe("GraphLayouts", () => {
         {origin: "agent3", tools: []},
     ]
 
-    it("Should place 3 agents in a linear layout", () => {
+    it("Should generate a linear layout", () => {
         const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, null, false, new Map())
 
         expect(nodes).toHaveLength(3)
