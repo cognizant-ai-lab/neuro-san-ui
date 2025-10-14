@@ -56,6 +56,10 @@ COPY apps/main ./apps/main
 ARG NEXT_PUBLIC_NEURO_SAN_UI_VERSION
 ENV NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}
 
+# Extract authentication setting
+ARG NEXT_PUBLIC_ENABLE_AUTHENTICATION
+ENV NEXT_PUBLIC_ENABLE_AUTHENTICATION=${NEXT_PUBLIC_ENABLE_AUTHENTICATION}
+
 # Build the Next.js app
 RUN --mount=type=cache,target=/root/.cache/yarn \
     corepack enable && \
@@ -64,7 +68,7 @@ RUN --mount=type=cache,target=/root/.cache/yarn \
 
 
 # Production image, copy all the files and run next
-FROM gcr.io/distroless/nodejs$NODEJS_VERSION-debian12@sha256:1c481261b3b1c6ec601cc11d3cea0c7d02e551e5041f8dcd47e077029e57a6bc AS runner
+FROM gcr.io/distroless/nodejs${NODEJS_VERSION}-debian12@sha256:1c481261b3b1c6ec601cc11d3cea0c7d02e551e5041f8dcd47e077029e57a6bc AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
