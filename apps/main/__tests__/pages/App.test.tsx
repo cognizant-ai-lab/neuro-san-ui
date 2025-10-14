@@ -5,6 +5,7 @@ import {ReactNode} from "react"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
+import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import NeuroSanUI from "../../pages/_app"
 
@@ -17,6 +18,11 @@ jest.mock("next-auth/react", () => ({
 }))
 
 jest.mock("../../../../packages/ui-common/const")
+
+jest.mock("../../../../packages/ui-common/state/Preferences", () => ({
+    __esModule: true,
+    usePreferences: jest.fn(),
+}))
 
 jest.mock("next/router", () => ({
     useRouter() {
@@ -64,6 +70,7 @@ describe("Main App Component", () => {
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
         ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
+        ;(usePreferences as jest.Mock).mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
 
         // Clear and reset the zustand store before each test
         useEnvironmentStore.setState({
@@ -78,7 +85,8 @@ describe("Main App Component", () => {
         window.fetch = originalFetch
     })
 
-    it("Should render correctly", async () => {
+    it.each([false, true])("should render the page with darkMode=%s", async (darkMode) => {
+        ;(usePreferences as jest.Mock).mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
         window.fetch = mockFetch({
             backendNeuroSanApiUrl: testNeuroSanURL,
             auth0ClientId: testClientId,
