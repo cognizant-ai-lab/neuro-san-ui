@@ -289,23 +289,6 @@ describe("GraphLayouts", () => {
             expect(thoughtBubbleEdges).toHaveLength(0)
         })
 
-        it("Should prevent duplicate thought bubble edges based on parsed text", () => {
-            const mockDuplicateEdge = {...mockEdge}
-            mockDuplicateEdge.data.text = "Invoking Agent with inquiry: Hello World"
-
-            const mockDuplicateEdge2FromEdge1 = {...mockEdge}
-            // Same parsed content but different spacing/casing
-            mockDuplicateEdge2FromEdge1.data.text = "Invoking Agent with inquiry:    hello world   "
-
-            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockDuplicateEdge)
-            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv2", mockDuplicateEdge2FromEdge1)
-
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
-            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
-
-            expect(thoughtBubbleEdges).toHaveLength(1) // Only one should be added due to duplicate detection
-        })
-
         it("Should enforce max thought bubble limit", () => {
             // Add more than MAX_GLOBAL_THOUGHT_BUBBLES (5) edges
             for (let i = 0; i < 7; i += 1) {

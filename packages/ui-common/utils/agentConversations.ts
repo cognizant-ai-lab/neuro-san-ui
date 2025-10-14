@@ -104,7 +104,19 @@ export const processChatChunk = (
             finalConversations = currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate
         } else {
             // Create a new conversation for this communication path
-            const newConversation = createConversation(agents, chatMessage.text)
+            let inquiryText: string | undefined
+            let appName: string | undefined
+            const params = chatMessage.structure?.["params"]
+            if (params && typeof params === "object") {
+                if ("inquiry" in params) {
+                    inquiryText = (params as {inquiry?: string}).inquiry
+                }
+                if ("app_name" in params) {
+                    appName = (params as {app_name?: string}).app_name
+                }
+            }
+            // Show either inquiry (from structure) or chat message text
+            const newConversation = createConversation(agents, inquiryText || appName)
             updatedConversations.push(newConversation)
             finalConversations = updatedConversations
         }

@@ -41,7 +41,6 @@ import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../state/Preferences"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
-import {parseInquiryFromText} from "../AgentChat/Utils"
 
 // #region: Types
 
@@ -164,69 +163,55 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setActiveThoughtBubbles((prevBubbles) => {
             const newBubbles: ActiveThoughtBubble[] = []
 
-            // Normalize parsed text for duplicate detection
-            const normalizeText = (text: string): string => {
-                // eslint-disable-next-line newline-per-chained-call
-                return text.toLowerCase().replace(/\s+/gu, " ").trim()
-            }
-
             // Check against what user actually sees (parsed text) from both bubbles and edges
-            const existingParsedTexts = new Set(
-                prevBubbles.map((b) => normalizeText(parseInquiryFromText(b.text || "")))
-            )
+            const existingParsedTexts = new Set(prevBubbles.map((b) => b.text || ""))
 
             // Also check existing edges to avoid duplicates
             thoughtBubbleEdges.forEach((edgeData) => {
                 const edgeText = (edgeData.edge.data as {text?: string})?.text
                 if (edgeText) {
-                    const parsedText = parseInquiryFromText(edgeText)
-                    existingParsedTexts.add(normalizeText(parsedText))
+                    existingParsedTexts.add(edgeText)
                 }
             })
 
             // Only add bubbles for conversations with unique parsed content
             for (const conv of currentConversations) {
-                if (conv.text) {
-                    const parsedText = parseInquiryFromText(conv.text)
-                    const normalizedParsedText = normalizeText(parsedText)
+                if (
+                    conv.text &&
+                    !existingParsedTexts.has(conv.text) &&
+                    !processedConversationIdsRef.current.has(conv.id)
+                ) {
+                    // Create an AgentConversation object representing the active thought bubble.
+                    // Use the conversation id from the incoming conversation and set startedAt
+                    // to "now" so the bubble timeout is measured from when the bubble appeared.
+                    newBubbles.push({
+                        agents: new Set(conv.agents),
+                        conversationId: conv.id,
+                        startedAt: new Date(),
+                        // No text needed
+                    })
 
-                    // Skip if we've already processed this conversation ID or if the text is a duplicate
-                    if (
-                        !existingParsedTexts.has(normalizedParsedText) &&
-                        !processedConversationIdsRef.current.has(conv.id)
-                    ) {
-                        // Create an AgentConversation object representing the active thought bubble.
-                        // Use the conversation id from the incoming conversation and set startedAt
-                        // to "now" so the bubble timeout is measured from when the bubble appeared.
-                        newBubbles.push({
-                            conversationId: conv.id,
-                            text: conv.text,
-                            agents: new Set(conv.agents),
-                            startedAt: new Date(),
-                        })
+                    // Mark this conversation ID as processed
+                    processedConversationIdsRef.current.add(conv.id)
 
-                        // Mark this conversation ID as processed
-                        processedConversationIdsRef.current.add(conv.id)
-
-                        // Add corresponding edge to global cache
-                        const agentList = Array.from(conv.agents)
-                        if (agentList.length >= 2) {
-                            const sourceAgent = agentList[0]
-                            const targetAgent = agentList[1]
-                            const edge: Edge = {
-                                id: `thought-bubble-${conv.id}`,
-                                source: sourceAgent,
-                                target: targetAgent,
-                                type: "thoughtBubbleEdge",
-                                data: {
-                                    text: conv.text,
-                                    showAlways: showThoughtBubbles,
-                                    conversationId: conv.id,
-                                },
-                                style: {pointerEvents: "none" as const},
-                            }
-                            addThoughtBubbleEdgeHelper(conv.id, edge)
+                    // Add corresponding edge to global cache
+                    const agentList = Array.from(conv.agents)
+                    if (agentList.length >= 2) {
+                        const sourceAgent = agentList[0]
+                        const targetAgent = agentList[1]
+                        const edge: Edge = {
+                            id: `thought-bubble-${conv.id}`,
+                            source: sourceAgent,
+                            target: targetAgent,
+                            type: "thoughtBubbleEdge",
+                            data: {
+                                text: conv.text,
+                                showAlways: showThoughtBubbles,
+                                conversationId: conv.id,
+                            },
+                            style: {pointerEvents: "none" as const},
                         }
+                        addThoughtBubbleEdgeHelper(conv.id, edge)
                     }
                 }
             }

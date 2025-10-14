@@ -2,8 +2,6 @@ import {styled} from "@mui/material"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {Edge, Node as RFNode} from "reactflow"
 
-import {isTextMeaningful, parseInquiryFromText} from "../AgentChat/Utils"
-
 // #region: Types
 
 interface ThoughtBubbleOverlayProps {
@@ -91,17 +89,16 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     showThoughtBubbles = true,
     onBubbleHoverChange,
 }) => {
-    // Filter edges with meaningful text
-    const thoughtBubbleEdges = edges.filter((e) => {
-        if (!e.data || typeof e.data.text !== "string") return false
-        const parsed = parseInquiryFromText(e.data.text)
-        return isTextMeaningful(parsed)
-    })
-
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
     const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
     const hoverTimeoutRef = useRef<number | null>(null)
     const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
+    // Filter edges with meaningful text
+    const thoughtBubbleEdges = edges.filter((e) => {
+        if (!e.data || typeof e.data.text !== "string") return false
+        return e.data.text
+    })
 
     // Find frontman node (depth === 0, same as isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
@@ -200,9 +197,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 const text = edge.data?.text
                 if (!text) return null
 
-                const parsedText = parseInquiryFromText(text)
-                if (!parsedText) return null
-
                 // Find the node to position bubble near
                 if (!nodes || !Array.isArray(nodes)) return null
 
@@ -263,7 +257,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                     }
                                 }}
                             >
-                                {parsedText}
+                                {text}
                             </TruncatedText>
                         </ThoughtBubble>
                         {/* Triangle pointer - positioned on left (west) side of bubble, touching it */}

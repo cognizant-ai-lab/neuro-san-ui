@@ -9,11 +9,7 @@ import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../../utils/agentConversations"
-import {cleanUpAgentName, parseInquiryFromText} from "../AgentChat/Utils"
-
-interface EdgeData {
-    text?: string
-}
+import {cleanUpAgentName} from "../AgentChat/Utils"
 
 const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
@@ -22,26 +18,6 @@ export const addThoughtBubbleEdge = (
     conversationId: string,
     edge: Edge<EdgeProps>
 ) => {
-    const normalizeText = (text: string): string => {
-        // eslint-disable-next-line newline-per-chained-call
-        return text.toLowerCase().replace(/\s+/u, " ").trim()
-    }
-
-    // Check for duplicate parsed content (what user actually sees)
-    const newEdgeRawText = (edge.data as EdgeData)?.text || ""
-    const newEdgeParsedText = normalizeText(parseInquiryFromText(newEdgeRawText))
-    const existingEdges = Array.from(thoughtBubbleEdges.values())
-
-    const isDuplicate = existingEdges.some((existing) => {
-        const existingRawText = (existing.edge.data as EdgeData)?.text || ""
-        const existingParsedText = normalizeText(parseInquiryFromText(existingRawText))
-        return existingParsedText === newEdgeParsedText
-    })
-
-    if (isDuplicate) {
-        return
-    }
-
     // Add with timestamp for age-based cleanup
     thoughtBubbleEdges.set(conversationId, {
         edge,

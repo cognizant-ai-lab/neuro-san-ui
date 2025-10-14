@@ -61,57 +61,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(overlay).toBeInTheDocument()
     })
 
-    it("Should filter out edges with non-meaningful text", () => {
-        const edges = [
-            createMockEdge("edge1", "node1", "node2", "0"), // Single digit - should be filtered
-            createMockEdge("edge2", "node1", "node2", "ab"), // Too short - should be filtered
-            createMockEdge("edge3", "node1", "node2", "This is meaningful text"), // Should render
-        ]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Only the meaningful text should be rendered
-        expect(screen.queryByText("0")).not.toBeInTheDocument()
-        expect(screen.queryByText("ab")).not.toBeInTheDocument()
-        expect(screen.getByText("This is meaningful text")).toBeInTheDocument()
-    })
-
-    it("Should parse inquiry from JSON code blocks", () => {
-        const jsonText = '```json\n{"inquiry": "What is the weather?"}\n```'
-        const edges = [createMockEdge("edge1", "node1", "node2", jsonText)]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        expect(screen.getByText("What is the weather?")).toBeInTheDocument()
-    })
-
-    it("Should parse Invoking format messages", () => {
-        const invokingText = 'Invoking: `WeatherAgent` with `{"inquiry": "Get forecast"}`'
-        const edges = [createMockEdge("edge1", "node1", "node2", invokingText)]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        expect(screen.getByText(/Invoking `WeatherAgent` with "Get forecast"/u)).toBeInTheDocument()
-    })
-
     it("Should prioritize frontman edges first", () => {
         const edges = [
             createMockEdge("edge1", "node2", "node1", "Non-frontman edge"),
