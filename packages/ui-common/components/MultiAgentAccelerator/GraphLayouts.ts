@@ -277,8 +277,8 @@ export const layoutRadial = (
     })
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
-    const globalEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = globalEdges.filter((edge: Edge<EdgeProps>) =>
+    const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
+    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge<EdgeProps>) =>
         edgesInNetwork.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
     )
 
@@ -333,8 +333,7 @@ export const layoutLinear = (
 
         if (!isFrontman) {
             for (const parentNode of parentIds) {
-                // Add edges from parents to node - plasma edges based on currentConversations (live, cleared at
-                // network end)
+                // Add edges from parents to node
                 const isEdgeAnimated = areAgentsInSameConversation(currentConversations, parentNode, originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
@@ -353,8 +352,8 @@ export const layoutLinear = (
     })
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
-    const globalEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = globalEdges.filter((edge: Edge<EdgeProps>) =>
+    const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
+    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge<EdgeProps>) =>
         edgesInNetwork.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
     )
 
