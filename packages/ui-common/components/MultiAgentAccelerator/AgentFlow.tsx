@@ -139,13 +139,23 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // references the original conversation via `conversationId`.
     const [activeThoughtBubbles, setActiveThoughtBubbles] = useState<ActiveThoughtBubble[]>([])
 
+    // Track conversation IDs we've already processed to prevent re-adding after expiry
+    const processedConversationIdsRef = useRef<Set<string>>(new Set())
+
     // Track which bubble is currently being hovered
     const hoveredBubbleIdRef = useRef<string | null>(null)
     const handleBubbleHoverChange = useCallback((bubbleId: string | null) => {
         hoveredBubbleIdRef.current = bubbleId
     }, [])
 
-    // Effect to add new thought bubbles - only when we actually have conversations to process
+    // Clear processed conversation IDs when thought bubble edges are cleared (streaming ends)
+    useEffect(() => {
+        if (thoughtBubbleEdges.size === 0) {
+            processedConversationIdsRef.current.clear()
+        }
+    }, [thoughtBubbleEdges.size])
+
+    // Effect to add and remove thought bubbles - only when we actually have conversations to process
     useEffect(() => {
         if (!currentConversations || currentConversations.length === 0) {
             return // Skip processing when no conversations
@@ -180,7 +190,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     const parsedText = parseInquiryFromText(conv.text)
                     const normalizedParsedText = normalizeText(parsedText)
 
-                    if (!existingParsedTexts.has(normalizedParsedText)) {
+                    // Skip if we've already processed this conversation ID or if the text is a duplicate
+                    if (!existingParsedTexts.has(normalizedParsedText) && !processedConversationIdsRef.current.has(conv.id)) {
                         // Create an AgentConversation object representing the active thought bubble.
                         // Use the conversation id from the incoming conversation and set startedAt
                         // to "now" so the bubble timeout is measured from when the bubble appeared.
@@ -190,6 +201,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             agents: new Set(conv.agents),
                             startedAt: new Date(),
                         })
+
+                        // Mark this conversation ID as processed
+                        processedConversationIdsRef.current.add(conv.id)
 
                         // Add corresponding edge to global cache
                         const agentList = Array.from(conv.agents)
@@ -219,21 +233,40 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             }
 
             const allBubbles = [...prevBubbles, ...newBubbles]
-            // If we're over the limit, remove the oldest bubbles
+            // If we're over the limit, first remove expired bubbles, then oldest if still needed
             if (allBubbles.length > MAX_THOUGHT_BUBBLES) {
-                const sorted = allBubbles.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
-                const kept = sorted.slice(-MAX_THOUGHT_BUBBLES)
-                const dropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
+                const now = Date.now()
+                const dropped: ActiveThoughtBubble[] = []
 
-                // Clean up dropped bubbles from edge cache
+                // First, filter out expired bubbles by checking THOUGHT_BUBBLE_TIMEOUT_MS
+                const nonExpiredBubbles = allBubbles.filter((bubble) => {
+                    const age = now - bubble.startedAt.getTime()
+                    const isExpired = age >= THOUGHT_BUBBLE_TIMEOUT_MS
+                    if (isExpired) {
+                        dropped.push(bubble)
+                    }
+                    return !isExpired
+                })
+
+                // If still over the limit after removing expired, remove oldest non-expired
+                let finalBubbles = nonExpiredBubbles
+                if (nonExpiredBubbles.length > MAX_THOUGHT_BUBBLES) {
+                    const sorted = nonExpiredBubbles.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
+                    finalBubbles = sorted.slice(-MAX_THOUGHT_BUBBLES)
+                    const additionalDropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
+                    dropped.push(...additionalDropped)
+                }
+
+                // Clean up all dropped bubbles from edge cache
                 dropped.forEach((bubble) => {
                     removeThoughtBubbleEdgeHelper(bubble.conversationId)
                 })
-                return kept
+
+                return finalBubbles
             }
             return allBubbles
         })
-    }, [currentConversations])
+    }, [currentConversations, addThoughtBubbleEdgeHelper, removeThoughtBubbleEdgeHelper])
 
     // Independent thought bubble cleanup - run timer only during streaming
     useEffect(() => {
@@ -273,7 +306,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }, 1000) // Check every second
 
         return () => clearInterval(cleanupInterval)
-    }, []) // Empty dependency array - run once and keep interval going
+    }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
     // Memoize filtered conversations directly from activeThoughtBubbles
     const filteredConversations: AgentConversation[] | null = useMemo(() => {
