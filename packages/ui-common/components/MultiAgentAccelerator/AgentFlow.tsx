@@ -6,7 +6,7 @@ import {ToggleButton, ToggleButtonGroup, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {FC, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {
     applyNodeChanges,
     Background,
@@ -14,6 +14,7 @@ import {
     ControlButton,
     Controls,
     Edge,
+    EdgeProps,
     EdgeTypes,
     NodeChange,
     ReactFlow,
@@ -32,7 +33,7 @@ import {
     HEATMAP_COLORS,
     LEVEL_SPACING,
 } from "./const"
-import {addGlobalThoughtBubbleEdge, layoutLinear, layoutRadial, removeGlobalThoughtBubbleEdge} from "./GraphLayouts"
+import {addThoughtBubbleEdge, layoutLinear, layoutRadial, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
@@ -58,6 +59,8 @@ export interface AgentFlowProps {
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isStreaming?: boolean
+    readonly thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+    readonly setThoughtBubbleEdges: Dispatch<SetStateAction<Map<string, {edge: Edge<EdgeProps>; timestamp: number}>>>
 }
 
 type Layout = "radial" | "linear"
@@ -79,10 +82,35 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     id,
     isAwaitingLlm,
     isStreaming,
+    thoughtBubbleEdges,
+    setThoughtBubbleEdges,
 }) => {
     const theme = useTheme()
 
     const {fitView} = useReactFlow()
+
+    // Helper functions to update thought bubble edges state immutably
+    const addThoughtBubbleEdgeHelper = useCallback(
+        (conversationId: string, edge: Edge<EdgeProps>) => {
+            setThoughtBubbleEdges((prev) => {
+                const newMap = new Map(prev)
+                addThoughtBubbleEdge(newMap, conversationId, edge)
+                return newMap
+            })
+        },
+        [setThoughtBubbleEdges]
+    )
+
+    const removeThoughtBubbleEdgeHelper = useCallback(
+        (conversationId: string) => {
+            setThoughtBubbleEdges((prev) => {
+                const newMap = new Map(prev)
+                removeThoughtBubbleEdge(newMap, conversationId)
+                return newMap
+            })
+        },
+        [setThoughtBubbleEdges]
+    )
 
     const handleResize = useCallback(() => {
         fitView() // Adjusts the view to fit after resizing
@@ -92,24 +120,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         window.addEventListener("resize", handleResize)
         return () => window.removeEventListener("resize", handleResize)
     }, [handleResize])
-
-    // Effect to clear all bubbles when streaming completes (currentConversations becomes null)
-    // Clear all bubbles EXCEPT the one being hovered (if any)
-    useEffect(() => {
-        if (currentConversations === null) {
-            setActiveThoughtBubbles((prevBubbles) => {
-                // Keep only the hovered bubble (if any)
-                if (hoveredBubbleIdRef.current) {
-                    const hoveredBubble = prevBubbles.find(
-                        (b) => `thought-bubble-${b.conversationId}` === hoveredBubbleIdRef.current
-                    )
-                    return hoveredBubble ? [hoveredBubble] : []
-                }
-                // Clear all bubbles if nothing is hovered
-                return []
-            })
-        }
-    }, [currentConversations])
 
     // Save this as a mutable ref so child nodes see updates
     const conversationsRef = useRef<AgentConversation[] | null>(currentConversations)
@@ -202,7 +212,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 },
                                 style: {pointerEvents: "none" as const},
                             }
-                            addGlobalThoughtBubbleEdge(conv.id, edge)
+                            addThoughtBubbleEdgeHelper(conv.id, edge)
                         }
                     }
                 }
@@ -219,12 +229,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 const kept = sorted.slice(-MAX_THOUGHT_BUBBLES)
                 const dropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
 
-                // Clean up dropped bubbles from processed texts and global cache
+                // Clean up dropped bubbles from processed texts and cache
                 dropped.forEach((bubble) => {
                     const parsedText = parseInquiryFromText(bubble.text)
                     const normalized = normalizeText(parsedText)
                     processedTextsRef.current.delete(normalized)
-                    removeGlobalThoughtBubbleEdge(bubble.conversationId)
+                    removeThoughtBubbleEdgeHelper(bubble.conversationId)
                 })
                 return kept
             }
@@ -258,12 +268,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         return true
                     }
 
-                    // If bubble is expiring, remove its parsed text from processed set and global cache
+                    // If bubble is expiring, remove its parsed text from processed set and cache
                     if (!shouldKeep) {
                         const parsedText = parseInquiryFromText(bubble.text)
                         const normalized = normalizeText(parsedText)
                         processedTextsRef.current.delete(normalized)
-                        removeGlobalThoughtBubbleEdge(bubble.conversationId)
+                        removeThoughtBubbleEdgeHelper(bubble.conversationId)
                     }
 
                     return shouldKeep
@@ -332,13 +342,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       isHeatmap ? agentCounts : undefined,
                       mergedAgentsInNetwork,
                       currentConversations,
-                      isAwaitingLlm
+                      isAwaitingLlm,
+                      thoughtBubbleEdges
                   )
                 : layoutRadial(
                       isHeatmap ? agentCounts : undefined,
                       mergedAgentsInNetwork,
                       currentConversations,
-                      isAwaitingLlm
+                      isAwaitingLlm,
+                      thoughtBubbleEdges
                   ),
         [
             layout,
@@ -347,6 +359,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             mergedAgentsInNetwork,
             currentConversations,
             filteredConversations,
+            thoughtBubbleEdges,
             isAwaitingLlm,
             showThoughtBubbles,
         ]

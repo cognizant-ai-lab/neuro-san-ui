@@ -1,14 +1,13 @@
-import {Edge} from "reactflow"
+import {Edge, EdgeProps} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
 import {
-    addGlobalThoughtBubbleEdge,
-    clearGlobalThoughtBubbleEdges,
-    getGlobalThoughtBubbleEdges,
+    addThoughtBubbleEdge,
+    getThoughtBubbleEdges,
     layoutLinear,
     layoutRadial,
-    removeGlobalThoughtBubbleEdge,
+    removeThoughtBubbleEdge,
 } from "../../../components/MultiAgentAccelerator/GraphLayouts"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 
@@ -53,8 +52,8 @@ describe("GraphLayouts", () => {
         {origin: "agent3", tools: []},
     ]
 
-    it("Should generate a linear layout", async () => {
-        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, null, false)
+    it("Should place 3 agents in a linear layout", () => {
+        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, null, false, new Map())
 
         expect(nodes).toHaveLength(3)
         expect(edges).toHaveLength(2)
@@ -258,14 +257,16 @@ describe("GraphLayouts", () => {
             data: {text: "Test message"},
         }
 
+        let thoughtBubbleEdgesMap: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+
         beforeEach(() => {
-            clearGlobalThoughtBubbleEdges()
+            thoughtBubbleEdgesMap = new Map()
         })
 
         it("Should add and retrieve global thought bubble edges", () => {
-            addGlobalThoughtBubbleEdge("conv1", mockEdge)
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(1)
@@ -279,10 +280,10 @@ describe("GraphLayouts", () => {
         })
 
         it("Should remove global thought bubble edges", () => {
-            addGlobalThoughtBubbleEdge("conv1", mockEdge)
-            removeGlobalThoughtBubbleEdge("conv1")
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
+            removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1")
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(0)
@@ -296,10 +297,10 @@ describe("GraphLayouts", () => {
             // Same parsed content but different spacing/casing
             mockDuplicateEdge2FromEdge1.data.text = "Invoking Agent with inquiry:    hello world   "
 
-            addGlobalThoughtBubbleEdge("conv1", mockDuplicateEdge)
-            addGlobalThoughtBubbleEdge("conv2", mockDuplicateEdge2FromEdge1)
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockDuplicateEdge)
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv2", mockDuplicateEdge2FromEdge1)
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(1) // Only one should be added due to duplicate detection
@@ -315,10 +316,10 @@ describe("GraphLayouts", () => {
                     type: "thoughtBubbleEdge",
                     data: {text: `Unique message ${i}`},
                 }
-                addGlobalThoughtBubbleEdge(`conv${i}`, mockEdgeMultiple)
+                addThoughtBubbleEdge(thoughtBubbleEdgesMap, `conv${i}`, mockEdgeMultiple)
             }
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(5) // Should be limited to MAX_GLOBAL_THOUGHT_BUBBLES
@@ -326,17 +327,17 @@ describe("GraphLayouts", () => {
 
         it("Should remove single thought bubble edge", () => {
             const e: Edge = {id: "e1", source: "A", target: "B"}
-            addGlobalThoughtBubbleEdge("c1", e)
-            removeGlobalThoughtBubbleEdge("c1")
-            expect(getGlobalThoughtBubbleEdges().length).toBe(0)
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
+            removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1")
+            expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(0)
         })
 
         it("Should clear all thought bubble edges", () => {
-            addGlobalThoughtBubbleEdge("conv1", mockEdge)
-            addGlobalThoughtBubbleEdge("conv2", mockEdge2)
-            clearGlobalThoughtBubbleEdges()
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv2", mockEdge2)
+            thoughtBubbleEdgesMap.clear()
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(0)

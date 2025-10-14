@@ -3,10 +3,9 @@ import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {useCallback, useEffect, useRef, useState} from "react"
-import {ReactFlowProvider} from "reactflow"
+import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
-import {clearGlobalThoughtBubbleEdges} from "./GraphLayouts"
 import {Sidebar} from "./Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
@@ -66,6 +65,11 @@ export const MultiAgentAccelerator = ({
 
     const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
 
+    // State to hold thought bubble edges - avoids duplicates across layout recalculations
+    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
+        Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+    >(new Map())
+
     const customURLCallback = useCallback(
         (url: string) => {
             setNeuroSanURL(url || backendNeuroSanApiUrl)
@@ -74,13 +78,18 @@ export const MultiAgentAccelerator = ({
         [backendNeuroSanApiUrl, setCustomURLLocalStorage]
     )
 
+    const clearThoughtBubbleEdgesAndSetStreamingFalse = useCallback(() => {
+        setThoughtBubbleEdges(new Map())
+        setIsStreaming(false)
+    }, [])
+
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
-        setIsStreaming(false)
+        clearThoughtBubbleEdgesAndSetStreamingFalse()
     }, [])
 
     useEffect(() => {
@@ -183,12 +192,7 @@ export const MultiAgentAccelerator = ({
         conversationsRef.current = null
         agentCountsRef.current = new Map<string, number>()
         setCurrentConversations(null)
-
-        // Also clear the global thought bubble cache
-        clearGlobalThoughtBubbleEdges()
-
-        // Mark that streaming is complete
-        setIsStreaming(false)
+        clearThoughtBubbleEdgesAndSetStreamingFalse()
     }, [])
 
     const getLeftPanel = () => {
@@ -252,6 +256,8 @@ export const MultiAgentAccelerator = ({
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                             isStreaming={isStreaming}
+                            thoughtBubbleEdges={thoughtBubbleEdges}
+                            setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
                     </Box>
                 </ReactFlowProvider>

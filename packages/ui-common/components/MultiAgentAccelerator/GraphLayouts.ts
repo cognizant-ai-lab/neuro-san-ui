@@ -15,11 +15,13 @@ interface EdgeData {
     text?: string
 }
 
-// Global cache for thought bubble edges to prevent duplicates across layout recalculations
-const globalThoughtBubbleEdges = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
 const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
-export const addGlobalThoughtBubbleEdge = (conversationId: string, edge: Edge<EdgeProps>) => {
+export const addThoughtBubbleEdge = (
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    conversationId: string,
+    edge: Edge<EdgeProps>
+) => {
     const normalizeText = (text: string): string => {
         // eslint-disable-next-line newline-per-chained-call
         return text.toLowerCase().replace(/\s+/u, " ").trim()
@@ -28,7 +30,7 @@ export const addGlobalThoughtBubbleEdge = (conversationId: string, edge: Edge<Ed
     // Check for duplicate parsed content (what user actually sees)
     const newEdgeRawText = (edge.data as EdgeData)?.text || ""
     const newEdgeParsedText = normalizeText(parseInquiryFromText(newEdgeRawText))
-    const existingEdges = Array.from(globalThoughtBubbleEdges.values())
+    const existingEdges = Array.from(thoughtBubbleEdges.values())
 
     const isDuplicate = existingEdges.some((existing) => {
         const existingRawText = (existing.edge.data as EdgeData)?.text || ""
@@ -41,33 +43,34 @@ export const addGlobalThoughtBubbleEdge = (conversationId: string, edge: Edge<Ed
     }
 
     // Add with timestamp for age-based cleanup
-    globalThoughtBubbleEdges.set(conversationId, {
+    thoughtBubbleEdges.set(conversationId, {
         edge,
         timestamp: Date.now(),
     })
 
     // Enforce max limit - remove oldest if over limit
-    if (globalThoughtBubbleEdges.size > MAX_GLOBAL_THOUGHT_BUBBLES) {
-        const entries = Array.from(globalThoughtBubbleEdges.entries())
+    if (thoughtBubbleEdges.size > MAX_GLOBAL_THOUGHT_BUBBLES) {
+        const entries = Array.from(thoughtBubbleEdges.entries())
         const sorted = entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
         const toRemove = sorted.slice(0, sorted.length - MAX_GLOBAL_THOUGHT_BUBBLES)
 
         toRemove.forEach(([id]) => {
-            globalThoughtBubbleEdges.delete(id)
+            thoughtBubbleEdges.delete(id)
         })
     }
 }
 
-export const removeGlobalThoughtBubbleEdge = (conversationId: string) => {
-    globalThoughtBubbleEdges.delete(conversationId)
+export const removeThoughtBubbleEdge = (
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    conversationId: string
+) => {
+    thoughtBubbleEdges.delete(conversationId)
 }
 
-export const getGlobalThoughtBubbleEdges = (): Edge<EdgeProps>[] => {
-    return Array.from(globalThoughtBubbleEdges.values()).map((item) => item.edge)
-}
-
-export const clearGlobalThoughtBubbleEdges = () => {
-    globalThoughtBubbleEdges.clear()
+export const getThoughtBubbleEdges = (
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+): Edge<EdgeProps>[] => {
+    return Array.from(thoughtBubbleEdges.values()).map((item) => item.edge)
 }
 
 // Helper function to check if two agents are in the same conversation
@@ -149,7 +152,8 @@ export const layoutRadial = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
-    isAwaitingLlm: boolean
+    isAwaitingLlm: boolean,
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
@@ -272,13 +276,13 @@ export const layoutRadial = (
         })
     })
 
-    // Add thought bubble edges from global cache to avoid duplicates across layout recalculations
-    const globalEdges = getGlobalThoughtBubbleEdges()
-    const thoughtBubbleEdges = globalEdges.filter((edge: Edge<EdgeProps>) =>
+    // Add thought bubble edges from cache to avoid duplicates across layout recalculations
+    const globalEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
+    const thoughtBubbleEdgesToAdd = globalEdges.filter((edge: Edge<EdgeProps>) =>
         edgesInNetwork.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
     )
 
-    edgesInNetwork.push(...thoughtBubbleEdges)
+    edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
 
     return {nodes: nodesInNetwork, edges: edgesInNetwork}
 }
@@ -287,7 +291,8 @@ export const layoutLinear = (
     agentCounts: Map<string, number>,
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
-    isAwaitingLlm: boolean
+    isAwaitingLlm: boolean,
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
@@ -347,13 +352,13 @@ export const layoutLinear = (
         }
     })
 
-    // Add thought bubble edges from global cache to avoid duplicates across layout recalculations
-    const globalEdges = getGlobalThoughtBubbleEdges()
-    const thoughtBubbleEdges = globalEdges.filter((edge: Edge<EdgeProps>) =>
+    // Add thought bubble edges from cache to avoid duplicates across layout recalculations
+    const globalEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
+    const thoughtBubbleEdgesToAdd = globalEdges.filter((edge: Edge<EdgeProps>) =>
         edgesInNetwork.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
     )
 
-    edgesInNetwork.push(...thoughtBubbleEdges)
+    edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
 
     const dagreGraph = new dagre.graphlib.Graph()
     dagreGraph.setDefaultEdgeLabel(() => ({}))
@@ -404,8 +409,8 @@ export const layoutLinear = (
         ? edgesInNetwork.filter((edge) => areAgentsInSameConversation(currentConversations, edge.source, edge.target))
         : edgesInNetwork
 
-    // Add thought bubble edges from global cache to avoid duplicates across layout recalculations
-    const globalBubbleEdges = getGlobalThoughtBubbleEdges()
+    // Add thought bubble edges from cache to avoid duplicates across layout recalculations
+    const globalBubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
     const thoughtBubbles = globalBubbleEdges.filter((edge: Edge<EdgeProps>) =>
         filteredEdges.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
     )
