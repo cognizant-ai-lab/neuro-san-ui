@@ -2,7 +2,6 @@
     "name": "@cognizant-ai-lab/neuro-san-web",
     "version": "1.0.0",
     "private": true,
-    "license": "SEE LICENSE IN LICENSE.txt",
     "type": "module",
     "scripts": {
         "build": "next build",
