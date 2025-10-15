@@ -23,7 +23,12 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
-import {LOGO} from "../../../packages/ui-common/const"
+import {
+    authenticationEnabled,
+    DEFAULT_NEURO_SAN_SERVER_URL,
+    DEFAULT_USER_IMAGE,
+    LOGO,
+} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
@@ -66,7 +71,7 @@ function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
 
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
-export default function NeuroSanUI({Component, pageProps: {session, ...pageProps}}: ExtendedAppProps): ReactElement {
+export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): ReactElement {
     const {
         auth0ClientId,
         auth0Domain,
@@ -85,7 +90,11 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
+    const authenticationType = authenticationEnabled()
+        ? currentUser
+            ? `ALB using ${oidcProvider}`
+            : "NextAuth"
+        : "None"
 
     const [pageTitle, setPageTitle] = useState<string>(DEFAULT_APP_NAME)
 
@@ -133,6 +142,17 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getEnvironment() {
+            if (!authenticationEnabled()) {
+                // Authentication is disabled, so we don't need to get environment variables
+                setBackendNeuroSanApiUrl(
+                    process.env["NEXT_PUBLIC_NEURO_SAN_SERVER_URL"] ?? DEFAULT_NEURO_SAN_SERVER_URL
+                )
+                setAuth0ClientId("")
+                setAuth0Domain("")
+                setSupportEmailAddress(process.env["NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS"] ?? "")
+                return
+            }
+
             // Fetch environment settings.
             // Save these in the zustand store so that subsequent pages will not need to fetch them again
             const res = await fetch("/api/environment", {
@@ -163,6 +183,14 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
 
     useEffect(() => {
         async function getUserInfo() {
+            if (!authenticationEnabled()) {
+                // Authentication is disabled, so we don't need to get user info
+                setCurrentUser("Guest")
+                setPicture(DEFAULT_USER_IMAGE)
+                setOidcProvider("None")
+                return
+            }
+
             const res = await fetch("/api/userInfo", {
                 method: "GET",
                 headers: {
@@ -231,7 +259,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 <LoadingSpinner id="loading-header" />
             )
         } else {
-            return Component.authRequired ? (
+            return authenticationEnabled() && Component.authRequired ? (
                 <Auth>
                     <Component
                         id="body-auth-component"
@@ -272,7 +300,7 @@ export default function NeuroSanUI({Component, pageProps: {session, ...pageProps
                 {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
-                <SessionProvider session={session}>
+                <SessionProvider>
                     <ErrorBoundary id="error_boundary">
                         <NavbarWrapper
                             id="nav-bar"

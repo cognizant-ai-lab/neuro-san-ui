@@ -15,3 +15,8 @@ export const CONTACT_US_CONFIRMATION_DIALOG_TEXT =
  * The default user image to use when the user does not have a profile picture.
  */
 export const DEFAULT_USER_IMAGE = "https://www.gravatar.com/avatar/?d=mp"
+
+export const authenticationEnabled = (): boolean => process.env["NEXT_PUBLIC_ENABLE_AUTHENTICATION"] !== "false"
+
+// Default "dev URL" for NeuroSan server, to allow for "zero config" execution.
+export const DEFAULT_NEURO_SAN_SERVER_URL = "https://neuro-san-dev.decisionai.ml"

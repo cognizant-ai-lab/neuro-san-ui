@@ -11,6 +11,7 @@ import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} fro
 import {ConfirmationModal} from "./confirmationModal"
 import {LoadingSpinner} from "./LoadingSpinner"
 import {
+    authenticationEnabled,
     CONTACT_US_CONFIRMATION_DIALOG_TEXT,
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     DEFAULT_USER_IMAGE,
@@ -372,13 +373,15 @@ export const Navbar = ({
                         >
                             {authenticationType}
                         </MenuItem>
-                        <MenuItem
-                            id="user-sign-out"
-                            sx={{...DISABLE_OUTLINE_PROPS, fontWeight: "bold"}}
-                            onClick={signOut}
-                        >
-                            Sign out
-                        </MenuItem>
+                        {authenticationEnabled() && (
+                            <MenuItem
+                                id="user-sign-out"
+                                sx={{...DISABLE_OUTLINE_PROPS, fontWeight: "bold"}}
+                                onClick={signOut}
+                            >
+                                Sign out
+                            </MenuItem>
+                        )}
                     </Menu>
                 </Grid>
             ) : null}

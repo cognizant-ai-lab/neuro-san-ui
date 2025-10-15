@@ -5,6 +5,8 @@
  * @see https://nextjs.org/docs/app/guides/instrumentation
  */
 
+import {authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
+
 /**
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
  * exit with an error message.
@@ -19,11 +21,13 @@ export const REQUIRED_ENV_VARS = [
 ]
 
 export function register() {
-    const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
+    if (authenticationEnabled()) {
+        const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
 
-    if (missingEnvVars.length > 0) {
-        throw new Error(
-            `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
-        )
+        if (missingEnvVars.length > 0) {
+            throw new Error(
+                `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
+            )
+        }
     }
 }

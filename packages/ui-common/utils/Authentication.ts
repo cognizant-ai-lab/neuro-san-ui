@@ -56,13 +56,13 @@ function createAuth0LogoutUrl(oidcProvider: OidcProvider, auth0Domain: string, a
 /**
  * Smart sign out function that abstracts away the authentication provider.
  * We are migrating to ALB-based authentication, instead of it being handled by the app via NextAuth. This function
- * handles the sign out process for both NextAuth and ALB.
+ * handles the sign-out process for both NextAuth and ALB.
  * @param currentUser The username of the current user. If undefined, we don't know what authentication provider we're
  * using, so just return. If null, we're using NextAuth. Otherwise, we're using ALB.
  * @param auth0Domain The Auth0 domain. See Auth0 doc for more details.
  * @param auth0ClientId The Auth0 client ID. See Auth0 doc for more details. Identifies the app being used in Auth0.
  * @param oidcProvider The OIDC provider. See OIDC doc for more details.
- * @return Nothing, but executes the sign out process.
+ * @return Nothing, but executes the sign-out process.
  *
  */
 export async function smartSignOut(

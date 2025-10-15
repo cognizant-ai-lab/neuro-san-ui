@@ -12,6 +12,7 @@ import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/c
 import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
+import {UserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
 import {processChatChunk} from "../../../../packages/ui-common/utils/agentConversations"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 
@@ -46,6 +47,14 @@ jest.mock("../../../../packages/ui-common/utils/agentConversations")
 jest.mock("../../../../packages/ui-common/state/Preferences", () => ({
     __esModule: true,
     usePreferences: jest.fn(),
+}))
+
+jest.mock("../../../../packages/ui-common/state/UserInfo", () => ({
+    __esModule: true,
+    useUserInfoStore: (): Partial<UserInfoStore> => ({
+        currentUser: MOCK_USER,
+        picture: null,
+    }),
 }))
 
 // Mock ChatCommon to call the mock function with props and support refs
