@@ -100,7 +100,9 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
     // Filter edges with meaningful text
     const thoughtBubbleEdges = edges.filter((e) => {
-        if (!e.data || typeof e.data.text !== "string") return false
+        if (typeof e?.data?.text !== "string") {
+            return false
+        }
         return e.data.text
     })
 
