@@ -94,7 +94,7 @@ export const MultiAgentAccelerator = ({
         [backendNeuroSanApiUrl, setCustomURLLocalStorage]
     )
 
-    const clearThoughtBubbleEdgesAndSetStreamingFalse = useCallback(() => {
+    const resetState = useCallback(() => {
         setThoughtBubbleEdges(new Map())
         setIsStreaming(false)
     }, [])
@@ -105,7 +105,7 @@ export const MultiAgentAccelerator = ({
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
-        clearThoughtBubbleEdgesAndSetStreamingFalse()
+        resetState()
     }, [])
 
     useEffect(() => {
@@ -208,7 +208,7 @@ export const MultiAgentAccelerator = ({
         conversationsRef.current = null
         agentCountsRef.current = new Map<string, number>()
         setCurrentConversations(null)
-        clearThoughtBubbleEdgesAndSetStreamingFalse()
+        resetState()
     }, [])
 
     const getLeftPanel = () => {
