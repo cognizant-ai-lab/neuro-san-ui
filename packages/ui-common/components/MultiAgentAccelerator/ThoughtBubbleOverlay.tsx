@@ -89,9 +89,13 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     showThoughtBubbles = true,
     onBubbleHoverChange,
 }) => {
+    // hoveredBubbleId: id of currently hovered bubble (or null)
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
+    // truncatedBubbles: set of edge ids whose text overflows the collapsed box
     const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
+    // hoverTimeoutRef: used to debounce clearing of hovered state on mouse leave
     const hoverTimeoutRef = useRef<number | null>(null)
+    // textRefs: mapping of edge id -> DOM node for measuring scrollHeight/clientHeight
     const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
     // Filter edges with meaningful text
@@ -127,6 +131,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         const newTruncated = new Set<string>()
 
         textRefs.current.forEach((element, edgeId) => {
+            // If scrollHeight > clientHeight then the content overflows (truncated)
             if (element && element.scrollHeight > element.clientHeight) {
                 newTruncated.add(edgeId)
             }
@@ -250,6 +255,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                 isHovered={isHovered}
                                 isTruncated={isTruncated}
                                 ref={(el: HTMLDivElement | null) => {
+                                    // Store/remove this text node in `textRefs` for truncation checks.
                                     if (el) {
                                         textRefs.current.set(edge.id, el)
                                     } else {
@@ -282,6 +288,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                 style={{display: "block"}}
                             >
                                 <polygon
+                                    // Draws a left-pointing triangle used as the bubble’s arrow pointer
                                     points="0,0 12,14 24,0"
                                     fill="rgba(255,255,255,0.98)"
                                     stroke="rgba(0, 0, 0, 0.06)"
