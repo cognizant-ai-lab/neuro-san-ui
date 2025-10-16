@@ -106,10 +106,8 @@ export const processChatChunk = (
             // Create a new conversation for this communication path
             let inquiryText: string | undefined
             const params = chatMessage.structure?.["params"]
-            if (params && typeof params === "object") {
-                if ("inquiry" in params) {
-                    inquiryText = (params as {inquiry?: string}).inquiry
-                }
+            if (params && typeof params === "object" && "inquiry" in params) {
+                inquiryText = (params as {inquiry?: string}).inquiry
             }
             // Show either inquiry (from structure) or chat message text
             const newConversation = createConversation(agents, inquiryText)
