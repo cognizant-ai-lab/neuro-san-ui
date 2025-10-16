@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "private": true,
     "description": "The root package for the Neuro-SAN UI monorepo, containing the MAA UI web app and common components.",
-    "license": "SEE LICENSE IN LICENSE.txt",
+    "license": "Apache-2.0",
     "type": "module",
     "workspaces": [
         "apps/*",
