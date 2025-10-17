@@ -21,13 +21,9 @@ describe("ErrorBoundary", () => {
     let consoleErrorSpy: jest.SpyInstance<void, [message?: unknown, ...optionalParams: unknown[]]>
 
     withStrictMocks()
-    
+
     beforeEach(() => {
         consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
-    })
-
-    afterEach(() => {
-        consoleErrorSpy.mockRestore()
     })
 
     test("renders fallback ErrorPage when child throws", () => {
