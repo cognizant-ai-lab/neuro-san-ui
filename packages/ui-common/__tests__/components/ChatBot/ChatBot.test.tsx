@@ -94,7 +94,7 @@ describe("ChatBot", () => {
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
         await user.click(iconContainer as HTMLElement)
-        expect(await screen.findByTestId("chat-common")).toBeInTheDocument()
+        await screen.findByTestId("chat-common")
         expect(screen.getByText("Cognizant Neuro AI Assistant")).toBeInTheDocument()
     })
 
@@ -106,7 +106,7 @@ describe("ChatBot", () => {
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
         await user.click(iconContainer as HTMLElement)
-        expect(await screen.findByTestId("chat-common")).toBeInTheDocument()
+        await screen.findByTestId("chat-common")
         // Close chat
         const closeButton = screen.getByTestId("close-button")
         await user.click(closeButton)
@@ -198,7 +198,7 @@ describe("ChatBot", () => {
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
         await user.click(iconContainer as HTMLElement)
-        expect(await screen.findByTestId("chat-common")).toBeInTheDocument()
+        await screen.findByTestId("chat-common")
         const chatContainer = document.getElementById("custom-chatbot-id")
         expect(chatContainer).toBeInTheDocument()
     })
@@ -213,7 +213,7 @@ describe("ChatBot", () => {
         await user.click(iconContainer as HTMLElement)
 
         // Verify chat window renders (which confirms all state management is working)
-        expect(await screen.findByTestId("chat-common")).toBeInTheDocument()
+        await screen.findByTestId("chat-common")
         expect(screen.getByText("Cognizant Neuro AI Assistant")).toBeInTheDocument()
     })
 })
