@@ -35,30 +35,37 @@ const OverlayContainer = styled("div")({
 const ThoughtBubble = styled("div", {
     shouldForwardProp: (prop) =>
         !["isHovered", "isTruncated", "animationDelay", "bubbleScreenX", "bubbleScreenY"].includes(prop as string),
-})<ThoughtBubbleProps>(({isHovered, isTruncated, animationDelay, bubbleScreenX, bubbleScreenY}) => ({
+})<ThoughtBubbleProps>(({theme, isHovered, isTruncated, animationDelay, bubbleScreenX, bubbleScreenY}) => ({
+    // Colors / theme
+    // TODO: Add dark mode support? For now both light and dark mode use the same thought bubble style and look fine.
+    background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,250,250,0.95) 100%)",
+    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-border-color)",
+    borderRadius: "var(--bs-border-radius-lg)",
+    color: "var(--bs-primary)",
+    fontFamily: theme.typography.fontFamily, // TODO: Easy to pull from theme. Rest we need to revisit.
+    fontSize: "var(--bs-body-font-size-extra-small)",
+    fontWeight: "var(--bs-body-font-weight)",
+    padding: "10px 14px",
+
+    // Positioning
     position: "absolute",
     right: bubbleScreenX, // Position from right edge instead of left
     top: bubbleScreenY,
     transform: "translateY(-50%)", // Only center vertically, not horizontally
-    background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,250,250,0.95) 100%)",
-    border: "1px solid rgba(0,0,0,0.06)",
-    borderRadius: "12px",
-    padding: "10px 14px",
-    fontSize: "13px",
-    fontWeight: 500,
-    color: "#2d2d2d",
-    width: "260px",
-    minWidth: "100px",
-    minHeight: "auto", // Let height adjust to content
-    // Only expand height when hovered AND text is truncated
-    height: isHovered && isTruncated ? "78px" : "auto",
+
+    // Dimensions
+    height: isHovered && isTruncated ? "78px" : "auto", // Only expand height when hovered AND text is truncated
     maxHeight: "78px", // Max 3 lines always
+    minHeight: "auto", // Let height adjust to content
+    minWidth: "100px",
+    width: "260px",
+
+    // Other styles
     boxShadow: isHovered
         ? "0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)"
         : "0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08)",
     zIndex: isHovered ? 10002 : 10000,
     lineHeight: 1.4,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     backdropFilter: "blur(12px)",
     WebkitBackdropFilter: "blur(12px)",
     transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
