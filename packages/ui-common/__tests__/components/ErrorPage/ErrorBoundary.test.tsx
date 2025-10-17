@@ -1,5 +1,6 @@
 import {render, screen} from "@testing-library/react"
 
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ErrorBoundary} from "../../../components/ErrorPage/ErrorBoundary"
 
 // Mock the ErrorPage component so tests don't need Next router or stores
@@ -17,16 +18,16 @@ function ErrorChild({shouldThrow}: {shouldThrow: boolean}) {
 }
 
 describe("ErrorBoundary", () => {
-    const originalConsoleError = console.error
+    let consoleErrorSpy: jest.SpyInstance<void, [message?: unknown, ...optionalParams: unknown[]]>
 
+    withStrictMocks()
+    
     beforeEach(() => {
-        // Silence expected console.error calls during React error boundary rendering
-        jest.spyOn(console, "error").mockImplementation()
+        consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
     })
 
     afterEach(() => {
-        ;(console.error as jest.Mock).mockRestore()
-        console.error = originalConsoleError
+        consoleErrorSpy.mockRestore()
     })
 
     test("renders fallback ErrorPage when child throws", () => {
@@ -39,6 +40,10 @@ describe("ErrorBoundary", () => {
         // ErrorPage receives an errorText like "boom in Unknown line null column null"
         const fallback = screen.getByTestId("mock-error")
         expect(fallback).toHaveTextContent(/boom in unknown line/iu)
+
+        // Assert console.error was called with the expected error
+        const messages = consoleErrorSpy.mock.calls.flat().join(" ")
+        expect(messages).toMatch(/error: boom/iu)
     })
 
     test("clears error when child no longer throws after re-render", async () => {
