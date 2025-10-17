@@ -55,8 +55,6 @@ describe("ChatBot", () => {
     const theme = createTheme()
 
     beforeEach(() => {
-        jest.clearAllMocks()
-
         mockUsePreferences.mockReturnValue({
             darkMode: false,
         })
@@ -92,8 +90,8 @@ describe("ChatBot", () => {
         renderChatBot()
 
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
-        expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        expect(iconContainer).toBeVisible()
+        await user.click(iconContainer)
         await screen.findByTestId("chat-common")
         expect(screen.getByText("Cognizant Neuro AI Assistant")).toBeInTheDocument()
     })
@@ -104,8 +102,8 @@ describe("ChatBot", () => {
 
         // Open chat first
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
-        expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        expect(iconContainer).toBeVisible()
+        await user.click(iconContainer)
         await screen.findByTestId("chat-common")
         // Close chat
         const closeButton = screen.getByTestId("close-button")
@@ -124,7 +122,7 @@ describe("ChatBot", () => {
         // Open chat
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        await user.click(iconContainer)
         await waitFor(() => expect(screen.queryByTestId("ContactSupportIcon")).not.toBeInTheDocument())
     })
 
@@ -163,7 +161,7 @@ describe("ChatBot", () => {
         // Open chat to trigger ChatCommon render
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        await user.click(iconContainer)
 
         // Check that ChatCommon renders with correct content
         const chatWindow = await screen.findByTestId("chat-common")
@@ -182,7 +180,7 @@ describe("ChatBot", () => {
         // Open chat to trigger ChatCommon render
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        await user.click(iconContainer)
 
         // Check that ChatCommon renders with dark mode background
         const chatWindow = await screen.findByTestId("chat-common")
@@ -197,7 +195,8 @@ describe("ChatBot", () => {
         // Open chat to see the container
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        await user.click(iconContainer)
+
         await screen.findByTestId("chat-common")
         const chatContainer = document.getElementById("custom-chatbot-id")
         expect(chatContainer).toBeInTheDocument()
@@ -210,7 +209,7 @@ describe("ChatBot", () => {
         // Open chat
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
-        await user.click(iconContainer as HTMLElement)
+        await user.click(iconContainer)
 
         // Verify chat window renders (which confirms all state management is working)
         await screen.findByTestId("chat-common")
