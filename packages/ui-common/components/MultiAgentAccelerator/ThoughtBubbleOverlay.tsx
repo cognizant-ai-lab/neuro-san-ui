@@ -5,17 +5,17 @@ import type {Edge, Node as RFNode} from "reactflow"
 // #region: Types
 
 interface ThoughtBubbleOverlayProps {
-    nodes: RFNode[]
-    edges: Edge[]
-    showThoughtBubbles?: boolean
-    onBubbleHoverChange?: (bubbleId: string | null) => void
+    readonly nodes: RFNode[]
+    readonly edges: Edge[]
+    readonly showThoughtBubbles?: boolean
+    readonly onBubbleHoverChange?: (bubbleId: string | null) => void
 }
 interface ThoughtBubbleProps {
-    isHovered: boolean
-    isTruncated: boolean
-    animationDelay: number
-    bubbleScreenX: number
-    bubbleScreenY: number
+    readonly isHovered: boolean
+    readonly isTruncated: boolean
+    readonly animationDelay: number
+    readonly bubbleScreenX: number
+    readonly bubbleScreenY: number
 }
 
 // #endregion: Types
@@ -234,7 +234,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 const bubbleRightOffset = rightMargin + 130 // 130 = half bubble width
                 const screenYCoord = topMargin + position.row * verticalSpacing
 
-                // Animation delay
+                // Per-bubble staggered animation delay in milliseconds
                 const animationDelay = index * 120
 
                 const isHovered = hoveredBubbleId === edge.id
@@ -250,7 +250,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
                 return (
                     <Fragment key={edge.id}>
-                        {/* Thought bubble */}
                         <ThoughtBubble
                             isHovered={isHovered}
                             isTruncated={isTruncated}
