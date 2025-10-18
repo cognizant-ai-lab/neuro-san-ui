@@ -27,7 +27,7 @@ import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../../utils/agentConversations"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
-const MAX_GLOBAL_THOUGHT_BUBBLES = 5
+export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
 export const addThoughtBubbleEdge = (
     thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,

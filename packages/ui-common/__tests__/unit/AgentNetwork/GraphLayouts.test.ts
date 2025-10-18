@@ -23,6 +23,7 @@ import {
     getThoughtBubbleEdges,
     layoutLinear,
     layoutRadial,
+    MAX_GLOBAL_THOUGHT_BUBBLES,
     removeThoughtBubbleEdge,
 } from "../../../components/MultiAgentAccelerator/GraphLayouts"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -307,7 +308,7 @@ describe("GraphLayouts", () => {
 
         it("Should enforce max thought bubble limit", () => {
             // Add more than MAX_GLOBAL_THOUGHT_BUBBLES (5) edges
-            for (let i = 0; i < 7; i += 1) {
+            for (let i = 0; i < MAX_GLOBAL_THOUGHT_BUBBLES + 2; i += 1) {
                 const mockEdgeMultiple: Edge = {
                     id: `edge${i}`,
                     source: "node1",
@@ -321,7 +322,7 @@ describe("GraphLayouts", () => {
             const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
-            expect(thoughtBubbleEdges).toHaveLength(5) // Should be limited to MAX_GLOBAL_THOUGHT_BUBBLES
+            expect(thoughtBubbleEdges).toHaveLength(5)
         })
 
         it("Should remove single thought bubble edge", () => {
