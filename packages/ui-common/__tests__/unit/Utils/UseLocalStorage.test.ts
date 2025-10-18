@@ -70,10 +70,9 @@ describe("useLocalStorage", () => {
         // Put invalid JSON into localStorage
         window.localStorage.setItem(itemKey, "not-a-json")
 
-        const spy = jest.spyOn(console, "error").mockImplementation()
+        jest.spyOn(console, "error").mockImplementation()
         const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
         expect(result.current[0]).toEqual(initialValue)
-        spy.mockRestore()
     })
 
     it("should catch and log when localStorage.setItem throws during setValue", () => {
@@ -97,7 +96,5 @@ describe("useLocalStorage", () => {
         expect(result.current[0]).toBe(cyclic)
         // console.error should have been called because JSON.stringify threw
         expect(consoleSpy).toHaveBeenCalled()
-
-        consoleSpy.mockRestore()
     })
 })

@@ -544,7 +544,6 @@ describe("AgentFlow", () => {
 
         // Verify cleanup was called
         expect(removeEventListenerSpy).toHaveBeenCalledWith("resize", expect.any(Function))
-        removeEventListenerSpy.mockRestore()
     })
 
     it("Should handle conversations without text field", () => {
