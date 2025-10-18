@@ -245,7 +245,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 const dropped: ActiveThoughtBubble[] = []
 
                 // First, filter out expired bubbles by checking THOUGHT_BUBBLE_TIMEOUT_MS
-                const nonExpiredBubbles = allBubbles.filter((bubble) => {
+                const activeBubbles = allBubbles.filter((bubble) => {
                     const age = now - bubble.startedAt.getTime()
                     const isExpired = age >= THOUGHT_BUBBLE_TIMEOUT_MS
                     if (isExpired) {
@@ -255,9 +255,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 })
 
                 // If still over the limit after removing expired, remove oldest non-expired
-                let finalBubbles = nonExpiredBubbles
-                if (nonExpiredBubbles.length > MAX_THOUGHT_BUBBLES) {
-                    const sorted = nonExpiredBubbles.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
+                let finalBubbles = activeBubbles
+                if (activeBubbles.length > MAX_THOUGHT_BUBBLES) {
+                    const sorted = activeBubbles.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
                     finalBubbles = sorted.slice(-MAX_THOUGHT_BUBBLES)
                     const additionalDropped = sorted.slice(0, -MAX_THOUGHT_BUBBLES)
                     dropped.push(...additionalDropped)

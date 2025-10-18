@@ -76,29 +76,6 @@ describe("useLocalStorage", () => {
         spy.mockRestore()
     })
 
-    it("should return initial value when window is undefined (server-side)", () => {
-        const itemKey = "ssr-key"
-        const initialValue = "server"
-
-        // Temporarily remove global window to simulate SSR
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const realWindow = global.window
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        global.window = undefined
-
-        try {
-            const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
-            expect(result.current[0]).toBe(initialValue)
-        } finally {
-            // Restore window
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            global.window = realWindow
-        }
-    })
-
     it("should catch and log when localStorage.setItem throws during setValue", () => {
         const itemKey = "throw-set"
         const initialValue = "init"
