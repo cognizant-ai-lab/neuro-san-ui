@@ -83,8 +83,10 @@ type Layout = "radial" | "linear"
 
 // #region: Constants
 
-const THOUGHT_BUBBLE_TIMEOUT_MS = 10000 // 10 seconds
+// Timeout for thought bubbles is set to 10 seconds
+const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
+// Maximum number of thought bubbles allowed on screen at any time. As more arrive, older ones are removed.
 const MAX_THOUGHT_BUBBLES = 5
 
 // #endregion: Constants
