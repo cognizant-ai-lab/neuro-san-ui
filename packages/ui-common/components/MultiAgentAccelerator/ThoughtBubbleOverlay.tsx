@@ -20,6 +20,15 @@ interface ThoughtBubbleProps {
 
 // #endregion: Types
 
+// #region: Constants
+
+const BUBBLE_ARROW_HEIGHT = 14
+const BUBBLE_ARROW_WIDTH = 24
+const BUBBLE_HEIGHT = 78
+const BUBBLE_WIDTH = 260
+
+// #endregion: Constants
+
 // #region: Styled Components
 
 const OverlayContainer = styled("div")({
@@ -54,11 +63,11 @@ const ThoughtBubble = styled("div", {
     transform: "translateY(-50%)", // Only center vertically, not horizontally
 
     // Dimensions
-    height: isHovered && isTruncated ? "78px" : "auto", // Only expand height when hovered AND text is truncated
-    maxHeight: "78px", // Max 3 lines always
+    height: isHovered && isTruncated ? BUBBLE_HEIGHT : "auto", // Only expand height when hovered AND text is truncated
+    maxHeight: BUBBLE_HEIGHT, // Max 3 lines always
     minHeight: "auto", // Let height adjust to content
     minWidth: "100px",
-    width: "260px",
+    width: BUBBLE_WIDTH,
 
     // Other styles
     boxShadow: isHovered
@@ -231,7 +240,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
                 // Position bubbles on the right side, stacked vertically
                 // Use right positioning instead of left
-                const bubbleRightOffset = rightMargin + 130 // 130 = half bubble width
+                const bubbleRightOffset = rightMargin + BUBBLE_WIDTH / 2
                 const screenYCoord = topMargin + position.row * verticalSpacing
 
                 // Per-bubble staggered animation delay in milliseconds
@@ -278,20 +287,20 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                         <div
                             style={{
                                 position: "absolute",
-                                // Position to left of bubble, touching edge (arrow width/2 = 12px)
-                                right: bubbleScreenX + 260 - 12,
+                                // Position to left of bubble, touching edge (arrow width / 2)
+                                right: bubbleScreenX + BUBBLE_WIDTH - BUBBLE_ARROW_WIDTH / 2,
                                 top: bubbleScreenY,
                                 transform: `translate(0, -50%) rotate(${triangleRotation}deg)`,
-                                width: "24px",
-                                height: "14px",
+                                width: BUBBLE_ARROW_WIDTH,
+                                height: BUBBLE_ARROW_HEIGHT,
                                 zIndex: 9999,
                                 pointerEvents: "none",
                                 filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))",
                             }}
                         >
                             <svg
-                                width="24"
-                                height="14"
+                                width={BUBBLE_ARROW_WIDTH}
+                                height={BUBBLE_ARROW_HEIGHT}
                                 viewBox="0 0 24 14"
                                 style={{display: "block"}}
                             >
