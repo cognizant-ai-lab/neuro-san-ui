@@ -292,7 +292,7 @@ export const layoutLinear = (
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
 
-    // Move repeated calculations outside the loop for efficiency
+    // Do these calculations outside the loop for efficiency
     const parentAgents = getParentAgents(agentsInNetwork)
     const childAgents = getChildAgents(parentAgents)
     const frontman = getFrontman(parentAgents, childAgents)
