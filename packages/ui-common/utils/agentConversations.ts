@@ -125,9 +125,10 @@ export const processChatChunk = (
             if (params && typeof params === "object" && "inquiry" in params) {
                 inquiryText = (params as {inquiry?: string}).inquiry
             }
-            // Show inquiry (from structure)
-            // TODO: This is only for networks that use AAOSA. Add more standard support on backend?
-            const newConversation = createConversation(agents, inquiryText)
+            const textToShow = inquiryText || chatMessage.text
+            // Show inquiry (from structure), that's only for networks that use AAOSA with a JSON format.
+            // Otherwise show the raw data from the `text` field of the chat message.
+            const newConversation = createConversation(agents, textToShow)
             updatedConversations.push(newConversation)
             finalConversations = updatedConversations
         }

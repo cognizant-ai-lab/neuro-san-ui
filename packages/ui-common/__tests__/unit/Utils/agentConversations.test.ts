@@ -183,5 +183,39 @@ describe("agentConversations", () => {
             expect(result.success).toBe(false)
             expect(consoleErrorSpy).toHaveBeenCalledWith("Agent conversation error:", expect.any(Error))
         })
+
+        it("should use structure.params.inquiry when present", () => {
+            const mockOrigin = [{tool: "agentX", instantiation_index: 0}]
+
+            mockChatMessageFromChunk.mockReturnValue({
+                type: ChatMessageType.AI,
+                origin: mockOrigin,
+                structure: {params: {inquiry: "Inquiry text here"}},
+                text: "This text should be ignored",
+            })
+
+            const result = processChatChunk("chunk with inquiry", new Map(), [])
+
+            expect(result.success).toBe(true)
+            expect(result.newConversations).toHaveLength(1)
+            expect(result.newConversations[0].text).toBe("Inquiry text here")
+        })
+
+        it("should fall back to chat message text when no inquiry present", () => {
+            const mockOrigin = [{tool: "agentY", instantiation_index: 0}]
+
+            mockChatMessageFromChunk.mockReturnValue({
+                type: ChatMessageType.AI,
+                origin: mockOrigin,
+                structure: {params: {}},
+                text: "Chat message text used",
+            })
+
+            const result = processChatChunk("chunk without inquiry", new Map(), [])
+
+            expect(result.success).toBe(true)
+            expect(result.newConversations).toHaveLength(1)
+            expect(result.newConversations[0].text).toBe("Chat message text used")
+        })
     })
 })
