@@ -27,6 +27,12 @@ const BUBBLE_ARROW_WIDTH = 24
 const BUBBLE_HEIGHT = 78
 const BUBBLE_WIDTH = 260
 
+const LAYOUT_BUBBLES_ANIMATION_DELAY_MS = 120 // Delay between each bubble's animation start
+const LAYOUT_BUBBLES_TOP_MARGIN = 50 // Distance from top of container
+const LAYOUT_BUBBLES_RIGHT_MARGIN = 40 // Distance from right edge
+const LAYOUT_BUBBLES_TRIANGLE_ROTATION = 90 // Point left (rotate arrow 90 degrees clockwise)
+const LAYOUT_BUBBLES_VERTICAL_SPACING = 90 // Spacing between stacked bubbles
+
 // #endregion: Constants
 
 // #region: Styled Components
@@ -230,21 +236,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 const positionNode = isFrontmanEdge ? frontmanNode : nodes.find((n: RFNode) => n.id === edge.source)
                 if (!positionNode) return null
 
-                // Layout bubbles stacked vertically on the right side
-                const verticalSpacing = 90 // Spacing between stacked bubbles
-                const topMargin = 50 // Distance from top of container
-                const rightMargin = 40 // Distance from right edge
-
                 // Stack bubbles vertically (one per row)
                 const position = edgePositions.get(edge.id) || {row: 0, col: 0}
 
                 // Position bubbles on the right side, stacked vertically
-                // Use right positioning instead of left
-                const bubbleRightOffset = rightMargin + BUBBLE_WIDTH / 2
-                const screenYCoord = topMargin + position.row * verticalSpacing
+                const bubbleRightOffset = LAYOUT_BUBBLES_RIGHT_MARGIN + BUBBLE_WIDTH / 2
+                const screenYCoord = LAYOUT_BUBBLES_TOP_MARGIN + position.row * LAYOUT_BUBBLES_VERTICAL_SPACING
 
                 // Per-bubble staggered animation delay in milliseconds
-                const animationDelay = index * 120
+                const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
 
                 const isHovered = hoveredBubbleId === edge.id
                 const isTruncated = truncatedBubbles.has(edge.id)
@@ -253,9 +253,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 // We'll use CSS right positioning in the component
                 const bubbleScreenX = bubbleRightOffset
                 const bubbleScreenY = screenYCoord
-
-                // Arrow points to the left (west) toward the chart
-                const triangleRotation = 90 // Point left (rotate arrow 90 degrees clockwise)
 
                 return (
                     <Fragment key={edge.id}>
@@ -283,14 +280,14 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                 {text}
                             </TruncatedText>
                         </ThoughtBubble>
-                        {/* Triangle pointer - positioned on left (west) side of bubble, touching it */}
+                        {/* Triangle pointer - positioned on the left side of the bubble and pointing left */}
                         <div
                             style={{
                                 position: "absolute",
                                 // Position to left of bubble, touching edge (arrow width / 2)
                                 right: bubbleScreenX + BUBBLE_WIDTH - BUBBLE_ARROW_WIDTH / 2,
                                 top: bubbleScreenY,
-                                transform: `translate(0, -50%) rotate(${triangleRotation}deg)`,
+                                transform: `translate(0, -50%) rotate(${LAYOUT_BUBBLES_TRIANGLE_ROTATION}deg)`,
                                 width: BUBBLE_ARROW_WIDTH,
                                 height: BUBBLE_ARROW_HEIGHT,
                                 zIndex: 9999,
