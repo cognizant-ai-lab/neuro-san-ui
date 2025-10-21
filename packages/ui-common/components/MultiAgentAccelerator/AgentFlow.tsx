@@ -206,15 +206,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         agents: new Set(conv.agents),
                         conversationId: conv.id,
                         startedAt: new Date(),
-                        // No text needed
+                        // No text needed. This is for tracking which conversations are active.
                     })
 
-                    // Mark this conversation ID as processed
+                    // Mark this conversation ID as processed. This protects against duplicates if conversations have the same ID,
+                    // although some duplicates still get through.
                     processedConversationIdsRef.current.add(conv.id)
 
-                    // Add corresponding edge to global cache
                     const agentList = Array.from(conv.agents)
+                    // TODO: Check if agentList has at least 2 agents. This allows us to set a source and target.
+                    // However, this can also have more than 2 agents. We may want to think more about that case.
                     if (agentList.length >= 2) {
+                        // These source and target agents are going to be useful later when we point bubbles to nodes.
                         const sourceAgent = agentList[0]
                         const targetAgent = agentList[1]
                         const edge: Edge = {
