@@ -172,7 +172,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             return prev
         })
-    }, [sortedEdges, hoveredBubbleId]) // Re-check when edges change or hover state changes
+    }, [hoveredBubbleId, sortedEdges, textRefs]) // Re-check when edges change or hover state changes
 
     // Notify parent when hover state changes
     const handleHoverChange = useCallback(
