@@ -181,22 +181,25 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setActiveThoughtBubbles((prevBubbles) => {
             const newBubbles: ActiveThoughtBubble[] = []
 
-            // Check against what user actually sees (parsed text) from both bubbles and edges
-            const existingParsedTexts = new Set(prevBubbles.map((b) => b.text || ""))
+            // Check what user actually sees (parsed text) as one level of duplicate prevention
+            const processedText = new Set(prevBubbles.map((b) => b.text || ""))
 
-            // Also check existing edges to avoid duplicates
-            thoughtBubbleEdges.forEach((edgeData) => {
-                const edgeText = (edgeData.edge.data as {text?: string})?.text
+            thoughtBubbleEdges.forEach((thoughtBubbleEdge) => {
+                const edgeText = (thoughtBubbleEdge.edge.data as {text?: string})?.text
                 if (edgeText) {
-                    existingParsedTexts.add(edgeText)
+                    // Add edge text to existing parsed texts to prevent duplicates
+                    processedText.add(edgeText)
                 }
             })
 
             // Only add bubbles for conversations with unique parsed content
             for (const conv of currentConversations) {
                 if (
+                    // Has text
                     conv.text &&
-                    !existingParsedTexts.has(conv.text) &&
+                    // Haven't already displayed this text (duplicate check #1)
+                    !processedText.has(conv.text) &&
+                    // Haven't already displayed this conversation ID (duplicate check #2)
                     !processedConversationIdsRef.current.has(conv.id)
                 ) {
                     // Create an AgentConversation object representing the active thought bubble.
