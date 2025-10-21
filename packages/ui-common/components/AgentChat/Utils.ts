@@ -21,12 +21,20 @@ import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 
 // We ignore any messages that are not of these types
-const KNOWN_MESSAGE_TYPES = [
+const ALL_KNOWN_MESSAGE_TYPES = [
     ChatMessageType.AI,
     ChatMessageType.AGENT,
     ChatMessageType.AGENT_FRAMEWORK,
     ChatMessageType.HUMAN,
     ChatMessageType.SYSTEM,
+]
+
+export const KNOWN_MESSAGE_TYPES_FOR_PLASMA = [
+    ChatMessageType.AI,
+    ChatMessageType.AGENT,
+    ChatMessageType.AGENT_FRAMEWORK,
+    ChatMessageType.SYSTEM,
+    // HUMAN omitted for plasma edges for performance reasons
 ]
 
 export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
@@ -41,7 +49,7 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     const messageType: ChatMessageType = chatMessage?.type
 
     // Check if it's a message type we know how to handle
-    if (!KNOWN_MESSAGE_TYPES.includes(messageType)) {
+    if (!ALL_KNOWN_MESSAGE_TYPES.includes(messageType)) {
         return null
     }
 
