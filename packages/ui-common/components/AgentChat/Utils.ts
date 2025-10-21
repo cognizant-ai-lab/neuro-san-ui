@@ -21,7 +21,13 @@ import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 
 // We ignore any messages that are not of these types
-const KNOWN_MESSAGE_TYPES = [ChatMessageType.AI, ChatMessageType.AGENT, ChatMessageType.AGENT_FRAMEWORK]
+const KNOWN_MESSAGE_TYPES = [
+    ChatMessageType.AI,
+    ChatMessageType.AGENT,
+    ChatMessageType.AGENT_FRAMEWORK,
+    ChatMessageType.HUMAN,
+    ChatMessageType.SYSTEM,
+]
 
 export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     let chatResponse: ChatResponse
