@@ -209,8 +209,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         // No text needed. This is for tracking which conversations are active.
                     })
 
-                    // Mark this conversation ID as processed. This protects against duplicates if conversations have the same ID,
-                    // although some duplicates still get through.
+                    // Mark this conversation ID as processed. This protects against duplicates if conversations have
+                    // the same ID, although some duplicates still get through.
                     processedConversationIdsRef.current.add(conv.id)
 
                     const agentList = Array.from(conv.agents)
