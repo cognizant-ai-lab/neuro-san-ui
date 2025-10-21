@@ -342,5 +342,61 @@ describe("GraphLayouts", () => {
 
             expect(thoughtBubbleEdges).toHaveLength(0)
         })
+
+        test.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout: should add thought bubble from cache when no duplicate ids exist", ({layoutFunction}) => {
+            const singleNodeMap = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
+            const bubble: Edge = {id: "tb1", source: "A", target: "B", type: "thoughtBubbleEdge", data: {text: "x"}}
+            addThoughtBubbleEdge(singleNodeMap, "conv-x", bubble)
+
+            const {edges} = layoutFunction(new Map(), [{origin: "A", tools: []}], null, true, singleNodeMap)
+            const bubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+            expect(bubbleEdges).toHaveLength(1)
+            expect(bubbleEdges[0].id).toBe("tb1")
+        })
+
+        test.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout: should add thought bubble when network already has non-thought edges", ({layoutFunction}) => {
+            const tbMap = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
+            const bubble: Edge = {id: "should-add", source: "agent1", target: "agent2", type: "thoughtBubbleEdge"}
+            addThoughtBubbleEdge(tbMap, "not-add", bubble)
+
+            const agents: ConnectivityInfo[] = [
+                {origin: "agent1", tools: ["agent2"]},
+                {origin: "agent2", tools: []},
+            ]
+
+            const {edges} = layoutFunction(new Map(), agents, null, false, tbMap)
+            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+            expect(thoughtBubbleEdges).toHaveLength(1)
+            expect(thoughtBubbleEdges[0].id).toBe("should-add")
+        })
+
+        test.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])(
+            "$name layout: should skip thought bubble when an existing network edge has the same id",
+            ({layoutFunction}) => {
+                const tbMap = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
+                const bubble: Edge = {id: "B-edge-A", source: "A", target: "B", type: "thoughtBubbleEdge"}
+                addThoughtBubbleEdge(tbMap, "dup-net", bubble)
+
+                const agents: ConnectivityInfo[] = [
+                    {origin: "A", tools: ["B"]},
+                    {origin: "B", tools: []},
+                ]
+
+                const {edges} = layoutFunction(new Map(), agents, null, false, tbMap)
+
+                const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
+                expect(thoughtBubbleEdges).toHaveLength(0)
+                expect(edges.some((e) => e.id === "B-edge-A" && e.type !== "thoughtBubbleEdge")).toBeTruthy()
+            }
+        )
     })
 })

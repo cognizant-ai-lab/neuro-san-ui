@@ -271,7 +271,9 @@ export const layoutRadial = (
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
     const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge<EdgeProps>) =>
-        edgesInNetwork.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
+        edgesInNetwork.every(
+            (existing: Edge<EdgeProps>) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge"
+        )
     )
 
     edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
@@ -346,7 +348,9 @@ export const layoutLinear = (
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
     const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge<EdgeProps>) =>
-        edgesInNetwork.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
+        edgesInNetwork.every(
+            (existing: Edge<EdgeProps>) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge"
+        )
     )
 
     edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
