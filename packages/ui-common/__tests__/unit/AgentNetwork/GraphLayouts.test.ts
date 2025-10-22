@@ -236,7 +236,7 @@ describe("GraphLayouts", () => {
     })
 
     describe("Plasma edges and known message types", () => {
-        test.each([
+        it.each([
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])("$name layout: creates plasma edge for all supported conversation types", ({layoutFunction}) => {
@@ -267,7 +267,7 @@ describe("GraphLayouts", () => {
             })
         })
 
-        test.each([
+        it.each([
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])("$name layout: does NOT create plasma edge for excluded conversation type (HUMAN)", ({layoutFunction}) => {
@@ -299,7 +299,7 @@ describe("GraphLayouts", () => {
         })
     })
 
-    test.each([
+    it.each([
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
     ])("Should handle a degenerate single-node graph in $name layout", async ({layoutFunction}) => {
@@ -311,7 +311,7 @@ describe("GraphLayouts", () => {
         expect(nodes[0]?.id).toBe("agent1")
     })
 
-    test.each([
+    it.each([
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
     ])("Should handle a disconnected graph in $name layout", ({layoutFunction}) => {
@@ -409,7 +409,7 @@ describe("GraphLayouts", () => {
             expect(thoughtBubbleEdges).toHaveLength(0)
         })
 
-        test.each([
+        it.each([
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])("$name layout: should add thought bubble from cache when no duplicate ids exist", ({layoutFunction}) => {
@@ -423,7 +423,7 @@ describe("GraphLayouts", () => {
             expect(bubbleEdges[0].id).toBe("tb1")
         })
 
-        test.each([
+        it.each([
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])("$name layout: should add thought bubble when network already has non-thought edges", ({layoutFunction}) => {
@@ -442,7 +442,7 @@ describe("GraphLayouts", () => {
             expect(thoughtBubbleEdges[0].id).toBe("should-add")
         })
 
-        test.each([
+        it.each([
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])(

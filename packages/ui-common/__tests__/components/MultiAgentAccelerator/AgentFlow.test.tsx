@@ -123,7 +123,7 @@ describe("AgentFlow", () => {
         })
     }
 
-    test.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
+    it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
         mockedUsePreferences.mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
         const {container} = renderAgentFlowComponent()
 
@@ -265,7 +265,7 @@ describe("AgentFlow", () => {
         expect(nodes).toHaveLength(1)
     })
 
-    test.each(["radial", "linear"])("Should allow switching to %s layout", async (layout) => {
+    it.each(["radial", "linear"])("Should allow switching to %s layout", async (layout) => {
         const {container} = renderAgentFlowComponent()
 
         // locate appropriate button
