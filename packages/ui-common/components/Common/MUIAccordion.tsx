@@ -15,14 +15,13 @@ limitations under the License.
 */
 
 import ArrowForwardIosSharpIcon from "@mui/icons-material/ArrowForwardIosSharp"
-import {styled, SxProps} from "@mui/material"
+import {styled, SxProps, useColorScheme} from "@mui/material"
 import MuiAccordion, {AccordionProps} from "@mui/material/Accordion"
 import MuiAccordionDetails from "@mui/material/AccordionDetails"
 import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} from "@mui/material/AccordionSummary"
 import Typography from "@mui/material/Typography"
 import {FC, ReactNode, SyntheticEvent, useCallback, useState} from "react"
 
-import {usePreferences} from "../../state/Preferences"
 // #region: Styled Components
 const Accordion = styled((props: AccordionProps) => (
     <MuiAccordion
@@ -91,7 +90,9 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
     sx,
 }) => {
     // Dark mode
-    const {darkMode} = usePreferences()
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+
     const [expandedList, setExpandedList] = useState<number[]>(defaultExpandedPanelKey ? [defaultExpandedPanelKey] : [])
 
     const handleChange = useCallback(

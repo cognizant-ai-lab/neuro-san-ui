@@ -54,9 +54,9 @@ import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {usePreferences} from "../../state/Preferences"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
+import {useColorScheme} from "@mui/material"
 
 // #region: Types
 
@@ -324,7 +324,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
-    const {darkMode} = usePreferences()
+    const { mode, systemMode } = useColorScheme();
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
 
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"

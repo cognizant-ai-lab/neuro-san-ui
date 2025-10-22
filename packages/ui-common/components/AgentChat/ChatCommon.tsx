@@ -23,7 +23,7 @@ import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
 import WrapTextIcon from "@mui/icons-material/WrapText"
-import {Box, Input} from "@mui/material"
+import {Box, Input,useColorScheme} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
@@ -67,7 +67,6 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
-import {usePreferences} from "../../state/Preferences"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
@@ -310,7 +309,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const {darkMode} = usePreferences()
+    const { mode, systemMode } = useColorScheme();
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
 
     // Temporary styling for implementation of dark mode
     const darkModeStyling = {
@@ -721,8 +721,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 succeeded.current = false
             }
         } else if (chatMessage?.text?.trim() !== "") {
-            // Not an error, so output it if it has text. The backend sometimes sends messages with no text content and
-            // we don't want to display those to the user.
+            // Not an error, so output it if it has text. The backend sometimes sends messages with no text content, 
+            // and we don't want to display those to the user.
             // Agent name is the last tool in the origin array. If it's not there, use a default name.
             const agentName =
                 chatMessage.origin?.length > 0
