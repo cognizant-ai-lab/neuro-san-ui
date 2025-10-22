@@ -23,7 +23,7 @@ import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
 import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
-import NeuroSanUI from "../../pages/_app"
+import {NeuroSanUI} from "../../pages/_app"
 
 const originalFetch = window.fetch
 

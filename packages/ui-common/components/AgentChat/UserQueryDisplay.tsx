@@ -17,7 +17,7 @@ limitations under the License.
 import {styled} from "@mui/material"
 
 import {DEFAULT_USER_IMAGE} from "../../const"
-import {usePreferences} from "../../state/Preferences"
+import {useColorScheme} from "@mui/material"
 
 // #region: Styled Components
 
@@ -45,7 +45,8 @@ export const UserQueryDisplay = ({
     title: string
     userImage: string
 }) => {
-    const {darkMode} = usePreferences()
+    const { mode, systemMode } = useColorScheme();
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
 
     return (
         <div

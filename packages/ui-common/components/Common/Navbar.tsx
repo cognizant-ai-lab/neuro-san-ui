@@ -20,7 +20,7 @@ limitations under the License.
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
-import {IconButton, Menu, MenuItem, Tooltip, Typography} from "@mui/material"
+import {IconButton, Menu, MenuItem, Tooltip, Typography, useColorScheme} from "@mui/material"
 import Grid from "@mui/material/Grid"
 import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
@@ -33,7 +33,6 @@ import {
     DEFAULT_USER_IMAGE,
     NEURO_SAN_UI_VERSION,
 } from "../../const"
-import {usePreferences} from "../../state/Preferences"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 
 // Declare the Props Interface
@@ -94,7 +93,8 @@ export const Navbar = ({
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
     // Dark mode
-    const {darkMode, toggleDarkMode} = usePreferences()
+    const {mode, setMode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
 
     // Gate to make sure we only attempt to render after NextJS has completed its rehydration
     const [hydrated, setHydrated] = useState(false)
@@ -414,7 +414,7 @@ export const Navbar = ({
                         color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)",
                     }}
                     onClick={() => {
-                        toggleDarkMode()
+                        setMode(darkMode ? "light" : "dark")
                     }}
                 />
             </Tooltip>

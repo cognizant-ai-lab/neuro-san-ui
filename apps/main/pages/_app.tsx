@@ -18,14 +18,14 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
-import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material"
+import {Container, CssBaseline, ThemeProvider} from "@mui/material"
 import startCase from "lodash-es/startCase.js"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
+import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
 
 import {
     Auth,
@@ -46,10 +46,9 @@ import {
     LOGO,
 } from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
-import {usePreferences} from "../../../packages/ui-common/state/Preferences"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
-import {APP_THEME, BRAND_COLORS} from "../theme"
+import {APP_THEME} from "../theme"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -117,28 +116,6 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
     const isContainedInViewport = Component.isContainedInViewport ?? false
-
-    // Dark mode
-    const {darkMode} = usePreferences()
-
-    const theme = useMemo(
-        () =>
-            createTheme({
-                ...APP_THEME,
-                palette: {
-                    ...APP_THEME.palette,
-                    mode: darkMode ? "dark" : "light",
-                    background: {
-                        default: darkMode ? BRAND_COLORS["bs-dark-mode-dim"] : BRAND_COLORS["bs-white"],
-                    },
-                    text: {
-                        primary: darkMode ? BRAND_COLORS["bs-white"] : BRAND_COLORS["bs-primary"],
-                        secondary: darkMode ? BRAND_COLORS["bs-gray-light"] : BRAND_COLORS["bs-gray-medium-dark"],
-                    },
-                },
-            }),
-        [darkMode]
-    )
 
     useEffect(() => {
         const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
@@ -360,7 +337,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <ThemeProvider theme={theme}>{body}</ThemeProvider>
+            <ThemeProvider theme={APP_THEME}>{body}</ThemeProvider>
             <SnackbarProvider
                 Components={{
                     info: Snackbar,
