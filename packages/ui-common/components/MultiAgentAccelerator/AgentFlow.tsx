@@ -324,17 +324,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
-    // Memoize filtered conversations directly from activeThoughtBubbles
-    const filteredConversations: AgentConversation[] | null = useMemo(() => {
-        // Map ActiveThoughtBubble back to AgentConversation
-        return activeThoughtBubbles.map((bubble: ActiveThoughtBubble) => ({
-            id: bubble.conversationId,
-            text: bubble.text,
-            agents: bubble.agents,
-            startedAt: bubble.startedAt,
-        }))
-    }, [activeThoughtBubbles])
-
     const {darkMode} = usePreferences()
 
     // Shadow color for icon. TODO: use MUI theme system instead.
@@ -389,7 +378,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             agentCounts,
             mergedAgentsInNetwork,
             currentConversations,
-            filteredConversations,
+            activeThoughtBubbles,
             thoughtBubbleEdges,
             isAwaitingLlm,
             showThoughtBubbles,

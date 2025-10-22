@@ -17,6 +17,7 @@ limitations under the License.
 import {Edge, EdgeProps} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Utils"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
 import {
     addThoughtBubbleEdge,
@@ -26,7 +27,7 @@ import {
     MAX_GLOBAL_THOUGHT_BUBBLES,
     removeThoughtBubbleEdge,
 } from "../../../components/MultiAgentAccelerator/GraphLayouts"
-import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 
 describe("GraphLayouts", () => {
     withStrictMocks()
@@ -223,6 +224,7 @@ describe("GraphLayouts", () => {
                 agents: new Set(["a", "b"]),
                 id: "conv1",
                 startedAt: new Date(),
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -231,6 +233,70 @@ describe("GraphLayouts", () => {
 
         // There should be at least one edge since a->b is a conversation agent edge
         expect(edges.some((e) => e.source === "a" && e.target === "b")).toBeTruthy()
+    })
+
+    describe("Plasma edges and known message types", () => {
+        test.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout: creates plasma edge for all supported conversation types", ({layoutFunction}) => {
+            const agents: ConnectivityInfo[] = [
+                {origin: "a", tools: ["b"]},
+                {origin: "b", tools: []},
+            ]
+
+            const agentCounts = new Map<string, number>()
+            agentCounts.set("a", 1)
+            agentCounts.set("b", 1)
+
+            // For each supported type in KNOWN_MESSAGE_TYPES_FOR_PLASMA ensure a plasma edge is produced
+            KNOWN_MESSAGE_TYPES_FOR_PLASMA.forEach((msgType) => {
+                const conversations = [
+                    {
+                        agents: new Set(["a", "b"]),
+                        id: `conv-${msgType}`,
+                        startedAt: new Date(),
+                        type: msgType,
+                    },
+                ]
+
+                const {edges} = layoutFunction(agentCounts, agents, conversations, true, new Map())
+
+                // Expect an animated/plasma edge to exist for the conversation between a -> b
+                expect(edges.some((e) => e.source === "a" && e.target === "b" && e.type === "plasmaEdge")).toBeTruthy()
+            })
+        })
+
+        test.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout: does NOT create plasma edge for excluded conversation type (HUMAN)", ({layoutFunction}) => {
+            const agents: ConnectivityInfo[] = [
+                {origin: "a", tools: ["b"]},
+                {origin: "b", tools: []},
+            ]
+
+            const agentCounts = new Map<string, number>()
+            agentCounts.set("a", 1)
+            agentCounts.set("b", 1)
+
+            const conversations = [
+                {
+                    agents: new Set(["a", "b"]),
+                    id: "conv1",
+                    startedAt: new Date(),
+                    type: ChatMessageType.HUMAN,
+                },
+            ]
+
+            const {edges} = layoutFunction(agentCounts, agents, conversations, true, new Map())
+
+            // Since HUMAN is omitted from KNOWN_MESSAGE_TYPES_FOR_PLASMA, there should be no plasma edge
+            expect(edges.some((e) => e.type === "plasmaEdge")).toBeFalsy()
+
+            // And there should be no edge between a and b when awaiting LLM (filtered out)
+            expect(edges.some((e) => e.source === "a" && e.target === "b")).toBeFalsy()
+        })
     })
 
     test.each([

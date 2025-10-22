@@ -22,7 +22,7 @@ import {EdgeProps, ReactFlowProvider} from "reactflow"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
-import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {usePreferences} from "../../../state/Preferences"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
@@ -89,6 +89,7 @@ describe("AgentFlow", () => {
                 id: "test-conv-1",
                 agents: new Set(["agent1"]),
                 startedAt: new Date(),
+                type: ChatMessageType.AGENT,
             },
         ],
         isAwaitingLlm: false,
@@ -189,6 +190,7 @@ describe("AgentFlow", () => {
                             id: "test-conv-2",
                             agents: new Set(["agent1", "agent3"]),
                             startedAt: new Date(),
+                            type: ChatMessageType.AGENT,
                         },
                     ]}
                     thoughtBubbleEdges={new Map()}
@@ -293,6 +295,7 @@ describe("AgentFlow", () => {
                             id: "test-conv-3",
                             agents: new Set(["agent3"]),
                             startedAt: new Date(),
+                            type: ChatMessageType.AGENT,
                         },
                     ]}
                     isAwaitingLlm={false}
@@ -645,6 +648,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Test message",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -707,6 +711,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Test timeout message",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -769,6 +774,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent2", "agent3"]),
                 startedAt: new Date(),
                 text: '{"inquiry": "What is the weather?"}', // Same parsed content
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -800,6 +806,7 @@ describe("AgentFlow", () => {
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(Date.now() + i * 1000), // Different startedAts
             text: `{"inquiry": "Message ${i}"}`, // Unique messages
+            type: ChatMessageType.AGENT,
         }))
 
         const {container} = render(
@@ -832,6 +839,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Test expiration",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -888,6 +896,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Helper test",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -969,6 +978,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Hover prevents expiry",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -1052,12 +1062,14 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: TEST MESSAGE",
+                type: ChatMessageType.AGENT,
             },
             {
                 id: "conv-case-2",
                 agents: new Set(["agent2", "agent3"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: test message", // Same but lowercase
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -1104,6 +1116,7 @@ describe("AgentFlow", () => {
                 agents: new Set(["agent2", "agent3"]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: New message",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -1136,6 +1149,7 @@ describe("AgentFlow", () => {
                             agents: new Set(["agent1", "agent2"]),
                             startedAt: new Date(),
                             text: "Invoking Agent with inquiry: First message",
+                            type: ChatMessageType.AGENT,
                         },
                     ]}
                     thoughtBubbleEdges={new Map()}
@@ -1155,7 +1169,7 @@ describe("AgentFlow", () => {
                             id: "conv-no-text",
                             agents: new Set(["agent2", "agent3"]),
                             startedAt: new Date(),
-                            // text is undefined
+                            type: ChatMessageType.AGENT,
                         },
                     ]}
                     thoughtBubbleEdges={new Map()}
@@ -1176,6 +1190,7 @@ describe("AgentFlow", () => {
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(),
             text: "Invoking Agent with inquiry: Duplicate ID test",
+            type: ChatMessageType.AGENT,
         }
 
         render(
@@ -1202,6 +1217,7 @@ describe("AgentFlow", () => {
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(),
             text: "Invoking Agent with inquiry: Clear test",
+            type: ChatMessageType.AGENT,
         }
 
         // Render with edges present (non-empty map)

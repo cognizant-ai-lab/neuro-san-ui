@@ -38,13 +38,18 @@ describe("agentConversations", () => {
     withStrictMocks()
 
     describe("createConversation", () => {
-        it("should create a new conversation with empty agents", () => {
-            const conversation = createConversation()
+        it("should create a conversation with correct properties", () => {
+            const agents = ["agent1", "agent2"]
+            const text = "Hello, this is a test conversation."
+            const type = ChatMessageType.AGENT
 
-            expect(conversation.id).toMatch(/^conv_\d+[a-z0-9]+$/u)
-            expect(conversation.agents).toBeInstanceOf(Set)
-            expect(conversation.agents.size).toBe(0)
-            expect(conversation.startedAt).toBeInstanceOf(Date)
+            const conversation: AgentConversation = createConversation(agents, text, type)
+
+            expect(conversation).toHaveProperty("id")
+            expect(conversation.agents).toEqual(new Set(agents))
+            expect(conversation).toHaveProperty("startedAt")
+            expect(conversation.text).toBe(text)
+            expect(conversation.type).toBe(type)
         })
     })
 
@@ -126,9 +131,7 @@ describe("agentConversations", () => {
 
         it("should remove agents on final message", () => {
             const conversations: AgentConversation[] = []
-            const conversation = createConversation()
-            conversation.agents.add("agent1")
-            conversation.agents.add("agent2")
+            const conversation = createConversation(["agent1", "agent2"], "Test message", ChatMessageType.AGENT)
             const conversationsWithAgents = [...conversations, conversation]
 
             const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
@@ -150,8 +153,7 @@ describe("agentConversations", () => {
 
         it("should remove empty conversations", () => {
             const conversations: AgentConversation[] = []
-            const conversation = createConversation()
-            conversation.agents.add("agent1")
+            const conversation = createConversation(["agent1"], "Test message", ChatMessageType.AGENT)
             const conversationsWithAgent = [...conversations, conversation]
 
             const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
@@ -188,7 +190,7 @@ describe("agentConversations", () => {
             const mockOrigin = [{tool: "agentX", instantiation_index: 0}]
 
             mockChatMessageFromChunk.mockReturnValue({
-                type: ChatMessageType.AI,
+                type: ChatMessageType.AGENT,
                 origin: mockOrigin,
                 structure: {params: {inquiry: "Inquiry text here"}},
                 text: "This text should be ignored",

@@ -21,7 +21,7 @@ import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 
 // We ignore any messages that are not of these types
-const ALL_KNOWN_MESSAGE_TYPES = [
+export const ALL_KNOWN_MESSAGE_TYPES = [
     ChatMessageType.AI,
     ChatMessageType.AGENT,
     ChatMessageType.AGENT_FRAMEWORK,

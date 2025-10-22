@@ -40,7 +40,7 @@ export const isFinalMessage = (chatMessage: {
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export const createConversation = (agents: string[], type: ChatMessageType, text?: string): AgentConversation => ({
+export const createConversation = (agents: string[], text: string, type: ChatMessageType): AgentConversation => ({
     // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
     // solution for HTTP on localhost.
     // eslint-disable-next-line newline-per-chained-call
@@ -132,7 +132,7 @@ export const processChatChunk = (
             const textToShow = inquiryText || chatMessage.text
             // Show inquiry (from structure), that's only for networks that use AAOSA with a JSON format.
             // Otherwise show the raw data from the `text` field of the chat message.
-            const newConversation = createConversation(agents, chatMessage.type, textToShow)
+            const newConversation = createConversation(agents, textToShow, chatMessage.type)
             updatedConversations.push(newConversation)
             finalConversations = updatedConversations
         }
