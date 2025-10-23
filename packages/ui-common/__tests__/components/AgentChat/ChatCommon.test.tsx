@@ -26,7 +26,6 @@ import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
-import {usePreferences} from "../../../state/Preferences"
 
 // Mock agent API
 jest.mock("../../../controller/agent/Agent")
@@ -36,10 +35,6 @@ jest.mock("../../../controller/llm/LlmChat")
 
 // Don't want to send user notifications during tests so mock this
 jest.mock("../../../components/Common/notification")
-
-// Mock Preferences state
-jest.mock("../../../state/Preferences")
-const mockedUsePreferences = jest.mocked(usePreferences, {shallow: true})
 
 const TEST_USER = "testUser"
 const TEST_AGENT_MATH_GUY = "Math Guy"
@@ -92,7 +87,6 @@ describe("ChatCommon", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
-        mockedUsePreferences.mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue({
@@ -126,7 +120,6 @@ describe("ChatCommon", () => {
     }
 
     it.each([false, true])("Should render correctly with darkMode=%s", async (darkMode) => {
-        mockedUsePreferences.mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
         const overrides = {id: darkMode ? "dark-mode" : "light-mode"}
         renderChatCommonComponent(overrides)
 
@@ -1045,8 +1038,6 @@ describe("ChatCommon", () => {
         {darkMode: true, agentId: "dark-agent"},
         {darkMode: false, agentId: "light-agent"},
     ])("Should handle dark mode $darkMode with custom styling", async ({darkMode, agentId}) => {
-        mockedUsePreferences.mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
-
         renderChatCommonComponent({
             id: agentId,
             backgroundColor: darkMode ? "#333333" : "#FFFFFF",

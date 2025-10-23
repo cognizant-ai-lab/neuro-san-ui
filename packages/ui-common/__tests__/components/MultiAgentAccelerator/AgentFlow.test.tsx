@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {useColorScheme} from "@mui/material"
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {FC, useEffect} from "react"
@@ -23,9 +24,13 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {usePreferences} from "../../../state/Preferences"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
+
+jest.mock("@mui/material", () => ({
+    ...jest.requireActual("@mui/material"),
+    useColorScheme: jest.fn(),
+}))
 
 jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid="mock-plasma-edge" />,
@@ -51,10 +56,6 @@ jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay", () =
     ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
 }))
 
-// Mock Preferences state
-jest.mock("../../../state/Preferences")
-const mockedUsePreferences = jest.mocked(usePreferences, {shallow: true})
-
 describe("AgentFlow", () => {
     let user: UserEvent
 
@@ -62,8 +63,9 @@ describe("AgentFlow", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
-
-        mockedUsePreferences.mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "light",
+        })
     })
 
     const network: ConnectivityInfo[] = [
@@ -124,7 +126,10 @@ describe("AgentFlow", () => {
     }
 
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
-        mockedUsePreferences.mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: darkMode ? "dark" : "light",
+        })
+
         const {container} = renderAgentFlowComponent()
 
         expect(await screen.findByText(cleanUpAgentName("React Flow"))).toBeInTheDocument()
@@ -1008,7 +1013,7 @@ describe("AgentFlow", () => {
             </ReactFlowProvider>
         )
 
-        // Fast-forward time by 11 seconds to trigger cleanup (past the 10 second timeout)
+        // Fast-forward time by 11 seconds to trigger cleanup (past the 10-second timeout)
         act(() => {
             jest.advanceTimersByTime(11000)
         })
@@ -1094,7 +1099,7 @@ describe("AgentFlow", () => {
     it("Should handle thought bubble edges without text field", () => {
         const existingEdgesMap = new Map()
 
-        // Add an edge without text (to test the if (edgeText) branch)
+        // Add an edge without text (to test the "if (edgeText)" branch)
         existingEdgesMap.set("edge-without-text", {
             edge: {
                 id: "thought-bubble-no-text",

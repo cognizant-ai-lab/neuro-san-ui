@@ -23,7 +23,7 @@ import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
 import WrapTextIcon from "@mui/icons-material/WrapText"
-import {Box, Input,useColorScheme} from "@mui/material"
+import {Box, Input, useColorScheme} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
@@ -309,14 +309,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const { mode, systemMode } = useColorScheme();
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
-
-    // Temporary styling for implementation of dark mode
-    const darkModeStyling = {
-        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-        color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
-    }
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
@@ -338,14 +332,13 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         sx: {
                             ...item.props.sx,
                             display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none",
-                            ...darkModeStyling,
                         },
                     })
                 }
                 return item
             })
         )
-    }, [showThinking, darkMode])
+    }, [showThinking])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -560,9 +553,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         sx={{
                             marginTop: "1rem",
                             marginBottom: "1rem",
-                            backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                             borderColor: darkMode ? "var(--bs-white)" : "var(--bs-border-color)",
-                            color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                         }}
                         items={[
                             {
@@ -721,7 +712,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 succeeded.current = false
             }
         } else if (chatMessage?.text?.trim() !== "") {
-            // Not an error, so output it if it has text. The backend sometimes sends messages with no text content, 
+            // Not an error, so output it if it has text. The backend sometimes sends messages with no text content,
             // and we don't want to display those to the user.
             // Agent name is the last tool in the origin array. If it's not there, use a default name.
             const agentName =
@@ -915,7 +906,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     id={`llm-chat-title-container-${id}`}
                     sx={{
                         alignItems: "center",
-                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-primary)",
                         borderTopLeftRadius: "var(--bs-border-radius)",
                         borderTopRightRadius: "var(--bs-border-radius)",
                         display: "flex",
@@ -951,7 +941,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 sx={{
                     ...divStyle,
                     border: "var(--bs-border-width) var(--bs-border-style)",
-                    borderColor: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                     borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flexGrow: 1,
@@ -1087,10 +1076,8 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
                     ref={chatInputRef}
                     sx={{
-                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                         border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
                         borderRadius: "var(--bs-border-radius)",
-                        color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                         display: "flex",
                         flexGrow: 1,
                         fontSize: "smaller",

@@ -18,7 +18,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import ClearIcon from "@mui/icons-material/Clear"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
-import {IconButton, InputAdornment, styled, useTheme} from "@mui/material"
+import {IconButton, InputAdornment, styled, useColorScheme, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import List from "@mui/material/List"
@@ -42,7 +42,6 @@ import {testConnection, TestConnectionResult} from "../../controller/agent/Agent
 import {useEnvironmentStore} from "../../state/environment"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
-import {useColorScheme} from "@mui/material"
 
 // #region: Styled Components
 
@@ -109,8 +108,8 @@ export const Sidebar: FC<SidebarProps> = ({
 
     // Theming/Dark mode
     const theme = useTheme()
-    const { mode, systemMode } = useColorScheme();
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
 
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
@@ -214,7 +213,6 @@ export const Sidebar: FC<SidebarProps> = ({
                 <h2
                     id={`${id}-heading`}
                     style={{
-                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                         borderBottomColor: "var(--bs-gray-light)",
                         borderBottomStyle: "solid",
                         borderBottomWidth: "1px",

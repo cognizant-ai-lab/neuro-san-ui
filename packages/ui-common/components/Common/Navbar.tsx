@@ -403,7 +403,7 @@ export const Navbar = ({
             ) : null}
             <Tooltip
                 id="dark-mode-toggle"
-                title="Toggle dark mode (experimental)"
+                title="Toggle dark mode"
             >
                 <DarkModeIcon
                     id="dark-mode-icon"

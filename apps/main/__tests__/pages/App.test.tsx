@@ -16,14 +16,14 @@ limitations under the License.
 
 import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL} from "@cognizant-ai-lab/ui-common/const"
 import {render, screen, waitFor} from "@testing-library/react"
+import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
-import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
-import {NeuroSanUI} from "../../pages/_app"
+import NeuroSanUI from "../../pages/_app"
 
 const originalFetch = window.fetch
 
@@ -34,11 +34,6 @@ jest.mock("next-auth/react", () => ({
 }))
 
 jest.mock("../../../../packages/ui-common/const")
-
-jest.mock("../../../../packages/ui-common/state/Preferences", () => ({
-    __esModule: true,
-    usePreferences: jest.fn(),
-}))
 
 jest.mock("next/router", () => ({
     useRouter() {
@@ -77,6 +72,8 @@ const APP_COMPONENT = (
 describe("Main App Component", () => {
     withStrictMocks()
 
+    let user: UserEvent
+
     const testNeuroSanURL = "testNeuroSanURL"
     const testClientId = "testClientId"
     const testDomain = "testDomain"
@@ -86,7 +83,6 @@ describe("Main App Component", () => {
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
         ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
-        ;(usePreferences as jest.Mock).mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
 
         // Clear and reset the zustand store before each test
         useEnvironmentStore.setState({
@@ -95,6 +91,8 @@ describe("Main App Component", () => {
             auth0Domain: null,
             supportEmailAddress: null,
         })
+
+        user = userEvent.setup()
     })
 
     afterEach(() => {
@@ -102,7 +100,6 @@ describe("Main App Component", () => {
     })
 
     it.each([false, true])("should render the page with darkMode=%s", async (darkMode) => {
-        ;(usePreferences as jest.Mock).mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
         window.fetch = mockFetch({
             backendNeuroSanApiUrl: testNeuroSanURL,
             auth0ClientId: testClientId,
@@ -115,6 +112,16 @@ describe("Main App Component", () => {
         render(APP_COMPONENT)
 
         await screen.findByText(COMPONENT_BODY)
+
+        const darkModeButton = await screen.findByTestId("DarkModeIcon")
+
+        if (darkMode) {
+            // Set MUI dark mode
+            await user.click(darkModeButton)
+        }
+
+        // Assert that dark mode was applied or not, as appropriate
+        expect(darkModeButton).toHaveStyle({color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)"})
 
         // Assert that values were set in the zustand store
         const state = useEnvironmentStore.getState()

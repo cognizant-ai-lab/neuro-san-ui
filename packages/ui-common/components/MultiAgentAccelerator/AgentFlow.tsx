@@ -18,7 +18,7 @@ import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
-import {ToggleButton, ToggleButtonGroup, useTheme} from "@mui/material"
+import {ToggleButton, ToggleButtonGroup, useColorScheme, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -56,7 +56,6 @@ import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
-import {useColorScheme} from "@mui/material"
 
 // #region: Types
 
@@ -324,8 +323,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
-    const { mode, systemMode } = useColorScheme();
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
 
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
@@ -542,8 +541,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         fontSize: "2rem",
                         zIndex: 10,
                         marginLeft: "0.5rem",
-                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                        border: darkMode ? "1px solid var(--bs-gray-medium)" : "1px solid var(--bs-gray-light)",
                     }}
                     size="small"
                 >
@@ -554,7 +551,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         sx={{
                             fontSize: "0.5rem",
                             height: "1rem",
-                            color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)",
                             backgroundColor:
                                 darkMode && coloringOption === "depth" ? "var(--bs-gray-medium)" : undefined,
                         }}
@@ -575,7 +571,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         sx={{
                             fontSize: "0.5rem",
                             height: "1rem",
-                            color: darkMode ? "var(--bs-white)" : "var(--bs-black)",
                             backgroundColor: darkMode && isHeatmap ? "var(--bs-gray-medium)" : undefined,
                         }}
                     >
@@ -714,6 +709,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     borderRadius: "var(--bs-border-radius-2xl)",
                 },
             }}
+            // Theme the "React Flow" attribution logo according to dark mode.
             className={darkMode ? "dark" : undefined}
         >
             <ReactFlow
