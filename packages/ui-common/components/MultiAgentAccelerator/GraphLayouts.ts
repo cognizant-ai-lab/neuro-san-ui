@@ -66,7 +66,7 @@ export const getThoughtBubbleEdges = (
 }
 
 // Helper function for plasma edges to check if two agents are in the same conversation
-const areAgentsSupportedAndInSameConversation = (
+const areInSameConversation = (
     conversations: AgentConversation[] | null,
     sourceAgent: string,
     targetAgent: string
@@ -233,11 +233,7 @@ export const layoutRadial = (
                     }
 
                     // Plasma edges based on currentConversations (live, cleared at network end)
-                    const isEdgeAnimated = areAgentsSupportedAndInSameConversation(
-                        currentConversations,
-                        nodeId,
-                        graphNode.id
-                    )
+                    const isEdgeAnimated = areInSameConversation(currentConversations, nodeId, graphNode.id)
 
                     // Add edge from parent to node
                     if (!isAwaitingLlm || isEdgeAnimated) {
@@ -332,11 +328,7 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const isEdgeAnimated = areAgentsSupportedAndInSameConversation(
-                    currentConversations,
-                    parentNode,
-                    originOfNode
-                )
+                const isEdgeAnimated = areInSameConversation(currentConversations, parentNode, originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
@@ -409,9 +401,7 @@ export const layoutLinear = (
     // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
     // Use currentConversations (plasma edges are live and clear at network end)
     const filteredEdges = isAwaitingLlm
-        ? edgesInNetwork.filter((edge) =>
-              areAgentsSupportedAndInSameConversation(currentConversations, edge.source, edge.target)
-          )
+        ? edgesInNetwork.filter((edge) => areInSameConversation(currentConversations, edge.source, edge.target))
         : edgesInNetwork
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
