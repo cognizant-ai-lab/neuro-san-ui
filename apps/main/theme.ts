@@ -41,13 +41,13 @@ const getRootStyles = (): CSSStyleDeclaration | null => {
  * @param variableName - The name of the CSS variable to retrieve (e.g., "--bs-primary").
  * @returns The resolved CSS variable value, or a default gray color if not found.
  */
-export const cssVar = (variableName: string): string => {
+const cssVar = (variableName: string): string => {
     const rootStyles = getRootStyles()
     return rootStyles?.getPropertyValue(variableName).trim() || DEFAULT_COLOR
 }
 
 // Define the default palette used in both light and dark themes
-export const DEFAULT_PALETTE = {
+const DEFAULT_PALETTE = {
     primary: {
         main: cssVar("--bs-primary"),
     },

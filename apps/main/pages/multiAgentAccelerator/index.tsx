@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {useColorScheme} from "@mui/material"
+
 import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
-import {useColorScheme} from "@mui/material"
 
 // Main function.
 export default function MultiAgentAcceleratorPage() {
@@ -28,9 +29,9 @@ export default function MultiAgentAcceleratorPage() {
 
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
-    const { mode, systemMode } = useColorScheme();
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
-    
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+
     return (
         <MultiAgentAccelerator
             userInfo={{userName, userImage}}
