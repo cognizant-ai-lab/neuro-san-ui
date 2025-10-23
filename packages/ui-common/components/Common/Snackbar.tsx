@@ -15,12 +15,11 @@ limitations under the License.
 */
 
 import CloseIcon from "@mui/icons-material/Close"
-import {styled} from "@mui/material"
+import {styled, useColorScheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef, JSX as ReactJSX} from "react"
-import {useColorScheme} from "@mui/material"
 
 // #region: Styled Components
 const IconBox = styled(Box)({
@@ -59,8 +58,8 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         const handleCloseSnackbar = () => closeSnackbar(id)
         const icon = iconVariant[variant]
 
-        const { mode, systemMode } = useColorScheme();
-        const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
+        const {mode, systemMode} = useColorScheme()
+        const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
 
         // Temporary styling for implementation of dark mode
         const darkModeStyling = {
