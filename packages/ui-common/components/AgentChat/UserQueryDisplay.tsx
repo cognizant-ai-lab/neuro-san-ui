@@ -17,19 +17,18 @@ limitations under the License.
 import {styled} from "@mui/material"
 
 import {DEFAULT_USER_IMAGE} from "../../const"
-import {useColorScheme} from "@mui/material"
 
 // #region: Styled Components
 
-const UserQueryContainer = styled("div", {
-    shouldForwardProp: (prop) => prop !== "darkMode",
-})<{darkMode?: boolean}>(({darkMode}) => ({
-    backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+const UserQueryContainer = styled("div")(({theme}) => ({
+    backgroundColor: theme.palette.background.default,
     border: "var(--bs-border-width) var(--bs-border-style)",
-    borderColor: darkMode ? "var(--bs-white)" : "var(--bs-border-color)",
+    borderColor: theme.palette.mode === "dark" ? "var(--bs-white)" : "var(--bs-border-color)",
     borderRadius: "var(--bs-border-radius)",
-    boxShadow: `0 0px 6px 0 ${darkMode ? "var(--bs-accent2-light)" : "rgba(var(--bs-primary-rgb), 0.15)"}`,
-    color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
+    boxShadow: `0 0px 6px 0 ${
+        theme.palette.mode === "dark" ? "var(--bs-accent2-light)" : "rgba(var(--bs-primary-rgb), 0.15)"
+    }`,
+    color: theme.palette.mode === "dark" ? "var(--bs-white)" : "var(--bs-primary)",
     display: "inline-flex",
     padding: "10px",
 }))
@@ -45,18 +44,12 @@ export const UserQueryDisplay = ({
     title: string
     userImage: string
 }) => {
-    const { mode, systemMode } = useColorScheme();
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark");
-
     return (
         <div
             id="user-query-div"
             style={{marginBottom: "1rem"}}
         >
-            <UserQueryContainer
-                darkMode={darkMode}
-                id="user-query-container"
-            >
+            <UserQueryContainer id="user-query-container">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     id="user-query-image"

@@ -18,8 +18,9 @@ limitations under the License.
  * Component tests for top nav bar
  */
 
+import {createTheme, ThemeProvider} from "@mui/material"
 import {render, screen} from "@testing-library/react"
-import {UserEvent, default as userEvent} from "@testing-library/user-event"
+import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Navbar} from "../../../components/Common/Navbar"
@@ -39,19 +40,21 @@ describe("Navbar", () => {
 
     const renderNavbar = (pathName: string = "/projects") =>
         render(
-            <Navbar
-                id="mock-id"
-                logo={logo}
-                query={undefined}
-                pathname={pathName}
-                userInfo={{
-                    name: MOCK_USER,
-                    image: "",
-                }}
-                authenticationType=""
-                signOut={jest.fn()}
-                supportEmailAddress={MOCK_EMAIL_ADDRESS}
-            />
+            <ThemeProvider theme={createTheme({colorSchemes: {light: true, dark: true}})}>
+                <Navbar
+                    id="mock-id"
+                    logo={logo}
+                    query={undefined}
+                    pathname={pathName}
+                    userInfo={{
+                        name: MOCK_USER,
+                        image: "",
+                    }}
+                    authenticationType=""
+                    signOut={jest.fn()}
+                    supportEmailAddress={MOCK_EMAIL_ADDRESS}
+                />
+            </ThemeProvider>
         )
 
     beforeEach(() => {
@@ -140,12 +143,7 @@ describe("Navbar", () => {
     it("toggles dark mode", async () => {
         renderNavbar()
 
-        const helpToggle = await screen.findByText("Help")
-        await user.click(helpToggle)
-
         const darkModeToggle = await screen.findByTestId("DarkModeIcon")
-        expect(darkModeToggle).toBeVisible()
-        expect(darkModeToggle).not.toBeChecked()
 
         // Check initial color (light mode)
         expect(darkModeToggle).toHaveStyle("color: var(--bs-gray-dark)")

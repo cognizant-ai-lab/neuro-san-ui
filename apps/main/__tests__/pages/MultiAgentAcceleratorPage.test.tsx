@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {useColorScheme} from "@mui/material"
 import {act, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
@@ -27,7 +28,6 @@ import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAge
 import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
-import {usePreferences} from "../../../../packages/ui-common/state/Preferences"
 import {UserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
 import {processChatChunk} from "../../../../packages/ui-common/utils/agentConversations"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
@@ -59,10 +59,10 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
 
 jest.mock("../../../../packages/ui-common/utils/agentConversations")
 
-// Mock Preferences state
-jest.mock("../../../../packages/ui-common/state/Preferences", () => ({
-    __esModule: true,
-    usePreferences: jest.fn(),
+// Mock MUI theming
+jest.mock("@mui/material", () => ({
+    ...jest.requireActual("@mui/material"),
+    useColorScheme: jest.fn(),
 }))
 
 jest.mock("../../../../packages/ui-common/state/UserInfo", () => ({
@@ -126,8 +126,6 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     beforeEach(() => {
-        ;(usePreferences as jest.Mock).mockReturnValue({darkMode: false, toggleDarkMode: jest.fn()})
-
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
         ;(getAgentNetworks as jest.Mock).mockResolvedValue([TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD])
 
@@ -151,6 +149,9 @@ describe("Multi Agent Accelerator Page", () => {
         ;(processChatChunk as jest.Mock).mockImplementation(
             jest.requireActual("../../../../packages/ui-common/utils/agentConversations").processChatChunk
         )
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "light",
+        })
 
         user = userEvent.setup()
     })
@@ -158,7 +159,9 @@ describe("Multi Agent Accelerator Page", () => {
     it.each([false, true])(
         "should render elements on the page with darkMode=%s and change the page on click of sidebar item",
         async (darkMode) => {
-            ;(usePreferences as jest.Mock).mockReturnValue({darkMode, toggleDarkMode: jest.fn()})
+            ;(useColorScheme as jest.Mock).mockReturnValue({
+                mode: darkMode ? "dark" : "light",
+            })
 
             renderMultiAgentAcceleratorPage()
 

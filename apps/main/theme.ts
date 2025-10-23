@@ -18,8 +18,8 @@ limitations under the License.
 
 import {createTheme} from "@mui/material"
 
-// Fallback to bright yellow color if CSS variable not found so we know something is up
-const DEFAULT_YELLOW = "#FFFF00"
+// Fallback color if CSS variable not found so we know something is up
+const DEFAULT_COLOR = "#97999b"
 
 // Cached root styles to avoid repeated lookups
 let cachedRootStyles: CSSStyleDeclaration | null = null
@@ -41,13 +41,13 @@ const getRootStyles = (): CSSStyleDeclaration | null => {
  * @param variableName - The name of the CSS variable to retrieve (e.g., "--bs-primary").
  * @returns The resolved CSS variable value, or a default gray color if not found.
  */
-const cssVar = (variableName: string): string => {
+export const cssVar = (variableName: string): string => {
     const rootStyles = getRootStyles()
-    return rootStyles?.getPropertyValue(variableName).trim() || DEFAULT_YELLOW
+    return rootStyles?.getPropertyValue(variableName).trim() || DEFAULT_COLOR
 }
 
 // Define the default palette used in both light and dark themes
-const DEFAULT_PALETTE = {
+export const DEFAULT_PALETTE = {
     primary: {
         main: cssVar("--bs-primary"),
     },
@@ -76,67 +76,68 @@ const DEFAULT_PALETTE = {
  * This is the main theme for the app. It is used by the MUI ThemeProvider. It supplies light and dark themes
  * using custom colors defined in globals.css.
  */
-export const APP_THEME = createTheme({
-    cssVariables: true,
-    components: {
-        MuiButton: {
-            styleOverrides: {
-                root: {
-                    "&:hover": {
-                        // TODO: May still want this for some buttons like "Cancel" in the modals,
-                        // but it was causing issues with icons.
-                        backgroundColor: "transparent",
+export const createAppTheme = () =>
+    createTheme({
+        components: {
+            MuiButton: {
+                styleOverrides: {
+                    root: {
+                        "&:hover": {
+                            // TODO: May still want this for some buttons like "Cancel" in the modals,
+                            // but it was causing issues with icons.
+                            backgroundColor: "transparent",
+                        },
+                    },
+                },
+            },
+            MuiDialog: {
+                styleOverrides: {
+                    paper: {
+                        borderRadius: "var(--bs-border-radius)",
                     },
                 },
             },
         },
-        MuiDialog: {
-            styleOverrides: {
-                paper: {
-                    borderRadius: "var(--bs-border-radius)",
-                },
-            },
-        },
-    },
-    typography: {
-        // Initially just force MUI to use our corporate font.
-        fontFamily: "var(--bs-body-font-family)",
+        typography: {
+            // Initially just force MUI to use our corporate font.
+            fontFamily: "var(--bs-body-font-family)",
 
-        // Undo MUI's urge to upper case everything
-        button: {
-            textTransform: "none",
-        },
+            // Undo MUI's urge to upper case everything
+            button: {
+                textTransform: "none",
+            },
 
-        h3: {
-            fontSize: "2rem",
-            fontWeight: 400,
-            marginBottom: "0.75rem",
+            h3: {
+                fontSize: "2rem",
+                fontWeight: 400,
+                marginBottom: "0.75rem",
+            },
         },
-    },
-    colorSchemes: {
-        dark: {
-            palette: {
-                ...DEFAULT_PALETTE,
-                background: {
-                    default: cssVar("--bs-dark-mode-dim"),
+        colorSchemes: {
+            dark: {
+                palette: {
+                    ...DEFAULT_PALETTE,
+
+                    background: {
+                        default: cssVar("--bs-dark-mode-dim"),
+                    },
+                    text: {
+                        primary: cssVar("--bs-white"),
+                        secondary: cssVar("--bs-gray-light"),
+                    },
                 },
-                text: {
-                    primary: cssVar("--bs-white"),
-                    secondary: cssVar("--bs-gray-light"),
+            },
+            light: {
+                palette: {
+                    ...DEFAULT_PALETTE,
+                    background: {
+                        default: cssVar("--bs-white"),
+                    },
+                    text: {
+                        primary: cssVar("--bs-primary"),
+                        secondary: cssVar("--bs-gray-medium-dark"),
+                    },
                 },
             },
         },
-        light: {
-            palette: {
-                ...DEFAULT_PALETTE,
-                background: {
-                    default: cssVar("--bs-white"),
-                },
-                text: {
-                    primary: cssVar("--bs-primary"),
-                    secondary: cssVar("--bs-gray-medium-dark"),
-                },
-            },
-        },
-    },
-})
+    })

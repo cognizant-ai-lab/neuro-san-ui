@@ -15,13 +15,12 @@ limitations under the License.
 */
 
 import ContactSupportIcon from "@mui/icons-material/ContactSupport"
-import {useTheme} from "@mui/material"
+import {useColorScheme, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Grow from "@mui/material/Grow"
 import {FC, useState} from "react"
 
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
-import {usePreferences} from "../../state/Preferences"
 import {useAuthentication} from "../../utils/Authentication"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon} from "../AgentChat/ChatCommon"
@@ -57,7 +56,8 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
 
     // MUI theme and dark mode
     const theme = useTheme()
-    const {darkMode} = usePreferences()
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
 
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"

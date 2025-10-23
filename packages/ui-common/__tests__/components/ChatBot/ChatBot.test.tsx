@@ -1,17 +1,12 @@
-import {createTheme, ThemeProvider} from "@mui/material/styles"
+import {createTheme, ThemeProvider, useColorScheme} from "@mui/material"
 import {render, screen, waitFor} from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
+import userEvent, {UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatBot} from "../../../components/ChatBot/ChatBot"
-import {usePreferences} from "../../../state/Preferences"
 import {useAuthentication} from "../../../utils/Authentication"
 
 // Mock dependencies
-jest.mock("../../../state/Preferences", () => ({
-    usePreferences: jest.fn(),
-}))
-
 jest.mock("../../../utils/Authentication", () => ({
     useAuthentication: jest.fn(),
 }))
@@ -34,17 +29,22 @@ jest.mock("../../../components/AgentChat/ChatCommon", () => ({
     ),
 }))
 
-// Mock MUI Grow to render children when `in` prop is true
+jest.mock("@mui/material", () => ({
+    ...jest.requireActual("@mui/material"),
+    useColorScheme: jest.fn(),
+}))
+
 jest.mock("@mui/material/Grow", () => ({
     __esModule: true,
     default: ({children, in: inProp}: {children: unknown; in: boolean}) => (inProp ? children : null),
 }))
 
-const mockUsePreferences = usePreferences as jest.Mock
 const mockUseAuthentication = useAuthentication as jest.Mock
 
 describe("ChatBot", () => {
     withStrictMocks()
+
+    let user: UserEvent
 
     const mockProps = {
         id: "test-chatbot",
@@ -52,13 +52,7 @@ describe("ChatBot", () => {
         pageContext: "This is a test page about products",
     }
 
-    const theme = createTheme()
-
     beforeEach(() => {
-        mockUsePreferences.mockReturnValue({
-            darkMode: false,
-        })
-
         mockUseAuthentication.mockReturnValue({
             data: {
                 user: {
@@ -66,11 +60,16 @@ describe("ChatBot", () => {
                 },
             },
         })
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "light",
+        })
+
+        user = userEvent.setup()
     })
 
     const renderChatBot = (props = mockProps) =>
         render(
-            <ThemeProvider theme={theme}>
+            <ThemeProvider theme={createTheme({colorSchemes: {light: true, dark: true}})}>
                 <ChatBot {...props} />
             </ThemeProvider>
         )
@@ -86,7 +85,6 @@ describe("ChatBot", () => {
     })
 
     it("Should open chat window when icon is clicked", async () => {
-        const user = userEvent.setup()
         renderChatBot()
 
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
@@ -97,7 +95,6 @@ describe("ChatBot", () => {
     })
 
     it("Should close chat window when close button is clicked", async () => {
-        const user = userEvent.setup()
         renderChatBot()
 
         // Open chat first
@@ -113,7 +110,6 @@ describe("ChatBot", () => {
     })
 
     it("Should hide chat icon when chat is open", async () => {
-        const user = userEvent.setup()
         renderChatBot()
 
         // Initially icon should be visible
@@ -127,8 +123,10 @@ describe("ChatBot", () => {
     })
 
     it("Should apply dark mode styling", () => {
-        mockUsePreferences.mockReturnValue({
-            darkMode: true,
+        // Set MUI to dark mode
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "dark",
+            systemMode: "dark",
         })
 
         renderChatBot()
@@ -141,10 +139,6 @@ describe("ChatBot", () => {
     })
 
     it("Should apply light mode styling", () => {
-        mockUsePreferences.mockReturnValue({
-            darkMode: false,
-        })
-
         renderChatBot()
 
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
@@ -155,7 +149,6 @@ describe("ChatBot", () => {
     })
 
     it("Should pass correct props to ChatCommon component", async () => {
-        const user = userEvent.setup()
         renderChatBot()
 
         // Open chat to trigger ChatCommon render
@@ -170,9 +163,9 @@ describe("ChatBot", () => {
     })
 
     it("Should set correct dark mode background for ChatCommon", async () => {
-        const user = userEvent.setup()
-        mockUsePreferences.mockReturnValue({
-            darkMode: true,
+        // Set MUI to dark mode
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "dark",
         })
 
         renderChatBot()
@@ -188,7 +181,6 @@ describe("ChatBot", () => {
     })
 
     it("Should use the provided id for the chatbot container", async () => {
-        const user = userEvent.setup()
         const customProps = {...mockProps, id: "custom-chatbot-id"}
         renderChatBot(customProps)
 
@@ -203,7 +195,6 @@ describe("ChatBot", () => {
     })
 
     it("Should handle isAwaitingLlm state changes", async () => {
-        const user = userEvent.setup()
         renderChatBot()
 
         // Open chat

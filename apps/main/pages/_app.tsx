@@ -48,7 +48,7 @@ import {
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
-import {APP_THEME} from "../theme"
+import {createAppTheme} from "../theme"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -337,15 +337,20 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <ThemeProvider theme={APP_THEME}>{body}</ThemeProvider>
-            <SnackbarProvider
-                Components={{
-                    info: Snackbar,
-                    success: Snackbar,
-                    warning: Snackbar,
-                    error: Snackbar,
-                }}
-            />
+            <ThemeProvider
+                theme={createAppTheme()}
+                noSsr={true}
+            >
+                {body}
+                <SnackbarProvider
+                    Components={{
+                        info: Snackbar,
+                        success: Snackbar,
+                        warning: Snackbar,
+                        error: Snackbar,
+                    }}
+                />
+            </ThemeProvider>
         </div>
     )
 }
