@@ -17,9 +17,9 @@ limitations under the License.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {AgentErrorProps} from "../../../components/AgentChat/Types"
 import {
-    ALL_KNOWN_MESSAGE_TYPES,
     chatMessageFromChunk,
     checkError,
+    KNOWN_MESSAGE_TYPES,
     KNOWN_MESSAGE_TYPES_FOR_PLASMA,
 } from "../../../components/AgentChat/Utils"
 import {ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
@@ -38,7 +38,7 @@ describe("AgentChat/Utils/chatMessageFromChunk", () => {
         expect(chatMessage).toBeNull()
     })
 
-    it.each(ALL_KNOWN_MESSAGE_TYPES)("Should correctly handle known message type %s", (t: ChatMessageType) => {
+    it.each(KNOWN_MESSAGE_TYPES)("Should correctly handle known message type %s", (t: ChatMessageType) => {
         const chunk: ChatResponse = {
             response: {
                 type: t,
@@ -85,9 +85,9 @@ describe("AgentChat/Utils/checkError", () => {
 describe("AgentChat/Utils/KNOWN_MESSAGE_TYPES_FOR_PLASMA", () => {
     withStrictMocks()
 
-    it("Should be a subset of ALL_KNOWN_MESSAGE_TYPES", () => {
+    it("Should be a subset of KNOWN_MESSAGE_TYPES", () => {
         KNOWN_MESSAGE_TYPES_FOR_PLASMA.forEach((t) => {
-            expect(ALL_KNOWN_MESSAGE_TYPES).toContain(t)
+            expect(KNOWN_MESSAGE_TYPES).toContain(t)
         })
     })
 

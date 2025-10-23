@@ -21,7 +21,7 @@ import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../generated/neuro-san/NeuroSanClient"
 
 // We ignore any messages that are not of these types
-export const ALL_KNOWN_MESSAGE_TYPES = [
+export const KNOWN_MESSAGE_TYPES: ChatMessageType[] = [
     ChatMessageType.AI,
     ChatMessageType.AGENT,
     ChatMessageType.AGENT_FRAMEWORK,
@@ -29,13 +29,11 @@ export const ALL_KNOWN_MESSAGE_TYPES = [
     ChatMessageType.SYSTEM,
 ]
 
-export const KNOWN_MESSAGE_TYPES_FOR_PLASMA = [
-    ChatMessageType.AI,
-    ChatMessageType.AGENT,
-    ChatMessageType.AGENT_FRAMEWORK,
-    ChatMessageType.SYSTEM,
-    // HUMAN omitted for plasma edges for performance reasons
-]
+// HUMAN omitted for plasma edges mainly for performance reasons. However, does it make sense for plasma to include
+// human messages anyway?
+export const KNOWN_MESSAGE_TYPES_FOR_PLASMA: ChatMessageType[] = KNOWN_MESSAGE_TYPES.filter(
+    (type) => type !== ChatMessageType.HUMAN
+)
 
 export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     let chatResponse: ChatResponse
@@ -49,7 +47,7 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     const messageType: ChatMessageType = chatMessage?.type
 
     // Check if it's a message type we know how to handle
-    if (!ALL_KNOWN_MESSAGE_TYPES.includes(messageType)) {
+    if (!KNOWN_MESSAGE_TYPES.includes(messageType)) {
         return null
     }
 
