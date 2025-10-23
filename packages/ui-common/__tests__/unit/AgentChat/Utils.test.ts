@@ -16,7 +16,12 @@ limitations under the License.
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {AgentErrorProps} from "../../../components/AgentChat/Types"
-import {chatMessageFromChunk, checkError} from "../../../components/AgentChat/Utils"
+import {
+    chatMessageFromChunk,
+    checkError,
+    KNOWN_MESSAGE_TYPES,
+    KNOWN_MESSAGE_TYPES_FOR_PLASMA,
+} from "../../../components/AgentChat/Utils"
 import {ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {
@@ -33,19 +38,18 @@ describe("AgentChat/Utils/chatMessageFromChunk", () => {
         expect(chatMessage).toBeNull()
     })
 
-    it("Should correctly handle known message types", () => {
+    it.each(KNOWN_MESSAGE_TYPES)("Should correctly handle known message type %s", (t: ChatMessageType) => {
         const chunk: ChatResponse = {
             response: {
-                type: ChatMessageType.AI,
-                text: "This is a test message",
+                type: t,
+                text: `test for type ${t}`,
             },
         }
 
         const chatMessage = chatMessageFromChunk(JSON.stringify(chunk))
         expect(chatMessage).not.toBeNull()
-
-        expect(chatMessage.type).toEqual(ChatMessageType.AI)
-        expect(chatMessage.text).toEqual("This is a test message")
+        expect(chatMessage.type).toEqual(t)
+        expect(chatMessage.text).toEqual(`test for type ${t}`)
     })
 })
 
@@ -75,5 +79,19 @@ describe("AgentChat/Utils/checkError", () => {
         })
 
         expect(result).toBeNull()
+    })
+})
+
+describe("AgentChat/Utils/KNOWN_MESSAGE_TYPES_FOR_PLASMA", () => {
+    withStrictMocks()
+
+    it("Should be a subset of KNOWN_MESSAGE_TYPES", () => {
+        KNOWN_MESSAGE_TYPES_FOR_PLASMA.forEach((t) => {
+            expect(KNOWN_MESSAGE_TYPES).toContain(t)
+        })
+    })
+
+    it("Should not include HUMAN (omitted for plasma)", () => {
+        expect(KNOWN_MESSAGE_TYPES_FOR_PLASMA).not.toContain(ChatMessageType.HUMAN)
     })
 })

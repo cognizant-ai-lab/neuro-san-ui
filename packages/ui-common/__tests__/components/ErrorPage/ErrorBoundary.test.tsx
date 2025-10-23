@@ -26,7 +26,7 @@ describe("ErrorBoundary", () => {
         consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
     })
 
-    test("renders fallback ErrorPage when child throws", () => {
+    it("renders fallback ErrorPage when child throws", () => {
         render(
             <ErrorBoundary id="test-boundary">
                 <ErrorChild shouldThrow={true} />
@@ -42,7 +42,7 @@ describe("ErrorBoundary", () => {
         expect(messages).toMatch(/error: boom/iu)
     })
 
-    test("clears error when child no longer throws after re-render", async () => {
+    it("clears error when child no longer throws after re-render", async () => {
         const {rerender} = render(
             <ErrorBoundary id="test-boundary">
                 <ErrorChild shouldThrow={true} />

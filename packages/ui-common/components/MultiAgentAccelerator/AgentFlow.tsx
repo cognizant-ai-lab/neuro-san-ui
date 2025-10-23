@@ -181,24 +181,27 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setActiveThoughtBubbles((prevBubbles) => {
             const newBubbles: ActiveThoughtBubble[] = []
 
-            // Check what user actually sees (parsed text) as one level of duplicate prevention
-            const processedText = new Set(prevBubbles.map((b) => b.text || ""))
+            // Check the text that user sees as one level of duplicate prevention
+            const processedText = new Set()
 
             thoughtBubbleEdges.forEach((thoughtBubbleEdge) => {
-                const edgeText = (thoughtBubbleEdge.edge.data as {text?: string})?.text
+                const edgeText = (thoughtBubbleEdge.edge.data as {text?: string})?.text?.trim()
                 if (edgeText) {
-                    // Add edge text to existing parsed texts to prevent duplicates
+                    // Add edge text to to prevent duplicates
                     processedText.add(edgeText)
                 }
             })
 
             // Only add bubbles for conversations with unique parsed content
+            // TODO: Even though there are two duplicate checks here, some duplicates still get through
             for (const conv of currentConversations) {
+                const convText = conv.text?.trim()
+
                 if (
                     // Has text
-                    conv.text &&
+                    convText &&
                     // Haven't already displayed this text (duplicate check #1)
-                    !processedText.has(conv.text) &&
+                    !processedText.has(convText) &&
                     // Haven't already displayed this conversation ID (duplicate check #2)
                     !processedConversationIdsRef.current.has(conv.id)
                 ) {
@@ -209,6 +212,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         agents: new Set(conv.agents),
                         conversationId: conv.id,
                         startedAt: new Date(),
+                        type: conv.type,
                         // No text needed. This is for tracking which conversations are active.
                     })
 
@@ -320,17 +324,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
-    // Memoize filtered conversations directly from activeThoughtBubbles
-    const filteredConversations: AgentConversation[] | null = useMemo(() => {
-        // Map ActiveThoughtBubble back to AgentConversation
-        return activeThoughtBubbles.map((bubble: ActiveThoughtBubble) => ({
-            id: bubble.conversationId,
-            text: bubble.text,
-            agents: bubble.agents,
-            startedAt: bubble.startedAt,
-        }))
-    }, [activeThoughtBubbles])
-
     const {darkMode} = usePreferences()
 
     // Shadow color for icon. TODO: use MUI theme system instead.
@@ -385,7 +378,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             agentCounts,
             mergedAgentsInNetwork,
             currentConversations,
-            filteredConversations,
+            activeThoughtBubbles,
             thoughtBubbleEdges,
             isAwaitingLlm,
             showThoughtBubbles,

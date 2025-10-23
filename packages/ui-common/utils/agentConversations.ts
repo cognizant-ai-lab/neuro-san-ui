@@ -27,6 +27,8 @@ export interface AgentConversation {
     startedAt: Date
     // The conversation text to display in thought bubbles
     text?: string
+    // The conversation type
+    type: ChatMessageType
 }
 
 export const isFinalMessage = (chatMessage: {
@@ -38,7 +40,7 @@ export const isFinalMessage = (chatMessage: {
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export const createConversation = (agents: string[] = [], text?: string): AgentConversation => ({
+export const createConversation = (agents: string[], text: string, type: ChatMessageType): AgentConversation => ({
     // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
     // solution for HTTP on localhost.
     // eslint-disable-next-line newline-per-chained-call
@@ -46,6 +48,7 @@ export const createConversation = (agents: string[] = [], text?: string): AgentC
     agents: new Set(agents),
     startedAt: new Date(),
     text,
+    type,
 })
 
 export const updateAgentCounts = (
@@ -114,7 +117,8 @@ export const processChatChunk = (
 
         let finalConversations: AgentConversation[] | null
 
-        // Check if this is an AGENT message and if it's a final message, i.e. an end event
+        // Check if this is an AGENT message and if it's a final message, i.e. an end event (could be an AGENT final
+        // message or coded tool end, see isFinalMessage function)
         if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
             const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents)
             finalConversations = currentConversationsToUpdate.length === 0 ? null : currentConversationsToUpdate
@@ -128,7 +132,7 @@ export const processChatChunk = (
             const textToShow = inquiryText || chatMessage.text
             // Show inquiry (from structure), that's only for networks that use AAOSA with a JSON format.
             // Otherwise show the raw data from the `text` field of the chat message.
-            const newConversation = createConversation(agents, textToShow)
+            const newConversation = createConversation(agents, textToShow, chatMessage.type)
             updatedConversations.push(newConversation)
             finalConversations = updatedConversations
         }

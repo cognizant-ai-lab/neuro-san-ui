@@ -25,7 +25,7 @@ import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../../utils/agentConversations"
-import {cleanUpAgentName} from "../AgentChat/Utils"
+import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Utils"
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
@@ -65,17 +65,17 @@ export const getThoughtBubbleEdges = (
     return Array.from(thoughtBubbleEdges.values()).map((item) => item.edge)
 }
 
-// Helper function to check if two agents are in the same conversation
-const areAgentsInSameConversation = (
+// Helper function for plasma edges to check if two agents are in the same conversation
+const areInSameConversation = (
     conversations: AgentConversation[] | null,
     sourceAgent: string,
     targetAgent: string
 ): boolean => {
     if (!conversations) return false
 
-    return conversations.some(
-        (conversation) => conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent)
-    )
+    return conversations
+        .filter((conversation) => KNOWN_MESSAGE_TYPES_FOR_PLASMA.includes(conversation.type))
+        .some((conversation) => conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent))
 }
 
 // #region: Constants
@@ -233,7 +233,7 @@ export const layoutRadial = (
                     }
 
                     // Plasma edges based on currentConversations (live, cleared at network end)
-                    const isEdgeAnimated = areAgentsInSameConversation(currentConversations, nodeId, graphNode.id)
+                    const isEdgeAnimated = areInSameConversation(currentConversations, nodeId, graphNode.id)
 
                     // Add edge from parent to node
                     if (!isAwaitingLlm || isEdgeAnimated) {
@@ -328,7 +328,7 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const isEdgeAnimated = areAgentsInSameConversation(currentConversations, parentNode, originOfNode)
+                const isEdgeAnimated = areInSameConversation(currentConversations, parentNode, originOfNode)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
@@ -401,7 +401,7 @@ export const layoutLinear = (
     // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
     // Use currentConversations (plasma edges are live and clear at network end)
     const filteredEdges = isAwaitingLlm
-        ? edgesInNetwork.filter((edge) => areAgentsInSameConversation(currentConversations, edge.source, edge.target))
+        ? edgesInNetwork.filter((edge) => areInSameConversation(currentConversations, edge.source, edge.target))
         : edgesInNetwork
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations

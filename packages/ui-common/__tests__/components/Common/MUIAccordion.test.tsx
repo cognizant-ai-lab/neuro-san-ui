@@ -62,7 +62,7 @@ describe("MUIAccordion", () => {
         ],
     }
 
-    test("renders correctly with given props", () => {
+    it("renders correctly with given props", () => {
         render(<MUIAccordion {...defaultProps} />)
         expect(screen.getByText("Title 1")).toBeInTheDocument()
         expect(screen.getByText("Title 2")).toBeInTheDocument()
@@ -72,28 +72,28 @@ describe("MUIAccordion", () => {
         expect(screen.getByText("Content 3")).toBeInTheDocument()
     })
 
-    test("renders default panel one open", () => {
+    it("renders default panel one open", () => {
         render(<MUIAccordion {...defaultPropsExpandOnePanelAndFirstPanelDefault} />)
         expect(screen.getByText("Content 1")).toBeVisible()
         expect(screen.getByText("Content 2")).not.toBeVisible()
         expect(screen.getByText("Content 3")).not.toBeVisible()
     })
 
-    test("renders default panel two open", () => {
+    it("renders default panel two open", () => {
         render(<MUIAccordion {...defaultPropsExpandOnePanelAndSecondPanelDefault} />)
         expect(screen.getByText("Content 1")).not.toBeVisible()
         expect(screen.getByText("Content 2")).toBeVisible()
         expect(screen.getByText("Content 3")).not.toBeVisible()
     })
 
-    test("renders default panel three open", () => {
+    it("renders default panel three open", () => {
         render(<MUIAccordion {...defaultPropsExpandOnePanelAndThirdPanelDefault} />)
         expect(screen.getByText("Content 1")).not.toBeVisible()
         expect(screen.getByText("Content 2")).not.toBeVisible()
         expect(screen.getByText("Content 3")).toBeVisible()
     })
 
-    test("expands and collapses panels correctly", async () => {
+    it("expands and collapses panels correctly", async () => {
         const user = userEvent.setup()
         render(<MUIAccordion {...defaultPropsExpandOnePanelAndFirstPanelDefault} />)
         const title2 = screen.getByText("Title 2")
@@ -120,7 +120,7 @@ describe("MUIAccordion", () => {
         })
     })
 
-    test("handles disabled state correctly for panel two", async () => {
+    it("handles disabled state correctly for panel two", async () => {
         const user = userEvent.setup()
         render(<MUIAccordion {...defaultPropsPanelTwoDisabled} />)
         const title2 = screen.getByText("Title 2")

@@ -278,7 +278,7 @@ describe("MicrophoneButton", () => {
         expect(button).toBeInTheDocument()
     })
 
-    test.each([
+    it.each([
         ["Edge on Mac", USER_AGENTS.EDGE_MAC],
         ["Edge on Windows", USER_AGENTS.EDGE_WINDOWS],
         ["Firefox on Mac", USER_AGENTS.FIREFOX_MAC],

@@ -111,7 +111,7 @@ describe("AgentNode", () => {
         expect(style.animation).not.toBe("none")
     })
 
-    test.each([
+    it.each([
         ["handles should display in regular mode", false, "block"],
         ["handles should not display in Zen mode", true, "none"],
     ])("%s", async (_description, isAwaitingLlm, expectedDisplay) => {
@@ -143,7 +143,7 @@ describe("AgentNode", () => {
         }
     })
 
-    test.each([
+    it.each([
         ["llm_agent", "AutoAwesomeIcon"],
         ["external_agent", "TravelExploreIcon"],
         ["coded_tool", "HandymanIcon"],
