@@ -25,7 +25,7 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
+import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
 
 import {
     Auth,
@@ -116,6 +116,8 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
     const isContainedInViewport = Component.isContainedInViewport ?? false
+
+    const theme = useMemo(() => createAppTheme(), [])
 
     useEffect(() => {
         const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
@@ -335,7 +337,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 />
             </Head>
             <ThemeProvider
-                theme={createAppTheme()}
+                theme={theme}
                 noSsr={true}
             >
                 {body}
