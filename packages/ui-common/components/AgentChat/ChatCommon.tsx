@@ -339,7 +339,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 return item
             })
         )
-    }, [showThinking])
+    }, [showThinking, darkMode])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
