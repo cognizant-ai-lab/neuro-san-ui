@@ -22,6 +22,8 @@ import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} fro
 import Typography from "@mui/material/Typography"
 import {FC, ReactNode, SyntheticEvent, useCallback, useState} from "react"
 
+import {isDarkMode} from "../../utils/Theme"
+
 // #region: Styled Components
 const Accordion = styled((props: AccordionProps) => (
     <MuiAccordion
@@ -91,7 +93,7 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
 }) => {
     // Dark mode
     const {mode, systemMode} = useColorScheme()
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+    const darkMode = isDarkMode(mode, systemMode)
 
     const [expandedList, setExpandedList] = useState<number[]>(defaultExpandedPanelKey ? [defaultExpandedPanelKey] : [])
 

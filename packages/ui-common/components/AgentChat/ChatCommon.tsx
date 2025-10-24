@@ -68,6 +68,7 @@ import {
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
+import {isDarkMode} from "../../utils/Theme"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
@@ -310,7 +311,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     const succeeded = useRef<boolean>(false)
 
     const {mode, systemMode} = useColorScheme()
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+    const darkMode = isDarkMode(mode, systemMode)
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
@@ -918,7 +919,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 >
                     <Typography
                         id={`llm-chat-title-${id}-text`}
-                        sx={{fontSize: "0.9rem", color: "var(--bs-white)"}}
+                        sx={{fontSize: "0.9rem"}}
                     >
                         {title}
                     </Typography>
@@ -928,10 +929,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                             id={`close-button-${id}`}
                             onClick={onClose}
                         >
-                            <CloseIcon
-                                id={`close-icon-${id}`}
-                                sx={{color: "var(--bs-white)"}}
-                            />
+                            <CloseIcon id={`close-icon-${id}`} />
                         </IconButton>
                     )}
                 </Box>

@@ -29,6 +29,7 @@ jest.mock("../../../components/AgentChat/ChatCommon", () => ({
     ),
 }))
 
+// Mock MUI theming
 jest.mock("@mui/material", () => ({
     ...jest.requireActual("@mui/material"),
     useColorScheme: jest.fn(),

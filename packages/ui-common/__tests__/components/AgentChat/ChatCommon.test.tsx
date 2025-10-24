@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {createTheme, ThemeProvider, useColorScheme} from "@mui/material"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
@@ -26,6 +27,12 @@ import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
+
+// Mock MUI theming
+jest.mock("@mui/material", () => ({
+    ...jest.requireActual("@mui/material"),
+    useColorScheme: jest.fn(),
+}))
 
 // Mock agent API
 jest.mock("../../../controller/agent/Agent")
@@ -69,7 +76,7 @@ describe("ChatCommon", () => {
 
     const defaultProps = {
         currentUser: TEST_USER,
-        id: "chat-common-test",
+        id: "test",
         isAwaitingLlm: false,
         onSend: jest.fn(),
         setIsAwaitingLlm: jest.fn(),
@@ -78,9 +85,21 @@ describe("ChatCommon", () => {
     }
 
     const renderChatCommonComponent = (overrides = {}) => {
-        const props = {...defaultProps, ...overrides}
-        render(<ChatCommon {...props} />)
-        return props
+        render(
+            <ThemeProvider
+                theme={createTheme({
+                    colorSchemes: {
+                        light: {palette: {text: {primary: "#000000"}}},
+                        dark: {palette: {text: {primary: "#ffffff"}}},
+                    },
+                })}
+            >
+                <ChatCommon
+                    {...defaultProps}
+                    {...overrides}
+                />
+            </ThemeProvider>
+        )
     }
 
     withStrictMocks()
@@ -101,6 +120,9 @@ describe("ChatCommon", () => {
                 },
             ],
         })
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "light",
+        })
     })
 
     async function sendQuery(agent: CombinedAgentType, query: string) {
@@ -120,13 +142,11 @@ describe("ChatCommon", () => {
     }
 
     it.each([false, true])("Should render correctly with darkMode=%s", async (darkMode) => {
-        const overrides = {id: darkMode ? "dark-mode" : "light-mode"}
-        renderChatCommonComponent(overrides)
-
-        // Make sure the id reflects the dark mode state
-        await waitFor(() => {
-            expect(document.querySelector(`#llm-chat-${overrides.id}`)).toBeInTheDocument()
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: darkMode ? "dark" : "light",
         })
+
+        renderChatCommonComponent()
 
         expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
 
@@ -136,12 +156,15 @@ describe("ChatCommon", () => {
         expect(screen.getByRole("button", {name: "Send"})).toBeInTheDocument()
 
         // Check that connectivity info is rendered correctly
-        const connectivityList = document.getElementById("connectivity-list")
+        const connectivityList = await screen.findByLabelText("I can connect you to the following agents")
         expect(connectivityList).toBeInTheDocument()
 
         // Check that the expected agents are in the connectivity list
         const musicNerdItem = within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD)
         expect(musicNerdItem).toBeInTheDocument()
+
+        // Check that the agent name has correct color based on dark mode
+        expect(musicNerdItem).toHaveStyle({color: darkMode ? "var(--bs-white)" : "var(--bs-primary)"})
 
         // Check that the tools for Music Nerd are listed
         const musicNerdToolsList = document.getElementById(`${TEST_AGENT_MUSIC_NERD}-tools`)
@@ -765,19 +788,16 @@ describe("ChatCommon", () => {
         const mockOnClose = jest.fn()
         const testTitle = "Test Chat Title"
 
-        // eslint-disable-next-line testing-library/no-unnecessary-act
-        await act(async () => {
-            renderChatCommonComponent({
-                title: testTitle,
-                onClose: mockOnClose,
-            })
+        renderChatCommonComponent({
+            title: testTitle,
+            onClose: mockOnClose,
         })
 
         // Check that title is rendered
-        expect(screen.getByText(testTitle)).toBeInTheDocument()
+        await screen.findByText(testTitle)
 
         // Check that close button is rendered
-        expect(screen.getByTestId("close-button-chat-common-test")).toBeInTheDocument()
+        await screen.findByTestId("close-button-test")
     })
 
     it("Should apply custom backgroundColor when provided", async () => {
@@ -787,10 +807,13 @@ describe("ChatCommon", () => {
             id: "test-chat",
         })
 
+        let chatContainer: HTMLElement | null = null
         await waitFor(() => {
-            const chatContainer = document.querySelector("#llm-chat-test-chat")
+            chatContainer = document.getElementById("llm-responses")
             expect(chatContainer).toBeInTheDocument()
         })
+
+        expect(chatContainer).toHaveStyle({"background-color": customColor})
     })
 
     it("Should use custom agent placeholder when provided", async () => {

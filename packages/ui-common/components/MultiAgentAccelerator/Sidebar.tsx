@@ -40,6 +40,7 @@ import {
 
 import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {useEnvironmentStore} from "../../state/environment"
+import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
 
@@ -109,7 +110,7 @@ export const Sidebar: FC<SidebarProps> = ({
     // Theming/Dark mode
     const theme = useTheme()
     const {mode, systemMode} = useColorScheme()
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+    const darkMode = isDarkMode(mode, systemMode)
 
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle

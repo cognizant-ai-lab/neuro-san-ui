@@ -119,17 +119,14 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
 
     useEffect(() => {
         const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
-        const pageName = startCase(urlPaths?.at(-1))
 
-        // If we are on the splash screen, set the page title to the default
         if (urlPaths.length === 0) {
+            // If we are on the splash screen, set the page title to the default
             setPageTitle(DEFAULT_APP_NAME)
-        }
-
-        // If there is just one URL path, set the page title. This prevents overriding Project, Experiment and
-        // DMS pages, which directly set the page title to document.title.
-        if (urlPaths.length === 1) {
-            setPageTitle(`${getTitleBase()} | ${pageName}`)
+        } else if (urlPaths.length === 1) {
+            // If there is just one URL path, set the page title. This prevents overriding Project, Experiment and
+            // DMS pages, which directly set the page title to document.title.
+            setPageTitle(`${getTitleBase()} | ${startCase(urlPaths[0])}`)
         }
     }, [pathname])
 
@@ -243,7 +240,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
 
         if (currentUser != null) {
             // We got the ALB headers
-            return backendNeuroSanApiUrl && currentUser ? (
+            return backendNeuroSanApiUrl ? (
                 <Component
                     id="body-non-auth-component"
                     {...pageProps}

@@ -55,6 +55,7 @@ import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../../utils/agentConversations"
+import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
 // #region: Types
@@ -186,7 +187,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             thoughtBubbleEdges.forEach((thoughtBubbleEdge) => {
                 const edgeText = (thoughtBubbleEdge.edge.data as {text?: string})?.text?.trim()
                 if (edgeText) {
-                    // Add edge text to to prevent duplicates
+                    // Add edge text to prevent duplicates
                     processedText.add(edgeText)
                 }
             })
@@ -324,7 +325,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
     const {mode, systemMode} = useColorScheme()
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+    const darkMode = isDarkMode(mode, systemMode)
 
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
@@ -404,7 +405,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const onNodesChange = useCallback((changes: NodeChange[]) => {
         setNodes((ns) =>
             applyNodeChanges<AgentNodeProps>(
-                // For now we only allow dragging, no updates
+                // For now, we only allow dragging, no updates
                 changes.filter((c) => c.type === "position"),
                 ns
             )
@@ -414,7 +415,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const transform = useStore((state) => state.transform)
 
     // Why not just a "const"? See: https://reactflow.dev/learn/customization/custom-nodes
-    // "It’s important that the nodeTypes are memoized or defined outside of the component. Otherwise React creates
+    // "It’s important that the nodeTypes are memoized or defined outside the component. Otherwise, React creates
     // a new object on every render which leads to performance issues and bugs."
     const nodeTypes: RFNodeTypes = useMemo(
         () => ({

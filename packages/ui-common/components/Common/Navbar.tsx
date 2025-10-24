@@ -34,6 +34,7 @@ import {
     NEURO_SAN_UI_VERSION,
 } from "../../const"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
+import {isDarkMode} from "../../utils/Theme"
 
 // Declare the Props Interface
 export interface NavbarProps {
@@ -94,9 +95,9 @@ export const Navbar = ({
 
     // Dark mode
     const {mode, setMode, systemMode} = useColorScheme()
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+    const darkMode = isDarkMode(mode, systemMode)
 
-    // Gate to make sure we only attempt to render after NextJS has completed its rehydration
+    // Gate to make sure we only attempt to render after Next.js has completed its rehydration
     const [hydrated, setHydrated] = useState(false)
 
     useEffect(() => {

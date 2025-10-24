@@ -21,6 +21,8 @@ import IconButton from "@mui/material/IconButton"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef, JSX as ReactJSX} from "react"
 
+import {isDarkMode} from "../../utils/Theme"
+
 // #region: Styled Components
 const IconBox = styled(Box)({
     position: "relative",
@@ -59,7 +61,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         const icon = iconVariant[variant]
 
         const {mode, systemMode} = useColorScheme()
-        const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+        const darkMode = isDarkMode(mode, systemMode)
 
         // Temporary styling for implementation of dark mode
         const darkModeStyling = {

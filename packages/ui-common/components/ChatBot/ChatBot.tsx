@@ -22,6 +22,7 @@ import {FC, useState} from "react"
 
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
 import {useAuthentication} from "../../utils/Authentication"
+import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon} from "../AgentChat/ChatCommon"
 import {LegacyAgentType} from "../AgentChat/Types"
@@ -57,7 +58,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
     // MUI theme and dark mode
     const theme = useTheme()
     const {mode, systemMode} = useColorScheme()
-    const darkMode = mode === "dark" || (mode === "system" && systemMode === "dark")
+    const darkMode = isDarkMode(mode, systemMode)
 
     // Shadow color for icon. TODO: use MUI theme system instead.
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"

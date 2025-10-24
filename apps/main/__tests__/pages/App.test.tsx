@@ -17,6 +17,7 @@ limitations under the License.
 import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL} from "@cognizant-ai-lab/ui-common/const"
 import {render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {useRouter} from "next/router"
 import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
@@ -36,27 +37,7 @@ jest.mock("next-auth/react", () => ({
 jest.mock("../../../../packages/ui-common/const")
 
 jest.mock("next/router", () => ({
-    useRouter() {
-        return {
-            route: "/projects",
-            pathname: "",
-            asPath: "",
-            push: jest.fn(),
-            events: {
-                on: jest.fn(),
-                off: jest.fn(),
-            },
-            beforePopState: jest.fn((): null => null),
-            prefetch: jest.fn((): null => null),
-            isReady: true,
-            query: {
-                projectID: "1",
-                experimentID: "1",
-                runID: "1",
-                prescriptorID: "1",
-            },
-        }
-    },
+    useRouter: jest.fn(),
 }))
 
 jest.mock("../../../../packages/ui-common/utils/Authentication")
@@ -93,13 +74,7 @@ describe("Main App Component", () => {
         })
 
         user = userEvent.setup()
-    })
 
-    afterEach(() => {
-        window.fetch = originalFetch
-    })
-
-    it.each([false, true])("should render the page with darkMode=%s", async (darkMode) => {
         window.fetch = mockFetch({
             backendNeuroSanApiUrl: testNeuroSanURL,
             auth0ClientId: testClientId,
@@ -108,7 +83,16 @@ describe("Main App Component", () => {
             oidcHeaderFound: true,
             username: "testUser",
         })
+        ;(useRouter as jest.Mock).mockReturnValue({
+            pathname: "/projects",
+        })
+    })
 
+    afterEach(() => {
+        window.fetch = originalFetch
+    })
+
+    it.each([false, true])("should render the page with darkMode=%s", async (darkMode) => {
         render(APP_COMPONENT)
 
         await screen.findByText(COMPONENT_BODY)
@@ -133,14 +117,6 @@ describe("Main App Component", () => {
 
     it("Should render correctly when authentication is disabled", async () => {
         ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
-        window.fetch = mockFetch({
-            backendNeuroSanApiUrl: testNeuroSanURL,
-            auth0ClientId: testClientId,
-            auth0Domain: testDomain,
-            supportEmailAddress: testSupportEmailAddress,
-            oidcHeaderFound: true,
-            username: "testUser",
-        })
 
         render(APP_COMPONENT)
 
@@ -178,5 +154,16 @@ describe("Main App Component", () => {
         // Both fetches should have failed
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to fetch environment variables"))
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to fetch user info"))
+    })
+
+    it("Should render the splash page correctly", async () => {
+        ;(useRouter as jest.Mock).mockReturnValue({
+            pathname: "/", // Splash page
+        })
+
+        render(APP_COMPONENT)
+
+        await screen.findByText(COMPONENT_BODY)
+        expect(document.getElementById("body-div")).toBeInTheDocument()
     })
 })
