@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
+import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
@@ -85,11 +85,15 @@ describe("MicrophoneButton", () => {
         setVoiceInputState: jest.fn(),
     }
 
+    let user: UserEvent
+
     withStrictMocks()
 
     beforeEach(() => {
         ;(toggleListening as jest.Mock).mockResolvedValue(undefined)
         ;(checkSpeechSupport as jest.Mock).mockReturnValue(true)
+
+        user = userEvent.setup()
     })
 
     afterEach(() => {
@@ -123,7 +127,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("calls onMicToggle and toggleListening when clicked to turn on", async () => {
-        const user = userEvent.setup()
         render(<MicrophoneButton {...defaultProps} />)
 
         const button = screen.getByTestId("microphone-button")
@@ -134,7 +137,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("calls onMicToggle and toggleListening when clicked to turn off", async () => {
-        const user = userEvent.setup()
         render(
             <MicrophoneButton
                 {...defaultProps}
@@ -150,7 +152,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("passes correct parameters to toggleListening when turning on", async () => {
-        const user = userEvent.setup()
         render(<MicrophoneButton {...defaultProps} />)
 
         const button = screen.getByTestId("microphone-button")
@@ -160,7 +161,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("passes correct parameters to toggleListening when turning off", async () => {
-        const user = userEvent.setup()
         render(
             <MicrophoneButton
                 {...defaultProps}
@@ -195,7 +195,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("displays correct tooltip text when microphone is off", async () => {
-        const user = userEvent.setup()
         render(<MicrophoneButton {...defaultProps} />)
 
         const button = screen.getByTestId("microphone-button")
@@ -205,7 +204,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("displays correct tooltip text when microphone is on", async () => {
-        const user = userEvent.setup()
         render(
             <MicrophoneButton
                 {...defaultProps}
@@ -220,7 +218,6 @@ describe("MicrophoneButton", () => {
     })
 
     it("updates tooltip text when isMicOn changes", async () => {
-        const user = userEvent.setup()
         const {rerender} = render(<MicrophoneButton {...defaultProps} />)
 
         const button = screen.getByTestId("microphone-button")
@@ -306,7 +303,6 @@ describe("MicrophoneButton", () => {
         expect(button).toBeInTheDocument()
         expect(button).toBeDisabled()
 
-        const user = userEvent.setup()
         await user.hover(button)
         // MUI Tooltip renders in a portal, so check document.body
         expect(
