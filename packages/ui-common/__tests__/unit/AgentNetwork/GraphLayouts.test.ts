@@ -231,8 +231,8 @@ describe("GraphLayouts", () => {
         const params: Parameters<typeof layoutLinear> = [agentCounts, agents, conversations, true, new Map()]
         const {edges} = layoutLinear(...params)
 
-        // There should be at least one edge since a->b is a conversation agent edge
-        expect(edges.some((e) => e.source === "a" && e.target === "b")).toBeTruthy()
+        // There should be at least one edge in the array since a->b is a conversation agent edge
+        expect(edges).toEqual(expect.arrayContaining([expect.objectContaining({source: "a", target: "b"})]))
     })
 
     describe("Plasma edges and known message types", () => {
@@ -391,11 +391,26 @@ describe("GraphLayouts", () => {
             expect(thoughtBubbleEdges).toHaveLength(5)
         })
 
-        it("Should remove single thought bubble edge", () => {
+        it("Should remove single existent thought bubble edge", () => {
             const e: Edge = {id: "e1", source: "A", target: "B"}
+            expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(0)
+
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
+            expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(1)
+
             removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1")
             expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(0)
+        })
+
+        it("Should be a no-op if we try to remove a single non-existent thought bubble edge", () => {
+            const e: Edge = {id: "e1", source: "A", target: "B"}
+            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
+
+            // Attempt to remove an edge that was never added
+            expect(() => removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "no-such-conv")).not.toThrow()
+
+            // Map should remain 1
+            expect(thoughtBubbleEdgesMap.size).toBe(1)
         })
 
         it("Should clear all thought bubble edges", () => {
