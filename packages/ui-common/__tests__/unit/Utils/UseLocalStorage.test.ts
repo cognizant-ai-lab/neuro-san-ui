@@ -70,9 +70,17 @@ describe("useLocalStorage", () => {
         // Put invalid JSON into localStorage
         window.localStorage.setItem(itemKey, "not-a-json")
 
-        jest.spyOn(console, "error").mockImplementation()
+        const consoleSpy = jest.spyOn(console, "error").mockImplementation()
         const {result} = renderHook(() => useLocalStorage(itemKey, initialValue))
         expect(result.current[0]).toEqual(initialValue)
+        // If JSON.parse throws, the hook should catch and log the error
+        expect(consoleSpy).toHaveBeenCalled()
+
+        const firstArg = consoleSpy.mock.calls[0][0]
+        // Should log the parse error (SyntaxError)
+        expect(firstArg).toBeInstanceOf(SyntaxError)
+        // Message can vary between environments, so check for known fragments
+        expect(firstArg.message).toMatch(/not-a-json|Unexpected token/u)
     })
 
     it("should catch and log when localStorage.setItem throws during setValue", () => {
@@ -96,5 +104,10 @@ describe("useLocalStorage", () => {
         expect(result.current[0]).toBe(cyclic)
         // console.error should have been called because JSON.stringify threw
         expect(consoleSpy).toHaveBeenCalled()
+
+        const errArg = consoleSpy.mock.calls[0][0]
+        // JSON.stringify circular structure throws (TypeError in many environments)
+        expect(errArg).toBeInstanceOf(Error)
+        expect(errArg.message).toMatch(/circular|Converting|circular structure|JSON/u)
     })
 })
