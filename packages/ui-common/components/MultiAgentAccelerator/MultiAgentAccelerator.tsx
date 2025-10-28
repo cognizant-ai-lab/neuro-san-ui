@@ -27,6 +27,7 @@ import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
+import {getUrlParameter, setUrlParameter} from "../../utils/urlParams"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
 import {cleanUpAgentName} from "../AgentChat/Utils"
@@ -64,6 +65,13 @@ export const MultiAgentAccelerator = ({
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
+
+    // Wrapper function to update both selectedNetwork state and URL parameter
+    const setSelectedNetworkWithUrl = useCallback((network: string | null) => {
+        setSelectedNetwork(network)
+        // Update URL parameter when network is selected manually
+        setUrlParameter("selectedNetwork", network)
+    }, [])
 
     // Track whether we've shown the info popup so we don't keep bugging the user with it
     const [haveShownPopup, setHaveShownPopup] = useState<boolean>(false)
@@ -114,7 +122,7 @@ export const MultiAgentAccelerator = ({
                 const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
                 const sortedNetworks = networksTmp?.sort((a, b) => a.localeCompare(b))
                 setNetworks(sortedNetworks)
-                // Set the first network as the selected network
+                // Set default network first
                 setSelectedNetwork(sortedNetworks[0])
                 closeNotification()
             } catch (e) {
@@ -131,6 +139,44 @@ export const MultiAgentAccelerator = ({
 
         void getNetworks()
     }, [neuroSanURL])
+
+    // Separate effect to handle URL parameter selection after networks are loaded
+    useEffect(() => {
+        if (networks.length === 0) {
+            return // Wait for networks to be loaded
+        }
+
+        const urlSelectedNetwork = getUrlParameter("selectedNetwork")
+        
+        if (urlSelectedNetwork) {
+            // Try exact match first (direct backend name)
+            let matchedNetwork = networks.find(
+                (network) => network === urlSelectedNetwork
+            )
+            
+            // If no exact match, try case-insensitive match
+            if (!matchedNetwork) {
+                matchedNetwork = networks.find(
+                    (network) => network.toLowerCase() === urlSelectedNetwork.toLowerCase()
+                )
+            }
+            
+            // If still no match, try matching against the cleaned display names
+            // This allows URLs like "?selectedNetwork=Cpg Agents" to match "cpg_agents"
+            if (!matchedNetwork) {
+                matchedNetwork = networks.find(
+                    (network) => {
+                        const cleanedNetworkName = cleanUpAgentName(network)
+                        return cleanedNetworkName.toLowerCase() === urlSelectedNetwork.toLowerCase()
+                    }
+                )
+            }
+            
+            if (matchedNetwork && matchedNetwork !== selectedNetwork) {
+                setSelectedNetwork(matchedNetwork)
+            }
+        }
+    }, [networks]) // Run when networks change
 
     useEffect(() => {
         ;(async () => {
@@ -236,7 +282,7 @@ export const MultiAgentAccelerator = ({
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
                         selectedNetwork={selectedNetwork}
-                        setSelectedNetwork={setSelectedNetwork}
+                        setSelectedNetwork={setSelectedNetworkWithUrl}
                     />
                 </Grid>
             </Slide>

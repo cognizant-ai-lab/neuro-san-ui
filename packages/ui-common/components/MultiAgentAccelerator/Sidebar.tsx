@@ -77,8 +77,8 @@ interface SidebarProps {
     id: string
     isAwaitingLlm: boolean
     networks: string[]
-    selectedNetwork: string
-    setSelectedNetwork: (network: string) => void
+    selectedNetwork: string | null
+    setSelectedNetwork: (network: string | null) => void
 }
 
 // #endregion: Types
