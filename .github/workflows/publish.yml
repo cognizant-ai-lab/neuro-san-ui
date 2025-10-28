@@ -12,13 +12,15 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-# This workflow publishes the package to GitHub Packages when a release is published.
+# This workflow publishes the package to GitHub Packages when a release is published
+# or when called by the orchestrator workflow on merge to main.
 
 name: Publish Package
 
 on:
     release:
         types: [published]
+    workflow_call:
 
 jobs:
     publish:
@@ -39,7 +41,18 @@ jobs:
             #            - name: Build
             #              run: yarn build
 
+            - name: Determine version
+              id: version
+              run: |
+                  if [ "${{ github.event_name }}" == "release" ]; then
+                    echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+                  else
+                    # For workflow_call, use the current package version
+                    VERSION=$(node -p "require('./packages/ui-common/package.json').version")
+                    echo "version=$VERSION" >> $GITHUB_OUTPUT
+                  fi
+
             - name: Publish to GitHub Packages
-              run: yarn publish --new-version ${{ github.event.release.tag_name }}
+              run: yarn workspace @cognizant-ai-lab/ui-common npm publish
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -80,5 +80,29 @@ jobs:
             revision: ${{ github.ref }}
             DISPLAY_VERSION: ${{ needs.setup.outputs.version }}
 
-    # Step 3: Deploy to environment (only for main/release)
-    # Not yet implemented.
+    # Step 3: Publish npm package (only for main)
+    publish:
+        uses: ./.github/workflows/publish.yml
+        needs: [setup, build]
+        if: needs.build.result == 'success' && github.ref == 'refs/heads/main'
+        secrets: inherit
+
+    # Step 4: Deploy to environment (only for main/release)
+    deploy:
+        uses: ./.github/workflows/deploy.yml
+        needs: [setup, build]
+        if: needs.build.result == 'success' && needs.setup.outputs.should_deploy == 'true'
+        with:
+            IMAGE_VERSION: ${{ needs.setup.outputs.version }}
+            DEPLOY_ENV: ${{ needs.setup.outputs.deploy_env }}
+        secrets:
+            LEAF_APP_PRIVATE_KEY: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
+
+    # Step 5: Trigger neuro-ui dependency update (only for main after publish)
+    trigger-neuro-ui:
+        uses: ./.github/workflows/trigger-neuro-ui.yml
+        needs: [setup, publish, deploy]
+        if: needs.publish.result == 'success' && needs.deploy.result == 'success' && github.ref == 'refs/heads/main'
+        with:
+            neuro_san_ui_version: ${{ needs.setup.outputs.version }}
+        secrets: inherit

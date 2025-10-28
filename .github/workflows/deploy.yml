@@ -1,0 +1,102 @@
+#    Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+# ================================================================================
+# Deploy Workflow
+# ================================================================================
+# Purpose: Deploy Docker image to Kubernetes cluster via neuro-san-deploy repo
+#
+# Trigger Scenarios:
+# - Called by orchestrator workflow (automatic flow)
+# - Manual trigger: Allows deploying any arbitrary image to any environment
+# ================================================================================
+
+name: Deploy
+
+on:
+    # Allow manual workflow dispatch
+    workflow_dispatch:
+        inputs:
+            IMAGE_VERSION:
+                description: "Docker image version/tag to deploy"
+                required: true
+                type: string
+            DEPLOY_ENV:
+                description: "Deployment environment (dev/staging/prod)"
+                required: true
+                type: choice
+                options: ["dev", "staging", "prod"]
+    # Allow being called by other workflows
+    workflow_call:
+        inputs:
+            IMAGE_VERSION:
+                required: true
+                type: string
+            DEPLOY_ENV:
+                required: true
+                type: string
+        secrets:
+            LEAF_APP_PRIVATE_KEY:
+                required: false
+
+env:
+    AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Create GitHub App token for LEAF
+              id: leaf-token
+              uses: actions/create-github-app-token@v2
+              with:
+                  app-id: ${{ vars.LEAF_APP_ID }}
+                  private-key: ${{ secrets.LEAF_APP_PRIVATE_KEY }}
+                  repositories: neuro-san-deploy
+                  owner: cognizant-ai-lab
+
+            - name: Checkout neuro-san-deploy repository
+              uses: actions/checkout@v4
+              with:
+                  repository: cognizant-ai-lab/neuro-san-deploy
+                  ref: main
+                  token: ${{ steps.leaf-token.outputs.token }}
+                  fetch-depth: 0
+
+            - name: Setup Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: ${{ vars.DEFAULT_NEUROAI_PYTHON_VERSION || '3.11' }}
+
+            - name: Install Python dependencies
+              run: |
+                  pip install pyyaml
+
+            - name: Update deployment manifest
+              run: |
+                  python .github/scripts/deploy_to_cluster.py \
+                    --file-path values-${{ inputs.DEPLOY_ENV }}.yaml \
+                    --ui-tag ${{ inputs.IMAGE_VERSION }}
+
+            - name: Commit and push manifest changes
+              run: |
+                  git config user.name ${{ vars.BOT_USER || 'GitHub Actions' }}
+                  git config user.email ${{ vars.BOT_EMAIL || 'actions@github.com' }}
+                  git add values-${{ inputs.DEPLOY_ENV }}.yaml
+                  git diff --staged --quiet || git commit -m "Update neuro-san-ui image version: ${{ inputs.IMAGE_VERSION }} from ${{ github.run_id }}"
+                  git push origin main
