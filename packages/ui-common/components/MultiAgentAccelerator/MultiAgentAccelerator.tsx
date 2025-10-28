@@ -140,6 +140,9 @@ export const MultiAgentAccelerator = ({
         void getNetworks()
     }, [neuroSanURL])
 
+    // Read hideChat parameter from URL
+    const hideChat = getUrlParameter("hideChat") === "true"
+
     // Separate effect to handle URL parameter selection after networks are loaded
     useEffect(() => {
         if (networks.length === 0) {
@@ -343,6 +346,7 @@ export const MultiAgentAccelerator = ({
                     size={isStreaming ? 0 : 6.5}
                     sx={{
                         height: "100%",
+                        visibility: hideChat ? "hidden" : "visible",
                     }}
                 >
                     <ChatCommon
