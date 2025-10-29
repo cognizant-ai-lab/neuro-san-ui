@@ -11,29 +11,23 @@ const __dirname = import.meta.dirname
 
 // Extra headers to be returned
 // Gleaned from here: https://nextjs.org/docs/advanced-features/security-headers
-const securityHeaders = [
-    {
-        key: "Strict-Transport-Security",
-        value: "max-age=63072000; includeSubDomains; preload",
-    },
-    {
-        key: "X-Content-Type-Options",
-        value: "nosniff",
-    },
-    {
-        key: "X-Frame-Options",
-        value: "SAMEORIGIN",
-    },
-    {
-        key: "X-XSS-Protection",
-        value: "1; mode=block",
-    },
-    {
-        key: "Content-Security-Policy",
-        value: "",
-    },
-]
+// TODO: Temporary for hackathon
+const isDev = process.env.NODE_ENV !== 'production'
 
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  // No X-Frame-Options in dev or it will always block iframes
+  ...(isDev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]),
+  // ...(isDev ? [] : [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }]),
+
+  {
+    key: 'Content-Security-Policy',
+    // Option 1 (tighter): list the VS Code ancestors explicitly
+    value: "frame-ancestors 'self' vscode-webview://* vscode-resource://* vscode-file://*;"
+    // Option 2 (fastest for hackathon dev): allow any ancestor
+    // value: "frame-ancestors *;"
+  }
+]
 const nextConfig: import("next").NextConfig = {
     transpilePackages: ["@cognizant-ai-lab/ui-common"],
 

@@ -101,6 +101,9 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     // Access NextJS router
     const {pathname, query} = useRouter()
 
+    // Check if we're in VS Code mode (hideChat parameter)
+    const hideChat = query["hideChat"] === "true"
+
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
 
@@ -294,25 +297,27 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider>
                     <ErrorBoundary id="error_boundary">
-                        <NavbarWrapper
-                            id="nav-bar"
-                            logo={LOGO}
-                            query={query}
-                            pathname={pathname}
-                            authenticationType={authenticationType}
-                            signOut={handleSignOut}
-                            supportEmailAddress={supportEmailAddress}
-                        />
+                        {!hideChat && (
+                            <NavbarWrapper
+                                id="nav-bar"
+                                logo={LOGO}
+                                query={query}
+                                pathname={pathname}
+                                authenticationType={authenticationType}
+                                signOut={handleSignOut}
+                                supportEmailAddress={supportEmailAddress}
+                            />
+                        )}
                         <Container
                             id="body-container"
                             maxWidth={false}
                             sx={{
                                 flex: 1,
                                 height: isContainedInViewport ? "100%" : "auto",
-                                paddingBottom: "5rem",
+                                paddingBottom: hideChat ? "0" : "5rem",
                             }}
                         >
-                            {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
+                            {includeBreadcrumbs && !hideChat && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
                         </Container>
                     </ErrorBoundary>

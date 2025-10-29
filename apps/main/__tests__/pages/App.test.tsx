@@ -85,6 +85,7 @@ describe("Main App Component", () => {
         })
         ;(useRouter as jest.Mock).mockReturnValue({
             pathname: "/projects",
+            query: {},
         })
     })
 
@@ -159,6 +160,7 @@ describe("Main App Component", () => {
     it("Should render the splash page correctly", async () => {
         ;(useRouter as jest.Mock).mockReturnValue({
             pathname: "/", // Splash page
+            query: {},
         })
 
         render(APP_COMPONENT)

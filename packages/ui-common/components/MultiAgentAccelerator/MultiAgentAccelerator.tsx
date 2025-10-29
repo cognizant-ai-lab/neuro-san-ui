@@ -110,6 +110,10 @@ export const MultiAgentAccelerator = ({
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
+    // State for tracking VS Code extension communication
+    const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+    const responseBufferRef = useRef<string>("")
+
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
@@ -223,6 +227,62 @@ export const MultiAgentAccelerator = ({
         return () => window.removeEventListener("keydown", onKeyDown)
     }, [isAwaitingLlm, handleExternalStop])
 
+    // Set up postMessage listener for VS Code extension communication
+    useEffect(() => {
+        const handleMessage = async (e: MessageEvent) => {
+            const m = e.data
+            if (!m || typeof m !== 'object') return
+
+            if (m.type === 'chat:send') {
+                const { convId, text } = m
+                
+                if (hideChat) {
+                    console.log('[MultiAgentAccelerator] Received VS Code message:', { convId, text })
+                }
+                
+                // Store the conversation ID for this interaction
+                setCurrentConversationId(convId)
+                responseBufferRef.current = ""
+                
+                try {
+                    // Send the text through the ChatCommon handleSend mechanism
+                    if (chatRef.current?.handleSend) {
+                        await chatRef.current.handleSend(text)
+                    } else {
+                        console.warn('[MultiAgentAccelerator] ChatCommon handleSend not available')
+                    }
+                } catch (error) {
+                    console.error('[MultiAgentAccelerator] Error handling VS Code message:', error)
+                    
+                    // Send error response back to VS Code
+                    window.parent?.postMessage(
+                        { 
+                            type: 'chat:error', 
+                            convId, 
+                            error: error instanceof Error ? error.message : 'Unknown error' 
+                        },
+                        '*'
+                    )
+                    
+                    // Clean up state
+                    setCurrentConversationId(null)
+                    responseBufferRef.current = ""
+                }
+            }
+        }
+
+        if (hideChat) {
+            window.addEventListener('message', handleMessage)
+            console.log('[MultiAgentAccelerator] VS Code mode enabled, listening for postMessage events')
+        }
+        
+        return () => {
+            if (hideChat) {
+                window.removeEventListener('message', handleMessage)
+            }
+        }
+    }, [hideChat])
+
     // Effect to exit zen mode when streaming ends
     useEffect(() => {
         if (!isAwaitingLlm) {
@@ -238,8 +298,13 @@ export const MultiAgentAccelerator = ({
             setCurrentConversations(result.newConversations)
         }
 
+        // If we have a conversation ID from VS Code, capture the chunk for postMessage response
+        if (currentConversationId) {
+            responseBufferRef.current += chunk
+        }
+
         return result.success
-    }, [])
+    }, [currentConversationId])
 
     const onStreamingStarted = useCallback((): void => {
         // Show info popup only once per session
@@ -253,14 +318,37 @@ export const MultiAgentAccelerator = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
+        // If we have a conversation ID from VS Code, send the response back
+        if (currentConversationId && responseBufferRef.current) {
+            const response = {
+                type: 'chat:receive', 
+                convId: currentConversationId, 
+                text: responseBufferRef.current 
+            }
+            
+            if (hideChat) {
+                console.log('[MultiAgentAccelerator] Sending response to VS Code:', response)
+            }
+            
+            window.parent?.postMessage(response, '*')
+            
+            // Clean up VS Code communication state
+            setCurrentConversationId(null)
+            responseBufferRef.current = ""
+        }
+
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         agentCountsRef.current = new Map<string, number>()
         setCurrentConversations(null)
         resetState()
-    }, [])
+    }, [currentConversationId, hideChat])
 
     const getLeftPanel = () => {
+        if (hideChat) {
+            return null
+        }
+        
         return (
             <Slide
                 id="multi-agent-accelerator-grid-sidebar-slide"
@@ -293,10 +381,15 @@ export const MultiAgentAccelerator = ({
     }
 
     const getCenterPanel = () => {
+        const getCenterGridSize = () => {
+            if (hideChat || isStreaming) return 18 // Full width when in VS Code mode or streaming
+            return 8.25 // Normal width with sidebar and chat
+        }
+        
         return (
             <Grid
                 id="multi-agent-accelerator-grid-agent-flow"
-                size={isStreaming ? 18 : 8.25}
+                size={getCenterGridSize()}
                 sx={{
                     height: "100%",
                 }}
@@ -310,7 +403,7 @@ export const MultiAgentAccelerator = ({
                             alignItems: "center",
                             width: "100%",
                             height: "100%",
-                            maxWidth: 1000,
+                            maxWidth: hideChat ? "none" : 1000,
                             margin: "0 auto",
                         }}
                     >
@@ -331,6 +424,29 @@ export const MultiAgentAccelerator = ({
     }
 
     const getRightPanel = () => {
+        if (hideChat) {
+            return (
+                // Hidden ChatCommon component that still processes messages for VS Code
+                <div style={{ display: "none" }}>
+                    <ChatCommon
+                        ref={chatRef}
+                        neuroSanURL={neuroSanURL}
+                        id="agent-network-ui"
+                        currentUser={userInfo.userName}
+                        userImage={userInfo.userImage}
+                        setIsAwaitingLlm={setIsAwaitingLlm}
+                        isAwaitingLlm={isAwaitingLlm}
+                        targetAgent={selectedNetwork}
+                        onChunkReceived={onChunkReceived}
+                        onStreamingComplete={onStreamingComplete}
+                        onStreamingStarted={onStreamingStarted}
+                        clearChatOnNewAgent={true}
+                        backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
+                    />
+                </div>
+            )
+        }
+        
         return (
             <Slide
                 id="multi-agent-accelerator-grid-agent-chat-common-slide"
@@ -346,7 +462,6 @@ export const MultiAgentAccelerator = ({
                     size={isStreaming ? 0 : 6.5}
                     sx={{
                         height: "100%",
-                        visibility: hideChat ? "hidden" : "visible",
                     }}
                 >
                     <ChatCommon

@@ -189,6 +189,7 @@ const MAX_AGENT_RETRIES = 3
 // Type for forward ref to expose the handleStop function
 export type ChatCommonHandle = {
     handleStop: () => void
+    handleSend: (query: string) => Promise<void>
 }
 
 /**
@@ -224,6 +225,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
     useImperativeHandle(ref, () => ({
         handleStop,
+        handleSend,
     }))
 
     // User LLM chat input
