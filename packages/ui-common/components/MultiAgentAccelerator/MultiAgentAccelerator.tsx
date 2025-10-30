@@ -18,7 +18,7 @@ import {StopCircle} from "@mui/icons-material"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
-import {JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
+import {JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
@@ -114,6 +114,8 @@ export const MultiAgentAccelerator = ({
     const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
     const responseBufferRef = useRef<string>("")
 
+
+
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
@@ -122,14 +124,18 @@ export const MultiAgentAccelerator = ({
 
     useEffect(() => {
         async function getNetworks() {
+            console.log('[MultiAgentAccelerator] Loading networks from:', neuroSanURL)
             try {
                 const networksTmp: string[] = await getAgentNetworks(neuroSanURL)
                 const sortedNetworks = networksTmp?.sort((a, b) => a.localeCompare(b))
+                console.log('[MultiAgentAccelerator] Networks loaded:', sortedNetworks)
                 setNetworks(sortedNetworks)
                 // Set default network first
                 setSelectedNetwork(sortedNetworks[0])
+                console.log('[MultiAgentAccelerator] Default network set to:', sortedNetworks[0])
                 closeNotification()
             } catch (e) {
+                console.error('[MultiAgentAccelerator] Error loading networks:', e)
                 sendNotification(
                     NotificationType.error,
                     "Connection error",
@@ -145,27 +151,32 @@ export const MultiAgentAccelerator = ({
     }, [neuroSanURL])
 
     // Read hideChat parameter from URL
-    const hideChat = getUrlParameter("hideChat") === "true"
+    const hideChat = useMemo(() => getUrlParameter("hideChat") === "true", [])
 
     // Separate effect to handle URL parameter selection after networks are loaded
     useEffect(() => {
+        console.log('[MultiAgentAccelerator] URL parameter effect - networks:', networks.length)
         if (networks.length === 0) {
+            console.log('[MultiAgentAccelerator] Waiting for networks to be loaded')
             return // Wait for networks to be loaded
         }
 
         const urlSelectedNetwork = getUrlParameter("selectedNetwork")
+        console.log('[MultiAgentAccelerator] URL selectedNetwork param:', urlSelectedNetwork)
         
         if (urlSelectedNetwork) {
             // Try exact match first (direct backend name)
             let matchedNetwork = networks.find(
                 (network) => network === urlSelectedNetwork
             )
+            console.log('[MultiAgentAccelerator] Exact match result:', matchedNetwork)
             
             // If no exact match, try case-insensitive match
             if (!matchedNetwork) {
                 matchedNetwork = networks.find(
                     (network) => network.toLowerCase() === urlSelectedNetwork.toLowerCase()
                 )
+                console.log('[MultiAgentAccelerator] Case-insensitive match result:', matchedNetwork)
             }
             
             // If still no match, try matching against the cleaned display names
@@ -177,11 +188,17 @@ export const MultiAgentAccelerator = ({
                         return cleanedNetworkName.toLowerCase() === urlSelectedNetwork.toLowerCase()
                     }
                 )
+                console.log('[MultiAgentAccelerator] Cleaned name match result:', matchedNetwork)
             }
             
             if (matchedNetwork && matchedNetwork !== selectedNetwork) {
+                console.log('[MultiAgentAccelerator] Setting matched network:', matchedNetwork)
                 setSelectedNetwork(matchedNetwork)
+            } else {
+                console.log('[MultiAgentAccelerator] No network change needed. Current:', selectedNetwork)
             }
+        } else {
+            console.log('[MultiAgentAccelerator] No URL selectedNetwork parameter found')
         }
     }, [networks]) // Run when networks change
 
@@ -229,59 +246,63 @@ export const MultiAgentAccelerator = ({
 
     // Set up postMessage listener for VS Code extension communication
     useEffect(() => {
-        const handleMessage = async (e: MessageEvent) => {
-            const m = e.data
-            if (!m || typeof m !== 'object') return
+        if (!hideChat) return undefined
 
-            if (m.type === 'chat:send') {
-                const { convId, text } = m
-                
-                if (hideChat) {
-                    console.log('[MultiAgentAccelerator] Received VS Code message:', { convId, text })
-                }
-                
-                // Store the conversation ID for this interaction
+        console.log('[MultiAgentAccelerator] VS Code mode enabled, setting up message listener')
+        
+        // Use a more isolated approach
+        const handleVSCodeMessage = (e: MessageEvent) => {
+            console.log('[MultiAgentAccelerator] Raw message received:', e.origin, e.data)
+            
+            // Only process messages meant for us
+            if (!e.data || typeof e.data !== 'object' || e.data.type !== 'chat:send') {
+                console.log('[MultiAgentAccelerator] Ignoring message:', e.data)
+                return
+            }
+
+            const { convId, text } = e.data
+            console.log('[MultiAgentAccelerator] Received VS Code message:', { convId, text })
+            
+            // Store conversation ID and process with real agent
+            console.log('[MultiAgentAccelerator] Setting up for agent processing')
+            
+            try {
                 setCurrentConversationId(convId)
                 responseBufferRef.current = ""
                 
+                // Use URL parameter or hardcoded fallback for VS Code mode
+                const targetNetwork = selectedNetwork || getUrlParameter("selectedNetwork") || "airline_policy"
+                console.log('[MultiAgentAccelerator] Using target network:', targetNetwork)
+                
+                console.log('[MultiAgentAccelerator] Starting direct agent processing with network:', targetNetwork)
+                
+                // Call agent directly without ChatCommon to avoid page reload issues
+                handleDirectAgentCall(text, convId, targetNetwork)
+                
+            } catch (error) {
+                console.error('[MultiAgentAccelerator] Error in message processing setup:', error)
+                
+                // Send error back to VS Code
                 try {
-                    // Send the text through the ChatCommon handleSend mechanism
-                    if (chatRef.current?.handleSend) {
-                        await chatRef.current.handleSend(text)
-                    } else {
-                        console.warn('[MultiAgentAccelerator] ChatCommon handleSend not available')
-                    }
-                } catch (error) {
-                    console.error('[MultiAgentAccelerator] Error handling VS Code message:', error)
-                    
-                    // Send error response back to VS Code
-                    window.parent?.postMessage(
-                        { 
-                            type: 'chat:error', 
-                            convId, 
-                            error: error instanceof Error ? error.message : 'Unknown error' 
-                        },
-                        '*'
-                    )
-                    
-                    // Clean up state
-                    setCurrentConversationId(null)
-                    responseBufferRef.current = ""
+                    window.parent?.postMessage({
+                        type: 'chat:error',
+                        convId,
+                        error: 'Failed to process message'
+                    }, '*')
+                } catch (postError) {
+                    console.error('[MultiAgentAccelerator] Failed to send setup error to VS Code:', postError)
                 }
             }
         }
 
-        if (hideChat) {
-            window.addEventListener('message', handleMessage)
-            console.log('[MultiAgentAccelerator] VS Code mode enabled, listening for postMessage events')
-        }
+        window.addEventListener('message', handleVSCodeMessage, { passive: true })
+        console.log('[MultiAgentAccelerator] Message listener attached')
         
         return () => {
-            if (hideChat) {
-                window.removeEventListener('message', handleMessage)
-            }
+            window.removeEventListener('message', handleVSCodeMessage)
+            console.log('[MultiAgentAccelerator] Message listener removed')
         }
-    }, [hideChat])
+    }, [])
 
     // Effect to exit zen mode when streaming ends
     useEffect(() => {
@@ -318,31 +339,100 @@ export const MultiAgentAccelerator = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
-        // If we have a conversation ID from VS Code, send the response back
-        if (currentConversationId && responseBufferRef.current) {
-            const response = {
-                type: 'chat:receive', 
-                convId: currentConversationId, 
-                text: responseBufferRef.current 
-            }
-            
-            if (hideChat) {
-                console.log('[MultiAgentAccelerator] Sending response to VS Code:', response)
-            }
-            
-            window.parent?.postMessage(response, '*')
-            
-            // Clean up VS Code communication state
-            setCurrentConversationId(null)
-            responseBufferRef.current = ""
-        }
-
+        console.log('[MultiAgentAccelerator] onStreamingComplete called')
+        
         // When streaming is complete, clean up any refs and state
+        console.log('[MultiAgentAccelerator] Resetting all state')
         conversationsRef.current = null
         agentCountsRef.current = new Map<string, number>()
         setCurrentConversations(null)
         resetState()
-    }, [currentConversationId, hideChat])
+    }, [hideChat])
+
+    // Direct agent call bypassing ChatCommon to avoid page reload issues
+    const handleDirectAgentCall = useCallback(async (text: string, convId: string, targetNetwork: string) => {
+        try {
+            console.log('[MultiAgentAccelerator] Starting direct agent call')
+            console.log('[MultiAgentAccelerator] Preserving conversation ID:', convId)
+            console.log('[MultiAgentAccelerator] Using neuroSanURL:', neuroSanURL)
+            
+            // Ensure conversation ID is preserved throughout the call
+            setCurrentConversationId(convId)
+            
+            // For VS Code mode, always use localhost backend
+            const apiUrl = hideChat ? 'http://localhost:8080' : neuroSanURL
+            console.log('[MultiAgentAccelerator] API URL for request:', apiUrl)
+            
+            setIsAwaitingLlm(true)
+            onStreamingStarted()
+            
+            // Import sendChatQuery dynamically
+            const { sendChatQuery } = await import('../../controller/agent/Agent')
+            
+            // Create abort controller
+            const abortController = new AbortController()
+            
+            console.log('[MultiAgentAccelerator] Making sendChatQuery call to:', apiUrl)
+            
+            // Make the agent request
+            await sendChatQuery(
+                apiUrl,
+                abortController.signal,
+                text,
+                targetNetwork,
+                (chunk: string) => {
+                    responseBufferRef.current += chunk
+                    onChunkReceived(chunk)
+                },
+                null, // chatContext
+                {}, // slyData
+                userInfo.userName // userId
+            )
+            
+            console.log('[MultiAgentAccelerator] Agent call completed successfully')
+            
+        } catch (error) {
+            console.error('[MultiAgentAccelerator] Error in direct agent call:', error)
+            
+            // Prevent any error from causing page reload
+            try {
+                // Send error response back to VS Code
+                window.parent?.postMessage({
+                    type: 'chat:error',
+                    convId,
+                    error: error instanceof Error ? error.message : 'Unknown error'
+                }, '*')
+            } catch (postMessageError) {
+                console.error('[MultiAgentAccelerator] Failed to send error to VS Code:', postMessageError)
+            }
+        } finally {
+            try {
+                setIsAwaitingLlm(false)
+                
+                // Send response back to VS Code with the preserved convId
+                if (convId && responseBufferRef.current && hideChat) {
+                    const response = {
+                        type: 'chat:receive', 
+                        convId: convId, 
+                        text: responseBufferRef.current 
+                    }
+                    
+                    console.log('[MultiAgentAccelerator] Sending response to VS Code:')
+                    console.log('[MultiAgentAccelerator] Response:', responseBufferRef.current)
+                    
+                    window.parent?.postMessage(response, '*')
+                    
+                    // Clean up
+                    responseBufferRef.current = ""
+                    setCurrentConversationId(null)
+                }
+                
+                onStreamingComplete()
+            } catch (finallyError) {
+                console.error('[MultiAgentAccelerator] Error in finally block:', finallyError)
+            }
+        }
+    }, [neuroSanURL, hideChat, onStreamingStarted, onChunkReceived, onStreamingComplete, userInfo.userName])
 
     const getLeftPanel = () => {
         if (hideChat) {
@@ -425,26 +515,7 @@ export const MultiAgentAccelerator = ({
 
     const getRightPanel = () => {
         if (hideChat) {
-            return (
-                // Hidden ChatCommon component that still processes messages for VS Code
-                <div style={{ display: "none" }}>
-                    <ChatCommon
-                        ref={chatRef}
-                        neuroSanURL={neuroSanURL}
-                        id="agent-network-ui"
-                        currentUser={userInfo.userName}
-                        userImage={userInfo.userImage}
-                        setIsAwaitingLlm={setIsAwaitingLlm}
-                        isAwaitingLlm={isAwaitingLlm}
-                        targetAgent={selectedNetwork}
-                        onChunkReceived={onChunkReceived}
-                        onStreamingComplete={onStreamingComplete}
-                        onStreamingStarted={onStreamingStarted}
-                        clearChatOnNewAgent={true}
-                        backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
-                    />
-                </div>
-            )
+            return null // No ChatCommon needed for VS Code mode - using direct agent calls
         }
         
         return (
