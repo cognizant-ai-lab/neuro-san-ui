@@ -18,9 +18,7 @@ import {chatMessageFromChunk} from "../components/AgentChat/Utils"
 import {NotificationType, sendNotification} from "../components/Common/notification"
 import {ChatMessageType, Origin} from "../generated/neuro-san/NeuroSanClient"
 
-export interface AgentConversation {
-    // Unique identifier for the conversation
-    id: string
+export interface AgentConversationBase {
     // The specific agents involved in this conversation path
     agents: Set<string>
     // Timestamp when the conversation started
@@ -29,6 +27,11 @@ export interface AgentConversation {
     text?: string
     // The conversation type
     type: ChatMessageType
+}
+
+export interface AgentConversation extends AgentConversationBase {
+    // Unique identifier for the conversation
+    id: string
 }
 
 export const isFinalMessage = (chatMessage: {

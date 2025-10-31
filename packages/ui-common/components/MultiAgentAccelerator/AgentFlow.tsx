@@ -54,7 +54,7 @@ import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation} from "../../utils/agentConversations"
+import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -62,7 +62,8 @@ import {getZIndex} from "../../utils/zIndexLayers"
 
 // ActiveThoughtBubble mirrors AgentConversation but uses `conversationId` instead of `id`
 // to make it explicit that this bubble maps back to an originating conversation.
-interface ActiveThoughtBubble extends Omit<AgentConversation, "id"> {
+
+interface ActiveThoughtBubble extends AgentConversationBase {
     conversationId: string
 }
 
