@@ -16,6 +16,8 @@ interface ThoughtBubbleProps {
     readonly animationDelay: number
     readonly bubbleScreenX: number
     readonly bubbleScreenY: number
+    readonly isVisible?: boolean
+    readonly isExiting?: boolean
 }
 
 // #endregion: Types
@@ -27,7 +29,7 @@ const BUBBLE_ARROW_WIDTH = 24
 const BUBBLE_HEIGHT = 78
 const BUBBLE_WIDTH = 260
 
-const LAYOUT_BUBBLES_ANIMATION_DELAY_MS = 120 // Delay between each bubble's animation start
+const LAYOUT_BUBBLES_ANIMATION_DELAY_MS = 100 // Delay between each bubble's animation start
 const LAYOUT_BUBBLES_TOP_MARGIN = 50 // Distance from top of container
 const LAYOUT_BUBBLES_RIGHT_MARGIN = 40 // Distance from right edge
 const LAYOUT_BUBBLES_TRIANGLE_ROTATION = 90 // Point left (rotate arrow 90 degrees clockwise)
@@ -49,51 +51,76 @@ const OverlayContainer = styled("div")({
 
 const ThoughtBubble = styled("div", {
     shouldForwardProp: (prop) =>
-        !["isHovered", "isTruncated", "animationDelay", "bubbleScreenX", "bubbleScreenY"].includes(prop as string),
-})<ThoughtBubbleProps>(({theme, isHovered, isTruncated, animationDelay, bubbleScreenX, bubbleScreenY}) => ({
-    // Colors / theme
-    // TODO: Add dark mode support? For now both light and dark mode use the same thought bubble style and look fine.
-    background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,250,250,0.95) 100%)",
-    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-border-color)",
-    borderRadius: "var(--bs-border-radius-lg)",
-    color: "var(--bs-primary)",
-    fontFamily: theme.typography.fontFamily, // TODO: Easy to pull from theme. Rest we need to revisit.
-    fontSize: "var(--bs-body-font-size-extra-small)",
-    fontWeight: "var(--bs-body-font-weight)",
-    padding: "10px 14px",
+        ![
+            "isHovered",
+            "isTruncated",
+            "animationDelay",
+            "bubbleScreenX",
+            "bubbleScreenY",
+            "isVisible",
+            "isExiting",
+        ].includes(prop as string),
+})<ThoughtBubbleProps>(
+    ({
+        theme,
+        isHovered,
+        isTruncated,
+        animationDelay,
+        bubbleScreenX,
+        bubbleScreenY,
+        isVisible = true,
+        isExiting = false,
+    }) => ({
+        // Colors / theme
+        // TODO: Add dark mode support? For now both light and dark mode use the same bubble style and look fine.
+        background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,250,250,0.95) 100%)",
+        border: "var(--bs-border-width) var(--bs-border-style) var(--bs-border-color)",
+        borderRadius: "var(--bs-border-radius-lg)",
+        color: "var(--bs-primary)",
+        fontFamily: theme.typography.fontFamily, // TODO: Easy to pull from theme. Rest we need to revisit.
+        fontSize: "var(--bs-body-font-size-extra-small)",
+        fontWeight: "var(--bs-body-font-weight)",
+        padding: "10px 14px",
 
-    // Positioning
-    position: "absolute",
-    right: bubbleScreenX, // Position from right edge instead of left
-    top: bubbleScreenY,
-    transform: "translateY(-50%)", // Only center vertically, not horizontally
+        // Positioning
+        position: "absolute",
+        right: bubbleScreenX, // Position from right edge instead of left
+        top: bubbleScreenY,
+        transform: "translateY(-50%)", // Only center vertically, not horizontally
 
-    // Dimensions
-    height: isHovered && isTruncated ? BUBBLE_HEIGHT : "auto", // Only expand height when hovered AND text is truncated
-    maxHeight: BUBBLE_HEIGHT, // Max 3 lines always
-    minHeight: "auto", // Let height adjust to content
-    minWidth: "100px",
-    width: BUBBLE_WIDTH,
+        // Dimensions
+        // Only expand height when hovered AND text is truncated
+        height: isHovered && isTruncated ? BUBBLE_HEIGHT : "auto",
+        maxHeight: BUBBLE_HEIGHT, // Max 3 lines always
+        minHeight: "auto", // Let height adjust to content
+        minWidth: "100px",
+        width: BUBBLE_WIDTH,
 
-    // Other styles
-    boxShadow: isHovered
-        ? "0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)"
-        : "0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08)",
-    zIndex: isHovered ? 10002 : 10000,
-    lineHeight: 1.4,
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
-    cursor: isTruncated ? "pointer" : "default",
-    userSelect: isHovered && isTruncated ? "text" : "none",
-    animation: `fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${animationDelay}ms both`,
-    pointerEvents: "auto",
-    wordBreak: "break-word",
-    overflow: "hidden", // Always hide overflow
-    // Enable vertical scrolling only when hovered and truncated
-    overflowY: isHovered && isTruncated ? "auto" : "hidden",
-    whiteSpace: "normal",
-}))
+        // Other styles
+        boxShadow: isHovered
+            ? "0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)"
+            : "0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08)",
+        zIndex: isHovered ? 10002 : 10000,
+        lineHeight: 1.4,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        transition: `box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+            z-index 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)`,
+        cursor: isTruncated ? "pointer" : "default",
+        userSelect: isHovered && isTruncated ? "text" : "none",
+        animation: isExiting
+            ? "fadeOutDown 0.4s cubic-bezier(0.4, 0, 0.1, 1) both"
+            : `fadeInUp 0.6s cubic-bezier(0.2, 0, 0.2, 1) ${animationDelay}ms both`,
+        opacity: isVisible ? (isExiting ? 0 : 1) : 0,
+        pointerEvents: "auto",
+        wordBreak: "break-word",
+        overflow: "hidden", // Always hide overflow
+        // Enable vertical scrolling only when hovered and truncated
+        overflowY: isHovered && isTruncated ? "auto" : "hidden",
+        whiteSpace: "normal",
+    })
+)
 
 const TruncatedText = styled("div")<{isHovered: boolean; isTruncated: boolean}>(({isHovered, isTruncated}) => ({
     display: isHovered && isTruncated ? "block" : "-webkit-box",
@@ -115,24 +142,89 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
     // truncatedBubbles: set of edge ids whose text overflows the collapsed box
     const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
+    // bubbleStates: track animation state of each bubble
+    const [bubbleStates, setBubbleStates] = useState<Map<string, {isVisible: boolean; isExiting: boolean}>>(new Map())
     // hoverTimeoutRef: used to debounce clearing of hovered state on mouse leave
     const hoverTimeoutRef = useRef<number | null>(null)
     // textRefs: mapping of edge id -> DOM node for measuring scrollHeight/clientHeight
     const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+    // animationTimeouts: track timeouts for bubble removal
+    const animationTimeouts = useRef<Map<string, number>>(new Map())
 
-    // Filter edges with meaningful text
-    const thoughtBubbleEdges = edges.filter((e) => {
-        if (typeof e?.data?.text !== "string") {
-            return false
-        }
-        return e.data.text
-    })
+    // Filter edges with meaningful text (memoized to prevent infinite re-renders)
+    const thoughtBubbleEdges = useMemo(
+        () =>
+            edges.filter((e) => {
+                if (typeof e?.data?.text !== "string") {
+                    return false
+                }
+                return e.data.text
+            }),
+        [edges]
+    )
 
     // Find frontman node (depth === 0, same as isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
         if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return null
         return nodes.find((n) => n.data?.depth === 0)
     }, [nodes])
+
+    // Handle bubble lifecycle (appear/disappear animations)
+    useEffect(() => {
+        const currentEdgeIds = new Set(thoughtBubbleEdges.map((e) => e.id))
+        const previousBubbleIds = new Set(bubbleStates.keys())
+
+        // Find new bubbles that should appear
+        const newBubbles = thoughtBubbleEdges.filter((e) => !previousBubbleIds.has(e.id))
+
+        // Find bubbles that should disappear
+        const removingBubbles = Array.from(previousBubbleIds).filter((id) => !currentEdgeIds.has(id))
+
+        setBubbleStates((prev) => {
+            const newState = new Map(prev)
+
+            // Add new bubbles in entering state
+            newBubbles.forEach((edge) => {
+                newState.set(edge.id, {isVisible: true, isExiting: false})
+            })
+
+            // Mark removing bubbles as exiting
+            removingBubbles.forEach((id) => {
+                const currentState = newState.get(id)
+                if (currentState) {
+                    newState.set(id, {...currentState, isExiting: true})
+
+                    // Clear any existing timeout
+                    const existingTimeout = animationTimeouts.current.get(id)
+                    if (existingTimeout) {
+                        clearTimeout(existingTimeout)
+                    }
+
+                    // Schedule removal after exit animation
+                    const timeout = window.setTimeout(() => {
+                        setBubbleStates((s) => {
+                            const updatedState = new Map(s)
+                            updatedState.delete(id)
+                            return updatedState
+                        })
+                        animationTimeouts.current.delete(id)
+                    }, 400) // Match exit animation duration (0.4s)
+
+                    animationTimeouts.current.set(id, timeout)
+                }
+            })
+
+            return newState
+        })
+    }, [thoughtBubbleEdges])
+
+    // Cleanup timeouts on unmount
+    useEffect(() => {
+        return () => {
+            animationTimeouts.current.forEach((timeout) => clearTimeout(timeout))
+            animationTimeouts.current.clear()
+        }
+    }, [])
 
     // Sort edges to prioritize frontman's edges first
     const sortedEdges = useMemo(() => {
@@ -220,9 +312,23 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Note: This MUST come after all hooks to maintain consistent hook ordering
     if (!showThoughtBubbles) return null
 
+    // Get all bubbles to render (including exiting ones)
+    const allBubbleIds = Array.from(bubbleStates.keys())
+    const renderableBubbles = allBubbleIds
+        .map((id) => {
+            // Try to find the edge in current edges first
+            let edge = sortedEdges.find((e) => e.id === id)
+            if (!edge) {
+                // If not found, this is an exiting bubble - find it in all edges
+                edge = edges.find((e) => e.id === id)
+            }
+            return edge
+        })
+        .filter((edge): edge is Edge => edge !== undefined)
+
     return (
         <OverlayContainer>
-            {sortedEdges.map((edge: Edge, index: number) => {
+            {renderableBubbles.map((edge: Edge, index: number) => {
                 const text = edge.data?.text
                 if (!text) return null
 
@@ -248,6 +354,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
                 const isHovered = hoveredBubbleId === edge.id
                 const isTruncated = truncatedBubbles.has(edge.id)
+                const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false}
 
                 // Calculate screen X from the right edge
                 // We'll use CSS right positioning in the component
@@ -262,6 +369,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                             animationDelay={animationDelay}
                             bubbleScreenX={bubbleScreenX}
                             bubbleScreenY={bubbleScreenY}
+                            isVisible={bubbleState.isVisible}
+                            isExiting={bubbleState.isExiting}
                             onMouseEnter={() => handleHoverChange(edge.id)}
                             onMouseLeave={() => handleHoverChange(null)}
                         >
@@ -284,15 +393,20 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                         <div
                             style={{
                                 position: "absolute",
-                                // Position to left of bubble, touching edge (arrow width / 2)
+                                // Position at the left edge of the bubble (touching the left border)
                                 right: bubbleScreenX + BUBBLE_WIDTH - BUBBLE_ARROW_WIDTH / 2,
-                                top: bubbleScreenY,
+                                top: bubbleScreenY - BUBBLE_ARROW_HEIGHT / 2,
                                 transform: `translate(0, -50%) rotate(${LAYOUT_BUBBLES_TRIANGLE_ROTATION}deg)`,
                                 width: BUBBLE_ARROW_WIDTH,
                                 height: BUBBLE_ARROW_HEIGHT,
                                 zIndex: 9999,
                                 pointerEvents: "none",
                                 filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))",
+                                // Sync animation with the bubble
+                                animation: bubbleState.isExiting
+                                    ? "fadeOut 0.4s cubic-bezier(0.4, 0, 0.1, 1) both"
+                                    : `fadeIn 0.6s cubic-bezier(0.2, 0, 0.2, 1) ${animationDelay}ms both`,
+                                opacity: bubbleState.isVisible ? (bubbleState.isExiting ? 0 : 1) : 0,
                             }}
                         >
                             <svg
@@ -302,8 +416,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                 style={{display: "block"}}
                             >
                                 <polygon
-                                    // Draws a left-pointing triangle used as the bubble’s arrow pointer
-                                    points="0,0 12,14 24,0"
+                                    // Draws a left-pointing triangle used as the bubble's arrow pointer
+                                    points="0,7 12,0 12,14"
                                     fill="rgba(255,255,255,0.98)"
                                     stroke="rgba(0, 0, 0, 0.06)"
                                     strokeWidth="1"

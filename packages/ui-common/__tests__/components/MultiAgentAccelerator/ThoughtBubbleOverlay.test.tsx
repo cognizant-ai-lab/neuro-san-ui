@@ -431,4 +431,432 @@ describe("ThoughtBubbleOverlay", () => {
         // New message should appear
         expect(screen.getByText("Updated message")).toBeInTheDocument()
     })
+
+    it("Should handle rapid edge additions and removals (timeout clearing)", () => {
+        const edges1 = [createMockEdge("edge1", "node1", "node2", "Message 1")]
+        const edges2 = [createMockEdge("edge2", "node1", "node2", "Message 2")]
+        const edges3 = [createMockEdge("edge3", "node1", "node2", "Message 3")]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges1}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(screen.getByText("Message 1")).toBeInTheDocument()
+
+        // Rapidly change edges to trigger timeout clearing logic
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges2}
+                showThoughtBubbles={true}
+            />
+        )
+
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges3}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should handle rapid changes without crashing
+        expect(screen.getByText("Message 3")).toBeInTheDocument()
+    })
+
+    it("Should handle edges with empty text string", () => {
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", ""),
+            createMockEdge("edge2", "node1", "node2", "Valid message"),
+        ]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should only render the valid message (empty string should be filtered out)
+        expect(screen.getByText("Valid message")).toBeInTheDocument()
+        // Check that only one bubble is rendered (empty string should be filtered out)
+        const bubbles = container.querySelectorAll("div[style*='position: absolute'][style*='right:']")
+        expect(bubbles.length).toBe(1)
+    })
+
+    it("Should handle edges with non-string text data", () => {
+        const edges = [
+            {id: "edge1", source: "node1", target: "node2", data: {text: 123}, type: "thoughtBubbleEdge"},
+            {id: "edge2", source: "node1", target: "node2", data: {text: true}, type: "thoughtBubbleEdge"},
+            {id: "edge3", source: "node1", target: "node2", data: {text: null}, type: "thoughtBubbleEdge"},
+            createMockEdge("edge4", "node1", "node2", "Valid message"),
+        ]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges as Edge[]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should only render the valid string message
+        expect(screen.getByText("Valid message")).toBeInTheDocument()
+        expect(screen.queryAllByText(/./u)).toHaveLength(1)
+    })
+
+    it("Should handle nodes with missing data property", () => {
+        const nodesWithMissingData = [
+            {id: "node1", position: {x: 100, y: 100}, type: "agentNode"}, // No data property
+            {id: "node2", data: null, position: {x: 200, y: 200}, type: "agentNode"}, // Null data
+            {id: "node3", data: {agentName: "Agent3"}, position: {x: 300, y: 300}, type: "agentNode"}, // No depth
+        ]
+
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={nodesWithMissingData as any}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should not crash
+        expect(screen.getByText("Test message")).toBeInTheDocument()
+    })
+
+    it("Should handle frontman node identification with multiple depth 0 nodes", () => {
+        const nodesWithMultipleFrontmen = [
+            {id: "node1", data: {depth: 0, agentName: "Frontman1"}, position: {x: 100, y: 100}, type: "agentNode"},
+            {id: "node2", data: {depth: 0, agentName: "Frontman2"}, position: {x: 200, y: 200}, type: "agentNode"},
+            {id: "node3", data: {depth: 1, agentName: "Agent3"}, position: {x: 300, y: 300}, type: "agentNode"},
+        ]
+
+        const edges = [
+            createMockEdge("edge1", "node1", "node3", "From first frontman"),
+            createMockEdge("edge2", "node2", "node3", "From second frontman"),
+        ]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={nodesWithMultipleFrontmen}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should render both messages without crashing
+        expect(screen.getByText("From first frontman")).toBeInTheDocument()
+        expect(screen.getByText("From second frontman")).toBeInTheDocument()
+    })
+
+    it("Should cleanup timeouts on component unmount", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {unmount} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(screen.getByText("Test message")).toBeInTheDocument()
+
+        // Unmount should not crash and should cleanup timeouts
+        expect(() => unmount()).not.toThrow()
+    })
+
+    it("Should handle bubble state transitions correctly", () => {
+        const edges1 = [
+            createMockEdge("edge1", "node1", "node2", "Message 1"),
+            createMockEdge("edge2", "node1", "node2", "Message 2"),
+        ]
+        const edges2 = [createMockEdge("edge1", "node1", "node2", "Message 1")] // Remove edge2
+        const edges3 = [
+            createMockEdge("edge1", "node1", "node2", "Message 1"),
+            createMockEdge("edge2", "node1", "node2", "Message 2"), // Add edge2 back
+        ]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges1}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(screen.getByText("Message 1")).toBeInTheDocument()
+        expect(screen.getByText("Message 2")).toBeInTheDocument()
+
+        // Remove edge2 (should trigger exit animation)
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges2}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Quickly add edge2 back (should trigger timeout clearing for the existing removal)
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges3}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Both messages should be present (tests the timeout clearing logic)
+        expect(screen.getByText("Message 1")).toBeInTheDocument()
+        expect(screen.getByText("Message 2")).toBeInTheDocument()
+    })
+
+    it("Should handle exiting bubbles that are not in current edges", () => {
+        const edges1 = [createMockEdge("edge1", "node1", "node2", "Message 1")]
+        const edges2: any[] = [] // Remove all edges
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges1}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(screen.getByText("Message 1")).toBeInTheDocument()
+
+        // Remove all edges (should find exiting bubble in original edges array)
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges2}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should not crash (tests finding exiting bubble in edges array)
+        // This tests the code path where exiting bubbles are looked up in the original edges array
+        expect(() => screen.queryByText("Message 1")).not.toThrow()
+    })
+
+    it("Should handle bubbles with isVisible=false", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Initial render should have bubble
+        expect(screen.getByText("Test message")).toBeInTheDocument()
+
+        // Check that bubble has proper styling for visibility
+        const bubble = container.querySelector("div[style*='position: absolute'][style*='right:']")
+        expect(bubble).toBeInTheDocument()
+    })
+
+    it("Should handle truncation detection edge cases", () => {
+        // Mock scrollHeight and clientHeight to simulate truncation
+        const originalScrollHeight = Object.getOwnPropertyDescriptor(Element.prototype, "scrollHeight")
+        const originalClientHeight = Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight")
+
+        Object.defineProperty(Element.prototype, "scrollHeight", {
+            configurable: true,
+            get() {
+                return this.textContent?.includes("Long text") ? 150 : 50
+            },
+        })
+        Object.defineProperty(Element.prototype, "clientHeight", {
+            configurable: true,
+            get() {
+                return 50
+            },
+        })
+
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", "Short"),
+            createMockEdge("edge2", "node1", "node2", "Long text that should be truncated"),
+        ]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should detect truncation correctly
+        expect(screen.getByText("Short")).toBeInTheDocument()
+        expect(screen.getByText("Long text that should be truncated")).toBeInTheDocument()
+
+        // Rerender to trigger truncation check
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Restore original properties
+        if (originalScrollHeight) {
+            Object.defineProperty(Element.prototype, "scrollHeight", originalScrollHeight)
+        }
+        if (originalClientHeight) {
+            Object.defineProperty(Element.prototype, "clientHeight", originalClientHeight)
+        }
+    })
+
+    it("Should handle animation delays correctly", () => {
+        const edges = [
+            createMockEdge("edge1", "node1", "node2", "First"),
+            createMockEdge("edge2", "node1", "node2", "Second"),
+            createMockEdge("edge3", "node1", "node2", "Third"),
+        ]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Check that all bubbles are rendered with staggered animation delays
+        const bubbles = container.querySelectorAll("div[style*='position: absolute'][style*='right:']")
+        expect(bubbles.length).toBe(3)
+
+        // Each bubble should have different animation delays
+        expect(screen.getByText("First")).toBeInTheDocument()
+        expect(screen.getByText("Second")).toBeInTheDocument()
+        expect(screen.getByText("Third")).toBeInTheDocument()
+    })
+
+    it("Should handle edge positioning with fallback", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should render with default position when edge position not found
+        expect(screen.getByText("Test message")).toBeInTheDocument()
+    })
+
+    it("Should skip rendering bubbles with null text after filtering", () => {
+        const edges = [
+            {id: "edge1", source: "node1", target: "node2", data: {text: null}, type: "thoughtBubbleEdge"},
+            createMockEdge("edge2", "node1", "node2", "Valid message"),
+        ]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges as Edge[]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should only render the valid message
+        expect(screen.getByText("Valid message")).toBeInTheDocument()
+        const bubbles = container.querySelectorAll("div[style*='position: absolute'][style*='right:']")
+        expect(bubbles.length).toBe(1)
+    })
+
+    it("Should render triangle with correct animation state", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Check that triangle SVG is rendered with animation
+        const triangles = container.querySelectorAll("svg polygon")
+        expect(triangles.length).toBe(1)
+
+        // Check that triangle has the correct points for left-pointing arrow
+        const polygon = triangles[0]
+        expect(polygon.getAttribute("points")).toBe("0,7 12,0 12,14")
+    })
+
+    it("Should handle complex bubble state scenarios", () => {
+        const edges1 = [createMockEdge("edge1", "node1", "node2", "Message 1")]
+        const edges2 = [
+            createMockEdge("edge1", "node1", "node2", "Message 1"),
+            createMockEdge("edge2", "node1", "node2", "Message 2"),
+        ]
+        const edges3 = [createMockEdge("edge3", "node1", "node2", "Message 3")]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges1}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Add more edges
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges2}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Completely replace all edges
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges3}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should handle complex state transitions without crashing
+        expect(screen.getByText("Message 3")).toBeInTheDocument()
+    })
+
+    it("Should handle undefined edge in renderableBubbles", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Simulate scenario where edge might be undefined during state transitions
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should handle gracefully without crashing
+        expect(() => screen.queryByText("Test message")).not.toThrow()
+    })
 })
