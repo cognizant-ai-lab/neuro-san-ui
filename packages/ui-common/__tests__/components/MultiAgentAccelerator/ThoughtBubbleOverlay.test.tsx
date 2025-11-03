@@ -859,4 +859,20 @@ describe("ThoughtBubbleOverlay", () => {
         // Should handle gracefully without crashing
         expect(() => screen.queryByText("Test message")).not.toThrow()
     })
+
+    it("Should return null when nodes is not an array", () => {
+        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={null}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Should not render any bubbles when nodes is null
+        const bubbles = container.querySelectorAll("div[style*='position: absolute'][style*='right:']")
+        expect(bubbles.length).toBe(0)
+    })
 })
