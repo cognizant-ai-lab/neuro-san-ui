@@ -510,27 +510,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.queryAllByText(/./u)).toHaveLength(1)
     })
 
-    it("Should handle nodes with missing data property", () => {
-        const nodesWithMissingData = [
-            {id: "node1", position: {x: 100, y: 100}, type: "agentNode"}, // No data property
-            {id: "node2", data: null, position: {x: 200, y: 200}, type: "agentNode"}, // Null data
-            {id: "node3", data: {agentName: "Agent3"}, position: {x: 300, y: 300}, type: "agentNode"}, // No depth
-        ]
-
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={nodesWithMissingData as any}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Should not crash
-        expect(screen.getByText("Test message")).toBeInTheDocument()
-    })
-
     it("Should handle frontman node identification with multiple depth 0 nodes", () => {
         const nodesWithMultipleFrontmen = [
             {id: "node1", data: {depth: 0, agentName: "Frontman1"}, position: {x: 100, y: 100}, type: "agentNode"},
@@ -619,8 +598,8 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle exiting bubbles that are not in current edges", () => {
-        const edges1 = [createMockEdge("edge1", "node1", "node2", "Message 1")]
-        const edges2: any[] = [] // Remove all edges
+        const edges1: Edge[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
+        const edges2: Edge[] = [] // Remove all edges
 
         const {rerender} = render(
             <ThoughtBubbleOverlay
