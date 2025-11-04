@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {Dispatch, SetStateAction} from "react"
+import {Dispatch, MutableRefObject, SetStateAction} from "react"
 
 // #region: Types
 
-interface SpeechRecognitionHandlers {
+export interface SpeechRecognitionHandlers {
     end: () => void
     error: (event: SpeechRecognitionErrorEvent) => void
     result: (event: SpeechRecognitionEvent) => void
@@ -143,7 +143,7 @@ const handleRecognitionError =
 
 // Remove speech recognition event handlers and stop speech recognition
 export function cleanupAndStopSpeechRecognition(
-    speechRecognitionRef: React.MutableRefObject<SpeechRecognition | null>,
+    speechRecognitionRef: MutableRefObject<SpeechRecognition | null>,
     handlers: SpeechRecognitionHandlers | null
 ): void {
     const speechRecognition = speechRecognitionRef.current
@@ -165,7 +165,7 @@ export function cleanupAndStopSpeechRecognition(
 export function setupSpeechRecognition(
     setChatInput: Dispatch<SetStateAction<string>>,
     setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>,
-    speechRecognitionRef: React.MutableRefObject<SpeechRecognition | null>
+    speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
 ): SpeechRecognitionHandlers | null {
     const speechSupported = checkSpeechSupport()
 

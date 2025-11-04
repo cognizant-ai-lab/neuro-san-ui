@@ -14,8 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type {Dispatch, MutableRefObject, SetStateAction} from "react"
+
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {checkSpeechSupport, toggleListening} from "../../../../components/AgentChat/VoiceChat/VoiceChat"
+import {
+    checkSpeechSupport,
+    cleanupAndStopSpeechRecognition,
+    setupSpeechRecognition,
+    SpeechRecognitionHandlers,
+    SpeechRecognitionState,
+    toggleListening,
+} from "../../../../components/AgentChat/VoiceChat/VoiceChat"
 
 const mockUserAgent = (userAgent: string) => {
     Object.defineProperty(navigator, "userAgent", {
@@ -246,6 +255,295 @@ describe("VoiceChat utils", () => {
 
             // Should still try to start recognition since it's Chrome and error is not permission-related
             expect(recognition.start).toHaveBeenCalled()
+        })
+    })
+
+    describe("Speech Recognition Event Handlers", () => {
+        let mockSetChatInput: jest.MockedFunction<Dispatch<SetStateAction<string>>>
+        let mockSetVoiceInputState: jest.MockedFunction<Dispatch<SetStateAction<SpeechRecognitionState>>>
+        let speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
+
+        beforeEach(() => {
+            mockSetChatInput = jest.fn()
+            mockSetVoiceInputState = jest.fn()
+            speechRecognitionRef = {current: null}
+
+            // Mock SpeechRecognition constructor
+            const MockSpeechRecognition = jest.fn().mockImplementation(() => ({
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                start: jest.fn(),
+                stop: jest.fn(),
+                continuous: true,
+                interimResults: true,
+                lang: "en-US",
+            }))
+
+            Object.defineProperty(window, "SpeechRecognition", {
+                value: MockSpeechRecognition,
+                configurable: true,
+                writable: true,
+            })
+
+            mockChromeBrowser()
+        })
+
+        it("should handle recognition start event", () => {
+            const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
+            expect(handlers).not.toBeNull()
+
+            // Call the start handler
+            handlers.start()
+
+            expect(mockSetVoiceInputState).toHaveBeenCalledWith(expect.any(Function))
+            const updateFn = mockSetVoiceInputState.mock.calls[0][0] as (
+                prev: SpeechRecognitionState
+            ) => SpeechRecognitionState
+            const prevState: SpeechRecognitionState = {
+                currentTranscript: "old",
+                finalTranscript: "final",
+                isListening: false,
+                isProcessingSpeech: true,
+            }
+            const newState = updateFn(prevState)
+            expect(newState).toEqual({
+                currentTranscript: "",
+                finalTranscript: "final",
+                isListening: true,
+                isProcessingSpeech: true,
+            })
+        })
+
+        it("should handle recognition end event", () => {
+            const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
+            expect(handlers).not.toBeNull()
+
+            // Call the end handler
+            handlers.end()
+
+            expect(mockSetVoiceInputState).toHaveBeenCalledWith(expect.any(Function))
+            const updateFn = mockSetVoiceInputState.mock.calls[0][0] as (
+                prev: SpeechRecognitionState
+            ) => SpeechRecognitionState
+            const prevState: SpeechRecognitionState = {
+                currentTranscript: "current",
+                finalTranscript: "final",
+                isListening: true,
+                isProcessingSpeech: true,
+            }
+            const newState = updateFn(prevState)
+            expect(newState).toEqual({
+                currentTranscript: "current",
+                finalTranscript: "final",
+                isListening: false,
+                isProcessingSpeech: false,
+            })
+        })
+
+        it("should handle recognition result event with final results", () => {
+            const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
+            expect(handlers).not.toBeNull()
+
+            // Mock speech recognition result event
+            const mockEvent = {
+                resultIndex: 0,
+                results: [
+                    {
+                        isFinal: true,
+                        0: {transcript: "Hello world"},
+                    },
+                    {
+                        isFinal: false,
+                        0: {transcript: "how are"},
+                    },
+                ],
+            } as unknown as SpeechRecognitionEvent
+
+            // Call the result handler
+            handlers.result(mockEvent)
+
+            // First for the result, second for final transcript processing
+            expect(mockSetVoiceInputState).toHaveBeenCalledTimes(2)
+
+            // Check the first call (result processing)
+            const firstUpdateFn = mockSetVoiceInputState.mock.calls[0][0] as (
+                prev: SpeechRecognitionState
+            ) => SpeechRecognitionState
+            const prevState: SpeechRecognitionState = {
+                currentTranscript: "",
+                finalTranscript: "",
+                isListening: true,
+                isProcessingSpeech: false,
+            }
+            const newState = firstUpdateFn(prevState)
+            expect(newState).toEqual({
+                currentTranscript: "how are",
+                finalTranscript: "Hello world",
+                isListening: true,
+                isProcessingSpeech: true,
+            })
+
+            // Check that setChatInput was called with a function
+            expect(mockSetChatInput).toHaveBeenCalledWith(expect.any(Function))
+            const chatInputFn = mockSetChatInput.mock.calls[0][0] as (prev: string) => string
+            expect(chatInputFn("previous text")).toBe("previous text Hello world")
+            expect(chatInputFn("previous text ")).toBe("previous text Hello world")
+            expect(chatInputFn("")).toBe("Hello world")
+        })
+
+        it("should handle recognition result event with only interim results", () => {
+            const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
+            expect(handlers).not.toBeNull()
+
+            // Mock speech recognition result event with only interim results
+            const mockEvent = {
+                resultIndex: 0,
+                results: [
+                    {
+                        isFinal: false,
+                        0: {transcript: "Hello"},
+                    },
+                    {
+                        isFinal: false,
+                        0: {transcript: " world"},
+                    },
+                ],
+            } as unknown as SpeechRecognitionEvent
+
+            // Call the result handler
+            handlers.result(mockEvent)
+
+            expect(mockSetVoiceInputState).toHaveBeenCalledWith(expect.any(Function))
+            const updateFn = mockSetVoiceInputState.mock.calls[0][0] as (
+                prev: SpeechRecognitionState
+            ) => SpeechRecognitionState
+            const prevState: SpeechRecognitionState = {
+                currentTranscript: "",
+                finalTranscript: "",
+                isListening: true,
+                isProcessingSpeech: false,
+            }
+            const newState = updateFn(prevState)
+            expect(newState).toEqual({
+                currentTranscript: "Hello world",
+                finalTranscript: "",
+                isListening: true,
+                isProcessingSpeech: true,
+            })
+
+            expect(mockSetChatInput).not.toHaveBeenCalled()
+        })
+
+        it("should handle recognition error event", () => {
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn())
+
+            const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
+            expect(handlers).not.toBeNull()
+
+            // Mock speech recognition error event
+            const mockErrorEvent = {
+                error: "network",
+            } as unknown as SpeechRecognitionErrorEvent
+
+            // Call the error handler
+            handlers.error(mockErrorEvent)
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith("Speech recognition error:", "network")
+
+            expect(mockSetVoiceInputState).toHaveBeenCalledWith(expect.any(Function))
+            const updateFn = mockSetVoiceInputState.mock.calls[0][0] as (
+                prev: SpeechRecognitionState
+            ) => SpeechRecognitionState
+            const prevState: SpeechRecognitionState = {
+                currentTranscript: "current",
+                finalTranscript: "final",
+                isListening: true,
+                isProcessingSpeech: true,
+            }
+            const newState = updateFn(prevState)
+            expect(newState).toEqual({
+                currentTranscript: "current",
+                finalTranscript: "final",
+                isListening: false,
+                isProcessingSpeech: false,
+            })
+
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("should return null when speech recognition is not supported", () => {
+            // Mock non-Chrome browser
+            mockUserAgent(USER_AGENTS.FIREFOX_MAC)
+
+            const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
+            expect(handlers).toBeNull()
+            expect(speechRecognitionRef.current).toBeNull()
+        })
+    })
+
+    describe("cleanupAndStopSpeechRecognition", () => {
+        it("should cleanup and stop speech recognition", () => {
+            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(jest.fn())
+
+            const mockSpeechRecognition = {
+                removeEventListener: jest.fn(),
+                stop: jest.fn(),
+            }
+
+            const speechRecognitionRef = {current: mockSpeechRecognition as unknown as SpeechRecognition}
+            const handlers = {
+                start: jest.fn(),
+                end: jest.fn(),
+                error: jest.fn(),
+                result: jest.fn(),
+            }
+
+            cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
+
+            expect(mockSpeechRecognition.removeEventListener).toHaveBeenCalledTimes(4)
+            expect(mockSpeechRecognition.removeEventListener).toHaveBeenCalledWith("start", handlers.start)
+            expect(mockSpeechRecognition.removeEventListener).toHaveBeenCalledWith("end", handlers.end)
+            expect(mockSpeechRecognition.removeEventListener).toHaveBeenCalledWith("error", handlers.error)
+            expect(mockSpeechRecognition.removeEventListener).toHaveBeenCalledWith("result", handlers.result)
+            expect(mockSpeechRecognition.stop).toHaveBeenCalled()
+            expect(speechRecognitionRef.current).toBeNull()
+
+            consoleWarnSpy.mockRestore()
+        })
+
+        it("should handle stop errors gracefully", () => {
+            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(jest.fn())
+
+            const mockSpeechRecognition = {
+                removeEventListener: jest.fn(),
+                stop: jest.fn().mockImplementation(() => {
+                    throw new Error("Stop failed")
+                }),
+            }
+
+            const speechRecognitionRef = {current: mockSpeechRecognition as unknown as SpeechRecognition}
+            const handlers = {
+                start: jest.fn(),
+                end: jest.fn(),
+                error: jest.fn(),
+                result: jest.fn(),
+            }
+
+            cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith("Error stopping speechRecognition:", expect.any(Error))
+            expect(speechRecognitionRef.current).toBeNull()
+
+            consoleWarnSpy.mockRestore()
+        })
+
+        it("should handle null speech recognition gracefully", () => {
+            const speechRecognitionRef: MutableRefObject<SpeechRecognition | null> = {current: null}
+            const handlers: SpeechRecognitionHandlers | null = null
+
+            expect(() => {
+                cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
+            }).not.toThrow()
         })
     })
 })

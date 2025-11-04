@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import SendIcon from "@mui/icons-material/Send"
+import {FC} from "react"
 
 import {LlmChatButton} from "./LlmChatButton"
 
@@ -30,7 +31,7 @@ interface SendButtonProps {
  * Generate the Send Button for a chat window.
  * @returns The Send Button.
  */
-export const SendButton: React.FC<SendButtonProps> = ({enableSendButton, id, onClickCallback}) => (
+export const SendButton: FC<SendButtonProps> = ({enableSendButton, id, onClickCallback}) => (
     <LlmChatButton
         aria-label="Send"
         disabled={!enableSendButton}
