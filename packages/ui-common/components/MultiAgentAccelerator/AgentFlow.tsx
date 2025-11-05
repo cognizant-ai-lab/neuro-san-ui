@@ -53,7 +53,7 @@ import {addThoughtBubbleEdge, layoutLinear, layoutRadial, removeThoughtBubbleEdg
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
-import {ChatMessageType, ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"

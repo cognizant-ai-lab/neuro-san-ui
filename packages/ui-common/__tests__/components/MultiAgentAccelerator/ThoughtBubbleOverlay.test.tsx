@@ -485,7 +485,7 @@ describe("ThoughtBubbleOverlay", () => {
     // Should only render the valid message (empty string should be filtered out)
     expect(screen.getByText("Valid message")).toBeInTheDocument()
     // Ensure only one bubble element rendered (use data-bubble-id attribute)
-    const bubbles = document.querySelectorAll('[data-bubble-id]')
+    const bubbles = document.querySelectorAll("[data-bubble-id]")
     expect(bubbles.length).toBe(1)
     })
 
@@ -766,9 +766,9 @@ describe("ThoughtBubbleOverlay", () => {
     const lines = container.querySelectorAll("svg line")
     expect(lines.length).toBe(1)
 
-    // Check that line has the correct stroke attributes for connecting line (uses CSS variable with fallback)
+    // Check that line has the correct stroke attributes for connecting line (uses CSS variable)
     const line = lines[0]
-    expect(line.getAttribute("stroke")).toBe("var(--thought-bubble-line-color, rgba(255, 50, 50, 0.92))")
+    expect(line.getAttribute("stroke")).toBe("var(--thought-bubble-line-color)")
     expect(line.getAttribute("stroke-width")).toBe("2")
     })
 

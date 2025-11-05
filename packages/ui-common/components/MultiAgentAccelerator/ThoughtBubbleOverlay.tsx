@@ -165,15 +165,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const rafRef = useRef<number | null>(null)
     const mountedRef = useRef(true)
 
-    // Try to read React Flow's transform so we can schedule updates on pan/zoom.
-    // Wrap in try/catch because tests may not provide a ReactFlowProvider.
-    let transform: [number, number, number]
-    try {
-        transform = useStore((s) => s.transform)
-    } catch {
-        transform = [0, 0, 1]
-    }
-
     // Filter edges with meaningful text (memoized to prevent infinite re-renders)
     const thoughtBubbleEdges = useMemo(
         () =>
@@ -645,7 +636,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                             y1={coords.y1}
                                             x2={coords.x2}
                                             y2={coords.y2}
-                                            stroke="var(--thought-bubble-line-color, rgba(255, 50, 50, 0.92))"
+                                            stroke="var(--thought-bubble-line-color)"
                                             strokeWidth="2"
                                             strokeDasharray="3,3"
                                             style={{
