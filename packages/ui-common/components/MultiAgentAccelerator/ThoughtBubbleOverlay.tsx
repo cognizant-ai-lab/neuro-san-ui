@@ -136,6 +136,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     nodes,
     edges,
     showThoughtBubbles = true,
+    isStreaming = false,
     onBubbleHoverChange,
 }) => {
     // hoveredBubbleId: id of currently hovered bubble (or null)
@@ -157,6 +158,9 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const lineVisibilityTimeouts = useRef<Map<string, number>>(new Map())
     // Small rerender tick used to force re-render when a scheduled line-visibility timeout fires
     const [, setRerenderTick] = useState(0)
+    // rAF ref for scheduling post-paint updates
+    const rafRef = useRef<number | null>(null)
+    const mountedRef = useRef(true)
 
     // Note: We intentionally avoid reading React Flow's transform here —
     // coordinate calculations use absolute DOM positions (getBoundingClientRect).
@@ -341,7 +345,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         [onBubbleHoverChange]
     )
 
-    // Calculate line coordinates fresh every render - no caching, just accuracy
+    // Calculate line coordinates - measurement only. Can be called from rAF/update loop.
     const calculateLineCoordinates = useCallback((edge: Edge, bubbleIndex: number) => {
         // Skip HUMAN conversation types - no lines for human bubbles
         // Note: HUMAN is a conversation type, not text content
@@ -422,6 +426,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         return results
     }, [nodes])
 
+    
+
 
 
     // (render gating moved further down so all hooks are registered in the same order)
@@ -439,6 +445,101 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             return edge
         })
         .filter((edge): edge is Edge => edge !== undefined)
+
+    // Update all SVG lines imperatively after paint. This reads DOM (getBoundingClientRect)
+    // and writes attributes on existing <line> elements stored in `lineRefs`.
+    const updateAllLines = useCallback(() => {
+        try {
+            renderableBubbles.forEach((edge, index) => {
+                const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false, enteredAt: 0}
+                if (!bubbleState.isVisible || bubbleState.isExiting) return
+
+                // Respect the entrance animation delay gating (lines appear only after bubble start)
+                const elapsed = Date.now() - (bubbleState.enteredAt || 0)
+                const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
+                if (elapsed < animationDelay) return
+
+                const coordsArray = calculateLineCoordinates(edge, index) as
+                    | {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[]
+                    | null
+
+                if (!coordsArray || coordsArray.length === 0) return
+
+                for (const coords of coordsArray) {
+                    const lineKey = `${edge.id}-${coords.targetAgent}`
+                    const lineEl = lineRefs.current.get(lineKey)
+                    if (!lineEl) continue
+
+                    // Update attributes imperatively
+                    lineEl.setAttribute("x1", String(coords.x1))
+                    lineEl.setAttribute("y1", String(coords.y1))
+                    lineEl.setAttribute("x2", String(coords.x2))
+                    lineEl.setAttribute("y2", String(coords.y2))
+                }
+            })
+        } catch (err) {
+            // Guard against unexpected DOM errors during measurement
+            // Do not throw to avoid breaking the app
+            // eslint-disable-next-line no-console
+            console.debug("ThoughtBubbleOverlay: updateAllLines error", err)
+        }
+    }, [renderableBubbles, bubbleStates, calculateLineCoordinates])
+
+    // Schedule post-paint updates with rAF and ResizeObserver. Also optionally run a
+    // continuous loop while `isStreaming` is true to keep lines in sync during streaming.
+    useEffect(() => {
+        mountedRef.current = true
+
+        const schedule = () => {
+            if (rafRef.current != null) return
+            rafRef.current = requestAnimationFrame(() => {
+                rafRef.current = null
+                if (!mountedRef.current) return
+                updateAllLines()
+            })
+        }
+
+        // Initial schedule
+        schedule()
+
+        // Resize observer to detect layout/size changes
+        const ro = new ResizeObserver(() => schedule())
+        try {
+            ro.observe(document.body)
+        } catch {
+            // Ignore if RO observation fails in some test environments
+        }
+
+        // Window resize
+        window.addEventListener("resize", schedule)
+
+        // If streaming, run a continuous rAF loop to keep up with frequent layout updates
+        let streamingRaf: number | null = null
+        const startStreamingLoop = () => {
+            if (streamingRaf != null) return
+            const loop = () => {
+                updateAllLines()
+                streamingRaf = requestAnimationFrame(loop)
+            }
+            streamingRaf = requestAnimationFrame(loop)
+        }
+        const stopStreamingLoop = () => {
+            if (streamingRaf != null) {
+                cancelAnimationFrame(streamingRaf)
+                streamingRaf = null
+            }
+        }
+
+        if (isStreaming) startStreamingLoop()
+
+        return () => {
+            mountedRef.current = false
+            if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
+            ro.disconnect()
+            window.removeEventListener("resize", schedule)
+            stopStreamingLoop()
+        }
+    }, [updateAllLines, isStreaming])
 
     // Schedule re-renders so lines become visible after each bubble's entrance animation delay.
     // We do this here so the SVG lines won't be rendered until the bubble begins its entrance animation.
