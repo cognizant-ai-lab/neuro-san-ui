@@ -810,6 +810,144 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.getByText("Message 3")).toBeInTheDocument()
     })
 
+    it("Should tolerate getConversations provider returning non-array (defensive)", () => {
+        const nodesWithProvider = [
+            {
+                id: "node1",
+                data: {
+                    depth: 0,
+                    agentName: "Frontman",
+                    // provider exists but returns a non-array value
+                    getConversations: () => ({notArray: true}),
+                },
+                position: {x: 100, y: 100},
+                type: "agentNode",
+            },
+            {
+                id: "node2",
+                data: {depth: 1, agentName: "Agent2"},
+                position: {x: 200, y: 200},
+                type: "agentNode",
+            },
+        ]
+
+        const edges = [createMockEdge("edge-gc", "node1", "node2", "GC test")]
+
+        // Should not throw when provider returns non-array
+        expect(() =>
+            render(
+                <ThoughtBubbleOverlay
+                    nodes={nodesWithProvider}
+                    edges={edges}
+                    showThoughtBubbles={true}
+                />
+            )
+        ).not.toThrow()
+        // Also assert that the rendered message is present
+        expect(screen.getByText("GC test")).toBeInTheDocument()
+    })
+
+    it("Should not update truncatedBubbles when nothing changed (no-op path)", () => {
+        // Make scrollHeight equal to clientHeight so nothing is truncated
+        const origScroll = Object.getOwnPropertyDescriptor(Element.prototype, "scrollHeight")
+        const origClient = Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight")
+        Object.defineProperty(Element.prototype, "scrollHeight", {
+            configurable: true,
+            get() {
+                return 50
+            },
+        })
+        Object.defineProperty(Element.prototype, "clientHeight", {
+            configurable: true,
+            get() {
+                return 50
+            },
+        })
+
+        const edges = [createMockEdge("edge1", "node1", "node2", "No truncation")]
+
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Rerender should exercise the size-equality branch and not throw
+        expect(() =>
+            rerender(
+                <ThoughtBubbleOverlay
+                    nodes={mockNodes}
+                    edges={edges}
+                    showThoughtBubbles={true}
+                />
+            )
+        ).not.toThrow()
+
+        // Restore
+        if (origScroll) Object.defineProperty(Element.prototype, "scrollHeight", origScroll)
+        if (origClient) Object.defineProperty(Element.prototype, "clientHeight", origClient)
+    })
+
+    it("Should call ResizeObserver.observe on document.body when no overlay element is present", () => {
+        // Spy on ResizeObserver.observe calls
+        const OriginalRO = (global as unknown as {ResizeObserver?: unknown}).ResizeObserver
+        const observed: Element[] = []
+        function SpyRO(this: {__isSpy?: boolean}) {
+            // mark instance so it's not an empty constructor
+            this.__isSpy = true
+        }
+        SpyRO.prototype.observe = function (el: Element): void {
+            observed.push(el)
+            return undefined
+        }
+        SpyRO.prototype.disconnect = function (): void {
+            // noop
+            return undefined
+        }
+        Object.defineProperty(global, "ResizeObserver", {value: SpyRO, configurable: true})
+
+        // Render with showThoughtBubbles=false so the overlay element is not attached
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[]}
+                showThoughtBubbles={false}
+            />
+        )
+
+        // Ensure document.body was observed
+        expect(observed).toContain(document.body)
+
+        // Restore
+        Object.defineProperty(global, "ResizeObserver", {value: OriginalRO, configurable: true})
+    })
+
+    it("Should schedule visibility timeouts for staggered bubbles", () => {
+        jest.useFakeTimers()
+        const spyTimeout = jest.spyOn(global, "setTimeout")
+
+        const edges = [createMockEdge("e1", "node1", "node2", "A"), createMockEdge("e2", "node1", "node2", "B")]
+
+        render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Advance timers to let effects run scheduling logic
+        act(() => jest.advanceTimersByTime(10))
+
+        // We expect at least one timeout to have been scheduled for staggered animation
+        expect(spyTimeout).toHaveBeenCalled()
+
+        spyTimeout.mockRestore()
+        jest.useRealTimers()
+    })
+
     it("Should handle undefined edge in renderableBubbles", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
@@ -1301,6 +1439,9 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
+        // Cleanup
+        a1.remove()
+        a2.remove()
         const lines = container.querySelectorAll("svg line")
         // Expect at least two lines (one per agent)
         expect(lines.length).toBeGreaterThanOrEqual(2)
@@ -1397,20 +1538,18 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should tolerate ResizeObserver.observe throwing (defensive catch)", () => {
         // Replace global ResizeObserver with one whose observe throws
-        const OriginalRO = (global as unknown as typeof globalThis).ResizeObserver
-        // Disable a few rules for this tiny test-only class
-        /* eslint-disable @typescript-eslint/class-methods-use-this */
-        /* eslint-disable @typescript-eslint/no-empty-function */
-        /* eslint-disable no-empty-function */
-        class BadRO {
-            observe() {
-                throw new Error("RO fail")
-            }
-            disconnect() {}
+        const OriginalRO = (global as unknown as {ResizeObserver?: unknown}).ResizeObserver
+        function BadRO(this: {__bad?: boolean}) {
+            // mark instance to avoid empty-function lint
+            this.__bad = true
         }
-        /* eslint-enable @typescript-eslint/class-methods-use-this */
-        /* eslint-enable @typescript-eslint/no-empty-function */
-        /* eslint-enable no-empty-function */
+        BadRO.prototype.observe = function (): void {
+            throw new Error("RO fail")
+        }
+        BadRO.prototype.disconnect = function (): void {
+            // noop
+            return undefined
+        }
 
         // Install replacement using defineProperty to avoid any casts
         Object.defineProperty(global, "ResizeObserver", {value: BadRO, configurable: true})
@@ -1479,6 +1618,105 @@ describe("ThoughtBubbleOverlay", () => {
         spy.mockRestore()
         a.remove()
         expect(() => unmount()).not.toThrow()
+        jest.useRealTimers()
+    })
+
+    it("Should catch and debug-log errors from updateAllLines without throwing", async () => {
+        // This test forces updateAllLines to encounter a DOM write error (setAttribute)
+        // and verifies the component swallows the error and logs via console.debug.
+        jest.useFakeTimers()
+        jest.setSystemTime(0)
+
+        const edges = [createMockEdge("edge-debug", "node1", "node2", "Debug test")]
+
+        // Create an agent element so lines will be rendered
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        agentEl.getBoundingClientRect = () => ({
+            left: 10,
+            top: 10,
+            width: 20,
+            height: 20,
+            right: 30,
+            bottom: 30,
+            x: 10,
+            y: 10,
+            toJSON: () => ({left: 10, top: 10, width: 20, height: 20}),
+        })
+        document.body.append(agentEl)
+
+    const debugSpy = jest.spyOn(console, "debug").mockImplementation(() => undefined)
+
+        // Render component normally first so React can mount without our failure injection
+        const {rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Fast-forward time so bubble entrance animation delay passes and re-render so lines are added
+        jest.setSystemTime(10000)
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+            />
+        )
+
+        const origSetAttr = Element.prototype.setAttribute
+        // Make setAttribute throw only for SVG <line> positional updates (x1/y1/x2/y2)
+        const proto = Element.prototype as unknown as {
+            setAttribute: (attrName: string, value: string) => void
+        }
+        proto.setAttribute = function (attrName: string, value: unknown) {
+            const tag = (this && (this as Element).tagName) || ""
+            if (
+                typeof tag === "string" &&
+                tag.toLowerCase() === "line" &&
+                (attrName === "x1" || attrName === "y1" || attrName === "x2" || attrName === "y2")
+            ) {
+                throw new Error("simulated setAttribute failure")
+            }
+
+            return origSetAttr.call(this as Element, attrName, String(value))
+        }
+
+        // Replace RAF with immediate runner so updateAllLines runs synchronously when streaming starts
+        const origRAF = global.requestAnimationFrame
+        const origCAF = global.cancelAnimationFrame
+    global.requestAnimationFrame = (cb: FrameRequestCallback) => {
+            try {
+                cb(0)
+            } catch {
+                // ignore
+            }
+            return 1
+        }
+    global.cancelAnimationFrame = () => undefined
+
+        // Start streaming by re-rendering with isStreaming=true so the effect starts the RAF loop
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                isStreaming={true}
+            />
+        )
+
+        // Expect console.debug to have been called because updateAllLines catches and logs errors
+        expect(debugSpy).toHaveBeenCalled()
+
+        // Restore globals
+    ;(Element.prototype as unknown as {setAttribute: (n: string, v: string) => void}).setAttribute = origSetAttr
+    debugSpy.mockRestore()
+    global.requestAnimationFrame = origRAF
+    global.cancelAnimationFrame = origCAF
+        agentEl.remove()
         jest.useRealTimers()
     })
 })

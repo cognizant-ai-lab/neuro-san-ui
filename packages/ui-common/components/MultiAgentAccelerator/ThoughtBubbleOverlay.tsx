@@ -346,7 +346,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             agentRectCache?: Map<string, DOMRect>
         ): {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null => {
             // Skip HUMAN conversation types - no lines for human bubbles
-            // Note: HUMAN is a conversation type, not text content
             if (edge.data?.type === ChatMessageType.HUMAN) {
                 return null
             }
