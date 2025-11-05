@@ -88,9 +88,7 @@ export const areInSameConversationForBubbles = (
 
     // Don't filter by message type for thought bubbles - include all conversation types
     return conversations.some((conversation) => {
-        return conversation.agents && 
-               conversation.agents.has(sourceAgent) && 
-               conversation.agents.has(targetAgent)
+        return conversation.agents && conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent)
     })
 }
 

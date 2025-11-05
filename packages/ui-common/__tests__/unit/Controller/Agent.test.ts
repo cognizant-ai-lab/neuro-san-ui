@@ -187,13 +187,12 @@ describe("Controller/Agent/getConnectivity", () => {
 
     it("Should throw on non-ok response", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
-        global.fetch = jest.fn(
-            () =>
-                Promise.resolve({
-                    ok: false,
-                    statusText: "Not Found",
-                    json: () => Promise.resolve({}),
-                } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: false,
+                statusText: "Not Found",
+                json: () => Promise.resolve({}),
+            } as unknown as Response)
         )
         await expect(getConnectivity(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)).rejects.toThrow(
             "Failed to send connectivity request: Not Found"
@@ -246,13 +245,12 @@ describe("Controller/Agent/getAgentFunction", () => {
     })
 
     it("Should throw on non-ok response", async () => {
-        global.fetch = jest.fn(
-            () =>
-                Promise.resolve({
-                    ok: false,
-                    statusText: "Bad Request",
-                    json: () => Promise.resolve({}),
-                } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: false,
+                statusText: "Bad Request",
+                json: () => Promise.resolve({}),
+            } as unknown as Response)
         )
         await expect(getAgentFunction(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)).rejects.toThrow(
             "Failed to send agent function request: Bad Request"

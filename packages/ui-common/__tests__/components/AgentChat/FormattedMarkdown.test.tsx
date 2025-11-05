@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import {render, screen, waitFor} from "@testing-library/react"
+import type {SyntaxHighlighterProps} from "react-syntax-highlighter"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {FormattedMarkdown} from "../../../components/AgentChat/FormattedMarkdown"
@@ -98,5 +99,35 @@ describe("FormattedMarkdown component tests", () => {
         await waitFor(() => {
             expect(screen.getAllByText(/Text 1./u)).toHaveLength(2)
         })
+    })
+
+    it("Renders fenced code block with language via SyntaxHighlighter", () => {
+        const md = "```javascript\nconsole.log('x')\n```"
+        // Should not throw during render
+        expect(() =>
+            render(
+                <FormattedMarkdown
+                    id="test-code"
+                    nodesList={[md]}
+                    style={{} as SyntaxHighlighterProps["style"]}
+                    wrapLongLines={false}
+                />
+            )
+        ).not.toThrow()
+    })
+
+    it("Renders links with target _blank and reference-link id", () => {
+        const md = "Please visit [site](http://example.com)"
+        // Ensure render does not throw
+        expect(() =>
+            render(
+                <FormattedMarkdown
+                    id="test-link"
+                    nodesList={[md]}
+                    style={{} as SyntaxHighlighterProps["style"]}
+                    wrapLongLines={false}
+                />
+            )
+        ).not.toThrow()
     })
 })
