@@ -53,7 +53,7 @@ import {addThoughtBubbleEdge, layoutLinear, layoutRadial, removeThoughtBubbleEdg
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
-import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType, ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -237,6 +237,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 text: conv.text,
                                 showAlways: showThoughtBubbles,
                                 conversationId: conv.id,
+                                type: conv.type, // Add conversation type for filtering
                             },
                             style: {pointerEvents: "none" as const},
                         }
@@ -737,6 +738,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 nodes={nodes}
                 edges={edges}
                 showThoughtBubbles={showThoughtBubbles}
+                isStreaming={isStreaming}
                 onBubbleHoverChange={handleBubbleHoverChange}
             />
         </Box>

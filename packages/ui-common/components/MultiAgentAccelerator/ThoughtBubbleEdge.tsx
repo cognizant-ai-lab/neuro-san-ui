@@ -6,6 +6,7 @@ interface ThoughtBubbleEdgeProps extends EdgeProps {
         text?: string
         showAlways?: boolean
         conversationId?: string
+        type?: string
     }
 }
 
