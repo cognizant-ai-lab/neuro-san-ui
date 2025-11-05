@@ -1,7 +1,6 @@
 import {styled} from "@mui/material"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {Edge, Node as RFNode} from "reactflow"
-import {useStore} from "reactflow"
 
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
@@ -137,15 +136,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     nodes,
     edges,
     showThoughtBubbles = true,
-    isStreaming = false,
     onBubbleHoverChange,
 }) => {
     // hoveredBubbleId: id of currently hovered bubble (or null)
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
     // truncatedBubbles: set of edge ids whose text overflows the collapsed box
     const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
-    // bubbleStates: track animation state of each bubble
-    const [bubbleStates, setBubbleStates] = useState<Map<string, {isVisible: boolean; isExiting: boolean}>>(new Map())
+    // bubbleStates: track animation state of each bubble and when it entered (used to delay line rendering
+    // until the bubble's entrance animation delay has passed)
+    const [bubbleStates, setBubbleStates] = useState<Map<string, {isVisible: boolean; isExiting: boolean; enteredAt: number}>>(new Map())
     // hoverTimeoutRef: used to debounce clearing of hovered state on mouse leave
     const hoverTimeoutRef = useRef<number | null>(null)
     // textRefs: mapping of edge id -> DOM node for measuring scrollHeight/clientHeight
@@ -154,16 +153,13 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const animationTimeouts = useRef<Map<string, number>>(new Map())
     // Refs for SVG lines to update without re-rendering
     const lineRefs = useRef<Map<string, SVGLineElement>>(new Map())
+    // Timeouts to schedule when lines should become visible (keyed by edge id)
+    const lineVisibilityTimeouts = useRef<Map<string, number>>(new Map())
+    // Small rerender tick used to force re-render when a scheduled line-visibility timeout fires
+    const [, setRerenderTick] = useState(0)
 
-    // Get React Flow transform state for positioning calculations
-    // Provide a fallback for tests that don't have ReactFlowProvider context
-    let transform: [number, number, number]
-    try {
-        transform = useStore((state) => state.transform)
-    } catch {
-        // Fallback for tests - default transform (no pan/zoom)
-        transform = [0, 0, 1]
-    }
+    // Note: We intentionally avoid reading React Flow's transform here —
+    // coordinate calculations use absolute DOM positions (getBoundingClientRect).
 
     // Filter edges with meaningful text (memoized to prevent infinite re-renders)
     const thoughtBubbleEdges = useMemo(
@@ -197,9 +193,11 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         setBubbleStates((prev) => {
             const newState = new Map(prev)
 
-            // Add new bubbles in entering state
+            // Add new bubbles in entering state. Record when they entered so we can delay showing
+            // connecting lines until the bubble's entrance animation delay.
+            const now = Date.now()
             newBubbles.forEach((edge) => {
-                newState.set(edge.id, {isVisible: true, isExiting: false})
+                newState.set(edge.id, {isVisible: true, isExiting: false, enteredAt: now})
             })
 
             // Mark removing bubbles as exiting
@@ -251,6 +249,40 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         )
         return [...frontmanEdges, ...otherEdges]
     }, [thoughtBubbleEdges, frontmanNode])
+
+    // Determine which agents are currently "active" using the same logic as AgentNode.
+    // An agent is active if any current conversation (from node.data.getConversations())
+    // includes that agent's id.
+    // Build the set of active agent ids. If no node provides a `getConversations` function
+    // (common in tests using simple mock nodes), we will not filter lines — preserving
+    // previous behavior and tests.
+    const {activeAgentIds, hasGetConversationsProvider} = useMemo(() => {
+        const set = new Set<string>()
+        let hasProvider = false
+        if (!nodes || !Array.isArray(nodes)) return {activeAgentIds: set, hasGetConversationsProvider: false}
+        for (const node of nodes) {
+            try {
+                const getConversations = (node.data as any)?.getConversations
+                if (typeof getConversations === "function") {
+                    hasProvider = true
+                    const convs = getConversations()
+                    if (Array.isArray(convs)) {
+                        for (const conv of convs) {
+                            if (conv?.agents && typeof conv.agents.has === "function") {
+                                if (conv.agents.has(node.id)) {
+                                    set.add(node.id)
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch {
+                // Defensive: ignore node if getConversations throws
+            }
+        }
+        return {activeAgentIds: set, hasGetConversationsProvider: hasProvider}
+    }, [nodes])
 
     // Check truncation after render, but only when nothing is hovered
     // (to avoid measuring expanded bubbles)
@@ -324,77 +356,75 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         
         if (bubbleElement) {
             const bubbleRect = bubbleElement.getBoundingClientRect()
-            // Use the left edge center of the bubble (where line should start)  
+            // Use the left edge center of the bubble (where line should start)
             bubbleX = Math.round(bubbleRect.left)
             bubbleY = Math.round(bubbleRect.top + bubbleRect.height / 2)
-            
-            console.log(`🔵 Bubble ${edge.id}: rect(${bubbleRect.left}, ${bubbleRect.top}, ${bubbleRect.width}x${bubbleRect.height}) -> (${bubbleX}, ${bubbleY})`)
         } else {
             // Fallback: calculate approximate viewport position
             bubbleX = window.innerWidth - 20 - BUBBLE_WIDTH
             bubbleY = 70 + bubbleIndex * (BUBBLE_HEIGHT + 10) + BUBBLE_HEIGHT / 2
-            console.log(`❌ No bubble element found for ${edge.id}, using fallback: (${bubbleX}, ${bubbleY})`)
         }
         
-        // Get target agent using simple stable distribution
-        const availableAgents = nodes.filter(node => {
-            return node.type === 'agentNode' && 
-                   !node.id.includes('URLProvider') &&
-                   !node.id.includes('ExtractDocs') &&
-                   !node.id.includes('Airline_360_Assistant')
-        })
-        
-        if (availableAgents.length === 0) return null
-        
-        // Simple stable hash for consistent targeting
-        const createStableHash = (str: string): number => {
-            let hash = 0
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i)
-                hash = ((hash << 5) - hash) + char
-                hash = hash & hash
+        // Determine which agents to point to. If the edge supplies an `agents` array in
+        // data (provided by AgentFlow), use that. Otherwise fallback to the explicit
+        // edge.target/edge.source pair (single target).
+        let agentIds: string[] = Array.isArray(edge.data?.agents)
+            ? (edge.data?.agents as string[])
+            : [(edge.target as string) || (edge.source as string)].filter(Boolean)
+
+        if (agentIds.length === 0) return null
+
+        // Filter out any agents that are not currently active (we only draw lines to active agents)
+        // If no node provides a getConversations provider (test mocks), skip filtering to preserve
+        // previous behavior and tests.
+        if (hasGetConversationsProvider) {
+            agentIds = agentIds.filter((id) => activeAgentIds.has(id))
+            if (agentIds.length === 0) return null
+        }
+
+        // For each agent id, find its visual element and calculate mid-point.
+        const results: {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] = []
+
+        for (const agentId of agentIds) {
+            // Try multiple strategies to find the visual node element for the agent.
+            let agentElements: NodeListOf<Element> | null = null
+            try {
+                agentElements = document.querySelectorAll(`[data-id="${agentId}"].react-flow__node`)
+            } catch {
+                agentElements = null
             }
-            return Math.abs(hash)
-        }
-        
-        const conversationId = edge.id.replace('thought-bubble-', '')
-        const stableIndex = createStableHash(conversationId) % availableAgents.length
-        const targetAgent = availableAgents[stableIndex]
-        
-        if (!targetAgent) return null
 
-        // Get actual agent DOM position (fresh every time)
-        const agentElements = document.querySelectorAll(`[data-id="${targetAgent.id}"].react-flow__node`)
-        let agentX = 0
-        let agentY = 0
-        
-        if (agentElements[0]) {
-            const agentElement = agentElements[0]
-            
-            // The React Flow node container should give us the right position
-            const containerRect = agentElement.getBoundingClientRect()
-            agentX = Math.round(containerRect.left + containerRect.width / 2)
-            agentY = Math.round(containerRect.top + containerRect.height / 2)
-            
-            console.log(`🔴 Agent ${targetAgent.id}: container rect(${containerRect.left}, ${containerRect.top}, ${containerRect.width}x${containerRect.height}) -> (${agentX}, ${agentY})`)
-        } else {
-            console.log(`❌ No agent element found for ${targetAgent.id}`)
+            let foundAgentEl: Element | null = null
+
+            if (agentElements && agentElements[0]) {
+                foundAgentEl = agentElements[0]
+            } else {
+                const byAttr = document.querySelector(`[data-id="${agentId}"]`)
+                if (byAttr) {
+                    foundAgentEl = (byAttr as Element).closest?.(".react-flow__node") || byAttr
+                } else {
+                    foundAgentEl = document.getElementById(agentId)
+                }
+            }
+
+            let agentX = 0
+            let agentY = 0
+
+            if (foundAgentEl) {
+                const containerRect = (foundAgentEl as Element).getBoundingClientRect()
+                agentX = Math.round(containerRect.left + containerRect.width / 2)
+                agentY = Math.round(containerRect.top + containerRect.height / 2)
+            }
+
+            results.push({x1: bubbleX, y1: bubbleY, x2: agentX, y2: agentY, targetAgent: agentId})
         }
 
-        return {
-            x1: bubbleX,
-            y1: bubbleY,
-            x2: agentX,
-            y2: agentY,
-            targetAgent: targetAgent.id
-        }
+        return results
     }, [nodes])
 
 
 
-    // Don't render anything if thought bubbles are disabled
-    // Note: This MUST come after all hooks to maintain consistent hook ordering
-    if (!showThoughtBubbles) return null
+    // (render gating moved further down so all hooks are registered in the same order)
 
     // Get all bubbles to render (including exiting ones)
     const allBubbleIds = Array.from(bubbleStates.keys())
@@ -409,6 +439,44 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             return edge
         })
         .filter((edge): edge is Edge => edge !== undefined)
+
+    // Schedule re-renders so lines become visible after each bubble's entrance animation delay.
+    // We do this here so the SVG lines won't be rendered until the bubble begins its entrance animation.
+    useEffect(() => {
+        const timeouts = lineVisibilityTimeouts.current
+
+        // Clear any existing timeouts
+        timeouts.forEach((t) => clearTimeout(t))
+        timeouts.clear()
+
+        const now = Date.now()
+        renderableBubbles.forEach((edge, index) => {
+            const bubbleState = bubbleStates.get(edge.id)
+            if (!bubbleState || bubbleState.isExiting) return
+
+            const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
+            const elapsed = now - (bubbleState.enteredAt || now)
+            const remaining = animationDelay - elapsed
+
+            if (remaining > 0) {
+                const timeout = window.setTimeout(() => {
+                    // Force a re-render when the bubble's delay elapses so lines can be shown
+                    setRerenderTick((n) => n + 1)
+                }, remaining)
+
+                timeouts.set(edge.id, timeout)
+            }
+        })
+
+        return () => {
+            timeouts.forEach((t) => clearTimeout(t))
+            timeouts.clear()
+        }
+    }, [bubbleStates, renderableBubbles])
+
+    // Don't render anything if thought bubbles are disabled
+    // This check is placed after all hooks so hook ordering stays consistent across renders.
+    if (!showThoughtBubbles) return null
 
     return (
         <OverlayContainer>
@@ -425,37 +493,57 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                     opacity: 1,
                 }}
             >
-                {/* Dynamic lines - coordinates calculated fresh every render */}
-                {renderableBubbles.map((edge: Edge, index: number) => {
-                    const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false}
-                    if (!bubbleState.isVisible) return null
-                    
-                    // Calculate fresh coordinates for this line
-                    const coords = calculateLineCoordinates(edge, index)
-                    if (!coords) return null
-                    
-                    return (
-                        <g key={`line-group-${edge.id}`}>
-                            {/* The actual connecting line */}
-                            <line
-                                key={`line-${edge.id}`}
-                                ref={(el: SVGLineElement | null) => {
-                                    if (el) {
-                                        lineRefs.current.set(edge.id, el)
-                                    } else {
-                                        lineRefs.current.delete(edge.id)
-                                    }
-                                }}
-                                x1={coords.x1}
-                                y1={coords.y1}
-                                x2={coords.x2}
-                                y2={coords.y2}
-                                stroke="rgba(255, 100, 100, 0.6)"
-                                strokeWidth="2"
-                                strokeDasharray="3,3"
-                            />
-                        </g>
-                    )
+        {/* Dynamic lines - coordinates calculated fresh every render */}
+        {renderableBubbles.map((edge: Edge, index: number) => {
+                        // Per-bubble staggered animation delay in milliseconds (for line animations)
+                        const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
+
+                        const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false, enteredAt: 0}
+                        if (!bubbleState.isVisible) return null
+
+                        // Only render lines after the bubble's entrance animation delay has elapsed.
+                        const elapsed = Date.now() - (bubbleState.enteredAt || 0)
+                        const shouldShowLines = elapsed >= animationDelay
+                        if (!shouldShowLines) return null
+
+                        // Calculate fresh coordinates for this line (may return multiple targets)
+                        const coordsArray = calculateLineCoordinates(edge, index) as
+                            | {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[]
+                            | null
+
+                        if (!coordsArray || coordsArray.length === 0) return null
+
+                        return (
+                            <g key={`line-group-${edge.id}`}>
+                                {/* Render one line per target agent */}
+                                {coordsArray.map((coords) => {
+                                    const lineKey = `${edge.id}-${coords.targetAgent}`
+                                    return (
+                                        <line
+                                            key={`line-${lineKey}`}
+                                            ref={(el: SVGLineElement | null) => {
+                                                if (el) {
+                                                    lineRefs.current.set(lineKey, el)
+                                                } else {
+                                                    lineRefs.current.delete(lineKey)
+                                                }
+                                            }}
+                                            x1={coords.x1}
+                                            y1={coords.y1}
+                                            x2={coords.x2}
+                                            y2={coords.y2}
+                                            stroke="rgba(255, 50, 50, 0.92)"
+                                            strokeWidth="2"
+                                            strokeDasharray="3,3"
+                                            style={{
+                                                opacity: bubbleState.isExiting ? 0 : CONNECTING_LINE_OPACITY,
+                                                transition: `opacity ${bubbleState.isExiting ? 400 : 600}ms cubic-bezier(0.2, 0, 0.2, 1) ${bubbleState.isExiting ? 0 : animationDelay}ms`,
+                                            }}
+                                        />
+                                    )
+                                })}
+                            </g>
+                        )
                 })}
             </svg>
             

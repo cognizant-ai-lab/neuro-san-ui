@@ -237,6 +237,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 text: conv.text,
                                 showAlways: showThoughtBubbles,
                                 conversationId: conv.id,
+                                // Include full agent list so overlays can point to all participants
+                                agents: agentList,
                                 type: conv.type, // Add conversation type for filtering
                             },
                             style: {pointerEvents: "none" as const},

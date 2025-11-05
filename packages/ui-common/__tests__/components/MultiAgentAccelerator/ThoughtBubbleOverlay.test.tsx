@@ -482,10 +482,11 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        // Should only render the valid message (empty string should be filtered out)
-        expect(screen.getByText("Valid message")).toBeInTheDocument()
-        // Empty string should not be rendered
-        expect(screen.queryByText("")).toBeNull()
+    // Should only render the valid message (empty string should be filtered out)
+    expect(screen.getByText("Valid message")).toBeInTheDocument()
+    // Ensure only one bubble element rendered (use data-bubble-id attribute)
+    const bubbles = document.querySelectorAll('[data-bubble-id]')
+    expect(bubbles.length).toBe(1)
     })
 
     it("Should handle edges with non-string text data", () => {
@@ -761,14 +762,14 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        // Check that connecting line SVG is rendered with animation
-        const lines = container.querySelectorAll("svg line")
-        expect(lines.length).toBe(1)
+    // Check that connecting line SVG is rendered with animation
+    const lines = container.querySelectorAll("svg line")
+    expect(lines.length).toBe(1)
 
-        // Check that line has the correct stroke attributes for connecting line
-        const line = lines[0]
-        expect(line.getAttribute("stroke")).toBe("var(--bs-primary)")
-        expect(line.getAttribute("stroke-width")).toBe("2")
+    // Check that line has the correct stroke attributes for connecting line (brighter red)
+    const line = lines[0]
+    expect(line.getAttribute("stroke")).toBe("rgba(255, 50, 50, 0.92)")
+    expect(line.getAttribute("stroke-width")).toBe("2")
     })
 
     it("Should handle complex bubble state scenarios", () => {
