@@ -78,20 +78,6 @@ const areInSameConversation = (
         .some((conversation) => conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent))
 }
 
-// Helper function for thought bubbles - more flexible, doesn't filter by message type
-export const areInSameConversationForBubbles = (
-    conversations: AgentConversation[] | null,
-    sourceAgent: string,
-    targetAgent: string
-): boolean => {
-    if (!conversations || !sourceAgent || !targetAgent) return false
-
-    // Don't filter by message type for thought bubbles - include all conversation types
-    return conversations.some((conversation) => {
-        return conversation.agents && conversation.agents.has(sourceAgent) && conversation.agents.has(targetAgent)
-    })
-}
-
 // #region: Constants
 
 // Name for custom node

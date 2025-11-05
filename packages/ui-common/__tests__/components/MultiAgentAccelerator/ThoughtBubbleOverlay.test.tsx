@@ -1646,7 +1646,7 @@ describe("ThoughtBubbleOverlay", () => {
         })
         document.body.append(agentEl)
 
-    const debugSpy = jest.spyOn(console, "debug").mockImplementation(() => undefined)
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation(() => undefined)
 
         // Render component normally first so React can mount without our failure injection
         const {rerender} = render(
@@ -1688,7 +1688,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Replace RAF with immediate runner so updateAllLines runs synchronously when streaming starts
         const origRAF = global.requestAnimationFrame
         const origCAF = global.cancelAnimationFrame
-    global.requestAnimationFrame = (cb: FrameRequestCallback) => {
+        global.requestAnimationFrame = (cb: FrameRequestCallback) => {
             try {
                 cb(0)
             } catch {
@@ -1696,7 +1696,7 @@ describe("ThoughtBubbleOverlay", () => {
             }
             return 1
         }
-    global.cancelAnimationFrame = () => undefined
+        global.cancelAnimationFrame = () => undefined
 
         // Start streaming by re-rendering with isStreaming=true so the effect starts the RAF loop
         rerender(
@@ -1712,10 +1712,10 @@ describe("ThoughtBubbleOverlay", () => {
         expect(debugSpy).toHaveBeenCalled()
 
         // Restore globals
-    ;(Element.prototype as unknown as {setAttribute: (n: string, v: string) => void}).setAttribute = origSetAttr
-    debugSpy.mockRestore()
-    global.requestAnimationFrame = origRAF
-    global.cancelAnimationFrame = origCAF
+        ;(Element.prototype as unknown as {setAttribute: (n: string, v: string) => void}).setAttribute = origSetAttr
+        debugSpy.mockRestore()
+        global.requestAnimationFrame = origRAF
+        global.cancelAnimationFrame = origCAF
         agentEl.remove()
         jest.useRealTimers()
     })
