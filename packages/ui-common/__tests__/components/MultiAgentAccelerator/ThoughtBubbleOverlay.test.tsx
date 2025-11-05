@@ -766,9 +766,9 @@ describe("ThoughtBubbleOverlay", () => {
     const lines = container.querySelectorAll("svg line")
     expect(lines.length).toBe(1)
 
-    // Check that line has the correct stroke attributes for connecting line (brighter red)
+    // Check that line has the correct stroke attributes for connecting line (uses CSS variable with fallback)
     const line = lines[0]
-    expect(line.getAttribute("stroke")).toBe("rgba(255, 50, 50, 0.92)")
+    expect(line.getAttribute("stroke")).toBe("var(--thought-bubble-line-color, rgba(255, 50, 50, 0.92))")
     expect(line.getAttribute("stroke-width")).toBe("2")
     })
 

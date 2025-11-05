@@ -1,6 +1,7 @@
 import {styled} from "@mui/material"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {Edge, Node as RFNode} from "reactflow"
+import {useStore} from "reactflow"
 
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
@@ -154,6 +155,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const animationTimeouts = useRef<Map<string, number>>(new Map())
     // Refs for SVG lines to update without re-rendering
     const lineRefs = useRef<Map<string, SVGLineElement>>(new Map())
+    // Ref to the overlay container so we can observe layout changes more precisely
+    const overlayRef = useRef<HTMLDivElement | null>(null)
     // Timeouts to schedule when lines should become visible (keyed by edge id)
     const lineVisibilityTimeouts = useRef<Map<string, number>>(new Map())
     // Small rerender tick used to force re-render when a scheduled line-visibility timeout fires
@@ -162,8 +165,14 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const rafRef = useRef<number | null>(null)
     const mountedRef = useRef(true)
 
-    // Note: We intentionally avoid reading React Flow's transform here —
-    // coordinate calculations use absolute DOM positions (getBoundingClientRect).
+    // Try to read React Flow's transform so we can schedule updates on pan/zoom.
+    // Wrap in try/catch because tests may not provide a ReactFlowProvider.
+    let transform: [number, number, number]
+    try {
+        transform = useStore((s) => s.transform)
+    } catch {
+        transform = [0, 0, 1]
+    }
 
     // Filter edges with meaningful text (memoized to prevent infinite re-renders)
     const thoughtBubbleEdges = useMemo(
@@ -346,7 +355,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     )
 
     // Calculate line coordinates - measurement only. Can be called from rAF/update loop.
-    const calculateLineCoordinates = useCallback((edge: Edge, bubbleIndex: number) => {
+    const calculateLineCoordinates = useCallback(
+        (edge: Edge, bubbleIndex: number, agentRectCache?: Map<string, DOMRect>) => {
         // Skip HUMAN conversation types - no lines for human bubbles
         // Note: HUMAN is a conversation type, not text content
         if (edge.data?.type === ChatMessageType.HUMAN) {
@@ -415,7 +425,14 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             let agentY = 0
 
             if (foundAgentEl) {
-                const containerRect = (foundAgentEl as Element).getBoundingClientRect()
+                let containerRect: DOMRect
+                if (agentRectCache && agentRectCache.has(agentId)) {
+                    containerRect = agentRectCache.get(agentId) as DOMRect
+                } else {
+                    containerRect = (foundAgentEl as Element).getBoundingClientRect()
+                    agentRectCache?.set(agentId, containerRect)
+                }
+
                 agentX = Math.round(containerRect.left + containerRect.width / 2)
                 agentY = Math.round(containerRect.top + containerRect.height / 2)
             }
@@ -425,12 +442,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
         return results
     }, [nodes])
-
-    
-
-
-
-    // (render gating moved further down so all hooks are registered in the same order)
 
     // Get all bubbles to render (including exiting ones)
     const allBubbleIds = Array.from(bubbleStates.keys())
@@ -505,7 +516,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         // Resize observer to detect layout/size changes
         const ro = new ResizeObserver(() => schedule())
         try {
-            ro.observe(document.body)
+            if (overlayRef.current) ro.observe(overlayRef.current)
+            else ro.observe(document.body)
         } catch {
             // Ignore if RO observation fails in some test environments
         }
@@ -530,7 +542,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             }
         }
 
-        if (isStreaming) startStreamingLoop()
+    if (isStreaming) startStreamingLoop()
 
         return () => {
             mountedRef.current = false
@@ -633,7 +645,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                             y1={coords.y1}
                                             x2={coords.x2}
                                             y2={coords.y2}
-                                            stroke="rgba(255, 50, 50, 0.92)"
+                                            stroke="var(--thought-bubble-line-color, rgba(255, 50, 50, 0.92))"
                                             strokeWidth="2"
                                             strokeDasharray="3,3"
                                             style={{
