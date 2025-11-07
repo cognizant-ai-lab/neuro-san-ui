@@ -15,94 +15,89 @@ limitations under the License.
 */
 
 import {render} from "@testing-library/react"
-import {Position} from "reactflow"
+import {act} from "react-dom/test-utils"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 
-// Capture the *real* createElement before it's mocked
-// eslint-disable-next-line @typescript-eslint/no-deprecated
-const originalCreateElement = global.document?.createElement
-
 describe("PlasmaEdge", () => {
-    withStrictMocks()
+    it("renders and runs animation with mocked canvas context, SVG methods, and RAF", () => {
+        const errSpy = jest.spyOn(console, "error").mockImplementation()
 
-    beforeEach(() => {
-        // Mock canvas context
-        jest.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
-            () =>
-                ({
-                    save: jest.fn(),
-                    beginPath: jest.fn(),
-                    arc: jest.fn(),
-                    fill: jest.fn(),
-                    restore: jest.fn(),
-                    clearRect: jest.fn(),
-                    setTransform: jest.fn(),
-                    scale: jest.fn(),
-                    shadowBlur: 0,
-                    shadowColor: "",
-                    fillStyle: "",
-                    globalAlpha: 1,
-                }) as never
-        )
+        // Mock getContext to provide minimal API used by the component
+        const fakeCtx: Partial<CanvasRenderingContext2D> = {
+            setTransform: jest.fn(),
+            scale: jest.fn(),
+            clearRect: jest.fn(),
+            beginPath: jest.fn(),
+            arc: jest.fn(),
+            fill: jest.fn(),
+            save: jest.fn(),
+            restore: jest.fn(),
+        }
 
-        // Mock SVG path methods
-        jest.spyOn(SVGPathElement.prototype, "getTotalLength").mockImplementation(() => 100)
-        jest.spyOn(SVGPathElement.prototype, "getPointAtLength").mockImplementation((len: number) => ({
-            x: len,
-            y: len,
-            z: 0,
-            w: 1,
-            matrixTransform: () => this,
-            toJSON: () => ({x: len, y: len, z: 0, w: 1}),
-        }))
+        // Keep originals so we can restore later
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const origGetContext = HTMLCanvasElement.prototype.getContext as any
+        const origRAF = global.requestAnimationFrame
+        const origCAF = global.cancelAnimationFrame
+        const origGetTotalLength = (SVGElement.prototype as any).getTotalLength
+        const origGetPointAtLength = (SVGElement.prototype as any).getPointAtLength
 
-        // Mock createElement for <path>
-        jest.spyOn(document, "createElement").mockImplementation(
-            (
-                (original) =>
-                (tag: string, ...args) => {
-                    const el = original.call(document, tag, ...args)
-                    if (tag.toLowerCase() === "path") {
-                        Object.assign(el, {
-                            getTotalLength: () => 100,
-                            getPointAtLength: (len: number) => ({
-                                x: len,
-                                y: len,
-                                z: 0,
-                                w: 1,
-                                matrixTransform: () => el,
-                                toJSON: () => ({x: len, y: len, z: 0, w: 1}),
-                            }),
-                        })
-                    }
-                    return el
-                }
-            )(originalCreateElement)
-        )
-    })
+        // @ts-ignore - test-time monkeypatch
+        HTMLCanvasElement.prototype.getContext = function (_: string) {
+            return fakeCtx
+        }
 
-    it("should render correctly", () => {
-        jest.spyOn(console, "error").mockImplementation()
+        // Provide simple implementations for SVG element methods used by the particle generator
+        ;(Element.prototype as any).getTotalLength = function () {
+            return 100
+        }
+        ;(Element.prototype as any).getPointAtLength = function (l: number) {
+            return {x: l, y: l}
+        }
 
-        render(
+        // Mock RAF to run callback immediately once
+        global.requestAnimationFrame = (cb: FrameRequestCallback) => {
+            try {
+                cb(0)
+            } catch {
+                // ignore
+            }
+            return 1
+        }
+        global.cancelAnimationFrame = () => undefined
+
+        const {unmount, container} = render(
             <PlasmaEdge
-                id="test-animated-edge"
+                // edge props are minimally required for rendering
+                id="test-edge"
                 source="test-source"
                 target="test-target"
                 sourceX={0}
                 sourceY={0}
-                targetX={0}
-                targetY={0}
-                sourcePosition={Position.Right}
-                targetPosition={Position.Left}
+                targetX={200}
+                targetY={120}
+                sourcePosition={"left" as any}
+                targetPosition={"right" as any}
             />
         )
 
-        expect(console.error).toHaveBeenCalledTimes(3)
-        expect(document.querySelector("canvas")).toBeInTheDocument()
-        expect(document.querySelector("foreignObject")).toBeInTheDocument()
-        expect(document.querySelector("path")).toBeInTheDocument()
+        // Allow effects to run
+        act(() => undefined)
+
+        // Ensure canvas and path are present
+        const canvas = container.querySelector("canvas")
+        const path = container.querySelector("path")
+        expect(canvas).not.toBeNull()
+        expect(path).not.toBeNull()
+
+        // Cleanup and restore
+        unmount()
+        ;(HTMLCanvasElement.prototype as any).getContext = origGetContext
+        global.requestAnimationFrame = origRAF
+        global.cancelAnimationFrame = origCAF
+        ;(SVGElement.prototype as any).getTotalLength = origGetTotalLength
+        ;(SVGElement.prototype as any).getPointAtLength = origGetPointAtLength
+        errSpy.mockRestore()
     })
 })

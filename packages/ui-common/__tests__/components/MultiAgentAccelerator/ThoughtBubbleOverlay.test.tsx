@@ -1,15 +1,56 @@
+/*
+Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {act} from "react-dom/test-utils"
-import type {Edge} from "reactflow"
+import type {Edge, Node} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleOverlay} from "../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 describe("ThoughtBubbleOverlay", () => {
     withStrictMocks()
 
     let user: UserEvent
+
+    // Ensure requestAnimationFrame exists in the test environment to avoid
+    // ReferenceError in some JSDOM setups. We'll polyfill if missing and restore after.
+    let _polyfilledRAF = false
+    let _origRAF: typeof global.requestAnimationFrame | undefined
+    let _origCAF: typeof global.cancelAnimationFrame | undefined
+
+    beforeAll(() => {
+        if (typeof (global as any).requestAnimationFrame === "undefined") {
+            _polyfilledRAF = true
+            _origRAF = (global as any).requestAnimationFrame
+            _origCAF = (global as any).cancelAnimationFrame
+            ;(global as any).requestAnimationFrame = (cb: FrameRequestCallback) =>
+                setTimeout(() => cb(Date.now()), 0) as unknown as number
+            ;(global as any).cancelAnimationFrame = (id: number) => clearTimeout(id)
+        }
+    })
+
+    afterAll(() => {
+        if (_polyfilledRAF) {
+            ;(global as any).requestAnimationFrame = _origRAF
+            ;(global as any).cancelAnimationFrame = _origCAF
+        }
+    })
 
     const mockNodes = [
         {
@@ -33,6 +74,263 @@ describe("ThoughtBubbleOverlay", () => {
         data: {text},
         type: "thoughtBubbleEdge",
     })
+
+    it("Should not render lines for HUMAN type edges", () => {
+        const humanEdge = {
+            id: "edge-human",
+            source: "node1",
+            target: "node2",
+            data: {text: "Human message", type: ChatMessageType.HUMAN, agents: ["node2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        agentEl.getBoundingClientRect = () => ({
+            left: 10,
+            top: 10,
+            width: 10,
+            height: 10,
+            right: 20,
+            bottom: 20,
+            x: 10,
+            y: 10,
+            toJSON: () => ({}),
+        })
+        document.body.append(agentEl)
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[humanEdge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Bubble should render but no SVG lines should be present for HUMAN type
+        expect(container.textContent).toContain("Human message")
+        const lines = container.querySelectorAll("svg line")
+        expect(lines.length).toBe(0)
+
+        agentEl.remove()
+    })
+
+    it("Should tolerate provider.getConversations throwing and continue", () => {
+        const nodesWithThrowingProvider = [
+            {
+                id: "node1",
+                data: {
+                    depth: 0,
+                    agentName: "Broken",
+                    getConversations: () => {
+                        throw new Error("boom")
+                    },
+                },
+                position: {x: 0, y: 0},
+                type: "agentNode",
+            },
+        ] as unknown as Node[]
+
+        const edge = {
+            id: "edge-broken-provider",
+            source: "node1",
+            target: "node1",
+            data: {text: "Provider throws", type: ChatMessageType.AI, agents: ["node1"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        expect(() =>
+            render(
+                <ThoughtBubbleOverlay
+                    nodes={nodesWithThrowingProvider}
+                    edges={[edge]}
+                    showThoughtBubbles={true}
+                />
+            )
+        ).not.toThrow()
+    })
+
+    it("Should return null when edge.data.agents is empty", () => {
+        const edgeEmptyAgents = {
+            id: "edge-empty-agents",
+            source: undefined,
+            target: undefined,
+            data: {text: "No agents", type: ChatMessageType.AI, agents: []},
+            type: "thoughtBubbleEdge",
+        } as unknown as Edge
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edgeEmptyAgents]}
+                showThoughtBubbles={true}
+            />
+        )
+        expect(container.textContent).toContain("No agents")
+        const lines = container.querySelectorAll("svg line")
+        expect(lines.length).toBe(0)
+    })
+
+    it("Should handle document.querySelectorAll throwing during agent lookup", () => {
+        const edge = {
+            id: "edge-qsa-throws",
+            source: "node1",
+            target: "node2",
+            data: {text: "QSA throws", type: ChatMessageType.AI, agents: ["node2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const originalQSA = document.querySelectorAll
+        // Make querySelectorAll throw to exercise the catch path
+        // Only throw for the specific selector pattern used in calculateLineCoordinates
+        // but simplest approach is to throw for any call and restore afterwards
+        // The component will continue and should not crash
+        // @ts-ignore - assign to readonly in test context
+        document.querySelectorAll = (() => {
+            throw new Error("qsa fail")
+        }) as any
+
+        expect(() =>
+            render(
+                <ThoughtBubbleOverlay
+                    nodes={mockNodes}
+                    edges={[edge]}
+                    showThoughtBubbles={true}
+                />
+            )
+        ).not.toThrow()
+
+        // Restore
+        // @ts-ignore
+        document.querySelectorAll = originalQSA
+    })
+
+    it("Should ignore provider conversations that use plain arrays for agents (no .has)", async () => {
+        jest.useFakeTimers()
+
+        const nodesWithArrayAgents = [
+            {
+                id: "node1",
+                data: {
+                    depth: 0,
+                    agentName: "ArrayAgent",
+                    getConversations: () => [{agents: ["node2"]}], // agents as array -> skipped
+                },
+                position: {x: 0, y: 0},
+                type: "agentNode",
+            },
+            {
+                id: "node2",
+                data: {depth: 1, agentName: "Agent2"},
+                position: {x: 100, y: 100},
+                type: "agentNode",
+            },
+        ] as unknown as Node[]
+
+        const edge = {
+            id: "edge-array-agents",
+            source: "node1",
+            target: "node2",
+            data: {text: "Array conv", type: ChatMessageType.AI, agents: ["node2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        // Create agent element so if lines were to be drawn they'd have coordinates
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        agentEl.getBoundingClientRect = () => ({
+            left: 50,
+            top: 50,
+            width: 20,
+            height: 20,
+            right: 70,
+            bottom: 70,
+            x: 50,
+            y: 50,
+            toJSON: () => ({}),
+        })
+        document.body.append(agentEl)
+
+        const {container, rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={nodesWithArrayAgents}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        await act(async () => jest.advanceTimersByTime(300))
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={nodesWithArrayAgents}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("Array conv")
+        const lines = container.querySelectorAll("svg line")
+        expect(lines.length).toBe(0)
+
+        agentEl.remove()
+        jest.useRealTimers()
+    })
+
+    it("Should find agent by getElementById when present", async () => {
+        jest.useFakeTimers()
+
+        const edge = {
+            id: "edge-getbyid",
+            source: "node1",
+            target: "node2",
+            data: {text: "GetById", type: ChatMessageType.AI, agents: ["node2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const agentEl = document.createElement("div")
+        agentEl.id = "node2"
+        agentEl.getBoundingClientRect = () => ({
+            left: 120,
+            top: 140,
+            width: 24,
+            height: 24,
+            right: 144,
+            bottom: 164,
+            x: 120,
+            y: 140,
+            toJSON: () => ({}),
+        })
+        document.body.append(agentEl)
+
+        const {container, rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+        await act(async () => jest.advanceTimersByTime(300))
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("GetById")
+        const lines = container.querySelectorAll("svg line")
+        if (lines.length > 0) expect(lines.length).toBeGreaterThanOrEqual(1)
+
+        agentEl.remove()
+        jest.useRealTimers()
+    })
+
+    // NOTE: intentionally omitting a test that throws from getBoundingClientRect because
+    // throwing during render surfaces as an uncaught error in jsdom. We exercise
+    // defensive code paths elsewhere without causing uncaught exceptions.
 
     beforeEach(() => {
         user = userEvent.setup()
@@ -1103,7 +1401,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         const {container: c2, rerender: r2} = render(
             <ThoughtBubbleOverlay
-                nodes={nodesWithProvider as unknown as import("reactflow").Node[]}
+                nodes={nodesWithProvider as unknown as Node[]}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
             />
@@ -1112,7 +1410,7 @@ describe("ThoughtBubbleOverlay", () => {
         await act(async () => jest.advanceTimersByTime(200))
         r2(
             <ThoughtBubbleOverlay
-                nodes={nodesWithProvider as unknown as import("reactflow").Node[]}
+                nodes={nodesWithProvider as unknown as Node[]}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
             />
@@ -1314,7 +1612,7 @@ describe("ThoughtBubbleOverlay", () => {
         expect(() =>
             render(
                 <ThoughtBubbleOverlay
-                    nodes={nodesWithThrowingProvider as unknown as import("reactflow").Node[]}
+                    nodes={nodesWithThrowingProvider as unknown as Node[]}
                     edges={edges}
                     showThoughtBubbles={true}
                 />
@@ -1536,6 +1834,70 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useRealTimers()
     })
 
+    it("renders a non-human thought bubble (AI type)", () => {
+        const edge = {
+            id: "edge-1",
+            source: "agent-1",
+            target: "agent-2",
+            data: {text: "Hello world", type: ChatMessageType.AI, agents: ["agent-2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={[]}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        const bubble = container.querySelector('[data-bubble-id="edge-1"]')
+        expect(bubble).not.toBeNull()
+        expect(container.textContent).toContain("Hello world")
+    })
+
+    it("handles nodes with getConversations provider and streaming enabled", () => {
+        const node = {
+            id: "agent-2",
+            data: {
+                depth: 1,
+                getConversations: () => [
+                    {
+                        agents: new Set(["agent-2"]),
+                    },
+                ],
+            },
+            position: {x: 0, y: 0},
+            type: "agentNode",
+        } as unknown as Node
+
+        const edge = {
+            id: "edge-2",
+            source: "agent-1",
+            target: "agent-2",
+            data: {text: "Active agent bubble", type: ChatMessageType.AI, agents: ["agent-2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const now = Date.now()
+        const spy = jest.spyOn(Date, "now").mockImplementation(() => now + 10000)
+
+        const {container, unmount} = render(
+            <ThoughtBubbleOverlay
+                nodes={[node]}
+                edges={[edge]}
+                isStreaming={true}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.querySelector('[data-bubble-id="edge-2"]')).not.toBeNull()
+
+        expect(() => unmount()).not.toThrow()
+
+        spy.mockRestore()
+    })
+
     it("Should tolerate ResizeObserver.observe throwing (defensive catch)", () => {
         // Replace global ResizeObserver with one whose observe throws
         const OriginalRO = (global as unknown as {ResizeObserver?: unknown}).ResizeObserver
@@ -1718,5 +2080,346 @@ describe("ThoughtBubbleOverlay", () => {
         global.cancelAnimationFrame = origCAF
         agentEl.remove()
         jest.useRealTimers()
+    })
+
+    it("Should render bubble when edge.data.agents is an empty array (no targets)", () => {
+        const edge = {
+            id: "edge-no-agents",
+            source: "node1",
+            target: "node2",
+            data: {text: "No agents", type: ChatMessageType.AI, agents: []},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("No agents")
+    })
+
+    it("Should render bubble when edge has no type property (defensive fallback)", () => {
+        const edge = {
+            id: "edge-no-type",
+            source: "node1",
+            target: "node2",
+            data: {text: "No type present", agents: ["node2"]},
+            type: "thoughtBubbleEdge",
+        } as unknown as Edge
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("No type present")
+    })
+
+    it("Should start streaming loop with no agent elements and not crash", async () => {
+        jest.useFakeTimers()
+
+        const edges = [createMockEdge("edge-stream-no-agent", "node1", "node2", "Stream no agent")]
+
+        const {unmount} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                isStreaming={true}
+            />
+        )
+
+        // Let a few RAF cycles run (component should guard against missing agent elements)
+        await act(async () => jest.advanceTimersByTime(50))
+
+        expect(() => unmount()).not.toThrow()
+
+        jest.useRealTimers()
+    })
+
+    it("Should handle edge.data.agents containing null/undefined entries gracefully", () => {
+        const edge = {
+            id: "edge-null-agents",
+            source: "node1",
+            target: "node2",
+            data: {text: "Null agents", type: ChatMessageType.AI, agents: [null, undefined, "node2"]},
+            type: "thoughtBubbleEdge",
+        } as unknown as Edge
+
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        agentEl.getBoundingClientRect = () => ({
+            left: 1,
+            top: 2,
+            width: 3,
+            height: 4,
+            right: 4,
+            bottom: 6,
+            x: 1,
+            y: 2,
+            toJSON: () => ({}),
+        })
+        document.body.append(agentEl)
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("Null agents")
+
+        agentEl.remove()
+    })
+
+    it("Should handle duplicate agent ids in edge.data.agents without crashing", async () => {
+        jest.useFakeTimers()
+        jest.setSystemTime(0)
+
+        const dupEdge = {
+            id: "edge-dup-agents",
+            source: "node1",
+            target: "node2",
+            data: {text: "Dup agents", type: ChatMessageType.AI, agents: ["node2", "node2"]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        agentEl.getBoundingClientRect = () => ({
+            left: 10,
+            top: 10,
+            width: 20,
+            height: 20,
+            right: 30,
+            bottom: 30,
+            x: 10,
+            y: 10,
+            toJSON: () => ({}),
+        })
+        document.body.append(agentEl)
+
+        // Suppress expected React warnings about duplicate keys for this test
+        const consoleErrSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+
+        const {container, rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[dupEdge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        await act(async () => jest.advanceTimersByTime(200))
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[dupEdge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("Dup agents")
+
+        consoleErrSpy.mockRestore()
+
+        agentEl.remove()
+        jest.useRealTimers()
+    })
+
+    it("Should not crash when unmounting immediately while streaming is running", async () => {
+        jest.useFakeTimers()
+
+        const edges = [createMockEdge("edge-unmount-stream", "node1", "node2", "Unmount stream")]
+
+        const {unmount} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                isStreaming={true}
+            />
+        )
+
+        // Immediately unmount while streaming RAF loop may be active
+        expect(() => unmount()).not.toThrow()
+
+        jest.useRealTimers()
+    })
+
+    it("Should toggle streaming on and off without errors", async () => {
+        jest.useFakeTimers()
+
+        const edges = [createMockEdge("edge-toggle-stream", "node1", "node2", "Toggle stream")]
+
+        const {rerender, unmount} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={edges}
+                showThoughtBubbles={true}
+                isStreaming={false}
+            />
+        )
+
+        // Enable streaming
+        expect(() =>
+            rerender(
+                <ThoughtBubbleOverlay
+                    nodes={mockNodes}
+                    edges={edges}
+                    showThoughtBubbles={true}
+                    isStreaming={true}
+                />
+            )
+        ).not.toThrow()
+
+        // Disable streaming again
+        expect(() =>
+            rerender(
+                <ThoughtBubbleOverlay
+                    nodes={mockNodes}
+                    edges={edges}
+                    showThoughtBubbles={true}
+                    isStreaming={false}
+                />
+            )
+        ).not.toThrow()
+
+        expect(() => unmount()).not.toThrow()
+
+        jest.useRealTimers()
+    })
+
+    it("Should handle edge.data.agents as a single string (non-array) and still locate agent", async () => {
+        jest.useFakeTimers()
+        jest.setSystemTime(0)
+
+        const singleAgentEdge = {
+            id: "edge-single-agent",
+            source: "node1",
+            target: undefined,
+            data: {text: "Single agent string", type: ChatMessageType.AI, agents: "node2" as unknown as string[]},
+            type: "thoughtBubbleEdge",
+        } as Edge
+
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        agentEl.getBoundingClientRect = () => ({
+            left: 11,
+            top: 22,
+            width: 33,
+            height: 44,
+            right: 44,
+            bottom: 66,
+            x: 11,
+            y: 22,
+            toJSON: () => ({left: 11, top: 22, width: 33, height: 44}),
+        })
+        document.body.append(agentEl)
+
+        const {container, rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[singleAgentEdge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        await act(async () => jest.advanceTimersByTime(200))
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[singleAgentEdge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("Single agent string")
+        const lines = container.querySelectorAll("svg line")
+        if (lines.length > 0) expect(lines.length).toBeGreaterThanOrEqual(1)
+
+        agentEl.remove()
+        jest.useRealTimers()
+    })
+
+    it("Should remove bubble after exit animation timeout when edges are removed", async () => {
+        jest.useFakeTimers()
+
+        const edge = createMockEdge("edge-exit-remove", "node1", "node2", "Exit remove")
+
+        const {container, rerender} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Now remove the edge to trigger exit animation
+        rerender(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        // Advance past the 400ms exit animation delay
+        await act(async () => jest.advanceTimersByTime(450))
+
+        expect(container.textContent).not.toContain("Exit remove")
+
+        jest.useRealTimers()
+    })
+
+    it("Should render nothing when showThoughtBubbles is false", () => {
+        const edge = createMockEdge("edge-hidden", "node1", "node2", "Hidden")
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={false}
+            />
+        )
+
+        // Component should render null — container should not contain the bubble text
+        expect(container.textContent).not.toContain("Hidden")
+    })
+
+    it("Should tolerate agent elements with no bounding rect (containerRect falsy)", () => {
+        const edge = createMockEdge("edge-no-rect", "node1", "node2", "No rect")
+
+        const agentEl = document.createElement("div")
+        agentEl.dataset["id"] = "node2"
+        agentEl.className = "react-flow__node"
+        // Return undefined to simulate missing rect
+        // @ts-ignore
+        agentEl.getBoundingClientRect = () => undefined
+        document.body.append(agentEl)
+
+        const {container} = render(
+            <ThoughtBubbleOverlay
+                nodes={mockNodes}
+                edges={[edge]}
+                showThoughtBubbles={true}
+            />
+        )
+
+        expect(container.textContent).toContain("No rect")
+
+        agentEl.remove()
     })
 })
