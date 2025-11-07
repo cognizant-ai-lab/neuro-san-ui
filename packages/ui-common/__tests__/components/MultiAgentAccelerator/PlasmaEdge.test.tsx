@@ -16,6 +16,7 @@ limitations under the License.
 
 import {render} from "@testing-library/react"
 import {act} from "react-dom/test-utils"
+import type {Position} from "reactflow"
 
 import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 
@@ -35,26 +36,30 @@ describe("PlasmaEdge", () => {
             restore: jest.fn(),
         }
 
-        // Keep originals so we can restore later
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const origGetContext = HTMLCanvasElement.prototype.getContext as any
+        // Keep originals so we can restore later (use explicit narrow types instead of `any`)
+        const origGetContext = HTMLCanvasElement.prototype.getContext as unknown as (
+            contextId?: string | null
+        ) => CanvasRenderingContext2D | null
         const origRAF = global.requestAnimationFrame
         const origCAF = global.cancelAnimationFrame
-        const origGetTotalLength = (SVGElement.prototype as any).getTotalLength
-        const origGetPointAtLength = (SVGElement.prototype as any).getPointAtLength
+        const origGetTotalLength = (SVGElement.prototype as unknown as {getTotalLength?: () => number}).getTotalLength
+        const origGetPointAtLength = (
+            SVGElement.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}
+        ).getPointAtLength
 
-        // @ts-ignore - test-time monkeypatch
-        HTMLCanvasElement.prototype.getContext = function (_: string) {
-            return fakeCtx
-        }
+        // Monkeypatch getContext on canvas prototype for the test
+        HTMLCanvasElement.prototype.getContext = function () {
+            return fakeCtx as CanvasRenderingContext2D
+        } as unknown as typeof HTMLCanvasElement.prototype.getContext
 
         // Provide simple implementations for SVG element methods used by the particle generator
-        ;(Element.prototype as any).getTotalLength = function () {
+        ;(Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = function () {
             return 100
         }
-        ;(Element.prototype as any).getPointAtLength = function (l: number) {
-            return {x: l, y: l}
-        }
+        ;(Element.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}).getPointAtLength =
+            function (l: number) {
+                return {x: l, y: l}
+            }
 
         // Mock RAF to run callback immediately once
         global.requestAnimationFrame = (cb: FrameRequestCallback) => {
@@ -77,8 +82,8 @@ describe("PlasmaEdge", () => {
                 sourceY={0}
                 targetX={200}
                 targetY={120}
-                sourcePosition={"left" as any}
-                targetPosition={"right" as any}
+                sourcePosition={"left" as Position}
+                targetPosition={"right" as Position}
             />
         )
 
@@ -93,11 +98,13 @@ describe("PlasmaEdge", () => {
 
         // Cleanup and restore
         unmount()
-        ;(HTMLCanvasElement.prototype as any).getContext = origGetContext
+        ;(HTMLCanvasElement.prototype as unknown as {getContext?: typeof origGetContext}).getContext = origGetContext
         global.requestAnimationFrame = origRAF
         global.cancelAnimationFrame = origCAF
-        ;(SVGElement.prototype as any).getTotalLength = origGetTotalLength
-        ;(SVGElement.prototype as any).getPointAtLength = origGetPointAtLength
+        ;(SVGElement.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = origGetTotalLength
+        ;(
+            SVGElement.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}
+        ).getPointAtLength = origGetPointAtLength
         errSpy.mockRestore()
     })
 })

@@ -17,7 +17,7 @@ limitations under the License.
 import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {act} from "react-dom/test-utils"
-import type {Edge, Node} from "reactflow"
+import type {Edge, Node as RFNode} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleOverlay} from "../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay"
@@ -34,21 +34,27 @@ describe("ThoughtBubbleOverlay", () => {
     let _origRAF: typeof global.requestAnimationFrame | undefined
     let _origCAF: typeof global.cancelAnimationFrame | undefined
 
+    // Helper-typed view of global to avoid `any` usages in tests
+    const globalWithRAF = global as unknown as {
+        requestAnimationFrame?: typeof global.requestAnimationFrame
+        cancelAnimationFrame?: typeof global.cancelAnimationFrame
+    }
+
     beforeAll(() => {
-        if (typeof (global as any).requestAnimationFrame === "undefined") {
+        if (globalWithRAF.requestAnimationFrame === undefined) {
             _polyfilledRAF = true
-            _origRAF = (global as any).requestAnimationFrame
-            _origCAF = (global as any).cancelAnimationFrame
-            ;(global as any).requestAnimationFrame = (cb: FrameRequestCallback) =>
+            _origRAF = globalWithRAF.requestAnimationFrame
+            _origCAF = globalWithRAF.cancelAnimationFrame
+            globalWithRAF.requestAnimationFrame = (cb: FrameRequestCallback) =>
                 setTimeout(() => cb(Date.now()), 0) as unknown as number
-            ;(global as any).cancelAnimationFrame = (id: number) => clearTimeout(id)
+            globalWithRAF.cancelAnimationFrame = (id: number) => clearTimeout(id)
         }
     })
 
     afterAll(() => {
         if (_polyfilledRAF) {
-            ;(global as any).requestAnimationFrame = _origRAF
-            ;(global as any).cancelAnimationFrame = _origCAF
+            globalWithRAF.requestAnimationFrame = _origRAF
+            globalWithRAF.cancelAnimationFrame = _origCAF
         }
     })
 
@@ -130,7 +136,7 @@ describe("ThoughtBubbleOverlay", () => {
                 position: {x: 0, y: 0},
                 type: "agentNode",
             },
-        ] as unknown as Node[]
+        ] as unknown as RFNode[]
 
         const edge = {
             id: "edge-broken-provider",
@@ -181,15 +187,11 @@ describe("ThoughtBubbleOverlay", () => {
             type: "thoughtBubbleEdge",
         } as Edge
 
-        const originalQSA = document.querySelectorAll
-        // Make querySelectorAll throw to exercise the catch path
-        // Only throw for the specific selector pattern used in calculateLineCoordinates
-        // but simplest approach is to throw for any call and restore afterwards
-        // The component will continue and should not crash
-        // @ts-ignore - assign to readonly in test context
-        document.querySelectorAll = (() => {
+        // Make querySelectorAll throw to exercise the catch path. Use jest.spyOn so
+        // we don't need to assign to the readonly property directly.
+        const qsaSpy = jest.spyOn(document, "querySelectorAll").mockImplementation((() => {
             throw new Error("qsa fail")
-        }) as any
+        }) as unknown as (sel: string) => NodeListOf<Element>)
 
         expect(() =>
             render(
@@ -202,8 +204,7 @@ describe("ThoughtBubbleOverlay", () => {
         ).not.toThrow()
 
         // Restore
-        // @ts-ignore
-        document.querySelectorAll = originalQSA
+        qsaSpy.mockRestore()
     })
 
     it("Should ignore provider conversations that use plain arrays for agents (no .has)", async () => {
@@ -226,7 +227,7 @@ describe("ThoughtBubbleOverlay", () => {
                 position: {x: 100, y: 100},
                 type: "agentNode",
             },
-        ] as unknown as Node[]
+        ] as unknown as RFNode[]
 
         const edge = {
             id: "edge-array-agents",
@@ -322,7 +323,8 @@ describe("ThoughtBubbleOverlay", () => {
 
         expect(container.textContent).toContain("GetById")
         const lines = container.querySelectorAll("svg line")
-        if (lines.length > 0) expect(lines.length).toBeGreaterThanOrEqual(1)
+        // Accept 0..n lines depending on JSDOM environment — assert non-negative
+        expect(lines.length).toBeGreaterThanOrEqual(0)
 
         agentEl.remove()
         jest.useRealTimers()
@@ -1401,7 +1403,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         const {container: c2, rerender: r2} = render(
             <ThoughtBubbleOverlay
-                nodes={nodesWithProvider as unknown as Node[]}
+                nodes={nodesWithProvider as unknown as RFNode[]}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
             />
@@ -1410,7 +1412,7 @@ describe("ThoughtBubbleOverlay", () => {
         await act(async () => jest.advanceTimersByTime(200))
         r2(
             <ThoughtBubbleOverlay
-                nodes={nodesWithProvider as unknown as Node[]}
+                nodes={nodesWithProvider as unknown as RFNode[]}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
             />
@@ -1612,7 +1614,7 @@ describe("ThoughtBubbleOverlay", () => {
         expect(() =>
             render(
                 <ThoughtBubbleOverlay
-                    nodes={nodesWithThrowingProvider as unknown as Node[]}
+                    nodes={nodesWithThrowingProvider as unknown as RFNode[]}
                     edges={edges}
                     showThoughtBubbles={true}
                 />
@@ -1869,7 +1871,7 @@ describe("ThoughtBubbleOverlay", () => {
             },
             position: {x: 0, y: 0},
             type: "agentNode",
-        } as unknown as Node
+        } as unknown as RFNode
 
         const edge = {
             id: "edge-2",
@@ -2211,7 +2213,7 @@ describe("ThoughtBubbleOverlay", () => {
         document.body.append(agentEl)
 
         // Suppress expected React warnings about duplicate keys for this test
-        const consoleErrSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+        const consoleErrSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
 
         const {container, rerender} = render(
             <ThoughtBubbleOverlay
@@ -2348,13 +2350,14 @@ describe("ThoughtBubbleOverlay", () => {
 
         expect(container.textContent).toContain("Single agent string")
         const lines = container.querySelectorAll("svg line")
-        if (lines.length > 0) expect(lines.length).toBeGreaterThanOrEqual(1)
+        // Accept 0..n lines depending on JSDOM environment — assert non-negative
+        expect(lines.length).toBeGreaterThanOrEqual(0)
 
         agentEl.remove()
         jest.useRealTimers()
     })
 
-    it("Should remove bubble after exit animation timeout when edges are removed", async () => {
+    it("Should remove bubble after exit animation timeout when edges are removed (alternate)", async () => {
         jest.useFakeTimers()
 
         const edge = createMockEdge("edge-exit-remove", "node1", "node2", "Exit remove")
@@ -2384,7 +2387,7 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useRealTimers()
     })
 
-    it("Should render nothing when showThoughtBubbles is false", () => {
+    it("Should render nothing when showThoughtBubbles is false (secondary)", () => {
         const edge = createMockEdge("edge-hidden", "node1", "node2", "Hidden")
 
         const {container} = render(
@@ -2406,8 +2409,10 @@ describe("ThoughtBubbleOverlay", () => {
         agentEl.dataset["id"] = "node2"
         agentEl.className = "react-flow__node"
         // Return undefined to simulate missing rect
-        // @ts-ignore
-        agentEl.getBoundingClientRect = () => undefined
+        Object.defineProperty(agentEl, "getBoundingClientRect", {
+            configurable: true,
+            value: () => undefined as unknown as DOMRect,
+        })
         document.body.append(agentEl)
 
         const {container} = render(
