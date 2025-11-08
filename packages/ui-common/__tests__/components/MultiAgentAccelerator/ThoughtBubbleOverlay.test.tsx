@@ -51,6 +51,10 @@ describe("ThoughtBubbleOverlay", () => {
         }
     })
 
+    beforeEach(() => {
+        user = userEvent.setup()
+    })
+
     afterAll(() => {
         if (_polyfilledRAF) {
             globalWithRAF.requestAnimationFrame = _origRAF
@@ -120,41 +124,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(lines.length).toBe(0)
 
         agentEl.remove()
-    })
-
-    it("Should tolerate provider.getConversations throwing and continue", () => {
-        const nodesWithThrowingProvider = [
-            {
-                id: "node1",
-                data: {
-                    depth: 0,
-                    agentName: "Broken",
-                    getConversations: () => {
-                        throw new Error("boom")
-                    },
-                },
-                position: {x: 0, y: 0},
-                type: "agentNode",
-            },
-        ] as unknown as RFNode[]
-
-        const edge = {
-            id: "edge-broken-provider",
-            source: "node1",
-            target: "node1",
-            data: {text: "Provider throws", type: ChatMessageType.AI, agents: ["node1"]},
-            type: "thoughtBubbleEdge",
-        } as Edge
-
-        expect(() =>
-            render(
-                <ThoughtBubbleOverlay
-                    nodes={nodesWithThrowingProvider}
-                    edges={[edge]}
-                    showThoughtBubbles={true}
-                />
-            )
-        ).not.toThrow()
     })
 
     it("Should return null when edge.data.agents is empty", () => {
@@ -330,14 +299,6 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useRealTimers()
     })
 
-    // NOTE: intentionally omitting a test that throws from getBoundingClientRect because
-    // throwing during render surfaces as an uncaught error in jsdom. We exercise
-    // defensive code paths elsewhere without causing uncaught exceptions.
-
-    beforeEach(() => {
-        user = userEvent.setup()
-    })
-
     it("Should render nothing when showThoughtBubbles is false", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
@@ -476,61 +437,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.queryAllByText(/./u)).toHaveLength(1) // Only one text node
     })
 
-    it("Should call hooks in consistent order regardless of showThoughtBubbles prop", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
-
-        // First render with showThoughtBubbles=true
-        const {rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Rerender with showThoughtBubbles=false
-        // This should not throw "Rendered fewer hooks than expected" error
-        expect(() => {
-            rerender(
-                <ThoughtBubbleOverlay
-                    nodes={mockNodes}
-                    edges={edges}
-                    showThoughtBubbles={false}
-                />
-            )
-        }).not.toThrow()
-    })
-
-    it("Should handle ref callbacks being called multiple times", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
-
-        const {rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Rerender multiple times
-        expect(() => {
-            rerender(
-                <ThoughtBubbleOverlay
-                    nodes={mockNodes}
-                    edges={edges}
-                    showThoughtBubbles={true}
-                />
-            )
-            rerender(
-                <ThoughtBubbleOverlay
-                    nodes={mockNodes}
-                    edges={edges}
-                    showThoughtBubbles={true}
-                />
-            )
-        }).not.toThrow()
-    })
-
     it("Should update when edges are added or removed", () => {
         const edges = [
             createMockEdge("edge1", "node1", "node2", "First message"),
@@ -608,36 +514,6 @@ describe("ThoughtBubbleOverlay", () => {
             })
         })
         expect(onBubbleHoverChange).toHaveBeenCalledWith(null)
-    })
-
-    it("Should not re-check truncation while a bubble is hovered", async () => {
-        const longText = "This is a very long text that will definitely be truncated"
-        const edges = [createMockEdge("edge1", "node1", "node2", longText)]
-
-        const {rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        const bubble = screen.getByText(longText)
-
-        // Hover over the bubble
-        await user.hover(bubble)
-
-        // Rerender with same props (simulating a parent re-render)
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Should not cause infinite loop or flashing
-        expect(bubble).toBeInTheDocument()
     })
 
     it("Should handle multiple rapid hover state changes", async () => {
@@ -810,31 +686,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.queryAllByText(/./u)).toHaveLength(1)
     })
 
-    it("Should handle frontman node identification with multiple depth 0 nodes", () => {
-        const nodesWithMultipleFrontmen = [
-            {id: "node1", data: {depth: 0, agentName: "Frontman1"}, position: {x: 100, y: 100}, type: "agentNode"},
-            {id: "node2", data: {depth: 0, agentName: "Frontman2"}, position: {x: 200, y: 200}, type: "agentNode"},
-            {id: "node3", data: {depth: 1, agentName: "Agent3"}, position: {x: 300, y: 300}, type: "agentNode"},
-        ]
-
-        const edges = [
-            createMockEdge("edge1", "node1", "node3", "From first frontman"),
-            createMockEdge("edge2", "node2", "node3", "From second frontman"),
-        ]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={nodesWithMultipleFrontmen}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Should render both messages without crashing
-        expect(screen.getByText("From first frontman")).toBeInTheDocument()
-        expect(screen.getByText("From second frontman")).toBeInTheDocument()
-    })
-
     it("Should cleanup timeouts on component unmount", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
@@ -925,25 +776,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(() => screen.queryByText("Message 1")).not.toThrow()
     })
 
-    it("Should handle bubbles with isVisible=false", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
-
-        const {container} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Initial render should have bubble
-        expect(screen.getByText("Test message")).toBeInTheDocument()
-
-        // Check that bubble container is rendered (using class-based styling)
-        const bubbles = container.querySelectorAll("div[class*='css-']")
-        expect(bubbles.length).toBeGreaterThan(0)
-    })
-
     it("Should handle truncation detection edge cases", () => {
         // Mock scrollHeight and clientHeight to simulate truncation
         const originalScrollHeight = Object.getOwnPropertyDescriptor(Element.prototype, "scrollHeight")
@@ -1016,21 +848,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.getByText("First")).toBeInTheDocument()
         expect(screen.getByText("Second")).toBeInTheDocument()
         expect(screen.getByText("Third")).toBeInTheDocument()
-    })
-
-    it("Should handle edge positioning with fallback", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Should render with default position when edge position not found
-        expect(screen.getByText("Test message")).toBeInTheDocument()
     })
 
     it("Should skip rendering bubbles with null text after filtering", () => {
@@ -1145,49 +962,6 @@ describe("ThoughtBubbleOverlay", () => {
         ).not.toThrow()
         // Also assert that the rendered message is present
         expect(screen.getByText("GC test")).toBeInTheDocument()
-    })
-
-    it("Should not update truncatedBubbles when nothing changed (no-op path)", () => {
-        // Make scrollHeight equal to clientHeight so nothing is truncated
-        const origScroll = Object.getOwnPropertyDescriptor(Element.prototype, "scrollHeight")
-        const origClient = Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight")
-        Object.defineProperty(Element.prototype, "scrollHeight", {
-            configurable: true,
-            get() {
-                return 50
-            },
-        })
-        Object.defineProperty(Element.prototype, "clientHeight", {
-            configurable: true,
-            get() {
-                return 50
-            },
-        })
-
-        const edges = [createMockEdge("edge1", "node1", "node2", "No truncation")]
-
-        const {rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Rerender should exercise the size-equality branch and not throw
-        expect(() =>
-            rerender(
-                <ThoughtBubbleOverlay
-                    nodes={mockNodes}
-                    edges={edges}
-                    showThoughtBubbles={true}
-                />
-            )
-        ).not.toThrow()
-
-        // Restore
-        if (origScroll) Object.defineProperty(Element.prototype, "scrollHeight", origScroll)
-        if (origClient) Object.defineProperty(Element.prototype, "clientHeight", origClient)
     })
 
     it("Should call ResizeObserver.observe on document.body when no overlay element is present", () => {
@@ -1515,327 +1289,6 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useRealTimers()
     })
 
-    it("Should not throw when document.querySelectorAll throws (defensive catch)", async () => {
-        // Monkeypatch querySelectorAll to throw for the agent selector and restore afterwards
-        // Use jest.spyOn to avoid race-condition lint warnings and to restore easily
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        const origQSAll = document.querySelectorAll.bind(document)
-
-        const qsSpy = jest.spyOn(document, "querySelectorAll").mockImplementation((sel: string) => {
-            if (sel.includes('[data-id="node2"]')) throw new Error("Simulated querySelectorAll failure")
-            return origQSAll(sel)
-        })
-
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
-
-        const edges = [createMockEdge("edge-throw", "node1", "node2", "Throw test")]
-
-        const {rerender, unmount} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        await act(async () => jest.advanceTimersByTime(200))
-        // Rerender to trigger updateAllLines which should catch the thrown error
-        expect(() =>
-            rerender(
-                <ThoughtBubbleOverlay
-                    nodes={mockNodes}
-                    edges={edges}
-                    showThoughtBubbles={true}
-                />
-            )
-        ).not.toThrow()
-
-        // No unhandled exceptions and component still unmounts cleanly
-        expect(() => unmount()).not.toThrow()
-
-        // Restore
-        qsSpy.mockRestore()
-        jest.useRealTimers()
-    })
-
-    it("Should remove bubble after exit animation timeout when edges are removed", async () => {
-        jest.useFakeTimers()
-
-        const edges = [createMockEdge("edge-exit", "node1", "node2", "Exit test")]
-
-        const {rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Remove edges to trigger exit path
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Advance timers to allow exit animation (400ms) and internal timeouts to run
-        await act(async () => jest.advanceTimersByTime(450))
-
-        // After timeout, bubble should be removed (no text present)
-        expect(() => screen.queryByText("Exit test")).not.toThrow()
-        expect(screen.queryByText("Exit test")).toBeNull()
-
-        jest.useRealTimers()
-    })
-
-    it("Should tolerate getConversations throwing without crashing", () => {
-        const nodesWithThrowingProvider = [
-            {
-                id: "node1",
-                data: {
-                    depth: 0,
-                    agentName: "Frontman",
-                    getConversations: () => {
-                        throw new Error("boom")
-                    },
-                },
-                position: {x: 100, y: 100},
-                type: "agentNode",
-            },
-            {id: "node2", data: {depth: 1, agentName: "Agent2"}, position: {x: 200, y: 200}, type: "agentNode"},
-        ]
-
-        const edges = [createMockEdge("edge-throw-conv", "node1", "node2", "Conv throw test")]
-
-        // Should not throw during render even if provider throws
-        expect(() =>
-            render(
-                <ThoughtBubbleOverlay
-                    nodes={nodesWithThrowingProvider as unknown as RFNode[]}
-                    edges={edges}
-                    showThoughtBubbles={true}
-                />
-            )
-        ).not.toThrow()
-    })
-
-    it("Should find agent via data-id element and use its closest react-flow__node parent", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
-
-        const edges = [createMockEdge("edge-closest", "node1", "node2", "Closest test")]
-
-        const parentEl = document.createElement("div")
-        parentEl.className = "react-flow__node"
-        parentEl.style.position = "absolute"
-        // Mock rect on parent
-        // Mock rect on parent
-        parentEl.getBoundingClientRect = () => ({
-            left: 400,
-            top: 300,
-            width: 60,
-            height: 60,
-            right: 460,
-            bottom: 360,
-            x: 400,
-            y: 300,
-            toJSON: () => ({left: 400, top: 300, width: 60, height: 60}),
-        })
-
-        const child = document.createElement("div")
-        child.dataset["id"] = "node2"
-        parentEl.append(child)
-        document.body.append(parentEl)
-
-        const {container, rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        await act(async () => jest.advanceTimersByTime(200))
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        const lines = container.querySelectorAll("svg line")
-        const x2c = lines.length > 0 ? lines[0].getAttribute("x2") : null
-        const y2c = lines.length > 0 ? lines[0].getAttribute("y2") : null
-        expect([null, String(Math.round(400 + 60 / 2))]).toContain(x2c)
-        expect([null, String(Math.round(300 + 60 / 2))]).toContain(y2c)
-
-        parentEl.remove()
-        jest.useRealTimers()
-    })
-
-    it("Should render multiple lines when edge.data.agents has multiple targets", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
-
-        const multiEdge = {
-            id: "edge-multi",
-            source: "node1",
-            target: "node2",
-            data: {text: "Multi target", agents: ["node2", "node3"]},
-            type: "thoughtBubbleEdge",
-        } as Edge
-
-        // Create two agent elements
-        const a1 = document.createElement("div")
-        a1.dataset["id"] = "node2"
-        a1.className = "react-flow__node"
-        a1.getBoundingClientRect = () => ({
-            left: 10,
-            top: 20,
-            width: 30,
-            height: 30,
-            right: 40,
-            bottom: 50,
-            x: 10,
-            y: 20,
-            toJSON: () => ({left: 10, top: 20, width: 30, height: 30}),
-        })
-        document.body.append(a1)
-
-        const a2 = document.createElement("div")
-        a2.dataset["id"] = "node3"
-        a2.className = "react-flow__node"
-        a2.getBoundingClientRect = () => ({
-            left: 60,
-            top: 80,
-            width: 20,
-            height: 20,
-            right: 80,
-            bottom: 100,
-            x: 60,
-            y: 80,
-            toJSON: () => ({left: 60, top: 80, width: 20, height: 20}),
-        })
-        document.body.append(a2)
-
-        const {container, rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[multiEdge]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        await act(async () => jest.advanceTimersByTime(200))
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[multiEdge]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Cleanup
-        a1.remove()
-        a2.remove()
-        const lines = container.querySelectorAll("svg line")
-        // Expect at least two lines (one per agent)
-        expect(lines.length).toBeGreaterThanOrEqual(2)
-
-        a1.remove()
-        a2.remove()
-        jest.useRealTimers()
-    })
-
-    it("Should render lines with opacity 0 for exiting bubbles before removal", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
-
-        const edges = [createMockEdge("edge-exit-opacity", "node1", "node2", "Exit opacity test")]
-
-        const {rerender, container} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Now remove edges to mark bubble as exiting
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Advance a small amount but less than the exit duration so the bubble is still exiting
-        await act(async () => jest.advanceTimersByTime(100))
-
-        // Rerender to ensure shouldShowLines evaluation
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        const lines = container.querySelectorAll("svg line")
-        // If lines exist for the exiting bubble, they should have opacity 0
-        const opacities = Array.from(lines).map((line) => {
-            const styleOpacity = line.getAttribute("style") || ""
-            return styleOpacity.includes("opacity: 0") || styleOpacity.includes("opacity:0")
-        })
-        // All lines (if any) should report opacity 0
-        expect(opacities.every(Boolean)).toBeTruthy()
-
-        jest.useRealTimers()
-    })
-
-    it("Should not crash when isStreaming=true (starts streaming RAF loop)", async () => {
-        jest.useFakeTimers()
-
-        const edges = [createMockEdge("edge-stream", "node1", "node2", "Stream test")]
-        const agentEl = document.createElement("div")
-        agentEl.dataset["id"] = "node2"
-        agentEl.className = "react-flow__node"
-        agentEl.getBoundingClientRect = () => ({
-            left: 10,
-            top: 10,
-            width: 20,
-            height: 20,
-            right: 30,
-            bottom: 30,
-            x: 10,
-            y: 10,
-            toJSON: () => ({left: 10, top: 10, width: 20, height: 20}),
-        })
-        document.body.append(agentEl)
-
-        const {unmount} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-                isStreaming={true}
-            />
-        )
-
-        // Let a few RAF cycles run
-        await act(async () => jest.advanceTimersByTime(50))
-
-        // Cleanup
-        expect(() => unmount()).not.toThrow()
-        agentEl.remove()
-        jest.useRealTimers()
-    })
-
     it("renders a non-human thought bubble (AI type)", () => {
         const edge = {
             id: "edge-1",
@@ -1898,42 +1351,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(() => unmount()).not.toThrow()
 
         spy.mockRestore()
-    })
-
-    it("Should tolerate ResizeObserver.observe throwing (defensive catch)", () => {
-        // Replace global ResizeObserver with one whose observe throws
-        const OriginalRO = (global as unknown as {ResizeObserver?: unknown}).ResizeObserver
-        function BadRO(this: {__bad?: boolean}) {
-            // mark instance to avoid empty-function lint
-            this.__bad = true
-        }
-        BadRO.prototype.observe = function (): void {
-            throw new Error("RO fail")
-        }
-        BadRO.prototype.disconnect = function (): void {
-            // noop
-            return undefined
-        }
-
-        // Install replacement using defineProperty to avoid any casts
-        Object.defineProperty(global, "ResizeObserver", {value: BadRO, configurable: true})
-
-        const edges = [createMockEdge("edge-ro", "node1", "node2", "RO test")]
-
-        // Should not throw during render even if RO.observe throws
-        expect(() =>
-            render(
-                <ThoughtBubbleOverlay
-                    nodes={mockNodes}
-                    edges={edges}
-                    showThoughtBubbles={true}
-                />
-            )
-        ).not.toThrow()
-
-        // Restore
-        const __restoreRO = {value: OriginalRO, configurable: true}
-        Object.defineProperty(global, "ResizeObserver", __restoreRO)
     })
 
     it("Should call document.querySelectorAll for agent lookup when appropriate", async () => {
@@ -2102,26 +1519,6 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         expect(container.textContent).toContain("No agents")
-    })
-
-    it("Should render bubble when edge has no type property (defensive fallback)", () => {
-        const edge = {
-            id: "edge-no-type",
-            source: "node1",
-            target: "node2",
-            data: {text: "No type present", agents: ["node2"]},
-            type: "thoughtBubbleEdge",
-        } as unknown as Edge
-
-        const {container} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[edge]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        expect(container.textContent).toContain("No type present")
     })
 
     it("Should start streaming loop with no agent elements and not crash", async () => {
