@@ -886,7 +886,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Check that line has the correct stroke attributes for connecting line (uses CSS variable)
         const line = lines[0]
         expect(line.getAttribute("stroke")).toBe("var(--thought-bubble-line-color)")
-        expect(line.getAttribute("stroke-width")).toBe("2")
+        expect(line.getAttribute("stroke-width")).toBe("3")
     })
 
     it("Should handle complex bubble state scenarios", () => {

@@ -626,7 +626,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                         x2={coords.x2}
                                         y2={coords.y2}
                                         stroke="var(--thought-bubble-line-color)"
-                                        strokeWidth="2"
+                                        strokeWidth="3"
                                         strokeDasharray="3,3"
                                         // Compute transition pieces separately to avoid long inline strings
                                         style={{

@@ -82,7 +82,7 @@ limitations under the License.
     --bs-code-color: var(--bs-red);
     --bs-highlight-bg: var(--bs-white);
     --bs-button-bg: var(--bs-accent3-medium);
-    --thought-bubble-line-color: rgba(255, 50, 50, 0.92);
+    --thought-bubble-line-color: var(--bs-green);
 }
 
 /* --------------- Font Face Rule --------------- */
