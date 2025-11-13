@@ -333,7 +333,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             }
 
             // Get actual bubble DOM position (fresh every time)
-            const bubbleElement = document.querySelector(`[data-bubble-id="${edge.id}"]`)
+            const bubbleElement = document.querySelector(`[data-bubble-id="${CSS.escape(edge.id)}"]`)
             let bubbleX: number
             let bubbleY: number
 
