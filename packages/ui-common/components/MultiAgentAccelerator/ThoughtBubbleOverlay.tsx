@@ -133,7 +133,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
     // truncatedBubbles: set of edge ids whose text overflows the collapsed box
     const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
-    // bubbleStates: track animation state of each bubble and when it entered (used to delay line rendering
+    // bubbleStates: track animation state of each bubble and when it's entered (used to delay line rendering
     // until the bubble's entrance animation delay has passed)
     const [bubbleStates, setBubbleStates] = useState<
         Map<string, {isVisible: boolean; isExiting: boolean; enteredAt: number}>
@@ -169,7 +169,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         [edges]
     )
 
-    // Find frontman node (depth === 0, same as isFrontman logic in AgentNode.tsx)
+    // Find frontman node (depth === 0, similar to isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
         if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return null
         return nodes.find((n) => n.data?.depth === 0)
@@ -390,25 +390,18 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             const results: {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] = []
 
             for (const agentId of agentIds) {
-                // Try multiple strategies to find the visual node element for the agent.
-                let agentElements: NodeListOf<Element> | null
+                // Only attempt the primary lookup used in practice: select the react-flow node
+                // by its data-id attribute. Keep a try/catch for environments where DOM APIs
+                // may throw (test environments).
+                let foundAgentEl: Element | null = null
                 try {
-                    agentElements = document.querySelectorAll(`[data-id="${agentId}"].react-flow__node`)
-                } catch {
-                    agentElements = null
-                }
-
-                let foundAgentEl: Element | null
-
-                if (agentElements?.[0]) {
-                    foundAgentEl = agentElements[0]
-                } else {
-                    const byAttr = document.querySelector(`[data-id="${agentId}"]`)
-                    if (byAttr) {
-                        foundAgentEl = byAttr?.closest?.(".react-flow__node") ?? byAttr
-                    } else {
-                        foundAgentEl = document.getElementById(agentId)
+                    const agentElements = document.querySelectorAll(`[data-id="${agentId}"].react-flow__node`)
+                    if (agentElements?.[0]) {
+                        foundAgentEl = agentElements[0]
                     }
+                } catch {
+                    // Ignore DOM errors in some test environments and leave foundAgentEl null
+                    foundAgentEl = null
                 }
 
                 let agentX = 0
