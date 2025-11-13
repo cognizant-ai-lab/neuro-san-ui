@@ -48,9 +48,28 @@ describe("ThoughtBubbleOverlay", () => {
             _polyfilledRAF = true
             _origRAF = globalWithRAF.requestAnimationFrame
             _origCAF = globalWithRAF.cancelAnimationFrame
-            globalWithRAF.requestAnimationFrame = (cb: FrameRequestCallback) =>
-                setTimeout(() => cb(Date.now()), 0) as unknown as number
-            globalWithRAF.cancelAnimationFrame = (id: number) => clearTimeout(id)
+
+            // Polyfill using a counter and a map for timeouts so we don't rely on
+            // casting `setTimeout` to `number` (which is incorrect in Node).
+            let _rafCounter = 0
+            const _rafTimeouts = new Map<number, ReturnType<typeof setTimeout>>()
+            globalWithRAF.requestAnimationFrame = (cb: FrameRequestCallback) => {
+                _rafCounter += 1
+                const id = _rafCounter
+                const timeout = setTimeout(() => {
+                    _rafTimeouts.delete(id)
+                    cb(Date.now())
+                }, 0)
+                _rafTimeouts.set(id, timeout)
+                return id
+            }
+            globalWithRAF.cancelAnimationFrame = (id: number) => {
+                const t = _rafTimeouts.get(id)
+                if (t !== undefined) {
+                    clearTimeout(t)
+                    _rafTimeouts.delete(id)
+                }
+            }
         }
     })
 
