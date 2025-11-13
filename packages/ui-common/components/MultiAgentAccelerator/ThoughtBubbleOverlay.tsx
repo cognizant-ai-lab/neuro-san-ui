@@ -392,7 +392,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             return results
         },
-        [nodes]
+        [activeAgentIds]
     )
 
     // Get all bubbles to render (including exiting ones)
