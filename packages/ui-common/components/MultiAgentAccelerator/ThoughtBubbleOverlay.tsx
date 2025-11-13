@@ -120,8 +120,6 @@ const TruncatedText = styled("div")<{isHovered: boolean; isTruncated: boolean}>(
 
 // #endregion: Styled Components
 
-// Note: Removed calculateBubblePosition - bubbles now use simple right-side positioning
-
 export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     nodes,
     edges,
