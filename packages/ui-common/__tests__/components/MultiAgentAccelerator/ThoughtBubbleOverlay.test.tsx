@@ -946,30 +946,6 @@ describe("ThoughtBubbleOverlay", () => {
         Object.defineProperty(global, "ResizeObserver", {value: OriginalRO, configurable: true})
     })
 
-    it("Should schedule visibility timeouts for staggered bubbles", () => {
-        jest.useFakeTimers()
-        const spyTimeout = jest.spyOn(global, "setTimeout")
-
-        const edges = [createMockEdge("e1", "node1", "node2", "A"), createMockEdge("e2", "node1", "node2", "B")]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Advance timers to let effects run scheduling logic
-        act(() => jest.advanceTimersByTime(10))
-
-        // We expect at least one timeout to have been scheduled for staggered animation
-        expect(spyTimeout).toHaveBeenCalled()
-
-        spyTimeout.mockRestore()
-        jest.useRealTimers()
-    })
-
     it("Should handle undefined edge in renderableBubbles", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 

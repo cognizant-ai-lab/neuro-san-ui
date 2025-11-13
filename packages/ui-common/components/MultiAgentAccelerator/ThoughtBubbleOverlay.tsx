@@ -148,11 +148,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const lineRefs = useRef<Map<string, SVGLineElement>>(new Map())
     // Ref to the overlay container so we can observe layout changes more precisely
     const overlayRef = useRef<HTMLDivElement | null>(null)
-    // Timeouts to schedule when lines should become visible (keyed by edge id)
-    const lineVisibilityTimeouts = useRef<Map<string, number>>(new Map())
-    // Small rerender tick used to force re-render when a scheduled line-visibility timeout fires
-    /* eslint-disable-next-line react/hook-use-state, @typescript-eslint/no-unused-vars */
-    const [_rerenderTick, setRerenderTick] = useState(0)
     // rAF ref for scheduling post-paint updates
     const rafRef = useRef<number | null>(null)
     const mountedRef = useRef(true)
@@ -505,40 +500,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             stopStreamingLoop()
         }
     }, [updateAllLines, isStreaming])
-
-    // Schedule re-renders so lines become visible after each bubble's entrance animation delay.
-    // We do this here so the SVG lines won't be rendered until the bubble begins its entrance animation.
-    useEffect(() => {
-        const timeouts = lineVisibilityTimeouts.current
-
-        // Clear any existing timeouts
-        timeouts.forEach((t) => clearTimeout(t))
-        timeouts.clear()
-
-        const now = Date.now()
-        renderableBubbles.forEach((edge, index) => {
-            const bubbleState = bubbleStates.get(edge.id)
-            if (!bubbleState || bubbleState.isExiting) return
-
-            const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
-            const elapsed = now - (bubbleState?.enteredAt ?? now)
-            const remaining = animationDelay - elapsed
-
-            if (remaining > 0) {
-                const timeout = window.setTimeout(() => {
-                    // Force a re-render when the bubble's delay elapses so lines can be shown
-                    setRerenderTick((n) => n + 1)
-                }, remaining)
-
-                timeouts.set(edge.id, timeout)
-            }
-        })
-
-        return () => {
-            timeouts.forEach((t) => clearTimeout(t))
-            timeouts.clear()
-        }
-    }, [bubbleStates, renderableBubbles])
 
     // Don't render anything if thought bubbles are disabled
     // This check is placed after all hooks so hook ordering stays consistent across renders.

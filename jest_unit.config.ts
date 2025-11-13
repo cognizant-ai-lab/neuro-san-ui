@@ -27,10 +27,10 @@ const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
     coverageThreshold: {
         global: {
-            statements: -78,
-            branches: -126,
-            functions: -22,
-            lines: -59,
+            statements: -75,
+            branches: -125,
+            functions: -19,
+            lines: -58,
         },
     },
 }
