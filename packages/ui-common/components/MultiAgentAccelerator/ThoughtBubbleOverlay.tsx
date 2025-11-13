@@ -27,7 +27,10 @@ interface ThoughtBubbleProps {
 
 // #region: Constants
 
+const BUBBLE_DISTANCE_FROM_RIGHT_EDGE = 20 // Fixed distance from right edge
 const BUBBLE_HEIGHT = 78
+const BUBBLE_HEIGHT_PLUS_SPACING = BUBBLE_HEIGHT + 10
+const BUBBLE_STACK_OFFSET_TOP = 70
 const BUBBLE_WIDTH = 260
 
 const LAYOUT_BUBBLES_ANIMATION_DELAY_MS = 120 // Delay between each bubble's animation start
@@ -69,8 +72,8 @@ const ThoughtBubble = styled("div", {
 
         // Positioning - restore original right-side layout
         position: "absolute",
-        right: 20, // Fixed distance from right edge
-        top: 70 + bubbleIndex * (BUBBLE_HEIGHT + 10), // Stack vertically with spacing (50px offset from top)
+        right: BUBBLE_DISTANCE_FROM_RIGHT_EDGE,
+        top: BUBBLE_STACK_OFFSET_TOP + bubbleIndex * BUBBLE_HEIGHT_PLUS_SPACING, // Stack vertically with spacing
         transform: "none",
 
         // Dimensions
@@ -362,8 +365,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 bubbleY = Math.round(bubbleRect.top + bubbleRect.height / 2)
             } else {
                 // Fallback: calculate approximate viewport position
-                bubbleX = window.innerWidth - 20 - BUBBLE_WIDTH
-                bubbleY = 70 + bubbleIndex * (BUBBLE_HEIGHT + 10) + BUBBLE_HEIGHT / 2
+                bubbleX = window.innerWidth - BUBBLE_DISTANCE_FROM_RIGHT_EDGE - BUBBLE_WIDTH
+                bubbleY = BUBBLE_STACK_OFFSET_TOP + bubbleIndex * BUBBLE_HEIGHT_PLUS_SPACING + BUBBLE_HEIGHT / 2
             }
 
             // Determine which agents to point to. If the edge supplies an `agents` array in
@@ -435,9 +438,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
     // Get all bubbles to render (including exiting ones)
     const allBubbleIds = Array.from(bubbleStates.keys())
-    const renderableBubbles = allBubbleIds
-        .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
-        .filter((edge): edge is Edge => edge !== undefined)
+    // Memoize the resolved edges so updateAllLines (and effects depending on it)
+    // doesn't get recreated on every render unnecessarily.
+    const renderableBubbles = useMemo(
+        () =>
+            allBubbleIds
+                .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
+                .filter((edge): edge is Edge => edge !== undefined),
+        [allBubbleIds, sortedEdges, edges]
+    )
 
     // Update all SVG lines imperatively after paint. This reads DOM (getBoundingClientRect)
     // and writes attributes on existing <line> elements stored in `lineRefs`.

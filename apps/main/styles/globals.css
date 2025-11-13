@@ -477,29 +477,3 @@ button[id*="prescriptoredge"] {
         transform: translateY(-50%) translateY(25px) scale(0.9);
     }
 }
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    60% {
-        opacity: 0.8;
-        transform: scale(1.02);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes fadeOut {
-    0% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-}
