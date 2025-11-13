@@ -16,7 +16,7 @@ limitations under the License.
 
 import {render} from "@testing-library/react"
 import {act} from "react-dom/test-utils"
-import type {Position} from "reactflow"
+import {Position} from "reactflow"
 
 import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 
@@ -82,8 +82,8 @@ describe("PlasmaEdge", () => {
                 sourceY={0}
                 targetX={200}
                 targetY={120}
-                sourcePosition={"left" as Position}
-                targetPosition={"right" as Position}
+                sourcePosition={Position.Left}
+                targetPosition={Position.Right}
             />
         )
 
