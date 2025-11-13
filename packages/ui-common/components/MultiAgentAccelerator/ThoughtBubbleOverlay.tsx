@@ -367,7 +367,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             for (const agentId of agentIds) {
                 // Find the agent element by its data-id attribute
-                const agentElements = document.querySelectorAll(`[data-id="${agentId}"].react-flow__node`)
+                const agentElements = document.querySelectorAll(`[data-id="${CSS.escape(agentId)}"].react-flow__node`)
                 const foundAgentEl = agentElements?.[0] || null
 
                 let agentX = 0
