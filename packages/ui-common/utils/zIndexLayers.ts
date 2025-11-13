@@ -18,7 +18,7 @@ limitations under the License.
 // github.com/mui/material-ui/blob/master/packages/mui-material/src/styles/zIndex.js
 // mui.com/material-ui/customization/z-index/
 
-import {Theme} from "@mui/material/styles"
+import {Theme} from "@mui/material"
 
 const DEFAULT_Z_INDEX = 500
 

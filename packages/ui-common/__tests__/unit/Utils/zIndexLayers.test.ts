@@ -1,7 +1,9 @@
+import {Theme} from "@mui/material"
+
 import {getZIndex} from "../../../utils/zIndexLayers"
 
 describe("zIndexLayers", () => {
-    const fakeTheme = {zIndex: {modal: 1300, drawer: 1200}} as unknown as import("@mui/material").Theme
+    const fakeTheme = {zIndex: {modal: 1300, drawer: 1200}} as unknown as Theme
 
     it("returns default z-index for unknown layer", () => {
         expect(getZIndex(0, fakeTheme)).toBe(500)
