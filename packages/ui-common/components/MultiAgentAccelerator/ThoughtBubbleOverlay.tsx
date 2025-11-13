@@ -247,41 +247,25 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     }, [thoughtBubbleEdges, frontmanNode])
 
     // Determine which agents are currently "active" using the same logic as AgentNode.
-    // An agent is active if any current conversation (from node.data.getConversations())
-    // includes that agent's id.
-    // Build the set of active agent ids. If no node provides a `getConversations` function
-    // (common in tests using simple mock nodes), we will not filter lines — preserving
-    // previous behavior and tests.
-    const {activeAgentIds, hasGetConversationsProvider} = useMemo(() => {
+    // An agent is active if any current conversation includes that agent's id.
+    const activeAgentIds = useMemo(() => {
         const set = new Set<string>()
-        let hasProvider = false
-        if (!nodes || !Array.isArray(nodes)) return {activeAgentIds: set, hasGetConversationsProvider: false}
+        if (!nodes || !Array.isArray(nodes)) return set
 
-        const processNode = (node: (typeof nodes)[number]) => {
+        for (const node of nodes) {
             const getConversations = node.data?.getConversations
-            if (typeof getConversations !== "function") return
-            hasProvider = true
-            const convs = getConversations()
-            if (!Array.isArray(convs)) return
-            for (const conv of convs) {
-                if (!conv?.agents || typeof conv.agents.has !== "function") {
-                    // not useful for this conv, continue to next
-                } else if (conv.agents.has(node.id)) {
-                    set.add(node.id)
-                    return
+            if (typeof getConversations === "function") {
+                const convs = getConversations()
+                if (Array.isArray(convs)) {
+                    const hasSelf = convs.some((conv) => Boolean(conv?.agents?.has?.(node.id)))
+                    if (hasSelf) {
+                        set.add(node.id)
+                    }
                 }
             }
         }
 
-        for (const node of nodes) {
-            try {
-                processNode(node)
-            } catch {
-                // Defensive: ignore node if getConversations throws
-            }
-        }
-
-        return {activeAgentIds: set, hasGetConversationsProvider: hasProvider}
+        return set
     }, [nodes])
 
     // Check truncation after render, but only when nothing is hovered
@@ -378,31 +362,18 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             if (agentIds.length === 0) return null
 
-            // Filter out any agents that are not currently active (we only draw lines to active agents)
-            // If no node provides a getConversations provider (test mocks), skip filtering to preserve
-            // previous behavior and tests.
-            if (hasGetConversationsProvider) {
-                agentIds = agentIds.filter((id) => activeAgentIds.has(id))
-                if (agentIds.length === 0) return null
-            }
+            // Filter out any agents that are not currently active (we only draw lines to active agents).
+            // Always apply filtering based on the activeAgentIds set.
+            agentIds = agentIds.filter((id) => activeAgentIds.has(id))
+            if (agentIds.length === 0) return null
 
             // For each agent id, find its visual element and calculate mid-point.
             const results: {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] = []
 
             for (const agentId of agentIds) {
-                // Only attempt the primary lookup used in practice: select the react-flow node
-                // by its data-id attribute. Keep a try/catch for environments where DOM APIs
-                // may throw (test environments).
-                let foundAgentEl: Element | null = null
-                try {
-                    const agentElements = document.querySelectorAll(`[data-id="${agentId}"].react-flow__node`)
-                    if (agentElements?.[0]) {
-                        foundAgentEl = agentElements[0]
-                    }
-                } catch {
-                    // Ignore DOM errors in some test environments and leave foundAgentEl null
-                    foundAgentEl = null
-                }
+                // Find the agent element by its data-id attribute
+                const agentElements = document.querySelectorAll(`[data-id="${agentId}"].react-flow__node`)
+                const foundAgentEl = agentElements?.[0] || null
 
                 let agentX = 0
                 let agentY = 0
@@ -575,7 +546,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
     return (
         <OverlayContainer>
-            {/* Single SVG container for ALL lines - positioned to match viewport */}
             <svg
                 style={{
                     position: "fixed",
@@ -588,7 +558,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                     opacity: 1,
                 }}
             >
-                {/* Dynamic lines - coordinates calculated fresh every render */}
                 {renderableBubbles.map((edge: Edge, index: number) => {
                     // Per-bubble staggered animation delay in milliseconds (for line animations)
                     const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
@@ -610,7 +579,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
                     return (
                         <g key={`line-group-${edge.id}`}>
-                            {/* Render one line per target agent */}
                             {coordsArray.map((coords) => {
                                 const lineKey = `${edge.id}-${coords.targetAgent}`
                                 return (
@@ -630,7 +598,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                         stroke="var(--thought-bubble-line-color)"
                                         strokeWidth="3"
                                         strokeDasharray="3,3"
-                                        // Compute transition pieces separately to avoid long inline strings
                                         style={{
                                             opacity: bubbleState.isExiting ? 0 : CONNECTING_LINE_OPACITY,
                                             transition: (() => {
@@ -657,8 +624,6 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 const isHovered = hoveredBubbleId === edge.id
                 const isTruncated = truncatedBubbles.has(edge.id)
                 const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false}
-
-                // Bubble positioning is handled by CSS, line coordinates handled by interval
 
                 return (
                     <Fragment key={edge.id}>
