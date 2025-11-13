@@ -143,7 +143,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // textRefs: mapping of edge id -> DOM node for measuring scrollHeight/clientHeight
     const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
     // animationTimeouts: track timeouts for bubble removal
-    const animationTimeouts = useRef<Map<string, number>>(new Map())
+    const animationTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
     // Refs for SVG lines to update without re-rendering
     const lineRefs = useRef<Map<string, SVGLineElement>>(new Map())
     // Ref to the overlay container so we can observe layout changes more precisely
