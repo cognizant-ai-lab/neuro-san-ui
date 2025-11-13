@@ -139,7 +139,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         Map<string, {isVisible: boolean; isExiting: boolean; enteredAt: number}>
     >(new Map())
     // hoverTimeoutRef: used to debounce clearing of hovered state on mouse leave
-    const hoverTimeoutRef = useRef<number | null>(null)
+    const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     // textRefs: mapping of edge id -> DOM node for measuring scrollHeight/clientHeight
     const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
     // animationTimeouts: track timeouts for bubble removal
