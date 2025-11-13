@@ -35,10 +35,13 @@ describe("ThoughtBubbleOverlay", () => {
     let _origCAF: typeof global.cancelAnimationFrame | undefined
 
     // Helper-typed view of global to avoid `any` usages in tests
-    const globalWithRAF = global as unknown as {
+    // Use a narrower type that extends the global object so we only assert
+    // the presence of the RAF/CAF properties we need.
+    type GlobalWithRAF = typeof globalThis & {
         requestAnimationFrame?: typeof global.requestAnimationFrame
         cancelAnimationFrame?: typeof global.cancelAnimationFrame
     }
+    const globalWithRAF = global as unknown as GlobalWithRAF
 
     beforeAll(() => {
         if (globalWithRAF.requestAnimationFrame === undefined) {
