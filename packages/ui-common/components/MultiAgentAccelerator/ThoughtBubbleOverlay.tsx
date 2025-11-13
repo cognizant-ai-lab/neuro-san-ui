@@ -149,7 +149,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Ref to the overlay container so we can observe layout changes more precisely
     const overlayRef = useRef<HTMLDivElement | null>(null)
     // rAF ref for scheduling post-paint updates
-    const rafRef = useRef<number | null>(null)
+    const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null)
     const mountedRef = useRef(true)
 
     // Filter edges with meaningful text (memoized to prevent infinite re-renders)
