@@ -17,7 +17,7 @@ function main() {
         exit 1
     fi
 
-    # Extract EXPOSEd port (default 3000 if none found)
+    # Read the port from the first EXPOSE instruction (default 3000 if none found)
     EXPOSED_PORT=$(grep -m1 '^EXPOSE ' "${DOCKERFILE}" | awk '{print $2}' || true)
     SERVICE_HTTP_PORT=${SERVICE_HTTP_PORT:-${EXPOSED_PORT:-3000}}
 
