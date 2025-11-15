@@ -1,38 +1,67 @@
-#!/bin/bash -e
+#!/bin/bash
 
-# Run the neuro-san-ui Docker image locally.
-# Usage:
-#   ./run.sh [extra docker run args]
+# Copyright © 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+#
+# END COPYRIGHT
 
-export SERVICE_TAG=${SERVICE_TAG:-neuro-san-ui}
-export SERVICE_VERSION=${SERVICE_VERSION:-0.0.1}
+# Script that runs the neuro-san-ui docker container locally
+# Usage: run.sh
+#
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DOCKERFILE="${REPO_ROOT}/apps/main/Dockerfile"
-
-function main() {
-    if [ ! -f "${DOCKERFILE}" ]; then
-        echo "Error: Dockerfile not found at ${DOCKERFILE}"
-        exit 1
+function check_directory() {
+    working_dir=$(pwd)
+    if [ "main" == "$(basename "${working_dir}")" ]
+    then
+        echo "We are in the neuro-san-ui/apps/main directory."
     fi
-
-    # Read the port from the first EXPOSE instruction (default 3000 if none found)
-    EXPOSED_PORT=$(grep -m1 '^EXPOSE ' "${DOCKERFILE}" | awk '{print $2}' || true)
-    SERVICE_HTTP_PORT=${SERVICE_HTTP_PORT:-${EXPOSED_PORT:-3000}}
-
-    IMAGE="${SERVICE_TAG}/${SERVICE_TAG}:${SERVICE_VERSION}"
-    CONTAINER_NAME="${SERVICE_TAG}-local"
-
-    echo "Running neuro-san-ui:"
-    echo "  IMAGE: ${IMAGE}"
-    echo "  PORT: ${SERVICE_HTTP_PORT}"
-
-    docker run --rm -it \
-        --name "${CONTAINER_NAME}" \
-        -p "${SERVICE_HTTP_PORT}:${SERVICE_HTTP_PORT}" \
-        "$@" \
-        "${IMAGE}"
 }
 
+function run() {
+
+    check_directory
+
+    CONTAINER_VERSION="0.0.1"
+    echo "Using CONTAINER_VERSION ${CONTAINER_VERSION}"
+    echo "Using args '$*'"
+
+    #
+    # Host networking only works on Linux. Get the OS we are running on
+    #
+    OS=$(uname)
+    echo "OS: ${OS}"
+
+    # Using a default network of 'host' is convenient when locally testing,
+    # but allow this to be changeable by env var.
+    network=${NETWORK:="host"}
+    echo "Network is ${network}"
+
+    SERVICE_NAME="neuro-san-ui"
+    # Assume the first port EXPOSE instruction in the Dockerfile is the service port
+    DOCKERFILE=$(find . -name Dockerfile | sort | head -1)
+    echo "DOCKERFILE is ${DOCKERFILE}"
+    SERVICE_HTTP_PORT=$(grep ^EXPOSE < "${DOCKERFILE}" | head -1 | awk '{ print $2 }')
+    echo "SERVICE_HTTP_PORT: ${SERVICE_HTTP_PORT}"
+
+    # Run the docker container in interactive mode
+    docker_cmd="docker run --rm -it \
+        --name=$SERVICE_NAME \
+        --network=$network \
+        -p $SERVICE_HTTP_PORT:$SERVICE_HTTP_PORT \
+            neuro-san-ui/neuro-san-ui:$CONTAINER_VERSION"
+
+    if [ "${OS}" == "Darwin" ];then
+        # Host networking does not work for non-Linux operating systems
+        # Remove it from the docker command
+        docker_cmd=${docker_cmd/--network=$network/}
+    fi
+
+    echo "${docker_cmd}"
+    $docker_cmd
+}
+
+function main() {
+    run "$@"
+}
+
+# Pass all command line args to function
 main "$@"
