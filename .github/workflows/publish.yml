@@ -93,7 +93,8 @@ jobs:
                   echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
 
             - name: Set ui-common version
-              run: yarn workspace @cognizant-ai-lab/ui-common version set ${{ steps.compute.outputs.version }}
+              working-directory: packages/ui-common
+              run: yarn version set ${{ steps.compute.outputs.version }}
 
             - name: Build ui-common library
               run: yarn build:lib
