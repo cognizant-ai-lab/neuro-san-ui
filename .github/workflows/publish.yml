@@ -22,10 +22,18 @@ on:
         types: [published]
     workflow_dispatch:
         inputs:
-            tag:
-                description: "Tag to publish (e.g., 'test-1', 'v1.3.2-rc1')"
-                required: true
-                type: string
+            dist_tag:
+                description: "npm dist-tag for manual publish"
+                type: choice
+                required: false
+                options:
+                    - prerelease
+                    - next
+                    - beta
+                    - rc
+                    - canary
+                    - dev
+                default: prerelease
 
 permissions:
     contents: read
@@ -62,31 +70,40 @@ jobs:
             - name: Generate OpenAPI types
               run: yarn generate
 
-            - name: Normalize version (remove 'v' prefix if present)
-              id: version
+            - name: Compute version and dist-tag
+              id: compute
               run: |
-                  # Get tag from either release event or manual input
                   if [ "${{ github.event_name }}" = "release" ]; then
+                    # Release: use release tag for version, "latest" for dist-tag
                     TAG="${{ github.event.release.tag_name }}"
+                    VERSION="${TAG#v}"
+                    DIST_TAG="latest"
+                    echo "Publishing release version: $VERSION with dist-tag: $DIST_TAG"
                   else
-                    TAG="${{ inputs.tag }}"
+                    # Manual: use git SHA for version, user-selected dist-tag
+                    SHORT_SHA="$(git rev-parse --short "$GITHUB_SHA")"
+                    # Read base version from ui-common/package.json
+                    BASE_VERSION=$(node -e "console.log(require('./packages/ui-common/package.json').version)")
+                    # Create unique pre-release version: <base>-pr.<sha>.<run>
+                    VERSION="${BASE_VERSION%%-*}-pr.${SHORT_SHA}.${{ github.run_number }}"
+                    DIST_TAG="${{ inputs.dist_tag || 'prerelease' }}"
+                    echo "Publishing manual version: $VERSION with dist-tag: $DIST_TAG"
                   fi
-                  # Remove 'v' prefix if present
-                  VERSION="${TAG#v}"
-                  echo "normalized_version=$VERSION" >> "$GITHUB_OUTPUT"
-                  echo "Publishing version: $VERSION (from tag: $TAG)"
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                  echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
 
-            - name: Set ui-common version to release tag
-              run: yarn workspace @cognizant-ai-lab/ui-common version set ${{ steps.version.outputs.normalized_version }}
+            - name: Set ui-common version
+              run: yarn workspace @cognizant-ai-lab/ui-common version set ${{ steps.compute.outputs.version }}
 
             - name: Build ui-common library
               run: yarn build:lib
 
             - name: Publish to GitHub Packages
               # Note: --tag sets the npm "dist-tag" (not the git tag or version number).
-              # Using "latest" means `npm install @cognizant-ai-lab/ui-common` will get this version.
-              # The actual package version (e.g., 1.3.1) is set in the previous step.
-              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag latest
+              # For releases: uses "latest" so `npm install @cognizant-ai-lab/ui-common` gets this version.
+              # For manual runs: uses selected dist-tag (e.g., "prerelease") to avoid affecting "latest".
+              # The actual package version (e.g., 1.3.1 or 1.2.4-pr.abc123.456) is set in the previous step.
+              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }}
               env:
                   YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
