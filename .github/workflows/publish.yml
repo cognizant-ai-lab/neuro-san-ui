@@ -93,12 +93,7 @@ jobs:
                   echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
 
             - name: Set ui-common version
-              working-directory: packages/ui-common
-              env:
-                  VERSION: ${{ steps.compute.outputs.version }}
-              run: |
-                  node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.version=process.env.VERSION; fs.writeFileSync('package.json', JSON.stringify(p,null,2)+'\n');"
-                  echo "Set version to $VERSION in package.json"
+              run: ./build_scripts/set_package_version.sh packages/ui-common/package.json ${{ steps.compute.outputs.version }}
 
             - name: Build ui-common library
               run: yarn build:lib
