@@ -93,8 +93,7 @@ jobs:
                   echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
 
             - name: Set ui-common version
-              working-directory: packages/ui-common
-              run: yarn version set ${{ steps.compute.outputs.version }}
+              run: ./build_scripts/set_package_version.sh packages/ui-common/package.json ${{ steps.compute.outputs.version }}
 
             - name: Build ui-common library
               run: yarn build:lib
