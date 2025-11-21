@@ -26,24 +26,25 @@ ARG NODEJS_VERSION=22
 
 FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 
 # Disable NextJS spyware
 ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 COPY .yarnrc.yml ./
-COPY packages/ui-common/generated ./generated
 COPY package.json ./
-COPY packages/ui-common/package.json ./packages/ui-common/package.json
-COPY apps/main/package.json ./apps/main/package.json
 COPY yarn.lock ./
+COPY tsconfig.json ./
+COPY packages/ui-common ./packages/ui-common
+COPY apps/main/package.json ./apps/main/package.json
 
-# Install yarn dependencies
+# Install all dependencies (including devDependencies) and build ui-common
 RUN --mount=type=cache,target=/root/.cache/yarn \
     corepack enable && \
     corepack install && \
-    yarn install --immutable
+    yarn install --immutable && \
+    yarn build:lib
 
 # Rebuild the source code only when needed
 FROM node:$NODEJS_VERSION-bookworm-slim AS builder
@@ -55,15 +56,23 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
-# From deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/yarn.lock ./
+# Install only production dependencies
+COPY .yarnrc.yml ./
+COPY package.json ./
+COPY packages/ui-common/package.json ./packages/ui-common/package.json
+COPY apps/main/package.json ./apps/main/package.json
+COPY yarn.lock ./
+
+# Copy the full ui-common package from deps (includes source + built dist)
+COPY --from=deps /app/packages/ui-common ./packages/ui-common
+
+RUN --mount=type=cache,target=/root/.cache/yarn \
+    corepack enable && \
+    corepack install && \
+    yarn install --immutable
 
 # Extra files from build context
 COPY tsconfig.json ./tsconfig.json
-COPY package.json ./package.json
-COPY .yarnrc.yml ./.yarnrc.yml
-COPY packages/ui-common ./packages/ui-common
 COPY apps/main ./apps/main
 
 # Extract build version
@@ -75,10 +84,7 @@ ARG NEXT_PUBLIC_ENABLE_AUTHENTICATION
 ENV NEXT_PUBLIC_ENABLE_AUTHENTICATION=${NEXT_PUBLIC_ENABLE_AUTHENTICATION}
 
 # Build the Next.js app
-RUN --mount=type=cache,target=/root/.cache/yarn \
-    corepack enable && \
-    corepack install && \
-    yarn build:app 
+RUN yarn build:app 
 
 
 # Production image, copy all the files and run next
