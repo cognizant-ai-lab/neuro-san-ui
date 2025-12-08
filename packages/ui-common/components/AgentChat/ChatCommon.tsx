@@ -23,7 +23,7 @@ import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
 import WrapTextIcon from "@mui/icons-material/WrapText"
-import {Box, Input, useColorScheme} from "@mui/material"
+import {Box, Chip, Input, useColorScheme} from "@mui/material"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
@@ -190,6 +190,9 @@ const MAX_AGENT_RETRIES = 3
 export type ChatCommonHandle = {
     handleStop: () => void
 }
+
+// Maximum number of sample queries to show
+const MAX_SAMPLE_QUERIES = 5
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -518,6 +521,48 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         </>
     )
 
+    /**
+     * Render sample queries as clickable chips. Agents may or may not have sample queries defined.
+     * @param sampleQueries The sample queries to render (from "connectivity" API)
+     * @returns A ReactNode representing the sample queries as clickable chips. If a user clicks a chip, it will
+     * send the query to the agent.
+     */
+    const renderSampleQueries = (sampleQueries: string[]) => {
+        return (
+            <Box
+                id="sample-queries-box"
+                sx={{marginTop: "2rem", marginBottom: "1rem"}}
+            >
+                {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => (
+                    <Tooltip
+                        id={`tooltip-${query}`}
+                        title={`Click to send query: "${query}"`}
+                        key={`tooltip-${query}`}
+                    >
+                        <Chip
+                            id={`sample-query-${query}`}
+                            key={query}
+                            label={query.length > 60 ? `${query.slice(0, 60)}...` : query}
+                            onClick={async () => {
+                                setChatInput(query)
+                                await handleSend(query)
+                            }}
+                            sx={{
+                                marginRight: "1rem",
+                                marginBottom: "1rem",
+                                backgroundColor: "var(--bs-accent1-medium)",
+                                "&:hover": {
+                                    backgroundColor: "var(--bs-accent1-dark)",
+                                    color: "var(--bs-white)",
+                                },
+                            }}
+                        />
+                    </Tooltip>
+                ))}
+            </Box>
+        )
+    }
+
     useEffect(() => {
         const newAgent = async () => {
             if (clearChatOnNewAgent) {
@@ -581,6 +626,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         ]}
                     />
                 )
+                updateOutput(renderSampleQueries((connectivity?.metadata?.["sample_queries"] as string[]) ?? []))
             } catch (e) {
                 sendNotification(
                     NotificationType.error,

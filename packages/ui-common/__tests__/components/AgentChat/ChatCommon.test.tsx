@@ -72,6 +72,8 @@ function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
 }
 
 describe("ChatCommon", () => {
+    const SAMPLE_QUERY_TEXT = "Sample query 1"
+
     let user: UserEvent
 
     const defaultProps = {
@@ -119,6 +121,7 @@ describe("ChatCommon", () => {
                     tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
                 },
             ],
+            metadata: {sample_queries: [SAMPLE_QUERY_TEXT, "Sample long query".repeat(5)]},
         })
         ;(useColorScheme as jest.Mock).mockReturnValue({
             mode: "light",
@@ -181,6 +184,37 @@ describe("ChatCommon", () => {
 
         // Should not be present since we are chatting with Math Guy, and we don't show agents connecting to themselves
         expect(mathGuyItem).not.toBeInTheDocument()
+    })
+
+    it("Should send sample queries correctly", async () => {
+        const mockSendFunction = jest.fn()
+        renderChatCommonComponent({onSend: mockSendFunction})
+        const sampleQueryButton = await screen.findByText(SAMPLE_QUERY_TEXT)
+        await user.click(sampleQueryButton)
+
+        expect(mockSendFunction).toHaveBeenCalledTimes(1)
+        expect(mockSendFunction).toHaveBeenCalledWith(SAMPLE_QUERY_TEXT)
+    })
+
+    it("Should handle missing sample queries gracefully", async () => {
+        ;(getConnectivity as jest.Mock).mockResolvedValue({
+            connectivity_info: [
+                {
+                    origin: TEST_AGENT_MUSIC_NERD,
+                    tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
+                },
+                {
+                    origin: TEST_AGENT_MATH_GUY,
+                    tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
+                },
+            ],
+        })
+        renderChatCommonComponent()
+
+        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+
+        // Should be no sample query chips rendered
+        expect(document.querySelectorAll(".MuiChip-root").length).toBe(0)
     })
 
     it("Should behave correctly when awaiting the LLM response", async () => {
