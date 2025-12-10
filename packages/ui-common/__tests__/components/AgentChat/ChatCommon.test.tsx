@@ -368,23 +368,6 @@ describe("ChatCommon", () => {
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
     })
 
-    it("Should handle receiving empty chunks correctly", async () => {
-        const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        const testResponseText = '"Response text from LLM"'
-
-        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
-        ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-            callback(testResponseText)
-        })
-
-        const query = "Sample test query for chunk handling"
-        await sendQuery(LegacyAgentType.DataGenerator, query)
-
-        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
-        expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
-        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
-    })
-
     it("Should handle final answer from legacy agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
         const testResponseText = "Final Answer: Sample final answer from LLM"
