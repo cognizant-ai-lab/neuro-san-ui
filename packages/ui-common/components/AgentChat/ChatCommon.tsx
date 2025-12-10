@@ -194,6 +194,9 @@ export type ChatCommonHandle = {
 // Maximum number of sample queries to show
 const MAX_SAMPLE_QUERIES = 5
 
+// Maximum length of query to show in sample query chips
+const QUERY_TRUNCATE_LENGTH = 80
+
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
@@ -446,9 +449,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                                         {repairedJson}
                                     </SyntaxHighlighter>
                                 ) : (
-                                    <ReactMarkdown key={hashString(logLine)}>
-                                        {logLine || "No further details"}
-                                    </ReactMarkdown>
+                                    <ReactMarkdown key={hashString(logLine)}>{logLine}</ReactMarkdown>
                                 )}
                             </div>
                         ),
@@ -528,7 +529,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
      * send the query to the agent.
      */
     const renderSampleQueries = (sampleQueries: string[]) => {
-        return (
+        return sampleQueries?.length > 0 ? (
             <Box
                 id="sample-queries-box"
                 sx={{marginTop: "2rem", marginBottom: "1rem"}}
@@ -542,9 +543,12 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         <Chip
                             id={`sample-query-${query}`}
                             key={query}
-                            label={query.length > 60 ? `${query.slice(0, 60)}...` : query}
+                            label={
+                                query.length > QUERY_TRUNCATE_LENGTH
+                                    ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
+                                    : query
+                            }
                             onClick={async () => {
-                                setChatInput(query)
                                 await handleSend(query)
                             }}
                             sx={{
@@ -560,7 +564,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     </Tooltip>
                 ))}
             </Box>
-        )
+        ) : null
     }
 
     useEffect(() => {

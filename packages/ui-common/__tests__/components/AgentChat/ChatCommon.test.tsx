@@ -71,6 +71,9 @@ function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
     }
 }
 
+// Generate a long query for testing truncation
+const LONG_QUERY_TEXT = "Long query".repeat(10)
+
 describe("ChatCommon", () => {
     const SAMPLE_QUERY_TEXT = "Sample query 1"
 
@@ -121,7 +124,9 @@ describe("ChatCommon", () => {
                     tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
                 },
             ],
-            metadata: {sample_queries: [SAMPLE_QUERY_TEXT, "Sample long query".repeat(5)]},
+            metadata: {
+                sample_queries: [SAMPLE_QUERY_TEXT, LONG_QUERY_TEXT, "Query 3", "Query 4", "Query 5", "Query 6"],
+            },
         })
         ;(useColorScheme as jest.Mock).mockReturnValue({
             mode: "light",
@@ -186,9 +191,21 @@ describe("ChatCommon", () => {
         expect(mathGuyItem).not.toBeInTheDocument()
     })
 
-    it("Should send sample queries correctly", async () => {
+    it("Should render and send sample queries correctly", async () => {
         const mockSendFunction = jest.fn()
         renderChatCommonComponent({onSend: mockSendFunction})
+
+        // Make sure long query chip is truncated
+        const expectedLongQuery = `${LONG_QUERY_TEXT.slice(0, 80)}...`
+        await screen.findByText(expectedLongQuery)
+
+        // Make sure we only display the first 5 queries
+        await screen.findByText("Query 3")
+        await screen.findByText("Query 4")
+        await screen.findByText("Query 5")
+        expect(screen.queryByText("Query 6")).not.toBeInTheDocument()
+
+        // Click a sample query
         const sampleQueryButton = await screen.findByText(SAMPLE_QUERY_TEXT)
         await user.click(sampleQueryButton)
 
@@ -335,6 +352,23 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle receiving chunks from legacy agents correctly", async () => {
+        const onChunkReceivedMock = jest.fn().mockReturnValue(true)
+        const testResponseText = '"Response text from LLM"'
+
+        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
+            callback(testResponseText)
+        })
+
+        const query = "Sample test query for chunk handling"
+        await sendQuery(LegacyAgentType.DataGenerator, query)
+
+        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+        expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
+        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
+    })
+
+    it("Should handle receiving empty chunks correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
         const testResponseText = '"Response text from LLM"'
 
