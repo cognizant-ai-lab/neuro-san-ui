@@ -3,7 +3,7 @@
     "version": "1.2.4",
     "type": "module",
     "scripts": {
-        "build": "yarn clean && yarn generate && yarn run -T tsc --project tsconfig.build.json && yarn run -B fix-esm-import-path dist > /dev/null",
+        "build": "yarn clean && yarn generate && yarn run -T tsc --project tsconfig.build.json && fix-esm-import-path dist > /dev/null",
         "clean": "rm -rf dist generated",
         "generate": "rm -rf generated && ./build_scripts/do_openapi_generate.sh",
         "prepack": "echo PREPACK_RUNNING && yarn build"
