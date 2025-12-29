@@ -91,20 +91,20 @@ jobs:
                   PACKAGE_OWNER="${{ env.PACKAGE_OWNER }}"
                   CUTOFF_DATE="${{ steps.cutoff.outputs.cutoff_date }}"
                   DRY_RUN="${{ steps.params.outputs.dry_run }}"
-                  
+
                   echo "Fetching package versions for @${PACKAGE_OWNER}/${PACKAGE_NAME}..."
-                  
+
                   # Initialize counters
                   TOTAL_VERSIONS=0
                   RELEASE_VERSIONS=0
                   KEPT_VERSIONS=0
                   DELETED_VERSIONS=0
                   WOULD_DELETE_VERSIONS=0
-                  
+
                   # Fetch all package versions (paginated)
                   PAGE=1
                   PER_PAGE=100
-                  
+
                   while true; do
                     RESPONSE=$(gh api \
                       -H "Accept: application/vnd.github+json" \
@@ -160,7 +160,7 @@ jobs:
                     fi
                     PAGE=$((PAGE + 1))
                   done
-                  
+
                   # Output summary
                   echo ""
                   echo "=== Summary ==="
@@ -172,7 +172,7 @@ jobs:
                   else
                     echo "Versions deleted: $DELETED_VERSIONS"
                   fi
-                  
+
                   # Set outputs for summary
                   echo "total=$TOTAL_VERSIONS" >> $GITHUB_OUTPUT
                   echo "release=$RELEASE_VERSIONS" >> $GITHUB_OUTPUT
@@ -186,21 +186,21 @@ jobs:
                   DRY_RUN="${{ steps.params.outputs.dry_run }}"
                   RETENTION_DAYS="${{ steps.params.outputs.retention_days }}"
                   CUTOFF_DATE="${{ steps.cutoff.outputs.cutoff_date }}"
-                  
+
                   echo "### NPM Package Cull Summary" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
                   echo "**Package:** \`@${{ env.PACKAGE_OWNER }}/${{ env.PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
                   echo "**Retention Period:** ${RETENTION_DAYS} days" >> $GITHUB_STEP_SUMMARY
                   echo "**Cutoff Date:** \`${CUTOFF_DATE}\`" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   if [ "$DRY_RUN" = "true" ]; then
                     echo "**Mode:** Dry Run (no packages were deleted)" >> $GITHUB_STEP_SUMMARY
                   else
                     echo "**Mode:** Live Run" >> $GITHUB_STEP_SUMMARY
                   fi
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "#### Retention Policy" >> $GITHUB_STEP_SUMMARY
                   echo "- Release versions (format \`x.y.z\`) are **never** deleted" >> $GITHUB_STEP_SUMMARY
                   echo "- Non-release versions older than ${RETENTION_DAYS} days are deleted" >> $GITHUB_STEP_SUMMARY
