@@ -30,6 +30,8 @@ import {
     ConciergeResponse,
     ConnectivityResponse,
     FunctionResponse,
+    components,
+    AgentInfo,
 } from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest} from "../llm/LlmChat"
 
@@ -83,16 +85,84 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
     }
 }
 
+export interface AgentNode {
+    label: string
+    path: string // full path from root, e.g. "industry/macys"
+    children?: AgentNode[] // present for directory nodes
+    agent?: AgentInfo // present for leaf agent nodes
+}
+
+/**
+ * Simple, iterative tree builder:
+ * - Uses a Map to ensure each path node is created once.
+ * - Single-part agent names become children of the `topLevelName` node.
+ * - Multi-part names create directory nodes and attach the agent to the leaf node.
+ */
+export function buildAgentTree(agents: readonly AgentInfo[]): AgentNode[] {
+    const nodeMap = new Map<string, AgentNode>()
+    const topLevelNodes: AgentNode[] = []
+
+    const ensureParentChain = (node: AgentNode) => {
+        const idx = node.path.lastIndexOf("/")
+        if (idx === -1) return
+        const parentPath = node.path.slice(0, idx)
+        if (!nodeMap.has(parentPath)) {
+            const parentLabel = parentPath.split("/").pop() || parentPath
+            const parentNode: AgentNode = {label: parentLabel, path: parentPath, children: []}
+            nodeMap.set(parentPath, parentNode)
+            ensureParentChain(parentNode)
+        }
+        const parentNode = nodeMap.get(parentPath)
+        parentNode.children = parentNode.children || []
+        // avoid duplicate child insertion
+        if (!parentNode.children.some((c) => c.path === node.path)) parentNode.children.push(node)
+    }
+
+    for (const a of agents) {
+        const parts = a.agent_name.split("/").filter(Boolean)
+        if (parts.length === 0) {
+            // skip invalid/empty names
+        } else if (parts.length === 1) {
+            topLevelNodes.push({label: parts[0], path: a.agent_name, agent: a})
+        } else {
+            const fullPath = parts.join("/")
+            let node = nodeMap.get(fullPath)
+            if (!node) {
+                node = {label: parts[parts.length - 1], path: fullPath}
+                nodeMap.set(fullPath, node)
+            }
+            node.agent = a
+            ensureParentChain(node)
+        }
+    }
+
+    // Collect root directory nodes (those with no slash in their path)
+    const rootDirs = Array.from(nodeMap.values()).filter((n) => !n.path.includes("/"))
+
+    const rootChildren: AgentNode[] = [...rootDirs]
+
+    if (topLevelNodes.length > 0) {
+        rootChildren.unshift({label: null, path: "", children: topLevelNodes})
+    }
+
+    return rootChildren
+}
+
 /**
  * Get the list of available agent networks from the concierge service.
  * @param url The neuro-san server URL
  * @returns A promise that resolves to an array of agent network names.
  */
-export async function getAgentNetworks(url: string): Promise<string[]> {
+export async function getAgentNetworks(url: string): Promise<AgentNode[]> {
     const path = `${url}${ApiPaths.ConciergeService_List}`
     const response = await fetch(path)
     const conciergeResponse: ConciergeResponse = (await response.json()) as ConciergeResponse
-    return conciergeResponse.agents.map((network) => network.agent_name)
+    const agents = conciergeResponse.agents
+
+    const tree = buildAgentTree(agents)
+    console.debug("Built agent tree:", tree)
+
+    return tree
 }
 
 // Function to split each chunk by newline and call the real callback. The server can send multiple JSON objects per

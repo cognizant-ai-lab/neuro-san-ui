@@ -13,21 +13,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import ClearIcon from "@mui/icons-material/Clear"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
-import {IconButton, InputAdornment, styled, useColorScheme, useTheme} from "@mui/material"
+import {Chip, styled, useColorScheme, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import List from "@mui/material/List"
-import ListItemButton from "@mui/material/ListItemButton"
-import ListItemText from "@mui/material/ListItemText"
+import IconButton from "@mui/material/IconButton"
+import InputAdornment from "@mui/material/InputAdornment"
 import Popover from "@mui/material/Popover"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
+import {RichTreeViewSlots, TreeViewBaseItem, useTreeItem} from "@mui/x-tree-view"
+import {RichTreeView} from "@mui/x-tree-view/RichTreeView"
+import {
+    TreeItemContent,
+    TreeItemGroupTransition,
+    TreeItemLabel,
+    TreeItemProps,
+    TreeItemRoot,
+} from "@mui/x-tree-view/TreeItem"
+import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {
     FC,
     ChangeEvent as ReactChangeEvent,
@@ -37,8 +45,9 @@ import {
     useRef,
     useState,
 } from "react"
+import * as React from "react"
 
-import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
+import {AgentNode, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {useEnvironmentStore} from "../../state/environment"
 import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -76,7 +85,7 @@ interface SidebarProps {
     customURLLocalStorage?: string
     id: string
     isAwaitingLlm: boolean
-    networks: string[]
+    networkFolders: AgentNode[]
     selectedNetwork: string
     setSelectedNetwork: (network: string) => void
 }
@@ -88,7 +97,7 @@ export const Sidebar: FC<SidebarProps> = ({
     customURLLocalStorage,
     id,
     isAwaitingLlm,
-    networks,
+    networkFolders,
     selectedNetwork,
     setSelectedNetwork,
 }) => {
@@ -198,6 +207,84 @@ export const Sidebar: FC<SidebarProps> = ({
         setSelectedNetwork(network)
     }
 
+    const tagColors = [
+        "--bs-accent1-medium",
+        "--bs-red",
+        "--bs-accent3-medium",
+        "--bs-orange",
+        "--bs-yellow",
+        "bs-green",
+        "--bs-secondary",
+    ]
+
+    const CustomTreeItem = React.forwardRef((props: TreeItemProps & {tags?: string[]}, ref1) => {
+        const {itemId, children, label, disabled, ref} = props
+
+        const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
+            useTreeItem({id: itemId, children, label, disabled, rootRef: ref})
+
+        console.debug("Rendering Tree Item:", itemId, `label: ${label}`)
+        const isParent = Array.isArray(children) && children.length > 0
+        const isChild = !isParent
+
+        const tags = isChild
+            ? networkFolders.flatMap((folder) => folder.children).find((child) => child.label === label)?.agent?.tags
+            : []
+        return (
+            <TreeItemProvider {...getContextProviderProps()}>
+                <TreeItemRoot {...getRootProps()}>
+                    <TreeItemContent {...getContentProps()}>
+                        <TreeItemLabel
+                            {...getLabelProps()}
+                            style={{
+                                fontWeight: isParent ? "bold" : "normal",
+                                color: isParent ? "var(--heading-color)" : null,
+                            }}
+                        >
+                            {cleanUpAgentName(label)}
+                        </TreeItemLabel>
+                        {!isParent && tags?.length > 0 ? (
+                            <Tooltip
+                                title={tags.map((text, idx) => (
+                                    <Chip
+                                        key={text}
+                                        label={text}
+                                        style={{
+                                            margin: "0.25rem",
+                                            backgroundColor: `var(${tagColors[idx % tagColors.length]})`,
+                                        }}
+                                    />
+                                ))}
+                            >
+                                <span style={{fontSize: "0.5rem", marginLeft: "0.5rem", color: "gray"}}>Tags</span>
+                            </Tooltip>
+                        ) : null}
+                    </TreeItemContent>
+                    {children && <TreeItemGroupTransition {...getGroupTransitionProps()} />}
+                </TreeItemRoot>
+            </TreeItemProvider>
+        )
+    })
+
+    console.debug("networks for sidebar:", networkFolders)
+
+    const treeViewItems: TreeViewBaseItem[] = networkFolders
+        .map((network) => ({
+            id: network.label || "uncategorized-network",
+            label: network.label || "Uncategorized",
+            children: network.children
+                .map((child, cidx) => ({
+                    id: `${child.label}-child-${cidx}`,
+                    label: child.label,
+                    path: child.path,
+                    tags: child.agent?.tags || [], // Pass tags from child.agent
+                    onClick: () => selectNetworkHandler(child.label),
+                }))
+                .sort((a, b) => a.label.localeCompare(b.label)),
+            selected: network.label === selectedNetwork,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+
     return (
         <>
             <aside
@@ -250,32 +337,12 @@ export const Sidebar: FC<SidebarProps> = ({
                         </Tooltip>
                     </Button>
                 </h2>
-                <List
-                    id={`${id}-network-list`}
-                    sx={{padding: 0, margin: 0}}
-                >
-                    {networks?.map((network) => (
-                        <ListItemButton
-                            id={`${network}-btn`}
-                            key={network}
-                            onClick={() => selectNetworkHandler(network)}
-                            sx={{textAlign: "left"}}
-                            selected={selectedNetwork === network}
-                            disabled={isAwaitingLlm}
-                            ref={selectedNetwork === network ? selectedNetworkRef : null}
-                        >
-                            <ListItemText
-                                id={`${network}-text`}
-                                slotProps={{
-                                    primary: {
-                                        fontSize: "0.75rem",
-                                    },
-                                }}
-                                primary={cleanUpAgentName(network)}
-                            />
-                        </ListItemButton>
-                    ))}
-                </List>
+                <RichTreeView
+                    items={treeViewItems}
+                    slots={{
+                        item: CustomTreeItem as RichTreeViewSlots["item"],
+                    }}
+                />
             </aside>
             <Popover
                 id="agent-network-settings-popover"
