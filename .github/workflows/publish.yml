@@ -15,8 +15,8 @@
 # This workflow publishes the package to GitHub Packages when a release is published.
 # It can also be triggered manually for testing purposes.
 #
-# For releases: publishes with dist-tag "latest" and triggers neuro-ui to update.
-# For manual runs: publishes with selected dist-tag for testing (no neuro-ui trigger).
+# For releases: publishes with dist-tag "latest".
+# For manual runs: publishes with selected dist-tag for testing.
 
 name: Publish Package
 
@@ -110,32 +110,3 @@ jobs:
               env:
                   YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-        outputs:
-            version: ${{ steps.compute.outputs.version }}
-            dist_tag: ${{ steps.compute.outputs.dist_tag }}
-
-    # Trigger neuro-ui to update to the new release version
-    # Only runs for release events (not manual workflow_dispatch)
-    trigger-neuro-ui:
-        needs: publish
-        if: github.event_name == 'release'
-        runs-on: ubuntu-latest
-        steps:
-            - name: Trigger neuro-ui update workflow
-              uses: peter-evans/repository-dispatch@v3
-              with:
-                  token: ${{ secrets.NEURO_UI_DISPATCH_TOKEN }}
-                  repository: cognizant-ai-lab/neuro-ui
-                  event-type: ui-common-release
-                  client-payload: '{"version": "${{ needs.publish.outputs.version }}", "tag": "${{ github.event.release.tag_name }}"}'
-
-            - name: Summary
-              run: |
-                  echo "### Triggered neuro-ui Update" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "Sent \`repository_dispatch\` event to \`cognizant-ai-lab/neuro-ui\`" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "**Event type:** \`ui-common-release\`" >> $GITHUB_STEP_SUMMARY
-                  echo "**Version:** \`${{ needs.publish.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-                  echo "**Release tag:** \`${{ github.event.release.tag_name }}\`" >> $GITHUB_STEP_SUMMARY
