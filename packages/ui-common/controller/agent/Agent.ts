@@ -19,6 +19,7 @@ limitations under the License.
  */
 
 import {
+    AgentInfo,
     ApiPaths,
     ChatContext,
     // eslint-disable-next-line camelcase
@@ -30,8 +31,6 @@ import {
     ConciergeResponse,
     ConnectivityResponse,
     FunctionResponse,
-    components,
-    AgentInfo,
 } from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest} from "../llm/LlmChat"
 
@@ -85,8 +84,9 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
     }
 }
 
+// Tree node for representing agent networks in a hierarchical structure.
 export interface AgentNode {
-    label: string
+    label: string // label/key, eg. "airline_policy"
     path: string // full path from root, e.g. "industry/macys"
     children?: AgentNode[] // present for directory nodes
     agent?: AgentInfo // present for leaf agent nodes
@@ -98,7 +98,7 @@ export interface AgentNode {
  * - Single-part agent names become children of the `topLevelName` node.
  * - Multi-part names create directory nodes and attach the agent to the leaf node.
  */
-export function buildAgentTree(agents: readonly AgentInfo[]): AgentNode[] {
+function buildAgentTree(agents: readonly AgentInfo[]): AgentNode[] {
     const nodeMap = new Map<string, AgentNode>()
     const topLevelNodes: AgentNode[] = []
 
@@ -159,10 +159,7 @@ export async function getAgentNetworks(url: string): Promise<AgentNode[]> {
     const conciergeResponse: ConciergeResponse = (await response.json()) as ConciergeResponse
     const agents = conciergeResponse.agents
 
-    const tree = buildAgentTree(agents)
-    console.debug("Built agent tree:", tree)
-
-    return tree
+    return buildAgentTree(agents)
 }
 
 // Function to split each chunk by newline and call the real callback. The server can send multiple JSON objects per
@@ -253,7 +250,7 @@ export async function getConnectivity(url: string, network: string, userId: stri
     })
 
     if (!response.ok) {
-        console.debug(`response: ${JSON.stringify(response)}`)
+        console.error(`response: ${JSON.stringify(response)}`)
         throw new Error(`Failed to send connectivity request: ${response.statusText}`)
     }
 

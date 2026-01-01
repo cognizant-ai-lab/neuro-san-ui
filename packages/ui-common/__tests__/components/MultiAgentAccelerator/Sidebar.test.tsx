@@ -20,7 +20,7 @@ import {SnackbarProvider} from "notistack"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {Sidebar} from "../../../components/MultiAgentAccelerator/Sidebar"
+import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {useEnvironmentStore} from "../../../state/environment"
 
@@ -44,11 +44,13 @@ describe("SideBar", () => {
 
     let user: UserEvent
 
-    const defaultProps = {
+    const defaultProps: SidebarProps = {
         customURLCallback: jest.fn(),
         id: "test-flow-id",
-        neuroSanURL: "",
-        networks: [TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD],
+        networkFolders: [
+            {label: TEST_AGENT_MATH_GUY, path: "/test/math-guy"},
+            {label: TEST_AGENT_MUSIC_NERD, path: "/test/music-nerd"},
+        ],
         selectedNetwork: TEST_AGENT_MATH_GUY,
         setSelectedNetwork: jest.fn(),
         isAwaitingLlm: false,
@@ -60,7 +62,7 @@ describe("SideBar", () => {
      * @return The props for the Sidebar component
      */
     const renderSidebarComponent = (overrides = {}) => {
-        const props = {...defaultProps, ...overrides}
+        const props: SidebarProps = {...defaultProps, ...overrides}
         render(
             <SnackbarProvider>
                 <Sidebar {...props} />
