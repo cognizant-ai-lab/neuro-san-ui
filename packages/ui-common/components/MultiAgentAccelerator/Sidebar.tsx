@@ -45,13 +45,25 @@ import {
     useRef,
     useState,
 } from "react"
-import * as React from "react"
 
 import {AgentNode, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {useEnvironmentStore} from "../../state/environment"
 import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {cleanUpAgentName} from "../AgentChat/Utils"
+
+// Palette of colors we can use for tags
+const TAG_COLORS = [
+    "--bs-accent2-light",
+    "--bs-accent1-medium",
+    "--bs-accent3-medium",
+    "--bs-accent3-dark",
+    "--bs-green",
+    "--bs-orange",
+    "--bs-pink",
+    "--bs-secondary",
+    "--bs-yellow",
+] as const
 
 // #region: Styled Components
 
@@ -80,7 +92,7 @@ enum CONNECTION_STATUS {
     ERROR = "error",
 }
 
-interface SidebarProps {
+export interface SidebarProps {
     customURLCallback: (url: string) => void
     customURLLocalStorage?: string
     id: string
@@ -89,6 +101,9 @@ interface SidebarProps {
     selectedNetwork: string
     setSelectedNetwork: (network: string) => void
 }
+
+// Define a type for the TAG_COLORS array
+type TagColor = (typeof TAG_COLORS)[number]
 
 // #endregion: Types
 
@@ -109,8 +124,6 @@ export const Sidebar: FC<SidebarProps> = ({
     const connectionStatusSuccess = connectionStatus === CONNECTION_STATUS.SUCCESS
     const connectionStatusError = connectionStatus === CONNECTION_STATUS.ERROR
     const isDefaultUrl = urlInput === backendNeuroSanApiUrl
-    // Enable the Save button if the URL input is not empty and the connection status is successful,
-    // OR if the URL input is the default URL and connection status is not error
     const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
     const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
@@ -204,57 +217,84 @@ export const Sidebar: FC<SidebarProps> = ({
     }, [])
 
     const selectNetworkHandler = (network: string) => {
+        console.debug(`Selecting network: ${network}`)
         setSelectedNetwork(network)
     }
 
-    const tagColors = [
-        "--bs-accent1-medium",
-        "--bs-red",
-        "--bs-accent3-medium",
-        "--bs-orange",
-        "--bs-yellow",
-        "bs-green",
-        "--bs-secondary",
-    ]
+    // Keep track of which tags have which colors so that the same tag always has the same color
+    const tagsToColors = new Map<string, TagColor>()
 
-    const CustomTreeItem = React.forwardRef((props: TreeItemProps & {tags?: string[]}, ref1) => {
-        const {itemId, children, label, disabled, ref} = props
+    // For now this component is only used in this module so keep it privately defined here
+    // eslint-disable-next-line react/no-multi-comp
+    const CustomTreeItem = (props: TreeItemProps) => {
+        const {itemId, children, label, disabled} = props
+
+        // We know all labels are strings because we set them that way in the tree view items
+        const labelString = label as string
 
         const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
-            useTreeItem({id: itemId, children, label, disabled, rootRef: ref})
+            useTreeItem({itemId, children, label, disabled})
 
-        console.debug("Rendering Tree Item:", itemId, `label: ${label}`)
         const isParent = Array.isArray(children) && children.length > 0
         const isChild = !isParent
 
+        // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
+        // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
+        // RichTreeView item, but that isn't well-supported at this time.
+        // Discussion: https://stackoverflow.com/questions/69481071/material-ui-how-to-pass-custom-props-to-a-custom-treeitem
         const tags = isChild
-            ? networkFolders.flatMap((folder) => folder.children).find((child) => child.label === label)?.agent?.tags
+            ? networkFolders.flatMap((folder) => folder.children).find((child) => child.label === labelString)?.agent
+                  ?.tags
             : []
+
+        // Assign colors to tags as needed and store in tagsToColors map
+        for (const tag of tags) {
+            if (!tagsToColors.has(tag)) {
+                const color = TAG_COLORS[tagsToColors.size % TAG_COLORS.length]
+                tagsToColors.set(tag, color)
+            }
+        }
+
+        // retrieve path for this network
+        const path = isChild
+            ? networkFolders.flatMap((folder) => folder.children).find((child) => child.label === labelString)?.path
+            : null
+
         return (
             <TreeItemProvider {...getContextProviderProps()}>
                 <TreeItemRoot {...getRootProps()}>
-                    <TreeItemContent {...getContentProps()}>
+                    <TreeItemContent
+                        key={labelString}
+                        {...getContentProps()}
+                        {...(isParent || isAwaitingLlm ? {} : {onClick: () => selectNetworkHandler(path)})}
+                    >
                         <TreeItemLabel
                             {...getLabelProps()}
-                            style={{
+                            sx={{
                                 fontWeight: isParent ? "bold" : "normal",
                                 color: isParent ? "var(--heading-color)" : null,
+                                "&:hover": {
+                                    textDecoration: "underline", // Adds underline on hover
+                                },
                             }}
                         >
-                            {cleanUpAgentName(label)}
+                            {cleanUpAgentName(labelString)}
                         </TreeItemLabel>
-                        {!isParent && tags?.length > 0 ? (
+                        {isChild && tags?.length > 0 ? (
                             <Tooltip
-                                title={tags.map((text, idx) => (
-                                    <Chip
-                                        key={text}
-                                        label={text}
-                                        style={{
-                                            margin: "0.25rem",
-                                            backgroundColor: `var(${tagColors[idx % tagColors.length]})`,
-                                        }}
-                                    />
-                                ))}
+                                title={tags
+                                    .slice()
+                                    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                    .map((tag) => (
+                                        <Chip
+                                            key={tag}
+                                            label={tag}
+                                            style={{
+                                                margin: "0.25rem",
+                                                backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
+                                            }}
+                                        />
+                                    ))}
                             >
                                 <span style={{fontSize: "0.5rem", marginLeft: "0.5rem", color: "gray"}}>Tags</span>
                             </Tooltip>
@@ -264,17 +304,15 @@ export const Sidebar: FC<SidebarProps> = ({
                 </TreeItemRoot>
             </TreeItemProvider>
         )
-    })
-
-    console.debug("networks for sidebar:", networkFolders)
+    }
 
     const treeViewItems: TreeViewBaseItem[] = networkFolders
         .map((network) => ({
             id: network.label || "uncategorized-network",
             label: network.label || "Uncategorized",
             children: network.children
-                .map((child, cidx) => ({
-                    id: `${child.label}-child-${cidx}`,
+                .map((child, idx) => ({
+                    id: `${child.label}-child-${idx}`,
                     label: child.label,
                     path: child.path,
                     tags: child.agent?.tags || [], // Pass tags from child.agent
