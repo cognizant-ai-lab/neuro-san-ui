@@ -97,7 +97,7 @@ export interface SidebarProps {
     customURLLocalStorage?: string
     id: string
     isAwaitingLlm: boolean
-    networkFolders: AgentNode[]
+    networks: AgentNode[]
     selectedNetwork: string
     setSelectedNetwork: (network: string) => void
 }
@@ -112,7 +112,7 @@ export const Sidebar: FC<SidebarProps> = ({
     customURLLocalStorage,
     id,
     isAwaitingLlm,
-    networkFolders,
+    networks,
     selectedNetwork,
     setSelectedNetwork,
 }) => {
@@ -217,13 +217,17 @@ export const Sidebar: FC<SidebarProps> = ({
     }, [])
 
     const selectNetworkHandler = (network: string) => {
-        console.debug(`Selecting network: ${network}`)
         setSelectedNetwork(network)
     }
 
     // Keep track of which tags have which colors so that the same tag always has the same color
     const tagsToColors = new Map<string, TagColor>()
 
+    /**
+     * Custom Tree Item for MUI RichTreeView to display agent networks with tags
+     * @param props - TreeItemProps
+     * @returns JSX.Element containing the custom tree item
+     */
     // For now this component is only used in this module so keep it privately defined here
     // eslint-disable-next-line react/no-multi-comp
     const CustomTreeItem = (props: TreeItemProps) => {
@@ -238,14 +242,15 @@ export const Sidebar: FC<SidebarProps> = ({
         const isParent = Array.isArray(children) && children.length > 0
         const isChild = !isParent
 
+        // This is a bit clunky: find the agent node in the networkFolders prop that matches this label
+        // Consider change the structure of networkFolders to make this easier (indexed by label?)
+        const agentNode = networks?.flatMap((folder) => folder.children).find((child) => child?.label === labelString)
+
         // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
         // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
         // RichTreeView item, but that isn't well-supported at this time.
         // Discussion: https://stackoverflow.com/questions/69481071/material-ui-how-to-pass-custom-props-to-a-custom-treeitem
-        const tags = isChild
-            ? networkFolders.flatMap((folder) => folder.children).find((child) => child.label === labelString)?.agent
-                  ?.tags
-            : []
+        const tags = isChild ? agentNode?.agent?.tags || [] : []
 
         // Assign colors to tags as needed and store in tagsToColors map
         for (const tag of tags) {
@@ -256,9 +261,7 @@ export const Sidebar: FC<SidebarProps> = ({
         }
 
         // retrieve path for this network
-        const path = isChild
-            ? networkFolders.flatMap((folder) => folder.children).find((child) => child.label === labelString)?.path
-            : null
+        const path = isChild ? agentNode?.path : null
 
         return (
             <TreeItemProvider {...getContextProviderProps()}>
@@ -306,12 +309,12 @@ export const Sidebar: FC<SidebarProps> = ({
         )
     }
 
-    const treeViewItems: TreeViewBaseItem[] = networkFolders
+    const treeViewItems: TreeViewBaseItem[] = networks
         .map((network) => ({
             id: network.label || "uncategorized-network",
             label: network.label || "Uncategorized",
-            children: network.children
-                .map((child, idx) => ({
+            children: network?.children
+                ?.map((child, idx) => ({
                     id: `${child.label}-child-${idx}`,
                     label: child.label,
                     path: child.path,
