@@ -111,11 +111,8 @@ export const MultiAgentAccelerator = ({
     useEffect(() => {
         async function getNetworks() {
             try {
-                const tree: AgentNode[] = await getAgentNetworks(neuroSanURL)
-                // const sortedNetworks = networksTmp?.sort((a, b) => a.localeCompare(b))
-                setNetworks(tree)
-                // Set the first network as the selected network
-                // setSelectedNetwork(sortedNetworks[0])
+                const networksTmp: AgentNode[] = await getAgentNetworks(neuroSanURL)
+                setNetworks(networksTmp)
                 closeNotification()
             } catch (e) {
                 sendNotification(
@@ -234,7 +231,7 @@ export const MultiAgentAccelerator = ({
                         customURLCallback={customURLCallback}
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
-                        networkFolders={networks}
+                        networks={networks}
                         selectedNetwork={selectedNetwork}
                         setSelectedNetwork={setSelectedNetwork}
                     />
