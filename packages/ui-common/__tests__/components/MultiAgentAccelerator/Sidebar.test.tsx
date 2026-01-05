@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {useColorScheme} from "@mui/material"
 import {render, screen, waitFor} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
@@ -42,6 +43,12 @@ const TEST_VERSION = "1.2.3.4a"
 // Folder name for test agents
 const TEST_AGENTS_FOLDER = "test-agents"
 
+// Mock MUI theming
+jest.mock("@mui/material", () => ({
+    ...jest.requireActual("@mui/material"),
+    useColorScheme: jest.fn(),
+}))
+
 describe("SideBar", () => {
     withStrictMocks()
 
@@ -58,7 +65,11 @@ describe("SideBar", () => {
                     {
                         label: TEST_AGENT_MATH_GUY,
                         path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                        agent: {agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`, description: "", tags: []},
+                        agent: {
+                            agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                            description: "",
+                            tags: ["tag1", "tag2", "tag3"],
+                        },
                     },
                     {
                         label: TEST_AGENT_MUSIC_NERD,
@@ -120,9 +131,16 @@ describe("SideBar", () => {
     beforeEach(() => {
         user = userEvent.setup()
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: "light",
+        })
     })
 
-    it("Should render Sidebar correctly", async () => {
+    it.each([false, true])("should render correctly with darkMode=%s", async (darkMode) => {
+        ;(useColorScheme as jest.Mock).mockReturnValue({
+            mode: darkMode ? "dark" : "light",
+        })
+
         const {setSelectedNetwork} = renderSidebarComponent()
 
         // Make sure the heading is present
