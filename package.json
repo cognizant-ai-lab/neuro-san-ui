@@ -72,8 +72,5 @@
     "resolutions": {
         "@types/react": "18.2.18",
         "@types/react-dom": "18.2.18"
-    },
-    "dependencies": {
-        "@mui/x-tree-view": "^8.22.0"
     }
 }
