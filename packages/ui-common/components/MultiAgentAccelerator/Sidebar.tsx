@@ -42,7 +42,6 @@ import {
     KeyboardEvent as ReactKeyboardEvent,
     MouseEvent as ReactMouseEvent,
     useEffect,
-    useRef,
     useState,
 } from "react"
 
@@ -125,7 +124,6 @@ export const Sidebar: FC<SidebarProps> = ({
     const connectionStatusError = connectionStatus === CONNECTION_STATUS.ERROR
     const isDefaultUrl = urlInput === backendNeuroSanApiUrl
     const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
-    const selectedNetworkRef = useRef<HTMLDivElement | null>(null)
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
 
@@ -195,13 +193,6 @@ export const Sidebar: FC<SidebarProps> = ({
         setUrlInput("")
         setConnectionStatus(CONNECTION_STATUS.IDLE)
     }
-
-    // Make sure selected network in the list is always in view
-    useEffect(() => {
-        if (selectedNetworkRef.current) {
-            selectedNetworkRef.current.scrollIntoView({behavior: "instant", block: "nearest"})
-        }
-    }, [selectedNetwork])
 
     // Get Neuro-san version on initial load
     useEffect(() => {
@@ -319,7 +310,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     label: child.label,
                     path: child.path,
                     tags: child.agent?.tags || [], // Pass tags from child.agent
-                    onClick: () => selectNetworkHandler(child.label),
                 }))
                 .sort((a, b) => a.label.localeCompare(b.label)),
             selected: network.label === selectedNetwork,

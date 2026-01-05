@@ -494,7 +494,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         <>
             {connectivityInfo
                 // Don't show connection to self
-                .filter((info) => info.origin !== targetAgent)
+                .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
                 // Sort by origin name
                 .sort((a, b) => a.origin.localeCompare(b.origin))
                 // Render each origin and its tools

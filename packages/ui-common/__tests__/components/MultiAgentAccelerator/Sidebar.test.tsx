@@ -39,6 +39,9 @@ jest.mock("../../../controller/agent/Agent")
 // Simulated Neuro-san version for testing
 const TEST_VERSION = "1.2.3.4a"
 
+// Folder name for test agents
+const TEST_AGENTS_FOLDER = "test-agents"
+
 describe("SideBar", () => {
     withStrictMocks()
 
@@ -54,13 +57,17 @@ describe("SideBar", () => {
                 children: [
                     {
                         label: TEST_AGENT_MATH_GUY,
-                        path: `test-agents/${TEST_AGENT_MATH_GUY}`,
-                        agent: {agent_name: `test-agents/${TEST_AGENT_MATH_GUY}`, description: "", tags: []},
+                        path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                        agent: {agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`, description: "", tags: []},
                     },
                     {
                         label: TEST_AGENT_MUSIC_NERD,
-                        path: `test-agents/${TEST_AGENT_MUSIC_NERD}`,
-                        agent: {agent_name: `test-agents/${TEST_AGENT_MUSIC_NERD}`, description: "", tags: []},
+                        path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
+                        agent: {
+                            agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
+                            description: "",
+                            tags: [],
+                        },
                     },
                 ],
             },
@@ -134,7 +141,7 @@ describe("SideBar", () => {
 
         // setSelectedNetwork should be called
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
-        expect(setSelectedNetwork).toHaveBeenCalledWith(`test-agents/${TEST_AGENT_MATH_GUY}`)
+        expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
 
         // Mousing over the cog should show the tooltip with the version and URL
         const settingsButton = await screen.findByRole("button", {name: /Agent Network Settings/u})
@@ -364,24 +371,6 @@ describe("SideBar", () => {
 
         // Check that Error icon is not displayed
         expect(screen.queryByTestId("HighlightOffIcon")).not.toBeInTheDocument()
-    })
-
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip("should scroll selected network into view when selectedNetwork changes", async () => {
-        const scrollIntoView = jest.fn()
-        // Mock ref
-        jest.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(scrollIntoView)
-        const {setSelectedNetwork} = renderSidebarComponent()
-
-        // Click the second network
-        const network = await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))
-        await waitFor(() => expect(network).toBeVisible(), {timeout: 4000})
-        expect(network).not.toBeDisabled()
-
-        await user.click(network)
-        expect(setSelectedNetwork).toHaveBeenCalledWith(`test-agents/${TEST_AGENT_MUSIC_NERD}`)
-        // The scrollIntoView should have been called
-        expect(scrollIntoView).toHaveBeenCalled()
     })
 
     it("should not break if networks is empty", async () => {

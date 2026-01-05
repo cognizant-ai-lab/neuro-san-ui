@@ -46,6 +46,8 @@ const TEST_USERNAME = "test-username"
 let oldFetch: typeof global.fetch
 
 describe("Controller/Agent/testConnection", () => {
+    withStrictMocks()
+
     it("Should handle a successful testConnection result", async () => {
         global.fetch = mockFetch({status: "healthy", versions: {"neuro-san": "1.2.3"}})
         const result: TestConnectionResult = await testConnection("www.example.com")
@@ -69,6 +71,8 @@ describe("Controller/Agent/testConnection", () => {
 })
 
 describe("Controller/Agent/getAgentNetworks", () => {
+    withStrictMocks()
+
     beforeEach(() => {
         oldFetch = global.fetch
     })
@@ -183,6 +187,8 @@ describe("Controller/Agent/sendChatQuery", () => {
 })
 
 describe("Controller/Agent/getConnectivity", () => {
+    withStrictMocks()
+
     beforeEach(() => {
         oldFetch = global.fetch
     })
@@ -208,9 +214,8 @@ describe("Controller/Agent/getConnectivity", () => {
         )
     })
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip("Should throw on non-ok response", async () => {
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+    it("Should throw on non-ok response", async () => {
+        const errorSpy = jest.spyOn(console, "error").mockImplementation()
         global.fetch = jest.fn(() =>
             Promise.resolve({
                 ok: false,
@@ -221,12 +226,15 @@ describe("Controller/Agent/getConnectivity", () => {
         await expect(getConnectivity(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)).rejects.toThrow(
             "Failed to send connectivity request: Not Found"
         )
-        expect(debugSpy).toHaveBeenCalled()
-        debugSpy.mockRestore()
+
+        // Make sure getConnectivity logged the error to the console
+        expect(errorSpy).toHaveBeenCalled()
     })
 })
 
 describe("Controller/Agent/getAgentFunction", () => {
+    withStrictMocks()
+
     beforeEach(() => {
         oldFetch = global.fetch
     })
