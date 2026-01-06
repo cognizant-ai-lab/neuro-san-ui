@@ -12,12 +12,32 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-# This workflow publishes the package to GitHub Packages when a release is published.
-# It can also be triggered manually for testing purposes.
+# ================================================================================
+# Publish UI Common Workflow
+# ================================================================================
+# This workflow publishes @cognizant-ai-lab/ui-common to GitHub Packages.
+#
+# Triggers:
+#   1. Push to main (with path filter): Publishes snapshot for CI/CD integration
+#   2. Release published: Publishes official release version
+#   3. Manual workflow_dispatch: For testing purposes
+#
+# Version and dist-tag by trigger:
+#   - Push to main:    <base>-main.<sha>.<run>  with dist-tag "main"
+#   - Release:         <release-tag>            with dist-tag "latest"
+#   - Manual:          <base>-pr.<sha>.<run>    with user-selected dist-tag
+#
+# After push-to-main publishes, triggers neuro-ui via repository_dispatch.
+# ================================================================================
 
-name: Publish Package
+name: Publish UI Common
 
 on:
+    push:
+        branches:
+            - main
+        paths:
+            - "packages/ui-common/**"
     release:
         types: [published]
     workflow_dispatch:
@@ -42,8 +62,14 @@ permissions:
 jobs:
     publish:
         runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.compute.outputs.version }}
+            dist_tag: ${{ steps.compute.outputs.dist_tag }}
+            sha: ${{ steps.compute.outputs.sha }}
+            short_sha: ${{ steps.compute.outputs.short_sha }}
         steps:
-            - uses: actions/checkout@v4
+            - name: Checkout repository
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
 
@@ -53,6 +79,8 @@ jobs:
                   corepack install
                   yarn --version
 
+            # Pin to Node.js 22.17.1 to avoid 22.18+ regression where experimental-strip-types
+            # was enabled by default, breaking npm package builds (see nodejs/node#59364)
             - name: Use Node.js
               uses: actions/setup-node@v4
               with:
@@ -63,7 +91,7 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  rm -rf node_modules
+                  rm --recursive --force node_modules
                   yarn cache clean --all
                   yarn install --immutable
 
@@ -73,24 +101,32 @@ jobs:
             - name: Compute version and dist-tag
               id: compute
               run: |
-                  if [ "${{ github.event_name }}" = "release" ]; then
-                    # Release: use release tag for version, "latest" for dist-tag
+                  SHORT_SHA="${GITHUB_SHA::7}"
+                  BASE_VERSION=$(node --eval "console.log(require('./packages/ui-common/package.json').version)")
+                  BASE_VERSION="${BASE_VERSION%%-*}"
+
+                  if [ "${{ github.event_name }}" = "push" ]; then
+                    # Push to main: snapshot version with "main" dist-tag
+                    VERSION="${BASE_VERSION}-main.${SHORT_SHA}.${{ github.run_number }}"
+                    DIST_TAG="main"
+                    echo "Publishing merge snapshot: $VERSION with dist-tag: $DIST_TAG"
+                  elif [ "${{ github.event_name }}" = "release" ]; then
+                    # Release: use release tag for version, "latest" dist-tag
                     TAG="${{ github.event.release.tag_name }}"
                     VERSION="${TAG#v}"
                     DIST_TAG="latest"
                     echo "Publishing release version: $VERSION with dist-tag: $DIST_TAG"
                   else
-                    # Manual: use git SHA for version, user-selected dist-tag
-                    SHORT_SHA="$(git rev-parse --short "$GITHUB_SHA")"
-                    # Read base version from ui-common/package.json
-                    BASE_VERSION=$(node -e "console.log(require('./packages/ui-common/package.json').version)")
-                    # Create unique pre-release version: <base>-pr.<sha>.<run>
-                    VERSION="${BASE_VERSION%%-*}-pr.${SHORT_SHA}.${{ github.run_number }}"
+                    # Manual workflow_dispatch: prerelease version with user-selected dist-tag
+                    VERSION="${BASE_VERSION}-pr.${SHORT_SHA}.${{ github.run_number }}"
                     DIST_TAG="${{ inputs.dist_tag || 'prerelease' }}"
                     echo "Publishing manual version: $VERSION with dist-tag: $DIST_TAG"
                   fi
+
                   echo "version=$VERSION" >> "$GITHUB_OUTPUT"
                   echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+                  echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+                  echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
 
             - name: Set ui-common version
               run: ./build_scripts/set_package_version.sh packages/ui-common/package.json ${{ steps.compute.outputs.version }}
@@ -99,11 +135,45 @@ jobs:
               run: yarn build:lib
 
             - name: Publish to GitHub Packages
-              # Note: --tag sets the npm "dist-tag" (not the git tag or version number).
-              # For releases: uses "latest" so `npm install @cognizant-ai-lab/ui-common` gets this version.
-              # For manual runs: uses selected dist-tag (e.g., "prerelease") to avoid affecting "latest".
-              # The actual package version (e.g., 1.3.1 or 1.2.4-pr.abc123.456) is set in the previous step.
               run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }}
               env:
                   YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Summary
+              run: |
+                  echo "### UI Common Published" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Version:** \`${{ steps.compute.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "**Dist-tag:** \`${{ steps.compute.outputs.dist_tag }}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "**Trigger:** \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "**Commit:** \`${{ steps.compute.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "Install with:" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                  echo "yarn add @cognizant-ai-lab/ui-common@${{ steps.compute.outputs.dist_tag }}" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+    # Trigger neuro-ui to update to the new snapshot version
+    # Only runs for push events (merge to main), not for releases or manual runs
+    trigger-neuro-ui:
+        needs: publish
+        if: github.event_name == 'push'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Trigger neuro-ui update workflow
+              uses: peter-evans/repository-dispatch@v3
+              with:
+                  token: ${{ secrets.NEURO_UI_DISPATCH_TOKEN }}
+                  repository: cognizant-ai-lab/neuro-ui
+                  event-type: ui-common-commit
+                  client-payload: '{"sha": "${{ needs.publish.outputs.sha }}", "short_sha": "${{ needs.publish.outputs.short_sha }}"}'
+
+            - name: Summary
+              run: |
+                  echo "### Triggered neuro-ui Update" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "Sent \`repository_dispatch\` event to \`cognizant-ai-lab/neuro-ui\`" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Event type:** \`ui-common-commit\`" >> $GITHUB_STEP_SUMMARY
+                  echo "**Payload SHA:** \`${{ needs.publish.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
