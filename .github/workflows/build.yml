@@ -46,7 +46,7 @@ on:
                 required: false
                 type: string
             DISPLAY_VERSION:
-                required: false
+                required: true
                 type: string
         outputs:
             image_tag:
