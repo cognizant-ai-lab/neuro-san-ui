@@ -1,0 +1,128 @@
+#    Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+# ================================================================================
+# Cull NPM Packages Workflow
+# ================================================================================
+# Purpose: Clean up old non-release npm packages to prevent package proliferation.
+#
+# Schedule: Runs weekly on Sunday at 00:00 UTC
+#
+# Retention Policy:
+# - Release packages (version format: x.y.z) are NEVER deleted
+# - Non-release packages (version format: x.y.z-main.sha.run or x.y.z-pr.sha.run):
+#   - The most recent N packages are ALWAYS kept (regardless of age)
+#   - Packages older than 14 days (beyond the most recent N) are deleted
+#
+# The workflow uses the GitHub API to list and delete package versions.
+# ================================================================================
+
+name: Cull NPM Packages
+
+on:
+    schedule:
+        # Run weekly on Sunday at 00:00 UTC
+        - cron: "0 0 * * 0"
+    workflow_dispatch:
+        inputs:
+            dry_run:
+                description: "Dry run (don't actually delete packages)"
+                type: boolean
+                default: true
+            retention_days:
+                description: "Delete non-release packages older than N days"
+                type: number
+                default: 14
+            min_keep_versions:
+                description: "Always keep at least N most recent non-release packages"
+                type: number
+                default: 5
+
+env:
+    PACKAGE_NAME: ui-common
+    PACKAGE_OWNER: cognizant-ai-lab
+    # Default retention period in days (can be overridden by workflow_dispatch input)
+    DEFAULT_RETENTION_DAYS: 14
+    # Default minimum versions to keep (can be overridden by workflow_dispatch input)
+    DEFAULT_MIN_KEEP_VERSIONS: 5
+
+permissions:
+    packages: write
+
+jobs:
+    cull-packages:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Determine parameters
+              id: params
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    DRY_RUN="${{ inputs.dry_run }}"
+                    RETENTION_DAYS="${{ inputs.retention_days }}"
+                    MIN_KEEP_VERSIONS="${{ inputs.min_keep_versions }}"
+                  else
+                    # Scheduled runs are NOT dry runs
+                    DRY_RUN="false"
+                    RETENTION_DAYS="${{ env.DEFAULT_RETENTION_DAYS }}"
+                    MIN_KEEP_VERSIONS="${{ env.DEFAULT_MIN_KEEP_VERSIONS }}"
+                  fi
+                  echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
+                  echo "retention_days=$RETENTION_DAYS" >> $GITHUB_OUTPUT
+                  echo "min_keep_versions=$MIN_KEEP_VERSIONS" >> $GITHUB_OUTPUT
+                  echo "Dry run: $DRY_RUN"
+                  echo "Retention days: $RETENTION_DAYS"
+                  echo "Min keep versions: $MIN_KEEP_VERSIONS"
+
+            - name: List and cull packages
+              id: cull
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  ./build_scripts/cull_npm_packages.sh \
+                    "${{ env.PACKAGE_NAME }}" \
+                    "${{ env.PACKAGE_OWNER }}" \
+                    "${{ steps.params.outputs.retention_days }}" \
+                    "${{ steps.params.outputs.dry_run }}" \
+                    "${{ steps.params.outputs.min_keep_versions }}"
+
+            - name: Summary
+              if: always()
+              run: |
+                  DRY_RUN="${{ steps.params.outputs.dry_run }}"
+                  RETENTION_DAYS="${{ steps.params.outputs.retention_days }}"
+                  MIN_KEEP_VERSIONS="${{ steps.params.outputs.min_keep_versions }}"
+                  CUTOFF_DATE="${{ steps.cull.outputs.cutoff_date }}"
+
+                  echo "### NPM Package Cull Summary" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Package:** \`@${{ env.PACKAGE_OWNER }}/${{ env.PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "**Retention Period:** ${RETENTION_DAYS} days" >> $GITHUB_STEP_SUMMARY
+                  echo "**Min Keep Versions:** ${MIN_KEEP_VERSIONS}" >> $GITHUB_STEP_SUMMARY
+                  echo "**Cutoff Date:** \`${CUTOFF_DATE}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  if [ "$DRY_RUN" = "true" ]; then
+                    echo "**Mode:** Dry Run (no packages were deleted)" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "**Mode:** Live Run" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  echo "#### Retention Policy" >> $GITHUB_STEP_SUMMARY
+                  echo "- Release versions (format \`x.y.z\`) are **never** deleted" >> $GITHUB_STEP_SUMMARY
+                  echo "- The most recent ${MIN_KEEP_VERSIONS} non-release versions are **always** kept" >> $GITHUB_STEP_SUMMARY
+                  echo "- Non-release versions older than ${RETENTION_DAYS} days (beyond the min keep) are deleted" >> $GITHUB_STEP_SUMMARY
