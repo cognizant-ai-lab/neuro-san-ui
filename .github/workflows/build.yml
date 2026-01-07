@@ -48,6 +48,10 @@ on:
             DISPLAY_VERSION:
                 required: false
                 type: string
+        outputs:
+            image_tag:
+                description: "The image tag that was pushed to ECR"
+                value: ${{ jobs.build.outputs.image_tag }}
 
 env:
     # AWS info needed to push the image to ECR
@@ -64,6 +68,8 @@ permissions:
 jobs:
     build:
         runs-on: ubuntu-latest
+        outputs:
+            image_tag: ${{ inputs.DISPLAY_VERSION }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
