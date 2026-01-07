@@ -52,7 +52,7 @@ echo "Retention policy: Keep last $MIN_KEEP_VERSIONS non-release versions, delet
 # Create temporary files for storing versions
 RELEASE_FILE=$(mktemp)
 NON_RELEASE_FILE=$(mktemp)
-trap "rm --force $RELEASE_FILE $NON_RELEASE_FILE" EXIT
+trap 'rm --force "$RELEASE_FILE" "$NON_RELEASE_FILE"' EXIT
 
 # Fetch all package versions (paginated) and categorize them
 PAGE=1
@@ -173,9 +173,11 @@ fi
 
 # Output results for GitHub Actions (if GITHUB_OUTPUT is set)
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
-    echo "total=$TOTAL_VERSIONS" >> "$GITHUB_OUTPUT"
-    echo "release=$RELEASE_VERSIONS" >> "$GITHUB_OUTPUT"
-    echo "kept=$KEPT_VERSIONS" >> "$GITHUB_OUTPUT"
-    echo "deleted=$DELETED_VERSIONS" >> "$GITHUB_OUTPUT"
-    echo "would_delete=$WOULD_DELETE_VERSIONS" >> "$GITHUB_OUTPUT"
+    {
+        echo "total=$TOTAL_VERSIONS"
+        echo "release=$RELEASE_VERSIONS"
+        echo "kept=$KEPT_VERSIONS"
+        echo "deleted=$DELETED_VERSIONS"
+        echo "would_delete=$WOULD_DELETE_VERSIONS"
+    } >> "$GITHUB_OUTPUT"
 fi
