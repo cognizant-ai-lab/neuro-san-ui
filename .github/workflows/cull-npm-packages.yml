@@ -21,8 +21,9 @@
 #
 # Retention Policy:
 # - Release packages (version format: x.y.z) are NEVER deleted
-# - Non-release packages (version format: x.y.z-main.sha.run or x.y.z-pr.sha.run)
-#   older than 14 days are deleted
+# - Non-release packages (version format: x.y.z-main.sha.run or x.y.z-pr.sha.run):
+#   - The most recent N packages are ALWAYS kept (regardless of age)
+#   - Packages older than 14 days (beyond the most recent N) are deleted
 #
 # The workflow uses the GitHub API to list and delete package versions.
 # ================================================================================
@@ -43,12 +44,18 @@ on:
                 description: "Delete non-release packages older than N days"
                 type: number
                 default: 14
+            min_keep_versions:
+                description: "Always keep at least N most recent non-release packages"
+                type: number
+                default: 5
 
 env:
     PACKAGE_NAME: ui-common
     PACKAGE_OWNER: cognizant-ai-lab
     # Default retention period in days (can be overridden by workflow_dispatch input)
     DEFAULT_RETENTION_DAYS: 14
+    # Default minimum versions to keep (can be overridden by workflow_dispatch input)
+    DEFAULT_MIN_KEEP_VERSIONS: 5
 
 permissions:
     packages: write
@@ -63,15 +70,19 @@ jobs:
                   if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
                     DRY_RUN="${{ inputs.dry_run }}"
                     RETENTION_DAYS="${{ inputs.retention_days }}"
+                    MIN_KEEP_VERSIONS="${{ inputs.min_keep_versions }}"
                   else
                     # Scheduled runs are NOT dry runs
                     DRY_RUN="false"
                     RETENTION_DAYS="${{ env.DEFAULT_RETENTION_DAYS }}"
+                    MIN_KEEP_VERSIONS="${{ env.DEFAULT_MIN_KEEP_VERSIONS }}"
                   fi
                   echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
                   echo "retention_days=$RETENTION_DAYS" >> $GITHUB_OUTPUT
+                  echo "min_keep_versions=$MIN_KEEP_VERSIONS" >> $GITHUB_OUTPUT
                   echo "Dry run: $DRY_RUN"
                   echo "Retention days: $RETENTION_DAYS"
+                  echo "Min keep versions: $MIN_KEEP_VERSIONS"
 
             - name: Calculate cutoff date
               id: cutoff
@@ -91,17 +102,17 @@ jobs:
                   PACKAGE_OWNER="${{ env.PACKAGE_OWNER }}"
                   CUTOFF_DATE="${{ steps.cutoff.outputs.cutoff_date }}"
                   DRY_RUN="${{ steps.params.outputs.dry_run }}"
+                  MIN_KEEP_VERSIONS="${{ steps.params.outputs.min_keep_versions }}"
 
                   echo "Fetching package versions for @${PACKAGE_OWNER}/${PACKAGE_NAME}..."
+                  echo "Retention policy: Keep last $MIN_KEEP_VERSIONS non-release versions, delete others older than $CUTOFF_DATE"
 
-                  # Initialize counters
-                  TOTAL_VERSIONS=0
-                  RELEASE_VERSIONS=0
-                  KEPT_VERSIONS=0
-                  DELETED_VERSIONS=0
-                  WOULD_DELETE_VERSIONS=0
+                  # Create temporary files for storing versions
+                  RELEASE_FILE=$(mktemp)
+                  NON_RELEASE_FILE=$(mktemp)
+                  trap "rm -f $RELEASE_FILE $NON_RELEASE_FILE" EXIT
 
-                  # Fetch all package versions (paginated)
+                  # Fetch all package versions (paginated) and categorize them
                   PAGE=1
                   PER_PAGE=100
 
@@ -111,28 +122,78 @@ jobs:
                       -H "X-GitHub-Api-Version: 2022-11-28" \
                       "/orgs/${PACKAGE_OWNER}/packages/npm/${PACKAGE_NAME}/versions?per_page=${PER_PAGE}&page=${PAGE}" \
                       2>/dev/null || echo "[]")
-                    
+
                     if [ "$RESPONSE" = "[]" ] || [ -z "$RESPONSE" ]; then
                       break
                     fi
-                    
-                    # Process each version
+
+                    # Categorize each version as release or non-release
                     echo "$RESPONSE" | jq -c '.[]' | while read -r VERSION_JSON; do
                       VERSION_ID=$(echo "$VERSION_JSON" | jq -r '.id')
                       VERSION_NAME=$(echo "$VERSION_JSON" | jq -r '.name')
                       CREATED_AT=$(echo "$VERSION_JSON" | jq -r '.created_at')
-                      
-                      TOTAL_VERSIONS=$((TOTAL_VERSIONS + 1))
-                      
+
                       # Check if this is a release version (format: x.y.z without any suffix)
-                      # Release versions match: ^[0-9]+\.[0-9]+\.[0-9]+$
                       if echo "$VERSION_NAME" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-                        echo "KEEP (release): $VERSION_NAME (created: $CREATED_AT)"
-                        RELEASE_VERSIONS=$((RELEASE_VERSIONS + 1))
+                        echo "$VERSION_ID|$VERSION_NAME|$CREATED_AT" >> "$RELEASE_FILE"
+                      else
+                        echo "$VERSION_ID|$VERSION_NAME|$CREATED_AT" >> "$NON_RELEASE_FILE"
+                      fi
+                    done
+
+                    # Check if there are more pages
+                    VERSION_COUNT=$(echo "$RESPONSE" | jq 'length')
+                    if [ "$VERSION_COUNT" -lt "$PER_PAGE" ]; then
+                      break
+                    fi
+                    PAGE=$((PAGE + 1))
+                  done
+
+                  # Initialize counters
+                  TOTAL_VERSIONS=0
+                  RELEASE_VERSIONS=0
+                  KEPT_VERSIONS=0
+                  DELETED_VERSIONS=0
+                  WOULD_DELETE_VERSIONS=0
+
+                  # Process release versions (always keep)
+                  echo ""
+                  echo "=== Release Versions (always kept) ==="
+                  if [ -s "$RELEASE_FILE" ]; then
+                    while IFS='|' read -r VERSION_ID VERSION_NAME CREATED_AT; do
+                      echo "KEEP (release): $VERSION_NAME (created: $CREATED_AT)"
+                      TOTAL_VERSIONS=$((TOTAL_VERSIONS + 1))
+                      RELEASE_VERSIONS=$((RELEASE_VERSIONS + 1))
+                    done < "$RELEASE_FILE"
+                  else
+                    echo "No release versions found"
+                  fi
+
+                  # Process non-release versions
+                  echo ""
+                  echo "=== Non-Release Versions ==="
+                  if [ -s "$NON_RELEASE_FILE" ]; then
+                    # Sort by creation date (newest first) and process
+                    # The created_at field is ISO 8601 format, so lexicographic sort works
+                    SORTED_NON_RELEASE=$(sort -t'|' -k3 -r "$NON_RELEASE_FILE")
+                    NON_RELEASE_COUNT=$(wc -l < "$NON_RELEASE_FILE" | tr -d ' ')
+                    echo "Found $NON_RELEASE_COUNT non-release versions"
+                    echo "Keeping at least $MIN_KEEP_VERSIONS most recent versions regardless of age"
+                    echo ""
+
+                    VERSION_INDEX=0
+                    echo "$SORTED_NON_RELEASE" | while IFS='|' read -r VERSION_ID VERSION_NAME CREATED_AT; do
+                      VERSION_INDEX=$((VERSION_INDEX + 1))
+                      TOTAL_VERSIONS=$((TOTAL_VERSIONS + 1))
+
+                      # Always keep the first N versions (most recent)
+                      if [ "$VERSION_INDEX" -le "$MIN_KEEP_VERSIONS" ]; then
+                        echo "KEEP (min-keep #$VERSION_INDEX): $VERSION_NAME (created: $CREATED_AT)"
+                        KEPT_VERSIONS=$((KEPT_VERSIONS + 1))
                         continue
                       fi
-                      
-                      # Check if the package is older than the cutoff date
+
+                      # For versions beyond the minimum keep count, apply age-based rule
                       if [[ "$CREATED_AT" < "$CUTOFF_DATE" ]]; then
                         if [ "$DRY_RUN" = "true" ]; then
                           echo "WOULD DELETE: $VERSION_NAME (created: $CREATED_AT)"
@@ -152,21 +213,16 @@ jobs:
                         KEPT_VERSIONS=$((KEPT_VERSIONS + 1))
                       fi
                     done
-                    
-                    # Check if there are more pages
-                    VERSION_COUNT=$(echo "$RESPONSE" | jq 'length')
-                    if [ "$VERSION_COUNT" -lt "$PER_PAGE" ]; then
-                      break
-                    fi
-                    PAGE=$((PAGE + 1))
-                  done
+                  else
+                    echo "No non-release versions found"
+                  fi
 
                   # Output summary
                   echo ""
                   echo "=== Summary ==="
                   echo "Total versions processed: $TOTAL_VERSIONS"
                   echo "Release versions (kept): $RELEASE_VERSIONS"
-                  echo "Recent versions (kept): $KEPT_VERSIONS"
+                  echo "Non-release versions kept: $KEPT_VERSIONS"
                   if [ "$DRY_RUN" = "true" ]; then
                     echo "Versions that would be deleted: $WOULD_DELETE_VERSIONS"
                   else
@@ -185,12 +241,14 @@ jobs:
               run: |
                   DRY_RUN="${{ steps.params.outputs.dry_run }}"
                   RETENTION_DAYS="${{ steps.params.outputs.retention_days }}"
+                  MIN_KEEP_VERSIONS="${{ steps.params.outputs.min_keep_versions }}"
                   CUTOFF_DATE="${{ steps.cutoff.outputs.cutoff_date }}"
 
                   echo "### NPM Package Cull Summary" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
                   echo "**Package:** \`@${{ env.PACKAGE_OWNER }}/${{ env.PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
                   echo "**Retention Period:** ${RETENTION_DAYS} days" >> $GITHUB_STEP_SUMMARY
+                  echo "**Min Keep Versions:** ${MIN_KEEP_VERSIONS}" >> $GITHUB_STEP_SUMMARY
                   echo "**Cutoff Date:** \`${CUTOFF_DATE}\`" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -203,4 +261,5 @@ jobs:
 
                   echo "#### Retention Policy" >> $GITHUB_STEP_SUMMARY
                   echo "- Release versions (format \`x.y.z\`) are **never** deleted" >> $GITHUB_STEP_SUMMARY
-                  echo "- Non-release versions older than ${RETENTION_DAYS} days are deleted" >> $GITHUB_STEP_SUMMARY
+                  echo "- The most recent ${MIN_KEEP_VERSIONS} non-release versions are **always** kept" >> $GITHUB_STEP_SUMMARY
+                  echo "- Non-release versions older than ${RETENTION_DAYS} days (beyond the min keep) are deleted" >> $GITHUB_STEP_SUMMARY
