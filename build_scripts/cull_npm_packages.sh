@@ -71,19 +71,8 @@ die() {
     exit 1
 }
 
-require_cmd() {
-    command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
-}
-
 check_deps() {
-    require_cmd gh
-    require_cmd jq
-    require_cmd date
-    require_cmd sort
-    require_cmd wc
-    require_cmd tr
-    require_cmd grep
-    require_cmd mktemp
+    command -v gh jq >/dev/null 2>&1 || die "Missing required command: gh and jq must be installed"
 }
 
 is_release_version() {
