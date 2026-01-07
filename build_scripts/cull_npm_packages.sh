@@ -102,10 +102,10 @@ WOULD_DELETE_VERSIONS=0
 echo ""
 echo "=== Release Versions (always kept) ==="
 if [ -s "$RELEASE_FILE" ]; then
+    RELEASE_VERSIONS=$(wc -l < "$RELEASE_FILE" | tr -d ' ')
+    TOTAL_VERSIONS=$((TOTAL_VERSIONS + RELEASE_VERSIONS))
     while IFS='|' read -r VERSION_ID VERSION_NAME CREATED_AT; do
         echo "KEEP (release): $VERSION_NAME (created: $CREATED_AT)"
-        TOTAL_VERSIONS=$((TOTAL_VERSIONS + 1))
-        RELEASE_VERSIONS=$((RELEASE_VERSIONS + 1))
     done < "$RELEASE_FILE"
 else
     echo "No release versions found"
@@ -115,18 +115,20 @@ fi
 echo ""
 echo "=== Non-Release Versions ==="
 if [ -s "$NON_RELEASE_FILE" ]; then
-    # Sort by creation date (newest first) and process
+    # Sort by creation date (newest first) and save to a new temp file
     # The created_at field is ISO 8601 format, so lexicographic sort works
-    SORTED_NON_RELEASE=$(sort -t'|' -k3 -r "$NON_RELEASE_FILE")
-    NON_RELEASE_COUNT=$(wc -l < "$NON_RELEASE_FILE" | tr -d ' ')
+    SORTED_FILE=$(mktemp)
+    sort -t'|' -k3 -r "$NON_RELEASE_FILE" > "$SORTED_FILE"
+    NON_RELEASE_COUNT=$(wc -l < "$SORTED_FILE" | tr -d ' ')
+    TOTAL_VERSIONS=$((TOTAL_VERSIONS + NON_RELEASE_COUNT))
     echo "Found $NON_RELEASE_COUNT non-release versions"
     echo "Keeping at least $MIN_KEEP_VERSIONS most recent versions regardless of age"
     echo ""
 
+    # Process each version - reading from file avoids subshell counter issues
     VERSION_INDEX=0
-    echo "$SORTED_NON_RELEASE" | while IFS='|' read -r VERSION_ID VERSION_NAME CREATED_AT; do
+    while IFS='|' read -r VERSION_ID VERSION_NAME CREATED_AT; do
         VERSION_INDEX=$((VERSION_INDEX + 1))
-        TOTAL_VERSIONS=$((TOTAL_VERSIONS + 1))
 
         # Always keep the first N versions (most recent)
         if [ "$VERSION_INDEX" -le "$MIN_KEEP_VERSIONS" ]; then
@@ -154,7 +156,8 @@ if [ -s "$NON_RELEASE_FILE" ]; then
             echo "KEEP (recent): $VERSION_NAME (created: $CREATED_AT)"
             KEPT_VERSIONS=$((KEPT_VERSIONS + 1))
         fi
-    done
+    done < "$SORTED_FILE"
+    rm --force "$SORTED_FILE"
 else
     echo "No non-release versions found"
 fi
