@@ -242,6 +242,15 @@ export const Sidebar: FC<SidebarProps> = ({
                     slots={{
                         item: AgentNetworkNode as RichTreeViewSlots["item"],
                     }}
+                    // Pass custom props to tree items via slotProps.
+                    // Reference: https://github.com/mui/mui-x/issues/13351
+                    slotProps={{
+                        item: {
+                            nodeIndex: index,
+                            setSelectedNetwork,
+                            shouldDisableTree: isAwaitingLlm,
+                        } as unknown,
+                    }}
                 />
             </aside>
             <Popover
