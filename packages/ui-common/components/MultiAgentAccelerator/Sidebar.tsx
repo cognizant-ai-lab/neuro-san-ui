@@ -214,48 +214,79 @@ export const Sidebar: FC<SidebarProps> = ({
     // Keep track of which tags have which colors so that the same tag always has the same color
     const tagsToColors = new Map<string, TagColor>()
 
+    // Index to quickly look up AgentInfo by node ID without having to traverse the tree
     const nodeIndex = new Map<string, AgentInfo>()
 
     const buildTreeViewItems = () => {
+        // Map to keep track of created nodes in a tree structure
         const map = new Map<string, TreeViewBaseItem>()
+
+        // Resulting tree view items, ready for consumption by RichTreeView
         const result: TreeViewBaseItem[] = []
 
+        const uncategorized: TreeViewBaseItem = {id: "uncategorized", label: "Uncategorized", children: []}
+
+        // Build a tree structure from the flat list of networks.
+        // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
+        // structure from that.
         networks.forEach((network) => {
-            const parts = network.agent_name.split("/")
-            let currentLevel = result
+            // Split the agent_name into parts based on "/"
+            const parts = network?.agent_name.split("/")
 
-            parts.forEach((part, index) => {
-                const nodeId = parts.slice(0, index + 1).join("/")
-                let node = map.get(nodeId)
+            if (parts.length === 1) {
+                // Add single-name networks to the "Uncategorized" parent
+                uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
+                nodeIndex.set(network.agent_name, network)
+            } else {
+                // Start at the root level for each network
+                let currentLevel = result
 
-                if (!node) {
-                    node = {id: nodeId, label: part, children: []}
-                    map.set(nodeId, node)
-                    nodeIndex.set(nodeId, network)
+                // For each part of the path, create a new node if it doesn't exist
+                parts.forEach((part, index) => {
+                    const nodeId = parts.slice(0, index + 1).join("/")
+                    let node = map.get(nodeId)
 
-                    if (index === 0) {
-                        currentLevel.push(node)
-                    } else {
-                        const parentId = parts.slice(0, index).join("/")
-                        const parentNode = map.get(parentId)
-                        if (parentNode) {
-                            parentNode.children.push(node)
-                            parentNode.children.sort((a, b) => a.label.localeCompare(b.label))
+                    if (!node) {
+                        // Create new node
+                        node = {id: nodeId, label: part, children: []}
+                        map.set(nodeId, node)
+                        nodeIndex.set(nodeId, network)
+
+                        if (index === 0) {
+                            currentLevel.push(node)
+                        } else {
+                            // Find parent node and add this node to its children
+                            const parentId = parts.slice(0, index).join("/")
+                            const parentNode = map.get(parentId)
+                            if (parentNode) {
+                                parentNode.children.push(node)
+
+                                // Sort the parent's children after adding a new node
+                                parentNode.children.sort((a, b) => a.label.localeCompare(b.label))
+                            }
                         }
                     }
-                }
 
-                currentLevel = node.children
-            })
+                    // Descend into the tree for the next part
+                    currentLevel = node.children
+                })
+            }
         })
 
+        // Add "Uncategorized" to the result if it has children
+        if (uncategorized.children.length > 0) {
+            uncategorized.children.sort((a, b) => a.label.localeCompare(b.label))
+            result.push(uncategorized)
+        }
+
+        // Sort the top-level nodes
         result.sort((a, b) => a.label.localeCompare(b.label))
+
         return result
     }
 
     const treeViewItems = buildTreeViewItems()
 
-    console.debug("treeViewItems:", treeViewItems)
     /**
      * Custom Tree Item for MUI RichTreeView to display agent networks with tags
      * @param props - TreeItemProps
