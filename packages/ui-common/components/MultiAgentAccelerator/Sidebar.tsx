@@ -45,7 +45,8 @@ import {
     useState,
 } from "react"
 
-import {AgentNode, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
+import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
+import {AgentInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../state/environment"
 import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -92,13 +93,12 @@ enum CONNECTION_STATUS {
 }
 
 export interface SidebarProps {
-    customURLCallback: (url: string) => void
-    customURLLocalStorage?: string
-    id: string
-    isAwaitingLlm: boolean
-    networks: AgentNode[]
-    selectedNetwork: string
-    setSelectedNetwork: (network: string) => void
+    readonly customURLCallback: (url: string) => void
+    readonly customURLLocalStorage?: string
+    readonly id: string
+    readonly isAwaitingLlm: boolean
+    readonly networks: readonly AgentInfo[]
+    readonly setSelectedNetwork: (network: string) => void
 }
 
 // Define a type for the TAG_COLORS array
@@ -112,9 +112,9 @@ export const Sidebar: FC<SidebarProps> = ({
     id,
     isAwaitingLlm,
     networks,
-    selectedNetwork,
     setSelectedNetwork,
 }) => {
+    console.debug("networks:", networks)
     // Get default URL from the environment store.
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
     const [urlInput, setUrlInput] = useState<string>(customURLLocalStorage || backendNeuroSanApiUrl)
@@ -214,6 +214,45 @@ export const Sidebar: FC<SidebarProps> = ({
     // Keep track of which tags have which colors so that the same tag always has the same color
     const tagsToColors = new Map<string, TagColor>()
 
+    const buildTreeViewItems = () => {
+        const map = new Map<string, TreeViewBaseItem>()
+        const result: TreeViewBaseItem[] = []
+
+        networks.forEach(({agent_name}) => {
+            const parts = agent_name.split("/")
+            let currentLevel = result
+
+            parts.forEach((part, index) => {
+                const nodeId = parts.slice(0, index + 1).join("/")
+                let node = map.get(nodeId)
+
+                if (!node) {
+                    node = {id: nodeId, label: part, children: []}
+                    map.set(nodeId, node)
+
+                    if (index === 0) {
+                        currentLevel.push(node)
+                    } else {
+                        const parentId = parts.slice(0, index).join("/")
+                        const parentNode = map.get(parentId)
+                        if (parentNode) {
+                            parentNode.children.push(node)
+                            parentNode.children.sort((a, b) => a.label.localeCompare(b.label))
+                        }
+                    }
+                }
+
+                currentLevel = node.children
+            })
+        })
+
+        result.sort((a, b) => a.label.localeCompare(b.label))
+        return result
+    }
+
+    const treeViewItems = buildTreeViewItems()
+
+    console.debug("treeViewItems:", treeViewItems)
     /**
      * Custom Tree Item for MUI RichTreeView to display agent networks with tags
      * @param props - TreeItemProps
@@ -300,21 +339,21 @@ export const Sidebar: FC<SidebarProps> = ({
         )
     }
 
-    const treeViewItems: TreeViewBaseItem[] = networks
-        .map((network) => ({
-            id: network.label || "uncategorized-network",
-            label: network.label || "Uncategorized",
-            children: network?.children
-                ?.map((child, idx) => ({
-                    id: `${child.label}-child-${idx}`,
-                    label: child.label,
-                    path: child.path,
-                    tags: child.agent?.tags || [], // Pass tags from child.agent
-                }))
-                .sort((a, b) => a.label.localeCompare(b.label)),
-            selected: network.label === selectedNetwork,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label))
+    // const treeViewItems: TreeViewBaseItem[] = networks
+    //     .map((network) => ({
+    //         id: network.label || "uncategorized-network",
+    //         label: network.label || "Uncategorized",
+    //         children: network?.children
+    //             ?.map((child, idx) => ({
+    //                 id: `${child.label}-child-${idx}`,
+    //                 label: child.label,
+    //                 path: child.path,
+    //                 tags: child.agent?.tags || [], // Pass tags from child.agent
+    //             }))
+    //             .sort((a, b) => a.label.localeCompare(b.label)),
+    //         selected: network.label === selectedNetwork,
+    //     }))
+    //     .sort((a, b) => a.label.localeCompare(b.label))
 
     return (
         <>
