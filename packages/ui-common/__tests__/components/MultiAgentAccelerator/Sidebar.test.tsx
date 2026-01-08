@@ -21,7 +21,7 @@ import {SnackbarProvider} from "notistack"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar"
+import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {useEnvironmentStore} from "../../../state/environment"
 
