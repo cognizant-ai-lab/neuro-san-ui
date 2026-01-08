@@ -90,7 +90,7 @@ jobs:
             - name: Trigger deployment to neuro-san-deploy
               uses: peter-evans/repository-dispatch@v3
               with:
-                  token: ${{ secrets.NEURO_SAN_DEPLOY_TOKEN }}
+                  token: ${{ secrets.NEURO_SAN_DEPLOY_DISPATCH_TOKEN }}
                   repository: cognizant-ai-lab/neuro-san-deploy
                   event-type: ui_deploy
                   client-payload: |
