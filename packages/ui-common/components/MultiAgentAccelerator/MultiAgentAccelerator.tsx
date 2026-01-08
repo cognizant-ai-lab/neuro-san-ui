@@ -23,8 +23,8 @@ import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
 import {Sidebar} from "./Sidebar"
-import {AgentNode, getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
-import {ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
+import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
@@ -59,7 +59,7 @@ export const MultiAgentAccelerator = ({
     // animation)
     const [isStreaming, setIsStreaming] = useState(false)
 
-    const [networks, setNetworks] = useState<AgentNode[]>([])
+    const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
 
@@ -111,7 +111,7 @@ export const MultiAgentAccelerator = ({
     useEffect(() => {
         async function getNetworks() {
             try {
-                const networksTmp: AgentNode[] = await getAgentNetworks(neuroSanURL)
+                const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
                 setNetworks(networksTmp)
                 closeNotification()
             } catch (e) {
@@ -232,7 +232,6 @@ export const MultiAgentAccelerator = ({
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
-                        selectedNetwork={selectedNetwork}
                         setSelectedNetwork={setSelectedNetwork}
                     />
                 </Grid>
