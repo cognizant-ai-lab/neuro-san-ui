@@ -214,12 +214,14 @@ export const Sidebar: FC<SidebarProps> = ({
     // Keep track of which tags have which colors so that the same tag always has the same color
     const tagsToColors = new Map<string, TagColor>()
 
+    const nodeIndex = new Map<string, AgentInfo>()
+
     const buildTreeViewItems = () => {
         const map = new Map<string, TreeViewBaseItem>()
         const result: TreeViewBaseItem[] = []
 
-        networks.forEach(({agent_name}) => {
-            const parts = agent_name.split("/")
+        networks.forEach((network) => {
+            const parts = network.agent_name.split("/")
             let currentLevel = result
 
             parts.forEach((part, index) => {
@@ -229,6 +231,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 if (!node) {
                     node = {id: nodeId, label: part, children: []}
                     map.set(nodeId, node)
+                    nodeIndex.set(nodeId, network)
 
                     if (index === 0) {
                         currentLevel.push(node)
@@ -272,15 +275,13 @@ export const Sidebar: FC<SidebarProps> = ({
         const isParent = Array.isArray(children) && children.length > 0
         const isChild = !isParent
 
-        // This is a bit clunky: find the agent node in the networkFolders prop that matches this label
-        // Consider change the structure of networkFolders to make this easier (indexed by label?)
-        const agentNode = networks?.flatMap((folder) => folder.children).find((child) => child?.label === labelString)
+        const agentNode = nodeIndex.get(itemId)
 
         // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
         // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
         // RichTreeView item, but that isn't well-supported at this time.
         // Discussion: https://stackoverflow.com/questions/69481071/material-ui-how-to-pass-custom-props-to-a-custom-treeitem
-        const tags = isChild ? agentNode?.agent?.tags || [] : []
+        const tags = isChild ? agentNode?.tags || [] : []
 
         // Assign colors to tags as needed and store in tagsToColors map
         for (const tag of tags) {
@@ -291,7 +292,7 @@ export const Sidebar: FC<SidebarProps> = ({
         }
 
         // retrieve path for this network
-        const path = isChild ? agentNode?.path : null
+        const path = isChild ? agentNode?.agent_name : null
 
         return (
             <TreeItemProvider {...getContextProviderProps()}>
@@ -305,6 +306,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             {...getLabelProps()}
                             sx={{
                                 fontWeight: isParent ? "bold" : "normal",
+                                fontSize: isParent ? "1rem" : "0.9rem",
                                 color: isParent ? "var(--heading-color)" : null,
                                 "&:hover": {
                                     textDecoration: "underline", // Adds underline on hover
