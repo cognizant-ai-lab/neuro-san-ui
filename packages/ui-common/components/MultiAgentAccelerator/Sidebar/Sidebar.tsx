@@ -17,7 +17,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import ClearIcon from "@mui/icons-material/Clear"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
-import {Chip, styled, useColorScheme, useTheme} from "@mui/material"
+import {styled, useColorScheme, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import IconButton from "@mui/material/IconButton"
@@ -26,16 +26,8 @@ import Popover from "@mui/material/Popover"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {RichTreeViewSlots, TreeViewBaseItem, useTreeItem} from "@mui/x-tree-view"
+import {RichTreeViewSlots} from "@mui/x-tree-view"
 import {RichTreeView} from "@mui/x-tree-view/RichTreeView"
-import {
-    TreeItemContent,
-    TreeItemGroupTransition,
-    TreeItemLabel,
-    TreeItemProps,
-    TreeItemRoot,
-} from "@mui/x-tree-view/TreeItem"
-import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {
     FC,
     ChangeEvent as ReactChangeEvent,
@@ -45,25 +37,13 @@ import {
     useState,
 } from "react"
 
-import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
-import {AgentInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useEnvironmentStore} from "../../state/environment"
-import {isDarkMode} from "../../utils/Theme"
-import {getZIndex} from "../../utils/zIndexLayers"
-import {cleanUpAgentName} from "../AgentChat/Utils"
-
-// Palette of colors we can use for tags
-const TAG_COLORS = [
-    "--bs-accent2-light",
-    "--bs-accent1-medium",
-    "--bs-accent3-medium",
-    "--bs-accent3-dark",
-    "--bs-green",
-    "--bs-orange",
-    "--bs-pink",
-    "--bs-secondary",
-    "--bs-yellow",
-] as const
+import {AgentNetworkNode} from "./AgentNetworkTreeItem"
+import {buildTreeViewItems} from "./TreeUtils"
+import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
+import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useEnvironmentStore} from "../../../state/environment"
+import {isDarkMode} from "../../../utils/Theme"
+import {getZIndex} from "../../../utils/zIndexLayers"
 
 // #region: Styled Components
 
@@ -101,9 +81,6 @@ export interface SidebarProps {
     readonly setSelectedNetwork: (network: string) => void
 }
 
-// Define a type for the TAG_COLORS array
-type TagColor = (typeof TAG_COLORS)[number]
-
 // #endregion: Types
 
 export const Sidebar: FC<SidebarProps> = ({
@@ -114,7 +91,6 @@ export const Sidebar: FC<SidebarProps> = ({
     networks,
     setSelectedNetwork,
 }) => {
-    console.debug("networks:", networks)
     // Get default URL from the environment store.
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
     const [urlInput, setUrlInput] = useState<string>(customURLLocalStorage || backendNeuroSanApiUrl)
@@ -207,186 +183,7 @@ export const Sidebar: FC<SidebarProps> = ({
         void fetchVersion()
     }, [])
 
-    const selectNetworkHandler = (network: string) => {
-        setSelectedNetwork(network)
-    }
-
-    // Keep track of which tags have which colors so that the same tag always has the same color
-    const tagsToColors = new Map<string, TagColor>()
-
-    // Index to quickly look up AgentInfo by node ID without having to traverse the tree
-    const nodeIndex = new Map<string, AgentInfo>()
-
-    const buildTreeViewItems = () => {
-        // Map to keep track of created nodes in a tree structure
-        const map = new Map<string, TreeViewBaseItem>()
-
-        // Resulting tree view items, ready for consumption by RichTreeView
-        const result: TreeViewBaseItem[] = []
-
-        const uncategorized: TreeViewBaseItem = {id: "uncategorized", label: "Uncategorized", children: []}
-
-        // Build a tree structure from the flat list of networks.
-        // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
-        // structure from that.
-        networks.forEach((network) => {
-            // Split the agent_name into parts based on "/"
-            const parts = network?.agent_name.split("/")
-
-            if (parts.length === 1) {
-                // Add single-name networks to the "Uncategorized" parent
-                uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
-                nodeIndex.set(network.agent_name, network)
-            } else {
-                // Start at the root level for each network
-                let currentLevel = result
-
-                // For each part of the path, create a new node if it doesn't exist
-                parts.forEach((part, index) => {
-                    const nodeId = parts.slice(0, index + 1).join("/")
-                    let node = map.get(nodeId)
-
-                    if (!node) {
-                        // Create new node
-                        node = {id: nodeId, label: part, children: []}
-                        map.set(nodeId, node)
-                        nodeIndex.set(nodeId, network)
-
-                        if (index === 0) {
-                            currentLevel.push(node)
-                        } else {
-                            // Find parent node and add this node to its children
-                            const parentId = parts.slice(0, index).join("/")
-                            const parentNode = map.get(parentId)
-                            if (parentNode) {
-                                parentNode.children.push(node)
-
-                                // Sort the parent's children after adding a new node
-                                parentNode.children.sort((a, b) => a.label.localeCompare(b.label))
-                            }
-                        }
-                    }
-
-                    // Descend into the tree for the next part
-                    currentLevel = node.children
-                })
-            }
-        })
-
-        // Add "Uncategorized" to the result if it has children
-        if (uncategorized.children.length > 0) {
-            uncategorized.children.sort((a, b) => a.label.localeCompare(b.label))
-            result.push(uncategorized)
-        }
-
-        // Sort the top-level nodes
-        result.sort((a, b) => a.label.localeCompare(b.label))
-
-        return result
-    }
-
-    const treeViewItems = buildTreeViewItems()
-
-    /**
-     * Custom Tree Item for MUI RichTreeView to display agent networks with tags
-     * @param props - TreeItemProps
-     * @returns JSX.Element containing the custom tree item
-     */
-    // For now this component is only used in this module so keep it privately defined here
-    // eslint-disable-next-line react/no-multi-comp
-    const CustomTreeItem = (props: TreeItemProps) => {
-        const {itemId, children, label, disabled} = props
-
-        // We know all labels are strings because we set them that way in the tree view items
-        const labelString = label as string
-
-        const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
-            useTreeItem({itemId, children, label, disabled})
-
-        const isParent = Array.isArray(children) && children.length > 0
-        const isChild = !isParent
-
-        const agentNode = nodeIndex.get(itemId)
-
-        // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
-        // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
-        // RichTreeView item, but that isn't well-supported at this time.
-        // Discussion: https://stackoverflow.com/questions/69481071/material-ui-how-to-pass-custom-props-to-a-custom-treeitem
-        const tags = isChild ? agentNode?.tags || [] : []
-
-        // Assign colors to tags as needed and store in tagsToColors map
-        for (const tag of tags) {
-            if (!tagsToColors.has(tag)) {
-                const color = TAG_COLORS[tagsToColors.size % TAG_COLORS.length]
-                tagsToColors.set(tag, color)
-            }
-        }
-
-        // retrieve path for this network
-        const path = isChild ? agentNode?.agent_name : null
-
-        return (
-            <TreeItemProvider {...getContextProviderProps()}>
-                <TreeItemRoot {...getRootProps()}>
-                    <TreeItemContent
-                        key={labelString}
-                        {...getContentProps()}
-                        {...(isParent || isAwaitingLlm ? {} : {onClick: () => selectNetworkHandler(path)})}
-                    >
-                        <TreeItemLabel
-                            {...getLabelProps()}
-                            sx={{
-                                fontWeight: isParent ? "bold" : "normal",
-                                fontSize: isParent ? "1rem" : "0.9rem",
-                                color: isParent ? "var(--heading-color)" : null,
-                                "&:hover": {
-                                    textDecoration: "underline", // Adds underline on hover
-                                },
-                            }}
-                        >
-                            {cleanUpAgentName(labelString)}
-                        </TreeItemLabel>
-                        {isChild && tags?.length > 0 ? (
-                            <Tooltip
-                                title={tags
-                                    .slice()
-                                    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
-                                    .map((tag) => (
-                                        <Chip
-                                            key={tag}
-                                            label={tag}
-                                            style={{
-                                                margin: "0.25rem",
-                                                backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
-                                            }}
-                                        />
-                                    ))}
-                            >
-                                <span style={{fontSize: "0.5rem", marginLeft: "0.5rem", color: "gray"}}>Tags</span>
-                            </Tooltip>
-                        ) : null}
-                    </TreeItemContent>
-                    {children && <TreeItemGroupTransition {...getGroupTransitionProps()} />}
-                </TreeItemRoot>
-            </TreeItemProvider>
-        )
-    }
-
-    // const treeViewItems: TreeViewBaseItem[] = networks
-    //     .map((network) => ({
-    //         id: network.label || "uncategorized-network",
-    //         label: network.label || "Uncategorized",
-    //         children: network?.children
-    //             ?.map((child, idx) => ({
-    //                 id: `${child.label}-child-${idx}`,
-    //                 label: child.label,
-    //                 path: child.path,
-    //                 tags: child.agent?.tags || [], // Pass tags from child.agent
-    //             }))
-    //             .sort((a, b) => a.label.localeCompare(b.label)),
-    //         selected: network.label === selectedNetwork,
-    //     }))
-    //     .sort((a, b) => a.label.localeCompare(b.label))
+    const {treeViewItems, index} = buildTreeViewItems(networks)
 
     return (
         <>
@@ -443,7 +240,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 <RichTreeView
                     items={treeViewItems}
                     slots={{
-                        item: CustomTreeItem as RichTreeViewSlots["item"],
+                        item: AgentNetworkNode as RichTreeViewSlots["item"],
                     }}
                 />
             </aside>

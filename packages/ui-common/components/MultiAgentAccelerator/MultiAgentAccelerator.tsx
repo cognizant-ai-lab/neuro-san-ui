@@ -22,7 +22,7 @@ import {JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
-import {Sidebar} from "./Sidebar"
+import {Sidebar} from "./Sidebar/Sidebar"
 import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
