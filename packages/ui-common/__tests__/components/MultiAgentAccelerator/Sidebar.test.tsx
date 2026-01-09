@@ -19,6 +19,11 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 
+import {
+    LIST_NETWORKS_RESPONSE,
+    TEST_AGENT_MATH_GUY,
+    TEST_AGENTS_FOLDER,
+} from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
@@ -30,8 +35,7 @@ const AGENT_SERVER_ADDRESS = "Agent server address"
 const CLEAR_INPUT = {name: /Clear input/u}
 const DEFAULT_EXAMPLE_URL = "https://default.example.com"
 const EDIT_EXAMPLE_URL = "https://edit.example.com"
-const TEST_AGENT_MATH_GUY = "math-guy"
-const TEST_AGENT_MUSIC_NERD = "music-nerd"
+
 const TEST_EXAMPLE_URL = "https://test.example.com"
 const TOOLTIP_EXAMPLE_URL = "https://tooltip.example.com"
 
@@ -39,9 +43,6 @@ jest.mock("../../../controller/agent/Agent")
 
 // Simulated Neuro-san version for testing
 const TEST_VERSION = "1.2.3.4a"
-
-// Folder name for test agents
-const TEST_AGENTS_FOLDER = "test-agents"
 
 // Mock MUI theming
 jest.mock("@mui/material", () => ({
@@ -57,33 +58,7 @@ describe("SideBar", () => {
     const defaultProps: SidebarProps = {
         customURLCallback: jest.fn(),
         id: "test-flow-id",
-        networks: [
-            {
-                label: "test-networks",
-                path: "",
-                children: [
-                    {
-                        label: TEST_AGENT_MATH_GUY,
-                        path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                        agent: {
-                            agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                            description: "",
-                            tags: ["tag1", "tag2", "tag3"],
-                        },
-                    },
-                    {
-                        label: TEST_AGENT_MUSIC_NERD,
-                        path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
-                        agent: {
-                            agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
-                            description: "",
-                            tags: [],
-                        },
-                    },
-                ],
-            },
-        ],
-        selectedNetwork: TEST_AGENT_MATH_GUY,
+        networks: LIST_NETWORKS_RESPONSE,
         setSelectedNetwork: jest.fn(),
         isAwaitingLlm: false,
     }
@@ -147,7 +122,7 @@ describe("SideBar", () => {
         await screen.findByText("Agent Networks")
 
         // click to expand networks
-        const header = await screen.findByText("Test Networks")
+        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
         await user.click(header)
 
         // Ensure the settings button is rendered

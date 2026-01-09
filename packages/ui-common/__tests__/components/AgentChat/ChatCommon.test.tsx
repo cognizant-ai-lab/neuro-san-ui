@@ -19,6 +19,7 @@ import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
+import {TEST_AGENT_MATH_GUY, TEST_AGENT_MUSIC_NERD} from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
 import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
@@ -44,9 +45,7 @@ jest.mock("../../../controller/llm/LlmChat")
 jest.mock("../../../components/Common/notification")
 
 const TEST_USER = "testUser"
-const TEST_AGENT_MATH_GUY = "Math Guy"
-const TEST_AGENT_MUSIC_NERD = "Music Nerd"
-const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
+const CHAT_WITH_MATH_GUY = `Chat with ${cleanUpAgentName(TEST_AGENT_MATH_GUY)}`
 const TEST_TOOL_SPOTIFY = "spotify_tool"
 const TEST_TOOL_LAST_FM = "last_fm_tool"
 const TEST_TOOL_SOLVER = "math_solver_tool"
@@ -156,7 +155,7 @@ describe("ChatCommon", () => {
 
         renderChatCommonComponent()
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
 
         // Should have "Clear Chat", "Regenerate" and "Send" buttons
         expect(screen.getByRole("button", {name: "Clear Chat"})).toBeInTheDocument()
@@ -185,7 +184,7 @@ describe("ChatCommon", () => {
         })
 
         // Now math guy
-        const mathGuyItem = within(connectivityList).queryByText(TEST_AGENT_MATH_GUY)
+        const mathGuyItem = within(connectivityList).queryByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
 
         // Should not be present since we are chatting with Math Guy, and we don't show agents connecting to themselves
         expect(mathGuyItem).not.toBeInTheDocument()
@@ -228,7 +227,7 @@ describe("ChatCommon", () => {
         })
         renderChatCommonComponent()
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
 
         // Should be no sample query chips rendered
         expect(document.querySelectorAll(".MuiChip-root").length).toBe(0)
@@ -256,7 +255,7 @@ describe("ChatCommon", () => {
 
         renderChatCommonComponent({onSend: mockSendFunction})
 
-        const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
+        const userInput = await screen.findByPlaceholderText(CHAT_WITH_MATH_GUY)
         expect(userInput).toBeInTheDocument()
 
         // Type user input
@@ -492,7 +491,7 @@ describe("ChatCommon", () => {
     it("Should show agent introduction", async () => {
         renderChatCommonComponent()
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
     })
 
     it("Should clear chat when a new agent is selected", async () => {
@@ -504,7 +503,7 @@ describe("ChatCommon", () => {
         )
 
         // Make sure first agent greeting appears
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
 
         rerender(
             <ChatCommon
@@ -831,7 +830,7 @@ describe("ChatCommon", () => {
         await user.click(clearButton)
 
         // Verify chat is cleared and agent introduction appears
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
         expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
     })
 
@@ -1036,7 +1035,7 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, "test query")
 
         // Component should still be functional - check for agent greeting elements
-        const agentGreetings = screen.getAllByText(TEST_AGENT_MATH_GUY)
+        const agentGreetings = screen.getAllByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
         expect(agentGreetings.length).toBeGreaterThan(0)
     })
 
@@ -1122,7 +1121,7 @@ describe("ChatCommon", () => {
             expect(chatContainer).toBeInTheDocument()
         })
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
     })
 
     it("Should handle connectivity info error gracefully", async () => {
@@ -1132,7 +1131,7 @@ describe("ChatCommon", () => {
         renderChatCommonComponent()
 
         // Component should still render despite connectivity error
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY)).toBeInTheDocument()
+        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))).toBeInTheDocument()
     })
 
     it("Should handle network request timeout", async () => {

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {
@@ -38,9 +39,6 @@ jest.mock("../../../controller/llm/LlmChat")
 
 const NEURO_SAN_EXAMPLE_URL = "https://neuro-san.example.com"
 
-const TEST_AGENTS_FOLDER = "test-agents"
-const TEST_AGENT_MATH_GUY = "math_guy"
-const TEST_AGENT_MUSIC_NERD = "music-nerd"
 const TEST_USERNAME = "test-username"
 
 let oldFetch: typeof global.fetch
@@ -82,30 +80,10 @@ describe("Controller/Agent/getAgentNetworks", () => {
     })
 
     it("Should fetch and return agent network names", async () => {
-        const agents = [
-            {agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`},
-            {agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`},
-        ]
+        const agents = LIST_NETWORKS_RESPONSE
         global.fetch = mockFetch({agents})
         const result = await getAgentNetworks(NEURO_SAN_EXAMPLE_URL)
-        expect(result).toEqual([
-            {
-                label: TEST_AGENTS_FOLDER,
-                path: TEST_AGENTS_FOLDER,
-                children: [
-                    {
-                        label: TEST_AGENT_MATH_GUY,
-                        path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                        agent: {agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`},
-                    },
-                    {
-                        label: TEST_AGENT_MUSIC_NERD,
-                        path: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
-                        agent: {agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`},
-                    },
-                ],
-            },
-        ])
+        expect(result).toEqual(LIST_NETWORKS_RESPONSE)
         expect(global.fetch).toHaveBeenCalledWith(`${NEURO_SAN_EXAMPLE_URL}${ApiPaths.ConciergeService_List}`)
     })
 })

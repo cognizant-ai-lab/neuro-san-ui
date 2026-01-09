@@ -21,8 +21,15 @@ import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {forwardRef} from "react"
 
+import {
+    LIST_NETWORKS_RESPONSE,
+    TEST_AGENT_MATH_GUY,
+    TEST_AGENT_MUSIC_NERD,
+    TEST_AGENTS_FOLDER,
+} from "../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
+import {cleanUpAgentName} from "../../../../packages/ui-common"
 import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
@@ -36,9 +43,6 @@ const MOCK_USER = "mock-user"
 
 // Backend neuro-san API server to use
 const NEURO_SAN_SERVER_URL = "https://default.example.com"
-
-const TEST_AGENT_MATH_GUY = "Math Guy"
-const TEST_AGENT_MUSIC_NERD = "Music Nerd"
 
 const mockUseSession = useSession as jest.Mock
 
@@ -127,24 +131,7 @@ describe("Multi Agent Accelerator Page", () => {
 
     beforeEach(() => {
         mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
-        ;(getAgentNetworks as jest.Mock).mockResolvedValue([
-            {
-                label: "test-networks",
-                path: "",
-                children: [
-                    {
-                        label: TEST_AGENT_MATH_GUY,
-                        path: `test-networks/${TEST_AGENT_MATH_GUY}`,
-                        agent: {agent_name: `test-networks/${TEST_AGENT_MATH_GUY}`, description: "", tags: []},
-                    },
-                    {
-                        label: TEST_AGENT_MUSIC_NERD,
-                        path: `test-networks/${TEST_AGENT_MUSIC_NERD}`,
-                        agent: {agent_name: `test-networks/${TEST_AGENT_MUSIC_NERD}`, description: "", tags: []},
-                    },
-                ],
-            },
-        ])
+        ;(getAgentNetworks as jest.Mock).mockResolvedValue(LIST_NETWORKS_RESPONSE)
 
         const mockGetConnectivity = jest.requireMock(
             "../../../../packages/ui-common/controller/agent/Agent"
@@ -183,29 +170,29 @@ describe("Multi Agent Accelerator Page", () => {
             renderMultiAgentAcceleratorPage()
 
             // click to expand networks
-            const header = await screen.findByText("Test Networks")
+            const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
             await user.click(header)
 
             // Ensure Math Guy (default network) element is rendered.
-            await screen.findByText(TEST_AGENT_MATH_GUY)
+            await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
 
             // Find sidebar. Will fail if <> 1 found
             await screen.findByText("Agent Networks")
 
             // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
-            const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD)
+            const musicNerdItem = await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))
 
             // Click Music Nerd sidebar item
             await user.click(musicNerdItem)
 
             // Music Nerd is selected now. Make sure we see it.
-            await screen.findByText(TEST_AGENT_MUSIC_NERD)
+            await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))
 
             // Make sure the page rendered ChatCommon with expected props
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
                     currentUser: MOCK_USER,
-                    targetAgent: `test-networks/${TEST_AGENT_MUSIC_NERD}`,
+                    targetAgent: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
                     clearChatOnNewAgent: true,
                     neuroSanURL: NEURO_SAN_SERVER_URL,
                 })
@@ -245,11 +232,11 @@ describe("Multi Agent Accelerator Page", () => {
         renderMultiAgentAcceleratorPage()
 
         // Expand networks
-        const header = await screen.findByText("Test Networks")
+        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
         await user.click(header)
 
         // Select a network to trigger getConnectivity
-        const network = await screen.findByText(TEST_AGENT_MATH_GUY)
+        const network = await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
         await user.click(network)
 
         // Assert the console.error call
@@ -257,7 +244,7 @@ describe("Multi Agent Accelerator Page", () => {
             expect(debugSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
                     // eslint-disable-next-line max-len
-                    `"Unable to get agent list for "Test Networks ${TEST_AGENT_MATH_GUY}". Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch connectivity."`
+                    `"Unable to get agent list for "${cleanUpAgentName(TEST_AGENTS_FOLDER)} ${cleanUpAgentName(TEST_AGENT_MATH_GUY)}". Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch connectivity."`
                 )
             )
         })
