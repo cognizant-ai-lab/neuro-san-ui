@@ -84,14 +84,6 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
     }
 }
 
-// Tree node for representing agent networks in a hierarchical structure.
-export interface AgentNode {
-    label: string // label/key, eg. "airline_policy"
-    path: string // full path from root, e.g. "industry/macys"
-    children?: AgentNode[] // present for directory nodes
-    agent?: AgentInfo // present for leaf agent nodes
-}
-
 /**
  * Get the list of available agent networks from the concierge service.
  * @param url The neuro-san server URL
