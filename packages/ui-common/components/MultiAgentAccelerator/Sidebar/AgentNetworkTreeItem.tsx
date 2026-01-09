@@ -1,4 +1,5 @@
 import BookmarkIcon from "@mui/icons-material/Bookmark"
+import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItem} from "@mui/x-tree-view"
@@ -96,38 +97,42 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
                     {...getContentProps()}
                     {...(isParent || shouldDisableTree ? {} : {onClick: () => selectNetworkHandler(path)})}
                 >
-                    <TreeItemLabel
-                        {...getLabelProps()}
-                        sx={{
-                            fontWeight: isParent ? "bold" : "normal",
-                            fontSize: isParent ? "1rem" : "0.9rem",
-                            color: isParent ? "var(--heading-color)" : null,
-                            "&:hover": {
-                                textDecoration: "underline", // Adds underline on hover
-                            },
-                        }}
-                    >
-                        {cleanUpAgentName(labelString)}
-                    </TreeItemLabel>
-                    {isChild && tags?.length > 0 ? (
-                        <Tooltip
-                            title={tags
-                                .slice()
-                                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
-                                .map((tag) => (
-                                    <Chip
-                                        key={tag}
-                                        label={tag}
-                                        style={{
-                                            margin: "0.25rem",
-                                            backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
-                                        }}
-                                    />
-                                ))}
+                    <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
+                        <TreeItemLabel
+                            {...getLabelProps()}
+                            sx={{
+                                fontWeight: isParent ? "bold" : "normal",
+                                fontSize: isParent ? "1rem" : "0.9rem",
+                                color: isParent ? "var(--heading-color)" : null,
+                                "&:hover": {
+                                    textDecoration: "underline",
+                                },
+                            }}
                         >
-                            <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
-                        </Tooltip>
-                    ) : null}
+                            {cleanUpAgentName(labelString)}
+                        </TreeItemLabel>
+                        {isChild && tags?.length > 0 ? (
+                            <Tooltip
+                                title={tags
+                                    .slice()
+                                    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                    .map((tag) => (
+                                        <Chip
+                                            key={tag}
+                                            label={tag}
+                                            style={{
+                                                margin: "0.25rem",
+                                                backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
+                                            }}
+                                        />
+                                    ))}
+                                placement="right"
+                                arrow={true}
+                            >
+                                <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
+                            </Tooltip>
+                        ) : null}
+                    </Box>
                 </TreeItemContent>
                 {children && <TreeItemGroupTransition {...getGroupTransitionProps()} />}
             </TreeItemRoot>
