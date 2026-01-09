@@ -1448,6 +1448,7 @@ __metadata:
     "@emotion/styled": "npm:11.13.0"
     "@mui/icons-material": "npm:7.3.1"
     "@mui/material": "npm:7.3.1"
+    "@mui/x-tree-view": "npm:8.22.0"
     "@types/lodash-es": "npm:4.17.12"
     eslint-config-next: "npm:15.4.6"
     http-status: "npm:1.7.3"
@@ -1476,7 +1477,6 @@ __metadata:
     "@babel/core": "npm:7.23.7"
     "@babel/preset-env": "npm:7.28.3"
     "@langchain/core": "npm:0.2.36"
-    "@mui/x-tree-view": "npm:8.22.0"
     "@types/dagre": "npm:0.7.53"
     "@types/lodash-es": "npm:4.17.12"
     "@types/node": "npm:20.11.5"
@@ -1506,6 +1506,7 @@ __metadata:
     "@emotion/styled": ^11.13.0
     "@mui/icons-material": ^7.3.1
     "@mui/material": ^7.3.1
+    "@mui/x-tree-view": ^8.22.0
     react: ^18.2.0
     react-dom: ^18.2.0
     typescript: ^5.9.2
@@ -2844,6 +2845,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mui/types@npm:^7.4.10":
+  version: 7.4.10
+  resolution: "@mui/types@npm:7.4.10"
+  dependencies:
+    "@babel/runtime": "npm:^7.28.4"
+  peerDependencies:
+    "@types/react": ^17.0.0 || ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/2e1e807795dcb6f5bdb62eb49068a7f4414299c62f55ceaaa05925a1d043799216150873c00c02f086fd631f7171c97ea416dc66c099c98649503ee3046dab3d
+  languageName: node
+  linkType: hard
+
 "@mui/types@npm:^7.4.5, @mui/types@npm:^7.4.9":
   version: 7.4.9
   resolution: "@mui/types@npm:7.4.9"
@@ -2858,7 +2873,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/utils@npm:^7.3.1, @mui/utils@npm:^7.3.5, @mui/utils@npm:^7.3.6":
+"@mui/utils@npm:^7.3.1, @mui/utils@npm:^7.3.6":
   version: 7.3.6
   resolution: "@mui/utils@npm:7.3.6"
   dependencies:
@@ -2875,6 +2890,26 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/0af5f65a022028fa25b6a331443c44fdfd9060355495fd10849807f7aee9c9a4f776592cfe427b3c478f4ee4bf96349d9e84d1a035d5e31ba84d821748b4f185
+  languageName: node
+  linkType: hard
+
+"@mui/utils@npm:^7.3.5":
+  version: 7.3.7
+  resolution: "@mui/utils@npm:7.3.7"
+  dependencies:
+    "@babel/runtime": "npm:^7.28.4"
+    "@mui/types": "npm:^7.4.10"
+    "@types/prop-types": "npm:^15.7.15"
+    clsx: "npm:^2.1.1"
+    prop-types: "npm:^15.8.1"
+    react-is: "npm:^19.2.3"
+  peerDependencies:
+    "@types/react": ^17.0.0 || ^18.0.0 || ^19.0.0
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/2732a01a24968c8fe73b1cf3c7afabffd8a5f13556f3f8078529eaf09d855a05cb7905421b733cb671f771406eb857f5dddb3b82166ecc2a3d0ab1a987954d08
   languageName: node
   linkType: hard
 
@@ -10511,7 +10546,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-is@npm:^19.1.1, react-is@npm:^19.2.0":
+"react-is@npm:^19.1.1, react-is@npm:^19.2.0, react-is@npm:^19.2.3":
   version: 19.2.3
   resolution: "react-is@npm:19.2.3"
   checksum: 10c0/2b54c422c21b8dbd68a435a1cce21ecd5b6f06f48659531f7d53dd7368365da5a67e946f352fb2010d11ca40658aa67bec90995f0f1ec5556c0f71dbffe54994

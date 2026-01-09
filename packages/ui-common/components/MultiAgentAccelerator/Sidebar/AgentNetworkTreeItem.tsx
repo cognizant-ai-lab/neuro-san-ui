@@ -1,3 +1,4 @@
+import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Chip from "@mui/material/Chip"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItem} from "@mui/x-tree-view"
@@ -30,6 +31,9 @@ const TAG_COLORS = [
 // Define a type for the TAG_COLORS array
 type TagColor = (typeof TAG_COLORS)[number]
 
+// Keep track of which tags have which colors so that the same tag always has the same color
+const tagsToColors = new Map<string, TagColor>()
+
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly agent_name: string
     readonly tags?: string[]
@@ -54,9 +58,6 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
 }) => {
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
-
-    // Keep track of which tags have which colors so that the same tag always has the same color
-    const tagsToColors = new Map<string, TagColor>()
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
@@ -124,7 +125,7 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
                                     />
                                 ))}
                         >
-                            <span style={{fontSize: "0.5rem", marginLeft: "0.5rem", color: "gray"}}>Tags</span>
+                            <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
                         </Tooltip>
                     ) : null}
                 </TreeItemContent>
