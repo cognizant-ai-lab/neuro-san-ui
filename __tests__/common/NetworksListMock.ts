@@ -4,10 +4,12 @@
 
 export const TEST_AGENT_MATH_GUY = "math-guy"
 export const TEST_AGENT_MUSIC_NERD = "music-nerd"
-const TEST_AGENT_AIRLINE_POLICY = "airline-policy"
+export const TEST_DEEP_AGENT = "deep-agent"
 
 // Folder name for test agents
 export const TEST_AGENTS_FOLDER = "test-agents"
+export const LEVEL_1_FOLDER = "level-1"
+export const LEVEL_2_FOLDER = "level-2"
 
 export const LIST_NETWORKS_RESPONSE = [
     {
@@ -21,13 +23,18 @@ export const LIST_NETWORKS_RESPONSE = [
         tags: [],
     },
     {
-        agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_AIRLINE_POLICY}`,
+        agent_name: "uncategorized-network-1",
         description: "",
         tags: [],
     },
     {
-        agent_name: TEST_AGENT_AIRLINE_POLICY,
+        agent_name: "uncategorized-network-2",
         description: "",
         tags: [],
+    },
+    {
+        agent_name: `${TEST_AGENTS_FOLDER}/${LEVEL_1_FOLDER}/${LEVEL_2_FOLDER}/${TEST_DEEP_AGENT}`,
+        description: "",
+        tags: ["deep-agent-tag1", "deep-agent-tag2"],
     },
 ]

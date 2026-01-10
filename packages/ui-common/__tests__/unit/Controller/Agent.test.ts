@@ -66,6 +66,13 @@ describe("Controller/Agent/testConnection", () => {
         const result2: TestConnectionResult = await testConnection("www.example.com")
         expect(result2.success).toBe(false)
     })
+
+    it("Should handle a non-ok response from fetch", async () => {
+        global.fetch = mockFetch({}, false)
+
+        const result: TestConnectionResult = await testConnection("www.example.com")
+        expect(result.success).toBe(false)
+    })
 })
 
 describe("Controller/Agent/getAgentNetworks", () => {

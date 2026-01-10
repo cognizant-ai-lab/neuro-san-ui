@@ -434,5 +434,22 @@ describe("Multi Agent Accelerator Page", () => {
         await screen.findByText(expectedPopupText)
 
         expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedPopupText))
+
+        // Second time user kicks off an interaction, popup should not appear again
+        debugSpy.mockClear()
+
+        // wait for popup to disappear
+        await waitFor(() => {
+            expect(screen.queryByText(expectedPopupText)).not.toBeInTheDocument()
+        })
+
+        await act(async () => {
+            onStreamingStarted()
+        })
+
+        expect(debugSpy).not.toHaveBeenCalled()
+
+        // make sure popup not in doc
+        expect(screen.queryByText(expectedPopupText)).not.toBeInTheDocument()
     })
 })

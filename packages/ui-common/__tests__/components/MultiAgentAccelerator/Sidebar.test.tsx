@@ -15,14 +15,17 @@ limitations under the License.
 */
 
 import {useColorScheme} from "@mui/material"
-import {render, screen, waitFor} from "@testing-library/react"
+import {render, screen, waitFor, within} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 
 import {
+    LEVEL_1_FOLDER,
+    LEVEL_2_FOLDER,
     LIST_NETWORKS_RESPONSE,
     TEST_AGENT_MATH_GUY,
     TEST_AGENTS_FOLDER,
+    TEST_DEEP_AGENT,
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
@@ -144,6 +147,77 @@ describe("SideBar", () => {
 
         // Check if the tooltip is displayed with the correct URL and version
         await screen.findByLabelText((label) => label.includes(DEFAULT_EXAMPLE_URL) && label.includes(TEST_VERSION))
+    })
+
+    it("Should render the tags when user mouses over the icon", async () => {
+        renderSidebarComponent()
+
+        // click to expand networks
+        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
+        await user.click(header)
+
+        // Find the first tag item and hover over it
+        const network = await screen.findByTestId("BookmarkIcon")
+        await user.hover(network)
+
+        // Check that all tags are displayed in the tooltip
+        for (const tag of LIST_NETWORKS_RESPONSE[0].tags) {
+            await screen.findByText(tag)
+        }
+    })
+
+    it("Should render uncategorized networks correctly", async () => {
+        renderSidebarComponent()
+
+        // Ensure uncategorized networks are displayed
+        const uncategorizedHeader = await screen.findByText("Uncategorized")
+
+        // Expand Uncategorized section
+        await user.click(uncategorizedHeader)
+
+        // Check for uncategorized networks; they are those without a "/" in their agent_name
+        const uncategorizedNetworks = LIST_NETWORKS_RESPONSE.filter((n) => !n.agent_name.includes("/"))
+        for (const network of uncategorizedNetworks) {
+            await screen.findByText(cleanUpAgentName(network.agent_name))
+        }
+    })
+
+    it("Should handle networks of arbitrary depth", async () => {
+        renderSidebarComponent()
+
+        // click to expand networks
+        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
+        await user.click(header)
+
+        // Ensure deep network is present
+        const level1Header = await screen.findByText(cleanUpAgentName(LEVEL_1_FOLDER))
+
+        // Expand level 1
+        await user.click(level1Header)
+
+        const level2Header = await screen.findByText(cleanUpAgentName(LEVEL_2_FOLDER))
+
+        // Expand level 2
+        await user.click(level2Header)
+
+        // Check for deep agent
+        const deepAgent = await screen.findByText(cleanUpAgentName(TEST_DEEP_AGENT))
+
+        // Deep agent tags
+        // Find the BookmarkIcon within the same parent container as the deep agent text
+        const deepAgentContainer = deepAgent.closest('[role="treeitem"]')
+        const bookmarkIcon = within(deepAgentContainer as HTMLElement).getByTestId("BookmarkIcon")
+
+        // Hover over the bookmark icon
+        await user.hover(bookmarkIcon)
+
+        // Verify the deep agent tags from LIST_NETWORKS_RESPONSE are displayed
+        const deepAgentData = LIST_NETWORKS_RESPONSE.find(
+            (n) => n.agent_name === `${TEST_AGENTS_FOLDER}/${LEVEL_1_FOLDER}/${LEVEL_2_FOLDER}/${TEST_DEEP_AGENT}`
+        )
+        for (const tag of deepAgentData.tags) {
+            await screen.findByText(tag)
+        }
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {
