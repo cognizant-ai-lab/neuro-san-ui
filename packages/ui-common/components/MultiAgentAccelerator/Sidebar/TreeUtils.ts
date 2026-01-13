@@ -9,11 +9,13 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
     // Use a queue for breadth-first traversal to avoid recursion
     const queue: TreeViewBaseItem[] = [...nodes]
+    let index = 0
 
-    while (queue.length > 0) {
-        const node = queue.shift()
+    while (index < queue.length) {
+        const node = queue[index]
+        index += 1
 
-        if (node && node.children && node.children.length > 0) {
+        if (node.children && node.children.length > 0) {
             // Sort the children alphabetically
             node.children.sort((a, b) => a.label.localeCompare(b.label))
             // Add children to the queue for processing
