@@ -3,6 +3,19 @@ import {TreeViewBaseItem} from "@mui/x-tree-view"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 
 /**
+ * Recursively sort all children of tree nodes
+ * @param nodes - Array of tree nodes to sort
+ */
+const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
+    nodes.forEach((node) => {
+        if (node.children && node.children.length > 0) {
+            node.children.sort((a, b) => a.label.localeCompare(b.label))
+            sortTreeNodes(node.children)
+        }
+    })
+}
+
+/**
  * Build a tree view structure from a flat list of networks.
  * The list of networks comes from a call to the Neuro-san /list API
  * The tree structure is used by the RichTreeView component to display the networks
@@ -61,9 +74,6 @@ export const buildTreeViewItems = (
                         const parentNode = map.get(parentId)
                         if (parentNode) {
                             parentNode.children.push(node)
-
-                            // Sort the parent's children after adding a new node
-                            parentNode.children.sort((a, b) => a.label.localeCompare(b.label))
                         }
                     }
                 }
@@ -80,8 +90,8 @@ export const buildTreeViewItems = (
         result.push(uncategorized)
     }
 
-    // Sort the top-level nodes
-    result.sort((a, b) => a.label.localeCompare(b.label))
+    // Sort all nodes in the tree recursively
+    sortTreeNodes(result)
 
     return {treeViewItems: result, index: nodeIndex}
 }
