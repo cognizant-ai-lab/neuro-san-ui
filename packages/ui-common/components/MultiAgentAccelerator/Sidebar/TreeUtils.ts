@@ -86,7 +86,6 @@ export const buildTreeViewItems = (
 
     // Add "Uncategorized" to the result if it has children
     if (uncategorized.children.length > 0) {
-        uncategorized.children.sort((a, b) => a.label.localeCompare(b.label))
         result.push(uncategorized)
     }
 
