@@ -21,11 +21,16 @@ import {SnackbarProvider} from "notistack"
 
 import {
     LEVEL_1_FOLDER,
+    LEVEL_1_FOLDER_DISPLAY,
     LEVEL_2_FOLDER,
+    LEVEL_2_FOLDER_DISPLAY,
     LIST_NETWORKS_RESPONSE,
     TEST_AGENT_MATH_GUY,
+    TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENTS_FOLDER,
+    TEST_AGENTS_FOLDER_DISPLAY,
     TEST_DEEP_AGENT,
+    TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
@@ -125,14 +130,14 @@ describe("SideBar", () => {
         await screen.findByText("Agent Networks")
 
         // click to expand networks
-        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
         await user.click(header)
 
         // Ensure the settings button is rendered
         await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
 
         // Clicking on a network should call the setSelectedNetwork function
-        const network = await screen.findByText(cleanUpAgentName(TEST_AGENT_MATH_GUY))
+        const network = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
         await user.click(network)
 
         // setSelectedNetwork should be called
@@ -153,7 +158,7 @@ describe("SideBar", () => {
         renderSidebarComponent()
 
         // click to expand networks
-        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
         await user.click(header)
 
         // Find the first tag item and hover over it
@@ -186,22 +191,22 @@ describe("SideBar", () => {
         renderSidebarComponent()
 
         // click to expand networks
-        const header = await screen.findByText(cleanUpAgentName(TEST_AGENTS_FOLDER))
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
         await user.click(header)
 
         // Ensure deep network is present
-        const level1Header = await screen.findByText(cleanUpAgentName(LEVEL_1_FOLDER))
+        const level1Header = await screen.findByText(LEVEL_1_FOLDER_DISPLAY)
 
         // Expand level 1
         await user.click(level1Header)
 
-        const level2Header = await screen.findByText(cleanUpAgentName(LEVEL_2_FOLDER))
+        const level2Header = await screen.findByText(LEVEL_2_FOLDER_DISPLAY)
 
         // Expand level 2
         await user.click(level2Header)
 
         // Check for deep agent
-        const deepAgent = await screen.findByText(cleanUpAgentName(TEST_DEEP_AGENT))
+        const deepAgent = await screen.findByText(TEST_DEEP_AGENT_DISPLAY)
 
         // Deep agent tags
         // Find the BookmarkIcon within the same parent container as the deep agent text

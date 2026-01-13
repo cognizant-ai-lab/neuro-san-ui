@@ -29,7 +29,7 @@ export const buildTreeViewItems = (
     // structure from that.
     networks.forEach((network) => {
         // Split the agent_name into parts based on "/"
-        const parts = network?.agent_name.split("/")
+        const parts = network.agent_name.split("/")
 
         if (parts.length === 1) {
             // Add single-name networks to the "Uncategorized" parent
