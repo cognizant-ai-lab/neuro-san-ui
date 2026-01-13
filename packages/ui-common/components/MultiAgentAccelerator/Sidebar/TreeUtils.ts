@@ -3,16 +3,23 @@ import {TreeViewBaseItem} from "@mui/x-tree-view"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 
 /**
- * Recursively sort all children of tree nodes
+ * Iteratively sort all children of tree nodes using a queue-based approach
  * @param nodes - Array of tree nodes to sort
  */
 const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
-    nodes.forEach((node) => {
-        if (node.children && node.children.length > 0) {
+    // Use a queue for breadth-first traversal to avoid recursion
+    const queue: TreeViewBaseItem[] = [...nodes]
+
+    while (queue.length > 0) {
+        const node = queue.shift()
+
+        if (node && node.children && node.children.length > 0) {
+            // Sort the children alphabetically
             node.children.sort((a, b) => a.label.localeCompare(b.label))
-            sortTreeNodes(node.children)
+            // Add children to the queue for processing
+            queue.push(...node.children)
         }
-    })
+    }
 }
 
 /**
