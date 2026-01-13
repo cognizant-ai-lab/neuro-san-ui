@@ -48,7 +48,10 @@ export const buildTreeViewItems = (
                     // Create new node
                     node = {id: nodeId, label: part, children: []}
                     map.set(nodeId, node)
-                    nodeIndex.set(nodeId, network)
+                    // Only index leaf nodes (actual networks), not intermediate folder nodes
+                    if (index === parts.length - 1) {
+                        nodeIndex.set(nodeId, network)
+                    }
 
                     if (index === 0) {
                         currentLevel.push(node)
