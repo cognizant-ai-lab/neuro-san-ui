@@ -36,8 +36,6 @@ type TagColor = (typeof TAG_COLORS)[number]
 const tagsToColors = new Map<string, TagColor>()
 
 interface AgentNetworkNodeProps extends TreeItemProps {
-    readonly agent_name: string
-    readonly tags?: string[]
     readonly nodeIndex: Map<string, AgentInfo>
     setSelectedNetwork: (network: string) => void
     shouldDisableTree: boolean
