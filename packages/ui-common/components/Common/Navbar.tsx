@@ -20,6 +20,7 @@ limitations under the License.
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
+import SettingsIcon from "@mui/icons-material/Settings"
 import {IconButton, Menu, MenuItem, Tooltip, Typography, useColorScheme} from "@mui/material"
 import Grid from "@mui/material/Grid"
 import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
@@ -35,7 +36,7 @@ import {
 } from "../../const"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 import {isDarkMode} from "../../utils/Theme"
-
+import {SettingsDialog} from "../Config/SettingsDialog"
 // Declare the Props Interface
 export interface NavbarProps {
     // id is a string handle to the element used for testing
@@ -126,6 +127,9 @@ export const Navbar = ({
         setExploreMenuAnchorEl(null)
     }
 
+    // Settings dialog state
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
+
     return hydrated ? (
         <Grid
             id="nav-bar-container"
@@ -137,6 +141,11 @@ export const Navbar = ({
                 padding: "0.25rem",
             }}
         >
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={settingsDialogOpen}
+                onClose={() => setSettingsDialogOpen(false)}
+            />
             <a
                 id="splash-logo-link"
                 href="https://www.cognizant.com/us/en"
@@ -402,6 +411,7 @@ export const Navbar = ({
                     </Menu>
                 </Grid>
             ) : null}
+            {/*Dark mode toggle*/}
             <Tooltip
                 id="dark-mode-toggle"
                 title="Toggle dark mode"
@@ -416,6 +426,19 @@ export const Navbar = ({
                     }}
                     onClick={() => {
                         setMode(darkMode ? "light" : "dark")
+                    }}
+                />
+            </Tooltip>
+            {/* Settings */}
+            <Tooltip title="Settings">
+                <SettingsIcon
+                    sx={{
+                        marginRight: "1rem",
+                        fontSize: "1rem",
+                        cursor: "pointer",
+                    }}
+                    onClick={() => {
+                        setSettingsDialogOpen(true)
                     }}
                 />
             </Tooltip>
