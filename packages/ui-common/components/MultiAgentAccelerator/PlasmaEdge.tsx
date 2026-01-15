@@ -17,14 +17,14 @@ limitations under the License.
 import {FC, useEffect, useRef} from "react"
 import {EdgeProps, getBezierPath} from "reactflow"
 
+import {useLocalStorage} from "../../utils/useLocalStorage"
+
 function createFunnelParticleOnPath(
     pathEl: SVGPathElement,
     canvasOffset: {x: number; y: number},
-    baseProgress: number
+    baseProgress: number,
+    plasmaColor: string
 ) {
-    // Prettier and ESlint conflict over this
-    // eslint-disable-next-line newline-per-chained-call
-    const green = getComputedStyle(document.documentElement).getPropertyValue("--bs-green").trim()
     const totalLength = pathEl.getTotalLength()
     const speed = 0.02 + Math.random() * 0.003
     const life = 100
@@ -68,8 +68,8 @@ function createFunnelParticleOnPath(
         ctx.beginPath()
         ctx.globalAlpha = alpha * 0.9 * pulse
         ctx.shadowBlur = 8 + 8 * pulse // Lowered for performance
-        ctx.shadowColor = green
-        ctx.fillStyle = green
+        ctx.shadowColor = plasmaColor
+        ctx.fillStyle = plasmaColor
         ctx.arc(x, y, 2, 0, Math.PI * 2)
         ctx.fill()
         ctx.globalAlpha = 1
@@ -93,6 +93,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
     const pathRef = useRef<SVGPathElement>(null)
     const animationRef = useRef<number>()
     const particles = useRef<ReturnType<typeof createFunnelParticleOnPath>[]>([])
+    const [plasmaColor] = useLocalStorage("plasmaColor", null)
 
     const [edgePath] = getBezierPath({
         sourceX,
@@ -134,7 +135,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
                 if (particles.current.length < MAX_PARTICLES) {
                     const t = Math.random()
                     if (Math.random() < 1 - t) {
-                        particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t))
+                        particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t, plasmaColor))
                     }
                 }
             }

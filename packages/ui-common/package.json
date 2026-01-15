@@ -17,6 +17,7 @@
         "next": "15.4.6",
         "next-auth": "5.0.0-beta.20",
         "notistack": "3.0.1",
+        "react-color-palette": "7.3.1",
         "react-dom": "18.2.0",
         "react-markdown": "9.0.1",
         "react-syntax-highlighter": "15.5.0",
