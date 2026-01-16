@@ -10,7 +10,6 @@
     },
     "dependencies": {
         "@langchain/core": "0.2.36",
-        "@mui/x-tree-view": "8.22.0",
         "dagre": "0.8.5",
         "http-status": "1.7.3",
         "jsonrepair": "3.8.0",
@@ -45,6 +44,7 @@
         "@emotion/styled": "^11.13.0",
         "@mui/icons-material": "^7.3.1",
         "@mui/material": "^7.3.1",
+        "@mui/x-tree-view": "^8.22.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "typescript": "^5.9.2"
