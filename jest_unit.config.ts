@@ -18,7 +18,7 @@ limitations under the License.
 
 import type {Config} from "@jest/types"
 
-import sharedConfig from "./jest.config"
+import sharedConfig from "./jest.config.ts"
 
 const config: Config.InitialOptions = {
     // Pull in shared config
@@ -27,10 +27,10 @@ const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
     coverageThreshold: {
         global: {
-            statements: -74,
-            branches: -125,
+            statements: -73,
+            branches: -126,
             functions: -19,
-            lines: -57,
+            lines: -56,
         },
     },
 }

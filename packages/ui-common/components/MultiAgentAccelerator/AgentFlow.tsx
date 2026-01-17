@@ -14,6 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/**
+ * AgentFlow — pure presentational React component for rendering an agent network.
+ * - Accepts data-only props (agents, conversations, thought-bubble edges).
+ * - Performs NO network requests or side-effectful fetching.
+ * - For a self-contained chart (fetching + state) use `AgentFlowWrapper`.
+ */
+
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"

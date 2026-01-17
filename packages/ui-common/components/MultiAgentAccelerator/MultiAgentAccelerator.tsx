@@ -19,17 +19,14 @@ import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
-import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
-import {AgentFlow} from "./AgentFlow"
+import {AgentFlowWrapper, AgentFlowWrapperHandle} from "./AgentFlowWrapper"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
-import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
+import {getAgentNetworks} from "../../controller/agent/Agent"
+import {AgentInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
-import {cleanUpAgentName} from "../AgentChat/Utils"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 interface MultiAgentAcceleratorProps {
@@ -60,9 +57,6 @@ export const MultiAgentAccelerator = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
-
-    const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
-
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
     // Track whether we've shown the info popup so we don't keep bugging the user with it
@@ -76,15 +70,7 @@ export const MultiAgentAccelerator = ({
     )
 
     const agentCountsRef = useRef<Map<string, number>>(new Map())
-
-    const conversationsRef = useRef<AgentConversation[] | null>(null)
-
-    const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
-
-    // State to hold thought bubble edges - avoids duplicates across layout recalculations
-    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
-        Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
-    >(new Map())
+    const agentFlowWrapperRef = useRef<AgentFlowWrapperHandle>(null)
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -95,7 +81,6 @@ export const MultiAgentAccelerator = ({
     )
 
     const resetState = useCallback(() => {
-        setThoughtBubbleEdges(new Map())
         setIsStreaming(false)
     }, [])
 
@@ -109,7 +94,7 @@ export const MultiAgentAccelerator = ({
     }, [])
 
     useEffect(() => {
-        async function getNetworks() {
+        async function fetchNetworks() {
             try {
                 const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
                 setNetworks(networksTmp)
@@ -125,36 +110,8 @@ export const MultiAgentAccelerator = ({
                 setSelectedNetwork(null)
             }
         }
-
-        void getNetworks()
+        void fetchNetworks()
     }, [neuroSanURL])
-
-    useEffect(() => {
-        ;(async () => {
-            if (selectedNetwork) {
-                try {
-                    const connectivity: ConnectivityResponse = await getConnectivity(
-                        neuroSanURL,
-                        selectedNetwork,
-                        userInfo.userName
-                    )
-                    const agentsInNetworkSorted: ConnectivityInfo[] = connectivity.connectivity_info
-                        .concat()
-                        .sort((a, b) => a?.origin.localeCompare(b?.origin))
-                    setAgentsInNetwork(agentsInNetworkSorted)
-                } catch (e) {
-                    const networkName = cleanUpAgentName(selectedNetwork)
-                    sendNotification(
-                        NotificationType.error,
-                        "Connection error",
-                        // eslint-disable-next-line max-len
-                        `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
-                    )
-                    setAgentsInNetwork([])
-                }
-            }
-        })()
-    }, [neuroSanURL, selectedNetwork])
 
     // Set up handler to allow Escape key to stop the interaction with the LLM.
     useEffect(() => {
@@ -179,34 +136,26 @@ export const MultiAgentAccelerator = ({
     }, [isAwaitingLlm])
 
     const onChunkReceived = useCallback((chunk: string): boolean => {
-        const result = processChatChunk(chunk, agentCountsRef.current, conversationsRef.current)
-        if (result.success) {
-            agentCountsRef.current = result.newCounts
-            conversationsRef.current = result.newConversations
-            setCurrentConversations(result.newConversations)
-        }
-
-        return result.success
+        // Forward incoming streaming chunk to the AgentFlowWrapper for processing
+        return agentFlowWrapperRef.current?.processChunk(chunk) ?? false
     }, [])
 
     const onStreamingStarted = useCallback((): void => {
-        // Show info popup only once per session
         if (!haveShownPopup) {
             sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
             setHaveShownPopup(true)
         }
-
-        // Mark that streaming has started
         setIsStreaming(true)
+        // Notify wrapper if needed
+        agentFlowWrapperRef.current?.onStreamingStarted?.()
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
-        // When streaming is complete, clean up any refs and state
-        conversationsRef.current = null
+        // Notify wrapper to clear internal conversations/edges
+        agentFlowWrapperRef.current?.onStreamingComplete?.()
         agentCountsRef.current = new Map<string, number>()
-        setCurrentConversations(null)
         resetState()
-    }, [])
+    }, [resetState])
 
     const getLeftPanel = () => {
         return (
@@ -248,31 +197,15 @@ export const MultiAgentAccelerator = ({
                     height: "100%",
                 }}
             >
-                <ReactFlowProvider>
-                    <Box
-                        id="multi-agent-accelerator-agent-flow-container"
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "100%",
-                            height: "100%",
-                            maxWidth: 1000,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <AgentFlow
-                            agentCounts={agentCountsRef.current}
-                            agentsInNetwork={agentsInNetwork}
-                            id="multi-agent-accelerator-agent-flow"
-                            currentConversations={currentConversations}
-                            isAwaitingLlm={isAwaitingLlm}
-                            isStreaming={isStreaming}
-                            thoughtBubbleEdges={thoughtBubbleEdges}
-                            setThoughtBubbleEdges={setThoughtBubbleEdges}
-                        />
-                    </Box>
-                </ReactFlowProvider>
+                <AgentFlowWrapper
+                    ref={agentFlowWrapperRef}
+                    neuroSanURL={neuroSanURL}
+                    selectedNetwork={selectedNetwork}
+                    userName={userInfo.userName}
+                    isAwaitingLlm={isAwaitingLlm}
+                    isStreaming={isStreaming}
+                    agentCountsRef={agentCountsRef}
+                />
             </Grid>
         )
     }
