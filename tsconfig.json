@@ -37,6 +37,7 @@
     "strictNullChecks": false,
     "target": "es2022",
     "useUnknownInCatchVariables": true,
+    "allowImportingTsExtensions": true,
     "incremental": true
   },
   "include": [
