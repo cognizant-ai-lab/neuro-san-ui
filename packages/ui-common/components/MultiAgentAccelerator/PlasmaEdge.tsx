@@ -17,7 +17,7 @@ limitations under the License.
 import {FC, useEffect, useRef} from "react"
 import {EdgeProps, getBezierPath} from "reactflow"
 
-import {useLocalStorage} from "../../utils/useLocalStorage"
+import {useSettingsStore} from "../../state/Settings"
 
 function createFunnelParticleOnPath(
     pathEl: SVGPathElement,
@@ -93,7 +93,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
     const pathRef = useRef<SVGPathElement>(null)
     const animationRef = useRef<number>()
     const particles = useRef<ReturnType<typeof createFunnelParticleOnPath>[]>([])
-    const [plasmaColor] = useLocalStorage("plasmaColor", null)
+    const plasmaColor = useSettingsStore((state) => state.settings.appearance.plasmaColor)
 
     const [edgePath] = getBezierPath({
         sourceX,

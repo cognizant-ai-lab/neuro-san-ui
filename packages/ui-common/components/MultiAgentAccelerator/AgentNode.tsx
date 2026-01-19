@@ -24,6 +24,7 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
+import {useSettingsStore} from "../../state/Settings"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -31,9 +32,9 @@ export interface AgentNodeProps {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
     readonly depth: number
+    readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
-    readonly displayAs?: string
 }
 
 // Node dimensions
@@ -52,6 +53,10 @@ const FRONTMAN_ICON_SIZE = "4.5rem"
 export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
     const theme = useTheme()
 
+    // Agent node color from settings store
+    const agentNodeColor = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
+    const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
+
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
     const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
@@ -64,7 +69,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const agentId = props.id
 
     // "Active" agents are those at either end of the current communication from the incoming chat messages.
-    // We highlight them with a green background.
+    // We highlight them with a different color
     const conversations = getConversations()
     const isActiveAgent = conversations?.some((conversation) => conversation.agents.has(agentId)) ?? false
 
@@ -73,8 +78,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
 
     if (isActiveAgent) {
-        backgroundColor = "var(--bs-green)"
-        color = "var(--bs-white)"
+        backgroundColor = agentNodeColor
+        color = agentNodeIconColor
     } else if (isHeatmap) {
         const agentCount = agentCounts.has(agentId) ? agentCounts.get(agentId) : 0
 
