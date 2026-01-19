@@ -15,7 +15,7 @@
 # ================================================================================
 # Publish UI Common Workflow
 # ================================================================================
-# This workflow publishes @cognizant-ai-lab/ui-common to GitHub Packages.
+# This workflow publishes @cognizant-ai-lab/ui-common to the public npm registry.
 #
 # Triggers:
 #   1. Push to main (with path filter): Publishes snapshot for CI/CD integration
@@ -28,6 +28,9 @@
 #   - Manual:          <base>-pr.<sha>.<run>    with user-selected dist-tag
 #
 # After push-to-main publishes, triggers neuro-ui via repository_dispatch.
+#
+# Required secrets:
+#   - NPM_TOKEN: npm automation token for publishing to registry.npmjs.org
 # ================================================================================
 
 name: Publish UI Common
@@ -85,8 +88,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 22.17.1
-                  registry-url: https://npm.pkg.github.com/
-                  scope: "@cognizant-ai-lab"
+                  registry-url: https://registry.npmjs.org/
                   cache: yarn
 
             - name: Install dependencies
@@ -134,11 +136,11 @@ jobs:
             - name: Build ui-common library
               run: yarn build:lib
 
-            - name: Publish to GitHub Packages
+            - name: Publish to npm registry
               run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }}
               env:
-                  YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
             - name: Summary
               run: |
