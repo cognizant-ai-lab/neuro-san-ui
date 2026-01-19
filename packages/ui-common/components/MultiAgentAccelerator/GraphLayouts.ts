@@ -383,7 +383,7 @@ export const layoutLinear = (
     nodesTmp.forEach((node) => {
         const nodeWithPosition = dagreGraph.node(node.id)
 
-        // We are shifting the dagre node position (anchor=center center) to the top left
+        // We are shifting the dagre node position (anchor=center) to the top left
         // so it matches the React Flow node anchor point (top left).
         node.position = {
             x: nodeWithPosition.x - NODE_WIDTH / 2,
