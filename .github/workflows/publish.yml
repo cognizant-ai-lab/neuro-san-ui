@@ -29,8 +29,9 @@
 #
 # After push-to-main publishes, triggers neuro-ui via repository_dispatch.
 #
-# Required secrets:
-#   - NPM_TOKEN: npm automation token for publishing to registry.npmjs.org
+# Authentication:
+#   Uses OIDC trusted publishing - no npm tokens required. Configure the trusted
+#   publisher on npmjs.com with this workflow filename (publish.yml).
 # ================================================================================
 
 name: Publish UI Common
@@ -60,7 +61,7 @@ on:
 
 permissions:
     contents: read
-    packages: write
+    id-token: write
 
 jobs:
     publish:
@@ -90,6 +91,10 @@ jobs:
                   node-version: 22.17.1
                   registry-url: https://registry.npmjs.org/
                   cache: yarn
+
+            # OIDC trusted publishing requires npm 11.5.1+
+            - name: Update npm for OIDC support
+              run: npm install --global npm@latest
 
             - name: Install dependencies
               run: |
@@ -137,10 +142,8 @@ jobs:
               run: yarn build:lib
 
             - name: Publish to npm registry
-              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }}
-              env:
-                  YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+              run: npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
+              working-directory: packages/ui-common
 
             - name: Summary
               run: |
