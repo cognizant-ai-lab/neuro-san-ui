@@ -36,7 +36,7 @@ import {
 } from "../../const"
 import {isDarkMode} from "../../Theme/Theme"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
-import {SettingsDialog} from "../Config/SettingsDialog"
+import {SettingsDialog} from "../Settings/SettingsDialog"
 // Declare the Props Interface
 export interface NavbarProps {
     // id is a string handle to the element used for testing
