@@ -22,7 +22,7 @@ import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} fro
 import Typography from "@mui/material/Typography"
 import {FC, ReactNode, SyntheticEvent, useCallback, useState} from "react"
 
-import {isDarkMode} from "../../utils/Theme"
+import {isDarkMode} from "../../Theme/Theme"
 
 // #region: Styled Components
 const Accordion = styled((props: AccordionProps) => (

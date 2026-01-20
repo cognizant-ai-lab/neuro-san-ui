@@ -42,7 +42,7 @@ import {buildTreeViewItems} from "./TreeUtils"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/environment"
-import {isDarkMode} from "../../../utils/Theme"
+import {isDarkMode} from "../../../Theme/Theme"
 import {getZIndex} from "../../../utils/zIndexLayers"
 
 // #region: Styled Components

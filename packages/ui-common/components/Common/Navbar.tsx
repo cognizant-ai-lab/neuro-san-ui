@@ -34,8 +34,8 @@ import {
     DEFAULT_USER_IMAGE,
     NEURO_SAN_UI_VERSION,
 } from "../../const"
+import {isDarkMode} from "../../Theme/Theme"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
-import {isDarkMode} from "../../utils/Theme"
 import {SettingsDialog} from "../Config/SettingsDialog"
 // Declare the Props Interface
 export interface NavbarProps {

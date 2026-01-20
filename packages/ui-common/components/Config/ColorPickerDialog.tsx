@@ -4,14 +4,16 @@ import Popover from "@mui/material/Popover"
 import Typography from "@mui/material/Typography"
 import {ColorPicker, IColor} from "react-color-palette"
 
-export function ColorPickerDialog(props: {
-    open: boolean
-    anchorEl: HTMLElement
-    onClose: () => void
-    color: IColor
-    onChange: (value: ((prevState: IColor) => IColor) | IColor) => void
-    onClick: () => void
-}) {
+interface ColorPickerDialogProps {
+    readonly open: boolean
+    readonly anchorEl: HTMLElement
+    readonly onClose: () => void
+    readonly color: IColor
+    readonly onChange: (value: ((prevState: IColor) => IColor) | IColor) => void
+    readonly onClick: () => void
+}
+
+export function ColorPickerDialog(props: ColorPickerDialogProps) {
     return (
         <Popover
             open={props.open}
@@ -29,7 +31,7 @@ export function ColorPickerDialog(props: {
         >
             <Typography
                 variant="h6"
-                sx={{mb: 2, color: "white"}}
+                sx={{marginBottom: 2, color: "white"}}
             >
                 Choose Color
             </Typography>
@@ -37,7 +39,7 @@ export function ColorPickerDialog(props: {
                 height={100}
                 color={props.color}
                 onChange={props.onChange}
-                hideInput={true}
+                hideInput={["rgb", "hsv"]}
                 hideAlpha={true}
             />
             <Box
@@ -52,7 +54,7 @@ export function ColorPickerDialog(props: {
             <Button
                 variant="contained"
                 onClick={props.onClick}
-                sx={{mt: 2, width: "100%"}}
+                sx={{marginTop: 2, width: "100%"}}
             >
                 OK
             </Button>
