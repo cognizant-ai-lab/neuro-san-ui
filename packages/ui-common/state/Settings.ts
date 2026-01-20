@@ -24,7 +24,7 @@ export const DEFAULT_PALETTE_KEY = "blue"
 /**
  * User preference settings
  */
-export interface Settings {
+interface Settings {
     appearance: {
         agentIconColor: string
         agentNodeColor: string
@@ -36,7 +36,7 @@ export interface Settings {
 /**
  * Zustand state store for user preferences/Settings
  */
-export interface SettingsStore {
+interface SettingsStore {
     settings: Settings
     updateSettings: (updates: Partial<Settings>) => void
     resetSettings: () => void
