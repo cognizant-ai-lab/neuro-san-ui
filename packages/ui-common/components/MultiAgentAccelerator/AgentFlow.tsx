@@ -46,8 +46,8 @@ import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useSettingsStore} from "../../state/Settings"
-import {PaletteKey, PALETTES} from "../../Theme/Palettes"
+import {DEFAULT_PALETTE_KEY, useSettingsStore} from "../../state/Settings"
+import {PALETTES} from "../../Theme/Palettes"
 import {isDarkMode} from "../../Theme/Theme"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -330,7 +330,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
 
     const isHeatmap = coloringOption === "heatmap"
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) as PaletteKey
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) || DEFAULT_PALETTE_KEY
     const palette = PALETTES[paletteKey]
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout

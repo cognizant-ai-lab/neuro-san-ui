@@ -23,8 +23,8 @@ import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
-import {useSettingsStore} from "../../state/Settings"
-import {PaletteKey, PALETTES} from "../../Theme/Palettes"
+import {DEFAULT_PALETTE_KEY, useSettingsStore} from "../../state/Settings"
+import {PALETTES} from "../../Theme/Palettes"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -56,7 +56,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Agent node color from settings store
     const agentNodeColor = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
     const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) as PaletteKey
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) || DEFAULT_PALETTE_KEY
     const palette = PALETTES[paletteKey]
 
     // Unpack the node-specific data
@@ -91,12 +91,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         const colorIndex = Math.floor((agentCount / maxAgentCount) * (palette.length - 1))
         backgroundColor = palette[colorIndex]
         const isDarkBackground = colorIndex >= palette.length / 2
-        color = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
+        color = agentNodeIconColor || (isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)")
     } else {
         const colorIndex = depth % palette.length
         backgroundColor = palette[colorIndex]
         const isDarkBackground = colorIndex >= palette.length / 2
-        color = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
+        color = agentNodeIconColor || (isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)")
     }
 
     // Animation style for making active agent glow and pulse

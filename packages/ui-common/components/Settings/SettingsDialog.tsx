@@ -1,5 +1,5 @@
 import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
-import {ToggleButton} from "@mui/material"
+import {ToggleButton, useColorScheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
@@ -11,10 +11,13 @@ import {useColor} from "react-color-palette"
 
 import "react-color-palette/css"
 import {ColorPickerDialog} from "./ColorPickerDialog"
-import {useSettingsStore} from "../../state/Settings"
+import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
+import {DEFAULT_PALETTE_KEY, useSettingsStore} from "../../state/Settings"
 import {PaletteKey, PALETTES} from "../../Theme/Palettes"
+import {isDarkMode} from "../../Theme/Theme"
 import {ConfirmationModal} from "../Common/confirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
+import {NotificationType, sendNotification} from "../Common/notification"
 
 interface SettingsDialogProps {
     readonly id: string
@@ -23,6 +26,11 @@ interface SettingsDialogProps {
 }
 
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) => {
+    // MUI theme and dark mode
+    const {mode, systemMode} = useColorScheme()
+    const darkMode = isDarkMode(mode, systemMode)
+
+    // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
     const resetSettings = useSettingsStore((state) => state.resetSettings)
 
@@ -34,21 +42,25 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     const plasmaColorPickerOpen = Boolean(plasmaColorPickerAnchorEl)
     const plasmaColorFromStore = useSettingsStore((state) => state.settings.appearance.plasmaColor)
     const [plasmaColor, setPlasmaColor] = useColor(plasmaColorFromStore)
+    const plasmaColorCheckmark = useCheckmarkFade()
 
     // Agent node color
     const [agentNodeColorPickerAnchorEl, setAgentNodeColorPickerAnchorEl] = useState<null | HTMLElement>(null)
     const agentNodeColorPickerOpen = Boolean(agentNodeColorPickerAnchorEl)
     const agentNodeColorFromStore = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
     const [agentNodeColor, setAgentNodeColor] = useColor(agentNodeColorFromStore)
+    const agentNodeColorCheckmark = useCheckmarkFade()
 
     // Agent icon color
     const [agentIconColorPickerAnchorEl, setAgentIconColorPickerAnchorEl] = useState<null | HTMLElement>(null)
     const agentIconColorPickerOpen = Boolean(agentIconColorPickerAnchorEl)
     const agentIconColorFromStore = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const [agentIconColor, setAgentIconColor] = useColor(agentIconColorFromStore)
+    const agentIconColorCheckmark = useCheckmarkFade()
 
-    // In your component:
-    const heatmapPalette = useSettingsStore((state) => state.settings.appearance.rangePalette)
+    // Which palette to use for heatmaps and depth display?
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) || DEFAULT_PALETTE_KEY
+    const rangePaletteCheckmark = useCheckmarkFade()
 
     const handlePaletteChange = (_event: ReactMouseEvent<HTMLElement>, newPalette: PaletteKey | null) => {
         if (newPalette) {
@@ -59,6 +71,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 },
             })
         }
+        rangePaletteCheckmark.trigger()
     }
 
     return (
@@ -77,6 +90,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             plasmaColor: plasmaColor.hex,
                         },
                     })
+                    plasmaColorCheckmark.trigger()
                 }}
             />
             <ColorPickerDialog
@@ -93,6 +107,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             agentNodeColor: agentNodeColor.hex,
                         },
                     })
+                    agentNodeColorCheckmark.trigger()
                 }}
             />
             <ColorPickerDialog
@@ -109,18 +124,23 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             agentIconColor: agentIconColor.hex,
                         },
                     })
+                    agentIconColorCheckmark.trigger()
                 }}
             />
             {resetToDefaultSettingsOpen ? (
                 <ConfirmationModal
                     id="{id}-reset-to-default-settings-confirmation-modal"
-                    content="Reset to default settings?"
+                    content={
+                        "This will reset all settings to their default values and cannot be undone. " +
+                        "Are you sure you want to proceed?"
+                    }
                     handleCancel={() => {
                         setResetToDefaultSettingsOpen(false)
                     }}
                     handleOk={() => {
                         resetSettings()
                         setResetToDefaultSettingsOpen(false)
+                        sendNotification(NotificationType.success, "Settings have been reset to default values.")
                     }}
                     title="Reset to default settings"
                 />
@@ -133,7 +153,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 paperProps={{
                     minWidth: "50%",
                     minHeight: "50%",
-                    backgroundColor: "var(--bs-dark-mode-dim)",
+                    backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                     borderColor: "var(--bs-white)",
                     border: "1px solid var(--bs-white)",
                 }}
@@ -155,11 +175,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     <Box sx={{display: "flex", alignItems: "center"}}>
                         <FormLabel>Palette (heatmap and depth):</FormLabel>
                         <ToggleButtonGroup
-                            value={heatmapPalette}
-                            exclusive
+                            value={paletteKey}
+                            exclusive={true}
                             onChange={handlePaletteChange}
                             size="small"
-                            sx={{marginLeft: "1rem", gap: 1}}
+                            sx={{marginLeft: "1rem", marginRight: "1rem"}}
                         >
                             {(Object.keys(PALETTES) as PaletteKey[]).map((key) => (
                                 <ToggleButton
@@ -197,6 +217,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                                 </ToggleButton>
                             ))}
                         </ToggleButtonGroup>
+                        <FadingCheckmark show={rangePaletteCheckmark.show} />
                     </Box>
                     <Typography
                         variant="subtitle1"
@@ -217,6 +238,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             }}
                             onClick={(e) => setPlasmaColorPickerAnchorEl(e.currentTarget)}
                         />
+                        <FadingCheckmark show={plasmaColorCheckmark.show} />
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent node color:</FormLabel>
@@ -230,6 +252,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             }}
                             onClick={(e) => setAgentNodeColorPickerAnchorEl(e.currentTarget)}
                         />
+                        <FadingCheckmark show={agentNodeColorCheckmark.show} />
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent icon color:</FormLabel>
@@ -243,6 +266,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             }}
                             onClick={(e) => setAgentIconColorPickerAnchorEl(e.currentTarget)}
                         />
+                        <FadingCheckmark show={agentIconColorCheckmark.show} />
                     </Box>
                 </Box>
                 <Box sx={{marginTop: 4, paddingTop: 2, borderTop: "1px solid var(--bs-border-color)"}}>

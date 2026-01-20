@@ -37,7 +37,7 @@ export const PALETTES = {
         "#662506",
         "#331203",
     ],
-    gray: [
+    grayScale: [
         "#f7f7f7",
         "#e1e1e1",
         "#cfcfcf",
@@ -60,6 +60,18 @@ export const PALETTES = {
         "#f46d43",
         "#d73027",
         "#a50026",
+    ],
+    visionImpaired: [
+        "#000000",
+        "#004949",
+        "#009292",
+        "#ff6db6",
+        "#ffb6db",
+        "#490092",
+        "#006ddb",
+        "#b66dff",
+        "#6db6ff",
+        "#b6dbff",
     ],
 }
 
