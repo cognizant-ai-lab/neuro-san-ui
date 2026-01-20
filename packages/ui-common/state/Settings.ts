@@ -17,6 +17,10 @@ limitations under the License.
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
+import {PaletteKey} from "../Theme/Palettes"
+
+export const DEFAULT_PALETTE_KEY = "blue"
+
 /**
  * User preference settings
  */
@@ -25,7 +29,7 @@ export interface Settings {
         agentIconColor: string
         agentNodeColor: string
         plasmaColor: string
-        rangePalette: string
+        rangePalette: PaletteKey
     }
 }
 
@@ -38,12 +42,15 @@ export interface SettingsStore {
     resetSettings: () => void
 }
 
+/**
+ * Default settings, used on first load and on reset
+ */
 const DEFAULT_SETTINGS: Settings = {
     appearance: {
-        // globals.css variables like --bs-green don't work here. TBD why.
+        // CSS variables like --bs-green don't work here. TBD why.
         agentNodeColor: "#2db81f",
-        agentIconColor: "#ffffff",
-        rangePalette: "blue",
+        agentIconColor: "black",
+        rangePalette: DEFAULT_PALETTE_KEY,
         plasmaColor: "#2db81f",
     },
 }
