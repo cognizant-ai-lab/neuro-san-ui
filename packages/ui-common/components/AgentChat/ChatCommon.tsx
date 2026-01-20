@@ -67,8 +67,8 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
+import {isDarkMode} from "../../Theme/Theme"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
-import {isDarkMode} from "../../utils/Theme"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"

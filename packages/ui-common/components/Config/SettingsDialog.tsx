@@ -1,13 +1,19 @@
+import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
+import {ToggleButton} from "@mui/material"
 import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
 import FormLabel from "@mui/material/FormLabel"
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Typography from "@mui/material/Typography"
-import {FC, useState} from "react"
+import {FC, MouseEvent as ReactMouseEvent, useState} from "react"
 import {useColor} from "react-color-palette"
-import "react-color-palette/css"
 
+import "react-color-palette/css"
 import {ColorPickerDialog} from "./ColorPickerDialog"
 import {useSettingsStore} from "../../state/Settings"
+import {PaletteKey, PALETTES} from "../../Theme/Palettes"
+import {ConfirmationModal} from "../Common/confirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 
 interface SettingsDialogProps {
@@ -18,6 +24,10 @@ interface SettingsDialogProps {
 
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) => {
     const updateSettings = useSettingsStore((state) => state.updateSettings)
+    const resetSettings = useSettingsStore((state) => state.resetSettings)
+
+    // Reset settings confirmation dialog state
+    const [resetToDefaultSettingsOpen, setResetToDefaultSettingsOpen] = useState<boolean>(false)
 
     // Plasma color
     const [plasmaColorPickerAnchorEl, setPlasmaColorPickerAnchorEl] = useState<null | HTMLElement>(null)
@@ -36,6 +46,20 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     const agentIconColorPickerOpen = Boolean(agentIconColorPickerAnchorEl)
     const agentIconColorFromStore = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const [agentIconColor, setAgentIconColor] = useColor(agentIconColorFromStore)
+
+    // In your component:
+    const heatmapPalette = useSettingsStore((state) => state.settings.appearance.rangePalette)
+
+    const handlePaletteChange = (_event: ReactMouseEvent<HTMLElement>, newPalette: PaletteKey | null) => {
+        if (newPalette) {
+            updateSettings({
+                appearance: {
+                    ...useSettingsStore.getState().settings.appearance,
+                    rangePalette: newPalette,
+                },
+            })
+        }
+    }
 
     return (
         <>
@@ -87,29 +111,100 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     })
                 }}
             />
+            {resetToDefaultSettingsOpen ? (
+                <ConfirmationModal
+                    id="{id}-reset-to-default-settings-confirmation-modal"
+                    content="Reset to default settings?"
+                    handleCancel={() => {
+                        setResetToDefaultSettingsOpen(false)
+                    }}
+                    handleOk={() => {
+                        resetSettings()
+                        setResetToDefaultSettingsOpen(false)
+                    }}
+                    title="Reset to default settings"
+                />
+            ) : null}
             <MUIDialog
                 id={id}
                 title={<Box sx={{fontSize: "1.5rem"}}>Settings</Box>}
                 isOpen={isOpen}
                 onClose={onClose}
                 paperProps={{
-                    fontSize: "0.8rem",
-                    minWidth: "75%",
-                    minHeight: "75%",
-                    paddingTop: "0",
+                    minWidth: "50%",
+                    minHeight: "50%",
                     backgroundColor: "var(--bs-dark-mode-dim)",
-                    borderColor: "white",
+                    borderColor: "var(--bs-white)",
                     border: "1px solid var(--bs-white)",
                 }}
             >
-                <Box sx={{mb: 3}}>
+                <Box sx={{marginBottom: 3}}>
                     <Typography
                         variant="h6"
-                        sx={{mb: 1}}
+                        sx={{marginBottom: 1}}
                     >
                         Appearance
                     </Typography>
-                    <Divider sx={{mb: 2}} />
+                    <Typography
+                        variant="subtitle1"
+                        sx={{marginBottom: 1, marginTop: 2, fontWeight: 600}}
+                    >
+                        Network display
+                    </Typography>
+                    <Divider sx={{marginBottom: 2}} />
+                    <Box sx={{display: "flex", alignItems: "center"}}>
+                        <FormLabel>Palette (heatmap and depth):</FormLabel>
+                        <ToggleButtonGroup
+                            value={heatmapPalette}
+                            exclusive
+                            onChange={handlePaletteChange}
+                            size="small"
+                            sx={{marginLeft: "1rem", gap: 1}}
+                        >
+                            {(Object.keys(PALETTES) as PaletteKey[]).map((key) => (
+                                <ToggleButton
+                                    key={key}
+                                    value={key}
+                                >
+                                    <Box
+                                        sx={{display: "flex", flexDirection: "column", gap: 0.5, alignItems: "center"}}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            sx={{textTransform: "capitalize"}}
+                                        >
+                                            {key}
+                                        </Typography>
+                                        <Box sx={{display: "flex", gap: 0.5}}>
+                                            {Array.from({length: 5}, (_, i) => {
+                                                const paletteLength = PALETTES[key].length
+                                                // Evenly sample 5 colors from the palette
+                                                const index = Math.floor((i * paletteLength) / 5)
+                                                return PALETTES[key][index]
+                                            }).map((color) => (
+                                                <Box
+                                                    key={color}
+                                                    sx={{
+                                                        width: "0.75rem",
+                                                        height: "0.75rem",
+                                                        backgroundColor: color,
+                                                        border: "1px solid",
+                                                    }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                </ToggleButton>
+                            ))}
+                        </ToggleButtonGroup>
+                    </Box>
+                    <Typography
+                        variant="subtitle1"
+                        sx={{marginBottom: 1, marginTop: 2, fontWeight: 600}}
+                    >
+                        Network animation
+                    </Typography>
+                    <Divider sx={{marginBottom: 2}} />
                     <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                         <FormLabel>Plasma animation color:</FormLabel>
                         <Box
@@ -149,6 +244,18 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             onClick={(e) => setAgentIconColorPickerAnchorEl(e.currentTarget)}
                         />
                     </Box>
+                </Box>
+                <Box sx={{marginTop: 4, paddingTop: 2, borderTop: "1px solid var(--bs-border-color)"}}>
+                    <Button
+                        variant="text"
+                        startIcon={<RestoreIcon />}
+                        onClick={() => {
+                            setResetToDefaultSettingsOpen(true)
+                        }}
+                        sx={{color: "var(--bs-secondary)"}}
+                    >
+                        Reset to defaults
+                    </Button>
                 </Box>
             </MUIDialog>
         </>

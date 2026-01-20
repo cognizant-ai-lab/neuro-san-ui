@@ -21,7 +21,7 @@ import IconButton from "@mui/material/IconButton"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef, JSX as ReactJSX} from "react"
 
-import {isDarkMode} from "../../utils/Theme"
+import {isDarkMode} from "../../Theme/Theme"
 
 // #region: Styled Components
 const IconBox = styled(Box)({

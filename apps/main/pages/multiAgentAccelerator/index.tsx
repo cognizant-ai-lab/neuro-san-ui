@@ -18,7 +18,7 @@ import {useColorScheme} from "@mui/material"
 
 import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
-import {isDarkMode} from "../../../../packages/ui-common/utils/Theme"
+import {isDarkMode} from "../../../../packages/ui-common/Theme/Theme"
 
 // Main function.
 export default function MultiAgentAcceleratorPage() {

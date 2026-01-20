@@ -25,6 +25,7 @@ export interface Settings {
         agentIconColor: string
         agentNodeColor: string
         plasmaColor: string
+        rangePalette: string
     }
 }
 
@@ -37,11 +38,13 @@ export interface SettingsStore {
     resetSettings: () => void
 }
 
-const defaultSettings: Settings = {
+const DEFAULT_SETTINGS: Settings = {
     appearance: {
-        agentNodeColor: "green",
-        agentIconColor: "white",
-        plasmaColor: "green",
+        // globals.css variables like --bs-green don't work here. TBD why.
+        agentNodeColor: "#2db81f",
+        agentIconColor: "#ffffff",
+        rangePalette: "blue",
+        plasmaColor: "#2db81f",
     },
 }
 
@@ -51,12 +54,12 @@ const defaultSettings: Settings = {
 export const useSettingsStore = create<SettingsStore>()(
     persist(
         (set) => ({
-            settings: defaultSettings,
+            settings: DEFAULT_SETTINGS,
             updateSettings: (updates) =>
                 set((state) => ({
                     settings: {...state.settings, ...updates},
                 })),
-            resetSettings: () => set({settings: defaultSettings}),
+            resetSettings: () => set({settings: DEFAULT_SETTINGS}),
         }),
         {
             name: "app-settings",

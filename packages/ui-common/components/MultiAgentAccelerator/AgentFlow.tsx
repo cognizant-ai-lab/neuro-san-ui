@@ -40,22 +40,16 @@ import {
 } from "reactflow"
 
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {
-    BACKGROUND_COLORS,
-    BACKGROUND_COLORS_DARK_IDX,
-    BASE_RADIUS,
-    DEFAULT_FRONTMAN_X_POS,
-    DEFAULT_FRONTMAN_Y_POS,
-    HEATMAP_COLORS,
-    LEVEL_SPACING,
-} from "./const"
+import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {useSettingsStore} from "../../state/Settings"
+import {PaletteKey, PALETTES} from "../../Theme/Palettes"
+import {isDarkMode} from "../../Theme/Theme"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
-import {isDarkMode} from "../../utils/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
 // #region: Types
@@ -102,6 +96,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
 }) => {
+    console.debug("agentcounts:", agentCounts)
     const theme = useTheme()
 
     const {fitView} = useReactFlow()
@@ -335,6 +330,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
 
     const isHeatmap = coloringOption === "heatmap"
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) as PaletteKey
+    const palette = PALETTES[paletteKey]
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network
@@ -479,9 +476,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Generate Legend for depth or heatmap colors
     function getLegend() {
-        const palette = isHeatmap ? HEATMAP_COLORS : BACKGROUND_COLORS
-        const title = isHeatmap ? "Heat" : "Depth"
-        const length = isHeatmap ? HEATMAP_COLORS.length : Math.min(maxDepth, BACKGROUND_COLORS.length)
+        const length = isHeatmap ? palette.length : Math.min(maxDepth, palette.length)
         return (
             <Box
                 id={`${id}-legend`}
@@ -497,15 +492,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     zIndex: getZIndex(2, theme),
                 }}
             >
-                <Typography
-                    id={`${id}-legend-label`}
-                    sx={{
-                        fontSize: "10px",
-                        marginLeft: "0.2rem",
-                    }}
-                >
-                    {title}
-                </Typography>
                 {/* Depth palette */}
                 {Array.from({length}, (_, i) => (
                     <Box
@@ -515,7 +501,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             alignItems: "center",
                             backgroundColor: palette[i],
                             borderRadius: "50%",
-                            color: i < BACKGROUND_COLORS_DARK_IDX ? "var(--bs-primary)" : "var(--bs-white)",
+                            color: i < palette.length / 2 ? "var(--bs-primary)" : "var(--bs-white)",
                             display: "flex",
                             height: "15px",
                             justifyContent: "center",

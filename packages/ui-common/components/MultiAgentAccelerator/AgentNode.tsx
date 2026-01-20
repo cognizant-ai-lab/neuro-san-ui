@@ -23,8 +23,8 @@ import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
-import {BACKGROUND_COLORS, BACKGROUND_COLORS_DARK_IDX, HEATMAP_COLORS} from "./const"
 import {useSettingsStore} from "../../state/Settings"
+import {PaletteKey, PALETTES} from "../../Theme/Palettes"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -56,6 +56,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Agent node color from settings store
     const agentNodeColor = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
     const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) as PaletteKey
+    const palette = PALETTES[paletteKey]
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
@@ -76,7 +78,9 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     let backgroundColor: string
     let color: string
     const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
-
+    console.debug(
+        `Rendering AgentNode ${agentId}: isActiveAgent=${isActiveAgent}, isHeatmap=${isHeatmap}, depth=${depth}`
+    )
     if (isActiveAgent) {
         backgroundColor = agentNodeColor
         color = agentNodeIconColor
@@ -84,14 +88,14 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         const agentCount = agentCounts.has(agentId) ? agentCounts.get(agentId) : 0
 
         // Calculate "heat" as a fraction of the times this agent was invoked compared to the maximum agent count.
-        const colorIndex = Math.floor((agentCount / maxAgentCount) * (HEATMAP_COLORS.length - 1))
-        backgroundColor = HEATMAP_COLORS[colorIndex]
-        const isDarkBackground = colorIndex >= BACKGROUND_COLORS_DARK_IDX
+        const colorIndex = Math.floor((agentCount / maxAgentCount) * (palette.length - 1))
+        backgroundColor = palette[colorIndex]
+        const isDarkBackground = colorIndex >= palette.length / 2
         color = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
     } else {
-        const colorIndex = depth % BACKGROUND_COLORS.length
-        backgroundColor = BACKGROUND_COLORS[colorIndex]
-        const isDarkBackground = colorIndex >= BACKGROUND_COLORS_DARK_IDX
+        const colorIndex = depth % palette.length
+        backgroundColor = palette[colorIndex]
+        const isDarkBackground = colorIndex >= palette.length / 2
         color = isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)"
     }
 
