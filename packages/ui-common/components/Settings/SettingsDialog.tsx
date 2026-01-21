@@ -129,7 +129,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
             />
             {resetToDefaultSettingsOpen ? (
                 <ConfirmationModal
-                    id="{id}-reset-to-default-settings-confirmation-modal"
+                    id={`${id}-reset-to-default-settings-confirmation-modal`}
                     content={
                         "This will reset all settings to their default values and cannot be undone. " +
                         "Are you sure you want to proceed?"
