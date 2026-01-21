@@ -13,13 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+import {merge} from "lodash-es"
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
 import {PaletteKey} from "../Theme/Palettes"
 
 export const DEFAULT_PALETTE_KEY = "blue"
+
+/**
+ * A utility type that makes all properties in T deeply optional, since Typescript's built-in Partial<T>
+ * only makes the top-level properties optional.
+ *
+ * We use it in conjunction with lodash.merge to allow partial updates to nested settings objects. Typescript doesn't
+ * know that lodash.merge will fill in the missing properties at runtime, so we need this shim to avoid type errors.
+ */
+type DeepPartial<T> = {
+    [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
+}
 
 /**
  * User preference settings
@@ -38,7 +49,7 @@ interface Settings {
  */
 interface SettingsStore {
     settings: Settings
-    updateSettings: (updates: Partial<Settings>) => void
+    updateSettings: (updates: DeepPartial<Settings>) => void
     resetSettings: () => void
 }
 
@@ -59,12 +70,13 @@ const DEFAULT_SETTINGS: Settings = {
  * The hook that lets apps use the store
  */
 export const useSettingsStore = create<SettingsStore>()(
+    // zustand persists to localStorage by default
     persist(
         (set) => ({
             settings: DEFAULT_SETTINGS,
             updateSettings: (updates) =>
                 set((state) => ({
-                    settings: {...state.settings, ...updates},
+                    settings: merge({}, state.settings, updates),
                 })),
             resetSettings: () => set({settings: DEFAULT_SETTINGS}),
         }),
