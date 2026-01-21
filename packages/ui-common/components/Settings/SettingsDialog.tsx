@@ -1,5 +1,5 @@
 import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
-import {ToggleButton, useColorScheme} from "@mui/material"
+import {ToggleButton} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
@@ -14,7 +14,6 @@ import {ColorPickerDialog} from "./ColorPickerDialog"
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
 import {DEFAULT_PALETTE_KEY, useSettingsStore} from "../../state/Settings"
 import {PaletteKey, PALETTES} from "../../Theme/Palettes"
-import {isDarkMode} from "../../Theme/Theme"
 import {ConfirmationModal} from "../Common/confirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
@@ -26,10 +25,6 @@ interface SettingsDialogProps {
 }
 
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) => {
-    // MUI theme and dark mode
-    const {mode, systemMode} = useColorScheme()
-    const darkMode = isDarkMode(mode, systemMode)
-
     // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
     const resetSettings = useSettingsStore((state) => state.resetSettings)
@@ -77,7 +72,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     return (
         <>
             <ColorPickerDialog
-                open={plasmaColorPickerOpen}
+                isOpen={plasmaColorPickerOpen}
                 anchorEl={plasmaColorPickerAnchorEl}
                 onClose={() => setPlasmaColorPickerAnchorEl(null)}
                 color={plasmaColor}
@@ -94,7 +89,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 }}
             />
             <ColorPickerDialog
-                open={agentNodeColorPickerOpen}
+                isOpen={agentNodeColorPickerOpen}
                 anchorEl={agentNodeColorPickerAnchorEl}
                 onClose={() => setAgentNodeColorPickerAnchorEl(null)}
                 color={agentNodeColor}
@@ -111,7 +106,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 }}
             />
             <ColorPickerDialog
-                open={agentIconColorPickerOpen}
+                isOpen={agentIconColorPickerOpen}
                 anchorEl={agentIconColorPickerAnchorEl}
                 onClose={() => setAgentIconColorPickerAnchorEl(null)}
                 color={agentIconColor}
@@ -153,9 +148,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 paperProps={{
                     minWidth: "50%",
                     minHeight: "50%",
-                    backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                    borderColor: "var(--bs-white)",
-                    border: "1px solid var(--bs-white)",
+                    border: "1px solid",
                 }}
             >
                 <Box sx={{marginBottom: 3}}>
