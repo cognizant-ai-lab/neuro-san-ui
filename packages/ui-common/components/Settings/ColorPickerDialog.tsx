@@ -31,7 +31,7 @@ export function ColorPickerDialog(props: ColorPickerDialogProps) {
         >
             <Typography
                 variant="h6"
-                sx={{marginBottom: 2, color: "white"}}
+                sx={{marginBottom: 2, color: "text.primary"}}
             >
                 Choose Color
             </Typography>
