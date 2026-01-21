@@ -24,6 +24,7 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {PALETTES} from "../../../Theme/Palettes"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
@@ -136,8 +137,8 @@ describe("AgentFlow", () => {
         verifyAgentNodes(container)
     })
 
-    it("Should allow switching to heatmap display", async () => {
-        renderAgentFlowComponent()
+    it("Should allow switching between heatmap and depth displays", async () => {
+        const {container} = renderAgentFlowComponent()
 
         const heatmapButton = await screen.findByRole("button", {name: "Heatmap"})
 
@@ -145,13 +146,27 @@ describe("AgentFlow", () => {
         await user.click(heatmapButton)
 
         // Legend should have switched to heatmap mode
-        await screen.findByText("Heat")
+        const legendContainer = container.querySelector('[id$="-legend"]')
+        const divElements = legendContainer?.querySelectorAll(".MuiBox-root")
+
+        const expectedItemsInLegend = PALETTES["blue"].length
+        expect(divElements.length).toBe(expectedItemsInLegend)
+
+        // Now switch back to depth display
+        const depthButton = await screen.findByRole("button", {name: "Depth"})
+        await user.click(depthButton)
+
+        // Legend should have switched back to depth mode
+        const depthLegendContainer = container.querySelector('[id$="-legend"]')
+        const depthDivElements = depthLegendContainer?.querySelectorAll(".MuiBox-root")
+        const expectedNetworkDepth = 2
+        expect(depthDivElements.length).toBe(expectedNetworkDepth)
     })
 
     it("Should allow switching to heatmap display and not show radial guides with linear display mode", async () => {
         const {container} = renderAgentFlowComponent()
 
-        const radialGuides = container.querySelector("#test-flow-id-radial-guides")
+        let radialGuides = container.querySelector("#test-flow-id-radial-guides")
 
         // Radial guides should be present in radial layout
         expect(radialGuides).toBeInTheDocument()
@@ -172,8 +187,9 @@ describe("AgentFlow", () => {
         // press the button to switch to heatmap mode
         await user.click(heatmapButton)
 
-        // Legend should have switched to heatmap mode
-        await screen.findByText("Heat")
+        // Radial guides should still not be present in linear layout
+        radialGuides = container.querySelector("#test-flow-id-radial-guides")
+        expect(radialGuides).not.toBeInTheDocument()
     })
 
     it("Should handle highlighting the active agents", async () => {
