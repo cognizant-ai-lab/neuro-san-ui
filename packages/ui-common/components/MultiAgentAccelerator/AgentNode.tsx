@@ -55,7 +55,11 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Agent node color from settings store
     const agentNodeColor = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
+
+    // Agent node icon color from settings store
     const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
+
+    // Color palette for depth/heatmap coloring
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) || DEFAULT_PALETTE_KEY
     const palette = PALETTES[paletteKey]
 
@@ -63,8 +67,10 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const data: AgentNodeProps = props.data
     const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
 
+    // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
 
+    // Determine max agent count for heatmap scaling
     const maxAgentCount = agentCounts ? Math.max(...Array.from(agentCounts.values())) : 0
 
     // Unpack the node-specific id
@@ -75,26 +81,23 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const conversations = getConversations()
     const isActiveAgent = conversations?.some((conversation) => conversation.agents.has(agentId)) ?? false
 
+    // Determine background color based on active status, heatmap, or depth
     let backgroundColor: string
-    let color: string
     const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
-
     if (isActiveAgent) {
+        // Highlight active agents with a distinct color
         backgroundColor = agentNodeColor
-        color = agentNodeIconColor
     } else if (isHeatmap) {
+        // Color by "heatmap" of agent invocation counts
         const agentCount = agentCounts.has(agentId) ? agentCounts.get(agentId) : 0
 
         // Calculate "heat" as a fraction of the times this agent was invoked compared to the maximum agent count.
         const colorIndex = Math.floor((agentCount / maxAgentCount) * (palette.length - 1))
         backgroundColor = palette[colorIndex]
-        const isDarkBackground = colorIndex >= palette.length / 2
-        color = agentNodeIconColor || (isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)")
     } else {
+        // Color by depth in the agent graph
         const colorIndex = depth % palette.length
         backgroundColor = palette[colorIndex]
-        const isDarkBackground = colorIndex >= palette.length / 2
-        color = agentNodeIconColor || (isDarkBackground ? "var(--bs-white)" : "var(--bs-dark)")
     }
 
     // Animation style for making active agent glow and pulse
@@ -160,7 +163,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     backgroundColor,
                     borderRadius: "50%",
                     boxShadow,
-                    color,
+                    color: agentNodeIconColor,
                     display: "flex",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     justifyContent: "center",
