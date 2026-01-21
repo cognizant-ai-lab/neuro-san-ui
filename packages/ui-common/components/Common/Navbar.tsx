@@ -141,11 +141,13 @@ export const Navbar = ({
                 padding: "0.25rem",
             }}
         >
-            <SettingsDialog
-                id="settings-dialog"
-                isOpen={settingsDialogOpen}
-                onClose={() => setSettingsDialogOpen(false)}
-            />
+            {settingsDialogOpen && (
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={settingsDialogOpen}
+                    onClose={() => setSettingsDialogOpen(false)}
+                />
+            )}
             <a
                 id="splash-logo-link"
                 href="https://www.cognizant.com/us/en"

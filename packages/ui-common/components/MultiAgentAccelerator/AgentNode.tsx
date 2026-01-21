@@ -78,9 +78,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     let backgroundColor: string
     let color: string
     const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
-    console.debug(
-        `Rendering AgentNode ${agentId}: isActiveAgent=${isActiveAgent}, isHeatmap=${isHeatmap}, depth=${depth}`
-    )
+
     if (isActiveAgent) {
         backgroundColor = agentNodeColor
         color = agentNodeIconColor

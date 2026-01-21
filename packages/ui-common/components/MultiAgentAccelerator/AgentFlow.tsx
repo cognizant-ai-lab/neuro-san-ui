@@ -96,7 +96,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
 }) => {
-    console.debug("agentcounts:", agentCounts)
     const theme = useTheme()
 
     const {fitView} = useReactFlow()
