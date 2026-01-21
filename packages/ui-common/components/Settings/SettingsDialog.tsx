@@ -81,7 +81,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     setPlasmaColorPickerAnchorEl(null)
                     updateSettings({
                         appearance: {
-                            ...useSettingsStore.getState().settings.appearance,
                             plasmaColor: plasmaColor.hex,
                         },
                     })
@@ -98,7 +97,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     setAgentNodeColorPickerAnchorEl(null)
                     updateSettings({
                         appearance: {
-                            ...useSettingsStore.getState().settings.appearance,
                             agentNodeColor: agentNodeColor.hex,
                         },
                     })
@@ -115,7 +113,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     setAgentIconColorPickerAnchorEl(null)
                     updateSettings({
                         appearance: {
-                            ...useSettingsStore.getState().settings.appearance,
                             agentIconColor: agentIconColor.hex,
                         },
                     })
