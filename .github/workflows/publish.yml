@@ -118,8 +118,12 @@ jobs:
             - name: Build ui-common library
               run: yarn build:lib
 
+            # Yarn 4 requires YARN_NPM_AUTH_TOKEN for registry auth.
+            # NODE_AUTH_TOKEN is set by actions/setup-node via OIDC.
             - name: Publish to npm registry
               run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
+              env:
+                  YARN_NPM_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
 
             - name: Summary
               run: |
