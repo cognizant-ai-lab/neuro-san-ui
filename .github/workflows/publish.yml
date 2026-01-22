@@ -15,7 +15,7 @@
 # ================================================================================
 # Publish UI Common Workflow
 # ================================================================================
-# This workflow publishes @cognizant-ai-lab/ui-common to GitHub Packages.
+# This workflow publishes @cognizant-ai-lab/ui-common to the public npm registry.
 #
 # Triggers:
 #   1. Push to main (with path filter): Publishes snapshot for CI/CD integration
@@ -28,6 +28,10 @@
 #   - Manual:          <base>-pr.<sha>.<run>    with user-selected dist-tag
 #
 # After push-to-main publishes, triggers neuro-ui via repository_dispatch.
+#
+# Authentication:
+#   Uses OIDC trusted publishing - no npm tokens required. Configure the trusted
+#   publisher on npmjs.com with this workflow filename (publish.yml).
 # ================================================================================
 
 name: Publish UI Common
@@ -57,7 +61,7 @@ on:
 
 permissions:
     contents: read
-    packages: write
+    id-token: write
 
 jobs:
     publish:
@@ -85,8 +89,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 22.17.1
-                  registry-url: https://npm.pkg.github.com/
-                  scope: "@cognizant-ai-lab"
+                  registry-url: https://registry.npmjs.org/
                   cache: yarn
 
             - name: Install dependencies
@@ -101,32 +104,13 @@ jobs:
             - name: Compute version and dist-tag
               id: compute
               run: |
-                  SHORT_SHA="${GITHUB_SHA::7}"
-                  BASE_VERSION=$(node --eval "console.log(require('./packages/ui-common/package.json').version)")
-                  BASE_VERSION="${BASE_VERSION%%-*}"
-
-                  if [ "${{ github.event_name }}" = "push" ]; then
-                    # Push to main: snapshot version with "main" dist-tag
-                    VERSION="${BASE_VERSION}-main.${SHORT_SHA}.${{ github.run_number }}"
-                    DIST_TAG="main"
-                    echo "Publishing merge snapshot: $VERSION with dist-tag: $DIST_TAG"
-                  elif [ "${{ github.event_name }}" = "release" ]; then
-                    # Release: use release tag for version, "latest" dist-tag
-                    TAG="${{ github.event.release.tag_name }}"
-                    VERSION="${TAG#v}"
-                    DIST_TAG="latest"
-                    echo "Publishing release version: $VERSION with dist-tag: $DIST_TAG"
-                  else
-                    # Manual workflow_dispatch: prerelease version with user-selected dist-tag
-                    VERSION="${BASE_VERSION}-pr.${SHORT_SHA}.${{ github.run_number }}"
-                    DIST_TAG="${{ inputs.dist_tag || 'prerelease' }}"
-                    echo "Publishing manual version: $VERSION with dist-tag: $DIST_TAG"
-                  fi
-
-                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-                  echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-                  echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
-                  echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+                  ./build_scripts/compute_publish_version.sh \
+                    "${{ github.event_name }}" \
+                    "${{ github.sha }}" \
+                    "${{ github.run_number }}" \
+                    "packages/ui-common/package.json" \
+                    "${{ github.event.release.tag_name }}" \
+                    "${{ inputs.dist_tag }}"
 
             - name: Set ui-common version
               run: ./build_scripts/set_package_version.sh packages/ui-common/package.json ${{ steps.compute.outputs.version }}
@@ -134,11 +118,8 @@ jobs:
             - name: Build ui-common library
               run: yarn build:lib
 
-            - name: Publish to GitHub Packages
-              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }}
-              env:
-                  YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Publish to npm registry
+              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
 
             - name: Summary
               run: |

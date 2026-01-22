@@ -21,7 +21,6 @@
         "lint": "eslint",
         "lint-rules": "eslint --print-config jest.config.ts",
         "lint-summary": "eslint --format summary",
-        "publish": "yarn workspace @cognizant-ai-lab/ui-common npm publish",
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
         "test": "jest --config ./jest_unit.config.ts"
     },
