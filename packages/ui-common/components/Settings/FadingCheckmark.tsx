@@ -18,6 +18,7 @@ export const useCheckmarkFade = () => {
             clearTimeout(timeoutRef.current)
         }
 
+        // Show the checkmark and set a timeout to hide it
         setShow(true)
         timeoutRef.current = setTimeout(() => {
             setShow(false)

@@ -7,12 +7,9 @@ import FormLabel from "@mui/material/FormLabel"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Typography from "@mui/material/Typography"
 import {FC, MouseEvent as ReactMouseEvent, useState} from "react"
-import {useColor} from "react-color-palette"
 
-import "react-color-palette/css"
-import {ColorPickerDialog} from "./ColorPickerDialog"
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
-import {DEFAULT_PALETTE_KEY, useSettingsStore} from "../../state/Settings"
+import {useSettingsStore} from "../../state/Settings"
 import {PaletteKey, PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/confirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
@@ -33,35 +30,25 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     const [resetToDefaultSettingsOpen, setResetToDefaultSettingsOpen] = useState<boolean>(false)
 
     // Plasma color
-    const [plasmaColorPickerAnchorEl, setPlasmaColorPickerAnchorEl] = useState<null | HTMLElement>(null)
-    const plasmaColorPickerOpen = Boolean(plasmaColorPickerAnchorEl)
-    const plasmaColorFromStore = useSettingsStore((state) => state.settings.appearance.plasmaColor)
-    const [plasmaColor, setPlasmaColor] = useColor(plasmaColorFromStore)
+    const plasmaColor = useSettingsStore((state) => state.settings.appearance.plasmaColor)
     const plasmaColorCheckmark = useCheckmarkFade()
 
     // Agent node color
-    const [agentNodeColorPickerAnchorEl, setAgentNodeColorPickerAnchorEl] = useState<null | HTMLElement>(null)
-    const agentNodeColorPickerOpen = Boolean(agentNodeColorPickerAnchorEl)
-    const agentNodeColorFromStore = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
-    const [agentNodeColor, setAgentNodeColor] = useColor(agentNodeColorFromStore)
+    const agentNodeColor = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
     const agentNodeColorCheckmark = useCheckmarkFade()
 
     // Agent icon color
-    const [agentIconColorPickerAnchorEl, setAgentIconColorPickerAnchorEl] = useState<null | HTMLElement>(null)
-    const agentIconColorPickerOpen = Boolean(agentIconColorPickerAnchorEl)
-    const agentIconColorFromStore = useSettingsStore((state) => state.settings.appearance.agentIconColor)
-    const [agentIconColor, setAgentIconColor] = useColor(agentIconColorFromStore)
+    const agentIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const agentIconColorCheckmark = useCheckmarkFade()
 
     // Which palette to use for heatmaps and depth display?
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) || DEFAULT_PALETTE_KEY
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
     const rangePaletteCheckmark = useCheckmarkFade()
 
     const handlePaletteChange = (_event: ReactMouseEvent<HTMLElement>, newPalette: PaletteKey | null) => {
         if (newPalette) {
             updateSettings({
                 appearance: {
-                    ...useSettingsStore.getState().settings.appearance,
                     rangePalette: newPalette,
                 },
             })
@@ -71,54 +58,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
 
     return (
         <>
-            <ColorPickerDialog
-                isOpen={plasmaColorPickerOpen}
-                anchorEl={plasmaColorPickerAnchorEl}
-                onClose={() => setPlasmaColorPickerAnchorEl(null)}
-                color={plasmaColor}
-                onChange={setPlasmaColor}
-                onClick={() => {
-                    setPlasmaColorPickerAnchorEl(null)
-                    updateSettings({
-                        appearance: {
-                            plasmaColor: plasmaColor.hex,
-                        },
-                    })
-                    plasmaColorCheckmark.trigger()
-                }}
-            />
-            <ColorPickerDialog
-                isOpen={agentNodeColorPickerOpen}
-                anchorEl={agentNodeColorPickerAnchorEl}
-                onClose={() => setAgentNodeColorPickerAnchorEl(null)}
-                color={agentNodeColor}
-                onChange={setAgentNodeColor}
-                onClick={() => {
-                    setAgentNodeColorPickerAnchorEl(null)
-                    updateSettings({
-                        appearance: {
-                            agentNodeColor: agentNodeColor.hex,
-                        },
-                    })
-                    agentNodeColorCheckmark.trigger()
-                }}
-            />
-            <ColorPickerDialog
-                isOpen={agentIconColorPickerOpen}
-                anchorEl={agentIconColorPickerAnchorEl}
-                onClose={() => setAgentIconColorPickerAnchorEl(null)}
-                color={agentIconColor}
-                onChange={setAgentIconColor}
-                onClick={() => {
-                    setAgentIconColorPickerAnchorEl(null)
-                    updateSettings({
-                        appearance: {
-                            agentIconColor: agentIconColor.hex,
-                        },
-                    })
-                    agentIconColorCheckmark.trigger()
-                }}
-            />
             {resetToDefaultSettingsOpen ? (
                 <ConfirmationModal
                     id={`${id}-reset-to-default-settings-confirmation-modal`}
@@ -130,8 +69,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                         setResetToDefaultSettingsOpen(false)
                     }}
                     handleOk={() => {
-                        resetSettings()
                         setResetToDefaultSettingsOpen(false)
+                        resetSettings()
                         sendNotification(NotificationType.success, "Settings have been reset to default values.")
                     }}
                     title="Reset to default settings"
@@ -165,14 +104,16 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     <Box sx={{display: "flex", alignItems: "center"}}>
                         <FormLabel>Palette (heatmap and depth):</FormLabel>
                         <ToggleButtonGroup
-                            value={paletteKey}
+                            aria-label="depth-heatmap-palette-selection"
                             exclusive={true}
                             onChange={handlePaletteChange}
                             size="small"
                             sx={{marginLeft: "1rem", marginRight: "1rem"}}
+                            value={paletteKey}
                         >
                             {(Object.keys(PALETTES) as PaletteKey[]).map((key) => (
                                 <ToggleButton
+                                    aria-label={`${key}-palette-button`}
                                     key={key}
                                     value={key}
                                 >
@@ -218,43 +159,49 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     <Divider sx={{marginBottom: 2}} />
                     <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                         <FormLabel>Plasma animation color:</FormLabel>
-                        <Box
-                            style={{
-                                backgroundColor: plasmaColor.hex,
-                                width: "1.5rem",
-                                height: "1.5rem",
-                                border: "1px solid #000",
-                                cursor: "pointer",
-                            }}
-                            onClick={(e) => setPlasmaColorPickerAnchorEl(e.currentTarget)}
+                        <input
+                            aria-label="plasma-color-picker"
+                            onChange={(e) =>
+                                updateSettings({
+                                    appearance: {
+                                        plasmaColor: e.target.value,
+                                    },
+                                })
+                            }
+                            type="color"
+                            value={plasmaColor}
                         />
                         <FadingCheckmark show={plasmaColorCheckmark.show} />
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent node color:</FormLabel>
-                        <Box
-                            style={{
-                                backgroundColor: agentNodeColor.hex,
-                                width: "1.5rem",
-                                height: "1.5rem",
-                                border: "1px solid #000",
-                                cursor: "pointer",
-                            }}
-                            onClick={(e) => setAgentNodeColorPickerAnchorEl(e.currentTarget)}
+                        <input
+                            aria-label="agent-node-color-picker"
+                            onChange={(e) =>
+                                updateSettings({
+                                    appearance: {
+                                        agentNodeColor: e.target.value,
+                                    },
+                                })
+                            }
+                            type="color"
+                            value={agentNodeColor}
                         />
                         <FadingCheckmark show={agentNodeColorCheckmark.show} />
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent icon color:</FormLabel>
-                        <Box
-                            style={{
-                                backgroundColor: agentIconColor.hex,
-                                width: "1.5rem",
-                                height: "1.5rem",
-                                border: "1px solid #000",
-                                cursor: "pointer",
-                            }}
-                            onClick={(e) => setAgentIconColorPickerAnchorEl(e.currentTarget)}
+                        <input
+                            aria-label="agent-icon-color-picker"
+                            onChange={(e) =>
+                                updateSettings({
+                                    appearance: {
+                                        agentIconColor: e.target.value,
+                                    },
+                                })
+                            }
+                            type="color"
+                            value={agentIconColor}
                         />
                         <FadingCheckmark show={agentIconColorCheckmark.show} />
                     </Box>
