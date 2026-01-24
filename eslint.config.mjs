@@ -484,7 +484,7 @@ const config = [
             ...testingLibrary.configs["flat/react"].rules,
 
             // Indicate that the findBy calls are implicit assertions
-            "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*"]}],
+            "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
 
             // Extra rules for Jest tests
             "testing-library/await-async-queries": "error",

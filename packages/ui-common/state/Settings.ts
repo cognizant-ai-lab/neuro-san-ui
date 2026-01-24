@@ -19,8 +19,6 @@ import {persist} from "zustand/middleware"
 
 import {PaletteKey} from "../Theme/Palettes"
 
-export const DEFAULT_PALETTE_KEY = "blue"
-
 /**
  * A utility type that makes all properties in T deeply optional, since Typescript's built-in Partial<T>
  * only makes the top-level properties optional.
@@ -56,12 +54,12 @@ interface SettingsStore {
 /**
  * Default settings, used on first load and on reset
  */
-const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_SETTINGS: Settings = {
     appearance: {
         // CSS variables like --bs-green don't work here. TBD why.
         agentNodeColor: "#2db81f",
         agentIconColor: "black",
-        rangePalette: DEFAULT_PALETTE_KEY,
+        rangePalette: "blue",
         plasmaColor: "#2db81f",
     },
 }

@@ -75,6 +75,26 @@ describe("Navbar", () => {
         await screen.findByText("Confirm")
     })
 
+    it("Should open the Settings page when Settings is clicked", async () => {
+        renderNavbar()
+
+        expect(screen.queryByTestId("settings-dialog")).not.toBeInTheDocument()
+
+        const settingsButton = screen.getByTestId("SettingsIcon")
+        await user.click(settingsButton)
+
+        screen.getByTestId("settings-dialog")
+        screen.getByRole("heading", {name: "Settings"})
+        screen.getByText("Appearance")
+        screen.getByText("Network animation")
+
+        // Close it
+        const closeButton = await screen.findByLabelText("close")
+        await user.click(closeButton)
+
+        expect(screen.queryByTestId("settings-dialog")).not.toBeInTheDocument()
+    })
+
     it("should redirect to email client when confirmation is clicked", async () => {
         renderNavbar()
 

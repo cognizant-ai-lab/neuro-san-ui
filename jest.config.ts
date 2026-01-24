@@ -25,9 +25,7 @@ const config: Config.InitialOptions = {
 
     preset: "ts-jest/presets/default-esm",
     extensionsToTreatAsEsm: [".ts", ".tsx"],
-    transformIgnorePatterns: [
-        "/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime|lodash-es|react-color-palette)",
-    ],
+    transformIgnorePatterns: ["/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime|lodash-es)"],
     transform: {
         "^.+\\.(ts|tsx)$": [
             "ts-jest",
@@ -58,8 +56,7 @@ const config: Config.InitialOptions = {
 
     // Prevent Jest from trying to parse CSS files. Reference: https://stackoverflow.com/a/43813992
     moduleNameMapper: {
-        "^react-color-palette/css$": "<rootDir>/apps/main/__tests__/__mocks__/styleMock.js",
-        "^.+\\.(css|less)$": "<rootDir>/apps/main/__tests__/__mocks__/styleMock.js",
+        "\\.(css|less)$": "<rootDir>/apps/main/__tests__/__mocks__/styleMock.js",
     },
 
     // Don't look for modules in these directories

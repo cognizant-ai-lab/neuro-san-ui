@@ -23,7 +23,7 @@ import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
-import {DEFAULT_PALETTE_KEY, useSettingsStore} from "../../state/Settings"
+import {useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -60,7 +60,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
 
     // Color palette for depth/heatmap coloring
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette) || DEFAULT_PALETTE_KEY
+    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
     const palette = PALETTES[paletteKey]
 
     // Unpack the node-specific data
