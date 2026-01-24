@@ -70,7 +70,6 @@ export const MUIDialog: FC<MUIDialogProps> = ({
         slotProps={{
             paper: {sx: paperProps},
         }}
-        sx={{borderWidth: 4}}
     >
         <StyledDialogTitle id={`${id}-title`}>{title}</StyledDialogTitle>
         {closeable && (
