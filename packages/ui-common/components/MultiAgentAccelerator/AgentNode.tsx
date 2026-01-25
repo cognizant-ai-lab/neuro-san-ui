@@ -83,7 +83,10 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Determine background color based on active status, heatmap, or depth
     let backgroundColor: string
-    const isHeatmap = agentCounts?.size > 0 && maxAgentCount > 0
+
+    // HACK: parent passes in agentCounts as undefined when not using heatmap mode. We distinguish between
+    // "undefined" (no heatmap) and "defined but empty" (heatmap with zero counts).
+    const isHeatmap = agentCounts !== undefined
     if (isActiveAgent) {
         // Highlight active agents with a distinct color
         backgroundColor = agentNodeColor
