@@ -190,6 +190,9 @@ export const MultiAgentAccelerator = ({
     }, [])
 
     const onStreamingStarted = useCallback((): void => {
+        // Reset agent counts
+        agentCountsRef.current = new Map()
+
         // Show info popup only once per session
         if (!haveShownPopup) {
             sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
@@ -203,7 +206,6 @@ export const MultiAgentAccelerator = ({
     const onStreamingComplete = useCallback((): void => {
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
-        agentCountsRef.current = new Map<string, number>()
         setCurrentConversations(null)
         resetState()
     }, [])
@@ -232,7 +234,10 @@ export const MultiAgentAccelerator = ({
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
-                        setSelectedNetwork={setSelectedNetwork}
+                        setSelectedNetwork={(newNetwork) => {
+                            agentCountsRef.current = new Map()
+                            setSelectedNetwork(newNetwork)
+                        }}
                     />
                 </Grid>
             </Slide>
