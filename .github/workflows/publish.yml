@@ -124,12 +124,12 @@ jobs:
             - name: Upgrade npm for OIDC support
               run: npm install --global npm@11.8.0
 
-            # Yarn 4 requires YARN_NPM_AUTH_TOKEN for registry auth.
+            # Use npm CLI directly for OIDC trusted publishing support.
+            # Yarn's npm publish command doesn't properly support OIDC token exchange.
             # NODE_AUTH_TOKEN is set by actions/setup-node via OIDC.
             - name: Publish to npm registry
-              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
-              env:
-                  YARN_NPM_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
+              run: npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
+              working-directory: packages/ui-common
 
             - name: Summary
               run: |
