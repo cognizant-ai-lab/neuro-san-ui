@@ -24,7 +24,7 @@
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
         "test": "jest --config ./jest_unit.config.ts"
     },
-    "packageManager": "yarn@4.9.4",
+    "packageManager": "yarn@4.12.0",
     "devDependencies": {
         "@babel/core": "7.23.7",
         "@babel/preset-env": "7.28.3",

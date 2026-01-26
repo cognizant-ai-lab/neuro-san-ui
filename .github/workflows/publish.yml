@@ -118,18 +118,10 @@ jobs:
             - name: Build ui-common library
               run: yarn build:lib
 
-            # Upgrade npm to v11.5.1+ for OIDC trusted publishing support.
-            # Node.js 22.x ships with npm v10, which has a bug causing 404 errors
-            # during OIDC token exchange. See: https://docs.npmjs.com/trusted-publishers
-            - name: Upgrade npm for OIDC support
-              run: npm install --global npm@11.8.0
-
-            # Use npm CLI directly as required by npm's trusted publishing docs:
-            # "Trusted publishing requires npm CLI version 11.5.1 or later."
-            # See: https://docs.npmjs.com/trusted-publishers/
+            # Publish using Yarn 4.12.0+ which supports OIDC trusted publishing.
+            # See: https://github.com/yarnpkg/berry/pull/6898
             - name: Publish to npm registry
-              run: npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
-              working-directory: packages/ui-common
+              run: yarn workspace @cognizant-ai-lab/ui-common npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
 
             - name: Summary
               run: |
