@@ -124,9 +124,9 @@ jobs:
             - name: Upgrade npm for OIDC support
               run: npm install --global npm@11.8.0
 
-            # Use npm CLI directly for OIDC trusted publishing support.
-            # Yarn's npm publish command doesn't properly support OIDC token exchange.
-            # NODE_AUTH_TOKEN is set by actions/setup-node via OIDC.
+            # Use npm CLI directly as required by npm's trusted publishing docs:
+            # "Trusted publishing requires npm CLI version 11.5.1 or later."
+            # See: https://docs.npmjs.com/trusted-publishers/
             - name: Publish to npm registry
               run: npm publish --tag ${{ steps.compute.outputs.dist_tag }} --provenance --access public
               working-directory: packages/ui-common
