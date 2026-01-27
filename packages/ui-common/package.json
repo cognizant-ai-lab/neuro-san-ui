@@ -9,7 +9,7 @@
         "prepack": "echo PREPACK_RUNNING && yarn build"
     },
     "dependencies": {
-        "@langchain/core": "0.2.36",
+        "@langchain/core": "0.3.80",
         "dagre": "0.8.5",
         "http-status": "1.7.3",
         "jsonrepair": "3.8.0",
