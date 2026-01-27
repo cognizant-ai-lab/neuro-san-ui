@@ -16,9 +16,6 @@ limitations under the License.
 
 import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
-import HandymanIcon from "@mui/icons-material/Handyman"
-import PersonIcon from "@mui/icons-material/Person"
-import TravelExploreIcon from "@mui/icons-material/TravelExplore"
 import {Tooltip, useTheme} from "@mui/material"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
@@ -67,7 +64,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getConversations, iconSuggestion, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, getConversations, iconSuggestion, isAwaitingLlm} = data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -122,44 +119,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
-        const id = `${agentId}-icon`
         if (iconSuggestion && MuiIcons[iconSuggestion as keyof typeof MuiIcons]) {
             const IconComponent = MuiIcons[iconSuggestion as keyof typeof MuiIcons]
             return <IconComponent sx={{fontSize: AGENT_ICON_SIZE}} />
-        }
-
-        if (isFrontman) {
-            return (
-                // Use special icon and larger size for Frontman
-                <PersonIcon
-                    id={id}
-                    sx={{fontSize: FRONTMAN_ICON_SIZE}}
-                />
-            )
-        }
-        switch (displayAs) {
-            case "external_agent":
-                return (
-                    <TravelExploreIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
-            case "coded_tool":
-                return (
-                    <HandymanIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
-            case "llm_agent":
-            default:
-                return (
-                    <AutoAwesomeIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
+        } else {
+            // return blank icon
+            return <AutoAwesomeIcon sx={{fontSize: isFrontman ? FRONTMAN_ICON_SIZE : AGENT_ICON_SIZE}} />
         }
     }
 
