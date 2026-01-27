@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
@@ -35,6 +36,7 @@ export interface AgentNodeProps {
     readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
+    readonly iconSuggestion?: string
 }
 
 // Node dimensions
@@ -65,7 +67,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, displayAs, getConversations, iconSuggestion, isAwaitingLlm} = data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -121,6 +123,11 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
         const id = `${agentId}-icon`
+        if (iconSuggestion && MuiIcons[iconSuggestion as keyof typeof MuiIcons]) {
+            const IconComponent = MuiIcons[iconSuggestion as keyof typeof MuiIcons]
+            return <IconComponent sx={{fontSize: AGENT_ICON_SIZE}} />
+        }
+
         if (isFrontman) {
             return (
                 // Use special icon and larger size for Frontman

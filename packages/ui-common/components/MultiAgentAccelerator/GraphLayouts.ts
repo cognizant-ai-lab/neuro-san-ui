@@ -145,7 +145,8 @@ export const layoutRadial = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    agentIconSuggestions: Record<string, string>
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
@@ -255,6 +256,7 @@ export const layoutRadial = (
                     // Use current conversations for node highlighting (cleared at end)
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
+                    iconSuggestion: agentIconSuggestions[nodeId],
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
                 style: {
@@ -286,7 +288,8 @@ export const layoutLinear = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    agentIconSuggestions: Record<string, string>
 ): {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge<EdgeProps>[]
@@ -313,7 +316,8 @@ export const layoutLinear = (
                 // Use current conversations for node highlighting (cleared at end)
                 getConversations: () => currentConversations,
                 isAwaitingLlm,
-                depth: undefined, // Depth will be computed later
+                depth: undefined, // Depth will be computed later,
+                iconSuggestion: agentIconSuggestions[originOfNode],
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {

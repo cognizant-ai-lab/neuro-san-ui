@@ -85,17 +85,31 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
 }
 
 /**
- * Get LLM suggestions for agent icons.
- * @param agents The list of agents to get icon suggestions for.
- * @returns A promise that resolves to the fetch response.
+ * Get LLM suggestions for network icons.
+ * @param networks The list of networks to get icon suggestions for.
+ * @returns A promise that resolves to a record mapping network names to icon names.
  */
-export async function getLlmIconSuggestions(agents: readonly AgentInfo[]): Promise<Record<string, string>> {
-    const res = await fetch("http://localhost:3001/api/chat", {
+export async function getLlmIconSuggestions(networks: readonly AgentInfo[]): Promise<Record<string, string>> {
+    const res = await fetch("http://localhost:3001/api/suggestIconsForNetworks", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({agents}),
+        body: JSON.stringify({networks}),
+    })
+
+    return JSON.parse(await res.json())
+}
+
+export async function getLlmIconSuggestionsForAgents(
+    connectivity: ConnectivityResponse
+): Promise<Record<string, string>> {
+    const res = await fetch("http://localhost:3001/api/suggestIconsForAgents", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(connectivity),
     })
 
     return JSON.parse(await res.json())

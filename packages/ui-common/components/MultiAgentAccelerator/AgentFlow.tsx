@@ -63,6 +63,7 @@ interface ActiveThoughtBubble extends AgentConversationBase {
 
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
+    readonly agentIconSuggestions: Record<string, string>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
@@ -88,6 +89,7 @@ const MAX_THOUGHT_BUBBLES = 5
 
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
+    agentIconSuggestions,
     agentsInNetwork,
     currentConversations,
     id,
@@ -364,14 +366,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      thoughtBubbleEdges
+                      thoughtBubbleEdges,
+                      agentIconSuggestions
                   )
                 : layoutRadial(
                       isHeatmap ? agentCounts : undefined,
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      thoughtBubbleEdges
+                      thoughtBubbleEdges,
+                      agentIconSuggestions
                   ),
         [
             layout,
@@ -383,6 +387,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             thoughtBubbleEdges,
             isAwaitingLlm,
             showThoughtBubbles,
+            agentIconSuggestions,
         ]
     )
 

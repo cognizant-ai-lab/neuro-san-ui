@@ -11,15 +11,14 @@ app.use(express.json())
 
 // Initialize LangChain LLM
 const llm = new ChatOpenAI({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o",
     temperature: 0.7,
     openAIApiKey: process.env["OPENAI_API_KEY"],
 })
 
-// Define your prompt template on the server
-const promptTemplate = ChatPromptTemplate.fromTemplate(`
-You are given a list of agents and associated information for each agent including agent name, description and any
-associated tags assigned by the network designer. These agents participate in an agentic AI network.
+const iconsForNetworksPrompt = ChatPromptTemplate.fromTemplate(`
+You are given a list of agent networks and associated information for each network including network name, 
+description and any associated tags assigned by the network designer. These are agentic AI networks.
 Example format:
 {{
 "agent_name": "industry/telco_network_orchestration",
@@ -44,25 +43,72 @@ a visualization UI, using the context of the agent description.
 Give your answer as pure JSON, no markdown, no extra formatting, no commentary. Example answer format:
 {{
   "industry/telco_network_orchestration": "AccessibilityIcon",
-  "agent2": "AdminPanelSettings"
+  "other_network": "AdminPanelSettings"
 }}
 
-Agent list:
-{agent_list}
+Network list:
+{network_list}
+`)
+
+const iconsForAgentsPrompt = ChatPromptTemplate.fromTemplate(`
+You are given a list of agents and associated connectivity information for each agent including agent name aka "origin",
+and for each agent, a list of other agents or tools that it can connect to. These are agentic AI agents. You are also
+provided with metadata about the overall network the agents belong to.
+
+For each agent in the list, suggest a suitable icon selected from the MUI icons to represent the agent in
+a visualization UI, using the context of the agent description. Try to avoid using the same icon for multiple agents 
+where possible.
+
+Example format: 
+{{
+connectivity_info: [array of agents with tools they can connect to. Agent name is "origin" field.],
+metadata: description: (description of the network as a whole), tags: [array of tags associated with the network],
+sample_queries: [array of sample queries that can be asked to the network]
+}}
+
+Give your answer as pure JSON, no markdown, no extra formatting, no commentary. Example answer format:
+{{
+  "agent1": "SomeIcon",
+  "agent2": "SomeOtherIcon"
+}}
+
+Agent info:
+{connectivity_info}
+
+Metadata:
+{metadata}
 `)
 
 app.get("/api/health", (_req, res) => {
     res.json({status: "ok"})
 })
 
-app.post("/api/chat", async (req, res) => {
-    console.debug("Received request body:", req.body)
+app.post("/api/suggestIconsForNetworks", async (req, res) => {
+    console.debug("Received suggestIconsForNetworks request", req.body)
     try {
         const variables = {
-            agent_list: typeof req.body === "object" ? JSON.stringify(req.body, null, 2) : req.body,
+            network_list: typeof req.body === "object" ? JSON.stringify(req.body, null, 2) : req.body,
         }
 
-        const formattedPrompt = await promptTemplate.formatMessages(variables)
+        const formattedPrompt = await iconsForNetworksPrompt.formatMessages(variables)
+        const response = await llm.invoke(formattedPrompt)
+
+        res.json(response.content)
+    } catch (error) {
+        console.error("Error:", error)
+        res.status(500).json({error: "Failed to get LLM response"})
+    }
+})
+
+app.post("/api/suggestIconsForAgents", async (req, res) => {
+    console.debug("Received suggestIconsForAgents request", req.body)
+    try {
+        const variables = {
+            connectivity_info: req.body.connectivity_info,
+            metadata: req.body.metadata,
+        }
+
+        const formattedPrompt = await iconsForAgentsPrompt.formatMessages(variables)
         const response = await llm.invoke(formattedPrompt)
 
         res.json(response.content)

@@ -23,7 +23,12 @@ import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {getAgentNetworks, getConnectivity, getLlmIconSuggestions} from "../../controller/agent/Agent"
+import {
+    getAgentNetworks,
+    getConnectivity,
+    getLlmIconSuggestions,
+    getLlmIconSuggestionsForAgents,
+} from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -63,6 +68,7 @@ export const MultiAgentAccelerator = ({
     const [iconSuggestions, setIconSuggestions] = useState<Record<string, string>>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
+    const [agentIconSuggestions, setAgentIconSuggestions] = useState<Record<string, string>>({})
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
@@ -148,6 +154,10 @@ export const MultiAgentAccelerator = ({
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
+
+                    const agentIconSuggestionsTmp = await getLlmIconSuggestionsForAgents(connectivity)
+                    setAgentIconSuggestions(agentIconSuggestionsTmp)
+                    closeNotification()
                 } catch (e) {
                     const networkName = cleanUpAgentName(selectedNetwork)
                     sendNotification(
@@ -276,6 +286,7 @@ export const MultiAgentAccelerator = ({
                         <AgentFlow
                             agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
+                            agentIconSuggestions={agentIconSuggestions}
                             id="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}

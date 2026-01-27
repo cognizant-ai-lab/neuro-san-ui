@@ -90,8 +90,6 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
 
     const path = isChild ? agentNode?.agent_name : null
     const suggestedIconName = isChild ? iconSuggestions?.[itemId] : null
-    console.debug(`Rendering tree item for ${itemId}, suggested icon: ${suggestedIconName}`)
-    console.debug("All suggested icons:", iconSuggestions)
 
     return (
         <TreeItemProvider {...getContextProviderProps()}>
