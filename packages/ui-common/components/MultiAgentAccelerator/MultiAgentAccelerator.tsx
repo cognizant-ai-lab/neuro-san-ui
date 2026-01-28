@@ -24,10 +24,10 @@ import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 import {AgentFlow} from "./AgentFlow"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
+    getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
-    getLlmIconSuggestions,
-    getLlmIconSuggestionsForAgents,
+    getNetworkIconSuggestions,
 } from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
@@ -119,18 +119,18 @@ export const MultiAgentAccelerator = ({
         async function getNetworks() {
             try {
                 const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
+                const iconSuggestionsTmp = await getNetworkIconSuggestions(networksTmp)
+                console.debug("fetched icon suggestions:", iconSuggestionsTmp)
+                // Batch state updates together to prevent stale render
                 setNetworks(networksTmp)
-
-                const iconSuggestionsTmp = await getLlmIconSuggestions(networksTmp)
                 setIconSuggestions(iconSuggestionsTmp)
-                console.debug("Icon suggestions:", iconSuggestionsTmp)
                 closeNotification()
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
                     "Connection error",
-                    // eslint-disable-next-line max-len
-                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid ` +
+                        `Multi-Agent Accelerator Server. Error: ${e}.`
                 )
                 setNetworks([])
                 setSelectedNetwork(null)
@@ -155,7 +155,7 @@ export const MultiAgentAccelerator = ({
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
 
-                    const agentIconSuggestionsTmp = await getLlmIconSuggestionsForAgents(connectivity)
+                    const agentIconSuggestionsTmp = await getAgentIconSuggestions(connectivity)
                     setAgentIconSuggestions(agentIconSuggestionsTmp)
                     closeNotification()
                 } catch (e) {

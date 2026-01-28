@@ -89,7 +89,7 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
  * @param networks The list of networks to get icon suggestions for.
  * @returns A promise that resolves to a record mapping network names to icon names.
  */
-export async function getLlmIconSuggestions(networks: readonly AgentInfo[]): Promise<Record<string, string>> {
+export async function getNetworkIconSuggestions(networks: readonly AgentInfo[]): Promise<Record<string, string>> {
     const res = await fetch("http://localhost:3001/api/suggestIconsForNetworks", {
         method: "POST",
         headers: {
@@ -101,9 +101,7 @@ export async function getLlmIconSuggestions(networks: readonly AgentInfo[]): Pro
     return JSON.parse(await res.json())
 }
 
-export async function getLlmIconSuggestionsForAgents(
-    connectivity: ConnectivityResponse
-): Promise<Record<string, string>> {
+export async function getAgentIconSuggestions(connectivity: ConnectivityResponse): Promise<Record<string, string>> {
     const res = await fetch("http://localhost:3001/api/suggestIconsForAgents", {
         method: "POST",
         headers: {
