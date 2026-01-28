@@ -38,11 +38,13 @@ The agents are NOT grounded and will simulate access to the network's systems in
 }}
 
 For each agent in the list, suggest a suitable icon selected from the MUI icons to represent the agent in
-a visualization UI, using the context of the agent description.
+a visualization UI, using the context of the agent description. Only give the name of the MUI Icon, not the suffix
+"Icon", so for example "FlightTakeOff" not "FlightTakeOffIcon". Try to avoid using the same icon for multiple networks
+where possible.
 
 Give your answer as pure JSON, no markdown, no extra formatting, no commentary. Example answer format:
 {{
-  "industry/telco_network_orchestration": "AccessibilityIcon",
+  "industry/telco_network_orchestration": "Accessibility",
   "other_network": "AdminPanelSettings"
 }}
 
@@ -56,7 +58,8 @@ and for each agent, a list of other agents or tools that it can connect to. Thes
 provided with metadata about the overall network the agents belong to.
 
 For each agent in the list, suggest a suitable icon selected from the MUI icons to represent the agent in
-a visualization UI, using the context of the agent description. Try to avoid using the same icon for multiple agents 
+a visualization UI, using the context of the agent description. Only give the name of the MUI Icon, not the suffix
+"Icon", so for example "FlightTakeOff" not "FlightTakeOffIcon". Try to avoid using the same icon for multiple agents 
 where possible.
 
 Example format: 
@@ -68,8 +71,8 @@ sample_queries: [array of sample queries that can be asked to the network]
 
 Give your answer as pure JSON, no markdown, no extra formatting, no commentary. Example answer format:
 {{
-  "agent1": "SomeIcon",
-  "agent2": "SomeOtherIcon"
+  "agent1": "Something",
+  "agent2": "SomeOtherThing"
 }}
 
 Agent info:

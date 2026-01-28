@@ -242,6 +242,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Button>
                 </h2>
                 <RichTreeView
+                    key={Object.keys(iconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
                     slots={{
                         item: AgentNetworkNode as RichTreeViewSlots["item"],

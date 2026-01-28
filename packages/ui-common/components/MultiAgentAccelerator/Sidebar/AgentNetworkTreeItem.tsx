@@ -91,6 +91,12 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     const path = isChild ? agentNode?.agent_name : null
     const suggestedIconName = isChild ? iconSuggestions?.[itemId] : null
 
+    let muiIconElement = null
+    if (suggestedIconName && MuiIcons[suggestedIconName as keyof typeof MuiIcons]) {
+        const IconComponent = MuiIcons[suggestedIconName as keyof typeof MuiIcons]
+        muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
+    }
+
     return (
         <TreeItemProvider {...getContextProviderProps()}>
             <TreeItemRoot {...getRootProps()}>
@@ -101,12 +107,7 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
                 >
                     <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
                         <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
-                            {suggestedIconName &&
-                                MuiIcons[suggestedIconName as keyof typeof MuiIcons] &&
-                                (() => {
-                                    const IconComponent = MuiIcons[suggestedIconName as keyof typeof MuiIcons]
-                                    return <IconComponent sx={{fontSize: "1rem"}} />
-                                })()}
+                            {muiIconElement}
                             <TreeItemLabel
                                 {...getLabelProps()}
                                 sx={{
