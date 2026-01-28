@@ -66,7 +66,6 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         // Temporary styling for implementation of dark mode
         const darkModeStyling = {
             backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-            color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
         }
 
         return (
@@ -78,7 +77,6 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                     className={`${variant}-snackbar-notification`}
                     id={`${id}-snackbar-box`}
                     sx={{
-                        ...darkModeStyling,
                         borderColor: "transparent",
                         borderRadius: "var(--bs-border-radius)",
                         borderWidth: "1px",

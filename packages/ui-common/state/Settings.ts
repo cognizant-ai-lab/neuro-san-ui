@@ -42,6 +42,8 @@ interface Settings {
     }
     branding: {
         customer: string
+        primary: string
+        background: string
         rangePalette: string[]
     }
 }
@@ -67,8 +69,10 @@ export const DEFAULT_SETTINGS: Settings = {
         plasmaColor: "#2db81f",
     },
     branding: {
-        customer: "Cognizant",
+        customer: null,
         rangePalette: null,
+        primary: null,
+        background: null,
     },
 }
 

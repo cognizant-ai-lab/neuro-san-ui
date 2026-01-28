@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 :root {
-    --bs-primary: #000048;
+    --bs-primary: "grey";
     --bs-primary-rgb: 0, 0, 72;
     --bs-secondary: #2f78c4;
     --heading-color: var(--bs-secondary);

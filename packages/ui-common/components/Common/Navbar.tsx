@@ -126,11 +126,9 @@ export const Navbar = ({
 
     // Customer for branding
     const customer = useSettingsStore((state) => state.settings.branding.customer)
-    const plasmaColor = useSettingsStore((state) => state.settings.appearance.plasmaColor)
+    const primary = useSettingsStore((state) => state.settings.branding.primary)
 
     const MENU_ITEM_TEXT_PROPS = {
-        color: plasmaColor || "var(--bs-white)",
-        backgroundColor: "var(--bs-primary)",
         fontFamily: "var(--bs-body-font-family)",
         fontSize: "18px",
     }
@@ -142,7 +140,7 @@ export const Navbar = ({
             alignItems="center"
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
-                color: plasmaColor || "var(--bs-white)",
+                color: primary || "var(--bs-white)",
                 padding: "0.25rem",
             }}
         >
@@ -158,16 +156,16 @@ export const Navbar = ({
                     id="customer-branding"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
-                        color: plasmaColor || undefined,
-                        fontSize: "24px",
-                        fontWeight: "bold",
+                        color: primary || undefined,
+                        fontSize: "30px",
+                        fontWeight: "600",
                         paddingLeft: "0.15rem",
                         width: "200px",
                         display: "flex",
                         alignItems: "center",
                     }}
                 >
-                    {customer}
+                    {customer}™
                 </Typography>
             ) : (
                 <a
@@ -196,7 +194,7 @@ export const Navbar = ({
                     id="nav-bar-brand"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
-                        color: plasmaColor || "var(--bs-white)",
+                        color: primary || "var(--bs-white)",
                         marginLeft: "0.85rem",
                         fontSize: "16px",
                         fontWeight: "bold",
@@ -207,7 +205,7 @@ export const Navbar = ({
                         style={{
                             fontWeight: 500,
                             fontSize: "1.1rem",
-                            color: plasmaColor || "var(--bs-white)",
+                            color: primary || "var(--bs-white)",
                             position: "relative",
                             bottom: "1px",
                             textDecoration: "none",
@@ -231,7 +229,7 @@ export const Navbar = ({
                     display: "flex",
                     justifyContent: "flex-end", // Right align
                     alignItems: "center", // Vertically center
-                    color: plasmaColor || "var(--bs-white)",
+                    color: primary || "var(--bs-white)",
                     marginRight: "50px",
                 }}
             >
@@ -262,7 +260,7 @@ export const Navbar = ({
                     Explore
                     <ArrowDropDownIcon
                         id="nav-explore-dropdown-arrow"
-                        sx={{color: plasmaColor || "var(--bs-white)", fontSize: 22}}
+                        sx={{color: primary || "var(--bs-white)", fontSize: 22}}
                     />
                 </Typography>
                 <Menu
@@ -313,7 +311,7 @@ export const Navbar = ({
                     Help
                     <ArrowDropDownIcon
                         id="nav-help-dropdown-arrow"
-                        sx={{color: plasmaColor || "var(--bs-white)", fontSize: 22}}
+                        sx={{color: primary || "var(--bs-white)", fontSize: 22}}
                     />
                 </Typography>
                 <Menu
@@ -383,7 +381,7 @@ export const Navbar = ({
                         />
                         <ArrowDropDownIcon
                             id="nav-user-dropdown-arrow"
-                            sx={{color: plasmaColor || "var(--bs-white)", fontSize: 22}}
+                            sx={{color: primary || "var(--bs-white)", fontSize: 22}}
                         />
                     </IconButton>
                     <Menu

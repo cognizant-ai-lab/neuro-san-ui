@@ -94,9 +94,12 @@ Return your response as JSON in the following format with no markdown, text or o
     "rangePalette": ["#hexcode1", "#hexcode2", "#hexcode3", "#hexcode4", "#hexcode5", "#hexcode6", "#hexcode7", "#hexcode8", "#hexcode9", "#hexcode10"]
 }}
 
+"primary" is used for primary UI elements like buttons and highlights, "background" is used for the main
+background of the app,
 "plasma" is used for displaying animated plasma effects in the UI, "nodeColor" is used for coloring agent nodes in
 the network visualization, and "rangePalette" is a graduated color palette with 10 items used for depth/heatmap 
-coloring.
+coloring. It doesn't have to be a strict gradient, but it should be a set of colors that work well together and fit the
+company branding.
 
 Company: {company}
 `)

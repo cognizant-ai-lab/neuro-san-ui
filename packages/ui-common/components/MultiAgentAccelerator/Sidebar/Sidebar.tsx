@@ -50,16 +50,8 @@ import {getZIndex} from "../../../utils/zIndexLayers"
 const PrimaryButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== "darkMode",
 })<{darkMode?: boolean}>(({darkMode}) => ({
-    backgroundColor: "var(--bs-primary)",
     marginLeft: "0.5rem",
     marginTop: "2px",
-    "&:hover": {
-        backgroundColor: "var(--bs-primary)",
-    },
-    "&.Mui-disabled": {
-        color: darkMode ? "rgba(255, 255, 255, 0.25)" : undefined,
-        backgroundColor: undefined,
-    },
 }))
 
 // #endregion: Styled Components

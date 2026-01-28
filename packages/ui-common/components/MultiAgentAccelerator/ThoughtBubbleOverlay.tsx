@@ -64,7 +64,6 @@ const ThoughtBubble = styled("div", {
         background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,250,250,0.95) 100%)",
         border: "var(--bs-border-width) var(--bs-border-style) var(--bs-border-color)",
         borderRadius: "var(--bs-border-radius-lg)",
-        color: "var(--bs-primary)",
         fontFamily: theme.typography.fontFamily, // TODO: Easy to pull from theme. Rest we need to revisit.
         fontSize: "var(--bs-body-font-size-extra-small)",
         fontWeight: "var(--bs-body-font-weight)",

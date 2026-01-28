@@ -28,7 +28,6 @@ const UserQueryContainer = styled("div")(({theme}) => ({
     boxShadow: `0 0px 6px 0 ${
         theme.palette.mode === "dark" ? "var(--bs-accent2-light)" : "rgba(var(--bs-primary-rgb), 0.15)"
     }`,
-    color: theme.palette.mode === "dark" ? "var(--bs-white)" : "var(--bs-primary)",
     display: "inline-flex",
     padding: "10px",
 }))

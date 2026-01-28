@@ -331,7 +331,7 @@ export const MultiAgentAccelerator = ({
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
                         clearChatOnNewAgent={true}
-                        backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
+                        // backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
                     />
                 </Grid>
             </Slide>
@@ -384,8 +384,6 @@ export const MultiAgentAccelerator = ({
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",
-                background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                 justifyContent: isAwaitingLlm ? "center" : "unset",
                 position: "relative",
             }}

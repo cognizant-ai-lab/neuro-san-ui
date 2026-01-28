@@ -93,6 +93,24 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
             agentNodeColorCheckmark.trigger()
         }
 
+        // primary
+        if (brandingColors["primary"]) {
+            updateSettings({
+                branding: {
+                    primary: brandingColors["primary"],
+                },
+            })
+        }
+
+        // background
+        if (brandingColors["background"]) {
+            updateSettings({
+                branding: {
+                    background: brandingColors["background"],
+                },
+            })
+        }
+
         if (Array.isArray(brandingColors["rangePalette"])) {
             updateSettings({
                 branding: {

@@ -76,7 +76,7 @@ const DEFAULT_PALETTE = {
  * This is the main theme for the app. It is used by the MUI ThemeProvider. It supplies light and dark themes
  * using custom colors defined in globals.css.
  */
-export const createAppTheme = () =>
+export const createAppTheme = (primary: string, background: string) =>
     createTheme({
         components: {
             MuiButton: {
@@ -116,25 +116,25 @@ export const createAppTheme = () =>
         colorSchemes: {
             dark: {
                 palette: {
-                    ...DEFAULT_PALETTE,
+                    // ...DEFAULT_PALETTE,
 
                     background: {
                         default: cssVar("--bs-dark-mode-dim"),
                     },
                     text: {
-                        primary: cssVar("--bs-white"),
+                        primary: primary || cssVar("--bs-white"),
                         secondary: cssVar("--bs-gray-light"),
                     },
                 },
             },
             light: {
                 palette: {
-                    ...DEFAULT_PALETTE,
+                    // ...DEFAULT_PALETTE,
                     background: {
-                        default: cssVar("--bs-white"),
+                        default: background,
                     },
                     text: {
-                        primary: cssVar("--bs-primary"),
+                        primary: primary || cssVar("--bs-primary"),
                         secondary: cssVar("--bs-gray-medium-dark"),
                     },
                 },

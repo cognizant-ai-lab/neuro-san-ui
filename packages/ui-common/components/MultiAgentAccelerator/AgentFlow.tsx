@@ -507,7 +507,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             alignItems: "center",
                             backgroundColor: palette[i],
                             borderRadius: "50%",
-                            color: i < palette.length / 2 ? "var(--bs-primary)" : "var(--bs-white)",
+                            color: theme.palette.getContrastText(palette[i]),
                             display: "flex",
                             height: "15px",
                             justifyContent: "center",
@@ -621,10 +621,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(layout === "radial"),
                             }}
                         >
-                            <HubOutlinedIcon
-                                id="radial-layout-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <HubOutlinedIcon id="radial-layout-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -641,10 +638,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(layout === "linear"),
                             }}
                         >
-                            <ScatterPlotOutlinedIcon
-                                id="linear-layout-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <ScatterPlotOutlinedIcon id="linear-layout-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -664,10 +658,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                             disabled={layout !== "radial"}
                         >
-                            <AdjustRoundedIcon
-                                id="radial-guides-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <AdjustRoundedIcon id="radial-guides-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -684,10 +675,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
                             }}
                         >
-                            <ChatBubbleOutlineIcon
-                                id="thought-bubble-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <ChatBubbleOutlineIcon id="thought-bubble-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>

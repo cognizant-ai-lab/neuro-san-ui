@@ -30,7 +30,6 @@ export const LoadingSpinner: FC<LoadingSpinnerProps> = ({id}) => {
         <h3 id={id}>
             <CircularProgress
                 id={`${id}-spinner`}
-                sx={{color: "var(--bs-primary)"}}
                 size={35}
             />
             <span

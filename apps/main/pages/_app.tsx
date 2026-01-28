@@ -46,6 +46,7 @@ import {
     LOGO,
 } from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
+import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
@@ -117,7 +118,10 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
 
     const isContainedInViewport = Component.isContainedInViewport ?? false
 
-    const theme = useMemo(() => createAppTheme(), [])
+    const primary = useSettingsStore((state) => state.settings.branding.primary)
+    const background = useSettingsStore((state) => state.settings.branding.background)
+
+    const theme = useMemo(() => createAppTheme(primary, background), [primary, background])
 
     useEffect(() => {
         const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
