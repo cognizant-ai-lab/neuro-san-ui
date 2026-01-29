@@ -68,7 +68,7 @@ function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
     let oidcProvider: OidcProvider = null
     let username: string = null
 
-    // Look for "well-known" fields in the OIDC headers to figure out if we're using Github or AD
+    // Look for "well-known" fields in the OIDC headers to figure out if we're using GitHub or AD
     if (userInfo.nickname) {
         oidcProvider = "Github"
         picture = userInfo.picture

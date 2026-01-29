@@ -280,7 +280,17 @@ const config = [
 
             "import/no-self-import": "error",
             "import/no-useless-path-segments": "error",
-
+            "no-restricted-imports": [
+                "error",
+                {
+                    /*
+                    Bans any import that starts with @mui/ followed by a single segment (i.e., no additional slashes 
+                    after the first segment). For example, imports like @mui/core or @mui/icons would be restricted, 
+                    while deeper imports such as @mui/icons-material/Button would not be affected.
+                     */
+                    patterns: [{regex: "^@mui/[^/]+$"}],
+                },
+            ],
             "import/no-unresolved": "error",
 
             "sort-imports": [

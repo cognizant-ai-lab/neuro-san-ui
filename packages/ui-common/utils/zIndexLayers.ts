@@ -13,13 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import {Theme} from "@mui/material/styles"
 
 // MUI zIndex information:
 // github.com/mui/material-ui/blob/master/packages/mui-material/src/styles/zIndex.js
 // mui.com/material-ui/customization/z-index/
-
-import {Theme} from "@mui/material"
-
 const DEFAULT_Z_INDEX = 500
 
 export const getZIndex = (layer: number, appTheme: Theme): number => {

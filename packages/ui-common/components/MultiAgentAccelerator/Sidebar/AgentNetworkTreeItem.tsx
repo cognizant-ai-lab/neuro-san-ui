@@ -2,7 +2,6 @@ import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import Tooltip from "@mui/material/Tooltip"
-import {useTreeItem} from "@mui/x-tree-view"
 import {
     TreeItemContent,
     TreeItemGroupTransition,
@@ -11,6 +10,7 @@ import {
     TreeItemRoot,
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
+import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC} from "react"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"

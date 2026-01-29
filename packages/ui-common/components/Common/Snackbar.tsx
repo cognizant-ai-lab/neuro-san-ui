@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import CloseIcon from "@mui/icons-material/Close"
-import {styled, useColorScheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
+import {styled, useColorScheme} from "@mui/material/styles"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef, JSX as ReactJSX} from "react"
 

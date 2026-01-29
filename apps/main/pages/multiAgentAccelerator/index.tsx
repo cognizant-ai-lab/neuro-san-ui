@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material"
+import {useColorScheme} from "@mui/material/styles"
 
 import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
-import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {isDarkMode} from "../../../../packages/ui-common/Theme/Theme"
 
 // Main function.

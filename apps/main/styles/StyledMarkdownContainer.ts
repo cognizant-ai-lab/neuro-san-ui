@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
+import {styled} from "@mui/material/styles"
 
 export const StyledMarkdownContainer = styled(Box)(() => ({
     fontSize: "1rem",

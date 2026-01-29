@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {CircularProgress, Typography} from "@mui/material"
+import CircularProgress from "@mui/material/CircularProgress"
+import Typography from "@mui/material/Typography"
 
 interface PageLoaderProps {
     id: string

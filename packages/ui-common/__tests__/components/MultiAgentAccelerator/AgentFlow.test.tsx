@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material"
+import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {FC, useEffect} from "react"
@@ -28,8 +28,8 @@ import {PALETTES} from "../../../Theme/Palettes"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
-jest.mock("@mui/material", () => ({
-    ...jest.requireActual("@mui/material"),
+jest.mock("@mui/material/styles", () => ({
+    ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
 

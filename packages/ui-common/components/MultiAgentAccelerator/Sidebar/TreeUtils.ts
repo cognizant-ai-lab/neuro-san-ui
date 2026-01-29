@@ -1,4 +1,4 @@
-import {TreeViewBaseItem} from "@mui/x-tree-view"
+import {TreeViewBaseItem} from "@mui/x-tree-view/models"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 

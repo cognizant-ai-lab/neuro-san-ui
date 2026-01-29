@@ -16,7 +16,7 @@ limitations under the License.
 
 // Main app theme.
 
-import {createTheme} from "@mui/material"
+import {createTheme} from "@mui/material/styles"
 
 // Fallback color if CSS variable not found so we know something is up
 const DEFAULT_COLOR = "#97999b"

@@ -18,7 +18,9 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
-import {Container, CssBaseline, ThemeProvider} from "@mui/material"
+import Container from "@mui/material/Container"
+import CssBaseline from "@mui/material/CssBaseline"
+import {ThemeProvider} from "@mui/material/styles"
 import startCase from "lodash-es/startCase.js"
 import {AppProps} from "next/app"
 import Head from "next/head"
@@ -45,7 +47,7 @@ import {
     DEFAULT_USER_IMAGE,
     LOGO,
 } from "../../../packages/ui-common/const"
-import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"

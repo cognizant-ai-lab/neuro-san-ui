@@ -20,11 +20,11 @@ import {persist} from "zustand/middleware"
 import {PaletteKey} from "../Theme/Palettes"
 
 /**
- * A utility type that makes all properties in T deeply optional, since Typescript's built-in Partial<T>
+ * A utility type that makes all properties in T deeply optional, since TypeScript's built-in Partial<T>
  * only makes the top-level properties optional.
  *
- * We use it in conjunction with lodash.merge to allow partial updates to nested settings objects. Typescript doesn't
- * know that lodash.merge will fill in the missing properties at runtime, so we need this shim to avoid type errors.
+ * We use it in conjunction with `lodash.merge` to allow partial updates to nested settings objects. TypeScript doesn't
+ * know that `lodash.merge` will fill in the missing properties at runtime, so we need this shim to avoid type errors.
  */
 type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]

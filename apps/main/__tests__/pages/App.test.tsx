@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL} from "@cognizant-ai-lab/ui-common/const"
 import {render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useRouter} from "next/router"
@@ -22,7 +21,8 @@ import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
-import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
+import {authenticationEnabled, DEFAULT_NEURO_SAN_SERVER_URL} from "../../../../packages/ui-common/const"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import NeuroSanUI from "../../pages/_app"
 

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createTheme, ThemeProvider, useColorScheme} from "@mui/material"
+import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
@@ -34,8 +34,8 @@ import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 
 // Mock MUI theming
-jest.mock("@mui/material", () => ({
-    ...jest.requireActual("@mui/material"),
+jest.mock("@mui/material/styles", () => ({
+    ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
 
