@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {DeleteOutline, Loop, StopCircle} from "@mui/icons-material"
+import DeleteOutline from "@mui/icons-material/DeleteOutline"
+import Loop from "@mui/icons-material/Loop"
+import StopCircle from "@mui/icons-material/StopCircle"
 import {FC} from "react"
 
 import {SmallLlmChatButton} from "./LlmChatButton"
