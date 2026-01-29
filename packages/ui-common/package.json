@@ -9,13 +9,13 @@
         "prepack": "echo PREPACK_RUNNING && yarn build"
     },
     "dependencies": {
-        "@langchain/core": "0.2.36",
+        "@langchain/core": "1.1.17",
         "dagre": "0.8.5",
         "http-status": "1.7.3",
         "jsonrepair": "3.8.0",
-        "lodash-es": "4.17.21",
-        "next": "15.4.6",
-        "next-auth": "5.0.0-beta.20",
+        "lodash-es": "4.17.23",
+        "next": "16.1.6",
+        "next-auth": "5.0.0-beta.30",
         "notistack": "3.0.1",
         "react-dom": "18.2.0",
         "react-markdown": "9.0.1",

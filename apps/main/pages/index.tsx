@@ -21,7 +21,7 @@ import {
 } from "@cognizant-ai-lab/ui-common/const"
 import Box from "@mui/material/Box"
 import {styled} from "@mui/material/styles"
-import NextImage from "next/legacy/image"
+import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
 import {ReactElement, useState} from "react"
@@ -216,8 +216,8 @@ export default function Index(): ReactElement {
                                 >
                                     <NextImage
                                         id="logo-img"
-                                        width="200"
-                                        height="45"
+                                        width={200}
+                                        height={45}
                                         src="/cognizant-logo-white.svg"
                                         alt="Cognizant Logo"
                                     />
