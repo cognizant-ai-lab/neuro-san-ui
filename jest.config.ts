@@ -20,12 +20,28 @@ limitations under the License.
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
 
+// Packages in ESM format that need to be transformed by Jest because they are not distributed in CommonJS format
+const esmPackagesToTransform = [
+    "character-.*",
+    "comma-.*",
+    "decode-.*",
+    "hast.*",
+    "is-.*",
+    "lodash-es",
+    "mdast.*",
+    "parse-.*",
+    "property-.*",
+    "react-syntax-highlighter",
+    "refractor",
+    "space-.*",
+]
+
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 
     preset: "ts-jest/presets/default-esm",
     extensionsToTreatAsEsm: [".ts", ".tsx"],
-    transformIgnorePatterns: ["/node_modules/(?!next-auth|@next-auth|react|react-dom|react/jsx-runtime|lodash-es)"],
+    transformIgnorePatterns: [`/node_modules/(?!(${esmPackagesToTransform.join("|")})/)`],
     transform: {
         "^.+\\.(ts|tsx)$": [
             "ts-jest",
