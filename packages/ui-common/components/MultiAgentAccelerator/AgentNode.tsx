@@ -59,6 +59,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Agent node icon color from settings store
     const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
+    const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Color palette for depth/heatmap coloring
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
@@ -157,17 +158,21 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         }
     }
 
+    // Determine icon color based on settings. If auto color is enabled, use contrasting color for readability.
+    const color = autoAgentIconColor ? theme.palette.getContrastText(backgroundColor) : agentNodeIconColor
+
     return (
         <>
             <div
                 id={agentId}
+                data-testid={agentId}
                 style={{
                     alignItems: "center",
                     animation: isActiveAgent ? "glow 2.0s infinite" : "none",
                     backgroundColor,
                     borderRadius: "50%",
                     boxShadow,
-                    color: agentNodeIconColor,
+                    color,
                     display: "flex",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     justifyContent: "center",

@@ -40,6 +40,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     // Agent icon color
     const agentIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const agentIconColorCheckmark = useCheckmarkFade()
+    const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Which palette to use for heatmaps and depth display?
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
@@ -191,15 +192,35 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent icon color:</FormLabel>
+                        <ToggleButtonGroup
+                            exclusive
+                            value={autoAgentIconColor ? "auto" : "custom"}
+                            onChange={(_, value) => {
+                                if (value !== null) {
+                                    updateSettings({
+                                        appearance: {
+                                            autoAgentIconColor: value === "auto",
+                                        },
+                                    })
+                                    agentIconColorCheckmark.trigger()
+                                }
+                            }}
+                            size="small"
+                        >
+                            <ToggleButton value="auto">Auto</ToggleButton>
+                            <ToggleButton value="custom">Custom</ToggleButton>
+                        </ToggleButtonGroup>
                         <input
                             aria-label="agent-icon-color-picker"
-                            onChange={(e) =>
+                            disabled={autoAgentIconColor}
+                            onChange={(e) => {
                                 updateSettings({
                                     appearance: {
                                         agentIconColor: e.target.value,
                                     },
                                 })
-                            }
+                                agentIconColorCheckmark.trigger()
+                            }}
                             type="color"
                             value={agentIconColor}
                         />

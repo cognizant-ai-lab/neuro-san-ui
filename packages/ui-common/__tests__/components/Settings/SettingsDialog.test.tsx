@@ -112,6 +112,33 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
     })
 
+    it("Allows selecting and unselecting auto agent icon color", async () => {
+        // Set non-default value first
+        useSettingsStore.getState().updateSettings({
+            appearance: {
+                autoAgentIconColor: false,
+            },
+        })
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Currently, "manual" is selected
+        const autoColorCheckbox = screen.getByRole("button", {name: /Auto/u})
+
+        // should have aria-pressed false
+        expect(autoColorCheckbox).toHaveAttribute("aria-pressed", "false")
+
+        await user.click(autoColorCheckbox)
+
+        // Now should be true
+        expect(useSettingsStore.getState().settings.appearance.autoAgentIconColor).toBe(true)
+    })
+
     it("resets settings to default when reset button is confirmed", async () => {
         ;(sendNotification as jest.Mock).mockClear()
 
