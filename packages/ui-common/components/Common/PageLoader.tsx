@@ -40,9 +40,6 @@ export const PageLoader = ({id}: PageLoaderProps) => (
         </Typography>
         <CircularProgress
             id={`${id}-loader__spinner`}
-            sx={{
-                color: "var(--bs-primary)",
-            }}
             size="100px"
         />
     </div>

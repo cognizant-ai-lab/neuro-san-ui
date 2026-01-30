@@ -85,6 +85,48 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
 }
 
 /**
+ * Get LLM suggestions for network icons.
+ * @param networks The list of networks to get icon suggestions for.
+ * @returns A promise that resolves to a record mapping network names to icon names.
+ */
+export async function getNetworkIconSuggestions(networks: readonly AgentInfo[]): Promise<Record<string, string>> {
+    const res = await fetch("http://localhost:3001/api/suggestIconsForNetworks", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({networks}),
+    })
+
+    return JSON.parse(await res.json())
+}
+
+export async function getAgentIconSuggestions(connectivity: ConnectivityResponse): Promise<Record<string, string>> {
+    const res = await fetch("http://localhost:3001/api/suggestIconsForAgents", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(connectivity),
+    })
+
+    return JSON.parse(await res.json())
+}
+
+export async function getBrandingColors(company: string): Promise<Record<string, string>> {
+    const fetchUrl = `http://localhost:3001/api/branding?company=${encodeURIComponent(company)}`
+
+    const res = await fetch(fetchUrl, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    })
+
+    return JSON.parse(await res.json())
+}
+
+/**
  * Get the list of available agent networks from the concierge service.
  * @param url The neuro-san server URL
  * @returns A promise that resolves to an array of AgentInfo objects.

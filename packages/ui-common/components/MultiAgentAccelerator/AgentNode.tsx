@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// We have to disable the restricted imports rule here because we need to dynamically access MUI icons by name.
+// eslint-disable-next-line no-restricted-imports
+import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
-import HandymanIcon from "@mui/icons-material/Handyman"
-import PersonIcon from "@mui/icons-material/Person"
-import TravelExploreIcon from "@mui/icons-material/TravelExplore"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -36,6 +36,7 @@ export interface AgentNodeProps {
     readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
+    readonly iconSuggestion?: string
 }
 
 // Node dimensions
@@ -62,12 +63,13 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Color palette for depth/heatmap coloring
+    const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = PALETTES[paletteKey]
+    const palette = brandPalette ?? PALETTES[paletteKey]
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, getConversations, iconSuggestion, isAwaitingLlm} = data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -122,39 +124,12 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
-        const id = `${agentId}-icon`
-        if (isFrontman) {
-            return (
-                // Use special icon and larger size for Frontman
-                <PersonIcon
-                    id={id}
-                    sx={{fontSize: FRONTMAN_ICON_SIZE}}
-                />
-            )
-        }
-        switch (displayAs) {
-            case "external_agent":
-                return (
-                    <TravelExploreIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
-            case "coded_tool":
-                return (
-                    <HandymanIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
-            case "llm_agent":
-            default:
-                return (
-                    <AutoAwesomeIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
+        if (iconSuggestion && MuiIcons[iconSuggestion as keyof typeof MuiIcons]) {
+            const IconComponent = MuiIcons[iconSuggestion as keyof typeof MuiIcons]
+            return <IconComponent sx={{fontSize: AGENT_ICON_SIZE}} />
+        } else {
+            // return blank icon
+            return <AutoAwesomeIcon sx={{fontSize: isFrontman ? FRONTMAN_ICON_SIZE : AGENT_ICON_SIZE}} />
         }
     }
 

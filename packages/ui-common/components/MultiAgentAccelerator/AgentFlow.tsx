@@ -65,6 +65,7 @@ interface ActiveThoughtBubble extends AgentConversationBase {
 
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
+    readonly agentIconSuggestions: Record<string, string>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
@@ -90,6 +91,7 @@ const MAX_THOUGHT_BUBBLES = 5
 
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
+    agentIconSuggestions,
     agentsInNetwork,
     currentConversations,
     id,
@@ -331,8 +333,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
 
     const isHeatmap = coloringOption === "heatmap"
+
+    const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = PALETTES[paletteKey]
+    const palette = brandPalette ?? PALETTES[paletteKey]
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network
@@ -366,14 +370,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      thoughtBubbleEdges
+                      thoughtBubbleEdges,
+                      agentIconSuggestions
                   )
                 : layoutRadial(
                       isHeatmap ? agentCounts : undefined,
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      thoughtBubbleEdges
+                      thoughtBubbleEdges,
+                      agentIconSuggestions
                   ),
         [
             layout,
@@ -385,6 +391,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             thoughtBubbleEdges,
             isAwaitingLlm,
             showThoughtBubbles,
+            agentIconSuggestions,
         ]
     )
 
@@ -502,7 +509,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             alignItems: "center",
                             backgroundColor: palette[i],
                             borderRadius: "50%",
-                            color: i < palette.length / 2 ? "var(--bs-primary)" : "var(--bs-white)",
+                            color: theme.palette.getContrastText(palette[i]),
                             display: "flex",
                             height: "15px",
                             justifyContent: "center",
@@ -616,10 +623,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(layout === "radial"),
                             }}
                         >
-                            <HubOutlinedIcon
-                                id="radial-layout-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <HubOutlinedIcon id="radial-layout-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -636,10 +640,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(layout === "linear"),
                             }}
                         >
-                            <ScatterPlotOutlinedIcon
-                                id="linear-layout-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <ScatterPlotOutlinedIcon id="linear-layout-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -659,10 +660,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                             disabled={layout !== "radial"}
                         >
-                            <AdjustRoundedIcon
-                                id="radial-guides-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <AdjustRoundedIcon id="radial-guides-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -679,10 +677,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
                             }}
                         >
-                            <ChatBubbleOutlineIcon
-                                id="thought-bubble-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <ChatBubbleOutlineIcon id="thought-bubble-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>

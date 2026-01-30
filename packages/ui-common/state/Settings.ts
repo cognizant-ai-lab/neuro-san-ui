@@ -41,6 +41,12 @@ interface Settings {
         readonly plasmaColor: string
         readonly rangePalette: PaletteKey
     }
+    branding: {
+        customer: string
+        primary: string
+        background: string
+        rangePalette: string[]
+    }
 }
 
 /**
@@ -64,13 +70,18 @@ export const DEFAULT_SETTINGS: Settings = {
         rangePalette: "blue",
         plasmaColor: "#2db81f",
     },
+    branding: {
+        customer: null,
+        rangePalette: null,
+        primary: null,
+        background: null,
+    },
 }
 
 /**
  * The hook that lets apps use the store
  */
 export const useSettingsStore = create<SettingsStore>()(
-    // zustand persists to localStorage by default
     persist(
         (set) => ({
             settings: DEFAULT_SETTINGS,
@@ -82,6 +93,13 @@ export const useSettingsStore = create<SettingsStore>()(
         }),
         {
             name: "app-settings",
+            merge: (persistedState, currentState) => {
+                // Merge persisted settings with defaults to fill in any missing fields
+                return {
+                    ...currentState,
+                    settings: merge({}, DEFAULT_SETTINGS, (persistedState as SettingsStore).settings),
+                }
+            },
         }
     )
 )

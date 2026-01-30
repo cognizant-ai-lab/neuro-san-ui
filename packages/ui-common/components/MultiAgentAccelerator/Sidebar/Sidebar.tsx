@@ -49,16 +49,8 @@ import {getZIndex} from "../../../utils/zIndexLayers"
 const PrimaryButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== "darkMode",
 })<{darkMode?: boolean}>(({darkMode}) => ({
-    backgroundColor: "var(--bs-primary)",
     marginLeft: "0.5rem",
     marginTop: "2px",
-    "&:hover": {
-        backgroundColor: "var(--bs-primary)",
-    },
-    "&.Mui-disabled": {
-        color: darkMode ? "rgba(255, 255, 255, 0.25)" : undefined,
-        backgroundColor: undefined,
-    },
 }))
 
 // #endregion: Styled Components
@@ -74,6 +66,7 @@ enum CONNECTION_STATUS {
 export interface SidebarProps {
     readonly customURLCallback: (url: string) => void
     readonly customURLLocalStorage?: string
+    readonly iconSuggestions?: Record<string, string>
     readonly id: string
     readonly isAwaitingLlm: boolean
     readonly networks: readonly AgentInfo[]
@@ -85,6 +78,7 @@ export interface SidebarProps {
 export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
+    iconSuggestions,
     id,
     isAwaitingLlm,
     networks,
@@ -237,6 +231,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Button>
                 </h2>
                 <RichTreeView
+                    key={Object.keys(iconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
                     slots={{
                         item: AgentNetworkNode as RichTreeViewSlots["item"],
@@ -248,6 +243,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             nodeIndex: index,
                             setSelectedNetwork,
                             shouldDisableTree: isAwaitingLlm,
+                            iconSuggestions,
                         } as unknown,
                     }}
                 />

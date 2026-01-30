@@ -133,8 +133,7 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
                             aria-controls={`${baseIdAndPanelKey}-summary`}
                             id={`${baseIdAndPanelKey}-summary`}
                             sx={{
-                                backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-gray-background)",
-                                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
+                                // backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-gray-background)",
                                 flexDirection: arrowPosition === "left" ? "row-reverse" : undefined,
                             }}
                         >
@@ -146,14 +145,7 @@ export const MUIAccordion: FC<MUIAccordionProps> = ({
                                 {title}
                             </Typography>
                         </AccordionSummary>
-                        <AccordionDetails
-                            id={`${baseIdAndPanelKey}-details`}
-                            sx={{
-                                backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "rgba(0, 0, 0, 0.02)",
-                                borderColor: darkMode ? "var(--bs-white)" : "var(--bs-border-color)",
-                                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
-                            }}
-                        >
+                        <AccordionDetails id={`${baseIdAndPanelKey}-details`}>
                             <Typography
                                 component="span"
                                 id={`${baseIdAndPanelKey}-details-typography`}

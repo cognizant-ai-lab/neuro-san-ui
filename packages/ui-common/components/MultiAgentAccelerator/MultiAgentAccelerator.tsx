@@ -23,7 +23,12 @@ import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
+import {
+    getAgentIconSuggestions,
+    getAgentNetworks,
+    getConnectivity,
+    getNetworkIconSuggestions,
+} from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -60,8 +65,10 @@ export const MultiAgentAccelerator = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
+    const [iconSuggestions, setIconSuggestions] = useState<Record<string, string>>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
+    const [agentIconSuggestions, setAgentIconSuggestions] = useState<Record<string, string>>({})
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
@@ -112,17 +119,22 @@ export const MultiAgentAccelerator = ({
         async function getNetworks() {
             try {
                 const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
+                const iconSuggestionsTmp = await getNetworkIconSuggestions(networksTmp)
+                console.debug("fetched icon suggestions:", iconSuggestionsTmp)
+                // Batch state updates together to prevent stale render
                 setNetworks(networksTmp)
+                setIconSuggestions(iconSuggestionsTmp)
                 closeNotification()
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
                     "Connection error",
-                    // eslint-disable-next-line max-len
-                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid ` +
+                        `Multi-Agent Accelerator Server. Error: ${e}.`
                 )
                 setNetworks([])
                 setSelectedNetwork(null)
+                setIconSuggestions({})
             }
         }
 
@@ -142,6 +154,10 @@ export const MultiAgentAccelerator = ({
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
+
+                    const agentIconSuggestionsTmp = await getAgentIconSuggestions(connectivity)
+                    setAgentIconSuggestions(agentIconSuggestionsTmp)
+                    closeNotification()
                 } catch (e) {
                     const networkName = cleanUpAgentName(selectedNetwork)
                     sendNotification(
@@ -234,6 +250,7 @@ export const MultiAgentAccelerator = ({
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
+                        iconSuggestions={iconSuggestions}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
@@ -269,6 +286,7 @@ export const MultiAgentAccelerator = ({
                         <AgentFlow
                             agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
+                            agentIconSuggestions={agentIconSuggestions}
                             id="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
@@ -313,7 +331,7 @@ export const MultiAgentAccelerator = ({
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
                         clearChatOnNewAgent={true}
-                        backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
+                        // backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
                     />
                 </Grid>
             </Slide>
@@ -366,8 +384,6 @@ export const MultiAgentAccelerator = ({
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",
-                background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                 justifyContent: isAwaitingLlm ? "center" : "unset",
                 position: "relative",
             }}
