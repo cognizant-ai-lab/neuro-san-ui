@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {render, screen, waitFor} from "@testing-library/react"
-import type {SyntaxHighlighterProps} from "react-syntax-highlighter"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {FormattedMarkdown} from "../../../components/AgentChat/FormattedMarkdown"
@@ -109,7 +108,7 @@ describe("FormattedMarkdown component tests", () => {
                 <FormattedMarkdown
                     id="test-code"
                     nodesList={[md]}
-                    style={{} as SyntaxHighlighterProps["style"]}
+                    style={{}}
                     wrapLongLines={false}
                 />
             )
@@ -124,7 +123,7 @@ describe("FormattedMarkdown component tests", () => {
             <FormattedMarkdown
                 id="test-code-ids"
                 nodesList={[withLang, withoutLang]}
-                style={{} as SyntaxHighlighterProps["style"]}
+                style={{}}
                 wrapLongLines={false}
             />
         )
@@ -140,7 +139,7 @@ describe("FormattedMarkdown component tests", () => {
             <FormattedMarkdown
                 id="test-wrap-code"
                 nodesList={[withoutLang]}
-                style={{} as SyntaxHighlighterProps["style"]}
+                style={{}}
                 wrapLongLines={true}
             />
         )
@@ -160,7 +159,7 @@ describe("FormattedMarkdown component tests", () => {
             <FormattedMarkdown
                 id="test-link"
                 nodesList={[md]}
-                style={{} as SyntaxHighlighterProps["style"]}
+                style={{}}
                 wrapLongLines={false}
             />
         )
