@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import ContactSupportIcon from "@mui/icons-material/ContactSupport"
-import {useColorScheme, useTheme} from "@mui/material"
 import Box from "@mui/material/Box"
 import Grow from "@mui/material/Grow"
+import {useColorScheme, useTheme} from "@mui/material/styles"
 import {FC, useState} from "react"
 
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"

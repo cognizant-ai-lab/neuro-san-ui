@@ -15,12 +15,12 @@ limitations under the License.
 */
 
 import CloseIcon from "@mui/icons-material/Close"
-import {styled, SxProps} from "@mui/material"
 import Dialog from "@mui/material/Dialog"
 import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
 import DialogTitle from "@mui/material/DialogTitle"
 import IconButton from "@mui/material/IconButton"
+import {styled, SxProps} from "@mui/material/styles"
 import {FC, JSX as ReactJSX, ReactNode} from "react"
 
 // #region: Styled Components

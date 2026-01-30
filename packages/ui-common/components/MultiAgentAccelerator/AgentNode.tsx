@@ -14,9 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// We have to disable the restricted imports rule here because we need to dynamically access MUI icons by name.
+// eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
-import {Tooltip, useTheme} from "@mui/material"
+import {useTheme} from "@mui/material/styles"
+import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
@@ -54,6 +57,10 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Agent node color from settings store
     const agentNodeColor = useSettingsStore((state) => state.settings.appearance.agentNodeColor)
+
+    // Agent node icon color from settings store
+    const agentNodeIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
+    const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Color palette for depth/heatmap coloring
     const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
@@ -126,12 +133,14 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         }
     }
 
-    const color = theme.palette.getContrastText(backgroundColor)
+    // Determine icon color based on settings. If auto color is enabled, use contrasting color for readability.
+    const color = autoAgentIconColor ? theme.palette.getContrastText(backgroundColor) : agentNodeIconColor
 
     return (
         <>
             <div
                 id={agentId}
+                data-testid={agentId}
                 style={{
                     alignItems: "center",
                     animation: isActiveAgent ? "glow 2.0s infinite" : "none",

@@ -19,7 +19,7 @@ import {useRouter} from "next/router.js"
 import {ReactElement} from "react"
 
 import {LOGO} from "../../const"
-import {useEnvironmentStore} from "../../state/environment"
+import {useEnvironmentStore} from "../../state/Environment"
 import {useUserInfoStore} from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"

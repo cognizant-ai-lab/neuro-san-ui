@@ -1,10 +1,10 @@
 import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
-import {ToggleButton} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
 import FormLabel from "@mui/material/FormLabel"
 import TextField from "@mui/material/TextField"
+import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Typography from "@mui/material/Typography"
 import {FC, MouseEvent as ReactMouseEvent, useState} from "react"
@@ -13,7 +13,7 @@ import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
 import {getBrandingColors} from "../../controller/agent/Agent"
 import {useSettingsStore} from "../../state/Settings"
 import {PaletteKey, PALETTES} from "../../Theme/Palettes"
-import {ConfirmationModal} from "../Common/confirmationModal"
+import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
 
@@ -42,6 +42,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     // Agent icon color
     const agentIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const agentIconColorCheckmark = useCheckmarkFade()
+    const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Which palette to use for heatmaps and depth display?
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
@@ -275,15 +276,35 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent icon color:</FormLabel>
+                        <ToggleButtonGroup
+                            exclusive
+                            value={autoAgentIconColor ? "auto" : "custom"}
+                            onChange={(_, value) => {
+                                if (value !== null) {
+                                    updateSettings({
+                                        appearance: {
+                                            autoAgentIconColor: value === "auto",
+                                        },
+                                    })
+                                    agentIconColorCheckmark.trigger()
+                                }
+                            }}
+                            size="small"
+                        >
+                            <ToggleButton value="auto">Auto</ToggleButton>
+                            <ToggleButton value="custom">Custom</ToggleButton>
+                        </ToggleButtonGroup>
                         <input
                             aria-label="agent-icon-color-picker"
-                            onChange={(e) =>
+                            disabled={autoAgentIconColor}
+                            onChange={(e) => {
                                 updateSettings({
                                     appearance: {
                                         agentIconColor: e.target.value,
                                     },
                                 })
-                            }
+                                agentIconColorCheckmark.trigger()
+                            }}
                             type="color"
                             value={agentIconColor}
                         />

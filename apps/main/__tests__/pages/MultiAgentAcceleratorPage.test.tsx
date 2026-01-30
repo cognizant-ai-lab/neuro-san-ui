@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material"
+import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
@@ -36,7 +36,7 @@ import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
-import {useEnvironmentStore} from "../../../../packages/ui-common/state/environment"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {UserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
 import {processChatChunk} from "../../../../packages/ui-common/utils/agentConversations"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
@@ -66,8 +66,8 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
 jest.mock("../../../../packages/ui-common/utils/agentConversations")
 
 // Mock MUI theming
-jest.mock("@mui/material", () => ({
-    ...jest.requireActual("@mui/material"),
+jest.mock("@mui/material/styles", () => ({
+    ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
 

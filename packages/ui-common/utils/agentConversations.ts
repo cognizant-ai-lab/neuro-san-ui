@@ -134,7 +134,7 @@ export const processChatChunk = (
             }
             const textToShow = inquiryText || chatMessage.text
             // Show inquiry (from structure), that's only for networks that use AAOSA with a JSON format.
-            // Otherwise show the raw data from the `text` field of the chat message.
+            // Otherwise, show the raw data from the `text` field of the chat message.
             const newConversation = createConversation(agents, textToShow, chatMessage.type)
             updatedConversations.push(newConversation)
             finalConversations = updatedConversations

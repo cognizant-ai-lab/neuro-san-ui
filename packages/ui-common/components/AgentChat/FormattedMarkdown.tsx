@@ -27,7 +27,7 @@ import {hashString} from "../../utils/text"
  */
 interface FormattedMarkdownProps {
     /**
-     * The id for the div that will contain the formatted markdown.
+     * The id for the div that will contain the formatted Markdown.
      */
     readonly id: string
 
@@ -42,16 +42,16 @@ interface FormattedMarkdownProps {
     readonly style: SyntaxHighlighterProps["style"]
 
     /**
-     * Whether to wrap long lines in the markdown.
+     * Whether to wrap long lines in the Markdown.
      */
     readonly wrapLongLines: boolean
 }
 
 /**
- * Format the output to ensure that text nodes are formatted as markdown but other nodes are passed along as-is.
+ * Format the output to ensure that text nodes are formatted as Markdown but other nodes are passed along as-is.
  *
  * @param props The props for the component. @see FormattedMarkdownProps
- * @returns The formatted output. Consecutive string nodes will be aggregated and wrapped in a markdown component,
+ * @returns The formatted output. Consecutive string nodes will be aggregated and wrapped in a Markdown component,
  * while other nodes will be passed along as-is.
  */
 export const FormattedMarkdown = ({
@@ -64,7 +64,7 @@ export const FormattedMarkdown = ({
      * Get the formatted output for a given string. The string is assumed to be in Markdown format.
      * @param stringToFormat The string to format.
      * @param index The index of the string in the nodes list. Used as "salt" to generate a unique key.
-     * @returns The formatted markdown.
+     * @returns The formatted Markdown.
      */
     const getFormattedMarkdown = (stringToFormat: string, index: number): ReactJSX.Element => (
         <ReactMarkdown

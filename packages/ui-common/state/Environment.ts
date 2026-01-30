@@ -24,7 +24,7 @@ import {create} from "zustand"
  * State store interface
  */
 interface EnvironmentStore {
-    // URL for NeuroSan API calls. Retrieved from NodeJS backend by first page visited
+    // URL for NeuroSan API calls. Retrieved from Node.js backend by first page visited
     backendNeuroSanApiUrl: string
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => void
 

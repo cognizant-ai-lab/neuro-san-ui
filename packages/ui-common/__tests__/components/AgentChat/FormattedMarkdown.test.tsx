@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {render, screen, waitFor} from "@testing-library/react"
-import type {SyntaxHighlighterProps} from "react-syntax-highlighter"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {FormattedMarkdown} from "../../../components/AgentChat/FormattedMarkdown"
@@ -109,7 +108,7 @@ describe("FormattedMarkdown component tests", () => {
                 <FormattedMarkdown
                     id="test-code"
                     nodesList={[md]}
-                    style={{} as SyntaxHighlighterProps["style"]}
+                    style={{}}
                     wrapLongLines={false}
                 />
             )
@@ -124,7 +123,7 @@ describe("FormattedMarkdown component tests", () => {
             <FormattedMarkdown
                 id="test-code-ids"
                 nodesList={[withLang, withoutLang]}
-                style={{} as SyntaxHighlighterProps["style"]}
+                style={{}}
                 wrapLongLines={false}
             />
         )
@@ -140,14 +139,14 @@ describe("FormattedMarkdown component tests", () => {
             <FormattedMarkdown
                 id="test-wrap-code"
                 nodesList={[withoutLang]}
-                style={{} as SyntaxHighlighterProps["style"]}
+                style={{}}
                 wrapLongLines={true}
             />
         )
 
         const codeEl = container.querySelector('code[id^="code-"]')
         const subject = codeEl ? codeEl.getAttribute("style") || "" : container.innerHTML
-        // Either the inline style should include white-space: pre-wrap OR the raw markdown
+        // Either the inline style should include white-space: pre-wrap OR the raw Markdown
         // fallback contains the text. Use a single unconditional expect to satisfy
         // jest/no-conditional-expect.
         expect(subject).toMatch(/white-space:\s*pre-wrap|line1/u)
@@ -160,18 +159,18 @@ describe("FormattedMarkdown component tests", () => {
             <FormattedMarkdown
                 id="test-link"
                 nodesList={[md]}
-                style={{} as SyntaxHighlighterProps["style"]}
+                style={{}}
                 wrapLongLines={false}
             />
         )
 
-        // The renderer can either produce an <a> tag or leave the raw markdown text
+        // The renderer can either produce an <a> tag or leave the raw Markdown text
         const possibleAnchor = container.querySelector("a#reference-link")
         const anchorOrHtml = possibleAnchor
             ? `${possibleAnchor.getAttribute("target") || ""} ${possibleAnchor.getAttribute("rel") || ""}`
             : container.innerHTML
         // Either the renderer produced an anchor with expected attributes or the raw
-        // markdown string is present. Single unconditional assertion avoids
+        // Markdown string is present. Single unconditional assertion avoids
         // jest/no-conditional-expect.
         expect(anchorOrHtml).toMatch(/_blank|\[site\]\(http:\/\/example.com\)/u)
     })

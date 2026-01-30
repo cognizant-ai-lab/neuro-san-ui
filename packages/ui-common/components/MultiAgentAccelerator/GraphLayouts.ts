@@ -17,7 +17,7 @@ limitations under the License.
 /**
  * Graph layout algorithms and associated functions for the agent network.
  */
-import dagre from "dagre"
+import dagre from "@dagrejs/dagre"
 import cloneDeep from "lodash-es/cloneDeep.js"
 import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 

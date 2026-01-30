@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import {styled} from "@mui/material/styles"
 import {FC, JSX as ReactJSX, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"

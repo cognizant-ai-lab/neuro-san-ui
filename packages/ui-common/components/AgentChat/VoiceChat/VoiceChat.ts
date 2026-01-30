@@ -51,7 +51,7 @@ export interface SpeechRecognitionState {
 
 // #endregion: Types
 
-// Check if browser is Chrome (excluding Edge). Only Chrome (on Mac OS and Windows) has full support for
+// Check if browser is Chrome (excluding Edge). Only Chrome (on macOS and Windows) has full support for
 // SpeechRecognition. Also, tested that this will exclude Firefox and Safari.
 const isChrome = (): boolean =>
     /Chrome/u.test(navigator.userAgent) && !/Edge/u.test(navigator.userAgent) && !/Edg\//u.test(navigator.userAgent)

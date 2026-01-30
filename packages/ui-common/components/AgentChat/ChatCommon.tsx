@@ -23,10 +23,13 @@ import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
 import WrapTextIcon from "@mui/icons-material/WrapText"
-import {Box, Chip, Input, useColorScheme} from "@mui/material"
+import Box from "@mui/material/Box"
+import Chip from "@mui/material/Chip"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
+import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
+import {useColorScheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -711,7 +714,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
         succeeded.current = succeeded.current || onChunkReceivedResult
 
-        // For legacy agents, we either get plain text or markdown. Just output it as-is.
+        // For legacy agents, we either get plain text or Markdown. Just output it as-is.
         if (isLegacyAgentType(targetAgent)) {
             // Display output as-is
             updateOutput(chunk)

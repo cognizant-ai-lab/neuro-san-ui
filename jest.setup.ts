@@ -99,13 +99,6 @@ Object.defineProperties(global.HTMLElement.prototype, {
 
 // End of hack
 
-// We need to mock the next/config module because it's not available in Jest
-jest.mock("next/config", () => () => ({
-    publicRuntimeConfig: {
-        enableAuthentication: false,
-    },
-}))
-
 // Cheesy mock implementation of structuredClone since it's not available in jsdom
 // See: https://github.com/jsdom/jsdom/issues/3363
 // eslint-disable-next-line unicorn/prefer-structured-clone

@@ -15,7 +15,10 @@ limitations under the License.
 */
 
 import CloseIcon from "@mui/icons-material/Close"
-import {Alert, AlertColor, Collapse, IconButton, styled, SxProps} from "@mui/material"
+import Alert, {AlertColor} from "@mui/material/Alert"
+import Collapse from "@mui/material/Collapse"
+import IconButton from "@mui/material/IconButton"
+import {styled, SxProps} from "@mui/material/styles"
 import {FC, ReactNode, useState} from "react"
 
 // #region: Styled Components

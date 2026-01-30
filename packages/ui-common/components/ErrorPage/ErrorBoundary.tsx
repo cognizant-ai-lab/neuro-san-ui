@@ -19,8 +19,8 @@ import {Component, ErrorInfo, ReactNode} from "react"
 import ErrorPage from "./ErrorPage"
 
 /**
- * Optional properties that should be present on the Error object if it's a real Javascript error.
- * It's possible to throw any random thing in Javascript/Typescript so we cannot assume these are present as some
+ * Optional properties that should be present on the Error object if it's a real JavaScript error.
+ * It's possible to throw any random thing in JavaScript/TypeScript so we cannot assume these are present as some
  * misbehaved piece of code may have thrown a <code>string</code> or an <code>int</code> instead of an error
  * object.
  */
@@ -48,7 +48,7 @@ interface ErrorBoundaryProps {
 }
 
 /**
- * Implements a system-wide error handler for NextJS pages in our app.
+ * Implements a system-wide error handler for Next.js pages in our app.
  * Taken from here: https://nextjs.org/docs/advanced-features/error-handling
  *
  * Note: as of writing (April 2023) ReactJS does not support error boundaries for functional components (like all of

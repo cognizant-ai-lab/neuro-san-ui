@@ -1,4 +1,4 @@
-import {createTheme, ThemeProvider, useColorScheme} from "@mui/material"
+import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {render, screen, waitFor} from "@testing-library/react"
 import userEvent, {UserEvent} from "@testing-library/user-event"
 
@@ -30,8 +30,8 @@ jest.mock("../../../components/AgentChat/ChatCommon", () => ({
 }))
 
 // Mock MUI theming
-jest.mock("@mui/material", () => ({
-    ...jest.requireActual("@mui/material"),
+jest.mock("@mui/material/styles", () => ({
+    ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
 

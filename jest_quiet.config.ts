@@ -18,7 +18,7 @@ limitations under the License.
 
 import type {Config} from "@jest/types"
 
-import sharedConfig from "./jest_unit.config"
+import sharedConfig from "./jest.config"
 
 const config: Config.InitialOptions = {
     // Pull in shared config

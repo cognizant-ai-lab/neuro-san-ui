@@ -41,17 +41,6 @@ const nextConfig: import("next").NextConfig = {
         // We check this elsewhere so disable during build
         ignoreBuildErrors: true,
     },
-    eslint: {
-        // We lint elsewhere so disable linting during build
-        ignoreDuringBuilds: true,
-
-        // Only these dirs will be scanned by ESLint. Apparently "." is enough to catch all subdirs (tested)
-        dirs: ["."],
-    },
-
-    publicRuntimeConfig: {
-        neuroSanUIVersion: process.env["NEURO_SAN_UI_VERSION"] || "unknown",
-    },
 
     output: "standalone",
 

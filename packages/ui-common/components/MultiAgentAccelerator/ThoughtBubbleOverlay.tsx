@@ -1,4 +1,4 @@
-import {styled} from "@mui/material"
+import {styled} from "@mui/material/styles"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {Edge, Node as RFNode} from "reactflow"
 
@@ -299,7 +299,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             if (bubbleId === null) {
                 // Delay clearing the hover state when mouse leaves to prevent accidental unhover
-                // "window." to satisfy typescript
+                // "window." to satisfy TypeScript
                 hoverTimeoutRef.current = window.setTimeout(() => {
                     setHoveredBubbleId(null)
                     if (onBubbleHoverChange) {
@@ -346,7 +346,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             }
 
             // Determine which agents to point to. If the edge supplies an `agents` array in
-            // data (provided by AgentFlow), use that. Otherwise fallback to the explicit
+            // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
             let agentIds: string[] = Array.isArray(edge.data?.agents)
                 ? (edge.data?.agents as string[])
@@ -441,7 +441,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         }
     }, [renderableBubbles, bubbleStates, calculateLineCoordinates])
 
-    // Schedule post-paint updates with rAF and ResizeObserver. Also optionally run a
+    // Schedule post-paint updates with rAF and ResizeObserver. Also, optionally run a
     // continuous loop while `isStreaming` is true to keep lines in sync during streaming.
     useEffect(() => {
         mountedRef.current = true

@@ -19,15 +19,15 @@ import {
     CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     LOGO,
 } from "@cognizant-ai-lab/ui-common/const"
-import {styled} from "@mui/material"
 import Box from "@mui/material/Box"
-import NextImage from "next/legacy/image"
+import {styled} from "@mui/material/styles"
+import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
 import {ReactElement, useState} from "react"
 
-import {ConfirmationModal} from "../../../packages/ui-common/components/Common/confirmationModal"
-import {useEnvironmentStore} from "../../../packages/ui-common/state/environment"
+import {ConfirmationModal} from "../../../packages/ui-common/components/Common/ConfirmationModal"
+import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 
 // #region: Styled Components
 const OuterContainer = styled("div")({
@@ -216,8 +216,8 @@ export default function Index(): ReactElement {
                                 >
                                     <NextImage
                                         id="logo-img"
-                                        width="200"
-                                        height="45"
+                                        width={200}
+                                        height={45}
                                         src="/cognizant-logo-white.svg"
                                         alt="Cognizant Logo"
                                     />

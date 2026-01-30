@@ -21,11 +21,16 @@ limitations under the License.
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import SettingsIcon from "@mui/icons-material/Settings"
-import {IconButton, Menu, MenuItem, Tooltip, Typography, useColorScheme} from "@mui/material"
 import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
+import Menu from "@mui/material/Menu"
+import MenuItem from "@mui/material/MenuItem"
+import {useColorScheme} from "@mui/material/styles"
+import Tooltip from "@mui/material/Tooltip"
+import Typography from "@mui/material/Typography"
 import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
-import {ConfirmationModal} from "./confirmationModal"
+import {ConfirmationModal} from "./ConfirmationModal"
 import {LoadingSpinner} from "./LoadingSpinner"
 import {
     authenticationEnabled,
@@ -38,6 +43,7 @@ import {useSettingsStore} from "../../state/Settings"
 import {isDarkMode} from "../../Theme/Theme"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 import {SettingsDialog} from "../Settings/SettingsDialog"
+
 // Declare the Props Interface
 export interface NavbarProps {
     // id is a string handle to the element used for testing

@@ -18,7 +18,7 @@ limitations under the License.
  * Component tests for top nav bar
  */
 
-import {createTheme, ThemeProvider} from "@mui/material"
+import {createTheme, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 

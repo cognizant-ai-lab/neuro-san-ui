@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material"
+import {useColorScheme} from "@mui/material/styles"
 import {render, screen, waitFor, within} from "@testing-library/react"
 import {UserEvent, default as userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
@@ -36,7 +36,7 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
-import {useEnvironmentStore} from "../../../state/environment"
+import {useEnvironmentStore} from "../../../state/Environment"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
 const AGENT_SERVER_ADDRESS = "Agent server address"
@@ -53,8 +53,8 @@ jest.mock("../../../controller/agent/Agent")
 const TEST_VERSION = "1.2.3.4a"
 
 // Mock MUI theming
-jest.mock("@mui/material", () => ({
-    ...jest.requireActual("@mui/material"),
+jest.mock("@mui/material/styles", () => ({
+    ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
 
