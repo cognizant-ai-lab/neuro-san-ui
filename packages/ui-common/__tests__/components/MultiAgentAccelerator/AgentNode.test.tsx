@@ -19,7 +19,7 @@ import {render, screen} from "@testing-library/react"
 import {CSSProperties} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentNode} from "../../../components/MultiAgentAccelerator/AgentNode"
+import {AgentNode, AgentNodeProps} from "../../../components/MultiAgentAccelerator/AgentNode"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {PALETTES} from "../../../Theme/Palettes"
@@ -36,31 +36,42 @@ jest.mock("reactflow", () => ({
 }))
 
 const AGENT_NAME = "Test Agent"
+const AGENT_ID = "testNode"
+
+const renderAgentNode = (data: Partial<AgentNodeProps>) => {
+    render(
+        <AgentNode
+            id={AGENT_ID}
+            type="test"
+            selected={false}
+            zIndex={0}
+            isConnectable={false}
+            xPos={0}
+            yPos={0}
+            dragging={false}
+            data={{
+                agentName: AGENT_NAME,
+                depth: 1,
+                displayAs: "llm_agent",
+                getConversations: () => null,
+                ...data,
+            }}
+        />
+    )
+}
 
 describe("AgentNode", () => {
     withStrictMocks()
 
+    beforeEach(() => {
+        // Reset settings store before each test
+        useSettingsStore.getState().resetSettings()
+    })
+
     it("Should render correctly", async () => {
-        const agentId = "testNode"
-        render(
-            <AgentNode
-                id={agentId}
-                type="test"
-                selected={false}
-                zIndex={0}
-                isConnectable={false}
-                xPos={0}
-                yPos={0}
-                dragging={false}
-                data={{
-                    agentCounts: new Map([[agentId, 42]]),
-                    agentName: AGENT_NAME,
-                    depth: 1,
-                    displayAs: "llm_agent",
-                    getConversations: () => null,
-                }}
-            />
-        )
+        renderAgentNode({
+            agentCounts: new Map([[AGENT_ID, 42]]),
+        })
 
         expect(screen.getByText(AGENT_NAME)).toBeInTheDocument()
 
@@ -89,33 +100,20 @@ describe("AgentNode", () => {
     })
 
     it("Should render animation if active agent", async () => {
-        render(
-            <AgentNode
-                id={AGENT_NAME}
-                type="test"
-                selected={false}
-                zIndex={0}
-                isConnectable={false}
-                xPos={0}
-                yPos={0}
-                dragging={false}
-                data={{
-                    agentName: "testAgent",
-                    depth: 3,
-                    getConversations: () => [
-                        {
-                            agents: new Set([AGENT_NAME]),
-                            id: "conversation1",
-                            startedAt: undefined,
-                            type: ChatMessageType.UNKNOWN,
-                        },
-                    ],
-                }}
-            />
-        )
+        renderAgentNode({
+            depth: 3,
+            getConversations: () => [
+                {
+                    agents: new Set([AGENT_ID]),
+                    id: "conversation1",
+                    startedAt: undefined,
+                    type: ChatMessageType.UNKNOWN,
+                },
+            ],
+        })
 
         // locate agent node div
-        const agentNodeDiv = screen.getByTestId(AGENT_NAME)
+        const agentNodeDiv = screen.getByTestId(AGENT_ID)
 
         // Active node should have animation
         const style = window.getComputedStyle(agentNodeDiv)
@@ -123,43 +121,27 @@ describe("AgentNode", () => {
     })
 
     it.each([
-        {autoNodeColor: true, depth: 1},
-        {autoNodeColor: true, depth: 9},
-        {autoNodeColor: false, depth: 1},
-        {autoNodeColor: false, depth: 9},
-    ])("should handle autoNodeColor=$autoNodeColor and depth=$depth", async ({autoNodeColor, depth}) => {
+        {autoAgentIconColor: true, depth: 1},
+        {autoAgentIconColor: true, depth: 9},
+        {autoAgentIconColor: false, depth: 1},
+        {autoAgentIconColor: false, depth: 9},
+    ])("should handle autoNodeColor=$autoNodeColor and depth=$depth", async ({autoAgentIconColor, depth}) => {
         const agentIconColor = "#112233"
         useSettingsStore.getState().updateSettings({
             appearance: {
                 agentIconColor,
-                autoAgentIconColor: autoNodeColor,
+                autoAgentIconColor,
             },
         })
 
-        render(
-            <AgentNode
-                id="testNode"
-                type="test"
-                selected={false}
-                zIndex={0}
-                isConnectable={false}
-                xPos={0}
-                yPos={0}
-                dragging={false}
-                data={{
-                    agentName: "Test Agent",
-                    depth,
-                    displayAs: "llm_agent",
-                    getConversations: () => null,
-                }}
-            />
-        )
+        renderAgentNode({depth})
 
+        // Locate the icon (should be AutoAwesomeIcon for llm_agent)
         const icon = await screen.findByTestId("AutoAwesomeIcon")
         const iconStyle = window.getComputedStyle(icon)
 
         // Make sure the icon color matches expected
-        const expectedIconColor = autoNodeColor
+        const expectedIconColor = autoAgentIconColor
             ? depth === 1
                 ? /rgba\(0, 0, 0, 0\.\d+\)/u // Ignore alpha value (last octet) that MUI generates
                 : /rgb\(255, 255, 255\)/u
@@ -171,28 +153,14 @@ describe("AgentNode", () => {
         ["handles should display in regular mode", false, "block"],
         ["handles should not display in Zen mode", true, "none"],
     ])("%s", async (_description, isAwaitingLlm, expectedDisplay) => {
-        render(
-            <AgentNode
-                id={AGENT_NAME}
-                type="test"
-                selected={false}
-                zIndex={0}
-                isConnectable={false}
-                xPos={0}
-                yPos={0}
-                dragging={false}
-                data={{
-                    agentName: "agentName",
-                    depth: 3,
-                    getConversations: () => [],
-                    isAwaitingLlm,
-                }}
-            />
-        )
+        renderAgentNode({
+            isAwaitingLlm,
+            depth: 3,
+        })
 
         const positions = ["left", "right", "top", "bottom"]
         for (const pos of positions) {
-            const handle = await screen.findByTestId(`handle-source-Test Agent-${pos}-handle`)
+            const handle = await screen.findByTestId(`handle-source-${AGENT_ID}-${pos}-handle`)
             expect(handle).toBeInTheDocument()
             expect(handle).toHaveStyle({display: expectedDisplay})
         }
@@ -204,24 +172,7 @@ describe("AgentNode", () => {
         ["coded_tool", "HandymanIcon"],
         ["unknown_display_as_value", "AutoAwesomeIcon"],
     ])("renders correct icon for displayAs=%s", async (displayAs, expectedTestId) => {
-        render(
-            <AgentNode
-                id="testNode"
-                type="test"
-                selected={false}
-                zIndex={0}
-                isConnectable={false}
-                xPos={0}
-                yPos={0}
-                dragging={false}
-                data={{
-                    agentName: "Test Agent",
-                    depth: 1,
-                    displayAs,
-                    getConversations: () => null,
-                }}
-            />
-        )
+        renderAgentNode({displayAs})
         await screen.findByTestId(expectedTestId)
     })
 })

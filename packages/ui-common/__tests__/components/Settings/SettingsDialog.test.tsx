@@ -127,10 +127,10 @@ describe("SettingsDialog", () => {
             />
         )
 
-        // Currently, "manual" is selected
+        // Locate the auto color checkbox
         const autoColorCheckbox = screen.getByRole("button", {name: /Auto/u})
 
-        // should have aria-pressed false
+        // "auto" button should not be pressed since we set autoAgentIconColor to false
         expect(autoColorCheckbox).toHaveAttribute("aria-pressed", "false")
 
         await user.click(autoColorCheckbox)

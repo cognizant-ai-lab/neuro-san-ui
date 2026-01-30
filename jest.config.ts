@@ -54,6 +54,15 @@ const config: Config.InitialOptions = {
     ],
     coverageReporters: ["text-summary"],
 
+    coverageThreshold: {
+        global: {
+            statements: -73,
+            branches: -124,
+            functions: -19,
+            lines: -56,
+        },
+    },
+
     // Prevent Jest from trying to parse CSS files. Reference: https://stackoverflow.com/a/43813992
     moduleNameMapper: {
         "\\.(css|less)$": "<rootDir>/apps/main/__tests__/__mocks__/styleMock.js",

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Jest config for unit tests (and "component" tests)
+// Jest config for running tests silently (no console output unless there is a test failure)
 
 import type {Config} from "@jest/types"
 
@@ -24,15 +24,9 @@ const config: Config.InitialOptions = {
     // Pull in shared config
     ...sharedConfig,
 
-    // For details on these settings: https://jestjs.io/docs/configuration
-    coverageThreshold: {
-        global: {
-            statements: -73,
-            branches: -124,
-            functions: -19,
-            lines: -56,
-        },
-    },
+    silent: true,
+    reporters: ["jest-silent-reporter"],
+    coverageReporters: ["none"],
 }
 
 export default config
