@@ -140,7 +140,7 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
                                 placement="right"
                                 arrow={true}
                             >
-                                <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
+                                <BookmarkIcon sx={{fontSize: "0.75rem"}} />
                             </Tooltip>
                         ) : null}
                     </Box>

@@ -48,7 +48,7 @@ import {getZIndex} from "../../../utils/zIndexLayers"
 
 const PrimaryButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== "darkMode",
-})<{darkMode?: boolean}>(({darkMode}) => ({
+})<{darkMode?: boolean}>(() => ({
     marginLeft: "0.5rem",
     marginTop: "2px",
 }))
@@ -183,7 +183,6 @@ export const Sidebar: FC<SidebarProps> = ({
             <aside
                 id={`${id}-sidebar`}
                 style={{
-                    borderRightColor: "var(--bs-gray-light)",
                     borderRightStyle: "solid",
                     borderRightWidth: "1px",
                     height: "100%",
@@ -194,7 +193,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 <h2
                     id={`${id}-heading`}
                     style={{
-                        borderBottomColor: "var(--bs-gray-light)",
+                        backgroundColor: theme.palette.background.default,
                         borderBottomStyle: "solid",
                         borderBottomWidth: "1px",
                         fontSize: "1.125rem",
