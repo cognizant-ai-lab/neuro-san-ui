@@ -21,6 +21,7 @@ limitations under the License.
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import SettingsIcon from "@mui/icons-material/Settings"
+import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import IconButton from "@mui/material/IconButton"
 import Menu from "@mui/material/Menu"
@@ -71,6 +72,13 @@ export interface NavbarProps {
     readonly supportEmailAddress: string
 }
 
+const MENU_ITEM_TEXT_PROPS = {
+    color: "var(--bs-white)",
+    backgroundColor: "var(--bs-primary)",
+    fontFamily: "var(--bs-body-font-family)",
+    fontSize: "18px",
+}
+
 const DISABLE_OUTLINE_PROPS = {
     outline: "none",
     "&:focus": {
@@ -79,6 +87,34 @@ const DISABLE_OUTLINE_PROPS = {
     "&:active": {
         outline: "none",
     },
+}
+
+// Logo.dev token from environment variables
+const logoDevToken = process.env["NEXT_PUBLIC_LOGO_DEV_TOKEN"]
+
+// Cognizant logo image component
+function getCognizantLogoImage() {
+    return (
+        <a
+            id="splash-logo-link"
+            href="https://www.cognizant.com/us/en"
+            style={{
+                display: "flex",
+                paddingLeft: "0.15rem",
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                id="logo-img"
+                width="200"
+                height="45"
+                src="/cognizant-logo-white.svg"
+                alt="Cognizant Logo"
+            />
+        </a>
+    )
 }
 
 export const Navbar = ({
@@ -134,10 +170,14 @@ export const Navbar = ({
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const primary = useSettingsStore((state) => state.settings.branding.primary)
 
-    const MENU_ITEM_TEXT_PROPS = {
-        fontFamily: "var(--bs-body-font-family)",
-        fontSize: "18px",
-    }
+    // Construct logo URL if customer branding is set to retrieve logo from logo.dev.
+    // NOTE: for this to work, a valid, active logo.dev token must be set in environment variables.
+    const logoUrl =
+        `https://img.logo.dev/name/${customer}` +
+        `?token=${logoDevToken}` +
+        `&theme=${darkMode ? "dark" : "light"}` +
+        "&format=png" +
+        "&size=75"
 
     return hydrated ? (
         <Grid
@@ -146,7 +186,7 @@ export const Navbar = ({
             alignItems="center"
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
-                color: primary || "var(--bs-white)",
+                color: primary,
                 padding: "0.25rem",
             }}
         >
@@ -158,44 +198,40 @@ export const Navbar = ({
                 />
             )}
             {customer ? (
-                <Typography
-                    id="customer-branding"
-                    sx={{
-                        ...MENU_ITEM_TEXT_PROPS,
-                        color: primary || undefined,
-                        fontSize: "30px",
-                        fontWeight: "600",
-                        paddingLeft: "0.15rem",
-                        width: "200px",
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    {customer}™
-                </Typography>
-            ) : (
-                <a
-                    id="splash-logo-link"
-                    href="https://www.cognizant.com/us/en"
-                    style={{
-                        display: "flex",
-                        paddingLeft: "0.15rem",
-                    }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        id="logo-img"
-                        width="200"
-                        height="45"
-                        src="/cognizant-logo-white.svg"
-                        alt="Cognizant Logo"
+                        src={logoUrl}
+                        alt={`${customer} Logo`}
+                        width="75"
+                        height="75"
+                        style={{paddingLeft: "0.15rem"}}
                     />
-                </a>
+                    <Typography
+                        id="customer-branding"
+                        sx={{
+                            ...MENU_ITEM_TEXT_PROPS,
+                            color: primary || undefined,
+                            fontSize: "20px",
+                            fontWeight: "600",
+                            paddingLeft: "0.15rem",
+                            width: "200px",
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                    >
+                        {customer}
+                    </Typography>
+                </Box>
+            ) : (
+                getCognizantLogoImage()
             )}
             {/*App title*/}
-            <Grid id={id}>
+            <Grid
+                id={id}
+                sx={{display: "flex", alignItems: "center"}}
+            >
+                {customer ? getCognizantLogoImage() : null}
                 <Typography
                     id="nav-bar-brand"
                     sx={{
@@ -462,6 +498,7 @@ export const Navbar = ({
             <Tooltip title="Settings">
                 <SettingsIcon
                     sx={{
+                        ...MENU_ITEM_TEXT_PROPS,
                         marginRight: "1rem",
                         fontSize: "1rem",
                         cursor: "pointer",

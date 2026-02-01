@@ -46,37 +46,11 @@ const cssVar = (variableName: string): string => {
     return rootStyles?.getPropertyValue(variableName).trim() || DEFAULT_COLOR
 }
 
-// Define the default palette used in both light and dark themes
-const DEFAULT_PALETTE = {
-    primary: {
-        main: cssVar("--bs-primary"),
-    },
-    secondary: {
-        main: cssVar("--bs-secondary"),
-    },
-    error: {
-        main: cssVar("--bs-danger"),
-    },
-    warning: {
-        main: cssVar("--bs-red"),
-    },
-    info: {
-        main: cssVar("--bs-info"),
-    },
-    success: {
-        main: cssVar("--bs-success"),
-    },
-    text: {
-        primary: cssVar("--bs-primary"),
-        secondary: cssVar("--bs-gray-medium-dark"),
-    },
-}
-
 /**
  * This is the main theme for the app. It is used by the MUI ThemeProvider. It supplies light and dark themes
  * using custom colors defined in globals.css.
  */
-export const createAppTheme = (primary: string, background: string) =>
+export const createAppTheme = (primary: string, secondary: string, background: string) =>
     createTheme({
         components: {
             MuiButton: {
@@ -116,26 +90,23 @@ export const createAppTheme = (primary: string, background: string) =>
         colorSchemes: {
             dark: {
                 palette: {
-                    // ...DEFAULT_PALETTE,
-
                     background: {
-                        default: cssVar("--bs-dark-mode-dim"),
+                        default: background,
                     },
                     text: {
                         primary: primary || cssVar("--bs-white"),
-                        secondary: cssVar("--bs-gray-light"),
+                        secondary: secondary || cssVar("--bs-gray-light"),
                     },
                 },
             },
             light: {
                 palette: {
-                    // ...DEFAULT_PALETTE,
                     background: {
                         default: background,
                     },
                     text: {
-                        primary: primary || cssVar("--bs-primary"),
-                        secondary: cssVar("--bs-gray-medium-dark"),
+                        primary: primary || cssVar("--bs-black"),
+                        secondary: secondary || cssVar("--bs-gray-medium-dark"),
                     },
                 },
             },

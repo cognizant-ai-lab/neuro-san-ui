@@ -121,9 +121,10 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     const isContainedInViewport = Component.isContainedInViewport ?? false
 
     const primary = useSettingsStore((state) => state.settings.branding.primary)
+    const secondary = useSettingsStore((state) => state.settings.branding.secondary)
     const background = useSettingsStore((state) => state.settings.branding.background)
 
-    const theme = useMemo(() => createAppTheme(primary, background), [primary, background])
+    const theme = useMemo(() => createAppTheme(primary, secondary, background), [primary, background])
 
     useEffect(() => {
         const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")

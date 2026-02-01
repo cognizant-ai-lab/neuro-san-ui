@@ -103,6 +103,15 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
             })
         }
 
+        // secondary
+        if (brandingColors["secondary"]) {
+            updateSettings({
+                branding: {
+                    secondary: brandingColors["secondary"],
+                },
+            })
+        }
+
         // background
         if (brandingColors["background"]) {
             updateSettings({
@@ -167,13 +176,15 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                     </Typography>
                     <Divider sx={{marginBottom: 2}} />
                     <Box sx={{display: "flex", alignItems: "center"}}>
-                        <Box sx={{display: "flex", alignItems: "center", gap: 2, marginBottom: "1rem"}}>
+                        <Box sx={{display: "flex", alignItems: "center", gap: 2, marginBottom: "1rem", width: "100%"}}>
                             <FormLabel>Branding:</FormLabel>
                             <TextField
                                 aria-label="branding-input"
                                 onChange={(e) => setBrandingInput(e.target.value)}
                                 value={brandingInput}
+                                placeholder="Company or organization name"
                                 size="small"
+                                sx={{width: "100%"}}
                                 variant="outlined"
                             />
                             <Button
