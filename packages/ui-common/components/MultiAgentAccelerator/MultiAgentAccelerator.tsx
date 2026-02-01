@@ -40,7 +40,6 @@ import {closeNotification, NotificationType, sendNotification} from "../Common/n
 interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
-    readonly darkMode: boolean
 }
 
 /**
@@ -51,7 +50,6 @@ interface MultiAgentAcceleratorProps {
  */
 export const MultiAgentAccelerator = ({
     backendNeuroSanApiUrl,
-    darkMode,
     userInfo,
 }: MultiAgentAcceleratorProps): ReactJSX.Element => {
     // Animation time for the left and right panels to slide in or out when launching the animation

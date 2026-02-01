@@ -52,6 +52,43 @@ export interface TestConnectionResult {
     readonly version?: string
 }
 
+// Maximum number of retries for fetch requests
+const MAX_RETRIES = 3
+
+/**
+ * Retry a fetch function up to MAX_RETRIES times on failure.
+ * @param fetchFn The fetch function to retry.
+ * @returns The parsed JSON response of type T. No verification is done on the structure of T.
+ */
+async function retryFetch<T>(fetchFn: () => Promise<Response>): Promise<T> {
+    let lastError: Error | undefined
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+        try {
+            const response = await fetchFn()
+
+            if (!response.ok) {
+                lastError = new Error(`HTTP ${response.status}: ${response.statusText}`)
+            } else {
+                const text = await response.json()
+                return JSON.parse(text) as T
+            }
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error))
+        }
+
+        if (attempt < MAX_RETRIES) {
+            await new Promise<void>((resolve) => {
+                setTimeout(() => {
+                    resolve()
+                })
+            })
+        }
+    }
+
+    throw new Error(`Failed after ${MAX_RETRIES + 1} attempts: ${lastError?.message}`)
+}
+
 /**
  * Test connection for a neuro-san server.
  * @param url The neuro-san server URL.
@@ -90,40 +127,42 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
  * @returns A promise that resolves to a record mapping network names to icon names.
  */
 export async function getNetworkIconSuggestions(networks: readonly AgentInfo[]): Promise<Record<string, string>> {
-    const res = await fetch("http://localhost:3001/api/suggestIconsForNetworks", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({networks}),
-    })
-
-    return JSON.parse(await res.json())
+    const fetchFunction = () =>
+        fetch("http://localhost:3001/api/suggestIconsForNetworks", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({networks}),
+        })
+    return retryFetch<Record<string, string>>(fetchFunction)
 }
 
 export async function getAgentIconSuggestions(connectivity: ConnectivityResponse): Promise<Record<string, string>> {
-    const res = await fetch("http://localhost:3001/api/suggestIconsForAgents", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(connectivity),
-    })
+    const fetchFunction = () =>
+        fetch("http://localhost:3001/api/suggestIconsForAgents", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(connectivity),
+        })
 
-    return JSON.parse(await res.json())
+    return retryFetch<Record<string, string>>(fetchFunction)
 }
 
 export async function getBrandingColors(company: string): Promise<Record<string, string>> {
     const fetchUrl = `http://localhost:3001/api/branding?company=${encodeURIComponent(company)}`
 
-    const res = await fetch(fetchUrl, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    })
+    const fetchFunction = () =>
+        fetch(fetchUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
 
-    return JSON.parse(await res.json())
+    return retryFetch<Record<string, string>>(fetchFunction)
 }
 
 /**

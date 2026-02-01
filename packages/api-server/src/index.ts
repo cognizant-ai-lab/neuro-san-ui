@@ -27,13 +27,8 @@ fault detection and resource allocation, for a telco company in Australia. The n
 (NSW: New South Wales, VIC: Victoria, QLD: Queensland), each with a site manager and a set of nodes.
 The agents are NOT grounded and will simulate access to the network's systems instead.",
 "tags": [
-"AAOSA",
 "telecommunications",
 "network-orchestration",
-"monitoring",
-"fault-detection",
-"resource-allocation",
-"simulation"
 ]
 }}
 
@@ -42,14 +37,14 @@ a visualization UI, using the context of the agent description. Only give the na
 "Icon", so for example "FlightTakeOff" not "FlightTakeOffIcon". Try to avoid using the same icon for multiple networks
 where possible.
 
+Network list:
+{network_list}
+
 Give your answer as pure JSON, no markdown, no extra formatting, no commentary. Example answer format:
 {{
   "industry/telco_network_orchestration": "Accessibility",
   "other_network": "AdminPanelSettings"
 }}
-
-Network list:
-{network_list}
 `)
 
 const iconsForAgentsPrompt = ChatPromptTemplate.fromTemplate(`
