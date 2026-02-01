@@ -7,7 +7,7 @@ import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Typography from "@mui/material/Typography"
-import {FC, MouseEvent as ReactMouseEvent, useState} from "react"
+import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
 import {getBrandingColors} from "../../controller/agent/Agent"
@@ -63,17 +63,17 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
         rangePaletteCheckmark.trigger()
     }
 
-    const [brandingInput, setBrandingInput] = useState<string>(customer)
+    const [customerInput, setCustomerInput] = useState<string>(customer)
 
     const handleBrandingApply = async () => {
         updateSettings({
             branding: {
-                customer: brandingInput,
+                customer: customerInput,
             },
         })
         customerCheckmark.trigger()
 
-        const brandingColors = await getBrandingColors(brandingInput)
+        const brandingColors = await getBrandingColors(customerInput)
         console.debug("Fetched branding colors:", brandingColors)
 
         if (brandingColors["plasma"]) {
@@ -130,6 +130,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
         }
     }
 
+    // Effect to keep input in sync with state store
+    useEffect(() => {
+        setCustomerInput(customer ?? "")
+    }, [customer])
+
     return (
         <>
             {resetToDefaultSettingsOpen ? (
@@ -180,20 +185,20 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             <FormLabel>Branding:</FormLabel>
                             <TextField
                                 aria-label="branding-input"
-                                onChange={(e) => setBrandingInput(e.target.value)}
+                                onChange={(e) => setCustomerInput(e.target.value)}
                                 onKeyDown={(e) => {
-                                    if (e.key === "Enter" && brandingInput?.trim().length > 0) {
+                                    if (e.key === "Enter" && customerInput?.trim().length > 0) {
                                         handleBrandingApply()
                                     }
                                 }}
-                                value={brandingInput}
+                                value={customerInput}
                                 placeholder="Company or organization name"
                                 size="small"
                                 sx={{width: "100%"}}
                                 variant="outlined"
                             />
                             <Button
-                                disabled={brandingInput?.trim().length === 0}
+                                disabled={customerInput?.trim().length === 0}
                                 variant="contained"
                                 size="small"
                                 onClick={handleBrandingApply}
