@@ -33,9 +33,10 @@ export const REQUIRED_ENV_VARS = [
     "AUTH0_DOMAIN",
     "AUTH0_ISSUER",
     "NEURO_SAN_SERVER_URL",
-    "NEXT_PUBLIC_LOGO_DEV_TOKEN",
     "SUPPORT_EMAIL_ADDRESS",
 ]
+
+export const OPTIONAL_ENV_VARS = ["NEXT_PUBLIC_LOGO_DEV_TOKEN", "OPENAI_API_KEY"]
 
 export function register() {
     if (authenticationEnabled()) {
@@ -46,5 +47,13 @@ export function register() {
                 `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
             )
         }
+    }
+
+    const missingOptionalEnvVars = OPTIONAL_ENV_VARS.filter((envVar) => !process.env[envVar])
+    if (missingOptionalEnvVars.length > 0) {
+        console.warn(
+            "Warning: The following optional environment variable(s) are empty or undefined. " +
+                `Some features may not work correctly:\n${missingOptionalEnvVars.join("\n")}`
+        )
     }
 }
