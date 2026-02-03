@@ -17,11 +17,9 @@ limitations under the License.
 import CloseIcon from "@mui/icons-material/Close"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
-import {styled, useColorScheme} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {ForwardedRef, forwardRef, JSX as ReactJSX} from "react"
-
-import {isDarkMode} from "../../Theme/Theme"
 
 // #region: Styled Components
 const IconBox = styled(Box)({
@@ -60,13 +58,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         const handleCloseSnackbar = () => closeSnackbar(id)
         const icon = iconVariant[variant]
 
-        const {mode, systemMode} = useColorScheme()
-        const darkMode = isDarkMode(mode, systemMode)
-
-        // Temporary styling for implementation of dark mode
-        const darkModeStyling = {
-            backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-        }
+        const theme = useTheme()
 
         return (
             <SnackbarContent
@@ -77,14 +69,16 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
                     className={`${variant}-snackbar-notification`}
                     id={`${id}-snackbar-box`}
                     sx={{
+                        background: theme.palette.background.paper,
                         borderColor: "transparent",
                         borderRadius: "var(--bs-border-radius)",
                         borderWidth: "1px",
-                        boxShadow: `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 
-                                    0 9px 28px 8px rgba(0, 0, 0, 0.05)`,
+                        boxShadow: `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+                                            0 9px 28px 8px rgba(0, 0, 0, 0.05)`,
                         maxWidth: "450px",
                         minWidth: "250px",
                         padding: "0.9rem",
+                        paddingRight: "4rem",
                     }}
                 >
                     {!hideIconVariant && (
