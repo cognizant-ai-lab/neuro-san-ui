@@ -19,7 +19,7 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
-import {useColorScheme, useTheme} from "@mui/material/styles"
+import {useTheme} from "@mui/material/styles"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
@@ -50,7 +50,6 @@ import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
-import {isDarkMode} from "../../Theme/Theme"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -326,12 +325,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
-    const {mode, systemMode} = useColorScheme()
-    const darkMode = isDarkMode(mode, systemMode)
-
-    // Shadow color for icon. TODO: use MUI theme system instead.
-    const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
-
+    // Shadow color for
+    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
     const isHeatmap = coloringOption === "heatmap"
 
     const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
@@ -494,7 +489,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     right: "10px",
                     padding: "5px",
                     borderRadius: "5px",
-                    boxShadow: `0 0 5px rgba(${shadowColor}, 0.3)`,
+                    boxShadow: `0 0 5px color-mix(in srgb, ${shadowColor} 30%, transparent)`,
                     display: "flex",
                     alignItems: "center",
                     zIndex: getZIndex(2, theme),
@@ -586,7 +581,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Get the background color for the control buttons based on the layout and dark mode setting
     const getControlButtonBackgroundColor = (isActive: boolean) => {
-        return isActive ? (darkMode ? "var(--bs-gray-dark)" : "var(--bs-gray-lighter)") : undefined
+        if (!isActive) {
+            return undefined
+        }
+        return theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[200]
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
@@ -688,13 +686,22 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             sx={{
                 height: "100%",
                 width: "100%",
+                backgroundColor: theme.palette.background.default,
                 "& .react-flow__node": {
-                    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-black)",
-                    borderRadius: "var(--bs-border-radius-2xl)",
+                    border: `1px solid ${theme.palette.divider}`,
+                },
+                "& .react-flow__panel": {
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    color: theme.palette.text.primary,
+                },
+                "& .react-flow__controls-button": {
+                    backgroundColor: theme.palette.background.paper,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    color: theme.palette.text.primary,
+                    fill: theme.palette.text.primary,
                 },
             }}
-            // Theme the "React Flow" attribution logo according to dark mode.
-            className={darkMode ? "dark" : undefined}
         >
             <ReactFlow
                 id={`${id}-react-flow`}
