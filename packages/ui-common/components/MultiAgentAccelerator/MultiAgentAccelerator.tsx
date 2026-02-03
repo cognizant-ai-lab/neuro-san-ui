@@ -118,7 +118,7 @@ export const MultiAgentAccelerator = ({
             try {
                 const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
                 const iconSuggestionsTmp = await getNetworkIconSuggestions(networksTmp)
-                console.debug("fetched icon suggestions:", iconSuggestionsTmp)
+
                 // Batch state updates together to prevent stale render
                 setNetworks(networksTmp)
                 setIconSuggestions(iconSuggestionsTmp)
@@ -360,7 +360,6 @@ export const MultiAgentAccelerator = ({
                             <StopCircle
                                 fontSize="small"
                                 id="stop-button-icon"
-                                sx={{color: "var(--bs-white)"}}
                             />
                         </SmallLlmChatButton>
                     </Box>

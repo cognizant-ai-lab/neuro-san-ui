@@ -46,13 +46,58 @@ const cssVar = (variableName: string): string => {
     return rootStyles?.getPropertyValue(variableName).trim() || DEFAULT_COLOR
 }
 
+/**
+ * Adjusts the brightness of a hex color by a given percentage.
+ * @param color - The hex color string (e.g., "#RRGGBB" or "#RGB").
+ * @param percent - The percentage to adjust brightness (-100 to 100). Positive values make the color lighter,
+ * negative values make it darker.
+ * @returns The adjusted hex color string.
+ */
 const adjustBrightness = (color: string, percent: number): string => {
-    const num = parseInt(color.replace("#", ""), 16)
+    if (!color?.startsWith("#") || (color?.length !== 7 && color?.length !== 4)) {
+        // Return original color if not in expected format
+        return color
+    }
+
+    // Expand 3-character hex colors to 6 characters
+    let hexColor = color
+    if (color.length === 4) {
+        hexColor = `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
+    }
+
+    const num = parseInt(hexColor.replace("#", ""), 16)
     const amt = Math.round(2.55 * percent)
     const R = Math.min(255, Math.max(0, (num >> 16) + amt))
     const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt))
     const B = Math.min(255, Math.max(0, (num & 0x0000ff) + amt))
+
     return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`
+}
+
+// Define the default palette used in both light and dark themes
+const DEFAULT_PALETTE = {
+    primary: {
+        main: cssVar("--bs-primary"),
+    },
+    secondary: {
+        main: cssVar("--bs-secondary"),
+    },
+    error: {
+        main: cssVar("--bs-danger"),
+    },
+    warning: {
+        main: cssVar("--bs-red"),
+    },
+    info: {
+        main: cssVar("--bs-info"),
+    },
+    success: {
+        main: cssVar("--bs-success"),
+    },
+    text: {
+        primary: cssVar("--bs-primary"),
+        secondary: cssVar("--bs-gray-medium-dark"),
+    },
 }
 
 /**
@@ -99,9 +144,11 @@ export const createAppTheme = (primary: string, secondary: string, background: s
         colorSchemes: {
             dark: {
                 palette: {
+                    ...DEFAULT_PALETTE,
+
                     background: {
-                        default: background,
-                        paper: adjustBrightness(background, 5),
+                        default: background || cssVar("--bs-dark-mode-dim"),
+                        paper: adjustBrightness(background || cssVar("--bs-dark-mode-dim"), 5),
                     },
                     text: {
                         primary: primary || cssVar("--bs-white"),
@@ -111,9 +158,10 @@ export const createAppTheme = (primary: string, secondary: string, background: s
             },
             light: {
                 palette: {
+                    ...DEFAULT_PALETTE,
                     background: {
-                        default: background,
-                        paper: adjustBrightness(background, 5),
+                        default: background || cssVar("--bs-white"),
+                        paper: adjustBrightness(background || cssVar("--bs-white"), -5),
                     },
                     text: {
                         primary: primary || cssVar("--bs-black"),

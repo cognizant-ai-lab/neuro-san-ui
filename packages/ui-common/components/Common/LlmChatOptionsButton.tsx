@@ -22,16 +22,17 @@ import {getZIndex} from "../../utils/zIndexLayers"
 type LLMChatGroupConfigBtnProps = {
     enabled?: boolean
     posRight?: number
-    posBottom?: number
 }
 
 export const LlmChatOptionsButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== "enabled" && prop !== "posRight" && prop !== "posBottom",
-})<LLMChatGroupConfigBtnProps>(({enabled, posRight}) => ({
+})<LLMChatGroupConfigBtnProps>(({theme, enabled, posRight}) => ({
     position: "absolute",
     top: 10,
     right: posRight || null,
     zIndex: getZIndex(1, null), // Seems to only be needed on Analytics Chat, but apply to all.
+    background: `${enabled ? theme.palette.primary.main : theme.palette.grey[600]} !important`,
+    borderColor: `${enabled ? theme.palette.primary.main : theme.palette.grey[600]} !important`,
     borderRadius: "var(--bs-border-radius)",
     width: "30px",
     height: "30px",

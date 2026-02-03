@@ -46,7 +46,6 @@ export const SendButton: FC<SendButtonProps> = ({enableSendButton, id, onClickCa
         <SendIcon
             fontSize="small"
             id="stop-button-icon" // Could update this but it would impact QA
-            sx={{color: "var(--bs-white)"}}
         />
     </LlmChatButton>
 )

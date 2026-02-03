@@ -73,8 +73,16 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
         })
         customerCheckmark.trigger()
 
-        const brandingColors = await getBrandingColors(customerInput)
-        console.debug("Fetched branding colors:", brandingColors)
+        let brandingColors
+        try {
+            brandingColors = await getBrandingColors(customerInput)
+        } catch {
+            sendNotification(
+                NotificationType.error,
+                `Failed to fetch branding colors for "${customerInput}". Please check the name and try again.`
+            )
+            return
+        }
 
         if (brandingColors["plasma"]) {
             updateSettings({
@@ -124,7 +132,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
         if (Array.isArray(brandingColors["rangePalette"])) {
             updateSettings({
                 branding: {
-                    rangePalette: brandingColors["rangePalette"] as string[],
+                    rangePalette: brandingColors["rangePalette"],
                 },
             })
         }

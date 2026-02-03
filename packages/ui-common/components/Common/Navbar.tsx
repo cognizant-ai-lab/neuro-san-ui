@@ -477,7 +477,7 @@ export const Navbar = ({
                 id="dark-mode-toggle"
                 title={
                     customer
-                        ? "Not available when customer branding is active. Reset via Settings menu."
+                        ? "Dark mode toggle is not available when customer branding is active. Reset via Settings menu."
                         : "Toggle dark mode"
                 }
             >
