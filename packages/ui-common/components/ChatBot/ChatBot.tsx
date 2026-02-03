@@ -80,7 +80,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
                         right: "2rem",
                         height: "60%",
                         maxWidth: 400,
-                        // background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                        background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                         boxShadow: `0 0px 2px 0 rgba(${shadowColor}, 0.15)`,
                         borderRadius: "var(--bs-border-radius)",
                         borderWidth: 1,
@@ -109,7 +109,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
                     sx={{
                         display: "flex",
                         alignItems: "center",
-                        // backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
+                        backgroundColor: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
                         borderRadius: "50%",
                         bottom: 16,
                         // For now mimic MUI's default box shadow but change color based on dark mode.
