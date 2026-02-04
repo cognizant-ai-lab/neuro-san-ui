@@ -75,4 +75,4 @@ export const PALETTES = {
     ],
 }
 
-export type PaletteKey = keyof typeof PALETTES
+export type PaletteKey = keyof typeof PALETTES | "brand"
