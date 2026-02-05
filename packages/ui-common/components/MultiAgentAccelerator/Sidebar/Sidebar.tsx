@@ -66,7 +66,7 @@ enum CONNECTION_STATUS {
 export interface SidebarProps {
     readonly customURLCallback: (url: string) => void
     readonly customURLLocalStorage?: string
-    readonly iconSuggestions?: Record<string, string>
+    readonly networkIconSuggestions?: Record<string, string>
     readonly id: string
     readonly isAwaitingLlm: boolean
     readonly networks: readonly AgentInfo[]
@@ -78,7 +78,7 @@ export interface SidebarProps {
 export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
-    iconSuggestions,
+    networkIconSuggestions,
     id,
     isAwaitingLlm,
     networks,
@@ -230,7 +230,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Button>
                 </h2>
                 <RichTreeView
-                    key={Object.keys(iconSuggestions || {}).length} // Force remount when suggestions change
+                    key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
                     slots={{
                         item: AgentNetworkNode as RichTreeViewSlots["item"],
@@ -242,7 +242,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             nodeIndex: index,
                             setSelectedNetwork,
                             shouldDisableTree: isAwaitingLlm,
-                            iconSuggestions,
+                            iconSuggestions: networkIconSuggestions,
                         } as unknown,
                     }}
                 />

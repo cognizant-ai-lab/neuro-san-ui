@@ -64,7 +64,7 @@ interface ActiveThoughtBubble extends AgentConversationBase {
 
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
-    readonly agentIconSuggestions: Record<string, string>
+    readonly agentIconSuggestions?: Record<string, string>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
@@ -331,7 +331,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = brandPalette ?? PALETTES[paletteKey]
+    const palette = paletteKey === "brand" ? brandPalette : PALETTES[paletteKey]
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network

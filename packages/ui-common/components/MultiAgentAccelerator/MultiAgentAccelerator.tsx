@@ -63,7 +63,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
-    const [iconSuggestions, setIconSuggestions] = useState<Record<string, string>>({})
+    const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
     const [agentIconSuggestions, setAgentIconSuggestions] = useState<Record<string, string>>({})
@@ -135,16 +135,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     useEffect(() => {
         ;(async () => {
             if (!(networks?.length > 0)) {
-                setIconSuggestions({})
+                setNetworkIconSuggestions({})
                 return
             }
 
             try {
                 const suggestions = await getNetworkIconSuggestions(networks)
-                setIconSuggestions(suggestions)
+                setNetworkIconSuggestions(suggestions)
             } catch (e) {
                 console.warn("Unable to get network icon suggestions from LLM:", e)
-                setIconSuggestions({})
+                setNetworkIconSuggestions({})
             }
         })()
     }, [networks])
@@ -271,7 +271,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
-                        iconSuggestions={iconSuggestions}
+                        networkIconSuggestions={networkIconSuggestions}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)

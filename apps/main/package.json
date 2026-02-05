@@ -12,6 +12,8 @@
         "@cognizant-ai-lab/ui-common": "workspace:*",
         "@emotion/react": "11.13.3",
         "@emotion/styled": "11.13.0",
+        "@langchain/core": "1.1.17",
+        "@langchain/openai": "1.2.5",
         "@mui/icons-material": "7.3.1",
         "@mui/material": "7.3.1",
         "@mui/x-tree-view": "8.22.0",

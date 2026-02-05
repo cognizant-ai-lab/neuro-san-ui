@@ -37,7 +37,7 @@ export interface AgentNodeProps {
     readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
-    readonly iconSuggestion?: string
+    readonly agentIconSuggestion?: string
 }
 
 // Node dimensions
@@ -66,11 +66,11 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Color palette for depth/heatmap coloring
     const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = brandPalette ?? PALETTES[paletteKey]
+    const palette = paletteKey === "brand" ? brandPalette : PALETTES[paletteKey]
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, getConversations, iconSuggestion, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, getConversations, agentIconSuggestion, isAwaitingLlm} = data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -125,8 +125,8 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
 
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
-        if (iconSuggestion && MuiIcons[iconSuggestion as keyof typeof MuiIcons]) {
-            const IconComponent = MuiIcons[iconSuggestion as keyof typeof MuiIcons]
+        if (agentIconSuggestion && MuiIcons[agentIconSuggestion as keyof typeof MuiIcons]) {
+            const IconComponent = MuiIcons[agentIconSuggestion as keyof typeof MuiIcons]
             return <IconComponent sx={{fontSize: AGENT_ICON_SIZE}} />
         } else {
             // return blank icon

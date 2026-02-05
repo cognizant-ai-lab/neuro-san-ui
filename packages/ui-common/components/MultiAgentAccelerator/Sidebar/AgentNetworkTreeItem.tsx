@@ -1,3 +1,5 @@
+// Need to disable restricted imports because we want to import all MUI icons dynamically
+// eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Box from "@mui/material/Box"
@@ -39,7 +41,7 @@ interface AgentNetworkNodeProps extends TreeItemProps {
     readonly nodeIndex: Map<string, AgentInfo>
     setSelectedNetwork: (network: string) => void
     shouldDisableTree: boolean
-    iconSuggestions: Record<string, string>
+    networkIconSuggestions: Record<string, string>
 }
 
 /**
@@ -55,7 +57,7 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     nodeIndex,
     setSelectedNetwork,
     shouldDisableTree,
-    iconSuggestions,
+    networkIconSuggestions,
 }) => {
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
@@ -89,7 +91,7 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     // retrieve path for this network
 
     const path = isChild ? agentNode?.agent_name : null
-    const suggestedIconName = isChild ? iconSuggestions?.[itemId] : null
+    const suggestedIconName = isChild ? networkIconSuggestions?.[itemId] : null
 
     let muiIconElement = null
     if (suggestedIconName && MuiIcons[suggestedIconName as keyof typeof MuiIcons]) {

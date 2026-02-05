@@ -32,7 +32,7 @@ describe("Environment API handler", () => {
         process.env = originalEnv
     })
 
-    it("returns environment variables when all are set", async () => {
+    it("returns environment variables when all are set", () => {
         // Set up environment variables
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
         process.env["AUTH0_CLIENT_ID"] = "test-client-id"
@@ -41,7 +41,7 @@ describe("Environment API handler", () => {
 
         const {req, res} = createMocks()
 
-        await handler(req, res)
+        handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
         expect(res._getHeaders()["content-type"]).toBe("application/json")
@@ -53,7 +53,7 @@ describe("Environment API handler", () => {
         })
     })
 
-    it("returns undefined for unset environment variables", async () => {
+    it("returns undefined for unset environment variables", () => {
         // Only set some environment variables
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
         // Leave others undefined
@@ -63,7 +63,7 @@ describe("Environment API handler", () => {
 
         const {req, res} = createMocks()
 
-        await handler(req, res)
+        handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
         expect(res._getJSONData()).toEqual({
@@ -74,7 +74,7 @@ describe("Environment API handler", () => {
         })
     })
 
-    it("handles empty environment variables", async () => {
+    it("handles empty environment variables", () => {
         // Set empty string values
         process.env["NEURO_SAN_SERVER_URL"] = ""
         process.env["AUTH0_CLIENT_ID"] = ""
@@ -83,7 +83,7 @@ describe("Environment API handler", () => {
 
         const {req, res} = createMocks()
 
-        await handler(req, res)
+        handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
         expect(res._getJSONData()).toEqual({
@@ -94,7 +94,7 @@ describe("Environment API handler", () => {
         })
     })
 
-    it("ignores request method and body", async () => {
+    it("ignores request method and body", () => {
         // Set up environment variables
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
 
@@ -103,7 +103,7 @@ describe("Environment API handler", () => {
             body: {someData: "test"},
         })
 
-        await handler(req, res)
+        handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
         expect(res._getJSONData()).toEqual({
