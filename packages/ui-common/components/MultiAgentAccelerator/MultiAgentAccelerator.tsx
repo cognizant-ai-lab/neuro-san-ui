@@ -117,11 +117,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         async function getNetworks() {
             try {
                 const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
-                const iconSuggestionsTmp = await getNetworkIconSuggestions(networksTmp)
-
-                // Batch state updates together to prevent stale render
                 setNetworks(networksTmp)
-                setIconSuggestions(iconSuggestionsTmp)
                 closeNotification()
             } catch (e) {
                 sendNotification(
@@ -132,12 +128,30 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 )
                 setNetworks([])
                 setSelectedNetwork(null)
-                setIconSuggestions({})
             }
         }
 
         void getNetworks()
     }, [neuroSanURL])
+
+    useEffect(() => {
+        async function getSuggestions() {
+            if (!(networks?.length > 0)) {
+                setIconSuggestions({})
+                return
+            }
+
+            try {
+                const suggestions = await getNetworkIconSuggestions(networks)
+                setIconSuggestions(suggestions)
+            } catch (e) {
+                console.warn("Unable to get network icon suggestions from LLM:", e)
+                setIconSuggestions({})
+            }
+        }
+
+        void getSuggestions()
+    }, [networks])
 
     useEffect(() => {
         ;(async () => {
