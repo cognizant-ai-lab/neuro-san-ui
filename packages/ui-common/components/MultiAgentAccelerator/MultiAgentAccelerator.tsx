@@ -18,7 +18,7 @@ import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
-import {JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
+import {FC, JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
@@ -48,10 +48,10 @@ interface MultiAgentAcceleratorProps {
  * @param darkMode Whether dark mode is enabled.
  * @param userInfo Information about the current user, including userName and userImage.
  */
-export const MultiAgentAccelerator = ({
+export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     backendNeuroSanApiUrl,
     userInfo,
-}: MultiAgentAcceleratorProps): ReactJSX.Element => {
+}): ReactJSX.Element => {
     // Animation time for the left and right panels to slide in or out when launching the animation
     const GROW_ANIMATION_TIME_MS = 800
 
