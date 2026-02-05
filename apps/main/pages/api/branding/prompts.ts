@@ -1,22 +1,7 @@
+/* eslint-disable max-len */
 import {ChatPromptTemplate} from "@langchain/core/prompts"
-import {ChatOpenAI} from "@langchain/openai"
-import cors from "cors"
-import express from "express"
 
-const app = express()
-const PORT = process.env["PORT"] || 3001
-
-app.use(cors())
-app.use(express.json())
-
-// Initialize LangChain LLM
-const llm = new ChatOpenAI({
-    model: "gpt-4o",
-    temperature: 0.7,
-    openAIApiKey: process.env["OPENAI_API_KEY"],
-})
-
-const iconsForNetworksPrompt = ChatPromptTemplate.fromTemplate(`
+export const SUGGEST_NETWORK_ICONS_PROMPT = ChatPromptTemplate.fromTemplate(`
 You are given a list of agent networks and associated information for each network including network name, 
 description and any associated tags assigned by the network designer. These are agentic AI networks.
 Example format:
@@ -47,7 +32,7 @@ Give your answer as pure JSON, no markdown, no extra formatting, no commentary. 
 }}
 `)
 
-const iconsForAgentsPrompt = ChatPromptTemplate.fromTemplate(`
+export const SUGGEST_AGENT_ICONS_PROMPT = ChatPromptTemplate.fromTemplate(`
 You are given a list of agents and associated connectivity information for each agent including agent name aka "origin",
 and for each agent, a list of other agents or tools that it can connect to. These are agentic AI agents. You are also
 provided with metadata about the overall network the agents belong to.
@@ -77,8 +62,7 @@ Metadata:
 {metadata}
 `)
 
-/* eslint-disable max-len */
-const brandingColorsPromps = ChatPromptTemplate.fromTemplate(`
+export const SUGGEST_BRANDING_COLORS_PROMPT = ChatPromptTemplate.fromTemplate(`
 Given a company or organization name, suggest colors in hex format that match the company's branding.
 Return your response as JSON in the following format with no markdown, text or other comments:
 {{
@@ -105,62 +89,3 @@ company branding.
 
 Company: {company}
 `)
-/* eslint-enable max-len */
-
-app.get("/api/health", (_req, res) => {
-    res.json({status: "ok"})
-})
-
-app.get("/api/branding", async (req, res) => {
-    console.debug("Received branding request", req.body)
-    try {
-        const company = req.query["company"] as string
-
-        const formattedPrompt = await brandingColorsPromps.formatMessages({company})
-        const response = await llm.invoke(formattedPrompt)
-
-        res.json(response.content)
-    } catch (error) {
-        console.error("Error:", error)
-        res.status(500).json({error: "Failed to get LLM response"})
-    }
-})
-
-app.post("/api/suggestIconsForNetworks", async (req, res) => {
-    console.debug("Received suggestIconsForNetworks request", req.body)
-    try {
-        const variables = {
-            network_list: typeof req.body === "object" ? JSON.stringify(req.body, null, 2) : req.body,
-        }
-
-        const formattedPrompt = await iconsForNetworksPrompt.formatMessages(variables)
-        const response = await llm.invoke(formattedPrompt)
-
-        res.json(response.content)
-    } catch (error) {
-        console.error("Error:", error)
-        res.status(500).json({error: "Failed to get LLM response"})
-    }
-})
-
-app.post("/api/suggestIconsForAgents", async (req, res) => {
-    console.debug("Received suggestIconsForAgents request", req.body)
-    try {
-        const variables = {
-            connectivity_info: req.body.connectivity_info,
-            metadata: req.body.metadata,
-        }
-
-        const formattedPrompt = await iconsForAgentsPrompt.formatMessages(variables)
-        const response = await llm.invoke(formattedPrompt)
-
-        res.json(response.content)
-    } catch (error) {
-        console.error("Error:", error)
-        res.status(500).json({error: "Failed to get LLM response"})
-    }
-})
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-})
