@@ -217,12 +217,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                         variant="subtitle1"
                         sx={{marginBottom: 1, marginTop: 2, fontWeight: 600}}
                     >
-                        Network display
+                        Branding
                     </Typography>
                     <Divider sx={{marginBottom: 2}} />
                     <Box sx={{display: "flex", alignItems: "center"}}>
                         <Box sx={{display: "flex", alignItems: "center", gap: 2, marginBottom: "1rem", width: "100%"}}>
-                            <FormLabel>Branding:</FormLabel>
+                            <FormLabel>Customer:</FormLabel>
                             <TextField
                                 aria-label="branding-input"
                                 onChange={(e) => setCustomerInput(e.target.value)}
@@ -256,6 +256,13 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                             <FadingCheckmark show={brandingCheckmark.show} />
                         </Box>
                     </Box>
+                    <Typography
+                        variant="subtitle1"
+                        sx={{marginBottom: 1, marginTop: 2, fontWeight: 600}}
+                    >
+                        Network display
+                    </Typography>
+                    <Divider sx={{marginBottom: 2}} />
                     <Box sx={{display: "flex", alignItems: "center"}}>
                         <FormLabel>Palette (heatmap and depth):</FormLabel>
                         <Tooltip title={customer ? "Palette is locked when branding is applied" : ""}>
