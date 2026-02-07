@@ -2,13 +2,19 @@
  * Next.js API route to provide branding colors using LangChain and OpenAI.
  */
 
-import {SUGGEST_BRANDING_COLORS_PROMPT} from "./prompts"
-import {createLLMHandler} from "../Common/LlmHandler"
+import {NextApiRequest, NextApiResponse} from "next"
 
-export default createLLMHandler({
-    allowedMethod: "GET",
-    promptTemplate: SUGGEST_BRANDING_COLORS_PROMPT,
-    extractVariables: (req) => ({
-        company: req.query["company"] as string,
-    }),
-})
+import {SUGGEST_BRANDING_COLORS_PROMPT} from "./prompts"
+import {handleLLMRequest} from "../Common/LlmHandler"
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+    return handleLLMRequest(req, res, {
+        allowedMethod: "GET",
+        promptTemplate: SUGGEST_BRANDING_COLORS_PROMPT,
+        extractVariables: (request) => ({
+            company: request.query["company"] as string,
+        }),
+    })
+}
+
+export default handler

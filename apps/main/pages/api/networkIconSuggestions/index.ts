@@ -2,13 +2,19 @@
  * Next.js API route to suggest icons for networks using LangChain and OpenAI.
  */
 
-import {SUGGEST_NETWORK_ICONS_PROMPT} from "./prompts"
-import {createLLMHandler} from "../Common/LlmHandler"
+import {NextApiRequest, NextApiResponse} from "next"
 
-export default createLLMHandler({
-    allowedMethod: "POST",
-    promptTemplate: SUGGEST_NETWORK_ICONS_PROMPT,
-    extractVariables: (req) => ({
-        network_list: typeof req.body === "object" ? JSON.stringify(req.body, null, 2) : req.body,
-    }),
-})
+import {SUGGEST_NETWORK_ICONS_PROMPT} from "./prompts"
+import {handleLLMRequest} from "../Common/LlmHandler"
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+    return handleLLMRequest(req, res, {
+        allowedMethod: "POST",
+        promptTemplate: SUGGEST_NETWORK_ICONS_PROMPT,
+        extractVariables: (request) => ({
+            network_list: typeof request.body === "object" ? JSON.stringify(request.body, null, 2) : request.body,
+        }),
+    })
+}
+
+export default handler
