@@ -377,16 +377,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       agentIconSuggestions
                   ),
         [
-            layout,
-            coloringOption,
-            agentCounts,
-            mergedAgentsInNetwork,
-            currentConversations,
             activeThoughtBubbles,
-            thoughtBubbleEdges,
-            isAwaitingLlm,
-            showThoughtBubbles,
+            agentCounts,
             agentIconSuggestions,
+            coloringOption,
+            currentConversations,
+            isAwaitingLlm,
+            layout,
+            mergedAgentsInNetwork,
+            showThoughtBubbles,
+            thoughtBubbleEdges,
         ]
     )
 

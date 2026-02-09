@@ -91,11 +91,11 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     // retrieve path for this network
 
     const path = isChild ? agentNode?.agent_name : null
-    const suggestedIconName = isChild ? networkIconSuggestions?.[itemId] : null
+    const iconNameSuggestion = isChild ? networkIconSuggestions?.[itemId] : null
 
     let muiIconElement = null
-    if (suggestedIconName && MuiIcons[suggestedIconName as keyof typeof MuiIcons]) {
-        const IconComponent = MuiIcons[suggestedIconName as keyof typeof MuiIcons]
+    if (iconNameSuggestion && MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
+        const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
         muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
     }
 

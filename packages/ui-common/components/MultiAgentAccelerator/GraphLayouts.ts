@@ -29,6 +29,14 @@ import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Uti
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
+/**
+ * Result of the layout algorithms, containing the nodes and edges with their computed positions and properties.
+ */
+export type LayoutResult = {
+    nodes: RFNode<AgentNodeProps>[]
+    edges: Edge<EdgeProps>[]
+}
+
 export const addThoughtBubbleEdge = (
     thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
     conversationId: string,
@@ -147,10 +155,7 @@ export const layoutRadial = (
     isAwaitingLlm: boolean,
     thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
     agentIconSuggestions: Record<string, string> = {}
-): {
-    nodes: RFNode<AgentNodeProps>[]
-    edges: Edge<EdgeProps>[]
-} => {
+): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
 
@@ -290,10 +295,7 @@ export const layoutLinear = (
     isAwaitingLlm: boolean,
     thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
     agentIconSuggestions: Record<string, string> = {}
-): {
-    nodes: RFNode<AgentNodeProps>[]
-    edges: Edge<EdgeProps>[]
-} => {
+): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
 
