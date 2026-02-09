@@ -8,7 +8,6 @@ import httpStatus from "http-status"
 import type {NextApiRequest, NextApiResponse} from "next"
 
 interface LLMHandlerOptions {
-    readonly allowedMethod: "GET" | "POST"
     readonly promptTemplate: ChatPromptTemplate
     readonly extractVariables: (req: NextApiRequest) => Record<string, unknown>
 }
@@ -23,9 +22,9 @@ interface LLMHandlerOptions {
 export const handleLLMRequest = async (
     req: NextApiRequest,
     res: NextApiResponse,
-    {allowedMethod, promptTemplate, extractVariables}: LLMHandlerOptions
+    {promptTemplate, extractVariables}: LLMHandlerOptions
 ): Promise<void> => {
-    if (req.method !== allowedMethod) {
+    if (req.method !== "POST") {
         res.status(httpStatus.METHOD_NOT_ALLOWED).json({error: "Method not allowed"})
         return
     }

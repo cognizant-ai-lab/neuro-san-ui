@@ -3,6 +3,7 @@ import {UserEvent} from "@testing-library/user-event"
 import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
 import {DEFAULT_SETTINGS, useSettingsStore} from "../../../state/Settings"
@@ -14,9 +15,16 @@ describe("SettingsDialog", () => {
     withStrictMocks()
 
     let user: UserEvent
+    let originalFetch: typeof global.fetch
+
     beforeEach(() => {
         user = userEvent.setup()
         useSettingsStore.getState().resetSettings()
+        originalFetch = global.fetch
+    })
+
+    afterEach(() => {
+        global.fetch = originalFetch
     })
 
     it("renders the SettingsDialog with default props", async () => {
@@ -205,5 +213,61 @@ describe("SettingsDialog", () => {
         const settingsAfter = useSettingsStore.getState().settings
         expect(settingsAfter.appearance.plasmaColor).toBe(plasmaColor)
         expect(settingsAfter.appearance.agentNodeColor).toBe(agentNodeColor)
+    })
+
+    it("Applies customer branding when selected", async () => {
+        // Set some non-default values first
+        useSettingsStore.getState().updateSettings({
+            branding: {
+                customer: null,
+            },
+        })
+
+        const palette = Array.from({length: 10}, (_, i) => `#${i.toString(16).padStart(6, "0")}`)
+        const plasma = "#112233"
+        const nodeColor = "#445566"
+        const primary = "#778899"
+        const secondary = "#AA0011"
+        const background = "#AA0022"
+
+        global.fetch = mockFetch(
+            {
+                plasma,
+                nodeColor,
+                primary,
+                secondary,
+                background,
+                rangePalette: palette,
+            },
+            true
+        )
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        const customerInput = screen.getByPlaceholderText(/Company or organization name/u)
+        const customerName = "Acme"
+        await user.type(customerInput, customerName)
+
+        // Click "Apply"
+        const applyButton = screen.getByRole("button", {name: /Apply/u})
+        await user.click(applyButton)
+
+        // Check that the store was updated with the new customer name
+        const brandingSettings = useSettingsStore.getState().settings.branding
+        const appearanceSettings = useSettingsStore.getState().settings.appearance
+
+        expect(brandingSettings.customer).toBe(customerName)
+        expect(appearanceSettings.rangePalette).toBe("brand")
+        expect(appearanceSettings.plasmaColor).toBe(plasma)
+        expect(appearanceSettings.agentNodeColor).toBe(nodeColor)
+        expect(brandingSettings.primary).toBe(primary)
+        expect(brandingSettings.secondary).toBe(secondary)
+        expect(brandingSettings.background).toBe(background)
+        expect(brandingSettings.rangePalette).toEqual(palette)
     })
 })

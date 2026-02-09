@@ -17,7 +17,7 @@ limitations under the License.
 import {ChatPromptTemplate} from "@langchain/core/prompts"
 import {ChatOpenAI} from "@langchain/openai"
 import httpStatus from "http-status"
-import {createMocks, RequestMethod} from "node-mocks-http"
+import {createMocks} from "node-mocks-http"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"
@@ -35,15 +35,14 @@ describe("LlmHandler", () => {
         }))
     })
 
-    test.each(["GET", "POST"] as RequestMethod[])("Handles a valid %s request", async (method) => {
+    it("Handles a valid request", async () => {
         const {req, res} = createMocks({
-            method,
+            method: "POST",
         })
 
         process.env["OPENAI_API_KEY"] = "test-api-key"
 
         await handleLLMRequest(req, res, {
-            allowedMethod: method as "GET" | "POST",
             extractVariables(): Record<string, unknown> {
                 return undefined
             },
@@ -57,7 +56,7 @@ describe("LlmHandler", () => {
 
     it("Returns an error if OpenAPI key is missing", async () => {
         const {req, res} = createMocks({
-            method: "GET",
+            method: "POST",
         })
 
         delete process.env["OPENAI_API_KEY"]
@@ -65,7 +64,6 @@ describe("LlmHandler", () => {
         const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
 
         await handleLLMRequest(req, res, {
-            allowedMethod: "GET",
             extractVariables(): Record<string, unknown> {
                 return undefined
             },
@@ -79,11 +77,10 @@ describe("LlmHandler", () => {
 
     it("Returns an error if method is not allowed", async () => {
         const {req, res} = createMocks({
-            method: "GET",
+            method: "PATCH",
         })
 
         await handleLLMRequest(req, res, {
-            allowedMethod: "POST",
             extractVariables(): Record<string, unknown> {
                 return undefined
             },
@@ -96,7 +93,7 @@ describe("LlmHandler", () => {
 
     it("Returns an error if exception is thrown", async () => {
         const {req, res} = createMocks({
-            method: "GET",
+            method: "POST",
         })
 
         process.env["OPENAI_API_KEY"] = "test-api-key"
@@ -108,7 +105,6 @@ describe("LlmHandler", () => {
         }))
 
         await handleLLMRequest(req, res, {
-            allowedMethod: "GET",
             extractVariables(): Record<string, unknown> {
                 return undefined
             },

@@ -9,10 +9,9 @@ import {handleLLMRequest} from "../Common/LlmHandler"
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return handleLLMRequest(req, res, {
-        allowedMethod: "POST",
         promptTemplate: SUGGEST_NETWORK_ICONS_PROMPT,
         extractVariables: (request) => ({
-            network_list: typeof request.body === "object" ? JSON.stringify(request.body, null, 2) : request.body,
+            network_list: request.body,
         }),
     })
 }

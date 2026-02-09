@@ -9,10 +9,9 @@ import {handleLLMRequest} from "../Common/LlmHandler"
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return handleLLMRequest(req, res, {
-        allowedMethod: "GET",
         promptTemplate: SUGGEST_BRANDING_COLORS_PROMPT,
         extractVariables: (request) => ({
-            company: request.query["company"] as string,
+            company: request.body,
         }),
     })
 }

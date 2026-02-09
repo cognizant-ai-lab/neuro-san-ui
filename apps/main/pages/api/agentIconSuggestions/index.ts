@@ -9,7 +9,6 @@ import {handleLLMRequest} from "../Common/LlmHandler"
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return handleLLMRequest(req, res, {
-        allowedMethod: "POST",
         promptTemplate: SUGGEST_AGENT_ICONS_PROMPT,
         extractVariables: (request) => ({
             connectivity_info: request.body.connectivity_info,
