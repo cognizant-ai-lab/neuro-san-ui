@@ -46,12 +46,10 @@ import {getZIndex} from "../../../utils/zIndexLayers"
 
 // #region: Styled Components
 
-const PrimaryButton = styled(Button, {
-    shouldForwardProp: (prop) => prop !== "darkMode",
-})<{darkMode?: boolean}>(() => ({
+const PrimaryButton = styled(Button)({
     marginLeft: "0.5rem",
     marginTop: "2px",
-}))
+})
 
 // #endregion: Styled Components
 
@@ -309,7 +307,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-test-btn"
                     onClick={handleTestConnection}
                     variant="contained"
-                    darkMode={darkMode}
                 >
                     Test
                 </PrimaryButton>
@@ -318,7 +315,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-save-btn"
                     onClick={handleSaveSettings}
                     variant="contained"
-                    darkMode={darkMode}
                 >
                     Save
                 </PrimaryButton>
@@ -326,7 +322,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-cancel-btn"
                     onClick={() => handleSettingsClose(true)}
                     variant="contained"
-                    darkMode={darkMode}
                 >
                     Cancel
                 </PrimaryButton>
