@@ -174,7 +174,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
         <ThemeProvider
             theme={createTheme({
                 palette: {
-                    mode: paletteMode ? "dark" : "light",
+                    mode: paletteMode,
                 },
             })}
         >
