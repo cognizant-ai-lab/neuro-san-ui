@@ -32,14 +32,14 @@ This package requires the following peer dependencies:
 
 ```json
 {
-  "@emotion/react": "^11.13.3",
-  "@emotion/styled": "^11.13.0",
-  "@mui/icons-material": "^7.3.1",
-  "@mui/material": "^7.3.1",
-  "@mui/x-tree-view": "^8.22.0",
-  "react": "^18.2.0",
-  "react-dom": "^18.2.0",
-  "typescript": "^5.9.2"
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/x-tree-view": "^8.22.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.9.2"
 }
 ```
 
@@ -87,14 +87,7 @@ ui-common/
 ### Basic Import
 
 ```typescript
-import {
-  ChatCommon,
-  Navbar,
-  MUIDialog,
-  LoadingSpinner,
-  useEnvironment,
-  useUserInfo
-} from '@cognizant-ai-lab/ui-common'
+import {ChatCommon, Navbar, MUIDialog, LoadingSpinner, useEnvironment, useUserInfo} from "@cognizant-ai-lab/ui-common"
 ```
 
 ### Using Components
@@ -102,66 +95,63 @@ import {
 #### Navigation Bar
 
 ```tsx
-import { Navbar } from '@cognizant-ai-lab/ui-common'
+import {Navbar} from "@cognizant-ai-lab/ui-common"
 
 function App() {
-  return (
-    <Navbar
-      id="main-navbar"
-      logo="My App"
-      query={{}}
-      pathname="/"
-      userInfo={{ name: "John Doe", image: "/avatar.jpg" }}
-      authenticationType="Auth0"
-      signOut={() => console.log('Sign out')}
-      supportEmailAddress="support@example.com"
-    />
-  )
+    return (
+        <Navbar
+            id="main-navbar"
+            logo="My App"
+            query={{}}
+            pathname="/"
+            userInfo={{name: "John Doe", image: "/avatar.jpg"}}
+            authenticationType="Auth0"
+            signOut={() => console.log("Sign out")}
+            supportEmailAddress="support@example.com"
+        />
+    )
 }
 ```
 
 #### Chat Interface
 
 ```tsx
-import { ChatCommon } from '@cognizant-ai-lab/ui-common'
-import { AIMessage, HumanMessage } from '@langchain/core/messages'
+import {ChatCommon} from "@cognizant-ai-lab/ui-common"
+import {AIMessage, HumanMessage} from "@langchain/core/messages"
 
 function ChatInterface() {
-  const [messages, setMessages] = useState([
-    new HumanMessage("Hello!"),
-    new AIMessage("Hi! How can I help you?")
-  ])
+    const [messages, setMessages] = useState([new HumanMessage("Hello!"), new AIMessage("Hi! How can I help you?")])
 
-  return (
-    <ChatCommon
-      agent="my-agent"
-      chatHistory={messages}
-      loading={false}
-      onClearHistory={() => setMessages([])}
-      onSendMessage={(msg) => console.log(msg)}
-    />
-  )
+    return (
+        <ChatCommon
+            agent="my-agent"
+            chatHistory={messages}
+            loading={false}
+            onClearHistory={() => setMessages([])}
+            onSendMessage={(msg) => console.log(msg)}
+        />
+    )
 }
 ```
 
 #### Dialog
 
 ```tsx
-import { MUIDialog } from '@cognizant-ai-lab/ui-common'
+import {MUIDialog} from "@cognizant-ai-lab/ui-common"
 
 function MyComponent() {
-  const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(false)
 
-  return (
-    <MUIDialog
-      id="my-dialog"
-      isOpen={open}
-      onClose={() => setOpen(false)}
-      title="Dialog Title"
-    >
-      <p>Dialog content goes here</p>
-    </MUIDialog>
-  )
+    return (
+        <MUIDialog
+            id="my-dialog"
+            isOpen={open}
+            onClose={() => setOpen(false)}
+            title="Dialog Title"
+        >
+            <p>Dialog content goes here</p>
+        </MUIDialog>
+    )
 }
 ```
 
@@ -188,59 +178,59 @@ function MyComponent() {
 #### Test Agent Connection
 
 ```typescript
-import { testConnection } from '@cognizant-ai-lab/ui-common'
+import {testConnection} from "@cognizant-ai-lab/ui-common"
 
 async function checkServer() {
-  const result = await testConnection('https://api.example.com')
-  
-  if (result.success) {
-    console.log(`Connected! Version: ${result.version}`)
-  } else {
-    console.error(`Connection failed: ${result.status}`)
-  }
+    const result = await testConnection("https://api.example.com")
+
+    if (result.success) {
+        console.log(`Connected! Version: ${result.version}`)
+    } else {
+        console.error(`Connection failed: ${result.status}`)
+    }
 }
 ```
 
 #### Send LLM Request
 
 ```typescript
-import { sendLlmRequest } from '@cognizant-ai-lab/ui-common'
-import { HumanMessage } from '@langchain/core/messages'
+import {sendLlmRequest} from "@cognizant-ai-lab/ui-common"
+import {HumanMessage} from "@langchain/core/messages"
 
 async function chatWithAgent() {
-  const controller = new AbortController()
-  
-  await sendLlmRequest(
-    (token) => console.log('Received:', token),
-    controller.signal,
-    '/api/chat',
-    { temperature: 0.7 },
-    'What is the weather?',
-    [new HumanMessage("Hello")],
-    'user-123'
-  )
+    const controller = new AbortController()
+
+    await sendLlmRequest(
+        (token) => console.log("Received:", token),
+        controller.signal,
+        "/api/chat",
+        {temperature: 0.7},
+        "What is the weather?",
+        [new HumanMessage("Hello")],
+        "user-123"
+    )
 }
 ```
 
 ### Multi-Agent Flow Visualization
 
 ```tsx
-import { MultiAgentAccelerator } from '@cognizant-ai-lab/ui-common'
+import {MultiAgentAccelerator} from "@cognizant-ai-lab/ui-common"
 
 function AgentFlowPage() {
-  return (
-    <MultiAgentAccelerator
-      agentName="orchestrator"
-      conversationId="conv-123"
-    />
-  )
+    return (
+        <MultiAgentAccelerator
+            agentName="orchestrator"
+            conversationId="conv-123"
+        />
+    )
 }
 ```
 
 ### Using Utilities
 
 ```typescript
-import { 
+import {
   useLocalStorage,
   formatTitle,
   getZIndexLayer
@@ -248,10 +238,10 @@ import {
 
 function MyComponent() {
   const [value, setValue] = useLocalStorage('myKey', 'defaultValue')
-  
+
   const title = formatTitle('hello world') // "Hello World"
   const zIndex = getZIndexLayer('modal') // Returns appropriate z-index
-  
+
   return <div>{value}</div>
 }
 ```
@@ -280,6 +270,7 @@ function ThemedComponent() {
 ## Available Components
 
 ### AgentChat
+
 - `ChatCommon` - Main chat interface component
 - `ControlButtons` - Chat control buttons (clear, scroll, etc.)
 - `LlmChatButton` - Button to initiate LLM chat
@@ -287,6 +278,7 @@ function ThemedComponent() {
 - `UserQueryDisplay` - Display user queries
 
 ### Common
+
 - `Navbar` - Application navigation bar
 - `MUIDialog` - Custom Material-UI dialog wrapper
 - `MUIAccordion` - Custom accordion component
@@ -298,48 +290,56 @@ function ThemedComponent() {
 - `Snackbar` - Toast notifications
 
 ### Authentication
+
 - `Auth` - Authentication wrapper component
 
 ### Multi-Agent Accelerator
+
 - `MultiAgentAccelerator` - Main multi-agent flow component
 - `AgentFlow` - Agent flow visualization
 - `Sidebar` - Agent flow sidebar
 
 ### Error Handling
+
 - `ErrorBoundary` - React error boundary component
 
 ## API Controllers
 
 ### Agent Controller
+
 - `testConnection(url)` - Test connection to Neuro-san server
 - `getAgentInfo(agent, userId)` - Get agent information
 - `getChatHistory(agent, conversationId, userId)` - Retrieve chat history
 - `sendChatMessage(...)` - Send chat message to agent
 
 ### LLM Controller
+
 - `sendLlmRequest(...)` - Send request to LLM with streaming support
 
 ## State Stores
 
 ### Environment Store
+
 Manages environment configuration (server URLs, settings)
 
 ```typescript
-const { environment, setEnvironment } = useEnvironment()
+const {environment, setEnvironment} = useEnvironment()
 ```
 
 ### UserInfo Store
+
 Manages user information and authentication state
 
 ```typescript
-const { userInfo, setUserInfo } = useUserInfo()
+const {userInfo, setUserInfo} = useUserInfo()
 ```
 
 ### Settings Store
+
 Manages user preferences including appearance settings
 
 ```typescript
-const { settings, setSettings } = useSettings()
+const {settings, setSettings} = useSettings()
 ```
 
 ## Constants
@@ -347,12 +347,7 @@ const { settings, setSettings } = useSettings()
 Access application constants:
 
 ```typescript
-import { 
-  LOGO,
-  NEURO_SAN_UI_VERSION,
-  DEFAULT_USER_IMAGE,
-  authenticationEnabled
-} from '@cognizant-ai-lab/ui-common/const'
+import {LOGO, NEURO_SAN_UI_VERSION, DEFAULT_USER_IMAGE, authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
 ```
 
 ## TypeScript Support
@@ -401,4 +396,3 @@ Current version: 1.2.4
 ---
 
 For more detailed documentation and examples, visit the [GitHub repository](https://github.com/cognizant-ai-lab/neuro-san-ui).
-
