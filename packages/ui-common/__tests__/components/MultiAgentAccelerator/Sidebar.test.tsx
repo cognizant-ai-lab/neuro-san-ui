@@ -27,6 +27,7 @@ import {
     LIST_NETWORKS_RESPONSE,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
+    TEST_AGENT_MUSIC_NERD,
     TEST_AGENTS_FOLDER,
     TEST_AGENTS_FOLDER_DISPLAY,
     TEST_DEEP_AGENT,
@@ -63,12 +64,19 @@ describe("SideBar", () => {
 
     let user: UserEvent
 
+    // Provide a suggested icon for first network, and an invalid icon name for the second network
+    // to test error handling
+    const networkIconSuggestions = {
+        [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
+    }
+
     const defaultProps: SidebarProps = {
         customURLCallback: jest.fn(),
         id: "test-flow-id",
-        networks: LIST_NETWORKS_RESPONSE,
-        setSelectedNetwork: jest.fn(),
         isAwaitingLlm: false,
+        networks: LIST_NETWORKS_RESPONSE,
+        networkIconSuggestions,
+        setSelectedNetwork: jest.fn(),
     }
 
     /**
@@ -152,6 +160,40 @@ describe("SideBar", () => {
 
         // Check if the tooltip is displayed with the correct URL and version
         await screen.findByLabelText((label) => label.includes(DEFAULT_EXAMPLE_URL) && label.includes(TEST_VERSION))
+    })
+
+    it("Should display suggested network icons correctly", async () => {
+        renderSidebarComponent()
+
+        // click to expand networks
+        const header = screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        const networkElement = screen.getByText(TEST_AGENT_MATH_GUY_DISPLAY)
+
+        // Find the icon within the same parent container as the network text
+        const networkContainer = networkElement.closest('[role="treeitem"]')
+        within(networkContainer as HTMLElement).getByTestId("SettingsIcon")
+    })
+
+    it("Should handle invalid icon suggestions correctly", async () => {
+        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+        renderSidebarComponent({
+            // Override networkIconSuggestions to include an invalid icon name for TEST_AGENT_MUSIC_NERD
+            networkIconSuggestions: {
+                ...networkIconSuggestions,
+                [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: "NonExistentIcon",
+            },
+        })
+
+        // click to expand networks
+        const header = screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        screen.getByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        expect(screen.queryByText("NonExistentIcon")).not.toBeInTheDocument()
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("NonExistentIcon"))
     })
 
     it("Should render the tags when user mouses over the icon", async () => {

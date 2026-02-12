@@ -57,6 +57,21 @@ jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay", () =
     ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
 }))
 
+const NETWORK: ConnectivityInfo[] = [
+    {
+        origin: "agent1",
+        tools: ["agent2", "agent3"],
+    },
+    {
+        origin: "agent2",
+        tools: ["agent3"],
+    },
+    {
+        origin: "agent3",
+        tools: [],
+    },
+]
+
 describe("AgentFlow", () => {
     let user: UserEvent
 
@@ -69,23 +84,8 @@ describe("AgentFlow", () => {
         })
     })
 
-    const network: ConnectivityInfo[] = [
-        {
-            origin: "agent1",
-            tools: ["agent2", "agent3"],
-        },
-        {
-            origin: "agent2",
-            tools: ["agent3"],
-        },
-        {
-            origin: "agent3",
-            tools: [],
-        },
-    ]
-
     const defaultProps: AgentFlowProps = {
-        agentsInNetwork: network,
+        agentsInNetwork: NETWORK,
         id: "test-flow-id",
         currentConversations: [
             {
@@ -114,7 +114,7 @@ describe("AgentFlow", () => {
         const nodes = container.getElementsByClassName("react-flow__node")
         expect(nodes).toHaveLength(3)
 
-        const agentNames = network.map((agent) => agent.origin)
+        const agentNames = NETWORK.map((agent) => agent.origin)
         const nodesArray = Array.from(nodes)
 
         // Make sure each agent node is rendered at least. Structure in react-flow is:
@@ -204,7 +204,7 @@ describe("AgentFlow", () => {
         rerender(
             <ReactFlowProvider>
                 <AgentFlow
-                    agentsInNetwork={network}
+                    agentsInNetwork={NETWORK}
                     id="test-flow-id"
                     currentConversations={[
                         {
@@ -272,7 +272,7 @@ describe("AgentFlow", () => {
 
     it("Should handle a Frontman-only network", async () => {
         const {container} = renderAgentFlowComponent({
-            agentsInNetwork: [network[2]],
+            agentsInNetwork: [NETWORK[2]],
             currentConversations: [
                 {
                     id: "test-conv-frontman",
@@ -309,7 +309,7 @@ describe("AgentFlow", () => {
         rerender(
             <ReactFlowProvider>
                 <AgentFlow
-                    agentsInNetwork={[network[2]]}
+                    agentsInNetwork={[NETWORK[2]]}
                     id="test-flow-id"
                     currentConversations={[
                         {

@@ -27,23 +27,42 @@ import {authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
  * exit with an error message.
  */
-export const REQUIRED_ENV_VARS = [
-    "AUTH0_CLIENT_ID",
-    "AUTH0_CLIENT_SECRET",
-    "AUTH0_DOMAIN",
-    "AUTH0_ISSUER",
-    "NEURO_SAN_SERVER_URL",
-    "SUPPORT_EMAIL_ADDRESS",
-]
+export const REQUIRED_ENV_VARS = ["NEURO_SAN_SERVER_URL", "SUPPORT_EMAIL_ADDRESS"]
+
+export const REQUIRED_FOR_AUTH_ENV_VARS = ["AUTH0_CLIENT_ID", "AUTH0_CLIENT_SECRET", "AUTH0_DOMAIN", "AUTH0_ISSUER"]
+
+/**
+ * List of environment variables that are optional. If any of these are not set, the app will log a warning but will
+ * continue to run. These are typically used for optional features that have a fallback if the env var is not set.
+ */
+export const OPTIONAL_ENV_VARS = ["NEXT_PUBLIC_LOGO_DEV_TOKEN", "OPENAI_API_KEY"]
 
 export function register() {
-    if (authenticationEnabled()) {
-        const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
+    // Always required env vars
+    const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
+    if (missingEnvVars.length > 0) {
+        throw new Error(
+            `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
+        )
+    }
 
-        if (missingEnvVars.length > 0) {
+    // Conditionally required env vars
+    if (authenticationEnabled()) {
+        const missingRequiredForAuthEnvVars = REQUIRED_FOR_AUTH_ENV_VARS.filter((envVar) => !process.env[envVar])
+        if (missingRequiredForAuthEnvVars.length > 0) {
             throw new Error(
-                `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
+                "Error: The following environment variable(s) are required for authentication " +
+                    `but are empty or undefined:\n${missingRequiredForAuthEnvVars.join("\n")}`
             )
         }
+    }
+
+    // Optional env vars
+    const missingOptionalEnvVars = OPTIONAL_ENV_VARS.filter((envVar) => !process.env[envVar])
+    if (missingOptionalEnvVars.length > 0) {
+        console.warn(
+            "Warning: The following optional environment variable(s) are empty or undefined. " +
+                `Some features may not work correctly:\n${missingOptionalEnvVars.join("\n")}`
+        )
     }
 }

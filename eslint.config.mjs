@@ -313,6 +313,8 @@ const config = [
             "@typescript-eslint/member-ordering": "off",
             // We like being explicit about types even when "obvious"
             "@typescript-eslint/no-inferrable-types": "off",
+            // These are handy in moderation -- probably should be policed in code reviews.
+            "no-bitwise": "off",
             // Controversial, but it's hard to do JSX without these. Probably should be policed in code reviews.
             "no-nested-ternary": "off",
             // Deprecated rule: see https://eslint.org/docs/latest/rules/no-return-await

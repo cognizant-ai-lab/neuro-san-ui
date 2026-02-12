@@ -29,8 +29,8 @@ type LLMChatGroupConfigBtnProps = {
 
 export const LlmChatButton = styled(Button, {
     shouldForwardProp: (prop) => !["posRight", "posBottom"].includes(String(prop)),
-})<LLMChatGroupConfigBtnProps>(({disabled, posRight, posBottom}) => ({
-    background: "var(--bs-primary) !important",
+})<LLMChatGroupConfigBtnProps>(({theme, disabled, posRight, posBottom}) => ({
+    background: `${theme.palette.primary.main} !important`,
     borderRadius: "var(--bs-border-radius)",
     bottom: posBottom !== undefined ? posBottom : 0,
     cursor: disabled ? "default" : "pointer",

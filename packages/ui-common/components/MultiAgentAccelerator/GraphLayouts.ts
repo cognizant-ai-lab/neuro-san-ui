@@ -29,6 +29,14 @@ import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Uti
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
+/**
+ * Result of the layout algorithms, containing the nodes and edges with their computed positions and properties.
+ */
+export type LayoutResult = {
+    nodes: RFNode<AgentNodeProps>[]
+    edges: Edge<EdgeProps>[]
+}
+
 export const addThoughtBubbleEdge = (
     thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
     conversationId: string,
@@ -145,11 +153,9 @@ export const layoutRadial = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
-): {
-    nodes: RFNode<AgentNodeProps>[]
-    edges: Edge<EdgeProps>[]
-} => {
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    agentIconSuggestions: Record<string, string> = {}
+): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
 
@@ -255,6 +261,7 @@ export const layoutRadial = (
                     // Use current conversations for node highlighting (cleared at end)
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
+                    agentIconSuggestion: agentIconSuggestions?.[nodeId],
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
                 style: {
@@ -286,11 +293,9 @@ export const layoutLinear = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
-): {
-    nodes: RFNode<AgentNodeProps>[]
-    edges: Edge<EdgeProps>[]
-} => {
+    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    agentIconSuggestions: Record<string, string> = {}
+): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge<EdgeProps>[] = []
 
@@ -313,7 +318,8 @@ export const layoutLinear = (
                 // Use current conversations for node highlighting (cleared at end)
                 getConversations: () => currentConversations,
                 isAwaitingLlm,
-                depth: undefined, // Depth will be computed later
+                depth: undefined, // Depth will be computed later,
+                agentIconSuggestion: agentIconSuggestions?.[originOfNode],
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {

@@ -18,12 +18,17 @@ import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
-import {JSX as ReactJSX, useCallback, useEffect, useRef, useState} from "react"
+import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
+import {
+    getAgentIconSuggestions,
+    getAgentNetworks,
+    getConnectivity,
+    getNetworkIconSuggestions,
+} from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -35,7 +40,6 @@ import {closeNotification, NotificationType, sendNotification} from "../Common/n
 interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
-    readonly darkMode: boolean
 }
 
 /**
@@ -44,11 +48,10 @@ interface MultiAgentAcceleratorProps {
  * @param darkMode Whether dark mode is enabled.
  * @param userInfo Information about the current user, including userName and userImage.
  */
-export const MultiAgentAccelerator = ({
+export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     backendNeuroSanApiUrl,
-    darkMode,
     userInfo,
-}: MultiAgentAcceleratorProps): ReactJSX.Element => {
+}): ReactJSX.Element => {
     // Animation time for the left and right panels to slide in or out when launching the animation
     const GROW_ANIMATION_TIME_MS = 800
 
@@ -60,8 +63,10 @@ export const MultiAgentAccelerator = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
+    const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
+    const [agentIconSuggestions, setAgentIconSuggestions] = useState<Record<string, string>>({})
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
@@ -94,6 +99,17 @@ export const MultiAgentAccelerator = ({
         [backendNeuroSanApiUrl, setCustomURLLocalStorage]
     )
 
+    // Memoized key for agent names to trigger icon suggestion updates when the set of agents changes, not just
+    // when sorting/other operations on the agents list
+    const agentNamesKey = useMemo(
+        () =>
+            agentsInNetwork
+                .map((agent) => agent.origin)
+                .sort()
+                .join(","),
+        [agentsInNetwork]
+    )
+
     const resetState = useCallback(() => {
         setThoughtBubbleEdges(new Map())
         setIsStreaming(false)
@@ -109,7 +125,7 @@ export const MultiAgentAccelerator = ({
     }, [])
 
     useEffect(() => {
-        async function getNetworks() {
+        ;(async () => {
             try {
                 const networksTmp: readonly AgentInfo[] = await getAgentNetworks(neuroSanURL)
                 setNetworks(networksTmp)
@@ -118,16 +134,28 @@ export const MultiAgentAccelerator = ({
                 sendNotification(
                     NotificationType.error,
                     "Connection error",
-                    // eslint-disable-next-line max-len
-                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                    `Unable to get list of Agent Networks. Verify that ${neuroSanURL} is a valid ` +
+                        `Multi-Agent Accelerator Server. Error: ${e}.`
                 )
                 setNetworks([])
                 setSelectedNetwork(null)
             }
-        }
-
-        void getNetworks()
+        })()
     }, [neuroSanURL])
+
+    useEffect(() => {
+        ;(async () => {
+            if (networks?.length > 0) {
+                try {
+                    const suggestions = await getNetworkIconSuggestions(networks)
+                    setNetworkIconSuggestions(suggestions)
+                } catch (e) {
+                    console.warn("Unable to get network icon suggestions from LLM:", e)
+                    setNetworkIconSuggestions({})
+                }
+            }
+        })()
+    }, [networks])
 
     useEffect(() => {
         ;(async () => {
@@ -142,19 +170,36 @@ export const MultiAgentAccelerator = ({
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
+                    setAgentIconSuggestions({})
+                    closeNotification()
                 } catch (e) {
                     const networkName = cleanUpAgentName(selectedNetwork)
                     sendNotification(
                         NotificationType.error,
                         "Connection error",
-                        // eslint-disable-next-line max-len
-                        `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid Multi-Agent Accelerator Server. Error: ${e}.`
+                        `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid ` +
+                            `Multi-Agent Accelerator Server. Error: ${e}.`
                     )
                     setAgentsInNetwork([])
                 }
             }
         })()
     }, [neuroSanURL, selectedNetwork])
+
+    useEffect(() => {
+        ;(async () => {
+            if (agentsInNetwork.length > 0) {
+                try {
+                    const connectivity: ConnectivityResponse = {connectivity_info: agentsInNetwork}
+                    const agentIconSuggestionsTmp = await getAgentIconSuggestions(connectivity)
+                    setAgentIconSuggestions(agentIconSuggestionsTmp)
+                } catch (e) {
+                    console.warn("Unable to get agent icon suggestions:", e)
+                    setAgentIconSuggestions({})
+                }
+            }
+        })()
+    }, [agentNamesKey])
 
     // Set up handler to allow Escape key to stop the interaction with the LLM.
     useEffect(() => {
@@ -234,6 +279,7 @@ export const MultiAgentAccelerator = ({
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
+                        networkIconSuggestions={networkIconSuggestions}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
@@ -269,6 +315,7 @@ export const MultiAgentAccelerator = ({
                         <AgentFlow
                             agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
+                            agentIconSuggestions={agentIconSuggestions}
                             id="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
@@ -313,7 +360,6 @@ export const MultiAgentAccelerator = ({
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
                         clearChatOnNewAgent={true}
-                        backgroundColor={darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-secondary-blue)"}
                     />
                 </Grid>
             </Slide>
@@ -366,8 +412,6 @@ export const MultiAgentAccelerator = ({
                 marginTop: "1rem",
                 overflow: "hidden",
                 padding: "1rem",
-                background: darkMode ? "var(--bs-dark-mode-dim)" : "var(--bs-white)",
-                color: darkMode ? "var(--bs-white)" : "var(--bs-primary)",
                 justifyContent: isAwaitingLlm ? "center" : "unset",
                 position: "relative",
             }}

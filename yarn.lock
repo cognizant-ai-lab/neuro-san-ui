@@ -1451,6 +1451,8 @@ __metadata:
     "@cognizant-ai-lab/ui-common": "workspace:*"
     "@emotion/react": "npm:11.13.3"
     "@emotion/styled": "npm:11.13.0"
+    "@langchain/core": "npm:1.1.17"
+    "@langchain/openai": "npm:1.2.5"
     "@mui/icons-material": "npm:7.3.1"
     "@mui/material": "npm:7.3.1"
     "@mui/x-tree-view": "npm:8.22.0"
@@ -2807,6 +2809,19 @@ __metadata:
     uuid: "npm:^10.0.0"
     zod: "npm:^3.25.76 || ^4"
   checksum: 10c0/7de492ecc0f28de7949fffb8d14bd694a7ea01c2c4322b46471ce2da5b8e0223e5a0cf616e82b1e1897654fac65cb7d90e6e3da5d90363e0b38a747fca8ef789
+  languageName: node
+  linkType: hard
+
+"@langchain/openai@npm:1.2.5":
+  version: 1.2.5
+  resolution: "@langchain/openai@npm:1.2.5"
+  dependencies:
+    js-tiktoken: "npm:^1.0.12"
+    openai: "npm:^6.18.0"
+    zod: "npm:^3.25.76 || ^4"
+  peerDependencies:
+    "@langchain/core": ^1.0.0
+  checksum: 10c0/0c0e132cbf5d8f3ffd9ad68c67896b0d4e4732883ff63f19dce5933b1b21ed7204e08b01ae1ca587136fc99890809a5c0c9d6927b424b0fdec45a12092f96d44
   languageName: node
   linkType: hard
 
@@ -10044,6 +10059,23 @@ __metadata:
   dependencies:
     mimic-fn: "npm:^2.1.0"
   checksum: 10c0/ffcef6fbb2692c3c40749f31ea2e22677a876daea92959b8a80b521d95cca7a668c884d8b2045d1d8ee7d56796aa405c405462af112a1477594cc63531baeb8f
+  languageName: node
+  linkType: hard
+
+"openai@npm:^6.18.0":
+  version: 6.18.0
+  resolution: "openai@npm:6.18.0"
+  peerDependencies:
+    ws: ^8.18.0
+    zod: ^3.25 || ^4.0
+  peerDependenciesMeta:
+    ws:
+      optional: true
+    zod:
+      optional: true
+  bin:
+    openai: bin/cli
+  checksum: 10c0/82d2f315bcb8eef0f834a3741afc248f15d5a26d5ed4fc877650a7df254bac3cffba11d35ff30335db7901bd0b9a96fe9bfaee0c19278433e6b6a9928d2eaab9
   languageName: node
   linkType: hard
 

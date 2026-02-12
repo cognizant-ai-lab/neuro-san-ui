@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// We have to disable the restricted imports rule here because we need to dynamically access MUI icons by name.
+// eslint-disable-next-line no-restricted-imports
+import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
@@ -25,7 +28,7 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {useSettingsStore} from "../../state/Settings"
-import {PALETTES} from "../../Theme/Palettes"
+import {usePalette} from "../../Theme/Palettes"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -36,6 +39,7 @@ export interface AgentNodeProps {
     readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
+    readonly agentIconSuggestion?: string
 }
 
 // Node dimensions
@@ -62,12 +66,11 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Color palette for depth/heatmap coloring
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = PALETTES[paletteKey]
+    const palette = usePalette()
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getConversations, isAwaitingLlm} = data
+    const {agentCounts, agentName, depth, displayAs, getConversations, agentIconSuggestion, isAwaitingLlm} = data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -123,38 +126,47 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
         const id = `${agentId}-icon`
-        if (isFrontman) {
-            return (
-                // Use special icon and larger size for Frontman
-                <PersonIcon
-                    id={id}
-                    sx={{fontSize: FRONTMAN_ICON_SIZE}}
-                />
-            )
-        }
-        switch (displayAs) {
-            case "external_agent":
+        if (agentIconSuggestion && MuiIcons[agentIconSuggestion as keyof typeof MuiIcons]) {
+            const IconComponent = MuiIcons[agentIconSuggestion as keyof typeof MuiIcons]
+            return <IconComponent sx={{fontSize: AGENT_ICON_SIZE}} />
+        } else {
+            if (agentIconSuggestion) {
+                console.warn(`Invalid MUI icon suggestion: ${agentIconSuggestion}`)
+            }
+            if (isFrontman) {
                 return (
-                    <TravelExploreIcon
+                    // Use special icon and larger size for Frontman
+                    <PersonIcon
                         id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
+                        sx={{fontSize: FRONTMAN_ICON_SIZE}}
                     />
                 )
-            case "coded_tool":
-                return (
-                    <HandymanIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
-            case "llm_agent":
-            default:
-                return (
-                    <AutoAwesomeIcon
-                        id={id}
-                        sx={{fontSize: AGENT_ICON_SIZE}}
-                    />
-                )
+            } else {
+                switch (displayAs) {
+                    case "external_agent":
+                        return (
+                            <TravelExploreIcon
+                                id={id}
+                                sx={{fontSize: AGENT_ICON_SIZE}}
+                            />
+                        )
+                    case "coded_tool":
+                        return (
+                            <HandymanIcon
+                                id={id}
+                                sx={{fontSize: AGENT_ICON_SIZE}}
+                            />
+                        )
+                    case "llm_agent":
+                    default:
+                        return (
+                            <AutoAwesomeIcon
+                                id={id}
+                                sx={{fontSize: AGENT_ICON_SIZE}}
+                            />
+                        )
+                }
+            }
         }
     }
 

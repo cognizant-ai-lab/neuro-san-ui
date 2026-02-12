@@ -27,9 +27,6 @@ const StyledButton = styled(Button)({
     padding: "0px 7px",
 })
 
-const StyledOKButton = styled(StyledButton)(({disabled}) => ({
-    backgroundColor: disabled ? "rgba(0, 0, 0, 0.12) !important" : "var(--bs-primary) !important",
-}))
 // #endregion: Styled Components
 
 // #region: Types
@@ -95,7 +92,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
                     {cancelBtnLabel ?? "Cancel"}
                 </StyledButton>
             )}
-            <StyledOKButton
+            <StyledButton
                 // This ID needs to be dynamic because there can be several instances of this on the page
                 id={`${id}-confirm-ok-btn`}
                 key="confirm-ok"
@@ -104,7 +101,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
                 variant="contained"
             >
                 {okBtnLabel ?? "Confirm"}
-            </StyledOKButton>
+            </StyledButton>
         </>
     )
 

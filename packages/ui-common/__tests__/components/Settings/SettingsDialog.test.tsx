@@ -3,6 +3,7 @@ import {UserEvent} from "@testing-library/user-event"
 import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
 import {DEFAULT_SETTINGS, useSettingsStore} from "../../../state/Settings"
@@ -14,10 +15,29 @@ describe("SettingsDialog", () => {
     withStrictMocks()
 
     let user: UserEvent
+    let originalFetch: typeof global.fetch
+
     beforeEach(() => {
         user = userEvent.setup()
         useSettingsStore.getState().resetSettings()
+        originalFetch = global.fetch
     })
+
+    afterEach(() => {
+        global.fetch = originalFetch
+    })
+
+    async function enterCustomerName(customerName: string, shouldClickApply: boolean = true) {
+        const customerInput = screen.getByPlaceholderText(/Company or organization name/u)
+        await user.clear(customerInput)
+        await user.type(customerInput, customerName)
+
+        if (shouldClickApply) {
+            // Click "Apply" if requested
+            const applyButton = screen.getByRole("button", {name: /Apply/u})
+            await user.click(applyButton)
+        }
+    }
 
     it("renders the SettingsDialog with default props", async () => {
         render(
@@ -176,7 +196,7 @@ describe("SettingsDialog", () => {
         )
     })
 
-    it("Does not resets settings to default when cancel button clicked", async () => {
+    it("Does not reset settings to default when cancel button clicked", async () => {
         const plasmaColor = "#123456"
         const agentNodeColor = "#abcdef"
 
@@ -205,5 +225,115 @@ describe("SettingsDialog", () => {
         const settingsAfter = useSettingsStore.getState().settings
         expect(settingsAfter.appearance.plasmaColor).toBe(plasmaColor)
         expect(settingsAfter.appearance.agentNodeColor).toBe(agentNodeColor)
+    })
+
+    it("Applies customer branding when selected", async () => {
+        // Reset values first
+        useSettingsStore.getState().resetSettings()
+
+        // Generate a palette of 10 colors for testing
+        const palette = Array.from({length: 10}, (_, i) => `#${i.toString(16).padStart(6, "0")}`)
+        const plasma = "#112233"
+        const nodeColor = "#445566"
+        const primary = "#778899"
+        const secondary = "#AA0011"
+        const background = "#AA0022"
+
+        global.fetch = mockFetch(
+            {
+                plasma,
+                nodeColor,
+                primary,
+                secondary,
+                background,
+                rangePalette: palette,
+            },
+            true
+        )
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+
+        // Check that the store was updated with the new customer name
+        const brandingSettings = useSettingsStore.getState().settings.branding
+        const appearanceSettings = useSettingsStore.getState().settings.appearance
+
+        expect(brandingSettings.customer).toBe(customerName)
+        expect(appearanceSettings.rangePalette).toBe("brand")
+        expect(appearanceSettings.plasmaColor).toBe(plasma)
+        expect(appearanceSettings.agentNodeColor).toBe(nodeColor)
+        expect(brandingSettings.primary).toBe(primary)
+        expect(brandingSettings.secondary).toBe(secondary)
+        expect(brandingSettings.background).toBe(background)
+        expect(brandingSettings.rangePalette).toEqual(palette)
+
+        // Now try using Enter to submit a new customer name and check that it also applies branding
+        const newCustomerName = "Acme 2"
+        await enterCustomerName(newCustomerName, false)
+        await user.keyboard("{Enter}")
+
+        expect(useSettingsStore.getState().settings.branding.customer).toBe(newCustomerName)
+    })
+
+    it("Handles missing branding values from server", async () => {
+        global.fetch = mockFetch(
+            {
+                // Simulate missing values by returning an empty object
+            },
+            true
+        )
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+
+        // Check that the store was updated with the new customer name
+        const brandingSettings = useSettingsStore.getState().settings.branding
+        const appearanceSettings = useSettingsStore.getState().settings.appearance
+        expect(brandingSettings.customer).toBe(customerName)
+        expect(appearanceSettings.rangePalette).toBe("brand")
+        expect(appearanceSettings.plasmaColor).toBe(DEFAULT_SETTINGS.appearance.plasmaColor)
+        expect(appearanceSettings.agentNodeColor).toBe(DEFAULT_SETTINGS.appearance.agentNodeColor)
+        expect(brandingSettings.primary).toBe(null)
+        expect(brandingSettings.secondary).toBe(null)
+        expect(brandingSettings.background).toBe(null)
+        expect(brandingSettings.rangePalette).toEqual(null)
+    })
+
+    it("Handles exception when retrieving branding colors", async () => {
+        const networkError = "Network error"
+        global.fetch = jest.fn().mockRejectedValue(new Error(networkError))
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Spy on console.warn to suppress output during test
+        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("Failed to fetch branding colors"),
+            expect.objectContaining({
+                message: expect.stringContaining(networkError),
+            })
+        )
     })
 })

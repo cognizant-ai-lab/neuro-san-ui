@@ -36,7 +36,7 @@ import {sendLlmRequest} from "../llm/LlmChat"
 
 /**
  * Insert the target agent name into the path. The paths Api enum contains values like:
- * <code>"/api/v1/{agent_name}/connectivity"</code> so unfortunately we need to do a replace() to insert the target
+ * <code>"/api/v1/{agent_name}/connectivity"</code> so unfortunately we need to do a `replace()` to insert the target
  * agent.
  * @param agent The agent to send the request to.
  * @param path The API path to insert the target agent into.
@@ -57,7 +57,7 @@ export interface TestConnectionResult {
  * @param url The neuro-san server URL.
  * @returns A boolean indicating whether the connection was successful.
  */
-export async function testConnection(url: string): Promise<TestConnectionResult> {
+export const testConnection = async (url: string): Promise<TestConnectionResult> => {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 2500) // 2.5s timeout
 
@@ -85,11 +85,73 @@ export async function testConnection(url: string): Promise<TestConnectionResult>
 }
 
 /**
+ * Utility function to send POST requests with JSON body and handle errors.
+ * Used for getting LLM suggestions for icons and branding colors.
+ * @param endpoint The API endpoint to send the request to.
+ * @param body The request body to send, which will be stringified to JSON.
+ * @param errorMessage The error message to include if the request fails.
+ * @returns The response from the server parsed as JSON.
+ * @throws An error if the request fails or the response is not ok.
+ */
+const postJsonRequest = async (
+    endpoint: string,
+    body: Record<string, unknown>,
+    errorMessage: string
+): Promise<Record<string, string>> => {
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+        throw new Error(`${errorMessage}: ${response.statusText}`)
+    }
+
+    return response.json()
+}
+
+/**
+ * Get LLM suggestions for network icons.
+ * @param networks The list of networks to get icon suggestions for.
+ * @returns A promise that resolves to a record mapping network names to icon names.
+ */
+export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]): Promise<Record<string, string>> =>
+    postJsonRequest("/api/networkIconSuggestions", {networks}, "Failed to get network icon suggestions")
+
+/**
+ * Get LLM suggestions for agent icons based on their descriptions from Neuro-san
+ * @param connectivity The connectivity information for the agents in the network, including their descriptions,
+ * tools, and connections.
+ * @return A promise that resolves to a record mapping agent names to suggested icon names.
+ */
+export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse): Promise<Record<string, string>> =>
+    postJsonRequest(
+        "/api/agentIconSuggestions",
+        {
+            connectivity_info: connectivity.connectivity_info,
+            metadata: connectivity.metadata,
+        },
+        "Failed to get network icon suggestions"
+    )
+
+/**
+ * Get LLM suggestions for branding colors based on the company name. This is used to customize the UI colors
+ * to match the user's company branding.
+ * @param company The name of the company to get branding color suggestions for.
+ * @returns A promise that resolves to a record mapping color types (e.g. "primary", "secondary") to hex color codes.
+ */
+export const getBrandingColors = async (company: string): Promise<Record<string, string>> =>
+    postJsonRequest("/api/branding", {company}, "Failed to get branding color suggestions")
+
+/**
  * Get the list of available agent networks from the concierge service.
  * @param url The neuro-san server URL
  * @returns A promise that resolves to an array of AgentInfo objects.
  */
-export async function getAgentNetworks(url: string): Promise<readonly AgentInfo[]> {
+export const getAgentNetworks = async (url: string): Promise<readonly AgentInfo[]> => {
     const path = `${url}${ApiPaths.ConciergeService_List}`
     const response = await fetch(path)
     const conciergeResponse: ConciergeResponse = (await response.json()) as ConciergeResponse
@@ -98,7 +160,7 @@ export async function getAgentNetworks(url: string): Promise<readonly AgentInfo[
 
 // Function to split each chunk by newline and call the real callback. The server can send multiple JSON objects per
 // chunk delimited by newline.
-function handleJsonLines(chunk: string, callback: (line: string) => void) {
+const handleJsonLines = (chunk: string, callback: (line: string) => void) => {
     chunk.split("\n").forEach((line) => {
         const trimmed = line.trim()
         if (trimmed) {
@@ -122,7 +184,7 @@ function handleJsonLines(chunk: string, callback: (line: string) => void) {
  * @param userId Current user ID in the session.
  * @returns The response from the agent network.
  */
-export async function sendChatQuery(
+export const sendChatQuery = async (
     url: string,
     signal: AbortSignal,
     userInput: string,
@@ -131,7 +193,7 @@ export async function sendChatQuery(
     chatContext: ChatContext,
     slyData: Record<string, unknown>,
     userId: string
-): Promise<ChatResponse> {
+): Promise<ChatResponse> => {
     // Create request
     const userMessage: ChatMessage = {
         type: ChatMessageType.HUMAN,
@@ -172,7 +234,7 @@ export async function sendChatQuery(
  * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
  * Caller is responsible for try-catch.
  */
-export async function getConnectivity(url: string, network: string, userId: string): Promise<ConnectivityResponse> {
+export const getConnectivity = async (url: string, network: string, userId: string): Promise<ConnectivityResponse> => {
     const fetchUrl = `${url}${insertTargetAgent(network, ApiPaths.AgentService_Connectivity)}`
 
     const response = await fetch(fetchUrl, {
@@ -199,7 +261,7 @@ export async function getConnectivity(url: string, network: string, userId: stri
  * @returns The function info as a <code>FunctionResponse</code> object
  * @throws Various exceptions if anything goes wrong such as network issues or invalid agent type.
  */
-export async function getAgentFunction(url: string, agent: string, userId: string): Promise<FunctionResponse> {
+export const getAgentFunction = async (url: string, agent: string, userId: string): Promise<FunctionResponse> => {
     const fetchUrl = `${url}${insertTargetAgent(agent, ApiPaths.AgentService_Function)}`
 
     const response = await fetch(fetchUrl, {

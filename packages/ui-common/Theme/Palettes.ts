@@ -1,4 +1,6 @@
 // Palettes for progressive coloring of nodes based on depth or heatmap value
+import {SettingsStore, useSettingsStore} from "../state/Settings"
+
 export const PALETTES = {
     blue: [
         "#f7fbff",
@@ -75,4 +77,22 @@ export const PALETTES = {
     ],
 }
 
-export type PaletteKey = keyof typeof PALETTES
+export type PaletteKey = keyof typeof PALETTES | "brand"
+
+/**
+ * Custom hook to get the current color palette based on user settings.
+ * If the user has selected custom branding, it will return the palette for that.
+ * Otherwise, it will return one of the predefined palettes from the PALETTES object based on the user's selection.
+ *
+ * @returns An array of color hex codes representing the current color palette.
+ */
+export const usePalette = () => {
+    const brandPalette = useSettingsStore((state: SettingsStore) => state.settings.branding.rangePalette)
+    const paletteKey = useSettingsStore((state: SettingsStore) => state.settings.appearance.rangePalette)
+
+    if (paletteKey === "brand" && brandPalette) {
+        return brandPalette
+    } else {
+        return PALETTES[paletteKey as keyof typeof PALETTES]
+    }
+}

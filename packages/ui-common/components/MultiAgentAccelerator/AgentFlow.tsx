@@ -19,7 +19,7 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
-import {useColorScheme, useTheme} from "@mui/material/styles"
+import {useTheme} from "@mui/material/styles"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
@@ -43,14 +43,12 @@ import {
 
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
-import {addThoughtBubbleEdge, layoutLinear, layoutRadial, removeThoughtBubbleEdge} from "./GraphLayouts"
+import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useSettingsStore} from "../../state/Settings"
-import {PALETTES} from "../../Theme/Palettes"
-import {isDarkMode} from "../../Theme/Theme"
+import {usePalette} from "../../Theme/Palettes"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -65,6 +63,7 @@ interface ActiveThoughtBubble extends AgentConversationBase {
 
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
+    readonly agentIconSuggestions?: Record<string, string>
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
@@ -90,6 +89,7 @@ const MAX_THOUGHT_BUBBLES = 5
 
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
+    agentIconSuggestions,
     agentsInNetwork,
     currentConversations,
     id,
@@ -324,15 +324,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [isStreaming, removeThoughtBubbleEdgeHelper])
 
-    const {mode, systemMode} = useColorScheme()
-    const darkMode = isDarkMode(mode, systemMode)
-
-    // Shadow color for icon. TODO: use MUI theme system instead.
-    const shadowColor = darkMode ? "255, 255, 255" : "0, 0, 0"
-
+    // Shadow color for icon
+    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
     const isHeatmap = coloringOption === "heatmap"
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = PALETTES[paletteKey]
+
+    const palette = usePalette()
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network
@@ -358,7 +354,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Create the flow layout depending on user preference
     // Memoize layoutResult so it only recalculates when relevant data changes
-    const layoutResult = useMemo(
+    const layoutResult: LayoutResult = useMemo(
         () =>
             layout === "linear"
                 ? layoutLinear(
@@ -366,25 +362,28 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      thoughtBubbleEdges
+                      thoughtBubbleEdges,
+                      agentIconSuggestions
                   )
                 : layoutRadial(
                       isHeatmap ? agentCounts : undefined,
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      thoughtBubbleEdges
+                      thoughtBubbleEdges,
+                      agentIconSuggestions
                   ),
         [
-            layout,
-            coloringOption,
-            agentCounts,
-            mergedAgentsInNetwork,
-            currentConversations,
             activeThoughtBubbles,
-            thoughtBubbleEdges,
+            agentCounts,
+            agentIconSuggestions,
+            coloringOption,
+            currentConversations,
             isAwaitingLlm,
+            layout,
+            mergedAgentsInNetwork,
             showThoughtBubbles,
+            thoughtBubbleEdges,
         ]
     )
 
@@ -487,7 +486,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     right: "10px",
                     padding: "5px",
                     borderRadius: "5px",
-                    boxShadow: `0 0 5px rgba(${shadowColor}, 0.3)`,
+                    boxShadow: `0 0 5px color-mix(in srgb, ${shadowColor} 30%, transparent)`,
                     display: "flex",
                     alignItems: "center",
                     zIndex: getZIndex(2, theme),
@@ -502,7 +501,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             alignItems: "center",
                             backgroundColor: palette[i],
                             borderRadius: "50%",
-                            color: i < palette.length / 2 ? "var(--bs-primary)" : "var(--bs-white)",
+                            color: theme.palette.getContrastText(palette[i]),
                             display: "flex",
                             height: "15px",
                             justifyContent: "center",
@@ -543,8 +542,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         sx={{
                             fontSize: "0.5rem",
                             height: "1rem",
-                            backgroundColor:
-                                darkMode && coloringOption === "depth" ? "var(--bs-gray-medium)" : undefined,
                         }}
                     >
                         <Typography
@@ -563,7 +560,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         sx={{
                             fontSize: "0.5rem",
                             height: "1rem",
-                            backgroundColor: darkMode && isHeatmap ? "var(--bs-gray-medium)" : undefined,
                         }}
                     >
                         <Typography
@@ -582,7 +578,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Get the background color for the control buttons based on the layout and dark mode setting
     const getControlButtonBackgroundColor = (isActive: boolean) => {
-        return isActive ? (darkMode ? "var(--bs-gray-dark)" : "var(--bs-gray-lighter)") : undefined
+        if (!isActive) {
+            return undefined
+        }
+        return theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[200]
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
@@ -616,10 +615,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(layout === "radial"),
                             }}
                         >
-                            <HubOutlinedIcon
-                                id="radial-layout-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <HubOutlinedIcon id="radial-layout-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -636,10 +632,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(layout === "linear"),
                             }}
                         >
-                            <ScatterPlotOutlinedIcon
-                                id="linear-layout-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <ScatterPlotOutlinedIcon id="linear-layout-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -659,10 +652,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                             disabled={layout !== "radial"}
                         >
-                            <AdjustRoundedIcon
-                                id="radial-guides-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <AdjustRoundedIcon id="radial-guides-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -679,10 +669,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
                             }}
                         >
-                            <ChatBubbleOutlineIcon
-                                id="thought-bubble-icon"
-                                sx={{color: darkMode ? "var(--bs-white)" : "var(--bs-dark-mode-dim)"}}
-                            />
+                            <ChatBubbleOutlineIcon id="thought-bubble-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -696,13 +683,22 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             sx={{
                 height: "100%",
                 width: "100%",
+                backgroundColor: theme.palette.background.default,
                 "& .react-flow__node": {
-                    border: "var(--bs-border-width) var(--bs-border-style) var(--bs-black)",
-                    borderRadius: "var(--bs-border-radius-2xl)",
+                    border: `1px solid ${theme.palette.divider}`,
+                },
+                "& .react-flow__panel": {
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    color: theme.palette.text.primary,
+                },
+                "& .react-flow__controls-button": {
+                    backgroundColor: theme.palette.background.paper,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    color: theme.palette.text.primary,
+                    fill: theme.palette.text.primary,
                 },
             }}
-            // Theme the "React Flow" attribution logo according to dark mode.
-            className={darkMode ? "dark" : undefined}
         >
             <ReactFlow
                 id={`${id}-react-flow`}

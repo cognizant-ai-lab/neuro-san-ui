@@ -94,6 +94,7 @@ const MATH_GUY_MESSAGE: ChatResponse = {
 let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => void
 let onStreamingStarted: () => void
+let onStreamingComplete: () => void
 
 jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon", () => ({
     __esModule: true,
@@ -102,6 +103,8 @@ jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon", () =
         setIsAwaitingLlm = props.setIsAwaitingLlm
         onChunkReceived = props.onChunkReceived
         onStreamingStarted = props.onStreamingStarted
+        onStreamingComplete = props.onStreamingComplete
+
         // handleStop ref
         ;(ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
         return (
@@ -453,5 +456,19 @@ describe("Multi Agent Accelerator Page", () => {
 
         // make sure popup not in doc
         expect(screen.queryByText(expectedPopupText)).not.toBeInTheDocument()
+    })
+
+    it("should show reset conversations onStreamingComplete is called", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        await act(async () => {
+            onStreamingComplete()
+        })
+
+        // Verify conversations were cleared by checking the AgentFlow prop
+        await waitFor(() => {
+            const lastCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1]
+            expect(lastCall[0]).toBeNull()
+        })
     })
 })

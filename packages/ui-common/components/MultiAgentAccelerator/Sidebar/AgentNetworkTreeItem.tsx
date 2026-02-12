@@ -1,3 +1,6 @@
+// Need to disable restricted imports because we want to import all MUI icons dynamically
+// eslint-disable-next-line no-restricted-imports
+import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
@@ -15,7 +18,6 @@ import {FC} from "react"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
-
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -35,10 +37,11 @@ type TagColor = (typeof TAG_COLORS)[number]
 // Keep track of which tags have which colors so that the same tag always has the same color
 const tagsToColors = new Map<string, TagColor>()
 
-interface AgentNetworkNodeProps extends TreeItemProps {
+export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly nodeIndex: Map<string, AgentInfo>
-    setSelectedNetwork: (network: string) => void
-    shouldDisableTree: boolean
+    readonly setSelectedNetwork: (network: string) => void
+    readonly shouldDisableTree: boolean
+    readonly networkIconSuggestions: Record<string, string>
 }
 
 /**
@@ -54,6 +57,7 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     nodeIndex,
     setSelectedNetwork,
     shouldDisableTree,
+    networkIconSuggestions,
 }) => {
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
@@ -85,7 +89,17 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     }
 
     // retrieve path for this network
+
     const path = isChild ? agentNode?.agent_name : null
+    const iconNameSuggestion = isChild ? networkIconSuggestions?.[itemId] : null
+
+    let muiIconElement = null
+    if (iconNameSuggestion && MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
+        const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
+        muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
+    } else if (iconNameSuggestion) {
+        console.warn(`Icon "${iconNameSuggestion}" not found in MUI icons library.`)
+    }
 
     return (
         <TreeItemProvider {...getContextProviderProps()}>
@@ -96,19 +110,22 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
                     {...(isParent || shouldDisableTree ? {} : {onClick: () => selectNetworkHandler(path)})}
                 >
                     <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
-                        <TreeItemLabel
-                            {...getLabelProps()}
-                            sx={{
-                                fontWeight: isParent ? "bold" : "normal",
-                                fontSize: isParent ? "1rem" : "0.9rem",
-                                color: isParent ? "var(--heading-color)" : null,
-                                "&:hover": {
-                                    textDecoration: "underline",
-                                },
-                            }}
-                        >
-                            {cleanUpAgentName(labelString)}
-                        </TreeItemLabel>
+                        <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
+                            {muiIconElement}
+                            <TreeItemLabel
+                                {...getLabelProps()}
+                                sx={{
+                                    fontWeight: isParent ? "bold" : "normal",
+                                    fontSize: isParent ? "1rem" : "0.9rem",
+                                    color: isParent ? "var(--heading-color)" : null,
+                                    "&:hover": {
+                                        textDecoration: "underline",
+                                    },
+                                }}
+                            >
+                                {cleanUpAgentName(labelString)}
+                            </TreeItemLabel>
+                        </Box>
                         {isChild && tags?.length > 0 ? (
                             <Tooltip
                                 title={tags

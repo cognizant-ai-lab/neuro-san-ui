@@ -21,37 +21,81 @@ Tests for instrumentation.ts NextJS startup file.
 import {authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {register, REQUIRED_ENV_VARS} from "../../../instrumentation"
+import {OPTIONAL_ENV_VARS, register, REQUIRED_ENV_VARS, REQUIRED_FOR_AUTH_ENV_VARS} from "../../../instrumentation"
 
 jest.mock("../../../../../packages/ui-common/const")
+
+// It's okay to do this in tests
+/* eslint-disable @typescript-eslint/no-dynamic-delete */
+
+function setAllEnvVars() {
+    // Set all required environment variables
+    REQUIRED_ENV_VARS.forEach((envVar) => {
+        process.env[envVar] = "test_value"
+    })
+
+    // Set all required-for-authentication environment variables
+    REQUIRED_FOR_AUTH_ENV_VARS.forEach((envVar) => {
+        process.env[envVar] = "test_value"
+    })
+
+    // Set all optional environment variables
+    OPTIONAL_ENV_VARS.forEach((envVar) => {
+        process.env[envVar] = "test_value"
+    })
+}
 
 describe("instrumentation", () => {
     withStrictMocks()
     beforeEach(() => {
         ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
+        setAllEnvVars()
     })
-    it("should throw if env vars not set", () => {
+
+    it("should not throw if env vars are all set", () => {
+        expect(() => register()).not.toThrow()
+    })
+
+    it("should throw if any required env vars not set", () => {
         // Unset a required environment variable
-        process.env[REQUIRED_ENV_VARS[0]] = undefined
+        delete process.env[REQUIRED_ENV_VARS[0]]
 
         expect(() => register()).toThrow(Error)
     })
 
-    it("Should not throw if authentication is disabled", () => {
+    it("Should throw if authentication is enabled and required variable is not set", () => {
+        ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
+
+        // Unset an environment variable that is only required for authentication
+        delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
+
+        expect(() => register()).toThrow()
+    })
+
+    it("Should not throw if authentication is disabled and required variable is not set", () => {
         ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
 
-        // Unset a required environment variable
-        process.env[REQUIRED_ENV_VARS[0]] = undefined
+        // Unset an environment variable that is only required for authentication
+        delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
 
         expect(() => register()).not.toThrow()
     })
 
-    it("should not throw if env vars are set", () => {
-        // Set all required environment variables
-        REQUIRED_ENV_VARS.forEach((envVar) => {
-            process.env[envVar] = "test_value"
+    it("Should not throw if optional variables are not set", () => {
+        ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
+
+        // Clear all optional environment variables
+        OPTIONAL_ENV_VARS.forEach((envVar) => {
+            delete process.env[envVar]
         })
 
+        // Spy on console.warn to suppress output during test
+        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+
         expect(() => register()).not.toThrow()
+
+        OPTIONAL_ENV_VARS.forEach((envVar) => {
+            expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining(envVar))
+        })
     })
 })

@@ -17,7 +17,7 @@ limitations under the License.
 import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
 
-import handler from "../../../pages/api/userInfo"
+import handler from "../../../../pages/api/userInfo"
 
 const AWS_OIDC_HEADER = "x-amzn-oidc-data"
 

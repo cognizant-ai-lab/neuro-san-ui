@@ -22,7 +22,7 @@ import Button from "@mui/material/Button"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import Popover from "@mui/material/Popover"
-import {styled, useColorScheme, useTheme} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -36,30 +36,19 @@ import {
     useState,
 } from "react"
 
-import {AgentNetworkNode} from "./AgentNetworkTreeItem"
+import {AgentNetworkNode, AgentNetworkNodeProps} from "./AgentNetworkTreeItem"
 import {buildTreeViewItems} from "./TreeUtils"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
-import {isDarkMode} from "../../../Theme/Theme"
 import {getZIndex} from "../../../utils/zIndexLayers"
 
 // #region: Styled Components
 
-const PrimaryButton = styled(Button, {
-    shouldForwardProp: (prop) => prop !== "darkMode",
-})<{darkMode?: boolean}>(({darkMode}) => ({
-    backgroundColor: "var(--bs-primary)",
+const PrimaryButton = styled(Button)({
     marginLeft: "0.5rem",
     marginTop: "2px",
-    "&:hover": {
-        backgroundColor: "var(--bs-primary)",
-    },
-    "&.Mui-disabled": {
-        color: darkMode ? "rgba(255, 255, 255, 0.25)" : undefined,
-        backgroundColor: undefined,
-    },
-}))
+})
 
 // #endregion: Styled Components
 
@@ -74,6 +63,7 @@ enum CONNECTION_STATUS {
 export interface SidebarProps {
     readonly customURLCallback: (url: string) => void
     readonly customURLLocalStorage?: string
+    readonly networkIconSuggestions?: Record<string, string>
     readonly id: string
     readonly isAwaitingLlm: boolean
     readonly networks: readonly AgentInfo[]
@@ -85,6 +75,7 @@ export interface SidebarProps {
 export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
+    networkIconSuggestions,
     id,
     isAwaitingLlm,
     networks,
@@ -104,8 +95,7 @@ export const Sidebar: FC<SidebarProps> = ({
 
     // Theming/Dark mode
     const theme = useTheme()
-    const {mode, systemMode} = useColorScheme()
-    const darkMode = isDarkMode(mode, systemMode)
+    const darkMode = theme.palette.mode === "dark"
 
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
@@ -189,7 +179,6 @@ export const Sidebar: FC<SidebarProps> = ({
             <aside
                 id={`${id}-sidebar`}
                 style={{
-                    borderRightColor: "var(--bs-gray-light)",
                     borderRightStyle: "solid",
                     borderRightWidth: "1px",
                     height: "100%",
@@ -200,7 +189,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 <h2
                     id={`${id}-heading`}
                     style={{
-                        borderBottomColor: "var(--bs-gray-light)",
+                        backgroundColor: theme.palette.background.default,
                         borderBottomStyle: "solid",
                         borderBottomWidth: "1px",
                         fontSize: "1.125rem",
@@ -237,6 +226,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Button>
                 </h2>
                 <RichTreeView
+                    key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
                     slots={{
                         item: AgentNetworkNode as RichTreeViewSlots["item"],
@@ -248,7 +238,8 @@ export const Sidebar: FC<SidebarProps> = ({
                             nodeIndex: index,
                             setSelectedNetwork,
                             shouldDisableTree: isAwaitingLlm,
-                        } as unknown,
+                            networkIconSuggestions,
+                        } as AgentNetworkNodeProps,
                     }}
                 />
             </aside>
@@ -314,7 +305,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-test-btn"
                     onClick={handleTestConnection}
                     variant="contained"
-                    darkMode={darkMode}
                 >
                     Test
                 </PrimaryButton>
@@ -323,7 +313,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-save-btn"
                     onClick={handleSaveSettings}
                     variant="contained"
-                    darkMode={darkMode}
                 >
                     Save
                 </PrimaryButton>
@@ -331,7 +320,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     id="agent-network-settings-cancel-btn"
                     onClick={() => handleSettingsClose(true)}
                     variant="contained"
-                    darkMode={darkMode}
                 >
                     Cancel
                 </PrimaryButton>

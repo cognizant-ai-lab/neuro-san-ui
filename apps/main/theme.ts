@@ -18,6 +18,8 @@ limitations under the License.
 
 import {createTheme} from "@mui/material/styles"
 
+import {adjustBrightness} from "../../packages/ui-common/Theme/Theme"
+
 // Fallback color if CSS variable not found so we know something is up
 const DEFAULT_COLOR = "#97999b"
 
@@ -76,7 +78,7 @@ const DEFAULT_PALETTE = {
  * This is the main theme for the app. It is used by the MUI ThemeProvider. It supplies light and dark themes
  * using custom colors defined in globals.css.
  */
-export const createAppTheme = () =>
+export const createAppTheme = (primary: string, secondary: string, background: string) =>
     createTheme({
         components: {
             MuiButton: {
@@ -119,11 +121,12 @@ export const createAppTheme = () =>
                     ...DEFAULT_PALETTE,
 
                     background: {
-                        default: cssVar("--bs-dark-mode-dim"),
+                        default: background || cssVar("--bs-dark-mode-dim"),
+                        paper: adjustBrightness(background || cssVar("--bs-dark-mode-dim"), 5),
                     },
                     text: {
-                        primary: cssVar("--bs-white"),
-                        secondary: cssVar("--bs-gray-light"),
+                        primary: primary || cssVar("--bs-white"),
+                        secondary: secondary || cssVar("--bs-gray-light"),
                     },
                 },
             },
@@ -131,11 +134,12 @@ export const createAppTheme = () =>
                 palette: {
                     ...DEFAULT_PALETTE,
                     background: {
-                        default: cssVar("--bs-white"),
+                        default: background || cssVar("--bs-white"),
+                        paper: adjustBrightness(background || cssVar("--bs-white"), -5),
                     },
                     text: {
-                        primary: cssVar("--bs-primary"),
-                        secondary: cssVar("--bs-gray-medium-dark"),
+                        primary: primary || cssVar("--bs-black"),
+                        secondary: secondary || cssVar("--bs-gray-medium-dark"),
                     },
                 },
             },

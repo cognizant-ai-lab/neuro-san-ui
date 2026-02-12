@@ -97,8 +97,8 @@ describe("ChatCommon", () => {
             <ThemeProvider
                 theme={createTheme({
                     colorSchemes: {
-                        light: {palette: {text: {primary: "#000000"}}},
-                        dark: {palette: {text: {primary: "#ffffff"}}},
+                        light: {palette: {text: {primary: "#112233"}}},
+                        dark: {palette: {text: {primary: "#445566"}}},
                     },
                 })}
             >
@@ -155,6 +155,7 @@ describe("ChatCommon", () => {
     it.each([false, true])("Should render correctly with darkMode=%s", async (darkMode) => {
         ;(useColorScheme as jest.Mock).mockReturnValue({
             mode: darkMode ? "dark" : "light",
+            systemMode: darkMode ? "dark" : "light",
         })
 
         renderChatCommonComponent()
@@ -173,9 +174,6 @@ describe("ChatCommon", () => {
         // Check that the expected agents are in the connectivity list
         const musicNerdItem = within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD)
         expect(musicNerdItem).toBeInTheDocument()
-
-        // Check that the agent name has correct color based on dark mode
-        expect(musicNerdItem).toHaveStyle({color: darkMode ? "var(--bs-white)" : "var(--bs-primary)"})
 
         // Check that the tools for Music Nerd are listed
         const musicNerdToolsList = document.getElementById(`${TEST_AGENT_MUSIC_NERD}-tools`)

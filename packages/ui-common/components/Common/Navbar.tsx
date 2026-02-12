@@ -21,6 +21,7 @@ limitations under the License.
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import SettingsIcon from "@mui/icons-material/Settings"
+import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import IconButton from "@mui/material/IconButton"
 import Menu from "@mui/material/Menu"
@@ -39,6 +40,7 @@ import {
     DEFAULT_USER_IMAGE,
     NEURO_SAN_UI_VERSION,
 } from "../../const"
+import {useSettingsStore} from "../../state/Settings"
 import {isDarkMode} from "../../Theme/Theme"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 import {SettingsDialog} from "../Settings/SettingsDialog"
@@ -85,6 +87,34 @@ const DISABLE_OUTLINE_PROPS = {
     "&:active": {
         outline: "none",
     },
+}
+
+// Logo.dev token from environment variables
+const logoDevToken = process.env["NEXT_PUBLIC_LOGO_DEV_TOKEN"]
+
+// Cognizant logo image component
+function getCognizantLogoImage() {
+    return (
+        <a
+            id="splash-logo-link"
+            href="https://www.cognizant.com/us/en"
+            style={{
+                display: "flex",
+                paddingLeft: "0.15rem",
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                id="logo-img"
+                width="200"
+                height="45"
+                src="/cognizant-logo-white.svg"
+                alt="Cognizant Logo"
+            />
+        </a>
+    )
 }
 
 export const Navbar = ({
@@ -136,6 +166,18 @@ export const Navbar = ({
     // Settings dialog state
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
 
+    // Customer for branding
+    const customer = useSettingsStore((state) => state.settings.branding.customer)
+    const primary = useSettingsStore((state) => state.settings.branding.primary)
+
+    // Construct logo URL if customer branding is set to retrieve logo from logo.dev.
+    // NOTE: for this to work, a valid, active logo.dev token must be set in environment variables.
+    const logoUrl =
+        logoDevToken && customer?.trim().length > 0
+            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}` +
+              `?token=${logoDevToken}&theme=light&format=png&size=75`
+            : null
+
     return hydrated ? (
         <Grid
             id="nav-bar-container"
@@ -143,7 +185,6 @@ export const Navbar = ({
             alignItems="center"
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
-                color: "var(--bs-white)",
                 padding: "0.25rem",
             }}
         >
@@ -154,32 +195,49 @@ export const Navbar = ({
                     onClose={() => setSettingsDialogOpen(false)}
                 />
             )}
-            <a
-                id="splash-logo-link"
-                href="https://www.cognizant.com/us/en"
-                style={{
-                    display: "flex",
-                    paddingLeft: "0.15rem",
-                }}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    id="logo-img"
-                    width="200"
-                    height="45"
-                    src="/cognizant-logo-white.svg"
-                    alt="Cognizant Logo"
-                />
-            </a>
+            {customer ? (
+                <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
+                    {logoUrl ? (
+                        // We're trying to wean ourselves off Next.js
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={logoUrl}
+                            alt={`${customer} Logo`}
+                            width="75"
+                            height="75"
+                            style={{paddingLeft: "0.15rem"}}
+                        />
+                    ) : null}
+                    <Typography
+                        id="customer-branding"
+                        sx={{
+                            ...MENU_ITEM_TEXT_PROPS,
+                            color: primary || undefined,
+                            fontSize: "20px",
+                            fontWeight: "600",
+                            paddingLeft: "0.15rem",
+                            width: "200px",
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                    >
+                        {customer}
+                    </Typography>
+                </Box>
+            ) : (
+                getCognizantLogoImage()
+            )}
             {/*App title*/}
-            <Grid id={id}>
+            <Grid
+                id={id}
+                sx={{display: "flex", alignItems: "center"}}
+            >
+                {customer ? getCognizantLogoImage() : null}
                 <Typography
                     id="nav-bar-brand"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
-                        color: "var(--bs-white)",
+                        color: primary || "var(--bs-white)",
                         marginLeft: "0.85rem",
                         fontSize: "16px",
                         fontWeight: "bold",
@@ -190,7 +248,7 @@ export const Navbar = ({
                         style={{
                             fontWeight: 500,
                             fontSize: "1.1rem",
-                            color: "var(--bs-white)",
+                            color: primary || "var(--bs-white)",
                             position: "relative",
                             bottom: "1px",
                             textDecoration: "none",
@@ -214,7 +272,7 @@ export const Navbar = ({
                     display: "flex",
                     justifyContent: "flex-end", // Right align
                     alignItems: "center", // Vertically center
-                    color: "var(--bs-white)",
+                    color: primary || "var(--bs-white)",
                     marginRight: "50px",
                 }}
             >
@@ -245,7 +303,7 @@ export const Navbar = ({
                     Explore
                     <ArrowDropDownIcon
                         id="nav-explore-dropdown-arrow"
-                        sx={{color: "var(--bs-white)", fontSize: 22}}
+                        sx={{color: primary || "var(--bs-white)", fontSize: 22}}
                     />
                 </Typography>
                 <Menu
@@ -296,7 +354,7 @@ export const Navbar = ({
                     Help
                     <ArrowDropDownIcon
                         id="nav-help-dropdown-arrow"
-                        sx={{color: "var(--bs-white)", fontSize: 22}}
+                        sx={{color: primary || "var(--bs-white)", fontSize: 22}}
                     />
                 </Typography>
                 <Menu
@@ -366,7 +424,7 @@ export const Navbar = ({
                         />
                         <ArrowDropDownIcon
                             id="nav-user-dropdown-arrow"
-                            sx={{color: "var(--bs-white)", fontSize: 22}}
+                            sx={{color: primary || "var(--bs-white)", fontSize: 22}}
                         />
                     </IconButton>
                     <Menu
@@ -422,18 +480,22 @@ export const Navbar = ({
             {/*Dark mode toggle*/}
             <Tooltip
                 id="dark-mode-toggle"
-                title="Toggle dark mode"
+                title={
+                    customer
+                        ? "Dark mode toggle is not available when customer branding is active. Reset via Settings menu."
+                        : "Toggle dark mode"
+                }
             >
                 <DarkModeIcon
                     id="dark-mode-icon"
                     sx={{
                         marginRight: "1rem",
                         fontSize: "1rem",
-                        cursor: "pointer",
+                        cursor: customer ? "not-allowed" : "pointer",
                         color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)",
                     }}
                     onClick={() => {
-                        setMode(darkMode ? "light" : "dark")
+                        !customer && setMode(darkMode ? "light" : "dark")
                     }}
                 />
             </Tooltip>
@@ -441,6 +503,7 @@ export const Navbar = ({
             <Tooltip title="Settings">
                 <SettingsIcon
                     sx={{
+                        ...MENU_ITEM_TEXT_PROPS,
                         marginRight: "1rem",
                         fontSize: "1rem",
                         cursor: "pointer",

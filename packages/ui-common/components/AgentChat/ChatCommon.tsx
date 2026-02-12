@@ -555,12 +555,12 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                                 await handleSend(query)
                             }}
                             sx={{
+                                color: "var(--bs-white)",
                                 marginRight: "1rem",
                                 marginBottom: "1rem",
                                 backgroundColor: "var(--bs-accent1-medium)",
                                 "&:hover": {
                                     backgroundColor: "var(--bs-accent1-dark)",
-                                    color: "var(--bs-white)",
                                 },
                             }}
                         />
@@ -606,7 +606,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         sx={{
                             marginTop: "1rem",
                             marginBottom: "1rem",
-                            borderColor: darkMode ? "var(--bs-white)" : "var(--bs-border-color)",
                         }}
                         items={[
                             {
@@ -1056,7 +1055,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     id="llm-responses"
                     ref={chatOutputRef}
                     sx={{
-                        backgroundColor: backgroundColor || "var(--bs-secondary-blue)",
+                        backgroundColor: backgroundColor || undefined,
                         borderWidth: "1px",
                         borderRadius: "0.5rem",
                         fontSize: "smaller",
