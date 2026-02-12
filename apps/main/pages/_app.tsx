@@ -52,7 +52,7 @@ import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
-import {EnvironmentResponse} from "./api/environment"
+import {EnvironmentResponse} from "./api/environment/Types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
