@@ -70,6 +70,9 @@ export interface NavbarProps {
 
     // Support email address for contact us functionality
     readonly supportEmailAddress: string
+
+    // Optional logo.dev token for customer branding
+    readonly logoDevToken?: string
 }
 
 const MENU_ITEM_TEXT_PROPS = {
@@ -88,9 +91,6 @@ const DISABLE_OUTLINE_PROPS = {
         outline: "none",
     },
 }
-
-// Logo.dev token from environment variables
-const logoDevToken = process.env["NEXT_PUBLIC_LOGO_DEV_TOKEN"]
 
 // Cognizant logo image component
 const getCognizantLogoImage = () => (
@@ -119,6 +119,7 @@ export const Navbar = ({
     authenticationType,
     id,
     logo,
+    logoDevToken,
     pathname,
     query,
     signOut,
