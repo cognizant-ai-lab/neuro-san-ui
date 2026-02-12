@@ -25,16 +25,17 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Navbar} from "../../../components/Common/Navbar"
 import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
+import {useSettingsStore} from "../../../state/Settings"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 import {navigateToUrl} from "../../../utils/BrowserNavigation"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
 const MOCK_USER = "mock-user"
+const MOCK_LOGO_DEV_TOKEN = "mock-logo-dev-token"
+const LOGO = "mock-title"
 
 describe("Navbar", () => {
     withStrictMocks()
-
-    const logo = "mock-title"
 
     let user: UserEvent
 
@@ -43,7 +44,7 @@ describe("Navbar", () => {
             <ThemeProvider theme={createTheme({colorSchemes: {light: true, dark: true}})}>
                 <Navbar
                     id="mock-id"
-                    logo={logo}
+                    logo={LOGO}
                     query={undefined}
                     pathname={pathName}
                     userInfo={{
@@ -52,6 +53,7 @@ describe("Navbar", () => {
                     }}
                     authenticationType=""
                     signOut={jest.fn()}
+                    logoDevToken={MOCK_LOGO_DEV_TOKEN}
                     supportEmailAddress={MOCK_EMAIL_ADDRESS}
                 />
             </ThemeProvider>
@@ -61,6 +63,9 @@ describe("Navbar", () => {
         jest.spyOn(BrowserNavigation, "navigateToUrl")
         ;(navigateToUrl as jest.Mock).mockImplementation()
         user = userEvent.setup()
+
+        // Reset settings to default before each test to avoid state leakage between tests
+        useSettingsStore.getState().resetSettings()
     })
 
     it("should open a confirmation dialog when the contact us link is clicked", async () => {
@@ -108,17 +113,22 @@ describe("Navbar", () => {
         expect(navigateToUrl).toHaveBeenCalledWith(`mailto:${MOCK_EMAIL_ADDRESS}`)
     })
 
-    it("renders the Navbar with the provided logo (Neuro® AI Decisioning)", async () => {
-        renderNavbar()
+    it("renders the Navbar with the provided title and logo", async () => {
+        const customer = "Acme"
 
-        const logoLink = await screen.findByRole("link", {name: `${logo} Decisioning`})
+        useSettingsStore.getState().updateSettings({branding: {customer}})
+        renderNavbar()
+        const logoLink = await screen.findByRole("link", {name: `${LOGO} Decisioning`})
         expect(logoLink).toHaveAttribute("href", "/")
+
+        const logoImage = screen.getByRole("img", {name: `${customer} Logo`})
+        expect(logoImage).toHaveAttribute("src", expect.stringMatching(new RegExp(`logo.dev.*${customer}`, "u")))
     })
 
     it("renders the Navbar with the provided logo (Neuro® AI Multi-Agent Accelerator)", async () => {
         renderNavbar("/multiAgentAccelerator")
 
-        const logoLink = await screen.findByRole("link", {name: `${logo} Multi-Agent Accelerator`})
+        const logoLink = await screen.findByRole("link", {name: `${LOGO} Multi-Agent Accelerator`})
         expect(logoLink).toHaveAttribute("href", "/")
     })
 
