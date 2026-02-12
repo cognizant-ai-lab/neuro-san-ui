@@ -52,6 +52,7 @@ import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
+import {EnvironmentResponse} from "./api/environment"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -94,9 +95,11 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         auth0ClientId,
         auth0Domain,
         backendNeuroSanApiUrl,
+        logoDevToken,
         setAuth0ClientId,
         setAuth0Domain,
         setBackendNeuroSanApiUrl,
+        setLogoDevToken,
         setSupportEmailAddress,
         supportEmailAddress,
     } = useEnvironmentStore()
@@ -168,13 +171,14 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 return
             }
 
-            const data = await res.json()
+            const data: EnvironmentResponse = await res.json()
 
             // Save env vars in zustand store
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             setAuth0ClientId(data.auth0ClientId)
             setAuth0Domain(data.auth0Domain)
             setSupportEmailAddress(data.supportEmailAddress)
+            setLogoDevToken(data.logoDevToken)
         }
 
         void getEnvironment()
@@ -304,6 +308,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
+                            logoDevToken={logoDevToken}
                             query={query}
                             pathname={pathname}
                             authenticationType={authenticationType}
