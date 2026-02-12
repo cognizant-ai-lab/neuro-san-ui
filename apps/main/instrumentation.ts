@@ -35,7 +35,7 @@ export const REQUIRED_FOR_AUTH_ENV_VARS = ["AUTH0_CLIENT_ID", "AUTH0_CLIENT_SECR
  * List of environment variables that are optional. If any of these are not set, the app will log a warning but will
  * continue to run. These are typically used for optional features that have a fallback if the env var is not set.
  */
-export const OPTIONAL_ENV_VARS = ["NEXT_PUBLIC_LOGO_DEV_TOKEN", "OPENAI_API_KEY"]
+export const OPTIONAL_ENV_VARS = ["LOGO_DEV_TOKEN", "OPENAI_API_KEY"]
 
 export const register = () => {
     // Always required env vars
