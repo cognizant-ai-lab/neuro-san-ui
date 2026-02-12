@@ -39,6 +39,10 @@ interface EnvironmentStore {
     // team support email address
     supportEmailAddress: string
     setSupportEmailAddress: (supportEmailAddress: string) => void
+
+    // Dev.logo token
+    logoDevToken: string
+    setLogoDevToken: (devLogoToken: string) => void
 }
 
 /**
@@ -56,4 +60,7 @@ export const useEnvironmentStore = create<EnvironmentStore>((set) => ({
 
     supportEmailAddress: null,
     setSupportEmailAddress: (supportEmailAddress: string) => set(() => ({supportEmailAddress})),
+
+    logoDevToken: null,
+    setLogoDevToken: (logoDevToken: string) => set(() => ({logoDevToken})),
 }))
