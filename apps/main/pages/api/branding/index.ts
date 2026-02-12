@@ -11,7 +11,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return handleLLMRequest(req, res, {
         promptTemplate: SUGGEST_BRANDING_COLORS_PROMPT,
         extractVariables: (request) => ({
-            company: request.body,
+            company: request.body.company,
         }),
     })
 }

@@ -28,7 +28,7 @@ import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
 import {useSettingsStore} from "../../state/Settings"
-import {PALETTES} from "../../Theme/Palettes"
+import {usePalette} from "../../Theme/Palettes"
 import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -66,12 +66,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
 
     // Color palette for depth/heatmap coloring
-    const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette =
-        paletteKey === "brand" && brandPalette
-            ? brandPalette
-            : PALETTES[paletteKey as Exclude<typeof paletteKey, "brand">]
+    const palette = usePalette()
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data

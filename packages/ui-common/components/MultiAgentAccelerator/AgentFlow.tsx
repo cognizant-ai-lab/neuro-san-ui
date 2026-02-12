@@ -48,8 +48,7 @@ import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useSettingsStore} from "../../state/Settings"
-import {PALETTES} from "../../Theme/Palettes"
+import {usePalette} from "../../Theme/Palettes"
 import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -329,9 +328,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
     const isHeatmap = coloringOption === "heatmap"
 
-    const brandPalette = useSettingsStore((state) => state.settings.branding.rangePalette)
-    const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
-    const palette = paletteKey === "brand" ? brandPalette : PALETTES[paletteKey]
+    const palette = usePalette()
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network

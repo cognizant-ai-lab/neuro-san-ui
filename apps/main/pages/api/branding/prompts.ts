@@ -2,7 +2,9 @@
 import {ChatPromptTemplate} from "@langchain/core/prompts"
 
 export const SUGGEST_BRANDING_COLORS_PROMPT = ChatPromptTemplate.fromTemplate(`
-Given a company or organization name, suggest colors in hex format that match the company's branding.
+Given a company or organization name, suggest colors in hex format that match the company's branding. If you are given
+a generic type of company or organization (e.g. "a tech startup", "a non-profit organization"), suggest colors that 
+would be appropriate for that type of company.
 Return your response as JSON in the following format with no markdown, text or other comments:
 {{
     "primary": "#hexcode",

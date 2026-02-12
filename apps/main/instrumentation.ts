@@ -51,7 +51,7 @@ export function register() {
         const missingRequiredForAuthEnvVars = REQUIRED_FOR_AUTH_ENV_VARS.filter((envVar) => !process.env[envVar])
         if (missingRequiredForAuthEnvVars.length > 0) {
             throw new Error(
-                "Error: The following environment variable(s) are required for authentication" +
+                "Error: The following environment variable(s) are required for authentication " +
                     `but are empty or undefined:\n${missingRequiredForAuthEnvVars.join("\n")}`
             )
         }

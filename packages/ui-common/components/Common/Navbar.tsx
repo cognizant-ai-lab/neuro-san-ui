@@ -172,10 +172,11 @@ export const Navbar = ({
 
     // Construct logo URL if customer branding is set to retrieve logo from logo.dev.
     // NOTE: for this to work, a valid, active logo.dev token must be set in environment variables.
-    const logoUrl = logoDevToken
-        ? `https://img.logo.dev/name/${encodeURIComponent(customer)}` +
-          `?token=${logoDevToken}&theme=light&format=png&size=75`
-        : null
+    const logoUrl =
+        logoDevToken && customer?.trim().length > 0
+            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}` +
+              `?token=${logoDevToken}&theme=light&format=png&size=75`
+            : null
 
     return hydrated ? (
         <Grid
@@ -184,7 +185,6 @@ export const Navbar = ({
             alignItems="center"
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
-                color: primary,
                 padding: "0.25rem",
             }}
         >

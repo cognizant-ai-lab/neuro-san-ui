@@ -53,7 +53,7 @@ interface Settings {
 /**
  * Zustand state store for user preferences/Settings
  */
-interface SettingsStore {
+export interface SettingsStore {
     readonly settings: Settings
     readonly updateSettings: (updates: DeepPartial<Settings>) => void
     readonly resetSettings: () => void
