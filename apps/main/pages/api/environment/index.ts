@@ -17,17 +17,10 @@ limitations under the License.
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-// Possible values returned by this API. Note that not all will necessarily be set
-export interface EnvironmentResponse {
-    readonly auth0ClientId?: string
-    readonly auth0Domain?: string
-    readonly backendNeuroSanApiUrl?: string
-    readonly logoDevToken?: string
-    readonly supportEmailAddress?: string
-}
+import {EnvironmentResponse} from "./Types"
 
 /**
- * This function is a handler for the /api/gpt/environment endpoint. It retrieves environment settings from the
+ * This function is a handler for the .../environment endpoint. It retrieves environment settings from the
  * node server and returns them to the client. This way, the UI can be configured to point to the correct backend.
  * @param _req Request -- not used
  * @param res Response -- the response object. It is used to send the environment settings to the client.
