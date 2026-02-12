@@ -53,13 +53,9 @@ describe("PlasmaEdge", () => {
         } as unknown as typeof HTMLCanvasElement.prototype.getContext
 
         // Provide simple implementations for SVG element methods used by the particle generator
-        ;(Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = function () {
-            return 100
-        }
+        ;(Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = () => 100
         ;(Element.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}).getPointAtLength =
-            function (l: number) {
-                return {x: l, y: l}
-            }
+            (l: number) => ({x: l, y: l})
 
         // Mock RAF to run callback immediately once
         global.requestAnimationFrame = (cb: FrameRequestCallback) => {

@@ -26,9 +26,7 @@ import {createHash} from "crypto"
  * @param input Input to be tested
  * @returns True if input contains only whitespace, false otherwise
  */
-export function hasOnlyWhitespace(input: string) {
-    return input?.trim().length === 0
-}
+export const hasOnlyWhitespace = (input: string) => input?.trim().length === 0
 
 /**
  * Extracts the ID from a model ID
@@ -43,7 +41,7 @@ export function hasOnlyWhitespace(input: string) {
  *  = "67fb86d3-9047-4ce0-0d42-4e3d3b0f715e"
  * ```
  */
-export function extractId(modelId: string, modelType: "prescriptor" | "rio"): string {
+export const extractId = (modelId: string, modelType: "prescriptor" | "rio"): string => {
     if (!modelId || !modelType || !modelId.includes(modelType)) {
         return ""
     }

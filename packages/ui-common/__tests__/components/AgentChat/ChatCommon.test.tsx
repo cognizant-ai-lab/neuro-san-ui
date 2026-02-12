@@ -55,24 +55,22 @@ const TEST_TOOL_LAST_FM = "last_fm_tool"
 const TEST_TOOL_SOLVER = "math_solver_tool"
 const TEST_TOOL_CALCULATOR = "calculator_tool"
 
-function getResponseMessage(type: ChatMessageType, text: string): ChatMessage {
-    return {
-        type,
-        text,
-        chat_context: {
-            chat_histories: [
-                {
-                    messages: [
-                        {
-                            type,
-                            text,
-                        },
-                    ],
-                },
-            ],
-        },
-    }
-}
+const getResponseMessage = (type: ChatMessageType, text: string): ChatMessage => ({
+    type,
+    text,
+    chat_context: {
+        chat_histories: [
+            {
+                messages: [
+                    {
+                        type,
+                        text,
+                    },
+                ],
+            },
+        ],
+    },
+})
 
 // Generate a long query for testing truncation
 const LONG_QUERY_TEXT = "Long query".repeat(10)
@@ -136,7 +134,7 @@ describe("ChatCommon", () => {
         })
     })
 
-    async function sendQuery(agent: CombinedAgentType, query: string) {
+    const sendQuery = async (agent: CombinedAgentType, query: string) => {
         // locate user query input
         const userQueryInput = screen.getByPlaceholderText(`Chat with ${cleanUpAgentName(agent)}`)
         expect(userQueryInput).toBeInTheDocument()
@@ -727,18 +725,14 @@ describe("ChatCommon", () => {
             const mockResult: SpeechRecognitionResult = {
                 length: 1,
                 isFinal: true,
-                item() {
-                    return mockAlternative
-                },
+                item: () => mockAlternative,
                 [Symbol.iterator]: Array.prototype[Symbol.iterator].bind([mockAlternative]),
                 0: mockAlternative,
             }
 
             const mockResults: SpeechRecognitionResultList = {
                 length: 1,
-                item() {
-                    return mockResult
-                },
+                item: () => mockResult,
                 [Symbol.iterator]: Array.prototype[Symbol.iterator].bind([mockResult]),
                 0: mockResult,
             }
@@ -771,16 +765,12 @@ describe("ChatCommon", () => {
                     const mockVoiceResult: Partial<SpeechRecognitionResult> = {
                         length: 1,
                         isFinal: true,
-                        item() {
-                            return {confidence: 100, transcript: "standalone voice input"}
-                        },
+                        item: () => ({confidence: 100, transcript: "standalone voice input"}),
                         0: {confidence: 100, transcript: "standalone voice input"},
                     }
                     const mockVoiceResults: Partial<SpeechRecognitionResultList> = {
                         length: 1,
-                        item() {
-                            return mockVoiceResult as SpeechRecognitionResult
-                        },
+                        item: () => mockVoiceResult as SpeechRecognitionResult,
                         0: mockVoiceResult as SpeechRecognitionResult,
                     }
                     const mockVoiceEvent: Partial<SpeechRecognitionEvent> = {

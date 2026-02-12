@@ -26,6 +26,7 @@ import eslintPluginImport from "eslint-plugin-import"
 // eslint-disable-next-line no-shadow
 import jest from "eslint-plugin-jest"
 import jestDom from "eslint-plugin-jest-dom"
+import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions"
 import eslintPluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
 import testingLibrary from "eslint-plugin-testing-library"
@@ -40,6 +41,7 @@ const compat = new FlatCompat({
 })
 
 const config = [
+    preferArrowFunctions.configs["all"],
     eslintPluginUnicorn.configs.all,
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],

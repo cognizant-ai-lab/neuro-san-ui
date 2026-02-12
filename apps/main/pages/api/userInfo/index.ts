@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 // Expected header from ALB
 const AWS_OIDC_HEADER = "x-amzn-oidc-data"
 
-function fetchUserInfoFromALB(req: NextApiRequest): UserInfoResponse {
+const fetchUserInfoFromALB = (req: NextApiRequest): UserInfoResponse => {
     const oidcDataHeader = req.headers[AWS_OIDC_HEADER] as string
 
     if (!oidcDataHeader) {

@@ -43,9 +43,7 @@ describe("LlmHandler", () => {
         process.env["OPENAI_API_KEY"] = "test-api-key"
 
         await handleLLMRequest(req, res, {
-            extractVariables(): Record<string, unknown> {
-                return undefined
-            },
+            extractVariables: (): Record<string, unknown> => undefined,
             promptTemplate: {
                 formatMessages: jest.fn().mockResolvedValue([{content: "Test prompt"}]),
             } as unknown as ChatPromptTemplate,
@@ -64,9 +62,7 @@ describe("LlmHandler", () => {
         const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
 
         await handleLLMRequest(req, res, {
-            extractVariables(): Record<string, unknown> {
-                return undefined
-            },
+            extractVariables: (): Record<string, unknown> => undefined,
             promptTemplate: {} as unknown as ChatPromptTemplate,
         })
 
@@ -81,9 +77,7 @@ describe("LlmHandler", () => {
         })
 
         await handleLLMRequest(req, res, {
-            extractVariables(): Record<string, unknown> {
-                return undefined
-            },
+            extractVariables: (): Record<string, unknown> => undefined,
             promptTemplate: {} as unknown as ChatPromptTemplate,
         })
 
@@ -105,9 +99,7 @@ describe("LlmHandler", () => {
         }))
 
         await handleLLMRequest(req, res, {
-            extractVariables(): Record<string, unknown> {
-                return {}
-            },
+            extractVariables: (): Record<string, unknown> => ({}),
             promptTemplate: {
                 formatMessages: jest.fn().mockResolvedValue([{content: "Test prompt"}]),
             } as unknown as ChatPromptTemplate,

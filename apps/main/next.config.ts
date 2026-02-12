@@ -65,15 +65,13 @@ const nextConfig: import("next").NextConfig = {
     // Disable dev tools icon
     devIndicators: false,
 
-    async headers() {
-        return [
-            {
-                // Apply these headers to all routes in the application.
-                source: "/:path*",
-                headers: securityHeaders,
-            },
-        ]
-    },
+    headers: async () => [
+        {
+            // Apply these headers to all routes in the application.
+            source: "/:path*",
+            headers: securityHeaders,
+        },
+    ],
 
     sassOptions: {
         includePaths: [path.join(__dirname, "styles")],

@@ -776,7 +776,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         }
     }
 
-    async function doQueryLoop(query: string) {
+    const doQueryLoop = async (query: string) => {
         succeeded.current = false
 
         let attemptNumber: number = 0

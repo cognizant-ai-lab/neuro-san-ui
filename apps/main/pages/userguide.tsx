@@ -29,7 +29,7 @@ const USER_GUIDE_PATH = "user_guide.md"
 export default function UserGuide() {
     const [userGuide, setUserGuide] = useState(null)
 
-    async function getData() {
+    const getData = async () => {
         try {
             // fetch guide from server
             const result = await fetch(USER_GUIDE_PATH, {

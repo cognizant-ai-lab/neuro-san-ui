@@ -93,29 +93,27 @@ const DISABLE_OUTLINE_PROPS = {
 const logoDevToken = process.env["NEXT_PUBLIC_LOGO_DEV_TOKEN"]
 
 // Cognizant logo image component
-function getCognizantLogoImage() {
-    return (
-        <a
-            id="splash-logo-link"
-            href="https://www.cognizant.com/us/en"
-            style={{
-                display: "flex",
-                paddingLeft: "0.15rem",
-            }}
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-                id="logo-img"
-                width="200"
-                height="45"
-                src="/cognizant-logo-white.svg"
-                alt="Cognizant Logo"
-            />
-        </a>
-    )
-}
+const getCognizantLogoImage = () => (
+    <a
+        id="splash-logo-link"
+        href="https://www.cognizant.com/us/en"
+        style={{
+            display: "flex",
+            paddingLeft: "0.15rem",
+        }}
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+            id="logo-img"
+            width="200"
+            height="45"
+            src="/cognizant-logo-white.svg"
+            alt="Cognizant Logo"
+        />
+    </a>
+)
 
 export const Navbar = ({
     authenticationType,

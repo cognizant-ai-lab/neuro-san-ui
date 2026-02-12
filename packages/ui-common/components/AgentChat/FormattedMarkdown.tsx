@@ -71,7 +71,7 @@ export const FormattedMarkdown = ({
             key={`${hashString(stringToFormat)}-${index}`}
             rehypePlugins={[rehypeRaw, rehypeSlug]}
             components={{
-                code(codeProps) {
+                code: (codeProps) => {
                     const {children, className, ...rest} = codeProps
                     const match = /language-(?<language>\w+)/u.exec(className || "")
                     return match ? (
@@ -95,18 +95,16 @@ export const FormattedMarkdown = ({
                     )
                 },
                 // Handle links specially since we want them to open in a new tab
-                a({...codeProps}) {
-                    return (
-                        <a
-                            {...codeProps}
-                            id="reference-link"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {codeProps.children}
-                        </a>
-                    )
-                },
+                a: ({...codeProps}) => (
+                    <a
+                        {...codeProps}
+                        id="reference-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {codeProps.children}
+                    </a>
+                ),
             }}
         >
             {stringToFormat}

@@ -475,7 +475,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }
 
     // Generate Legend for depth or heatmap colors
-    function getLegend() {
+    const getLegend = () => {
         const length = isHeatmap ? palette.length : Math.min(maxDepth, palette.length)
         return (
             <Box

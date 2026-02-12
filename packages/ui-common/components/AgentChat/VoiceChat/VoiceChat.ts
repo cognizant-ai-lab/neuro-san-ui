@@ -142,10 +142,10 @@ const handleRecognitionError =
     }
 
 // Remove speech recognition event handlers and stop speech recognition
-export function cleanupAndStopSpeechRecognition(
+export const cleanupAndStopSpeechRecognition = (
     speechRecognitionRef: MutableRefObject<SpeechRecognition | null>,
     handlers: SpeechRecognitionHandlers | null
-): void {
+): void => {
     const speechRecognition = speechRecognitionRef.current
     if (!speechRecognition || !handlers) return
 
@@ -162,11 +162,11 @@ export function cleanupAndStopSpeechRecognition(
     speechRecognitionRef.current = null
 }
 
-export function setupSpeechRecognition(
+export const setupSpeechRecognition = (
     setChatInput: Dispatch<SetStateAction<string>>,
     setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>,
     speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
-): SpeechRecognitionHandlers | null {
+): SpeechRecognitionHandlers | null => {
     const speechSupported = checkSpeechSupport()
 
     if (speechSupported) {
