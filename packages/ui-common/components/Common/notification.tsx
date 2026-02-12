@@ -31,7 +31,7 @@ const ERROR_WARNING_NOTIFICATION_DURATION_MS = 15_000
 // Display info notification popups for this many seconds
 const SUCCESS_NOTIFICATION_DURATION_MS = 5000
 
-export function closeNotification(snackbarId?: SnackbarKey) {
+export const closeNotification = (snackbarId?: SnackbarKey) => {
     closeSnackbar(snackbarId)
 }
 
@@ -43,7 +43,7 @@ export function closeNotification(snackbarId?: SnackbarKey) {
  * @param description More complete description of the notification
  * @param placement Where to show notification. Defaults to top-right.
  */
-export function sendNotification(
+export const sendNotification = (
     variantType: NotificationType,
     message: string,
     description: string | ReactJSX.Element = "",
@@ -52,7 +52,7 @@ export function sendNotification(
         vertical: "top",
         horizontal: "right",
     }
-): void {
+): void => {
     // Log a copy to the console for troubleshooting
     const descriptionAsString = typeof description === "string" ? description : renderToString(description)
     console.debug(`Notification: Message: "${message}" Description: "${descriptionAsString}"`)

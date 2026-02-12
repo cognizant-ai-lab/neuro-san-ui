@@ -37,7 +37,7 @@ export const REQUIRED_FOR_AUTH_ENV_VARS = ["AUTH0_CLIENT_ID", "AUTH0_CLIENT_SECR
  */
 export const OPTIONAL_ENV_VARS = ["NEXT_PUBLIC_LOGO_DEV_TOKEN", "OPENAI_API_KEY"]
 
-export function register() {
+export const register = () => {
     // Always required env vars
     const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
     if (missingEnvVars.length > 0) {

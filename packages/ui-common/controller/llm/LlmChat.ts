@@ -33,7 +33,7 @@ import {BaseMessage} from "@langchain/core/messages"
  * @returns Either the JSON result of the call, or, if a callback is provided, nothing, but tokens are streamed
  * to the callback as they are received from the server.
  */
-export async function sendLlmRequest(
+export const sendLlmRequest = async (
     callback: (token: string) => void,
     signal: AbortSignal,
     fetchUrl: string,
@@ -41,7 +41,7 @@ export async function sendLlmRequest(
     userQuery?: string,
     chatHistory?: BaseMessage[],
     userId?: string
-) {
+) => {
     const res = await fetch(fetchUrl, {
         method: "POST",
         headers: {

@@ -27,7 +27,7 @@ describe("SettingsDialog", () => {
         global.fetch = originalFetch
     })
 
-    async function enterCustomerName(customerName: string, shouldClickApply: boolean = true) {
+    const enterCustomerName = async (customerName: string, shouldClickApply: boolean = true) => {
         const customerInput = screen.getByPlaceholderText(/Company or organization name/u)
         await user.clear(customerInput)
         await user.type(customerInput, customerName)

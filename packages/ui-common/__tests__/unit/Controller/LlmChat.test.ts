@@ -40,7 +40,7 @@ describe("LlmChat", () => {
             ok: true,
             body: {
                 getReader: () => ({
-                    async read() {
+                    read: async () => {
                         if (readIndex < mockChunks.length) {
                             const returnValue = {done: false, value: mockChunks[readIndex]}
                             readIndex += 1

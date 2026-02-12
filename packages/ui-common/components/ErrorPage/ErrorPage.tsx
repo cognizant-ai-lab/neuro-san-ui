@@ -49,7 +49,7 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
 
     const {data: {user: userInfo} = {}} = useAuthentication()
 
-    async function handleSignOut() {
+    const handleSignOut = async () => {
         // Clear our state storage variables
         setCurrentUser(undefined)
         setPicture(undefined)

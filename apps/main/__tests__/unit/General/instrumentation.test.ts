@@ -28,7 +28,7 @@ jest.mock("../../../../../packages/ui-common/const")
 // It's okay to do this in tests
 /* eslint-disable @typescript-eslint/no-dynamic-delete */
 
-function setAllEnvVars() {
+const setAllEnvVars = () => {
     // Set all required environment variables
     REQUIRED_ENV_VARS.forEach((envVar) => {
         process.env[envVar] = "test_value"

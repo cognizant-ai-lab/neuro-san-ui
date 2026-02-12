@@ -75,7 +75,7 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
  * @param props All props for Navbar except userInfo.
  * @return Navbar with userInfo passed to it.
  */
-function NavbarWrapper(props: Omit<NavbarProps, "userInfo">): ReactElement {
+const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
     const {data} = useAuthentication()
     const userInfo = data?.user
     return (
@@ -140,7 +140,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     }, [pathname])
 
     useEffect(() => {
-        async function getEnvironment() {
+        const getEnvironment = async () => {
             if (!authenticationEnabled()) {
                 // Authentication is disabled, so we don't need to get environment variables
                 setBackendNeuroSanApiUrl(
@@ -181,7 +181,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     }, [])
 
     useEffect(() => {
-        async function getUserInfo() {
+        const getUserInfo = async () => {
             if (!authenticationEnabled()) {
                 // Authentication is disabled, so we don't need to get user info
                 setCurrentUser("Guest")
@@ -223,7 +223,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         void getUserInfo()
     }, [])
 
-    async function handleSignOut() {
+    const handleSignOut = async () => {
         // Clear our state storage variables
         setCurrentUser(undefined)
         setPicture(undefined)
@@ -241,7 +241,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
      *
      * @returns The outer container of the app
      */
-    function getAppComponent() {
+    const getAppComponent = () => {
         // Haven't figured out whether we have ALB headers yet
         if (currentUser === undefined || !backendNeuroSanApiUrl) {
             return <LoadingSpinner id="loading-header" />

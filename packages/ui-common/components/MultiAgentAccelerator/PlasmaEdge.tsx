@@ -19,12 +19,12 @@ import {EdgeProps, getBezierPath} from "reactflow"
 
 import {useSettingsStore} from "../../state/Settings"
 
-function createFunnelParticleOnPath(
+const createFunnelParticleOnPath = (
     pathEl: SVGPathElement,
     canvasOffset: {x: number; y: number},
     baseProgress: number,
     plasmaColor: string
-) {
+) => {
     const totalLength = pathEl.getTotalLength()
     const speed = 0.02 + Math.random() * 0.003
     const life = 100

@@ -29,14 +29,12 @@ jest.mock("next-auth/react", () => ({
 }))
 
 jest.mock("next/router", () => ({
-    useRouter() {
-        return {
-            pathname: "",
-            query: {
-                someValue: 42,
-            },
-        }
-    },
+    useRouter: () => ({
+        pathname: "",
+        query: {
+            someValue: 42,
+        },
+    }),
 }))
 
 jest.mock("../../../../packages/ui-common/utils/Authentication")

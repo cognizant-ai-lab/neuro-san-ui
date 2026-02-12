@@ -732,9 +732,7 @@ describe("ThoughtBubbleOverlay", () => {
         })
         Object.defineProperty(Element.prototype, "clientHeight", {
             configurable: true,
-            get() {
-                return 50
-            },
+            get: () => 50,
         })
 
         const edges = [

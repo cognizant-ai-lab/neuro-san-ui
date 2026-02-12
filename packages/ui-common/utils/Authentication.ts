@@ -32,7 +32,7 @@ export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
  * being handled by the app via NextAuth. This way existing pages only need trivial changes to use this hook instead
  * of NextAuth's useSession hook.
  */
-export function useAuthentication() {
+export const useAuthentication = () => {
     const {data: session} = useSession()
     const {currentUser: albUser, picture: albPicture} = useUserInfoStore()
 
@@ -55,7 +55,7 @@ export function useAuthentication() {
  * @param auth0ClientId The Auth0 client ID. See Auth0 doc for more details. Identifies the app being used in Auth0.
  * @return The logout URL.
  */
-function createAuth0LogoutUrl(oidcProvider: OidcProvider, auth0Domain: string, auth0ClientId: string) {
+const createAuth0LogoutUrl = (oidcProvider: OidcProvider, auth0Domain: string, auth0ClientId: string) => {
     switch (oidcProvider) {
         case "AD":
             return `https://login.microsoftonline.com/${AD_TENANT_ID}/oauth2/v2.0/logout`
@@ -81,12 +81,12 @@ function createAuth0LogoutUrl(oidcProvider: OidcProvider, auth0Domain: string, a
  * @return Nothing, but executes the sign-out process.
  *
  */
-export async function smartSignOut(
+export const smartSignOut = async (
     currentUser: string,
     auth0Domain: string,
     auth0ClientId: string,
     oidcProvider: OidcProvider
-) {
+) => {
     if (currentUser === undefined) {
         // Don't know what authentication provider we're using, so just return
         return

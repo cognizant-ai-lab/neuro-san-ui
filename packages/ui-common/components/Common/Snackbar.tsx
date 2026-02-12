@@ -47,13 +47,11 @@ export interface SnackbarProps extends CustomContentProps {
 }
 // #endregion: Types
 
-// Passing Snackbar callback as a function because if we use an arrow function here we'd have to set displayName
 export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
-    // eslint-disable-next-line prefer-arrow-callback
-    function Snackbar(
+    (
         {description, hideIconVariant = false, iconVariant, id, message, variant}: SnackbarProps,
         ref: ForwardedRef<HTMLDivElement>
-    ): ReactJSX.Element {
+    ): ReactJSX.Element => {
         const {closeSnackbar} = useSnackbar()
         const handleCloseSnackbar = () => closeSnackbar(id)
         const icon = iconVariant[variant]
@@ -148,3 +146,5 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
         )
     }
 )
+
+Snackbar.displayName = "Snackbar"

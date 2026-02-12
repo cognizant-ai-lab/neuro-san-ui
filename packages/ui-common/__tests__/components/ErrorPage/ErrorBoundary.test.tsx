@@ -10,7 +10,7 @@ jest.mock("../../../components/ErrorPage/ErrorPage", () => ({
 }))
 
 // Create a component that throws when shouldThrow is true
-function ErrorChild({shouldThrow}: {shouldThrow: boolean}) {
+const ErrorChild = ({shouldThrow}: {shouldThrow: boolean}) => {
     if (shouldThrow) {
         throw new Error("boom")
     }
