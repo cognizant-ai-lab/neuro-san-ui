@@ -1426,7 +1426,7 @@ __metadata:
     eslint-plugin-import: "npm:2.32.0"
     eslint-plugin-jest: "npm:29.0.1"
     eslint-plugin-jest-dom: "npm:5.5.0"
-    eslint-plugin-prefer-arrow-functions: "npm:^3.9.1"
+    eslint-plugin-prefer-arrow-functions: "npm:3.9.1"
     eslint-plugin-react: "npm:7.37.5"
     eslint-plugin-react-hooks: "npm:5.2.0"
     eslint-plugin-testing-library: "npm:7.6.3"
@@ -6555,7 +6555,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-prefer-arrow-functions@npm:^3.9.1":
+"eslint-plugin-prefer-arrow-functions@npm:3.9.1":
   version: 3.9.1
   resolution: "eslint-plugin-prefer-arrow-functions@npm:3.9.1"
   dependencies:
