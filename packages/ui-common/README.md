@@ -3,7 +3,7 @@
 A comprehensive React component library and utilities package for building user interfaces for Neuro-san AI
 applications.
 
-This package provides ready-to-use components, and APIs for Neuro-san AI applications.
+This package provides ready-to-use components and APIs for Neuro-san AI applications.
 
 ## Copyright
 
@@ -13,7 +13,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -163,8 +163,6 @@ function AgentFlowPage() {
     )
 }
 ```
-
-### Using Utilities
 
 ### Theme Support
 
