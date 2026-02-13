@@ -31,11 +31,11 @@ yarn add @cognizant-ai-lab/ui-common
 
 ## Features
 
-- **UI Components**: Pre-built React components for AI chat interfaces, navigation, dialogs, and more
+- **UI Components**: Ready-to-use React components for AI chat interfaces, navigation, dialogs, and more
 - **Multi-Agent Visualization**: Interactive flow diagrams for visualizing agent networks
 - **Authentication**: Built-in authentication components supporting multiple providers
 - **State Management**: Zustand-based stores for environment, settings, and user info
-- **Theme Support**: Dark mode support with customizable, 100% Material-UI-based theming
+- **Theme Support**: Dark mode support with customizable, MUI-based theming
 - **Type Safety**: Full TypeScript support with generated OpenAPI types
 - **LLM Integration**: Controllers for interacting with language models and AI agents
 
@@ -45,7 +45,7 @@ Among the technologies and libraries used in this package are:
 
 - ESLint and Prettier (for code quality)
 - Jest and React Testing Library (for testing)
-- Material-UI
+- MUI
 - next-auth (for authentication)
 - React
 - React Flow (for multi-agent visualization)
@@ -56,7 +56,7 @@ Among the technologies and libraries used in this package are:
 
 ```
 ui-common/
-├── components/          # React components
+├── components/         # React components
 │   ├── AgentChat/      # Chat interface components
 │   ├── Authentication/ # Auth components
 │   ├── ChatBot/        # ChatBot components
@@ -78,8 +78,7 @@ ui-common/
 #### Example application
 
 Refer to [MAUI](https://github.com/cognizant-ai-lab/neuro-san-ui/tree/main/apps/main), the Multi-Agent Accelerator UI,
-in the main Neuro-san UI repository for a comprehensive example of how to use these components together in a real
-application.
+for a real-world application example that uses these components.
 
 ### Basic Import
 
@@ -91,20 +90,30 @@ import {ChatCommon, Navbar, MUIDialog, LoadingSpinner, useEnvironment, useUserIn
 
 #### ChatCommon
 
+Usage example with the current prop names:
+
 ```tsx
 import {ChatCommon} from "@cognizant-ai-lab/ui-common"
 import {AIMessage, HumanMessage} from "@langchain/core/messages"
+import {useState} from "react"
 
 function ChatInterface() {
-    const [messages, setMessages] = useState([new HumanMessage("Hello!"), new AIMessage("Hi! How can I help you?")])
+    const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
     return (
         <ChatCommon
-            agent="my-agent"
-            chatHistory={messages}
-            loading={false}
-            onClearHistory={() => setMessages([])}
-            onSendMessage={(msg) => console.log(msg)}
+            id="example-chat"
+            currentUser="user-123"
+            userImage="/images/user.png"
+            setIsAwaitingLlm={setIsAwaitingLlm}
+            isAwaitingLlm={isAwaitingLlm}
+            targetAgent="my-agent"
+            onSend={() => {}}
+            onChunkReceived={() => {}}
+            onStreamingStarted={() => {}}
+            onStreamingComplete={() => {}}
+            onClose={() => {}}
+            extraParams={{}}
         />
     )
 }
@@ -157,8 +166,8 @@ import {MultiAgentAccelerator} from "@cognizant-ai-lab/ui-common"
 function AgentFlowPage() {
     return (
         <MultiAgentAccelerator
-            agentName="orchestrator"
-            conversationId="conv-123"
+            userInfo={{userName: "user-123", userImage: "/images/user.png"}}
+            backendNeuroSanApiUrl="https://api.example.com"
         />
     )
 }
@@ -166,7 +175,7 @@ function AgentFlowPage() {
 
 ### Theme Support
 
-The package includes built-in theme support using Material-UI theming. The components will automatically respond to
+The package includes built-in theme support using MUI theming. The components will automatically respond to
 the currently active MUI theme.
 
 ## Available Components
@@ -182,7 +191,7 @@ the currently active MUI theme.
 ### Common
 
 - `Navbar` - Application navigation bar
-- `MUIDialog` - Custom Material-UI dialog wrapper
+- `MUIDialog` - Custom MUI dialog wrapper
 - `MUIAccordion` - Custom accordion component
 - `MUIAlert` - Alert/notification component
 - `Breadcrumbs` - Breadcrumb navigation
