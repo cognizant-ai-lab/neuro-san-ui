@@ -42,7 +42,7 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
   directory:
     - `yarn generate`
         - `yarn generate` will generate the necessary files in the `generated` directory.
-    - To verify, check to make sure that `ls generated/neuro-san/NeuroSanClient.ts` was generated.
+    - To verify, check to make sure that `generated/neuro-san/NeuroSanClient.ts` was generated.
 - In your project root directory, create a file named `.env` which contains the following keys.  
   Ask a current UI developer for the your_value values or get them self-serve from the leaf-team-vault server (see below).
 
