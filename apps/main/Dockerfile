@@ -61,6 +61,7 @@ COPY .yarnrc.yml ./
 COPY package.json ./
 COPY packages/ui-common/package.json ./packages/ui-common/package.json
 COPY apps/main/package.json ./apps/main/package.json
+COPY ./generated ./generated
 COPY yarn.lock ./
 
 # Copy the full ui-common package from deps (includes source + built dist)
