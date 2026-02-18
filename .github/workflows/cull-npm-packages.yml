@@ -52,6 +52,7 @@ on:
 
 env:
     SCOPED_PACKAGE_NAME: "@cognizant-ai-lab/ui-common"
+    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
     # Default retention period in days (can be overridden by workflow_dispatch input)
     DEFAULT_RETENTION_DAYS: 14
     # Default minimum versions to keep (can be overridden by workflow_dispatch input)
@@ -87,7 +88,7 @@ jobs:
             - name: Set up Node.js
               uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
               with:
-                  node-version: 22
+                  node-version: ${{ env.NODEJS_VERSION }}
 
             - name: List and cull packages
               id: cull
