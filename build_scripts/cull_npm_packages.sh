@@ -137,7 +137,7 @@ fetch_and_categorize_versions() {
     versions_json=$(npm view "${SCOPED_PACKAGE_NAME}" versions --json 2>/dev/null) || die "Failed to fetch versions for ${SCOPED_PACKAGE_NAME}"
     time_json=$(npm view "${SCOPED_PACKAGE_NAME}" time --json 2>/dev/null) || die "Failed to fetch publish times for ${SCOPED_PACKAGE_NAME}"
 
-    for version in $(echo "$versions_json" | jq --raw-output '.[]'); do
+    for version in $(echo "$versions_json" | jq --raw-output 'if type == "array" then .[] else . end'); do
         published_at=$(echo "$time_json" | jq --raw-output --arg v "$version" '.[$v] // empty')
 
         if [ -z "$published_at" ]; then
