@@ -1,9 +1,7 @@
 # @cognizant-ai-lab/ui-common
 
 A comprehensive React component library and utilities package for building user interfaces for Neuro-san AI
-applications.
-
-This package provides ready-to-use components and APIs for Neuro-san AI applications.
+applications. Contains components for chat interfaces, multi-agent flow visualization, theming and more.
 
 ## Copyright
 
@@ -21,13 +19,45 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Installation
+## Quickstart
+
+If you don't already have a ReactJS application, create one, for example, using [Create React App](https://create-react-app.dev/):
+The following assumes you're using TypeScript (recommended):
+```bash
+npx create-react-app my-app --template typescript
+cd my-app
+```
+
+Install the library:
 
 ```bash
 npm install @cognizant-ai-lab/ui-common
-# or
-yarn add @cognizant-ai-lab/ui-common
 ```
+
+Then edit `src/App.tsx` (assuming TypeScript) and replace the contents with the code below:
+
+```tsx
+export default function MyApp() {
+    // Animation time for the left and right panels to slide in or out when launching the animation
+    // For access to logged-in session and current username
+    const {
+        user: {image: userImage, name: userName},
+    } = useAuthentication().data
+
+    const {backendNeuroSanApiUrl} = useEnvironmentStore()
+
+    return (
+        <MultiAgentAccelerator
+            userInfo={{userName: "Alice", userImage: "https://example.com/alice.png"}}
+            backendNeuroSanApiUrl={backendNeuroSanApiUrl}
+        />
+    )
+}
+```
+
+Run your app with `npm start` or `yarn start`, and you should see the Multi-Agent Accelerator interface, 
+which is a demo application showcasing the components in this package. You can select an agent, chat with that agent 
+via the chat interface, and visualize the agent network flow.
 
 ## Features
 
@@ -90,7 +120,8 @@ import {ChatCommon, Navbar, MUIDialog, LoadingSpinner, useEnvironment, useUserIn
 
 #### ChatCommon
 
-Usage example with the current prop names:
+See `ChatCommonProps` for all available props and their types. Here's a basic example of how to use the `ChatCommon`
+component in a React application:
 
 ```tsx
 import {ChatCommon} from "@cognizant-ai-lab/ui-common"
@@ -102,18 +133,17 @@ function ChatInterface() {
 
     return (
         <ChatCommon
-            id="example-chat"
-            currentUser="user-123"
-            userImage="/images/user.png"
-            setIsAwaitingLlm={setIsAwaitingLlm}
-            isAwaitingLlm={isAwaitingLlm}
-            targetAgent="my-agent"
-            onSend={() => {}}
-            onChunkReceived={() => {}}
-            onStreamingStarted={() => {}}
-            onStreamingComplete={() => {}}
-            onClose={() => {}}
-            extraParams={{}}
+            id="agent-network-ui"
+            ref={chatRef} // If you need to access internal methods, like calling "Stop" when user clicks stop
+            neuroSanURL={neuroSanURL} // Base URL for Neuro-san API. Must point to a valid Neuro-san server
+            currentUser="Alice" // Current user's name, used for chat attribution in API calls and display
+            setIsAwaitingLlm={setIsAwaitingLlm} // Used to set whether we're currently waiting for an LLM response,
+            // which can be used to disable input and show loading states
+            isAwaitingLlm={isAwaitingLlm} // Used to indicate whether we're currently waiting for an LLM response
+            targetAgent={selectedNetwork} // The agent we're currently chatting with in Neuro-san.
+            onChunkReceived={onChunkReceived} // Callback function that will be called with each new chunk of response
+            // from the LLM. You can use this to update your UI in real time
+            // as the response comes in.
         />
     )
 }
@@ -122,6 +152,8 @@ function ChatInterface() {
 ### Using Controllers
 
 #### Test Agent Connection
+
+Used for testing connectivity to a Neuro-san server and retrieving version information.
 
 ```typescript
 import {testConnection} from "@cognizant-ai-lab/ui-common"
@@ -137,7 +169,34 @@ async function checkServer() {
 }
 ```
 
+### Send Chat Query
+
+Send a chat query to the Agent LLM API. If you are using `ChatCommon`, you shouldn't need to call this directly.
+
+```typescript
+import {sendChatQuery} from "@cognizant-ai-lab/ui-common"
+async function sendMessage() {
+    const controller = new AbortController()
+
+    const response = await sendChatQuery(
+        neuroSanURL,
+        controller.signal,
+        "What is the weather in 90210 today?",
+        "weather_agent",
+        (chunk) => console.log("Received chunk:", chunk),
+        chatContext,
+        slyData,
+        currentUser
+    )
+}
+```
+
 #### Send LLM Request
+
+Lower-level interface to send chat messages to a designated LLM and stream response tokens to the supplied callback
+function. You should not need to call this directly if you are using `ChatCommon`. It is a lower-level interface than
+`sendChatQuery` and is used by that function under the hood. This function can also be used to send messages to
+"legacy" agents, which are not built using the Agent API but still accept chat messages via the LLM API.
 
 ```typescript
 import {sendLlmRequest} from "@cognizant-ai-lab/ui-common"
@@ -158,21 +217,6 @@ async function chatWithAgent() {
 }
 ```
 
-### Multi-Agent Flow Visualization
-
-```tsx
-import {MultiAgentAccelerator} from "@cognizant-ai-lab/ui-common"
-
-function AgentFlowPage() {
-    return (
-        <MultiAgentAccelerator
-            userInfo={{userName: "user-123", userImage: "/images/user.png"}}
-            backendNeuroSanApiUrl="https://api.example.com"
-        />
-    )
-}
-```
-
 ### Theme Support
 
 The package includes built-in theme support using MUI theming. The components will automatically respond to
@@ -188,48 +232,18 @@ the currently active MUI theme.
 - `SendButton` - Message send button
 - `UserQueryDisplay` - Display user queries
 
-### Common
-
-- `Navbar` - Application navigation bar
-- `MUIDialog` - Custom MUI dialog wrapper
-- `MUIAccordion` - Custom accordion component
-- `MUIAlert` - Alert/notification component
-- `Breadcrumbs` - Breadcrumb navigation
-- `ConfirmationModal` - Confirmation dialog
-- `LoadingSpinner` - Loading indicator
-- `PageLoader` - Full-page loading component
-- `Snackbar` - Toast notifications
-
-### Authentication
-
-- `Auth` - Authentication wrapper component
-
 ### Multi-Agent Accelerator
 
 - `MultiAgentAccelerator` - Main multi-agent flow component
 - `AgentFlow` - Agent flow visualization
-- `Sidebar` - Agent flow sidebar
+- `Sidebar` - Agent networks sidebar
 
 ## API Controllers
 
 ### Agent Controller
 
-- `testConnection(url)` - Test connection to Neuro-san server
-- `getAgentInfo(agent, userId)` - Get agent information
-- `getChatHistory(agent, conversationId, userId)` - Retrieve chat history
-- `sendChatMessage(...)` - Send chat message to agent
-
-### LLM Controller
-
-- `sendLlmRequest(...)` - Send request to LLM with streaming support
-
-## Constants
-
-Access application constants:
-
-```typescript
-import {LOGO, NEURO_SAN_UI_VERSION, DEFAULT_USER_IMAGE, authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
-```
+Various functions for interacting with the Neuro-san Agent API, such as retrieving lists of
+agent networks and sending chat messages to agents.
 
 ## TypeScript Support
 
