@@ -1,6 +1,6 @@
 # Copyright
 
-Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+Copyright 2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -42,12 +42,7 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
   directory:
     - `yarn generate`
         - `yarn generate` will generate the necessary files in the `generated` directory.
-    - To view the files: `ls generated/neuro-san`. Sample response:
-
-```bash
-NeuroSanClient.ts  OpenAPITypes.ts
-```
-
+    - To verify, check to make sure that `generated/neuro-san/NeuroSanClient.ts` was generated.
 - In your project root directory, create a file named `.env` which contains the following keys.  
   Ask a current UI developer for the your_value values or get them self-serve from the leaf-team-vault server (see below).
 
