@@ -16,7 +16,7 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {act} from "react-dom/test-utils"
+import {act} from "react"
 import type {Edge, Node as RFNode} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"

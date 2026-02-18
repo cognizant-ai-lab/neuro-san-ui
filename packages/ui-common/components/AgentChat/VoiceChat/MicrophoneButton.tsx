@@ -17,7 +17,7 @@ limitations under the License.
 import MicNoneIcon from "@mui/icons-material/MicNone"
 import MicOffIcon from "@mui/icons-material/MicOff"
 import Tooltip from "@mui/material/Tooltip"
-import {Dispatch, FC, MutableRefObject, SetStateAction} from "react"
+import {Dispatch, FC, RefObject, SetStateAction} from "react"
 
 import {LlmChatButton} from "../LlmChatButton"
 import {checkSpeechSupport, SpeechRecognitionState, toggleListening} from "./VoiceChat"
@@ -37,7 +37,7 @@ export interface MicrophoneButtonProps {
     /**
      * Reference to the SpeechRecognition instance
      */
-    speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
+    speechRecognitionRef: RefObject<SpeechRecognition | null>
 
     /**
      * Current voice input state

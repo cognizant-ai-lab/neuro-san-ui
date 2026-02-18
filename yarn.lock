@@ -1414,8 +1414,8 @@ __metadata:
     "@types/dom-speech-recognition": "npm:0.0.6"
     "@types/jest": "npm:30.0.0"
     "@types/node": "npm:22.17.1"
-    "@types/react": "npm:18.2.0"
-    "@types/react-dom": "npm:18.2.0"
+    "@types/react": "npm:19.2.14"
+    "@types/react-dom": "npm:19.2.3"
     "@typescript-eslint/eslint-plugin": "npm:8.39.0"
     "@typescript-eslint/parser": "npm:8.39.0"
     babel-jest: "npm:30.1.1"
@@ -1438,7 +1438,8 @@ __metadata:
     jest-silent-reporter: "npm:0.6.0"
     knip: "npm:5.63.1"
     prettier: "npm:3.6.2"
-    react: "npm:18.2.0"
+    react: "npm:19.2.4"
+    react-dom: "npm:19.2.4"
     ts-jest: "npm:29.4.1"
     ts-node: "npm:10.9.2"
     typescript: "npm:5.9.2"
@@ -1464,16 +1465,16 @@ __metadata:
     next: "npm:16.1.6"
     next-auth: "npm:5.0.0-beta.30"
     node-mocks-http: "npm:1.17.2"
-    notistack: "npm:3.0.1"
+    notistack: "npm:3.0.2"
     react-markdown: "npm:10.1.0"
-    reactflow: "npm:11.10.2"
+    reactflow: "npm:11.11.4"
     rehype-raw: "npm:7.0.0"
     rehype-slug: "npm:6.0.0"
     remark-toc: "npm:9.0.0"
     sharp: "npm:0.33.2"
   peerDependencies:
-    react: ^18.2.0
-    react-dom: ^18.2.0
+    react: ^19.2.4
+    react-dom: ^19.2.4
     typescript: ^5.9.2
   languageName: unknown
   linkType: soft
@@ -1488,8 +1489,8 @@ __metadata:
     "@langchain/core": "npm:1.1.17"
     "@types/lodash-es": "npm:4.17.12"
     "@types/node": "npm:20.11.5"
-    "@types/react": "npm:18.2.0"
-    "@types/react-dom": "npm:18.2.0"
+    "@types/react": "npm:19.2.14"
+    "@types/react-dom": "npm:19.2.3"
     "@types/react-syntax-highlighter": "npm:15.5.13"
     babel-jest: "npm:30.2.0"
     fix-esm-import-path: "npm:1.10.3"
@@ -1499,12 +1500,12 @@ __metadata:
     lodash-es: "npm:4.17.23"
     next: "npm:16.1.6"
     next-auth: "npm:5.0.0-beta.30"
-    notistack: "npm:3.0.1"
+    notistack: "npm:3.0.2"
     openapi-typescript: "npm:7.8.0"
-    react-dom: "npm:18.2.0"
+    react-dom: "npm:19.2.4"
     react-markdown: "npm:10.1.0"
     react-syntax-highlighter: "npm:16.1.0"
-    reactflow: "npm:11.10.2"
+    reactflow: "npm:11.11.4"
     rehype-raw: "npm:7.0.0"
     rehype-slug: "npm:6.0.0"
     zustand: "npm:4.4.7"
@@ -1514,8 +1515,8 @@ __metadata:
     "@mui/icons-material": ^7.3.1
     "@mui/material": ^7.3.1
     "@mui/x-tree-view": ^8.22.0
-    react: ^18.2.0
-    react-dom: ^18.2.0
+    react: ^19.2.4
+    react-dom: ^19.2.4
     typescript: ^5.9.2
   languageName: unknown
   linkType: soft
@@ -3387,37 +3388,37 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@reactflow/background@npm:11.3.7":
-  version: 11.3.7
-  resolution: "@reactflow/background@npm:11.3.7"
+"@reactflow/background@npm:11.3.14":
+  version: 11.3.14
+  resolution: "@reactflow/background@npm:11.3.14"
   dependencies:
-    "@reactflow/core": "npm:11.10.2"
+    "@reactflow/core": "npm:11.11.4"
     classcat: "npm:^5.0.3"
     zustand: "npm:^4.4.1"
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/975d8f5e29c80b650ad79def4a1da418db71fd6fe3c5956eacd53d13a2470fa9b9bea255c01158712c50ff245d3ba35a32707e7cb1523a018d0677097f3daf0b
+  checksum: 10c0/a4ef8ca38f9cfd72d578dd2b2672d5bf841410f5a399e0c1d7bf4ea10e5d76003dec2fee15f927d4d5f121fc4414c811f2c4b9e702d28e31a4bd9399fc8cbe29
   languageName: node
   linkType: hard
 
-"@reactflow/controls@npm:11.2.7":
-  version: 11.2.7
-  resolution: "@reactflow/controls@npm:11.2.7"
+"@reactflow/controls@npm:11.2.14":
+  version: 11.2.14
+  resolution: "@reactflow/controls@npm:11.2.14"
   dependencies:
-    "@reactflow/core": "npm:11.10.2"
+    "@reactflow/core": "npm:11.11.4"
     classcat: "npm:^5.0.3"
     zustand: "npm:^4.4.1"
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/f2c24d44404e4ba878fbc148c21c5ade32e66f591e2d26e03143f54d32743d082282da221cd6c6b011559571f2a79b9832fb3c559837180562be679e3f4534bb
+  checksum: 10c0/6cd79e66590e301e5b3034dccfa1dcfb01fe27bbd1b8aadf8afaa8a0f68e3abe1c3d4a90a6e1ea54eecf5acb019073ead7379fbbf1252af06a63e413f82a74dc
   languageName: node
   linkType: hard
 
-"@reactflow/core@npm:11.10.2":
-  version: 11.10.2
-  resolution: "@reactflow/core@npm:11.10.2"
+"@reactflow/core@npm:11.11.4":
+  version: 11.11.4
+  resolution: "@reactflow/core@npm:11.11.4"
   dependencies:
     "@types/d3": "npm:^7.4.0"
     "@types/d3-drag": "npm:^3.0.1"
@@ -3431,15 +3432,15 @@ __metadata:
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/cf387dff26b6297dce0b2f5988a5527a3f7fefdff4ed54aff1ca4c14e8600491ca2c0356e8047653625d877efd2a35e022433469b5127277e9f5e6a2c8ab8ff9
+  checksum: 10c0/895a0c1491ba81a6ed06ee9f2619870083753c6faf26ad6cb37a5c27f2f2fa80ab88d4be5c77fb7cad17ba6b20b212ea3171a976f3817056196cf85f6d90e86c
   languageName: node
   linkType: hard
 
-"@reactflow/minimap@npm:11.7.7":
-  version: 11.7.7
-  resolution: "@reactflow/minimap@npm:11.7.7"
+"@reactflow/minimap@npm:11.7.14":
+  version: 11.7.14
+  resolution: "@reactflow/minimap@npm:11.7.14"
   dependencies:
-    "@reactflow/core": "npm:11.10.2"
+    "@reactflow/core": "npm:11.11.4"
     "@types/d3-selection": "npm:^3.0.3"
     "@types/d3-zoom": "npm:^3.0.1"
     classcat: "npm:^5.0.3"
@@ -3449,15 +3450,15 @@ __metadata:
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/a271da8be2f109a25636e8c6f1cc5361c996ae50745e828a64747f85087dd5a06383bf8b4f7f06b2e86dd1ce084494ae0b42f015458dce7eb890da6be700a687
+  checksum: 10c0/5bc99ab12e4daafacfb3d60e36c7d2253cfd7cd7ba5765a9ff7c35a3a6835c49cae9aa1acde181baf5b2de3e2c48226758f5a61125ecf7014a9d58fe6ef62bb6
   languageName: node
   linkType: hard
 
-"@reactflow/node-resizer@npm:2.2.7":
-  version: 2.2.7
-  resolution: "@reactflow/node-resizer@npm:2.2.7"
+"@reactflow/node-resizer@npm:2.2.14":
+  version: 2.2.14
+  resolution: "@reactflow/node-resizer@npm:2.2.14"
   dependencies:
-    "@reactflow/core": "npm:11.10.2"
+    "@reactflow/core": "npm:11.11.4"
     classcat: "npm:^5.0.4"
     d3-drag: "npm:^3.0.0"
     d3-selection: "npm:^3.0.0"
@@ -3465,21 +3466,21 @@ __metadata:
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/7e0c547c88cbed7d589eb2cee54bf46d7d3d410bbc49b207008ec2b8301cf0ac68eba29d7f1de0d1c8c010c21d924cad0f42c7436f086115ca923d57ce711280
+  checksum: 10c0/094905bc9eb4ec9e20ebe732983a44895822f7fae56c8d348b478bbee776342b286f08578c57eeeb5408a931febced32a5fef68163755b37fc19ca523b78e0dd
   languageName: node
   linkType: hard
 
-"@reactflow/node-toolbar@npm:1.3.7":
-  version: 1.3.7
-  resolution: "@reactflow/node-toolbar@npm:1.3.7"
+"@reactflow/node-toolbar@npm:1.3.14":
+  version: 1.3.14
+  resolution: "@reactflow/node-toolbar@npm:1.3.14"
   dependencies:
-    "@reactflow/core": "npm:11.10.2"
+    "@reactflow/core": "npm:11.11.4"
     classcat: "npm:^5.0.3"
     zustand: "npm:^4.4.1"
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/5840d796617a0461b1d04262f38b967137cf52e8d633146c35e2eae7a55a763770c682d662e6ee95135e767bb86c03083c3235b13a87447f0da57aa805a76a35
+  checksum: 10c0/cd29257969a11feb273849d3aa540d534513b292115ebf697db1357fae704426be899dcf882ea36e13a33d49073b6c2b44fc67c4ddbc779bf2dcd49ba87053a3
   languageName: node
   linkType: hard
 
@@ -4165,19 +4166,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/prop-types@npm:*, @types/prop-types@npm:^15.7.15":
+"@types/prop-types@npm:^15.7.15":
   version: 15.7.15
   resolution: "@types/prop-types@npm:15.7.15"
   checksum: 10c0/b59aad1ad19bf1733cf524fd4e618196c6c7690f48ee70a327eb450a42aab8e8a063fbe59ca0a5701aebe2d92d582292c0fb845ea57474f6a15f6994b0e260b2
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:18.2.18":
-  version: 18.2.18
-  resolution: "@types/react-dom@npm:18.2.18"
-  dependencies:
-    "@types/react": "npm:*"
-  checksum: 10c0/74dba11a1b8156f3a763f3fca1fb4ec1dcd349153279b8bf79210024a69f994bf2cf0728198c047f8130c5318420ea56281b0a4ef84c8ae943cd9a0cac705220
+"@types/react-dom@npm:19.2.3":
+  version: 19.2.3
+  resolution: "@types/react-dom@npm:19.2.3"
+  peerDependencies:
+    "@types/react": ^19.2.0
+  checksum: 10c0/b486ebe0f4e2fb35e2e108df1d8fc0927ca5d6002d5771e8a739de11239fe62d0e207c50886185253c99eb9dedfeeb956ea7429e5ba17f6693c7acb4c02f8cd1
   languageName: node
   linkType: hard
 
@@ -4199,21 +4200,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:18.2.18":
-  version: 18.2.18
-  resolution: "@types/react@npm:18.2.18"
+"@types/react@npm:19.2.14":
+  version: 19.2.14
+  resolution: "@types/react@npm:19.2.14"
   dependencies:
-    "@types/prop-types": "npm:*"
-    "@types/scheduler": "npm:*"
-    csstype: "npm:^3.0.2"
-  checksum: 10c0/2f544da491f7fcfa91ef172945b9b0f3ed9aff48bdf644f557cdfbef363b5891e1b1b06f3510c8f361c72523b835ed72ef0320a0d03cddbdcc37ff198c212900
-  languageName: node
-  linkType: hard
-
-"@types/scheduler@npm:*":
-  version: 0.26.0
-  resolution: "@types/scheduler@npm:0.26.0"
-  checksum: 10c0/84626b06551ab7e1247412a2588430da5cd75263a353f1fd70593ca7331d43797937b89fe587089c6b3613d0658986087c5f0b2debef5bae831cdc1104a432ef
+    csstype: "npm:^3.2.2"
+  checksum: 10c0/7d25bf41b57719452d86d2ac0570b659210402707313a36ee612666bf11275a1c69824f8c3ee1fdca077ccfe15452f6da8f1224529b917050eb2d861e52b59b7
   languageName: node
   linkType: hard
 
@@ -5772,6 +5764,13 @@ __metadata:
   version: 3.1.3
   resolution: "csstype@npm:3.1.3"
   checksum: 10c0/80c089d6f7e0c5b2bd83cf0539ab41474198579584fa10d86d0cafe0642202343cbc119e076a0b1aece191989477081415d66c9fefbf3c957fc2fc4b7009f248
+  languageName: node
+  linkType: hard
+
+"csstype@npm:^3.2.2":
+  version: 3.2.3
+  resolution: "csstype@npm:3.2.3"
+  checksum: 10c0/cd29c51e70fa822f1cecd8641a1445bed7063697469d35633b516e60fe8c1bde04b08f6c5b6022136bb669b64c63d4173af54864510fbb4ee23281801841a3ce
   languageName: node
   linkType: hard
 
@@ -9139,7 +9138,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loose-envify@npm:^1.1.0, loose-envify@npm:^1.4.0":
+"loose-envify@npm:^1.4.0":
   version: 1.4.0
   resolution: "loose-envify@npm:1.4.0"
   dependencies:
@@ -10033,16 +10032,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"notistack@npm:3.0.1":
-  version: 3.0.1
-  resolution: "notistack@npm:3.0.1"
+"notistack@npm:3.0.2":
+  version: 3.0.2
+  resolution: "notistack@npm:3.0.2"
   dependencies:
     clsx: "npm:^1.1.0"
     goober: "npm:^2.0.33"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
-  checksum: 10c0/dd5bd492dbaf8d07a1f45a53ae195c5d481bc7136d73a756eb076534d315216a3cd2f4628263be55ad21d8bfed6ec546e5063584ffcc2798fb2aac56e5ccf0cf
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/82a0270ee1b9e70bc1dfad4d7e1d2bbb6dc08ac887b920986dcfa58cc2aa975bd48b71f7cf3afc2e11badd142ba9ade5f708c858ee2080b9d4cd950b80c43811
   languageName: node
   linkType: hard
 
@@ -10680,15 +10679,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:18.2.0":
-  version: 18.2.0
-  resolution: "react-dom@npm:18.2.0"
+"react-dom@npm:19.2.4":
+  version: 19.2.4
+  resolution: "react-dom@npm:19.2.4"
   dependencies:
-    loose-envify: "npm:^1.1.0"
-    scheduler: "npm:^0.23.0"
+    scheduler: "npm:^0.27.0"
   peerDependencies:
-    react: ^18.2.0
-  checksum: 10c0/66dfc5f93e13d0674e78ef41f92ed21dfb80f9c4ac4ac25a4b51046d41d4d2186abc915b897f69d3d0ebbffe6184e7c5876f2af26bfa956f179225d921be713a
+    react: ^19.2.4
+  checksum: 10c0/f0c63f1794dedb154136d4d0f59af00b41907f4859571c155940296808f4b94bf9c0c20633db75b5b2112ec13d8d7dd4f9bf57362ed48782f317b11d05a44f35
   languageName: node
   linkType: hard
 
@@ -10773,29 +10771,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:18.2.0":
-  version: 18.2.0
-  resolution: "react@npm:18.2.0"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10c0/b562d9b569b0cb315e44b48099f7712283d93df36b19a39a67c254c6686479d3980b7f013dc931f4a5a3ae7645eae6386b4aa5eea933baa54ecd0f9acb0902b8
+"react@npm:19.2.4":
+  version: 19.2.4
+  resolution: "react@npm:19.2.4"
+  checksum: 10c0/cd2c9ff67a720799cc3b38a516009986f7fc4cb8d3e15716c6211cf098d1357ee3e348ab05ad0600042bbb0fd888530ba92e329198c92eafa0994f5213396596
   languageName: node
   linkType: hard
 
-"reactflow@npm:11.10.2":
-  version: 11.10.2
-  resolution: "reactflow@npm:11.10.2"
+"reactflow@npm:11.11.4":
+  version: 11.11.4
+  resolution: "reactflow@npm:11.11.4"
   dependencies:
-    "@reactflow/background": "npm:11.3.7"
-    "@reactflow/controls": "npm:11.2.7"
-    "@reactflow/core": "npm:11.10.2"
-    "@reactflow/minimap": "npm:11.7.7"
-    "@reactflow/node-resizer": "npm:2.2.7"
-    "@reactflow/node-toolbar": "npm:1.3.7"
+    "@reactflow/background": "npm:11.3.14"
+    "@reactflow/controls": "npm:11.2.14"
+    "@reactflow/core": "npm:11.11.4"
+    "@reactflow/minimap": "npm:11.7.14"
+    "@reactflow/node-resizer": "npm:2.2.14"
+    "@reactflow/node-toolbar": "npm:1.3.14"
   peerDependencies:
     react: ">=17"
     react-dom: ">=17"
-  checksum: 10c0/6aba243fcb88b1960c7d2fc4c92adf8cd53f9ff08a3029cf402d1284a8fba2aedb9f22f9f5e458ce6c07822e10e4f52ee34a212af489f422847f47ab048b53da
+  checksum: 10c0/5faf9895db29d39c190b78a6113a4f97430d576086efeb3570deec81035559297823dd9ca96b9dd7daeb17159a12ac9117e399e71696485e6ccf43e9f98c1f35
   languageName: node
   linkType: hard
 
@@ -11164,12 +11160,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"scheduler@npm:^0.23.0":
-  version: 0.23.2
-  resolution: "scheduler@npm:0.23.2"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10c0/26383305e249651d4c58e6705d5f8425f153211aef95f15161c151f7b8de885f24751b377e4a0b3dd42cce09aad3f87a61dab7636859c0d89b7daf1a1e2a5c78
+"scheduler@npm:^0.27.0":
+  version: 0.27.0
+  resolution: "scheduler@npm:0.27.0"
+  checksum: 10c0/4f03048cb05a3c8fddc45813052251eca00688f413a3cee236d984a161da28db28ba71bd11e7a3dd02f7af84ab28d39fb311431d3b3772fed557945beb00c452
   languageName: node
   linkType: hard
 
