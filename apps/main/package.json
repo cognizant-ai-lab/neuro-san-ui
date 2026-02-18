@@ -31,7 +31,7 @@
     },
     "devDependencies": {
         "@types/lodash-es": "4.17.12",
-        "eslint-config-next": "15.4.11",
+        "eslint-config-next": "16.1.6",
         "node-mocks-http": "1.17.2"
     },
     "peerDependencies": {
