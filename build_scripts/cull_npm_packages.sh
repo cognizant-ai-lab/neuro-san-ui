@@ -40,7 +40,7 @@
 # npmjs.org Unpublish Policy:
 #   npm blocks unpublish when a version was published more than 72 hours ago
 #   AND has 300+ downloads in the last week AND has dependents in the public
-#   registry. In practice, non-release dev versions rarely hit the download
+#   registry. In practice, non-release dev versions should not hit the download
 #   threshold, so unpublish will typically succeed. When it does not, the
 #   script falls back to deprecation which has no such restrictions.
 # ================================================================================
