@@ -21,13 +21,14 @@ limitations under the License.
 
 ## Quickstart
 
-For this quickstart, we'll show how to use the `MultiAgentAccelerator` component, which is a demo application 
+For this quickstart, we'll show how to use the `MultiAgentAccelerator` component, which is a demo application
 showcasing the components in this package.
 
 You will need access to a Neuro-san API backend to use the components in this package.
 
-If you don't already have a ReactJS application, create one, for example, using [Create React App](https://create-react-app.dev/): 
+If you don't already have a ReactJS application, create one, for example, using [Create React App](https://create-react-app.dev/):
 The following assumes you're using TypeScript (recommended):
+
 ```bash
 npx create-react-app my-app --template typescript
 cd my-app
@@ -52,8 +53,8 @@ export default function MyApp() {
 }
 ```
 
-Run your app with `npm start` or `yarn start`, and you should see the Multi-Agent Accelerator interface, 
-which is a demo application showcasing the components in this package. You can select an agent, chat with that agent 
+Run your app with `npm start` or `yarn start`, and you should see the Multi-Agent Accelerator interface,
+which is a demo application showcasing the components in this package. You can select an agent, chat with that agent
 via the chat interface, and visualize the agent network flow.
 
 ## Features
