@@ -21,7 +21,12 @@ limitations under the License.
 
 ## Quickstart
 
-If you don't already have a ReactJS application, create one, for example, using [Create React App](https://create-react-app.dev/):
+For this quickstart, we'll show how to use the `MultiAgentAccelerator` component, which is a demo application 
+showcasing the components in this package.
+
+You will need access to a Neuro-san API backend to use the components in this package.
+
+If you don't already have a ReactJS application, create one, for example, using [Create React App](https://create-react-app.dev/): 
 The following assumes you're using TypeScript (recommended):
 ```bash
 npx create-react-app my-app --template typescript
