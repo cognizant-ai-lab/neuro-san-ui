@@ -19,7 +19,6 @@ import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environm
 
 // Main function.
 export default function MultiAgentAcceleratorPage() {
-    // Animation time for the left and right panels to slide in or out when launching the animation
     // For access to logged-in session and current username
     const {
         user: {image: userImage, name: userName},
