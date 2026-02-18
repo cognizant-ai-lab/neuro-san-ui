@@ -1560,7 +1560,7 @@ __metadata:
     "@eslint/eslintrc": "npm:3.3.1"
     "@eslint/js": "npm:9.32.0"
     "@jest/types": "npm:30.0.5"
-    "@next/eslint-plugin-next": "npm:15.4.11"
+    "@next/eslint-plugin-next": "npm:16.1.6"
     "@testing-library/dom": "npm:10.4.1"
     "@testing-library/jest-dom": "npm:6.6.4"
     "@testing-library/react": "npm:16.3.0"
@@ -3261,15 +3261,6 @@ __metadata:
   version: 16.1.6
   resolution: "@next/env@npm:16.1.6"
   checksum: 10c0/ed7023edb94b9b2e5da3f9c99d08b614da9757c1edd0ecec792fce4d336b4f0c64db1a84955e07cfbd848b9e61c4118fff28f4098cd7b0a7f97814a90565ebe6
-  languageName: node
-  linkType: hard
-
-"@next/eslint-plugin-next@npm:15.4.11":
-  version: 15.4.11
-  resolution: "@next/eslint-plugin-next@npm:15.4.11"
-  dependencies:
-    fast-glob: "npm:3.3.1"
-  checksum: 10c0/771c2224d1a5fb3b1ff01fbe14258da816c4110e56c6d856df6fcc910f252bde28a6c42dfd2721df2fb77142530be935420dfde1d9009981ddf817a513cb8fd3
   languageName: node
   linkType: hard
 
