@@ -35,14 +35,12 @@
 # - Dev packages (version format: x.y.z-main.sha.run or x.y.z-pr.sha.run):
 #   - The most recent N packages are ALWAYS kept (regardless of age)
 #   - Packages older than cutoff_date (beyond the most recent N) are unpublished
-#   - If unpublish fails, the version is deprecated instead
 #
 # npmjs.org Unpublish Policy:
 #   npm blocks unpublish when a version was published more than 72 hours ago
 #   AND has 300+ downloads in the last week AND has dependents in the public
 #   registry. In practice, non-release dev versions should not hit the download
-#   threshold, so unpublish will typically succeed. When it does not, the
-#   script falls back to deprecation which has no such restrictions.
+#   threshold, so unpublish will typically succeed.
 # ================================================================================
 
 set -euo pipefail
@@ -128,7 +126,7 @@ init_counters() {
     KEPT_VERSIONS=0
     DELETED_VERSIONS=0
     WOULD_DELETE_VERSIONS=0
-    DEPRECATED_VERSIONS=0
+    FAILED_VERSIONS=0
 }
 
 # ================================================================================
@@ -168,18 +166,6 @@ unpublish_version() {
         return 0
     else
         log "  -> Unpublish failed (likely download count or dependents)"
-        return 1
-    fi
-}
-
-deprecate_version() {
-    local version="$1"
-
-    if npm deprecate "${SCOPED_PACKAGE_NAME}@${version}" "Culled: old dev version superseded by newer builds" 2>/dev/null; then
-        log "  -> Deprecated successfully"
-        return 0
-    else
-        log "  -> Deprecation failed for $version"
         return 1
     fi
 }
@@ -241,11 +227,7 @@ process_dev_versions() {
                     if unpublish_version "$version"; then
                         DELETED_VERSIONS=$((DELETED_VERSIONS + 1))
                     else
-                        if deprecate_version "$version"; then
-                            DEPRECATED_VERSIONS=$((DEPRECATED_VERSIONS + 1))
-                        else
-                            log "  -> WARNING: Version $version could not be unpublished or deprecated"
-                        fi
+                        FAILED_VERSIONS=$((FAILED_VERSIONS + 1))
                     fi
                 fi
             else
@@ -276,7 +258,7 @@ print_summary() {
         log "Versions that would be deleted: $WOULD_DELETE_VERSIONS"
     else
         log "Versions unpublished: $DELETED_VERSIONS"
-        log "Versions deprecated (unpublish blocked): $DEPRECATED_VERSIONS"
+        log "Versions failed to unpublish: $FAILED_VERSIONS"
     fi
 }
 
@@ -288,7 +270,7 @@ emit_github_output() {
             echo "release=$RELEASE_VERSIONS"
             echo "kept=$KEPT_VERSIONS"
             echo "deleted=$DELETED_VERSIONS"
-            echo "deprecated=$DEPRECATED_VERSIONS"
+            echo "failed=$FAILED_VERSIONS"
             echo "would_delete=$WOULD_DELETE_VERSIONS"
         } >> "$GITHUB_OUTPUT"
     fi

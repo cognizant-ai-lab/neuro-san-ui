@@ -25,8 +25,7 @@
 #   - The most recent N packages are ALWAYS kept (regardless of age)
 #   - Packages older than 14 days (beyond the most recent N) are deleted
 #
-# The workflow uses the npmjs.org registry API to unpublish or deprecate versions.
-# Versions that cannot be unpublished (due to npm's unpublish policy) are deprecated.
+# The workflow uses the npmjs.org registry API to unpublish versions.
 # ================================================================================
 
 name: Cull NPM Packages
@@ -128,4 +127,3 @@ jobs:
                   echo "- Release versions (format \`x.y.z\`) are **never** deleted" >> $GITHUB_STEP_SUMMARY
                   echo "- The most recent ${MIN_KEEP_VERSIONS} non-release versions are **always** kept" >> $GITHUB_STEP_SUMMARY
                   echo "- Non-release versions older than ${RETENTION_DAYS} days (beyond the min keep) are unpublished" >> $GITHUB_STEP_SUMMARY
-                  echo "- Versions that cannot be unpublished are deprecated instead" >> $GITHUB_STEP_SUMMARY
