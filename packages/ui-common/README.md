@@ -38,18 +38,10 @@ Then edit `src/App.tsx` (assuming TypeScript) and replace the contents with the 
 
 ```tsx
 export default function MyApp() {
-    // Animation time for the left and right panels to slide in or out when launching the animation
-    // For access to logged-in session and current username
-    const {
-        user: {image: userImage, name: userName},
-    } = useAuthentication().data
-
-    const {backendNeuroSanApiUrl} = useEnvironmentStore()
-
     return (
         <MultiAgentAccelerator
             userInfo={{userName: "Alice", userImage: "https://example.com/alice.png"}}
-            backendNeuroSanApiUrl={backendNeuroSanApiUrl}
+            backendNeuroSanApiUrl="https://my-neuro-san-api.example.com"
         />
     )
 }
