@@ -26,7 +26,7 @@
 #   - Packages older than 14 days (beyond the most recent N) are deleted
 #
 # The workflow uses the npmjs.org registry API to unpublish or deprecate versions.
-# Versions that cannot be unpublished (due to npm's 72-hour policy) are deprecated.
+# Versions that cannot be unpublished (due to npm's unpublish policy) are deprecated.
 # ================================================================================
 
 name: Cull NPM Packages
@@ -62,7 +62,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
             - name: Determine parameters
               id: params
@@ -85,7 +85,7 @@ jobs:
                   echo "Min keep versions: $MIN_KEEP_VERSIONS"
 
             - name: Set up Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
               with:
                   node-version: 22
 
@@ -127,4 +127,4 @@ jobs:
                   echo "- Release versions (format \`x.y.z\`) are **never** deleted" >> $GITHUB_STEP_SUMMARY
                   echo "- The most recent ${MIN_KEEP_VERSIONS} non-release versions are **always** kept" >> $GITHUB_STEP_SUMMARY
                   echo "- Non-release versions older than ${RETENTION_DAYS} days (beyond the min keep) are unpublished" >> $GITHUB_STEP_SUMMARY
-                  echo "- Versions that cannot be unpublished (npm 72-hour policy) are deprecated instead" >> $GITHUB_STEP_SUMMARY
+                  echo "- Versions that cannot be unpublished are deprecated instead" >> $GITHUB_STEP_SUMMARY

@@ -35,7 +35,14 @@
 # - Dev packages (version format: x.y.z-main.sha.run or x.y.z-pr.sha.run):
 #   - The most recent N packages are ALWAYS kept (regardless of age)
 #   - Packages older than cutoff_date (beyond the most recent N) are unpublished
-#   - If unpublish fails (e.g., 72-hour policy), the version is deprecated instead
+#   - If unpublish fails, the version is deprecated instead
+#
+# npmjs.org Unpublish Policy:
+#   npm blocks unpublish when a version was published more than 72 hours ago
+#   AND has 300+ downloads in the last week AND has dependents in the public
+#   registry. In practice, non-release dev versions rarely hit the download
+#   threshold, so unpublish will typically succeed. When it does not, the
+#   script falls back to deprecation which has no such restrictions.
 # ================================================================================
 
 set -euo pipefail
@@ -160,7 +167,7 @@ unpublish_version() {
         log "  -> Unpublished successfully"
         return 0
     else
-        log "  -> Unpublish failed (likely 72-hour policy or dependents)"
+        log "  -> Unpublish failed (likely download count or dependents)"
         return 1
     fi
 }
