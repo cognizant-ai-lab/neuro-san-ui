@@ -234,8 +234,11 @@ process_dev_versions() {
                     if unpublish_version "$version"; then
                         DELETED_VERSIONS=$((DELETED_VERSIONS + 1))
                     else
-                        deprecate_version "$version"
-                        DEPRECATED_VERSIONS=$((DEPRECATED_VERSIONS + 1))
+                        if deprecate_version "$version"; then
+                            DEPRECATED_VERSIONS=$((DEPRECATED_VERSIONS + 1))
+                        else
+                            log "  -> WARNING: Version $version could not be unpublished or deprecated"
+                        fi
                     fi
                 fi
             else
