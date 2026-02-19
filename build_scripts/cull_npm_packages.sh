@@ -149,7 +149,7 @@ fetch_and_categorize_versions() {
     local versions_json time_json version published_at
 
     log "Fetching package versions for ${SCOPED_PACKAGE_NAME}..."
-    log "Retention policy: Keep last $MIN_KEEP_VERSIONS dev versions, delete others older than $CUTOFF_DATE"
+    log "Retention policy: Keep last $MIN_KEEP_VERSIONS dev versions, delete others older than $(date --date "@$CUTOFF_DATE" --utc +%Y-%m-%dT%H:%M:%SZ)"
 
     versions_json=$(npm view "${SCOPED_PACKAGE_NAME}" versions --json 2>/dev/null) || die "Failed to fetch versions for ${SCOPED_PACKAGE_NAME}"
     time_json=$(npm view "${SCOPED_PACKAGE_NAME}" time --json 2>/dev/null) || die "Failed to fetch publish times for ${SCOPED_PACKAGE_NAME}"
