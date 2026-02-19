@@ -96,11 +96,19 @@ is_release_version() {
 # Argument Parsing and Setup
 # ================================================================================
 
+usage() {
+    echo "Usage: $0 <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>" >&2
+    exit 1
+}
+
 parse_args() {
-    SCOPED_PACKAGE_NAME="${1:?Usage: $0 <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>}"
-    RETENTION_DAYS="${2:?Usage: $0 <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>}"
-    DRY_RUN="${3:?Usage: $0 <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>}"
-    MIN_KEEP_VERSIONS="${4:?Usage: $0 <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>}"
+    if [ "$#" -ne 4 ]; then
+        usage
+    fi
+    SCOPED_PACKAGE_NAME="$1"
+    RETENTION_DAYS="$2"
+    DRY_RUN="$3"
+    MIN_KEEP_VERSIONS="$4"
 }
 
 compute_cutoff_date() {
