@@ -278,7 +278,7 @@ print_summary() {
 emit_github_output() {
     if [ -n "${GITHUB_OUTPUT:-}" ]; then
         {
-            echo "cutoff_date=$CUTOFF_DATE"
+            echo "cutoff_date=$(date --date "@$CUTOFF_DATE" --utc +%Y-%m-%dT%H:%M:%SZ)"
             echo "total=$TOTAL_VERSIONS"
             echo "release=$RELEASE_VERSIONS"
             echo "kept=$KEPT_VERSIONS"
