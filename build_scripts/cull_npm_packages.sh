@@ -77,7 +77,8 @@ die() {
 }
 
 check_deps() {
-    command -v npm jq >/dev/null 2>&1 || die "Missing required commands: npm and jq must be installed"
+    command -v npm >/dev/null 2>&1 || die "Missing required command: npm must be installed"
+    command -v jq >/dev/null 2>&1 || die "Missing required command: jq must be installed"
 }
 
 check_auth() {
@@ -112,8 +113,8 @@ parse_args() {
 }
 
 compute_cutoff_date() {
-    CUTOFF_DATE=$(date --date "$RETENTION_DAYS days ago" --utc +%Y-%m-%dT%H:%M:%SZ)
-    log "Cutoff date: $CUTOFF_DATE"
+    CUTOFF_DATE=$(date --date "$RETENTION_DAYS days ago" --utc +%s)
+    log "Cutoff date: $(date --date "@$CUTOFF_DATE" --utc +%Y-%m-%dT%H:%M:%SZ)"
     log "Packages published before this date will be considered for deletion"
 }
 
@@ -200,7 +201,7 @@ process_release_versions() {
 process_dev_versions() {
     local version_index=0
     local dev_count
-    local version published_at
+    local version published_at published_epoch
 
     log ""
     log "=== Dev Versions ==="
@@ -225,7 +226,8 @@ process_dev_versions() {
                 continue
             fi
 
-            if [[ "$published_at" < "$CUTOFF_DATE" ]]; then
+            published_epoch=$(date --date "$published_at" --utc +%s)
+            if [ "$published_epoch" -lt "$CUTOFF_DATE" ]; then
                 if [ "$DRY_RUN" = "true" ]; then
                     log "WOULD DELETE: $version (published: $published_at)"
                     WOULD_DELETE_VERSIONS=$((WOULD_DELETE_VERSIONS + 1))
