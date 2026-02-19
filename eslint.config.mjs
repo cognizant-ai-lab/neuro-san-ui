@@ -51,9 +51,9 @@ const config = [
             // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
             // "rules" section below.
             "eslint:all",
-            "plugin:@next/next/recommended",
+            "plugin:@next/next/recommended-legacy",
             // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
-            "plugin:@next/next/core-web-vitals",
+            "plugin:@next/next/core-web-vitals-legacy",
             "plugin:@typescript-eslint/all",
             "plugin:import/recommended",
             "plugin:import/typescript",
