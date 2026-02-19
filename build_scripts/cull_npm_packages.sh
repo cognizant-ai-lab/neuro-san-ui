@@ -76,9 +76,13 @@ die() {
     exit 1
 }
 
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1 must be installed"
+}
+
 check_deps() {
-    command -v npm >/dev/null 2>&1 || die "Missing required command: npm must be installed"
-    command -v jq >/dev/null 2>&1 || die "Missing required command: jq must be installed"
+    require_command npm
+    require_command jq
 }
 
 check_auth() {
