@@ -25,7 +25,7 @@
 #   - The most recent N packages are ALWAYS kept (regardless of age)
 #   - Packages older than 14 days (beyond the most recent N) are deleted
 #
-# The workflow uses the GitHub API to list and delete package versions.
+# The workflow uses the npmjs.org registry API to unpublish versions.
 # ================================================================================
 
 name: Cull NPM Packages
@@ -50,22 +50,19 @@ on:
                 default: 5
 
 env:
-    PACKAGE_NAME: ui-common
-    PACKAGE_OWNER: cognizant-ai-lab
+    SCOPED_PACKAGE_NAME: "@cognizant-ai-lab/ui-common"
+    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
     # Default retention period in days (can be overridden by workflow_dispatch input)
     DEFAULT_RETENTION_DAYS: 14
     # Default minimum versions to keep (can be overridden by workflow_dispatch input)
     DEFAULT_MIN_KEEP_VERSIONS: 5
-
-permissions:
-    packages: write
 
 jobs:
     cull-packages:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
             - name: Determine parameters
               id: params
@@ -87,14 +84,18 @@ jobs:
                   echo "Retention days: $RETENTION_DAYS"
                   echo "Min keep versions: $MIN_KEEP_VERSIONS"
 
+            - name: Set up Node.js
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              with:
+                  node-version: ${{ env.NODEJS_VERSION }}
+
             - name: List and cull packages
               id: cull
               env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
               run: |
                   ./build_scripts/cull_npm_packages.sh \
-                    "${{ env.PACKAGE_NAME }}" \
-                    "${{ env.PACKAGE_OWNER }}" \
+                    "${{ env.SCOPED_PACKAGE_NAME }}" \
                     "${{ steps.params.outputs.retention_days }}" \
                     "${{ steps.params.outputs.dry_run }}" \
                     "${{ steps.params.outputs.min_keep_versions }}"
@@ -109,7 +110,7 @@ jobs:
 
                   echo "### NPM Package Cull Summary" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "**Package:** \`@${{ env.PACKAGE_OWNER }}/${{ env.PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+                  echo "**Package:** \`${{ env.SCOPED_PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
                   echo "**Retention Period:** ${RETENTION_DAYS} days" >> $GITHUB_STEP_SUMMARY
                   echo "**Min Keep Versions:** ${MIN_KEEP_VERSIONS}" >> $GITHUB_STEP_SUMMARY
                   echo "**Cutoff Date:** \`${CUTOFF_DATE}\`" >> $GITHUB_STEP_SUMMARY
@@ -125,4 +126,4 @@ jobs:
                   echo "#### Retention Policy" >> $GITHUB_STEP_SUMMARY
                   echo "- Release versions (format \`x.y.z\`) are **never** deleted" >> $GITHUB_STEP_SUMMARY
                   echo "- The most recent ${MIN_KEEP_VERSIONS} non-release versions are **always** kept" >> $GITHUB_STEP_SUMMARY
-                  echo "- Non-release versions older than ${RETENTION_DAYS} days (beyond the min keep) are deleted" >> $GITHUB_STEP_SUMMARY
+                  echo "- Non-release versions older than ${RETENTION_DAYS} days (beyond the min keep) are unpublished" >> $GITHUB_STEP_SUMMARY
