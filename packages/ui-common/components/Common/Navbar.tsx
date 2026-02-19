@@ -32,6 +32,7 @@ import Typography from "@mui/material/Typography"
 import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "./ConfirmationModal"
+import {CustomerLogo, getCognizantLogoImage} from "./CustomerLogo"
 import {LoadingSpinner} from "./LoadingSpinner"
 import {
     authenticationEnabled,
@@ -92,29 +93,6 @@ const DISABLE_OUTLINE_PROPS = {
     },
 }
 
-// Cognizant logo image component
-const getCognizantLogoImage = () => (
-    <a
-        id="splash-logo-link"
-        href="https://www.cognizant.com/us/en"
-        style={{
-            display: "flex",
-            paddingLeft: "0.15rem",
-        }}
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-            id="logo-img"
-            width="200"
-            height="45"
-            src="/cognizant-logo-white.svg"
-            alt="Cognizant Logo"
-        />
-    </a>
-)
-
 export const Navbar = ({
     authenticationType,
     id,
@@ -169,14 +147,6 @@ export const Navbar = ({
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const primary = useSettingsStore((state) => state.settings.branding.primary)
 
-    // Construct logo URL if customer branding is set to retrieve logo from logo.dev.
-    // NOTE: for this to work, a valid, active logo.dev token must be set in environment variables.
-    const logoUrl =
-        logoDevToken && customer?.trim().length > 0
-            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}` +
-              `?token=${logoDevToken}&theme=light&format=png&size=75`
-            : null
-
     return hydrated ? (
         <Grid
             id="nav-bar-container"
@@ -194,38 +164,25 @@ export const Navbar = ({
                     onClose={() => setSettingsDialogOpen(false)}
                 />
             )}
-            {customer ? (
-                <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
-                    {logoUrl ? (
-                        // We're trying to wean ourselves off Next.js
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                            src={logoUrl}
-                            alt={`${customer} Logo`}
-                            width="75"
-                            height="75"
-                            style={{paddingLeft: "0.15rem"}}
-                        />
-                    ) : null}
-                    <Typography
-                        id="customer-branding"
-                        sx={{
-                            ...MENU_ITEM_TEXT_PROPS,
-                            color: primary || undefined,
-                            fontSize: "20px",
-                            fontWeight: "600",
-                            paddingLeft: "0.15rem",
-                            width: "200px",
-                            display: "flex",
-                            alignItems: "center",
-                        }}
-                    >
-                        {customer}
-                    </Typography>
-                </Box>
-            ) : (
-                getCognizantLogoImage()
-            )}
+            <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
+                <CustomerLogo logoDevToken={logoDevToken} />
+                <Typography
+                    id="customer-branding"
+                    sx={{
+                        ...MENU_ITEM_TEXT_PROPS,
+                        color: primary || undefined,
+                        fontSize: "20px",
+                        fontWeight: "600",
+                        paddingLeft: "0.15rem",
+                        width: "200px",
+                        display: "flex",
+                        alignItems: "center",
+                    }}
+                >
+                    {customer}
+                </Typography>
+            </Box>
+
             {/*App title*/}
             <Grid
                 id={id}
