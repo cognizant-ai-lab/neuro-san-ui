@@ -62,7 +62,6 @@ RELEASE_VERSIONS=0
 KEPT_VERSIONS=0
 DELETED_VERSIONS=0
 WOULD_DELETE_VERSIONS=0
-DEPRECATED_VERSIONS=0
 
 # ================================================================================
 # Utility Functions
