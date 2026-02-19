@@ -13,20 +13,22 @@ import Typography from "@mui/material/Typography"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
-import {getBrandingColors} from "../../controller/agent/Agent"
+import {getBrandingSuggestions} from "../../controller/agent/Agent"
 import {useSettingsStore} from "../../state/Settings"
 import {PaletteKey, PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
+import {CustomerLogo} from "../Common/CustomerLogo"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
 
 interface SettingsDialogProps {
     readonly id: string
     readonly isOpen?: boolean
+    readonly logoDevToken?: string
     readonly onClose?: () => void
 }
 
-export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) => {
+export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToken, onClose}) => {
     // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
     const resetSettings = useSettingsStore((state) => state.resetSettings)
@@ -55,6 +57,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
     // Customer branding
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const brandingCheckmark = useCheckmarkFade()
+    const logoCheckmark = useCheckmarkFade()
     const [customerInput, setCustomerInput] = useState<string>(customer)
     const [isBrandingApplying, setIsBrandingApplying] = useState<boolean>(false)
 
@@ -86,8 +89,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 },
             })
 
-            const brandingColors = await getBrandingColors(customerInput)
-            if (!brandingColors) {
+            const brandingSuggestions = await getBrandingSuggestions(customerInput)
+            if (!brandingSuggestions) {
                 console.warn(`Failed to fetch branding colors for customer "${customerInput}"`)
                 sendNotification(
                     NotificationType.error,
@@ -102,55 +105,63 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                 },
             })
 
-            if (brandingColors["plasma"]) {
+            if (brandingSuggestions["plasma"]) {
                 updateSettings({
                     appearance: {
-                        plasmaColor: brandingColors["plasma"],
+                        plasmaColor: brandingSuggestions["plasma"],
                     },
                 })
                 plasmaColorCheckmark.trigger()
             }
 
-            if (brandingColors["nodeColor"]) {
+            if (brandingSuggestions["nodeColor"]) {
                 updateSettings({
                     appearance: {
-                        agentNodeColor: brandingColors["nodeColor"],
+                        agentNodeColor: brandingSuggestions["nodeColor"],
                     },
                 })
                 agentNodeColorCheckmark.trigger()
             }
 
             // primary
-            if (brandingColors["primary"]) {
+            if (brandingSuggestions["primary"]) {
                 updateSettings({
                     branding: {
-                        primary: brandingColors["primary"],
+                        primary: brandingSuggestions["primary"],
                     },
                 })
             }
 
             // secondary
-            if (brandingColors["secondary"]) {
+            if (brandingSuggestions["secondary"]) {
                 updateSettings({
                     branding: {
-                        secondary: brandingColors["secondary"],
+                        secondary: brandingSuggestions["secondary"],
                     },
                 })
             }
 
             // background
-            if (brandingColors["background"]) {
+            if (brandingSuggestions["background"]) {
                 updateSettings({
                     branding: {
-                        background: brandingColors["background"],
+                        background: brandingSuggestions["background"],
                     },
                 })
             }
 
-            if (Array.isArray(brandingColors["rangePalette"])) {
+            if (Array.isArray(brandingSuggestions["rangePalette"])) {
                 updateSettings({
                     branding: {
-                        rangePalette: brandingColors["rangePalette"],
+                        rangePalette: brandingSuggestions["rangePalette"],
+                    },
+                })
+            }
+
+            if (brandingSuggestions["iconSuggestion"]) {
+                updateSettings({
+                    branding: {
+                        iconSuggestion: brandingSuggestions["iconSuggestion"],
                     },
                 })
             }
@@ -268,6 +279,63 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, onClose}) =
                                 {isBrandingApplying ? "Applying..." : "Apply"}
                             </Button>
                             <FadingCheckmark show={brandingCheckmark.show} />
+                        </Box>
+                    </Box>
+                    <Box sx={{display: "flex", alignItems: "center"}}>
+                        <Box sx={{display: "flex", alignItems: "center", gap: 2, marginBottom: "1rem", width: "100%"}}>
+                            <FormLabel>Logo:</FormLabel>
+                            <Tooltip title={customer ? null : "Set a customer name to enable logo options"}>
+                                <ToggleButtonGroup
+                                    aria-label="logo-selection"
+                                    disabled={!customer}
+                                    exclusive={true}
+                                    onChange={(_, value) => {
+                                        if (value !== null) {
+                                            updateSettings({
+                                                branding: {
+                                                    logoSource: value,
+                                                },
+                                            })
+                                            logoCheckmark.trigger()
+                                        }
+                                    }}
+                                    size="small"
+                                    sx={{marginRight: "1rem"}}
+                                    value={useSettingsStore((state) => state.settings.branding.logoSource) || "none"}
+                                >
+                                    <Tooltip title="No logo will be displayed">
+                                        <ToggleButton value="none">None</ToggleButton>
+                                    </Tooltip>
+                                    <Tooltip title="Display a simple, anonymous generic logo based on a generic brand">
+                                        <ToggleButton value="generic">Generic</ToggleButton>
+                                    </Tooltip>
+                                    <Tooltip
+                                        title={
+                                            logoDevToken
+                                                ? "Use a service to attempt to automatically find a suitable logo based " +
+                                                  "on the customer name. Results may vary based on the uniqueness of the " +
+                                                  "name" +
+                                                  "and availability of logos online."
+                                                : "No Logo.dev token found, cannot use Auto logo source"
+                                        }
+                                    >
+                                        <span>
+                                            <ToggleButton
+                                                value="auto"
+                                                disabled={!logoDevToken}
+                                            >
+                                                Auto
+                                            </ToggleButton>
+                                        </span>
+                                    </Tooltip>
+                                </ToggleButtonGroup>
+                            </Tooltip>
+                            <FormLabel>Preview:</FormLabel>
+                            <CustomerLogo
+                                fallbackElement="(None)"
+                                logoDevToken={logoDevToken}
+                            />
+                            <FadingCheckmark show={logoCheckmark.show} />
                         </Box>
                     </Box>
                     <Typography

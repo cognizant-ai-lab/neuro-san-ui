@@ -5,6 +5,8 @@ export const SUGGEST_BRANDING_COLORS_PROMPT = ChatPromptTemplate.fromTemplate(`
 Given a company or organization name, suggest colors in hex format that match the company's branding. If you are given
 a generic type of company or organization (e.g. "a tech startup", "a non-profit organization"), suggest colors that 
 would be appropriate for that type of company.
+Also suggest a suitable icon selected from the MUI icons to represent the company or organization. Only give the 
+name of the MUI Icon, not the suffix "Icon", so for example "FlightTakeOff" not "FlightTakeOffIcon". 
 Return your response as JSON in the following format with no markdown, text or other comments:
 {{
     "primary": "#hexcode",
@@ -12,7 +14,8 @@ Return your response as JSON in the following format with no markdown, text or o
     "background": "#hexcode",
     "plasma": "#hexcode",
     "nodeColor": "#hexcode",
-    "rangePalette": ["#hexcode1", "#hexcode2", "#hexcode3", "#hexcode4", "#hexcode5", "#hexcode6", "#hexcode7", "#hexcode8", "#hexcode9", "#hexcode10"]
+    "rangePalette": ["#hexcode1", "#hexcode2", "#hexcode3", "#hexcode4", "#hexcode5", "#hexcode6", "#hexcode7", "#hexcode8", "#hexcode9", "#hexcode10"],
+    "iconSuggestion": "IconName"
 }}
 
 These colors will be used in a MUI theme for a web application, so ensure they work well together and that there is
