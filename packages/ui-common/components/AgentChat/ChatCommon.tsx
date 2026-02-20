@@ -29,7 +29,7 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {useColorScheme} from "@mui/material/styles"
+import {SxProps, useColorScheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -339,10 +339,10 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 if (isValidElement(item) && item.type === MUIAccordion) {
                     const itemAsAccordion = item as ReactElement<MUIAccordionProps>
                     return cloneElement(itemAsAccordion, {
-                        sx: {
-                            ...item.props.sx,
-                            display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none",
-                        },
+                        sx: [
+                            itemAsAccordion.props.sx,
+                            {display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none"},
+                        ] as SxProps,
                     })
                 }
                 return item
