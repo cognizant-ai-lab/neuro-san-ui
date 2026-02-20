@@ -37,10 +37,10 @@ import {
     cloneElement,
     CSSProperties,
     Dispatch,
-    forwardRef,
     isValidElement,
     ReactElement,
     ReactNode,
+    Ref,
     SetStateAction,
     useEffect,
     useImperativeHandle,
@@ -205,7 +205,7 @@ const QUERY_TRUNCATE_LENGTH = 80
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
-export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
+export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const slyData = useRef<Record<string, unknown>>({})
 
     const {
@@ -1201,8 +1201,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             </Box>
         </Box>
     )
-})
+}
 
-// Set a useful display name for the component for debugging purposes. We have to do it here because we're using
-// forwardRef in the main definition.
+// Set a useful display name for the component for debugging purposes.
 ChatCommon.displayName = "ChatCommon"
