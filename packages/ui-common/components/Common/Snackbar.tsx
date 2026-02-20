@@ -149,5 +149,3 @@ export const Snackbar = ({
         </SnackbarContent>
     )
 }
-
-Snackbar.displayName = "Snackbar"

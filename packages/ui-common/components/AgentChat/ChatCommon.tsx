@@ -1202,6 +1202,3 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Box>
     )
 }
-
-// Set a useful display name for the component for debugging purposes.
-ChatCommon.displayName = "ChatCommon"
