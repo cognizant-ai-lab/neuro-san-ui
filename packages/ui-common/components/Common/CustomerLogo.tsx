@@ -59,8 +59,12 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoDevTok
     // "generic": try MUI icon, then Cognizant fallback
     if (logoSource === "generic") {
         const MuiIcon = MuiIcons[iconSuggestion as keyof typeof MuiIcons]
-        const muiIconElement = MuiIcon ? <MuiIcon sx={{fontSize: "2rem"}} /> : null
-        return muiIconElement || getCognizantLogoImage()
+        if (MuiIcon) {
+            return <MuiIcon sx={{fontSize: "2rem"}} />
+        } else {
+            console.warn(`Icon "${iconSuggestion}" not found in MUI icons. Falling back to default.`)
+            return fallbackElement
+        }
     }
 
     // "auto": use logo.dev service

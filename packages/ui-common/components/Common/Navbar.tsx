@@ -161,6 +161,7 @@ export const Navbar = ({
                 <SettingsDialog
                     id="settings-dialog"
                     isOpen={settingsDialogOpen}
+                    logoDevToken={logoDevToken}
                     onClose={() => setSettingsDialogOpen(false)}
                 />
             )}
