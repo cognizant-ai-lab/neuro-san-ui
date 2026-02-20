@@ -69,6 +69,23 @@ export const updateAgentCounts = (
     }, new Map(agentCountsMap))
 }
 
+/**
+ * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
+ * @example
+ * ```json
+ * {
+ *   "reservation_id": "copy_cat-hello_world-14ecb260-4389-44f3-afad-ea315dfa1966",
+ *   "lifetime_in_seconds": 300.0,
+ *   "expiration_time_in_seconds": 1771438301.0245166
+ * }
+ * ```
+ */
+export type AgentReservation = {
+    readonly reservation_id: string
+    readonly lifetime_in_seconds: number
+    readonly expiration_time_in_seconds: number
+}
+
 const processAgentCompletion = (conversations: AgentConversation[], tools: string[]): AgentConversation[] => {
     const toolsToRemove = new Set(tools)
 
@@ -93,9 +110,10 @@ export const processChatChunk = (
     agentCountsMap: Map<string, number>,
     currentConversations: AgentConversation[] | null
 ): {
-    success: boolean
-    newCounts: Map<string, number>
+    agentReservations?: AgentReservation[]
     newConversations: AgentConversation[] | null
+    newCounts: Map<string, number>
+    success: boolean
 } => {
     try {
         const updatedConversations = [...(currentConversations || [])]
@@ -103,9 +121,21 @@ export const processChatChunk = (
         // Get chat message if it's a known message type
         const chatMessage = chatMessageFromChunk(chunk)
 
+        let agentReservations: AgentReservation[] = []
+
+        // Check for temp networks in sly_data
+        if (
+            chatMessage?.type === ChatMessageType.AGENT_FRAMEWORK &&
+            chatMessage?.sly_data && // check for agent_reservations key in slyData
+            "agent_reservations" in chatMessage.sly_data
+        ) {
+            agentReservations = chatMessage.sly_data["agent_reservations"] as AgentReservation[]
+        }
+
         // If there are no origins in a chat message, return current state
         if (!chatMessage?.origin?.length) {
             return {
+                agentReservations,
                 success: true,
                 newCounts: agentCountsMap,
                 newConversations: currentConversations,
@@ -141,14 +171,16 @@ export const processChatChunk = (
         }
 
         return {
-            success: true,
-            newCounts: updatedCounts,
+            agentReservations,
             newConversations: finalConversations,
+            newCounts: updatedCounts,
+            success: true,
         }
     } catch (error) {
         sendNotification(NotificationType.error, "Agent conversation error")
         console.error("Agent conversation error:", error)
         return {
+            agentReservations: [],
             success: false,
             newCounts: agentCountsMap,
             newConversations: currentConversations,

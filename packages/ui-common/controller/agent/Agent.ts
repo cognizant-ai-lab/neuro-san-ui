@@ -43,7 +43,13 @@ import {sendLlmRequest} from "../llm/LlmChat"
  * @returns The path with the target agent name inserted.
  */
 const insertTargetAgent = (agent: string, path: string) => {
-    return path.replace("{agent_name}", agent)
+    let agentTmp = agent
+    // Remove "temporary" prefix from network name if it exists since the server doesn't know about that convention
+    if (agentTmp.startsWith("temporary/")) {
+        agentTmp = agentTmp.replace("temporary/", "")
+    }
+
+    return path.replace("{agent_name}", agentTmp)
 }
 
 export interface TestConnectionResult {

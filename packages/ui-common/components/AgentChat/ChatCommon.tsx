@@ -609,7 +609,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         }}
                         items={[
                             {
-                                title: "Agent Details",
+                                title: "Network Details",
                                 content: [
                                     `My description is: "${agentFunction?.function?.description}"`,
                                     <h6
