@@ -312,10 +312,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                     <Tooltip
                                         title={
                                             logoDevToken
-                                                ? "Use a service to attempt to automatically find a suitable logo based " +
-                                                  "on the customer name. Results may vary based on the uniqueness of the " +
-                                                  "name" +
-                                                  "and availability of logos online."
+                                                ? "Use a service to attempt to automatically find a suitable logo " +
+                                                  "based on the customer name. Results may vary based " +
+                                                  "on the uniqueness of the name and availability of logos online."
                                                 : "No Logo.dev token found, cannot use Auto logo source"
                                         }
                                     >
