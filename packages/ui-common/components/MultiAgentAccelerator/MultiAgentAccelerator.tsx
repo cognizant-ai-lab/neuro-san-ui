@@ -30,7 +30,7 @@ import {
     getNetworkIconSuggestions,
 } from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
+import {AgentConversation, AgentReservation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
@@ -41,6 +41,18 @@ interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
 }
+const tmp = [
+    {
+        reservation_id: "copy_cat-hello_world-be043e2b-63fb-4e22-a550-5c86a0ee1046",
+        lifetime_in_seconds: 300.0,
+        expiration_time_in_seconds: 1771438301.0245166,
+    },
+]
+const convertReservationsToNetworks = (agentReservations: AgentReservation[]): AgentInfo[] =>
+    agentReservations.map((reservation) => ({
+        agent_name: `temporary/${reservation.reservation_id}`,
+        origin: reservation.reservation_id,
+    }))
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -63,6 +75,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
+    const [temporaryNetworks, setTemporaryNetworks] = useState<readonly AgentInfo[]>(convertReservationsToNetworks(tmp))
+
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
@@ -154,8 +168,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setNetworkIconSuggestions({})
                 }
             }
+            if (temporaryNetworks?.length > 0) {
+                setNetworkIconSuggestions({
+                    ...networkIconSuggestions,
+                    ...Object.fromEntries(temporaryNetworks.map((network) => [network.agent_name, "HourglassTop"])),
+                })
+            }
         })()
-    }, [networks])
+    }, [networks, temporaryNetworks])
 
     useEffect(() => {
         ;(async () => {
@@ -229,6 +249,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             agentCountsRef.current = result.newCounts
             conversationsRef.current = result.newConversations
             setCurrentConversations(result.newConversations)
+            if (result.agentReservations?.length > 0) {
+                const result2 = convertReservationsToNetworks(result.agentReservations)
+                setTemporaryNetworks(result2)
+            }
         }
 
         return result.success
@@ -284,6 +308,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
                         }}
+                        temporaryNetworks={temporaryNetworks}
                     />
                 </Grid>
             </Slide>
