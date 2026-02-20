@@ -7,6 +7,9 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
  * @param nodes - Array of tree nodes to sort
  */
 const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
+    // Sort the top level nodes first
+    nodes.sort((a, b) => a.label.localeCompare(b.label))
+
     // Use a queue for breadth-first traversal to avoid recursion
     const queue: TreeViewBaseItem[] = [...nodes]
     let index = 0
@@ -16,9 +19,7 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
         index += 1
 
         if (node.children && node.children.length > 0) {
-            // Sort the children alphabetically
             node.children.sort((a, b) => a.label.localeCompare(b.label))
-            // Add children to the queue for processing
             queue.push(...node.children)
         }
     }
@@ -29,10 +30,12 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
  * The list of networks comes from a call to the Neuro-san /list API
  * The tree structure is used by the RichTreeView component to display the networks
  * @param networks - Array of networks from the Neuro-san /list API
+ * @param temporaryNetworks - Array of temporary networks (e.g. ones recently created by the user)
  * @returns Array of TreeViewBaseItem objects representing the tree structure and an index for rapid access
  */
 export const buildTreeViewItems = (
-    networks: readonly AgentInfo[]
+    networks: readonly AgentInfo[],
+    temporaryNetworks: readonly AgentInfo[]
 ): {treeViewItems: TreeViewBaseItem[]; index: Map<string, AgentInfo>} => {
     // Map to keep track of created nodes in a tree structure
     const map = new Map<string, TreeViewBaseItem>()
@@ -49,7 +52,7 @@ export const buildTreeViewItems = (
     // Build a tree structure from the flat list of networks.
     // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
     // structure from that.
-    networks.forEach((network) => {
+    ;[...temporaryNetworks, ...networks].forEach((network) => {
         // Split the agent_name into parts based on "/"
         const parts = network.agent_name.split("/")
 

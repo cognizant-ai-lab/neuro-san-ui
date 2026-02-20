@@ -63,23 +63,27 @@ enum CONNECTION_STATUS {
 export interface SidebarProps {
     readonly customURLCallback: (url: string) => void
     readonly customURLLocalStorage?: string
-    readonly networkIconSuggestions?: Record<string, string>
     readonly id: string
     readonly isAwaitingLlm: boolean
+    readonly networkIconSuggestions?: Record<string, string>
     readonly networks: readonly AgentInfo[]
     readonly setSelectedNetwork: (network: string) => void
+    readonly temporaryNetworks?: readonly AgentInfo[]
 }
 
 // #endregion: Types
 
+const EMPTY_ARRAY: AgentInfo[] = []
+
 export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
-    networkIconSuggestions,
     id,
     isAwaitingLlm,
+    networkIconSuggestions,
     networks,
     setSelectedNetwork,
+    temporaryNetworks = EMPTY_ARRAY,
 }) => {
     // Get default URL from the environment store.
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
@@ -172,7 +176,7 @@ export const Sidebar: FC<SidebarProps> = ({
         void fetchVersion()
     }, [])
 
-    const {treeViewItems, index} = buildTreeViewItems(networks)
+    const {treeViewItems, index} = buildTreeViewItems(networks, temporaryNetworks)
 
     return (
         <>

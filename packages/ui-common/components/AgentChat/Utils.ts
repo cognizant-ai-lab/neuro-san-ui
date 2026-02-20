@@ -68,10 +68,15 @@ export const checkError: (chatMessageJson: object) => string | null = (chatMessa
 }
 
 /**
- * Convert FOO_BAR to more human "Foo Bar"
+ * Convert FOO_BAR to more human "Foo Bar". Also removes trailing GUIDs that are sometimes appended to agent names,
+ * e.g. "MY_AGENT-123e4567-e89b-12d3-a456-426614174000" becomes "My Agent".
  * @param agentName Agent name in SNAKE_CASE format.
  * @returns User-friendly agent name.
  */
 export const cleanUpAgentName = (agentName: string): string => {
-    return startCase(capitalize(agentName))
+    // if agent name ends in a GUID, strip that
+    const guidRegex = /-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u
+    const agentNameWithoutGuid = agentName?.replace(guidRegex, "")
+
+    return startCase(capitalize(agentNameWithoutGuid))
 }
