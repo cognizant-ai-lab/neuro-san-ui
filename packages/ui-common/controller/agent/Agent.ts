@@ -143,7 +143,7 @@ export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse
  * @param company The name of the company to get branding color suggestions for.
  * @returns A promise that resolves to a record mapping color types (e.g. "primary", "secondary") to hex color codes.
  */
-export const getBrandingColors = async (company: string): Promise<Record<string, string>> =>
+export const getBrandingSuggestions = async (company: string): Promise<Record<string, string>> =>
     postJsonRequest("/api/branding", {company}, "Failed to get branding color suggestions")
 
 /**
