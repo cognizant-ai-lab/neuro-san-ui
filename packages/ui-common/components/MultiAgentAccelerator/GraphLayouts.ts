@@ -18,8 +18,8 @@ limitations under the License.
  * Graph layout algorithms and associated functions for the agent network.
  */
 import dagre from "@dagrejs/dagre"
+import {Edge, MarkerType, Node as RFNode} from "@xyflow/react"
 import cloneDeep from "lodash-es/cloneDeep.js"
-import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
@@ -34,13 +34,13 @@ export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
  */
 export type LayoutResult = {
     nodes: RFNode<AgentNodeProps>[]
-    edges: Edge<EdgeProps>[]
+    edges: Edge[]
 }
 
 export const addThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
     conversationId: string,
-    edge: Edge<EdgeProps>
+    edge: Edge
 ) => {
     // Add with timestamp for age-based cleanup
     thoughtBubbleEdges.set(conversationId, {
@@ -61,15 +61,13 @@ export const addThoughtBubbleEdge = (
 }
 
 export const removeThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
     conversationId: string
 ) => {
     thoughtBubbleEdges.delete(conversationId)
 }
 
-export const getThoughtBubbleEdges = (
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
-): Edge<EdgeProps>[] => {
+export const getThoughtBubbleEdges = (thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>): Edge[] => {
     return Array.from(thoughtBubbleEdges.values()).map((item) => item.edge)
 }
 
@@ -135,7 +133,7 @@ const getEdgeProperties = (
     sourceHandle: string,
     targetHandle: string,
     isAnimated: boolean
-): Edge<EdgeProps> => {
+): Edge => {
     return {
         animated: false,
         id: `${targetId}-edge-${sourceId}`,
@@ -153,11 +151,11 @@ export const layoutRadial = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
     agentIconSuggestions: Record<string, string> = {}
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
-    const edgesInNetwork: Edge<EdgeProps>[] = []
+    const edgesInNetwork: Edge[] = []
 
     // Compute depth of each node using breadth-first traversal
     const nodeDepths = new Map<string, number>()
@@ -277,10 +275,8 @@ export const layoutRadial = (
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge<EdgeProps>) =>
-        edgesInNetwork.every(
-            (existing: Edge<EdgeProps>) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge"
-        )
+    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge) =>
+        edgesInNetwork.every((existing: Edge) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge")
     )
 
     edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
@@ -293,11 +289,11 @@ export const layoutLinear = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
     agentIconSuggestions: Record<string, string> = {}
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
-    const edgesInNetwork: Edge<EdgeProps>[] = []
+    const edgesInNetwork: Edge[] = []
 
     // Do these calculations outside the loop for efficiency
     const parentAgents = getParentAgents(agentsInNetwork)
@@ -353,10 +349,8 @@ export const layoutLinear = (
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge<EdgeProps>) =>
-        edgesInNetwork.every(
-            (existing: Edge<EdgeProps>) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge"
-        )
+    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge) =>
+        edgesInNetwork.every((existing: Edge) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge")
     )
 
     edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
@@ -412,8 +406,8 @@ export const layoutLinear = (
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const globalBubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbles = globalBubbleEdges.filter((edge: Edge<EdgeProps>) =>
-        filteredEdges.every((existing: Edge<EdgeProps>) => existing.id !== edge.id)
+    const thoughtBubbles = globalBubbleEdges.filter((edge: Edge) =>
+        filteredEdges.every((existing: Edge) => existing.id !== edge.id)
     )
 
     filteredEdges.push(...thoughtBubbles)

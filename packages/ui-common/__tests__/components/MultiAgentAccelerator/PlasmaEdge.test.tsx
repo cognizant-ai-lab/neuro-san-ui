@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 import {render} from "@testing-library/react"
+import {Position} from "@xyflow/react"
 import {act} from "react"
-import {Position} from "reactflow"
 
 import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 

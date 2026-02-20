@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {Edge, EdgeProps} from "reactflow"
+import {Edge, EdgeProps} from "@xyflow/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Utils"

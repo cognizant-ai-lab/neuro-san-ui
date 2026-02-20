@@ -1,5 +1,5 @@
 import {render} from "@testing-library/react"
-import {Position} from "reactflow"
+import {Position} from "@xyflow/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdge} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"

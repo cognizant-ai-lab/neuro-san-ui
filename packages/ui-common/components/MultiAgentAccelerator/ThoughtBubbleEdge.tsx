@@ -1,5 +1,5 @@
+import {EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC} from "react"
-import {EdgeProps, getBezierPath} from "reactflow"
 
 interface ThoughtBubbleEdgeProps extends EdgeProps {
     data?: {

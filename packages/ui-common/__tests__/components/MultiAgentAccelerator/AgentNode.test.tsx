@@ -24,9 +24,9 @@ import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {PALETTES} from "../../../Theme/Palettes"
 
-// Mock the Handle component since we don't want to invite react-flow to this party
-jest.mock("reactflow", () => ({
-    ...jest.requireActual("reactflow"),
+// Mock the Handle component since we don't want to invite reactflow (now @xyflow/react) to this party
+jest.mock("@xyflow/react", () => ({
+    ...jest.requireActual("@xyflow/react"),
     Handle: (props: {type: unknown; id: unknown; style: CSSProperties}) => (
         <div
             data-testid={`handle-${props.type}-${props.id}`}

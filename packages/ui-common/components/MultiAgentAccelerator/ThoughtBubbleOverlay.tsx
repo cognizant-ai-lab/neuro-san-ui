@@ -1,6 +1,6 @@
 import {styled} from "@mui/material/styles"
+import type {Edge, Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
-import type {Edge, Node as RFNode} from "reactflow"
 
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 

@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC, useEffect, useRef} from "react"
-import {EdgeProps, getBezierPath} from "reactflow"
 
 import {useSettingsStore} from "../../state/Settings"
 
