@@ -18,11 +18,12 @@ import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
-import {Edge, ReactFlowProvider} from "@xyflow/react"
+import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {AgentFlow} from "./AgentFlow"
 import {Sidebar} from "./Sidebar/Sidebar"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
     getAgentNetworks,
@@ -87,9 +88,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
 
     // State to hold thought bubble edges - avoids duplicates across layout recalculations
-    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<Map<string, {edge: Edge; timestamp: number}>>(
-        new Map()
-    )
+    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
+        Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
+    >(new Map())
 
     const customURLCallback = useCallback(
         (url: string) => {

@@ -23,6 +23,7 @@ import cloneDeep from "lodash-es/cloneDeep.js"
 
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../../utils/agentConversations"
 import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Utils"
@@ -38,9 +39,9 @@ export type LayoutResult = {
 }
 
 export const addThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     conversationId: string,
-    edge: Edge
+    edge: ThoughtBubbleEdgeShape
 ) => {
     // Add with timestamp for age-based cleanup
     thoughtBubbleEdges.set(conversationId, {

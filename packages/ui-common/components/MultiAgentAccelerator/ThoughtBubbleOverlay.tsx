@@ -164,7 +164,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Find frontman node (depth === 0, similar to isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
         if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return null
-        return nodes.find((n) => (n.data as unknown as {depth?: number})["depth"] === 0)
+        return nodes.find((n) => n.data["depth"] === 0)
     }, [nodes])
 
     // Handle bubble lifecycle (appear/disappear animations)
@@ -349,7 +349,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
             const potentialAgents = (edge.data as ThoughtBubbleEdgeData)?.agents
-            const fallback = [edge.target || edge.source].filter((v): v is string => v != null && v !== "")
+            const candidate = edge.target || edge.source
+            const fallback: string[] = candidate ? [candidate] : []
             let agentIds: string[] = Array.isArray(potentialAgents) ? potentialAgents : fallback
 
             if (agentIds.length === 0) return null

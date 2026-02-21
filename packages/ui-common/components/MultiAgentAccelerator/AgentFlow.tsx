@@ -30,7 +30,6 @@ import {
     ConnectionMode,
     ControlButton,
     Controls,
-    Edge,
     EdgeTypes,
     NodeChange,
     ReactFlow,
@@ -44,7 +43,7 @@ import {AgentNode, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
-import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
+import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
@@ -68,8 +67,10 @@ export interface AgentFlowProps {
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isStreaming?: boolean
-    readonly thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>
-    readonly setThoughtBubbleEdges: Dispatch<SetStateAction<Map<string, {edge: Edge; timestamp: number}>>>
+    readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
+    readonly setThoughtBubbleEdges: Dispatch<
+        SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
+    >
 }
 
 type Layout = "radial" | "linear"
@@ -103,7 +104,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Helper functions to update thought bubble edges state immutably
     const addThoughtBubbleEdgeHelper = useCallback(
-        (conversationId: string, edge: Edge) => {
+        (conversationId: string, edge: ThoughtBubbleEdgeShape) => {
             setThoughtBubbleEdges((prev) => {
                 const newMap = new Map(prev)
                 addThoughtBubbleEdge(newMap, conversationId, edge)
@@ -223,7 +224,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         // These source and target agents are going to be useful later when we point bubbles to nodes.
                         const sourceAgent = agentList[0]
                         const targetAgent = agentList[1]
-                        const edge: Edge = {
+                        const edge: ThoughtBubbleEdgeShape = {
                             id: `thought-bubble-${conv.id}`,
                             source: sourceAgent,
                             target: targetAgent,
