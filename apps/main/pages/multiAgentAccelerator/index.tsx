@@ -14,17 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import dynamic from "next/dynamic"
-
-import {useAuthentication} from "../../../../packages/ui-common"
+import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-
-// @xyflow/react (v12) is imported normally — SSR is skipped via next/dynamic because
-// ReactFlow accesses browser-only APIs during render and must be client-only.
-const MultiAgentAccelerator = dynamic(
-    () => import("../../../../packages/ui-common").then((m) => m.MultiAgentAccelerator),
-    {ssr: false}
-)
 
 // Main function.
 export default function MultiAgentAcceleratorPage() {
