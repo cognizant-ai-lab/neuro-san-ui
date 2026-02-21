@@ -14,27 +14,33 @@
 #    limitations under the License.
 
 # ================================================================================
-# Cull NPM Packages Script
+# Cull NPM Packages Script (npmjs.org)
 # ================================================================================
-# Purpose: Clean up old dev (non-release) npm packages to prevent package proliferation.
+# Purpose: Clean up old dev (non-release) npm packages from the npmjs.org registry
+#          to prevent package proliferation.
 #
-# Usage: ./cull_npm_packages.sh <package_name> <package_owner> <retention_days> <dry_run> <min_keep_versions>
+# Usage: ./cull_npm_packages.sh <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>
 #
 # Arguments:
-#   package_name      - Name of the npm package (e.g., "ui-common")
-#   package_owner     - GitHub org/user that owns the package (e.g., "cognizant-ai-lab")
-#   retention_days    - Number of days; packages older than this are candidates for deletion
-#   dry_run           - "true" or "false"; if true, no packages are actually deleted
-#   min_keep_versions - Always keep at least this many most recent dev versions
+#   scoped_package_name - Full scoped npm package name (e.g., "@cognizant-ai-lab/ui-common")
+#   retention_days      - Number of days; packages older than this are candidates for deletion
+#   dry_run             - "true" or "false"; if true, no packages are actually deleted
+#   min_keep_versions   - Always keep at least this many most recent dev versions
 #
 # Environment:
-#   GH_TOKEN - GitHub token with packages:write permission (required)
+#   NODE_AUTH_TOKEN - npmjs.org access token with read and write permission (required)
 #
 # Retention Policy:
 # - Release packages (version format: x.y.z) are NEVER deleted
 # - Dev packages (version format: x.y.z-main.sha.run or x.y.z-pr.sha.run):
 #   - The most recent N packages are ALWAYS kept (regardless of age)
-#   - Packages older than cutoff_date (beyond the most recent N) are deleted
+#   - Packages older than cutoff_date (beyond the most recent N) are unpublished
+#
+# npmjs.org Unpublish Policy:
+#   npm blocks unpublish when a version was published more than 72 hours ago
+#   AND has 300+ downloads in the last week AND has dependents in the public
+#   registry. In practice, non-release dev versions should not hit the download
+#   threshold, so unpublish will typically succeed.
 # ================================================================================
 
 set -euo pipefail
@@ -42,8 +48,7 @@ set -euo pipefail
 # ================================================================================
 # Global Variables (set by parse_args and setup functions)
 # ================================================================================
-PACKAGE_NAME=""
-PACKAGE_OWNER=""
+SCOPED_PACKAGE_NAME=""
 RETENTION_DAYS=""
 DRY_RUN=""
 MIN_KEEP_VERSIONS=""
@@ -71,8 +76,20 @@ die() {
     exit 1
 }
 
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1 must be installed"
+}
+
 check_deps() {
-    command -v gh jq >/dev/null 2>&1 || die "Missing required command: gh and jq must be installed"
+    require_command npm
+    require_command jq
+}
+
+check_auth() {
+    if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+        die "NODE_AUTH_TOKEN environment variable is not set"
+    fi
+    npm config set //registry.npmjs.org/:_authToken "${NODE_AUTH_TOKEN}"
 }
 
 is_release_version() {
@@ -84,18 +101,25 @@ is_release_version() {
 # Argument Parsing and Setup
 # ================================================================================
 
+usage() {
+    echo "Usage: $0 <scoped_package_name> <retention_days> <dry_run> <min_keep_versions>" >&2
+    exit 1
+}
+
 parse_args() {
-    PACKAGE_NAME="${1:?Usage: $0 <package_name> <package_owner> <retention_days> <dry_run> <min_keep_versions>}"
-    PACKAGE_OWNER="${2:?Usage: $0 <package_name> <package_owner> <retention_days> <dry_run> <min_keep_versions>}"
-    RETENTION_DAYS="${3:?Usage: $0 <package_name> <package_owner> <retention_days> <dry_run> <min_keep_versions>}"
-    DRY_RUN="${4:?Usage: $0 <package_name> <package_owner> <retention_days> <dry_run> <min_keep_versions>}"
-    MIN_KEEP_VERSIONS="${5:?Usage: $0 <package_name> <package_owner> <retention_days> <dry_run> <min_keep_versions>}"
+    if [ "$#" -ne 4 ]; then
+        usage
+    fi
+    SCOPED_PACKAGE_NAME="$1"
+    RETENTION_DAYS="$2"
+    DRY_RUN="$3"
+    MIN_KEEP_VERSIONS="$4"
 }
 
 compute_cutoff_date() {
-    CUTOFF_DATE=$(date --date "$RETENTION_DAYS days ago" --utc +%Y-%m-%dT%H:%M:%SZ)
-    log "Cutoff date: $CUTOFF_DATE"
-    log "Packages created before this date will be considered for deletion"
+    CUTOFF_DATE=$(date --date "$RETENTION_DAYS days ago" --utc +%s)
+    log "Cutoff date: $(date --date "@$CUTOFF_DATE" --utc +%Y-%m-%dT%H:%M:%SZ)"
+    log "Packages published before this date will be considered for deletion"
 }
 
 cleanup() {
@@ -114,74 +138,48 @@ init_counters() {
     KEPT_VERSIONS=0
     DELETED_VERSIONS=0
     WOULD_DELETE_VERSIONS=0
+    FAILED_VERSIONS=0
 }
 
 # ================================================================================
-# GitHub API Functions
+# npmjs.org Registry Functions
 # ================================================================================
-
-fetch_versions_page() {
-    local page="$1"
-    local per_page="$2"
-    gh api \
-        --header "Accept: application/vnd.github+json" \
-        --header "X-GitHub-Api-Version: 2022-11-28" \
-        "/orgs/${PACKAGE_OWNER}/packages/npm/${PACKAGE_NAME}/versions?per_page=${per_page}&page=${page}" \
-        2>/dev/null || echo "[]"
-}
-
-categorize_version() {
-    local version_json="$1"
-    local version_id version_name created_at
-
-    version_id=$(echo "$version_json" | jq --raw-output '.id')
-    version_name=$(echo "$version_json" | jq --raw-output '.name')
-    created_at=$(echo "$version_json" | jq --raw-output '.created_at')
-
-    if is_release_version "$version_name"; then
-        echo "$version_id|$version_name|$created_at" >> "$RELEASE_FILE"
-    else
-        echo "$version_id|$version_name|$created_at" >> "$DEV_FILE"
-    fi
-}
 
 fetch_and_categorize_versions() {
-    local page=1
-    local per_page=100
-    local response version_count
+    local versions_json time_json version published_at
 
-    log "Fetching package versions for @${PACKAGE_OWNER}/${PACKAGE_NAME}..."
-    log "Retention policy: Keep last $MIN_KEEP_VERSIONS dev versions, delete others older than $CUTOFF_DATE"
+    log "Fetching package versions for ${SCOPED_PACKAGE_NAME}..."
+    log "Retention policy: Keep last $MIN_KEEP_VERSIONS dev versions, delete others older than $(date --date "@$CUTOFF_DATE" --utc +%Y-%m-%dT%H:%M:%SZ)"
 
-    while true; do
-        response=$(fetch_versions_page "$page" "$per_page")
+    versions_json=$(npm view "${SCOPED_PACKAGE_NAME}" versions --json 2>/dev/null) || die "Failed to fetch versions for ${SCOPED_PACKAGE_NAME}"
+    time_json=$(npm view "${SCOPED_PACKAGE_NAME}" time --json 2>/dev/null) || die "Failed to fetch publish times for ${SCOPED_PACKAGE_NAME}"
 
-        if [ "$response" = "[]" ] || [ -z "$response" ]; then
-            break
+    for version in $(echo "$versions_json" | jq --raw-output 'if type == "array" then .[] else . end'); do
+        published_at=$(echo "$time_json" | jq --raw-output --arg v "$version" '.[$v] // empty')
+
+        if [ -z "$published_at" ]; then
+            log "WARNING: No publish time found for $version, skipping"
+            continue
         fi
 
-        echo "$response" | jq --compact-output '.[]' | while read -r version_json; do
-            categorize_version "$version_json"
-        done
-
-        version_count=$(echo "$response" | jq --raw-output 'length')
-        if [ "$version_count" -lt "$per_page" ]; then
-            break
+        if is_release_version "$version"; then
+            echo "$version|$published_at" >> "$RELEASE_FILE"
+        else
+            echo "$version|$published_at" >> "$DEV_FILE"
         fi
-        page=$((page + 1))
     done
 }
 
-delete_version() {
-    local version_id="$1"
-    local version_name="$2"
+unpublish_version() {
+    local version="$1"
 
-    gh api \
-        --method DELETE \
-        --header "Accept: application/vnd.github+json" \
-        --header "X-GitHub-Api-Version: 2022-11-28" \
-        "/orgs/${PACKAGE_OWNER}/packages/npm/${PACKAGE_NAME}/versions/${version_id}" \
-        2>/dev/null || log "Failed to delete version $version_name"
+    if npm unpublish "${SCOPED_PACKAGE_NAME}@${version}" 2>/dev/null; then
+        log "  -> Unpublished successfully"
+        return 0
+    else
+        log "  -> Unpublish failed (likely download count or dependents)"
+        return 1
+    fi
 }
 
 # ================================================================================
@@ -196,8 +194,8 @@ process_release_versions() {
         RELEASE_VERSIONS=$(wc --lines < "$RELEASE_FILE" | tr --delete ' ')
         TOTAL_VERSIONS=$((TOTAL_VERSIONS + RELEASE_VERSIONS))
 
-        while IFS='|' read -r version_id version_name created_at; do
-            log "KEEP (release): $version_name (created: $created_at)"
+        while IFS='|' read -r version published_at; do
+            log "KEEP (release): $version (published: $published_at)"
         done < "$RELEASE_FILE"
     else
         log "No release versions found"
@@ -207,14 +205,14 @@ process_release_versions() {
 process_dev_versions() {
     local version_index=0
     local dev_count
-    local version_id version_name created_at
+    local version published_at published_epoch
 
     log ""
     log "=== Dev Versions ==="
 
     if [ -s "$DEV_FILE" ]; then
         SORTED_FILE=$(mktemp)
-        sort --field-separator='|' --key=3 --reverse "$DEV_FILE" > "$SORTED_FILE"
+        sort --field-separator='|' --key=2 --reverse "$DEV_FILE" > "$SORTED_FILE"
 
         dev_count=$(wc --lines < "$SORTED_FILE" | tr --delete ' ')
         TOTAL_VERSIONS=$((TOTAL_VERSIONS + dev_count))
@@ -223,26 +221,30 @@ process_dev_versions() {
         log "Keeping at least $MIN_KEEP_VERSIONS most recent versions regardless of age"
         log ""
 
-        while IFS='|' read -r version_id version_name created_at; do
+        while IFS='|' read -r version published_at; do
             version_index=$((version_index + 1))
 
             if [ "$version_index" -le "$MIN_KEEP_VERSIONS" ]; then
-                log "KEEP (min-keep #$version_index): $version_name (created: $created_at)"
+                log "KEEP (min-keep #$version_index): $version (published: $published_at)"
                 KEPT_VERSIONS=$((KEPT_VERSIONS + 1))
                 continue
             fi
 
-            if [[ "$created_at" < "$CUTOFF_DATE" ]]; then
+            published_epoch=$(date --date "$published_at" --utc +%s)
+            if [ "$published_epoch" -lt "$CUTOFF_DATE" ]; then
                 if [ "$DRY_RUN" = "true" ]; then
-                    log "WOULD DELETE: $version_name (created: $created_at)"
+                    log "WOULD DELETE: $version (published: $published_at)"
                     WOULD_DELETE_VERSIONS=$((WOULD_DELETE_VERSIONS + 1))
                 else
-                    log "DELETING: $version_name (created: $created_at)"
-                    delete_version "$version_id" "$version_name"
-                    DELETED_VERSIONS=$((DELETED_VERSIONS + 1))
+                    log "DELETING: $version (published: $published_at)"
+                    if unpublish_version "$version"; then
+                        DELETED_VERSIONS=$((DELETED_VERSIONS + 1))
+                    else
+                        FAILED_VERSIONS=$((FAILED_VERSIONS + 1))
+                    fi
                 fi
             else
-                log "KEEP (recent): $version_name (created: $created_at)"
+                log "KEEP (recent): $version (published: $published_at)"
                 KEPT_VERSIONS=$((KEPT_VERSIONS + 1))
             fi
         done < "$SORTED_FILE"
@@ -268,18 +270,20 @@ print_summary() {
     if [ "$DRY_RUN" = "true" ]; then
         log "Versions that would be deleted: $WOULD_DELETE_VERSIONS"
     else
-        log "Versions deleted: $DELETED_VERSIONS"
+        log "Versions unpublished: $DELETED_VERSIONS"
+        log "Versions failed to unpublish: $FAILED_VERSIONS"
     fi
 }
 
 emit_github_output() {
     if [ -n "${GITHUB_OUTPUT:-}" ]; then
         {
-            echo "cutoff_date=$CUTOFF_DATE"
+            echo "cutoff_date=$(date --date "@$CUTOFF_DATE" --utc +%Y-%m-%dT%H:%M:%SZ)"
             echo "total=$TOTAL_VERSIONS"
             echo "release=$RELEASE_VERSIONS"
             echo "kept=$KEPT_VERSIONS"
             echo "deleted=$DELETED_VERSIONS"
+            echo "failed=$FAILED_VERSIONS"
             echo "would_delete=$WOULD_DELETE_VERSIONS"
         } >> "$GITHUB_OUTPUT"
     fi
@@ -292,6 +296,7 @@ emit_github_output() {
 main() {
     check_deps
     parse_args "$@"
+    check_auth
     compute_cutoff_date
     setup_temp_files
     init_counters
