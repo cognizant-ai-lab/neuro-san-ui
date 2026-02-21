@@ -62,13 +62,15 @@ export const addThoughtBubbleEdge = (
 }
 
 export const removeThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     conversationId: string
 ) => {
     thoughtBubbleEdges.delete(conversationId)
 }
 
-export const getThoughtBubbleEdges = (thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>): Edge[] => {
+export const getThoughtBubbleEdges = (
+    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
+): ThoughtBubbleEdgeShape[] => {
     return Array.from(thoughtBubbleEdges.values()).map((item) => item.edge)
 }
 
@@ -152,7 +154,7 @@ export const layoutRadial = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: Record<string, string> = {}
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
@@ -276,7 +278,7 @@ export const layoutRadial = (
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge) =>
+    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: ThoughtBubbleEdgeShape) =>
         edgesInNetwork.every((existing: Edge) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge")
     )
 
@@ -290,7 +292,7 @@ export const layoutLinear = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    thoughtBubbleEdges: Map<string, {edge: Edge; timestamp: number}>,
+    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: Record<string, string> = {}
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []

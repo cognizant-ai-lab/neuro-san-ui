@@ -2,6 +2,7 @@ import {Edge, EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC} from "react"
 
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+
 export interface ThoughtBubbleEdgeData extends Record<string, unknown> {
     text?: string
     showAlways?: boolean
