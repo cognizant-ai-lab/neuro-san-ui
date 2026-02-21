@@ -291,8 +291,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             if (!isStreaming) return
 
             const now = Date.now()
-            // Collect expired IDs outside the state updater so we don't call a parent setState
-            // during the setActiveThoughtBubbles updater (forbidden in React 19).
+            // Collect expired bubble IDs outside the state updater to avoid triggering parent
+            // state updates while the `setActiveThoughtBubbles` updater runs.
             const expiredIds: string[] = []
 
             setActiveThoughtBubbles((prevBubbles) => {
@@ -322,8 +322,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 return prevBubbles
             })
 
-            // Remove from parent edge cache after the state updater completes — safe to call here
-            // because setInterval callbacks run outside React's render cycle.
+            // Remove corresponding edges after the updater finishes. This is safe here because
+            // the `setInterval` callback runs outside React's render cycle.
             expiredIds.forEach((expiredId) => removeThoughtBubbleEdgeHelper(expiredId))
         }, 1000) // Check every second
 
