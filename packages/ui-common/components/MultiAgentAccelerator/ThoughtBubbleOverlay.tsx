@@ -2,8 +2,9 @@ import {styled} from "@mui/material/styles"
 import type {Edge, Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
+import {AgentNodeProps} from "./AgentNode"
+import {ThoughtBubbleEdgeData} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation} from "../../utils/agentConversations"
 
 // #region: Types
 
@@ -22,7 +23,6 @@ interface ThoughtBubbleProps {
     readonly isVisible?: boolean
     readonly isExiting?: boolean
 }
-// Note: Removed BubblePosition interface - no longer needed for right-side positioning
 
 // #endregion: Types
 
@@ -155,7 +155,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const thoughtBubbleEdges = useMemo(
         () =>
             edges.filter((e) => {
-                const text = (e?.data as unknown as {text?: string})?.text
+                const text = (e?.data as ThoughtBubbleEdgeData)?.text
                 return typeof text === "string" && text.length > 0
             }),
         [edges]
@@ -245,11 +245,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         if (!nodes || !Array.isArray(nodes)) return set
 
         for (const node of nodes) {
-            const getConversations = (
-                node.data as unknown as {
-                    getConversations?: () => AgentConversation[] | null
-                }
-            )?.getConversations
+            const getConversations = (node.data as Partial<AgentNodeProps>)?.getConversations
             if (typeof getConversations === "function") {
                 const convs = getConversations()
                 if (Array.isArray(convs)) {
@@ -329,7 +325,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             agentRectCache?: Map<string, DOMRect>
         ): {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null => {
             // Skip HUMAN conversation types - no lines for human bubbles
-            if ((edge.data as unknown as {type?: ChatMessageType})["type"] === ChatMessageType.HUMAN) {
+            if ((edge.data as ThoughtBubbleEdgeData)?.type === ChatMessageType.HUMAN) {
                 return null
             }
 
@@ -352,7 +348,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Determine which agents to point to. If the edge supplies an `agents` array in
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
-            const potentialAgents = (edge.data as unknown as {agents?: string[]})?.agents
+            const potentialAgents = (edge.data as ThoughtBubbleEdgeData)?.agents
             const fallback = [edge.target || edge.source].filter((v): v is string => v != null && v !== "")
             let agentIds: string[] = Array.isArray(potentialAgents) ? potentialAgents : fallback
 
@@ -577,7 +573,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             </svg>
 
             {renderableBubbles.map((edge: Edge, index: number) => {
-                const text = (edge.data as unknown as {text?: string})?.text
+                const text = (edge.data as ThoughtBubbleEdgeData)?.text
                 if (typeof text !== "string") return null
 
                 // Per-bubble staggered animation delay in milliseconds
