@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC, useEffect, useRef} from "react"
-import {EdgeProps, getBezierPath} from "reactflow"
 
 import {useSettingsStore} from "../../state/Settings"
 
@@ -91,7 +91,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
 }: EdgeProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const pathRef = useRef<SVGPathElement>(null)
-    const animationRef = useRef<number>()
+    const animationRef = useRef<number | undefined>(undefined)
     const particles = useRef<ReturnType<typeof createFunnelParticleOnPath>[]>([])
     const plasmaColor = useSettingsStore((state) => state.settings.appearance.plasmaColor)
 
@@ -151,7 +151,9 @@ export const PlasmaEdge: FC<EdgeProps> = ({
         }
 
         animate()
-        return () => cancelAnimationFrame(animationRef.current)
+        return () => {
+            if (animationRef.current !== undefined) cancelAnimationFrame(animationRef.current)
+        }
     }, [edgePath, width, height, x, y])
 
     return (

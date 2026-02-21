@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {Edge, EdgeProps} from "reactflow"
-
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Utils"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
@@ -27,6 +25,7 @@ import {
     MAX_GLOBAL_THOUGHT_BUBBLES,
     removeThoughtBubbleEdge,
 } from "../../../components/MultiAgentAccelerator/GraphLayouts"
+import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 
 describe("GraphLayouts", () => {
@@ -324,7 +323,7 @@ describe("GraphLayouts", () => {
     })
 
     describe("Thought Bubble Edge Management", () => {
-        const mockEdge: Edge = {
+        const mockEdge: ThoughtBubbleEdgeShape = {
             id: "edge1",
             source: "node1",
             target: "node2",
@@ -332,7 +331,7 @@ describe("GraphLayouts", () => {
             data: {text: "Test message"},
         }
 
-        const mockEdge2: Edge = {
+        const mockEdge2: ThoughtBubbleEdgeShape = {
             id: "edge2",
             source: "node3",
             target: "node4",
@@ -340,7 +339,7 @@ describe("GraphLayouts", () => {
             data: {text: "Test message"},
         }
 
-        let thoughtBubbleEdgesMap: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
+        let thoughtBubbleEdgesMap: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
 
         beforeEach(() => {
             thoughtBubbleEdgesMap = new Map()
@@ -375,7 +374,7 @@ describe("GraphLayouts", () => {
         it("Should enforce max thought bubble limit", () => {
             // Add more than MAX_GLOBAL_THOUGHT_BUBBLES (5) edges
             for (let i = 0; i < MAX_GLOBAL_THOUGHT_BUBBLES + 2; i += 1) {
-                const mockEdgeMultiple: Edge = {
+                const mockEdgeMultiple: ThoughtBubbleEdgeShape = {
                     id: `edge${i}`,
                     source: "node1",
                     target: "node2",
@@ -392,7 +391,13 @@ describe("GraphLayouts", () => {
         })
 
         it("Should remove single existent thought bubble edge", () => {
-            const e: Edge = {id: "e1", source: "A", target: "B"}
+            const e: ThoughtBubbleEdgeShape = {
+                id: "e1",
+                source: "A",
+                target: "B",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test message"},
+            }
             expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(0)
 
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
@@ -403,7 +408,13 @@ describe("GraphLayouts", () => {
         })
 
         it("Should be a no-op if we try to remove a single non-existent thought bubble edge", () => {
-            const e: Edge = {id: "e1", source: "A", target: "B"}
+            const e: ThoughtBubbleEdgeShape = {
+                id: "e1",
+                source: "A",
+                target: "B",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test message"},
+            }
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
 
             // Attempt to remove an edge that was never added
@@ -428,8 +439,14 @@ describe("GraphLayouts", () => {
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])("$name layout: should add thought bubble from cache when no duplicate ids exist", ({layoutFunction}) => {
-            const singleNodeMap = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
-            const bubble: Edge = {id: "tb1", source: "A", target: "B", type: "thoughtBubbleEdge", data: {text: "x"}}
+            const singleNodeMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+            const bubble: ThoughtBubbleEdgeShape = {
+                id: "tb1",
+                source: "A",
+                target: "B",
+                type: "thoughtBubbleEdge",
+                data: {text: "x"},
+            }
             addThoughtBubbleEdge(singleNodeMap, "conv-x", bubble)
 
             const {edges} = layoutFunction(new Map(), [{origin: "A", tools: []}], null, true, singleNodeMap)
@@ -442,8 +459,14 @@ describe("GraphLayouts", () => {
             {layoutFunction: layoutRadial, name: "radial"},
             {layoutFunction: layoutLinear, name: "linear"},
         ])("$name layout: should add thought bubble when network already has non-thought edges", ({layoutFunction}) => {
-            const tbMap = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
-            const bubble: Edge = {id: "should-add", source: "agent1", target: "agent2", type: "thoughtBubbleEdge"}
+            const tbMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+            const bubble: ThoughtBubbleEdgeShape = {
+                id: "should-add",
+                source: "agent1",
+                target: "agent2",
+                type: "thoughtBubbleEdge",
+                data: {text: "Test message"},
+            }
             addThoughtBubbleEdge(tbMap, "not-add", bubble)
 
             const agents: ConnectivityInfo[] = [
@@ -463,8 +486,13 @@ describe("GraphLayouts", () => {
         ])(
             "$name layout: should skip thought bubble when an existing network edge has the same id",
             ({layoutFunction}) => {
-                const tbMap = new Map<string, {edge: Edge<EdgeProps>; timestamp: number}>()
-                const bubble: Edge = {id: "B-edge-A", source: "A", target: "B", type: "thoughtBubbleEdge"}
+                const tbMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+                const bubble: ThoughtBubbleEdgeShape = {
+                    id: "B-edge-A",
+                    source: "A",
+                    target: "B",
+                    type: "thoughtBubbleEdge",
+                }
                 addThoughtBubbleEdge(tbMap, "dup-net", bubble)
 
                 const agents: ConnectivityInfo[] = [

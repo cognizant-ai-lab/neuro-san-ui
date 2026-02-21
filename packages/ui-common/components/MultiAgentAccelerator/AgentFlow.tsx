@@ -24,28 +24,26 @@ import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {
     applyNodeChanges,
     Background,
     ConnectionMode,
     ControlButton,
     Controls,
-    Edge,
-    EdgeProps,
     EdgeTypes,
     NodeChange,
     ReactFlow,
     NodeTypes as RFNodeTypes,
     useReactFlow,
     useStore,
-} from "reactflow"
+} from "@xyflow/react"
+import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
-import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
+import {AgentNode, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
-import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
+import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
@@ -69,8 +67,10 @@ export interface AgentFlowProps {
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isStreaming?: boolean
-    readonly thoughtBubbleEdges: Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
-    readonly setThoughtBubbleEdges: Dispatch<SetStateAction<Map<string, {edge: Edge<EdgeProps>; timestamp: number}>>>
+    readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
+    readonly setThoughtBubbleEdges: Dispatch<
+        SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
+    >
 }
 
 type Layout = "radial" | "linear"
@@ -104,7 +104,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Helper functions to update thought bubble edges state immutably
     const addThoughtBubbleEdgeHelper = useCallback(
-        (conversationId: string, edge: Edge<EdgeProps>) => {
+        (conversationId: string, edge: ThoughtBubbleEdgeShape) => {
             setThoughtBubbleEdges((prev) => {
                 const newMap = new Map(prev)
                 addThoughtBubbleEdge(newMap, conversationId, edge)
@@ -224,7 +224,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         // These source and target agents are going to be useful later when we point bubbles to nodes.
                         const sourceAgent = agentList[0]
                         const targetAgent = agentList[1]
-                        const edge: Edge = {
+                        const edge: ThoughtBubbleEdgeShape = {
                             id: `thought-bubble-${conv.id}`,
                             source: sourceAgent,
                             target: targetAgent,
@@ -290,10 +290,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             // Only clean up if we're currently streaming
             if (!isStreaming) return
 
+            const now = Date.now()
+            // Collect expired bubble IDs outside the state updater to avoid triggering parent
+            // state updates while the `setActiveThoughtBubbles` updater runs.
+            const expiredIds: string[] = []
+
             setActiveThoughtBubbles((prevBubbles) => {
                 if (prevBubbles.length === 0) return prevBubbles
-
-                const now = Date.now()
 
                 const filteredBubbles = prevBubbles.filter((bubble) => {
                     const age = now - bubble.startedAt.getTime()
@@ -305,9 +308,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         return true
                     }
 
-                    // If bubble is expiring, remove it from the edge cache
                     if (!shouldKeep) {
-                        removeThoughtBubbleEdgeHelper(bubble.conversationId)
+                        expiredIds.push(bubble.conversationId)
                     }
 
                     return shouldKeep
@@ -319,6 +321,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 }
                 return prevBubbles
             })
+
+            // Remove corresponding edges after the updater finishes. This is safe here because
+            // the `setInterval` callback runs outside React's render cycle.
+            expiredIds.forEach((expiredId) => removeThoughtBubbleEdgeHelper(expiredId))
         }, 1000) // Check every second
 
         return () => clearInterval(cleanupInterval)
@@ -405,7 +411,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const onNodesChange = useCallback((changes: NodeChange[]) => {
         setNodes((ns) =>
-            applyNodeChanges<AgentNodeProps>(
+            applyNodeChanges(
                 // For now, we only allow dragging, no updates
                 changes.filter((c) => c.type === "position"),
                 ns
@@ -591,7 +597,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const getControls = () => {
         return (
             <Controls
-                id="react-flow-controls"
                 position="top-left"
                 style={{
                     position: "absolute",

@@ -1,14 +1,19 @@
+import {Edge, EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC} from "react"
-import {EdgeProps, getBezierPath} from "reactflow"
 
-interface ThoughtBubbleEdgeProps extends EdgeProps {
-    data?: {
-        text?: string
-        showAlways?: boolean
-        conversationId?: string
-        type?: string
-    }
+import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+
+export interface ThoughtBubbleEdgeData extends Record<string, unknown> {
+    text?: string
+    showAlways?: boolean
+    conversationId?: string
+    type?: ChatMessageType
+    agents?: string[]
 }
+
+export type ThoughtBubbleEdgeShape = Edge<ThoughtBubbleEdgeData, "thoughtBubbleEdge">
+
+type ThoughtBubbleEdgeProps = EdgeProps<ThoughtBubbleEdgeShape>
 
 // Simplified edge component - visual rendering is handled by ThoughtBubbleOverlay
 export const ThoughtBubbleEdge: FC<ThoughtBubbleEdgeProps> = ({

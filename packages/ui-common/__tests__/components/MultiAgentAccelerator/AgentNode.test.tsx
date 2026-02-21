@@ -16,6 +16,7 @@ limitations under the License.
 
 import {hexToRgb} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
+import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -23,10 +24,11 @@ import {AgentNode, AgentNodeProps} from "../../../components/MultiAgentAccelerat
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {PALETTES} from "../../../Theme/Palettes"
+import {AgentConversation} from "../../../utils/agentConversations"
 
-// Mock the Handle component since we don't want to invite react-flow to this party
-jest.mock("reactflow", () => ({
-    ...jest.requireActual("reactflow"),
+// Mock the Handle component since we don't want to invite reactflow (now @xyflow/react) to this party
+jest.mock("@xyflow/react", () => ({
+    ...jest.requireActual("@xyflow/react"),
     Handle: (props: {type: unknown; id: unknown; style: CSSProperties}) => (
         <div
             data-testid={`handle-${props.type}-${props.id}`}
@@ -39,25 +41,28 @@ const AGENT_NAME = "Test Agent"
 const AGENT_ID = "testNode"
 
 const renderAgentNode = (data: Partial<AgentNodeProps>) => {
-    render(
-        <AgentNode
-            id={AGENT_ID}
-            type="test"
-            selected={false}
-            zIndex={0}
-            isConnectable={false}
-            xPos={0}
-            yPos={0}
-            dragging={false}
-            data={{
-                agentName: AGENT_NAME,
-                depth: 1,
-                displayAs: "llm_agent",
-                getConversations: () => null,
-                ...data,
-            }}
-        />
-    )
+    const nodeProps: NodeProps<RFNode<AgentNodeProps>> = {
+        id: AGENT_ID,
+        type: "test",
+        selected: false,
+        selectable: false,
+        deletable: false,
+        draggable: false,
+        zIndex: 0,
+        isConnectable: false,
+        positionAbsoluteX: 0,
+        positionAbsoluteY: 0,
+        dragging: false,
+        data: {
+            agentName: AGENT_NAME,
+            depth: 1,
+            displayAs: "llm_agent",
+            getConversations: (): AgentConversation[] | null => null,
+            ...data,
+        },
+    }
+
+    render(<AgentNode {...nodeProps} />)
 }
 
 describe("AgentNode", () => {

@@ -29,7 +29,7 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {useColorScheme} from "@mui/material/styles"
+import {SxProps, useColorScheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -37,10 +37,10 @@ import {
     cloneElement,
     CSSProperties,
     Dispatch,
-    forwardRef,
     isValidElement,
     ReactElement,
     ReactNode,
+    Ref,
     SetStateAction,
     useEffect,
     useImperativeHandle,
@@ -205,7 +205,7 @@ const QUERY_TRUNCATE_LENGTH = 80
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
-export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
+export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const slyData = useRef<Record<string, unknown>>({})
 
     const {
@@ -339,10 +339,10 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 if (isValidElement(item) && item.type === MUIAccordion) {
                     const itemAsAccordion = item as ReactElement<MUIAccordionProps>
                     return cloneElement(itemAsAccordion, {
-                        sx: {
-                            ...item.props.sx,
-                            display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none",
-                        },
+                        sx: [
+                            itemAsAccordion.props.sx,
+                            {display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none"},
+                        ] as SxProps,
                     })
                 }
                 return item
@@ -1201,8 +1201,4 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             </Box>
         </Box>
     )
-})
-
-// Set a useful display name for the component for debugging purposes. We have to do it here because we're using
-// forwardRef in the main definition.
-ChatCommon.displayName = "ChatCommon"
+}

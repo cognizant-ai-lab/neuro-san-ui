@@ -1,7 +1,9 @@
 import {styled} from "@mui/material/styles"
+import type {Edge, Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
-import type {Edge, Node as RFNode} from "reactflow"
 
+import {AgentNodeProps} from "./AgentNode"
+import {ThoughtBubbleEdgeData} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
 // #region: Types
@@ -21,7 +23,6 @@ interface ThoughtBubbleProps {
     readonly isVisible?: boolean
     readonly isExiting?: boolean
 }
-// Note: Removed BubblePosition interface - no longer needed for right-side positioning
 
 // #endregion: Types
 
@@ -154,10 +155,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const thoughtBubbleEdges = useMemo(
         () =>
             edges.filter((e) => {
-                if (typeof e?.data?.text !== "string") {
-                    return false
-                }
-                return e.data.text
+                const text = (e?.data as ThoughtBubbleEdgeData)?.text
+                return typeof text === "string" && text.length > 0
             }),
         [edges]
     )
@@ -165,7 +164,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Find frontman node (depth === 0, similar to isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
         if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return null
-        return nodes.find((n) => n.data?.depth === 0)
+        return nodes.find((n) => n.data["depth"] === 0)
     }, [nodes])
 
     // Handle bubble lifecycle (appear/disappear animations)
@@ -246,11 +245,11 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         if (!nodes || !Array.isArray(nodes)) return set
 
         for (const node of nodes) {
-            const getConversations = node.data?.getConversations
+            const getConversations = (node.data as Partial<AgentNodeProps>)?.getConversations
             if (typeof getConversations === "function") {
                 const convs = getConversations()
                 if (Array.isArray(convs)) {
-                    const hasSelf = convs.some((conv) => Boolean(conv?.agents?.has?.(node.id)))
+                    const hasSelf = convs.some((conv) => conv?.agents?.has?.(node.id) === true)
                     if (hasSelf) {
                         set.add(node.id)
                     }
@@ -326,7 +325,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             agentRectCache?: Map<string, DOMRect>
         ): {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null => {
             // Skip HUMAN conversation types - no lines for human bubbles
-            if (edge.data?.type === ChatMessageType.HUMAN) {
+            if ((edge.data as ThoughtBubbleEdgeData)?.type === ChatMessageType.HUMAN) {
                 return null
             }
 
@@ -349,9 +348,10 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Determine which agents to point to. If the edge supplies an `agents` array in
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
-            let agentIds: string[] = Array.isArray(edge.data?.agents)
-                ? (edge.data?.agents as string[])
-                : [edge.target || edge.source].filter(Boolean)
+            const potentialAgents = (edge.data as ThoughtBubbleEdgeData)?.agents
+            const candidate = edge.target || edge.source
+            const fallback: string[] = candidate ? [candidate] : []
+            let agentIds: string[] = Array.isArray(potentialAgents) ? potentialAgents : fallback
 
             if (agentIds.length === 0) return null
 
@@ -574,8 +574,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             </svg>
 
             {renderableBubbles.map((edge: Edge, index: number) => {
-                const text = edge.data?.text
-                if (!text) return null
+                const text = (edge.data as ThoughtBubbleEdgeData)?.text
+                if (typeof text !== "string") return null
 
                 // Per-bubble staggered animation delay in milliseconds
                 const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
