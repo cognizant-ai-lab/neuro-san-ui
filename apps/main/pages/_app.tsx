@@ -18,6 +18,7 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
+import Box from "@mui/material/Box"
 import Container from "@mui/material/Container"
 import CssBaseline from "@mui/material/CssBaseline"
 import {ThemeProvider} from "@mui/material/styles"
@@ -30,18 +31,6 @@ import {SnackbarProvider} from "notistack"
 import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
 
 import {
-    Auth,
-    ErrorBoundary,
-    getTitleBase,
-    LoadingSpinner,
-    Navbar,
-    NavbarProps,
-    NeuroAIBreadcrumbs,
-    smartSignOut,
-    Snackbar,
-    useAuthentication,
-} from "../../../packages/ui-common"
-import {
     authenticationEnabled,
     DEFAULT_NEURO_SAN_SERVER_URL,
     DEFAULT_USER_IMAGE,
@@ -53,6 +42,19 @@ import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
 import {EnvironmentResponse} from "./api/environment/Types"
+import {
+    Auth,
+    ErrorBoundary,
+    Footer,
+    getTitleBase,
+    LoadingSpinner,
+    Navbar,
+    NavbarProps,
+    NeuroAIBreadcrumbs,
+    smartSignOut,
+    Snackbar,
+    useAuthentication,
+} from "../../../packages/ui-common"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -326,6 +328,9 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         >
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
+                            <Box sx={{marginTop: "2rem"}}>
+                                <Footer supportEmailAddress={supportEmailAddress} />
+                            </Box>
                         </Container>
                     </ErrorBoundary>
                 </SessionProvider>

@@ -77,7 +77,7 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoDevTok
         // eslint-disable-next-line @next/next/no-img-element
         <img
             src={logoUrl}
-            alt={`${customer} logo`}
+            alt={`${customer} Logo`}
             width={40}
             height={40}
             style={{borderRadius: "50%"}}

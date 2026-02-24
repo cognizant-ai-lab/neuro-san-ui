@@ -170,8 +170,6 @@ export const Navbar = ({
                 <Typography
                     id="customer-branding"
                     sx={{
-                        ...MENU_ITEM_TEXT_PROPS,
-                        color: primary || undefined,
                         fontSize: "20px",
                         fontWeight: "600",
                         paddingLeft: "0.15rem",
@@ -194,7 +192,6 @@ export const Navbar = ({
                     id="nav-bar-brand"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
-                        color: primary || "var(--bs-white)",
                         marginLeft: "0.85rem",
                         fontSize: "16px",
                         fontWeight: "bold",
@@ -205,7 +202,7 @@ export const Navbar = ({
                         style={{
                             fontWeight: 500,
                             fontSize: "1.1rem",
-                            color: primary || "var(--bs-white)",
+                            color: "var(--bs-white)",
                             position: "relative",
                             bottom: "1px",
                             textDecoration: "none",
@@ -229,7 +226,6 @@ export const Navbar = ({
                     display: "flex",
                     justifyContent: "flex-end", // Right align
                     alignItems: "center", // Vertically center
-                    color: primary || "var(--bs-white)",
                     marginRight: "50px",
                 }}
             >
