@@ -69,7 +69,6 @@ const config = [
     {rules: {...eslintPluginReact.configs.all.rules, ...eslintPluginReact.configs["jsx-runtime"].rules}},
     {
         plugins: {
-            // "@typescript-eslint" is already registered by typescriptEslint.configs["flat/all"] above
             "jest-dom": fixupPluginRules(jestDom),
             "react-hooks": fixupPluginRules(reactHooks),
             import: fixupPluginRules(eslintPluginImport),
