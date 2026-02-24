@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {fixupConfigRules, fixupPluginRules} from "@eslint/compat"
-import {FlatCompat} from "@eslint/eslintrc"
+import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
 import typescriptEslint from "@typescript-eslint/eslint-plugin"
@@ -33,43 +32,44 @@ import testingLibrary from "eslint-plugin-testing-library"
 import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 
-const ___dirname = import.meta.dirname
-const compat = new FlatCompat({
-    baseDirectory: ___dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all,
-})
-
 const config = [
     preferArrowFunctions.configs["all"],
     eslintPluginUnicorn.configs.all,
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
-    ...fixupConfigRules(
-        compat.extends(
-            // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
-            // "rules" section below.
-            "eslint:all",
-            "plugin:@next/next/recommended-legacy",
-            // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
-            "plugin:@next/next/core-web-vitals-legacy",
-            "plugin:@typescript-eslint/all",
-            "plugin:import/recommended",
-            "plugin:import/typescript",
-            "plugin:jest/recommended",
-            "plugin:react-hooks/recommended",
-            "plugin:react/all",
-            // This next one has to be included or else the React rules will complain that "React is not in scope".
-            // But those rules are wrong -- as of React 17, "React" automatically gets included in the transpilation
-            // process and doesn't *need* to be in scope.
-            "plugin:react/jsx-runtime",
-            "prettier"
-        )
-    ),
+    // Replaces compat.extends("eslint:all") -- all base ESLint rules. We selectively disable those we are not
+    // yet ready for in the "rules" section below.
+    {rules: {...js.configs.all.rules}},
+
+    // Replaces plugin:@next/next/recommended and plugin:@next/next/core-web-vitals (flat-native plain objects)
+    // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
+    next.configs.recommended,
+    next.configs["core-web-vitals"],
+
+    // Replaces plugin:@typescript-eslint/all ("flat/all" is the flat-config array; "all" is the legacy eslintrc format)
+    ...typescriptEslint.configs["flat/all"],
+
+    // Replaces plugin:import/recommended and plugin:import/typescript (legacy configs -- use .rules)
+    {rules: {...eslintPluginImport.configs.recommended.rules, ...eslintPluginImport.configs.typescript.rules}},
+
+    // Replaces plugin:jest/recommended (flat-native config object -- take rules+languageOptions, skip plugins
+    // since jest is registered in the plugins block below with fixupPluginRules)
+    {
+        rules: {...jest.configs["flat/recommended"].rules},
+        languageOptions: jest.configs["flat/recommended"].languageOptions,
+    },
+
+    // Replaces plugin:react-hooks/recommended (legacy format -- only take rules; plugin is registered in plugins block)
+    {rules: {...reactHooks.configs.recommended.rules}},
+
+    // Replaces plugin:react/all and plugin:react/jsx-runtime (legacy configs -- use .rules)
+    // jsx-runtime must come after all to avoid "React is not in scope" errors: as of React 17,
+    // React is automatically included in the transpilation and doesn't need to be in scope.
+    {rules: {...eslintPluginReact.configs.all.rules, ...eslintPluginReact.configs["jsx-runtime"].rules}},
     {
         plugins: {
-            "@typescript-eslint": fixupPluginRules(typescriptEslint),
+            // "@typescript-eslint" is already registered by typescriptEslint.configs["flat/all"] above
             "jest-dom": fixupPluginRules(jestDom),
             "react-hooks": fixupPluginRules(reactHooks),
             import: fixupPluginRules(eslintPluginImport),
@@ -365,6 +365,7 @@ const config = [
             "@typescript-eslint/no-unsafe-return": "off",
             "@typescript-eslint/no-unnecessary-type-arguments": "off",
             "@typescript-eslint/no-unsafe-enum-comparison": "off",
+            "@typescript-eslint/no-useless-default-assignment": "off",
             "@typescript-eslint/non-nullable-type-assertion-style": "off",
             "@typescript-eslint/prefer-includes": "off",
             "@typescript-eslint/no-unsafe-type-assertion": "off",
@@ -388,6 +389,7 @@ const config = [
             "@typescript-eslint/restrict-template-expressions": "off",
             "@typescript-eslint/sort-type-constituents": "off",
             "@typescript-eslint/strict-boolean-expressions": "off",
+            "@typescript-eslint/strict-void-return": "off",
             "arrow-body-style": "off",
             "capitalized-comments": "off",
             complexity: "off",

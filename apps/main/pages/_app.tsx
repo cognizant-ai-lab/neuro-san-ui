@@ -300,6 +300,9 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider>
+                    {/* eslint-disable-next-line max-len */}
+                    {/* TODO: Remove @ts-expect-error once React 19 upgrade is complete (TS2786 caused by React 18/19 types conflict via next@16 internals) */}
+                    {/* @ts-expect-error TS2786 */}
                     <ErrorBoundary id="error_boundary">
                         <NavbarWrapper
                             id="nav-bar"

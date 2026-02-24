@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         console.error({error, errorInfo})
     }
 
-    override render() {
+    override render(): ReactNode {
         // Check if the error is thrown
         if (this.state.hasError) {
             // Render fallback UI

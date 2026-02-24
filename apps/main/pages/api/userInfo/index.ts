@@ -53,7 +53,7 @@ const fetchUserInfoFromALB = (req: NextApiRequest): UserInfoResponse => {
 
     // Split the header into two parts
     const jwtHeaders = oidcDataHeader.split(".")
-    if (!jwtHeaders || jwtHeaders.length !== EXPECTED_NUMBER_OF_JWT_HEADERS) {
+    if (jwtHeaders?.length !== EXPECTED_NUMBER_OF_JWT_HEADERS) {
         return {oidcHeaderFound: true, oidcHeaderValid: false}
     }
 
