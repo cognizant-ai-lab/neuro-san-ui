@@ -187,6 +187,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
     const availablePalettes = customer && brandingRangePalette?.length > 0 ? {brand: brandingRangePalette} : PALETTES
     const paletteKeys: PaletteKey[] = Object.keys(availablePalettes) as (keyof typeof availablePalettes)[]
 
+    /* Dev note:
+        Before you go removing the "useless" spans in code below that wrap MUI elements: they are required because 
+        MUI's disabled state on certain components sets pointer-events: none, which prevents tooltips from working. 
+        Wrapping in a span allows the tooltip to still function while the inner component is disabled.
+        See: https://github.com/mui/material-ui/issues/8416
+     */
     return (
         // Always use default theme for settings dialog so user can always see to reset. It's possible that with
         // certain custom themes the dialog would be unreadable.
@@ -285,49 +291,58 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                         <Box sx={{display: "flex", alignItems: "center", gap: 2, marginBottom: "1rem", width: "100%"}}>
                             <FormLabel>Logo:</FormLabel>
                             <Tooltip title={customer ? null : "Set a customer name to enable logo options"}>
-                                <ToggleButtonGroup
-                                    aria-label="logo-selection"
-                                    disabled={!customer}
-                                    exclusive={true}
-                                    onChange={(_, value) => {
-                                        if (value !== null) {
-                                            updateSettings({
-                                                branding: {
-                                                    logoSource: value,
-                                                },
-                                            })
-                                            logoCheckmark.trigger()
-                                        }
-                                    }}
-                                    size="small"
-                                    sx={{marginRight: "1rem"}}
-                                    value={useSettingsStore((state) => state.settings.branding.logoSource) || "none"}
-                                >
-                                    <Tooltip title="No logo will be displayed">
-                                        <ToggleButton value="none">None</ToggleButton>
-                                    </Tooltip>
-                                    <Tooltip title="Display a simple, anonymous generic logo based on a generic brand">
-                                        <ToggleButton value="generic">Generic</ToggleButton>
-                                    </Tooltip>
-                                    <Tooltip
-                                        title={
-                                            logoDevToken
-                                                ? "Use a service to attempt to automatically find a suitable logo " +
-                                                  "based on the customer name. Results may vary based " +
-                                                  "on the uniqueness of the name and availability of logos online."
-                                                : "No Logo.dev token found, cannot use Auto logo source"
+                                <span>
+                                    <ToggleButtonGroup
+                                        aria-label="logo-selection"
+                                        disabled={!customer}
+                                        exclusive={true}
+                                        onChange={(_, value) => {
+                                            if (value !== null) {
+                                                updateSettings({
+                                                    branding: {
+                                                        logoSource: value,
+                                                    },
+                                                })
+                                                logoCheckmark.trigger()
+                                            }
+                                        }}
+                                        size="small"
+                                        sx={{marginRight: "1rem"}}
+                                        value={
+                                            useSettingsStore((state) => state.settings.branding.logoSource) || "none"
                                         }
                                     >
-                                        <span>
-                                            <ToggleButton
-                                                value="auto"
-                                                disabled={!logoDevToken}
-                                            >
-                                                Auto
-                                            </ToggleButton>
-                                        </span>
-                                    </Tooltip>
-                                </ToggleButtonGroup>
+                                        <Tooltip title="No logo will be displayed">
+                                            <span>
+                                                <ToggleButton value="none">None</ToggleButton>
+                                            </span>
+                                        </Tooltip>
+                                        {/* eslint-disable-next-line max-len */}
+                                        <Tooltip title="Display a simple, anonymous generic logo based on a generic brand">
+                                            <span>
+                                                <ToggleButton value="generic">Generic</ToggleButton>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip
+                                            title={
+                                                logoDevToken
+                                                    ? "Use a service to attempt to automatically find a suitable " +
+                                                      "logo based on the customer name. Results may vary based " +
+                                                      "on the uniqueness of the name and availability of logos online."
+                                                    : "No Logo.dev token found, cannot use Auto logo source"
+                                            }
+                                        >
+                                            <span>
+                                                <ToggleButton
+                                                    value="auto"
+                                                    disabled={!logoDevToken}
+                                                >
+                                                    Auto
+                                                </ToggleButton>
+                                            </span>
+                                        </Tooltip>
+                                    </ToggleButtonGroup>
+                                </span>
                             </Tooltip>
                             <FormLabel>Preview:</FormLabel>
                             <CustomerLogo
@@ -347,68 +362,70 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                     <Box sx={{display: "flex", alignItems: "center"}}>
                         <FormLabel>Palette (heatmap and depth):</FormLabel>
                         <Tooltip title={customer ? "Palette is locked when branding is applied" : ""}>
-                            <ToggleButtonGroup
-                                aria-label="depth-heatmap-palette-selection"
-                                disabled={Boolean(customer)}
-                                exclusive={true}
-                                onChange={handlePaletteChange}
-                                size="small"
-                                sx={{
-                                    cursor: customer ? "not-allowed" : "pointer",
-                                    marginLeft: "1rem",
-                                    marginRight: "1rem",
-                                    opacity: customer ? 0.5 : 1,
-                                }}
-                                value={paletteKey}
-                            >
-                                {paletteKeys.map((key) => {
-                                    const palette = availablePalettes[key as keyof typeof availablePalettes]
-                                    if (!palette || !Array.isArray(palette)) return null
+                            <span>
+                                <ToggleButtonGroup
+                                    aria-label="depth-heatmap-palette-selection"
+                                    disabled={Boolean(customer)}
+                                    exclusive={true}
+                                    onChange={handlePaletteChange}
+                                    size="small"
+                                    sx={{
+                                        cursor: customer ? "not-allowed" : "pointer",
+                                        marginLeft: "1rem",
+                                        marginRight: "1rem",
+                                        opacity: customer ? 0.5 : 1,
+                                    }}
+                                    value={paletteKey}
+                                >
+                                    {paletteKeys.map((key) => {
+                                        const palette = availablePalettes[key as keyof typeof availablePalettes]
+                                        if (!palette || !Array.isArray(palette)) return null
 
-                                    const paletteArray: string[] = palette
+                                        const paletteArray: string[] = palette
 
-                                    return (
-                                        <ToggleButton
-                                            aria-label={`${key}-palette-button`}
-                                            key={key}
-                                            value={key}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    gap: 0.5,
-                                                    alignItems: "center",
-                                                }}
+                                        return (
+                                            <ToggleButton
+                                                aria-label={`${key}-palette-button`}
+                                                key={key}
+                                                value={key}
                                             >
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{textTransform: "capitalize"}}
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        gap: 0.5,
+                                                        alignItems: "center",
+                                                    }}
                                                 >
-                                                    {key}
-                                                </Typography>
-                                                <Box sx={{display: "flex", gap: 0.5}}>
-                                                    {Array.from({length: 5}, (_, i) => {
-                                                        const paletteLength = paletteArray.length
-                                                        const index = Math.floor((i * paletteLength) / 5)
-                                                        return paletteArray[index]
-                                                    }).map((color) => (
-                                                        <Box
-                                                            key={color}
-                                                            sx={{
-                                                                width: "0.75rem",
-                                                                height: "0.75rem",
-                                                                backgroundColor: color,
-                                                                border: "1px solid",
-                                                            }}
-                                                        />
-                                                    ))}
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{textTransform: "capitalize"}}
+                                                    >
+                                                        {key}
+                                                    </Typography>
+                                                    <Box sx={{display: "flex", gap: 0.5}}>
+                                                        {Array.from({length: 5}, (_, i) => {
+                                                            const paletteLength = paletteArray.length
+                                                            const index = Math.floor((i * paletteLength) / 5)
+                                                            return paletteArray[index]
+                                                        }).map((color) => (
+                                                            <Box
+                                                                key={color}
+                                                                sx={{
+                                                                    width: "0.75rem",
+                                                                    height: "0.75rem",
+                                                                    backgroundColor: color,
+                                                                    border: "1px solid",
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </Box>
                                                 </Box>
-                                            </Box>
-                                        </ToggleButton>
-                                    )
-                                })}
-                            </ToggleButtonGroup>
+                                            </ToggleButton>
+                                        )
+                                    })}
+                                </ToggleButtonGroup>
+                            </span>
                         </Tooltip>
                         <FadingCheckmark show={rangePaletteCheckmark.show} />
                     </Box>
@@ -462,26 +479,33 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                     <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
                         <FormLabel>Agent icon color:</FormLabel>
                         <Tooltip title={customer ? "Agent icon color is locked when branding is applied" : ""}>
-                            <ToggleButtonGroup
-                                disabled={Boolean(customer)}
-                                exclusive
-                                value={autoAgentIconColor ? "auto" : "custom"}
-                                onChange={(_, value) => {
-                                    if (value !== null) {
-                                        updateSettings({
-                                            appearance: {
-                                                autoAgentIconColor: value === "auto",
-                                            },
-                                        })
-                                        agentIconColorCheckmark.trigger()
-                                    }
-                                }}
-                                size="small"
-                                style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
-                            >
-                                <ToggleButton value="auto">Auto</ToggleButton>
-                                <ToggleButton value="custom">Custom</ToggleButton>
-                            </ToggleButtonGroup>
+                            <span>
+                                <ToggleButtonGroup
+                                    disabled={Boolean(customer)}
+                                    exclusive
+                                    value={autoAgentIconColor ? "auto" : "custom"}
+                                    onChange={(_, value) => {
+                                        if (value !== null) {
+                                            updateSettings({
+                                                appearance: {
+                                                    autoAgentIconColor: value === "auto",
+                                                },
+                                            })
+                                            agentIconColorCheckmark.trigger()
+                                        }
+                                    }}
+                                    size="small"
+                                    style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
+                                >
+                                    <ToggleButton
+                                        data-testid="auto-agent-icon-color-button"
+                                        value="auto"
+                                    >
+                                        Auto
+                                    </ToggleButton>
+                                    <ToggleButton value="custom">Custom</ToggleButton>
+                                </ToggleButtonGroup>
+                            </span>
                         </Tooltip>
                         <Tooltip
                             title={

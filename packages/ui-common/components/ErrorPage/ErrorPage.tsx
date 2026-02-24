@@ -23,6 +23,7 @@ import {useEnvironmentStore} from "../../state/Environment"
 import {useUserInfoStore} from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
+import {Footer} from "../Common/Footer"
 import {Navbar} from "../Common/Navbar"
 
 interface ErrorPageProps {
@@ -121,6 +122,7 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
                 More information may be available in the browser console. Please include such information in your report
                 if possible.
             </Box>
+            <Footer supportEmailAddress={supportEmailAddress} />
         </>
     )
 }

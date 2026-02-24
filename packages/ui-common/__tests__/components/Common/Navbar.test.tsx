@@ -117,6 +117,8 @@ describe("Navbar", () => {
         const customer = "Acme"
 
         useSettingsStore.getState().updateSettings({branding: {customer}})
+        useSettingsStore.getState().updateSettings({branding: {logoSource: "auto"}})
+
         renderNavbar()
         const logoLink = await screen.findByRole("link", {name: `${LOGO} Decisioning`})
         expect(logoLink).toHaveAttribute("href", "/")

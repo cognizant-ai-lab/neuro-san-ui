@@ -103,6 +103,10 @@ describe("Environment API handler", () => {
     it("ignores request method and body", () => {
         // Set up environment variables
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
+        delete process.env["AUTH0_CLIENT_ID"]
+        delete process.env["AUTH0_DOMAIN"]
+        delete process.env["SUPPORT_EMAIL_ADDRESS"]
+        delete process.env["LOGO_DEV_TOKEN"]
 
         const {req, res} = createMocks({
             method: "POST",
