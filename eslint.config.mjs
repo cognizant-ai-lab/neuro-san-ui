@@ -38,43 +38,39 @@ const config = [
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
-    // Replaces compat.extends("eslint:all") -- all base ESLint rules. We selectively disable those we are not
-    // yet ready for in the "rules" section below.
-    {rules: {...js.configs.all.rules}},
 
-    // Replaces plugin:@next/next/recommended and plugin:@next/next/core-web-vitals (flat-native plain objects)
+    // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
+    // "rules" section below.
+    js.configs.all,
+
     // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
-    next.configs.recommended,
-    next.configs["core-web-vitals"],
+    {rules: {...next.configs["recommended-legacy"].rules}},
+    {rules: {...next.configs["core-web-vitals-legacy"].rules}},
 
-    // Replaces plugin:@typescript-eslint/all ("flat/all" is the flat-config array; "all" is the legacy eslintrc format)
+    // Equivalent to plugin:@typescript-eslint/all, expressed as flat config.
     ...typescriptEslint.configs["flat/all"],
 
-    // Replaces plugin:import/recommended and plugin:import/typescript (legacy configs -- use .rules)
-    {rules: {...eslintPluginImport.configs.recommended.rules, ...eslintPluginImport.configs.typescript.rules}},
-
-    // Replaces plugin:jest/recommended (flat-native config object -- take rules+languageOptions, skip plugins
-    // since jest is registered in the plugins block below with fixupPluginRules)
-    {
-        rules: {...jest.configs["flat/recommended"].rules},
-        languageOptions: jest.configs["flat/recommended"].languageOptions,
-    },
-
-    // Replaces plugin:react-hooks/recommended (legacy format -- only take rules; plugin is registered in plugins block)
+    {rules: {...eslintPluginImport.configs.recommended.rules}},
+    {rules: {...eslintPluginImport.configs.typescript.rules}},
+    {rules: {...jest.configs.recommended.rules}},
     {rules: {...reactHooks.configs.recommended.rules}},
+    {rules: {...eslintPluginReact.configs.all.rules}},
+    {rules: {...eslintPluginReact.configs["jsx-runtime"].rules}},
 
-    // Replaces plugin:react/all and plugin:react/jsx-runtime (legacy configs -- use .rules)
-    // jsx-runtime must come after all to avoid "React is not in scope" errors: as of React 17,
-    // React is automatically included in the transpilation and doesn't need to be in scope.
-    {rules: {...eslintPluginReact.configs.all.rules, ...eslintPluginReact.configs["jsx-runtime"].rules}},
+    // Equivalent to extending "prettier" (kept here to preserve rule-order precedence), and then re-applied below
+    // exactly as in main.
+    eslintConfigPrettier,
+
     {
         plugins: {
-            "jest-dom": fixupPluginRules(jestDom),
-            "react-hooks": fixupPluginRules(reactHooks),
+            "@next/next": next,
+            "@typescript-eslint": typescriptEslint,
+            "jest-dom": jestDom,
+            "react-hooks": reactHooks,
             import: fixupPluginRules(eslintPluginImport),
-            jest: fixupPluginRules(jest),
-            next,
+            jest,
             react: fixupPluginRules(eslintPluginReact),
+            "testing-library": testingLibrary,
         },
         linterOptions: {
             reportUnusedDisableDirectives: "error",
@@ -232,7 +228,8 @@ const config = [
             "no-param-reassign": "error",
             "no-redeclare": "error",
             "no-setter-return": "error",
-            "no-shadow-restricted-names": "error",
+            // Explicit opt-out: this codebase does not need to guard against globalThis reassignment.
+            "no-shadow-restricted-names": ["error", {reportGlobalThis: false}],
             "no-this-before-super": "error",
             "no-undef": "error",
             "no-unreachable": "error",
@@ -310,6 +307,12 @@ const config = [
             // Requires strict type checks enabled in tsc which we're not ready for yet
             "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
 
+            // Requires strictNullChecks which isn't enabled in this repo
+            "@typescript-eslint/no-useless-default-assignment": "off",
+
+            // Too strict for current codebase (many callbacks are typed to return void)
+            "@typescript-eslint/strict-void-return": "off",
+
             // Conflicts with react/sort-comp
             "@typescript-eslint/member-ordering": "off",
             // We like being explicit about types even when "obvious"
@@ -364,7 +367,6 @@ const config = [
             "@typescript-eslint/no-unsafe-return": "off",
             "@typescript-eslint/no-unnecessary-type-arguments": "off",
             "@typescript-eslint/no-unsafe-enum-comparison": "off",
-            "@typescript-eslint/no-useless-default-assignment": "off",
             "@typescript-eslint/non-nullable-type-assertion-style": "off",
             "@typescript-eslint/prefer-includes": "off",
             "@typescript-eslint/no-unsafe-type-assertion": "off",
@@ -388,7 +390,6 @@ const config = [
             "@typescript-eslint/restrict-template-expressions": "off",
             "@typescript-eslint/sort-type-constituents": "off",
             "@typescript-eslint/strict-boolean-expressions": "off",
-            "@typescript-eslint/strict-void-return": "off",
             "arrow-body-style": "off",
             "capitalized-comments": "off",
             complexity: "off",
