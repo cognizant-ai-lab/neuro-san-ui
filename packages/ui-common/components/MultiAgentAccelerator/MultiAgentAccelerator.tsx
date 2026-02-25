@@ -30,6 +30,7 @@ import {
     getNetworkIconSuggestions,
 } from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {useTempNetworksStore} from "../../state/TempNetworks"
 import {AgentConversation, AgentReservation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
@@ -41,13 +42,7 @@ interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
 }
-const tmp = [
-    {
-        reservation_id: "copy_cat-hello_world-be043e2b-63fb-4e22-a550-5c86a0ee1046",
-        lifetime_in_seconds: 300.0,
-        expiration_time_in_seconds: 1771438301.0245166,
-    },
-]
+
 const convertReservationsToNetworks = (agentReservations: AgentReservation[]): AgentInfo[] =>
     agentReservations.map((reservation) => ({
         agent_name: `temporary/${reservation.reservation_id}`,
@@ -75,7 +70,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
-    const [temporaryNetworks, setTemporaryNetworks] = useState<readonly AgentInfo[]>(convertReservationsToNetworks(tmp))
+
+    const temporaryNetworks = useTempNetworksStore((state) => state.tempNetworks)
+    const setTemporaryNetworks = useTempNetworksStore.getState().setTempNetworks
 
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
 
