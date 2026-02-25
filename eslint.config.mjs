@@ -228,7 +228,6 @@ const config = [
             "no-param-reassign": "error",
             "no-redeclare": "error",
             "no-setter-return": "error",
-            // Explicit opt-out: this codebase does not need to guard against globalThis reassignment.
             "no-shadow-restricted-names": ["error", {reportGlobalThis: false}],
             "no-this-before-super": "error",
             "no-undef": "error",
