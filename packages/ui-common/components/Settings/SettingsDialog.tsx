@@ -60,6 +60,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
     const logoCheckmark = useCheckmarkFade()
     const [customerInput, setCustomerInput] = useState<string>(customer)
     const [isBrandingApplying, setIsBrandingApplying] = useState<boolean>(false)
+    const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -193,6 +194,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
         Wrapping in a span allows the tooltip to still function while the inner component is disabled.
         See: https://github.com/mui/material-ui/issues/8416
      */
+
     return (
         // Always use default theme for settings dialog so user can always see to reset. It's possible that with
         // certain custom themes the dialog would be unreadable.
@@ -308,18 +310,27 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                         }}
                                         size="small"
                                         sx={{marginRight: "1rem"}}
-                                        value={
-                                            useSettingsStore((state) => state.settings.branding.logoSource) || "none"
-                                        }
+                                        value={logoSource || "none"}
                                     >
-                                        <Tooltip title="No logo will be displayed">
-                                            <span>
+                                        <Tooltip
+                                            title="No logo will be displayed"
+                                            // Avoids having overlapping tooltips
+                                            disableHoverListener={!customer}
+                                            disableFocusListener={!customer}
+                                            disableTouchListener={!customer}
+                                        >
+                                            <span style={{cursor: logoDevToken ? "pointer" : "not-allowed"}}>
                                                 <ToggleButton value="none">None</ToggleButton>
                                             </span>
                                         </Tooltip>
-                                        {/* eslint-disable-next-line max-len */}
-                                        <Tooltip title="Display a simple, anonymous generic logo based on a generic brand">
-                                            <span>
+                                        <Tooltip
+                                            title="Display a simple, anonymous generic logo based on a generic brand"
+                                            // Avoids having overlapping tooltips
+                                            disableHoverListener={!customer}
+                                            disableFocusListener={!customer}
+                                            disableTouchListener={!customer}
+                                        >
+                                            <span style={{cursor: logoDevToken ? "pointer" : "not-allowed"}}>
                                                 <ToggleButton value="generic">Generic</ToggleButton>
                                             </span>
                                         </Tooltip>
@@ -331,11 +342,15 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                                       "on the uniqueness of the name and availability of logos online."
                                                     : "No Logo.dev token found, cannot use Auto logo source"
                                             }
+                                            // Avoids having overlapping tooltips
+                                            disableHoverListener={!customer}
+                                            disableFocusListener={!customer}
+                                            disableTouchListener={!customer}
                                         >
-                                            <span>
+                                            <span style={{cursor: logoDevToken ? "pointer" : "not-allowed"}}>
                                                 <ToggleButton
-                                                    value="auto"
                                                     disabled={!logoDevToken}
+                                                    value="auto"
                                                 >
                                                     Auto
                                                 </ToggleButton>

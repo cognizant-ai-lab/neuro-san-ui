@@ -18,7 +18,7 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
-import Box from "@mui/material/Box"
+import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
 import CssBaseline from "@mui/material/CssBaseline"
 import {ThemeProvider} from "@mui/material/styles"
@@ -30,18 +30,6 @@ import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
 
-import {
-    authenticationEnabled,
-    DEFAULT_NEURO_SAN_SERVER_URL,
-    DEFAULT_USER_IMAGE,
-    LOGO,
-} from "../../../packages/ui-common/const"
-import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
-import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
-import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
-import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
-import {createAppTheme} from "../theme"
-import {EnvironmentResponse} from "./api/environment/Types"
 import {
     Auth,
     ErrorBoundary,
@@ -55,6 +43,17 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
+import {
+    authenticationEnabled,
+    DEFAULT_NEURO_SAN_SERVER_URL,
+    DEFAULT_USER_IMAGE,
+    LOGO,
+} from "../../../packages/ui-common/const"
+import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
+import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
+import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
+import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
+import {createAppTheme} from "../theme"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
@@ -328,9 +327,10 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         >
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
-                            <Box sx={{marginTop: "2rem"}}>
-                                <Footer supportEmailAddress={supportEmailAddress} />
-                            </Box>
+                            <Footer
+                                supportEmailAddress={supportEmailAddress}
+                                sx={{borderTop: "none", marginTop: "4rem"}}
+                            />
                         </Container>
                     </ErrorBoundary>
                 </SessionProvider>
