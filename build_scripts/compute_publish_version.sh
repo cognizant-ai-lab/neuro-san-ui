@@ -17,13 +17,12 @@
 #
 # Computes the npm package version and dist-tag for publishing @cognizant-ai-lab/ui-common.
 #
-# Usage: compute_publish_version.sh <event_name> <sha> <run_number> <package_json_path> [release_tag] [dist_tag_input]
+# Usage: compute_publish_version.sh <event_name> <sha> <run_number> [release_tag] [dist_tag_input]
 #
 # Arguments:
 #   event_name:       The GitHub event name (push, release, workflow_dispatch)
 #   sha:              The full Git SHA
 #   run_number:       The GitHub Actions run number
-#   package_json_path: Path to the package.json file to read base version from
 #   release_tag:      (Optional) The release tag name (required if event_name is "release")
 #   dist_tag_input:   (Optional) User-selected dist-tag for workflow_dispatch
 #
@@ -33,10 +32,13 @@
 #   - sha:       The full Git SHA (passed through)
 #   - short_sha: The short (7-char) Git SHA
 #
+# The base version for pre-release builds (push, workflow_dispatch) is derived
+# from the latest git tag so that it automatically tracks the most recent release.
+#
 # Version formats by trigger:
-#   - push to main:      <base>-main.<short_sha>.<run_number>  with dist-tag "main"
-#   - release:           <release_tag> (without v prefix)      with dist-tag "latest"
-#   - workflow_dispatch: <base>-pr.<short_sha>.<run_number>    with dist-tag from input
+#   - push to main:      <latest_tag>-main.<short_sha>.<run_number>  with dist-tag "main"
+#   - release:           <release_tag> (without v prefix)            with dist-tag "latest"
+#   - workflow_dispatch: <latest_tag>-pr.<short_sha>.<run_number>    with dist-tag from input
 #
 
 set -o errtrace
@@ -47,29 +49,27 @@ set -o pipefail
 EVENT_NAME="${1:-}"
 SHA="${2:-}"
 RUN_NUMBER="${3:-}"
-PACKAGE_JSON_PATH="${4:-}"
-RELEASE_TAG="${5:-}"
-DIST_TAG_INPUT="${6:-prerelease}"
+RELEASE_TAG="${4:-}"
+DIST_TAG_INPUT="${5:-prerelease}"
 
 # Validate required arguments
-if [[ -z "$EVENT_NAME" || -z "$SHA" || -z "$RUN_NUMBER" || -z "$PACKAGE_JSON_PATH" ]]; then
-    echo "Error: event_name, sha, run_number, and package_json_path are required" >&2
-    echo "Usage: $0 <event_name> <sha> <run_number> <package_json_path> [release_tag] [dist_tag_input]" >&2
-    exit 1
-fi
-
-# Validate package.json exists
-if [[ ! -f "$PACKAGE_JSON_PATH" ]]; then
-    echo "Error: package.json not found at $PACKAGE_JSON_PATH" >&2
+if [[ -z "$EVENT_NAME" || -z "$SHA" || -z "$RUN_NUMBER" ]]; then
+    echo "Error: event_name, sha, and run_number are required" >&2
+    echo "Usage: $0 <event_name> <sha> <run_number> [release_tag] [dist_tag_input]" >&2
     exit 1
 fi
 
 # Compute short SHA (first 7 characters)
 SHORT_SHA="${SHA:0:7}"
 
-# Read base version from package.json and strip any prerelease suffix
-BASE_VERSION=$(node --eval "console.log(require('./$PACKAGE_JSON_PATH').version)")
-BASE_VERSION="${BASE_VERSION%%-*}"
+# Derive base version from the latest git tag so pre-release versions
+# automatically stay in sync with the most recent release.
+if ! BASE_VERSION=$(git describe --tags --abbrev=0 2>/dev/null); then
+    echo "Error: no git tags found. Create an initial release tag first." >&2
+    exit 1
+fi
+# Strip 'v' prefix if present
+BASE_VERSION="${BASE_VERSION#v}"
 
 # Compute version and dist-tag based on event type
 if [[ "$EVENT_NAME" == "push" ]]; then

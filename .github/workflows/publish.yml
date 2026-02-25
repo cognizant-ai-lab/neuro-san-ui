@@ -108,7 +108,6 @@ jobs:
                     "${{ github.event_name }}" \
                     "${{ github.sha }}" \
                     "${{ github.run_number }}" \
-                    "packages/ui-common/package.json" \
                     "${{ github.event.release.tag_name }}" \
                     "${{ inputs.dist_tag }}"
 
