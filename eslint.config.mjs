@@ -51,7 +51,10 @@ const config = [
     ...typescriptEslint.configs["flat/all"],
 
     {rules: {...eslintPluginImport.configs.recommended.rules}},
-    {rules: {...eslintPluginImport.configs.typescript.rules}},
+    {
+        rules: {...eslintPluginImport.configs.typescript.rules},
+        settings: {...eslintPluginImport.configs.typescript.settings},
+    },
     {rules: {...jest.configs.recommended.rules}},
     {rules: {...reactHooks.configs.recommended.rules}},
     {rules: {...eslintPluginReact.configs.all.rules}},
