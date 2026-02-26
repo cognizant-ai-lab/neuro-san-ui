@@ -38,6 +38,7 @@ describe("Environment API handler", () => {
         process.env["AUTH0_CLIENT_ID"] = "test-client-id"
         process.env["AUTH0_DOMAIN"] = "test-domain.auth0.com"
         process.env["SUPPORT_EMAIL_ADDRESS"] = "support@example.com"
+        process.env["LOGO_SERVICE_TOKEN"] = "test-logo-service-token"
 
         const {req, res} = createMocks()
 
@@ -50,6 +51,7 @@ describe("Environment API handler", () => {
             auth0ClientId: "test-client-id",
             auth0Domain: "test-domain.auth0.com",
             supportEmailAddress: "support@example.com",
+            logoServiceToken: "test-logo-service-token",
         })
     })
 
@@ -60,6 +62,7 @@ describe("Environment API handler", () => {
         delete process.env["AUTH0_CLIENT_ID"]
         delete process.env["AUTH0_DOMAIN"]
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
+        delete process.env["LOGO_SERVICE_TOKEN"]
 
         const {req, res} = createMocks()
 
@@ -71,6 +74,7 @@ describe("Environment API handler", () => {
             auth0ClientId: undefined,
             auth0Domain: undefined,
             supportEmailAddress: undefined,
+            logoServiceToken: undefined,
         })
     })
 
@@ -80,6 +84,7 @@ describe("Environment API handler", () => {
         process.env["AUTH0_CLIENT_ID"] = ""
         process.env["AUTH0_DOMAIN"] = ""
         process.env["SUPPORT_EMAIL_ADDRESS"] = ""
+        process.env["LOGO_SERVICE_TOKEN"] = ""
 
         const {req, res} = createMocks()
 
@@ -91,12 +96,17 @@ describe("Environment API handler", () => {
             auth0ClientId: "",
             auth0Domain: "",
             supportEmailAddress: "",
+            logoServiceToken: "",
         })
     })
 
     it("ignores request method and body", () => {
         // Set up environment variables
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
+        delete process.env["AUTH0_CLIENT_ID"]
+        delete process.env["AUTH0_DOMAIN"]
+        delete process.env["SUPPORT_EMAIL_ADDRESS"]
+        delete process.env["LOGO_SERVICE_TOKEN"]
 
         const {req, res} = createMocks({
             method: "POST",
@@ -111,6 +121,7 @@ describe("Environment API handler", () => {
             auth0ClientId: undefined,
             auth0Domain: undefined,
             supportEmailAddress: undefined,
+            logoServiceToken: undefined,
         })
     })
 })

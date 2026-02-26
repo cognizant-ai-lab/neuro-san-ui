@@ -23,6 +23,7 @@ import {useEnvironmentStore} from "../../state/Environment"
 import {useUserInfoStore} from "../../state/UserInfo"
 import {smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
+import {Footer} from "../Common/Footer"
 import {Navbar} from "../Common/Navbar"
 
 interface ErrorPageProps {
@@ -36,7 +37,7 @@ interface ErrorPageProps {
  * @param errorText Error text to be displayed
  */
 export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement {
-    const {auth0ClientId, auth0Domain, supportEmailAddress} = useEnvironmentStore()
+    const {auth0ClientId, auth0Domain, supportEmailAddress, logoServiceToken} = useEnvironmentStore()
 
     // Access NextJS router
     const router = useRouter()
@@ -60,11 +61,12 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
     return (
         <>
             <Navbar
+                authenticationType={authenticationType}
                 id="nav-bar"
                 logo={LOGO}
-                query={router.query}
+                logoServiceToken={logoServiceToken}
                 pathname={router.pathname}
-                authenticationType={authenticationType}
+                query={router.query}
                 signOut={handleSignOut}
                 supportEmailAddress={supportEmailAddress}
                 userInfo={userInfo}
@@ -120,6 +122,7 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
                 More information may be available in the browser console. Please include such information in your report
                 if possible.
             </Box>
+            <Footer supportEmailAddress={supportEmailAddress} />
         </>
     )
 }

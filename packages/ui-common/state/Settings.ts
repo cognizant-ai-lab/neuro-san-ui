@@ -41,12 +41,14 @@ interface Settings {
         readonly plasmaColor: string
         readonly rangePalette: PaletteKey
     }
-    branding: {
-        customer: string | null
-        primary: string | null
-        secondary: string | null
-        background: string | null
-        rangePalette: string[] | null
+    readonly branding: {
+        readonly customer: string | null
+        readonly primary: string | null
+        readonly secondary: string | null
+        readonly background: string | null
+        readonly rangePalette: string[] | null
+        readonly iconSuggestion: string | null
+        readonly logoSource: "none" | "generic" | "auto" | null
     }
 }
 
@@ -74,6 +76,8 @@ export const DEFAULT_SETTINGS: Settings = {
     branding: {
         background: null,
         customer: null,
+        iconSuggestion: null,
+        logoSource: null,
         primary: null,
         rangePalette: null,
         secondary: null,

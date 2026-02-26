@@ -18,6 +18,7 @@ import "@xyflow/react/dist/style.css"
 
 import "../styles/globals.css"
 
+import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
 import CssBaseline from "@mui/material/CssBaseline"
 import {ThemeProvider} from "@mui/material/styles"
@@ -27,11 +28,12 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
+import {ComponentType, ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
 
 import {
     Auth,
     ErrorBoundary,
+    Footer,
     getTitleBase,
     LoadingSpinner,
     Navbar,
@@ -90,13 +92,22 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
 export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): ReactElement {
+    // TODO: Remove once React 19 upgrade is complete
+    // Cast once so JSX accepts it even if React types are temporarily mismatched
+    const ErrorBoundaryComponent = ErrorBoundary as unknown as ComponentType<{
+        readonly id: string
+        readonly children: React.ReactNode
+    }>
+
     const {
         auth0ClientId,
         auth0Domain,
         backendNeuroSanApiUrl,
+        logoServiceToken,
         setAuth0ClientId,
         setAuth0Domain,
         setBackendNeuroSanApiUrl,
+        setLogoServiceToken,
         setSupportEmailAddress,
         supportEmailAddress,
     } = useEnvironmentStore()
@@ -168,13 +179,14 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 return
             }
 
-            const data = await res.json()
+            const data: EnvironmentResponse = await res.json()
 
             // Save env vars in zustand store
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             setAuth0ClientId(data.auth0ClientId)
             setAuth0Domain(data.auth0Domain)
             setSupportEmailAddress(data.supportEmailAddress)
+            setLogoServiceToken(data.logoServiceToken)
         }
 
         void getEnvironment()
@@ -300,10 +312,11 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider>
-                    <ErrorBoundary id="error_boundary">
+                    <ErrorBoundaryComponent id="error_boundary">
                         <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
+                            logoServiceToken={logoServiceToken}
                             query={query}
                             pathname={pathname}
                             authenticationType={authenticationType}
@@ -321,8 +334,12 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         >
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
+                            <Footer
+                                supportEmailAddress={supportEmailAddress}
+                                sx={{borderTop: "none", marginTop: "4rem"}}
+                            />
                         </Container>
-                    </ErrorBoundary>
+                    </ErrorBoundaryComponent>
                 </SessionProvider>
             </>
         )
