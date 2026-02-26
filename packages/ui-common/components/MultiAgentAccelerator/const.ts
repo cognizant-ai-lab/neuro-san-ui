@@ -22,3 +22,8 @@ export const BASE_RADIUS = 100
 
 // Distance between depth levels
 export const LEVEL_SPACING = 150
+
+// Temporary folder name for networks created from agent reservations. These networks are not "in a folder" when
+// they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
+// temporary.
+export const TEMPORARY_NETWORK_FOLDER = "temporary"
