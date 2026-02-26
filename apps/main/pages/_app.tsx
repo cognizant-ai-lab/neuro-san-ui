@@ -18,6 +18,7 @@ import "reactflow/dist/style.css"
 
 import "../styles/globals.css"
 
+import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
 import CssBaseline from "@mui/material/CssBaseline"
 import {ThemeProvider} from "@mui/material/styles"
@@ -32,6 +33,7 @@ import {ComponentType, ReactElement, JSX as ReactJSX, ReactNode, useEffect, useM
 import {
     Auth,
     ErrorBoundary,
+    Footer,
     getTitleBase,
     LoadingSpinner,
     Navbar,
@@ -101,9 +103,11 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         auth0ClientId,
         auth0Domain,
         backendNeuroSanApiUrl,
+        logoServiceToken,
         setAuth0ClientId,
         setAuth0Domain,
         setBackendNeuroSanApiUrl,
+        setLogoServiceToken,
         setSupportEmailAddress,
         supportEmailAddress,
     } = useEnvironmentStore()
@@ -175,13 +179,14 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 return
             }
 
-            const data = await res.json()
+            const data: EnvironmentResponse = await res.json()
 
             // Save env vars in zustand store
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             setAuth0ClientId(data.auth0ClientId)
             setAuth0Domain(data.auth0Domain)
             setSupportEmailAddress(data.supportEmailAddress)
+            setLogoServiceToken(data.logoServiceToken)
         }
 
         void getEnvironment()
@@ -311,6 +316,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
+                            logoServiceToken={logoServiceToken}
                             query={query}
                             pathname={pathname}
                             authenticationType={authenticationType}
@@ -328,6 +334,10 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         >
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
+                            <Footer
+                                supportEmailAddress={supportEmailAddress}
+                                sx={{borderTop: "none", marginTop: "4rem"}}
+                            />
                         </Container>
                     </ErrorBoundaryComponent>
                 </SessionProvider>

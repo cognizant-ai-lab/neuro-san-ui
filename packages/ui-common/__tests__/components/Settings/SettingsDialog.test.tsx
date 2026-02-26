@@ -148,7 +148,7 @@ describe("SettingsDialog", () => {
         )
 
         // Locate the auto color checkbox
-        const autoColorCheckbox = screen.getByRole("button", {name: /Auto/u})
+        const autoColorCheckbox = screen.getByTestId("auto-agent-icon-color-button")
 
         // "auto" button should not be pressed since we set autoAgentIconColor to false
         expect(autoColorCheckbox).toHaveAttribute("aria-pressed", "false")

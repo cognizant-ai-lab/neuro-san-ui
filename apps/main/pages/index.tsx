@@ -14,19 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
-    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
-    LOGO,
-} from "@cognizant-ai-lab/ui-common/const"
+import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import Box from "@mui/material/Box"
 import {styled} from "@mui/material/styles"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {ReactElement, useState} from "react"
+import {ReactElement} from "react"
 
-import {ConfirmationModal} from "../../../packages/ui-common/components/Common/ConfirmationModal"
+import {Footer} from "../../../packages/ui-common/components/Common/Footer"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 
 // #region: Styled Components
@@ -113,38 +109,11 @@ const LaunchButton = styled("div")({
     },
 })
 
-const HeaderLineFive = styled("h5")({
-    color: "var(--bs-white)",
-    fontWeight: "bold",
-})
-
-const LinkDivider = styled("div")({
-    border: "1px solid rgb(38 239 233)",
-    marginBottom: "1.2rem",
-    width: "2.4rem",
-})
-
-const MoreLinks = styled("div")({
-    marginTop: "0.1rem",
-})
-
 const ActionLink = styled("a")({
     "&:hover": {
         color: "var(--bs-accent3-medium)",
     },
 })
-
-const SplashLink = styled("a")({
-    color: "rgb(120, 115, 115)",
-    display: "block",
-    marginBottom: "0.37rem",
-    width: "fit-content",
-
-    "&:hover": {
-        color: "var(--bs-white)",
-    },
-})
-
 const SubHeaderTitle = styled(Box)({
     color: "var(--bs-white)",
     fontSize: "2rem",
@@ -170,9 +139,6 @@ export default function Index(): ReactElement {
     // Access environment info
     const {supportEmailAddress} = useEnvironmentStore()
 
-    // For email dialog
-    const [emailDialogOpen, setEmailDialogOpen] = useState<boolean>(false)
-
     // Function to build the query string from the current route
     const buildQueryString = () => {
         const {query} = router
@@ -190,20 +156,6 @@ export default function Index(): ReactElement {
                 height: "100%",
             }}
         >
-            {emailDialogOpen && (
-                <ConfirmationModal
-                    content={CONTACT_US_CONFIRMATION_DIALOG_TEXT}
-                    handleCancel={() => {
-                        setEmailDialogOpen(false)
-                    }}
-                    handleOk={() => {
-                        window.location.href = `mailto:${supportEmailAddress}`
-                        setEmailDialogOpen(false)
-                    }}
-                    id="email-dialog"
-                    title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}
-                />
-            )}
             <OuterContainer id="outer-container">
                 <BodyContent id="body-content">
                     <Navbar id="nav-bar">
@@ -269,91 +221,7 @@ export default function Index(): ReactElement {
                         </NeuroAIToolsContainer>
                     </div>
                 </BodyContent>
-                <footer
-                    id="footer"
-                    style={{
-                        borderTop: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
-                        marginLeft: "2rem",
-                        marginRight: "2rem",
-                    }}
-                >
-                    <div
-                        id="additional-links-container"
-                        style={{
-                            columnGap: "60px",
-                            display: "flex",
-                            marginLeft: "1.5rem",
-                            marginTop: "1.1rem",
-                        }}
-                    >
-                        <MoreLinks id="team-links">
-                            <HeaderLineFive id="additional-links-header">Team</HeaderLineFive>
-                            <LinkDivider id="additional-links-divider" />
-                            <SplashLink
-                                id="learn-more-link"
-                                href="https://www.cognizant.com/us/en/services/ai/ai-lab"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                About
-                            </SplashLink>
-                            <SplashLink
-                                id="contact-us-footer-link"
-                                href={null}
-                                onClick={() => setEmailDialogOpen(true)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{cursor: "pointer"}}
-                            >
-                                Contact Us
-                            </SplashLink>
-                        </MoreLinks>
-                        <MoreLinks id="services-links">
-                            <HeaderLineFive id="additional-links-header">Services</HeaderLineFive>
-                            <LinkDivider id="additional-links-divider" />
-                            <SplashLink
-                                id="ai-innovation-studios-link"
-                                href="https://portal-innovationstudio-apps-prod-we-001.azurewebsites.net/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                AI Innovation Studios
-                            </SplashLink>
-                            <SplashLink
-                                id="neuro-it-ops-link"
-                                href="https://www.cognizant.com/us/en/services/neuro-intelligent-automation/neuro-ai-it-operations"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Neuro IT Ops
-                            </SplashLink>
-                            <SplashLink
-                                id="flowsource-link"
-                                href="https://www.cognizant.com/us/en/services/software-engineering-services/flowsource"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Flowsource
-                            </SplashLink>
-                            <SplashLink
-                                id="skygrade-link"
-                                href="https://www.cognizant.com/us/en/services/cloud-solutions/cognizant-skygrade"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Skygrade
-                            </SplashLink>
-                            <SplashLink
-                                id="cdit-link"
-                                href="https://cditoolkit.cognizant.com/cditlive2.0/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Cognizant Ignition
-                            </SplashLink>
-                        </MoreLinks>
-                    </div>
-                </footer>
+                <Footer supportEmailAddress={supportEmailAddress} />
             </OuterContainer>
         </div>
     )

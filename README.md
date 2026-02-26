@@ -66,6 +66,10 @@ AUTH0_DOMAIN=cognizant-ai.auth0.com
 
 # Can be anything
 SUPPORT_EMAIL_ADDRESS=test@example.com
+
+# Token from logo.dev if you want to use their service for logo generation. Can be omitted if you don't need logo
+# generation.
+LOGO_SERVICE_TOKEN=<your_token>
 ```
 
 - Instructions for generating NEXTAUTH_SECRET are [here](https://next-auth.js.org/configuration/options#secret).
