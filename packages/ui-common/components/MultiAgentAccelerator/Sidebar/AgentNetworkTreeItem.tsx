@@ -42,6 +42,16 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly setSelectedNetwork: (network: string) => void
     readonly shouldDisableTree: boolean
     readonly networkIconSuggestions: Record<string, string>
+    readonly temporaryNetworkExpirationTimes: Record<string, Date>
+}
+
+/**
+ * Helper function to determine if a temporary network is expired based on its expiration date
+ * @param expirationDate - Date object representing the expiration time of the temporary network
+ * @returns boolean indicating whether the temporary network is expired
+ */
+const isTemporaryNetworkExpired = (expirationDate: Date): boolean => {
+    return Date.now() > expirationDate.getTime()
 }
 
 /**
@@ -54,10 +64,11 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
     disabled,
     itemId,
     label,
+    networkIconSuggestions,
     nodeIndex,
     setSelectedNetwork,
     shouldDisableTree,
-    networkIconSuggestions,
+    temporaryNetworkExpirationTimes,
 }) => {
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
@@ -88,8 +99,11 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
         }
     }
 
-    // retrieve path for this network
+    // Determine if expired (temporary networks only)
+    const expirationTime = temporaryNetworkExpirationTimes?.[itemId]
+    const isExpired = isChild && expirationTime && isTemporaryNetworkExpired(expirationTime)
 
+    // retrieve path for this network
     const path = isChild ? agentNode?.agent_name : null
     const iconNameSuggestion = isChild ? networkIconSuggestions?.[itemId] : null
 
@@ -107,25 +121,35 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
                 <TreeItemContent
                     key={labelString}
                     {...getContentProps()}
-                    {...(isParent || shouldDisableTree ? {} : {onClick: () => selectNetworkHandler(path)})}
+                    {...(isParent || shouldDisableTree || isExpired ? {} : {onClick: () => selectNetworkHandler(path)})}
+                    sx={{cursor: isExpired ? "not-allowed" : "pointer"}}
                 >
                     <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
-                        <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
-                            {muiIconElement}
-                            <TreeItemLabel
-                                {...getLabelProps()}
-                                sx={{
-                                    fontWeight: isParent ? "bold" : "normal",
-                                    fontSize: isParent ? "1rem" : "0.9rem",
-                                    color: isParent ? "var(--heading-color)" : null,
-                                    "&:hover": {
-                                        textDecoration: "underline",
-                                    },
-                                }}
-                            >
-                                {cleanUpAgentName(labelString)}
-                            </TreeItemLabel>
-                        </Box>
+                        <Tooltip
+                            title={
+                                isChild && isExpired
+                                    ? "Expired"
+                                    : expirationTime && `Expires at ${expirationTime.toLocaleString()}`
+                            }
+                        >
+                            <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
+                                {muiIconElement}
+                                <TreeItemLabel
+                                    {...getLabelProps()}
+                                    sx={{
+                                        fontWeight: isParent ? "bold" : "normal",
+                                        fontSize: isParent ? "1rem" : "0.9rem",
+                                        color: isParent ? "var(--heading-color)" : null,
+                                        opacity: isExpired ? 0.5 : 1,
+                                        "&:hover": {
+                                            textDecoration: "underline",
+                                        },
+                                    }}
+                                >
+                                    {cleanUpAgentName(labelString)}
+                                </TreeItemLabel>
+                            </Box>
+                        </Tooltip>
                         {isChild && tags?.length > 0 ? (
                             <Tooltip
                                 title={tags
