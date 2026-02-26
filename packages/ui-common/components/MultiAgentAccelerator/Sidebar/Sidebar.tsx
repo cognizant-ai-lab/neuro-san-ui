@@ -36,13 +36,14 @@ import {
     useState,
 } from "react"
 
-import {AgentNetworkTreeItem, AgentNetworkNodeProps} from "./AgentNetworkTreeItem"
+import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
 import {buildTreeViewItems} from "./TreeUtils"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {TEMPORARY_NETWORK_FOLDER} from "../const"
 
 // #region: Styled Components
 
@@ -200,7 +201,9 @@ export const Sidebar: FC<SidebarProps> = ({
                 setSelectedItems([firstItem])
                 setSelectedNetwork(firstItem)
             }
-            setExpandedItems((prev) => (prev.includes("temporary") ? prev : [...prev, "temporary"]))
+            setExpandedItems((prev) =>
+                prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
+            )
         }
     }, [newlyAddedTemporaryNetworks])
 

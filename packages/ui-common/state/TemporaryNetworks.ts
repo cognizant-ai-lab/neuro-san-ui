@@ -44,7 +44,7 @@ interface TempNetworksStore {
 export const useTempNetworksStore = create<TempNetworksStore>()(
     persist(
         (set) => ({
-            tempNetworks: [],
+            tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
         }),
         {

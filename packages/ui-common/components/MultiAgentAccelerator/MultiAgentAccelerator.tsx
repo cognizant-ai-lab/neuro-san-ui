@@ -22,6 +22,7 @@ import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} 
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {AgentFlow} from "./AgentFlow"
+import {TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
     getAgentIconSuggestions,
@@ -42,11 +43,6 @@ interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
 }
-
-// Temporary folder name for networks created from agent reservations. These networks are not "in a folder" when
-// they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
-// temporary.
-export const TEMPORARY_NETWORK_FOLDER = "temporary"
 
 // Display expired temporary networks for this amount of time after they expire
 const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
