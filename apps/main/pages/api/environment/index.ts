@@ -32,13 +32,13 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Envir
     const auth0ClientId = process.env["AUTH0_CLIENT_ID"]
     const auth0Domain = process.env["AUTH0_DOMAIN"]
     const supportEmailAddress = process.env["SUPPORT_EMAIL_ADDRESS"]
-    const logoDevToken = process.env["LOGO_SERVICE_TOKEN"]
+    const logoServiceToken = process.env["LOGO_SERVICE_TOKEN"]
 
     res.status(httpStatus.OK).json({
         backendNeuroSanApiUrl,
         auth0ClientId,
         auth0Domain,
         supportEmailAddress,
-        logoDevToken,
+        logoServiceToken,
     })
 }

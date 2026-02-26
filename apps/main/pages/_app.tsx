@@ -96,11 +96,11 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         auth0ClientId,
         auth0Domain,
         backendNeuroSanApiUrl,
-        logoDevToken,
+        logoServiceToken,
         setAuth0ClientId,
         setAuth0Domain,
         setBackendNeuroSanApiUrl,
-        setLogoDevToken,
+        setLogoServiceToken,
         setSupportEmailAddress,
         supportEmailAddress,
     } = useEnvironmentStore()
@@ -179,7 +179,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
             setAuth0ClientId(data.auth0ClientId)
             setAuth0Domain(data.auth0Domain)
             setSupportEmailAddress(data.supportEmailAddress)
-            setLogoDevToken(data.logoDevToken)
+            setLogoServiceToken(data.logoServiceToken)
         }
 
         void getEnvironment()
@@ -309,7 +309,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                         <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
-                            logoDevToken={logoDevToken}
+                            logoServiceToken={logoServiceToken}
                             query={query}
                             pathname={pathname}
                             authenticationType={authenticationType}
