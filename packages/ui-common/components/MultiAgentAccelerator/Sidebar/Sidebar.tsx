@@ -36,7 +36,7 @@ import {
     useState,
 } from "react"
 
-import {AgentNetworkNode, AgentNetworkNodeProps} from "./AgentNetworkTreeItem"
+import {AgentNetworkTreeItem, AgentNetworkNodeProps} from "./AgentNetworkTreeItem"
 import {buildTreeViewItems} from "./TreeUtils"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -70,6 +70,7 @@ export interface SidebarProps {
     readonly networks: readonly AgentInfo[]
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
+    readonly newlyAddedTemporaryNetworks?: Set<string>
 }
 
 // #endregion: Types
@@ -83,6 +84,7 @@ export const Sidebar: FC<SidebarProps> = ({
     isAwaitingLlm,
     networkIconSuggestions,
     networks,
+    newlyAddedTemporaryNetworks,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -97,6 +99,8 @@ export const Sidebar: FC<SidebarProps> = ({
     const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
+
+    const [expandedItems, setExpandedItems] = useState<string[]>([])
 
     // Theming/Dark mode
     const theme = useTheme()
@@ -186,6 +190,20 @@ export const Sidebar: FC<SidebarProps> = ({
         {} as Record<string, Date>
     )
 
+    const [selectedItems, setSelectedItems] = useState<string[]>([])
+
+    useEffect(() => {
+        // If we got a new temporary network, select it and expand the temporary category in the tree view
+        if (newlyAddedTemporaryNetworks && newlyAddedTemporaryNetworks.size > 0) {
+            const firstItem = newlyAddedTemporaryNetworks.values().next().value
+            if (firstItem) {
+                setSelectedItems([firstItem])
+                setSelectedNetwork(firstItem)
+            }
+            setExpandedItems((prev) => (prev.includes("temporary") ? prev : [...prev, "temporary"]))
+        }
+    }, [newlyAddedTemporaryNetworks])
+
     return (
         <>
             <aside
@@ -240,8 +258,12 @@ export const Sidebar: FC<SidebarProps> = ({
                 <RichTreeView
                     key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
+                    expandedItems={expandedItems}
+                    onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+                    selectedItems={selectedItems}
+                    onSelectedItemsChange={(_event, itemIds) => setSelectedItems(itemIds as string[])}
                     slots={{
-                        item: AgentNetworkNode as RichTreeViewSlots["item"],
+                        item: AgentNetworkTreeItem as RichTreeViewSlots["item"],
                     }}
                     // Pass custom props to tree items via slotProps.
                     // Reference: https://github.com/mui/mui-x/issues/13351

@@ -99,7 +99,9 @@ export const buildTreeViewItems = (
     // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
     // structure from that.
     networks.forEach((network) => addNetworkToTree(network, treeViewItems, uncategorized, map, nodeIndex))
-    temporaryNetworks.forEach((temporaryNetwork) =>
+
+    // Now handle temporary networks
+    temporaryNetworks?.forEach((temporaryNetwork) =>
         addNetworkToTree(temporaryNetwork.agentInfo, treeViewItems, uncategorized, map, nodeIndex)
     )
 

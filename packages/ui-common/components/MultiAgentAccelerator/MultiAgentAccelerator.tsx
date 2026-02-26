@@ -46,11 +46,17 @@ interface MultiAgentAcceleratorProps {
 // Temporary folder name for networks created from agent reservations. These networks are not "in a folder" when
 // they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
 // temporary.
-const TEMPORARY_NETWORK_FOLDER = "temporary"
+export const TEMPORARY_NETWORK_FOLDER = "temporary"
 
 // Display expired temporary networks for this amount of time after they expire
 const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
 
+/**
+ * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
+ * in the tree.
+ * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
+ * @returns List of TemporaryNetwork objects that can be displayed in the UI
+ */
 const convertReservationsToNetworks = (agentReservations: AgentReservation[]): TemporaryNetwork[] => {
     return agentReservations.map((reservation) => ({
         reservation,
@@ -85,7 +91,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
 
     const temporaryNetworks = useTempNetworksStore((state) => state.tempNetworks)
-    const setTemporaryNetworks = useTempNetworksStore.getState().setTempNetworks
+
+    // Track newly added temp networks so we can highlight them
+    const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
 
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
 
@@ -279,9 +287,18 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             agentCountsRef.current = result.newCounts
             conversationsRef.current = result.newConversations
             setCurrentConversations(result.newConversations)
+
+            // Handle agent reservations (temporary networks) that come in through the chat stream.
             if (result.agentReservations?.length > 0) {
                 const newTemporaryNetworks = convertReservationsToNetworks(result.agentReservations)
-                setTemporaryNetworks([...temporaryNetworks, ...newTemporaryNetworks])
+                const currentNetworks = useTempNetworksStore.getState().tempNetworks
+                useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+
+                // record the new temporary networks so we can select them for the user. For now, we only
+                // care about the first one.
+                setNewlyAddedTemporaryNetworks(
+                    new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name))
+                )
             }
         }
 
@@ -303,6 +320,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback((): void => {
+        const network = newlyAddedTemporaryNetworks?.values().next().value
+        if (network?.length > 0) {
+            const agentNameDisplay = cleanUpAgentName(network)
+            sendNotification(
+                NotificationType.info,
+                "New temporary network created",
+                `A temporary network "${agentNameDisplay}" has been created.`
+            )
+        }
+
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
@@ -334,6 +361,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
+                        newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
