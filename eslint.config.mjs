@@ -214,6 +214,7 @@ const config = [
             "constructor-super": "error",
             "default-case": "error",
             "getter-return": "error",
+            "grouped-accessor-pairs": ["error", "anyOrder", {enforceForTSTypes: true}],
             "max-depth": "error",
             "newline-per-chained-call": "error",
             "no-alert": "error",
@@ -236,10 +237,12 @@ const config = [
             "no-undef": "error",
             "no-unreachable": "error",
             "no-unsafe-negation": "error",
+            "no-unused-private-class-members": "error",
             "no-var": "error",
             "prefer-const": "error",
             "prefer-rest-params": "error",
             "prefer-spread": "error",
+            "preserve-caught-error": "warn",
             "react/jsx-curly-brace-presence": "error",
             "react/no-array-index-key": "error",
             "react/no-object-type-as-default-prop": "error",
@@ -489,6 +492,12 @@ const config = [
             "unicorn/filename-case": "off",
             "unicorn/no-null": "off",
             "unicorn/prevent-abbreviations": "off",
+        },
+    },
+    {
+        files: ["**/*.{ts,tsx}"],
+        rules: {
+            "@typescript-eslint/no-unused-private-class-members": "error",
         },
     },
     {
