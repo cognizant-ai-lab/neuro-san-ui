@@ -319,7 +319,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                             disableFocusListener={!customer}
                                             disableTouchListener={!customer}
                                         >
-                                            <span style={{cursor: logoDevToken ? "pointer" : "not-allowed"}}>
+                                            <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
                                                 <ToggleButton value="none">None</ToggleButton>
                                             </span>
                                         </Tooltip>
@@ -330,7 +330,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                             disableFocusListener={!customer}
                                             disableTouchListener={!customer}
                                         >
-                                            <span style={{cursor: logoDevToken ? "pointer" : "not-allowed"}}>
+                                            <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
                                                 <ToggleButton value="generic">Generic</ToggleButton>
                                             </span>
                                         </Tooltip>
@@ -347,7 +347,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                             disableFocusListener={!customer}
                                             disableTouchListener={!customer}
                                         >
-                                            <span style={{cursor: logoDevToken ? "pointer" : "not-allowed"}}>
+                                            <span
+                                                style={{cursor: customer && logoDevToken ? "pointer" : "not-allowed"}}
+                                            >
                                                 <ToggleButton
                                                     disabled={!logoDevToken}
                                                     value="auto"
