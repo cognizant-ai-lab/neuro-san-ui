@@ -14,10 +14,11 @@ import {
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
-import {FC} from "react"
+import {FC, useRef} from "react"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
+
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -42,7 +43,7 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly setSelectedNetwork: (network: string) => void
     readonly shouldDisableTree: boolean
     readonly networkIconSuggestions: Record<string, string>
-    readonly temporaryNetworkExpirationTimes: Record<string, Date>
+    readonly temporaryNetworkExpirationTimes?: Record<string, Date>
 }
 
 /**
@@ -59,7 +60,7 @@ const isTemporaryNetworkExpired = (expirationDate: Date): boolean => {
  * @param props - see AgentNetworkNode interface
  * @returns JSX.Element containing the custom tree item
  */
-export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
+export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     children,
     disabled,
     itemId,
@@ -75,6 +76,8 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
+
+    const rootRef = useRef<HTMLLIElement>(null)
 
     const isParent = Array.isArray(children) && children.length > 0
     const isChild = !isParent
@@ -117,12 +120,17 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
 
     return (
         <TreeItemProvider {...getContextProviderProps()}>
-            <TreeItemRoot {...getRootProps()}>
+            <TreeItemRoot
+                {...getRootProps()}
+                ref={rootRef}
+            >
                 <TreeItemContent
                     key={labelString}
                     {...getContentProps()}
                     {...(isParent || shouldDisableTree || isExpired ? {} : {onClick: () => selectNetworkHandler(path)})}
-                    sx={{cursor: isExpired ? "not-allowed" : "pointer"}}
+                    sx={{
+                        cursor: isExpired ? "not-allowed" : "pointer",
+                    }}
                 >
                     <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
                         <Tooltip
