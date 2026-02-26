@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {fixupConfigRules, fixupPluginRules} from "@eslint/compat"
-import {FlatCompat} from "@eslint/eslintrc"
+import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
 import typescriptEslint from "@typescript-eslint/eslint-plugin"
@@ -33,49 +32,48 @@ import testingLibrary from "eslint-plugin-testing-library"
 import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 
-const ___dirname = import.meta.dirname
-const compat = new FlatCompat({
-    baseDirectory: ___dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all,
-})
-
 const config = [
     preferArrowFunctions.configs["all"],
     eslintPluginUnicorn.configs.all,
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
-    ...fixupConfigRules(
-        compat.extends(
-            // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
-            // "rules" section below.
-            "eslint:all",
-            "plugin:@next/next/recommended-legacy",
-            // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
-            "plugin:@next/next/core-web-vitals-legacy",
-            "plugin:@typescript-eslint/all",
-            "plugin:import/recommended",
-            "plugin:import/typescript",
-            "plugin:jest/recommended",
-            "plugin:react-hooks/recommended",
-            "plugin:react/all",
-            // This next one has to be included or else the React rules will complain that "React is not in scope".
-            // But those rules are wrong -- as of React 17, "React" automatically gets included in the transpilation
-            // process and doesn't *need* to be in scope.
-            "plugin:react/jsx-runtime",
-            "prettier"
-        )
-    ),
+
+    // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
+    // "rules" section below.
+    js.configs.all,
+
+    // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
+    {rules: {...next.configs["recommended-legacy"].rules}},
+    {rules: {...next.configs["core-web-vitals-legacy"].rules}},
+
+    // Equivalent to plugin:@typescript-eslint/all, expressed as flat config.
+    ...typescriptEslint.configs["flat/all"],
+
+    {rules: {...eslintPluginImport.configs.recommended.rules}},
+    {
+        rules: {...eslintPluginImport.configs.typescript.rules},
+        settings: {...eslintPluginImport.configs.typescript.settings},
+    },
+    {rules: {...jest.configs.recommended.rules}},
+    {rules: {...reactHooks.configs.recommended.rules}},
+    {rules: {...eslintPluginReact.configs.all.rules}},
+    {rules: {...eslintPluginReact.configs["jsx-runtime"].rules}},
+
+    // Equivalent to extending "prettier" (kept here to preserve rule-order precedence), and then re-applied below
+    // exactly as in main.
+    eslintConfigPrettier,
+
     {
         plugins: {
-            "@typescript-eslint": fixupPluginRules(typescriptEslint),
-            "jest-dom": fixupPluginRules(jestDom),
-            "react-hooks": fixupPluginRules(reactHooks),
+            "@next/next": next,
+            "@typescript-eslint": typescriptEslint,
+            "jest-dom": jestDom,
+            "react-hooks": reactHooks,
             import: fixupPluginRules(eslintPluginImport),
-            jest: fixupPluginRules(jest),
-            next,
+            jest,
             react: fixupPluginRules(eslintPluginReact),
+            "testing-library": testingLibrary,
         },
         linterOptions: {
             reportUnusedDisableDirectives: "error",
@@ -216,6 +214,7 @@ const config = [
             "constructor-super": "error",
             "default-case": "error",
             "getter-return": "error",
+            "grouped-accessor-pairs": ["error", "anyOrder", {enforceForTSTypes: true}],
             "max-depth": "error",
             "newline-per-chained-call": "error",
             "no-alert": "error",
@@ -233,15 +232,17 @@ const config = [
             "no-param-reassign": "error",
             "no-redeclare": "error",
             "no-setter-return": "error",
-            "no-shadow-restricted-names": "error",
+            "no-shadow-restricted-names": ["error", {reportGlobalThis: false}],
             "no-this-before-super": "error",
             "no-undef": "error",
             "no-unreachable": "error",
             "no-unsafe-negation": "error",
+            "no-unused-private-class-members": "error",
             "no-var": "error",
             "prefer-const": "error",
             "prefer-rest-params": "error",
             "prefer-spread": "error",
+            "preserve-caught-error": "warn",
             "react/jsx-curly-brace-presence": "error",
             "react/no-array-index-key": "error",
             "react/no-object-type-as-default-prop": "error",
@@ -310,6 +311,12 @@ const config = [
 
             // Requires strict type checks enabled in tsc which we're not ready for yet
             "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
+
+            // Requires strictNullChecks which isn't enabled in this repo
+            "@typescript-eslint/no-useless-default-assignment": "off",
+
+            // Too strict for current codebase (many callbacks are typed to return void)
+            "@typescript-eslint/strict-void-return": "off",
 
             // Conflicts with react/sort-comp
             "@typescript-eslint/member-ordering": "off",
@@ -485,6 +492,12 @@ const config = [
             "unicorn/filename-case": "off",
             "unicorn/no-null": "off",
             "unicorn/prevent-abbreviations": "off",
+        },
+    },
+    {
+        files: ["**/*.{ts,tsx}"],
+        rules: {
+            "@typescript-eslint/no-unused-private-class-members": "error",
         },
     },
     {

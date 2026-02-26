@@ -28,7 +28,7 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
+import {ComponentType, ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
 
 import {
     Auth,
@@ -92,6 +92,13 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
 export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): ReactElement {
+    // TODO: Remove once React 19 upgrade is complete
+    // Cast once so JSX accepts it even if React types are temporarily mismatched
+    const ErrorBoundaryComponent = ErrorBoundary as unknown as ComponentType<{
+        readonly id: string
+        readonly children: React.ReactNode
+    }>
+
     const {
         auth0ClientId,
         auth0Domain,
@@ -305,7 +312,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
                 removed when we fully switch to ALB auth.*/}
                 <SessionProvider>
-                    <ErrorBoundary id="error_boundary">
+                    <ErrorBoundaryComponent id="error_boundary">
                         <NavbarWrapper
                             id="nav-bar"
                             logo={LOGO}
@@ -332,7 +339,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                                 sx={{borderTop: "none", marginTop: "4rem"}}
                             />
                         </Container>
-                    </ErrorBoundary>
+                    </ErrorBoundaryComponent>
                 </SessionProvider>
             </>
         )
