@@ -1,6 +1,7 @@
 import {TreeViewBaseItem} from "@mui/x-tree-view/models"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 
 /**
  * Iteratively sort all children of tree nodes using a queue-based approach
@@ -26,6 +27,51 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
 }
 
 /**
+ * Add a single AgentInfo entry into the tree structure
+ */
+const addNetworkToTree = (
+    network: AgentInfo,
+    result: TreeViewBaseItem[],
+    uncategorized: TreeViewBaseItem,
+    map: Map<string, TreeViewBaseItem>,
+    nodeIndex: Map<string, AgentInfo>
+): void => {
+    const parts = network.agent_name.split("/")
+
+    if (parts.length === 1) {
+        uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
+        nodeIndex.set(network.agent_name, network)
+    } else {
+        let currentLevel = result
+
+        parts.forEach((part, index) => {
+            const nodeId = parts.slice(0, index + 1).join("/")
+            let node = map.get(nodeId)
+
+            if (!node) {
+                node = {id: nodeId, label: part, children: []}
+                map.set(nodeId, node)
+                if (index === parts.length - 1) {
+                    nodeIndex.set(nodeId, network)
+                }
+
+                if (index === 0) {
+                    currentLevel.push(node)
+                } else {
+                    const parentId = parts.slice(0, index).join("/")
+                    const parentNode = map.get(parentId)
+                    if (parentNode) {
+                        parentNode.children.push(node)
+                    }
+                }
+            }
+
+            currentLevel = node.children
+        })
+    }
+}
+
+/**
  * Build a tree view structure from a flat list of networks.
  * The list of networks comes from a call to the Neuro-san /list API
  * The tree structure is used by the RichTreeView component to display the networks
@@ -35,8 +81,8 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
  */
 export const buildTreeViewItems = (
     networks: readonly AgentInfo[],
-    temporaryNetworks: readonly AgentInfo[]
-): {treeViewItems: TreeViewBaseItem[]; index: Map<string, AgentInfo>} => {
+    temporaryNetworks: readonly TemporaryNetwork[]
+): {treeViewItems: TreeViewBaseItem[]; nodeIndex: Map<string, AgentInfo>} => {
     // Map to keep track of created nodes in a tree structure
     const map = new Map<string, TreeViewBaseItem>()
 
@@ -44,7 +90,7 @@ export const buildTreeViewItems = (
     const nodeIndex = new Map<string, AgentInfo>()
 
     // Resulting tree view items, ready for consumption by RichTreeView
-    const result: TreeViewBaseItem[] = []
+    const treeViewItems: TreeViewBaseItem[] = []
 
     // Special parent node for networks that aren't in any folder
     const uncategorized: TreeViewBaseItem = {id: "uncategorized", label: "Uncategorized", children: []}
@@ -52,57 +98,18 @@ export const buildTreeViewItems = (
     // Build a tree structure from the flat list of networks.
     // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
     // structure from that.
-    ;[...temporaryNetworks, ...networks].forEach((network) => {
-        // Split the agent_name into parts based on "/"
-        const parts = network.agent_name.split("/")
-
-        if (parts.length === 1) {
-            // Add single-name networks to the "Uncategorized" parent
-            uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
-            nodeIndex.set(network.agent_name, network)
-        } else {
-            // Start at the root level for each network
-            let currentLevel = result
-
-            // For each part of the path, create a new node if it doesn't exist
-            parts.forEach((part, index) => {
-                const nodeId = parts.slice(0, index + 1).join("/")
-                let node = map.get(nodeId)
-
-                if (!node) {
-                    // Create new node
-                    node = {id: nodeId, label: part, children: []}
-                    map.set(nodeId, node)
-                    // Only index leaf nodes (actual networks), not intermediate folder nodes
-                    if (index === parts.length - 1) {
-                        nodeIndex.set(nodeId, network)
-                    }
-
-                    if (index === 0) {
-                        currentLevel.push(node)
-                    } else {
-                        // Find parent node and add this node to its children
-                        const parentId = parts.slice(0, index).join("/")
-                        const parentNode = map.get(parentId)
-                        if (parentNode) {
-                            parentNode.children.push(node)
-                        }
-                    }
-                }
-
-                // Descend into the tree for the next part
-                currentLevel = node.children
-            })
-        }
-    })
+    networks.forEach((network) => addNetworkToTree(network, treeViewItems, uncategorized, map, nodeIndex))
+    temporaryNetworks.forEach((temporaryNetwork) =>
+        addNetworkToTree(temporaryNetwork.agentInfo, treeViewItems, uncategorized, map, nodeIndex)
+    )
 
     // Add "Uncategorized" to the result if it has children
     if (uncategorized.children.length > 0) {
-        result.push(uncategorized)
+        treeViewItems.push(uncategorized)
     }
 
     // Sort all nodes in the tree recursively
-    sortTreeNodes(result)
+    sortTreeNodes(treeViewItems)
 
-    return {treeViewItems: result, index: nodeIndex}
+    return {treeViewItems, nodeIndex}
 }

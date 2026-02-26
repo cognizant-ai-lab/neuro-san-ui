@@ -41,6 +41,7 @@ import {buildTreeViewItems} from "./TreeUtils"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
+import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 
 // #region: Styled Components
@@ -68,12 +69,12 @@ export interface SidebarProps {
     readonly networkIconSuggestions?: Record<string, string>
     readonly networks: readonly AgentInfo[]
     readonly setSelectedNetwork: (network: string) => void
-    readonly temporaryNetworks?: readonly AgentInfo[]
+    readonly temporaryNetworks?: readonly TemporaryNetwork[]
 }
 
 // #endregion: Types
 
-const EMPTY_ARRAY: AgentInfo[] = []
+const EMPTY_ARRAY: TemporaryNetwork[] = []
 
 export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
@@ -176,7 +177,14 @@ export const Sidebar: FC<SidebarProps> = ({
         void fetchVersion()
     }, [])
 
-    const {treeViewItems, index} = buildTreeViewItems(networks, temporaryNetworks)
+    const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
+    const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(
+        (acc, tempNetwork) => {
+            acc[tempNetwork.agentInfo.agent_name] = new Date(tempNetwork.reservation.expiration_time_in_seconds * 1000)
+            return acc
+        },
+        {} as Record<string, Date>
+    )
 
     return (
         <>
@@ -239,10 +247,11 @@ export const Sidebar: FC<SidebarProps> = ({
                     // Reference: https://github.com/mui/mui-x/issues/13351
                     slotProps={{
                         item: {
-                            nodeIndex: index,
+                            nodeIndex,
                             setSelectedNetwork,
                             shouldDisableTree: isAwaitingLlm,
                             networkIconSuggestions,
+                            temporaryNetworkExpirationTimes,
                         } as AgentNetworkNodeProps,
                     }}
                 />

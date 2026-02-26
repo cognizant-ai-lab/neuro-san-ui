@@ -19,12 +19,23 @@ import {persist} from "zustand/middleware"
 
 import {AgentInfo} from "../generated/neuro-san/NeuroSanClient"
 
+type AgentReservation = {
+    readonly reservation_id: string
+    readonly lifetime_in_seconds: number
+    readonly expiration_time_in_seconds: number
+}
+
+export type TemporaryNetwork = {
+    readonly reservation: AgentReservation
+    readonly agentInfo: AgentInfo
+}
+
 /**
  * Zustand state store for temporary networks, such as vibe coded networks created by the user.
  */
-export interface TempNetworksStore {
-    readonly tempNetworks: AgentInfo[]
-    setTempNetworks: (tempNetworks: AgentInfo[]) => void
+interface TempNetworksStore {
+    readonly tempNetworks: TemporaryNetwork[]
+    readonly setTempNetworks: (tempNetworks: TemporaryNetwork[]) => void
 }
 
 /**
@@ -34,10 +45,10 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
     persist(
         (set) => ({
             tempNetworks: [],
-            setTempNetworks: (tempNetworks: AgentInfo[]) => set({tempNetworks}),
+            setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
         }),
         {
-            name: "temp-networks-storage",
+            name: "temp-networks",
         }
     )
 )

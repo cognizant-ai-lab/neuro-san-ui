@@ -30,7 +30,7 @@ import {
     getNetworkIconSuggestions,
 } from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
-import {useTempNetworksStore} from "../../state/TempNetworks"
+import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {AgentConversation, AgentReservation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
@@ -43,11 +43,24 @@ interface MultiAgentAcceleratorProps {
     readonly backendNeuroSanApiUrl: string
 }
 
-const convertReservationsToNetworks = (agentReservations: AgentReservation[]): AgentInfo[] =>
-    agentReservations.map((reservation) => ({
-        agent_name: `temporary/${reservation.reservation_id}`,
-        origin: reservation.reservation_id,
+// Temporary folder name for networks created from agent reservations. These networks are not "in a folder" when
+// they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
+// temporary.
+const TEMPORARY_NETWORK_FOLDER = "temporary"
+
+// Display expired temporary networks for this amount of time after they expire
+const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
+
+const convertReservationsToNetworks = (agentReservations: AgentReservation[]): TemporaryNetwork[] => {
+    return agentReservations.map((reservation) => ({
+        reservation,
+        agentInfo: {
+            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+            origin: reservation.reservation_id,
+            status: "active",
+        },
     }))
+}
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -168,7 +181,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             if (temporaryNetworks?.length > 0) {
                 setNetworkIconSuggestions({
                     ...networkIconSuggestions,
-                    ...Object.fromEntries(temporaryNetworks.map((network) => [network.agent_name, "HourglassTop"])),
+                    ...Object.fromEntries(
+                        temporaryNetworks.map((network) => [network.agentInfo.agent_name, "HourglassTop"])
+                    ),
                 })
             }
         })()
@@ -240,6 +255,24 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [isAwaitingLlm])
 
+    // Reaper: remove temporary networks that have been expired for more than GRACE_PERIOD_MS
+    useEffect(() => {
+        if (temporaryNetworks.length === 0) return undefined
+
+        const interval = setInterval(() => {
+            const now = Date.now() / 1000 // convert to seconds since epoch
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks(
+                    temporaryNetworks.filter(
+                        (n) => n.reservation.expiration_time_in_seconds > now - GRACE_PERIOD_MS / 1000
+                    )
+                )
+        }, 10_000) // check every 10s
+
+        return () => clearInterval(interval)
+    }, [temporaryNetworks])
+
     const onChunkReceived = useCallback((chunk: string): boolean => {
         const result = processChatChunk(chunk, agentCountsRef.current, conversationsRef.current)
         if (result.success) {
@@ -247,8 +280,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             conversationsRef.current = result.newConversations
             setCurrentConversations(result.newConversations)
             if (result.agentReservations?.length > 0) {
-                const result2 = convertReservationsToNetworks(result.agentReservations)
-                setTemporaryNetworks(result2)
+                const newTemporaryNetworks = convertReservationsToNetworks(result.agentReservations)
+                setTemporaryNetworks([...temporaryNetworks, ...newTemporaryNetworks])
             }
         }
 
