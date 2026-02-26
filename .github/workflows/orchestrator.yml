@@ -20,7 +20,7 @@
 # Trigger Scenarios:
 # - Push to any branch: Runs tests only (for development feedback)
 # - Push to main branch: Runs test → build → deploy to dev
-# - GitHub release: Runs test → build → deploy to staging
+# - GitHub release: Runs test → build → deploy to staging → bump package.json
 # ================================================================================
 
 # Note: this is mostly copy-pasta from the same Action in neuro-ui :thumbsdown:
@@ -38,7 +38,7 @@ on:
 
 permissions:
     id-token: write
-    contents: read
+    contents: write
 
 jobs:
     setup:
@@ -102,3 +102,34 @@ jobs:
                         "image_tag": "${{ needs.build.outputs.image_tag }}",
                         "sender": "${{ github.actor }}"
                       }
+
+    # Step 4: Bump package.json version on main after a release
+    # Uses GITHUB_TOKEN so the resulting push does not re-trigger workflows.
+    bump-version:
+        runs-on: ubuntu-latest
+        needs: [setup, deploy]
+        if: github.event_name == 'release'
+        steps:
+            - name: Checkout main branch
+              uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+              with:
+                  ref: main
+                  fetch-depth: 0
+
+            - name: Update package.json to release version
+              run: |
+                  ./build_scripts/set_package_version.sh \
+                    packages/ui-common/package.json \
+                    "${{ needs.setup.outputs.version }}"
+
+            - name: Commit and push if changed
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add packages/ui-common/package.json
+                  if git diff --cached --quiet; then
+                      echo "No version change needed."
+                  else
+                      git commit -m "Bump ui-common version to ${{ needs.setup.outputs.version }}"
+                      git push origin main
+                  fi
