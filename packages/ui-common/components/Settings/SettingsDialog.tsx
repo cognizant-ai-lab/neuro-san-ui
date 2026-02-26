@@ -24,11 +24,11 @@ import {NotificationType, sendNotification} from "../Common/notification"
 interface SettingsDialogProps {
     readonly id: string
     readonly isOpen?: boolean
-    readonly logoDevToken?: string
+    readonly logoServiceToken?: string
     readonly onClose?: () => void
 }
 
-export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToken, onClose}) => {
+export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
     const resetSettings = useSettingsStore((state) => state.resetSettings)
@@ -336,7 +336,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                         </Tooltip>
                                         <Tooltip
                                             title={
-                                                logoDevToken
+                                                logoServiceToken
                                                     ? "Use a service to attempt to automatically find a suitable " +
                                                       "logo based on the customer name. Results may vary based " +
                                                       "on the uniqueness of the name and availability of logos online."
@@ -348,10 +348,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                                             disableTouchListener={!customer}
                                         >
                                             <span
-                                                style={{cursor: customer && logoDevToken ? "pointer" : "not-allowed"}}
+                                                style={{
+                                                    cursor: customer && logoServiceToken ? "pointer" : "not-allowed",
+                                                }}
                                             >
                                                 <ToggleButton
-                                                    disabled={!logoDevToken}
+                                                    disabled={!logoServiceToken}
                                                     value="auto"
                                                 >
                                                     Auto
@@ -364,7 +366,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoDevToke
                             <FormLabel>Preview:</FormLabel>
                             <CustomerLogo
                                 fallbackElement="(None)"
-                                logoDevToken={logoDevToken}
+                                logoServiceToken={logoServiceToken}
                             />
                             <FadingCheckmark show={logoCheckmark.show} />
                         </Box>

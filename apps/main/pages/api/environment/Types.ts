@@ -19,6 +19,6 @@ export interface EnvironmentResponse {
     readonly auth0ClientId?: string
     readonly auth0Domain?: string
     readonly backendNeuroSanApiUrl?: string
-    readonly logoDevToken?: string
+    readonly logoServiceToken?: string
     readonly supportEmailAddress?: string
 }

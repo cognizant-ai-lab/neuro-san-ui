@@ -37,7 +37,7 @@ interface ErrorPageProps {
  * @param errorText Error text to be displayed
  */
 export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement {
-    const {auth0ClientId, auth0Domain, supportEmailAddress, logoDevToken} = useEnvironmentStore()
+    const {auth0ClientId, auth0Domain, supportEmailAddress, logoServiceToken} = useEnvironmentStore()
 
     // Access NextJS router
     const router = useRouter()
@@ -64,7 +64,7 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
                 authenticationType={authenticationType}
                 id="nav-bar"
                 logo={LOGO}
-                logoDevToken={logoDevToken}
+                logoServiceToken={logoServiceToken}
                 pathname={router.pathname}
                 query={router.query}
                 signOut={handleSignOut}

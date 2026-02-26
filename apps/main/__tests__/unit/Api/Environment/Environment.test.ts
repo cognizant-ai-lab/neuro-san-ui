@@ -38,7 +38,7 @@ describe("Environment API handler", () => {
         process.env["AUTH0_CLIENT_ID"] = "test-client-id"
         process.env["AUTH0_DOMAIN"] = "test-domain.auth0.com"
         process.env["SUPPORT_EMAIL_ADDRESS"] = "support@example.com"
-        process.env["LOGO_SERVICE_TOKEN"] = "test-logo-dev-token"
+        process.env["LOGO_SERVICE_TOKEN"] = "test-logo-service-token"
 
         const {req, res} = createMocks()
 
@@ -51,7 +51,7 @@ describe("Environment API handler", () => {
             auth0ClientId: "test-client-id",
             auth0Domain: "test-domain.auth0.com",
             supportEmailAddress: "support@example.com",
-            logoDevToken: "test-logo-dev-token",
+            logoServiceToken: "test-logo-service-token",
         })
     })
 
@@ -74,7 +74,7 @@ describe("Environment API handler", () => {
             auth0ClientId: undefined,
             auth0Domain: undefined,
             supportEmailAddress: undefined,
-            logoDevToken: undefined,
+            logoServiceToken: undefined,
         })
     })
 
@@ -96,7 +96,7 @@ describe("Environment API handler", () => {
             auth0ClientId: "",
             auth0Domain: "",
             supportEmailAddress: "",
-            logoDevToken: "",
+            logoServiceToken: "",
         })
     })
 
@@ -121,7 +121,7 @@ describe("Environment API handler", () => {
             auth0ClientId: undefined,
             auth0Domain: undefined,
             supportEmailAddress: undefined,
-            logoDevToken: undefined,
+            logoServiceToken: undefined,
         })
     })
 })

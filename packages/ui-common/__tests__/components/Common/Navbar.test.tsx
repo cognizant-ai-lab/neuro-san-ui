@@ -53,7 +53,7 @@ describe("Navbar", () => {
                     }}
                     authenticationType=""
                     signOut={jest.fn()}
-                    logoDevToken={MOCK_LOGO_SERVICE_TOKEN}
+                    logoServiceToken={MOCK_LOGO_SERVICE_TOKEN}
                     supportEmailAddress={MOCK_EMAIL_ADDRESS}
                 />
             </ThemeProvider>

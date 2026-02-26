@@ -73,7 +73,7 @@ export interface NavbarProps {
     readonly supportEmailAddress: string
 
     // Optional logo.dev token for customer branding
-    readonly logoDevToken?: string
+    readonly logoServiceToken?: string
 }
 
 const MENU_ITEM_TEXT_PROPS = {
@@ -97,7 +97,7 @@ export const Navbar = ({
     authenticationType,
     id,
     logo,
-    logoDevToken,
+    logoServiceToken,
     pathname,
     query,
     signOut,
@@ -161,12 +161,12 @@ export const Navbar = ({
                 <SettingsDialog
                     id="settings-dialog"
                     isOpen={settingsDialogOpen}
-                    logoDevToken={logoDevToken}
+                    logoServiceToken={logoServiceToken}
                     onClose={() => setSettingsDialogOpen(false)}
                 />
             )}
             <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
-                <CustomerLogo logoDevToken={logoDevToken} />
+                <CustomerLogo logoServiceToken={logoServiceToken} />
                 <Typography
                     id="customer-branding"
                     sx={{

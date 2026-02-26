@@ -7,7 +7,7 @@ import {useSettingsStore} from "../../state/Settings"
 
 interface CustomerLogoProps {
     readonly fallbackElement?: ReactElement | string
-    readonly logoDevToken?: string
+    readonly logoServiceToken?: string
 }
 
 /**
@@ -37,11 +37,11 @@ export const getCognizantLogoImage = () => (
 
 /**
  * Component to display the customer's logo based on the settings.
- * @param logoDevToken - Optional token for fetching the logo from logo.dev
+ * @param logoServiceToken - Optional token for fetching the logo from logo.dev
  * @returns JSX element representing the customer's logo, MUI icon, or Cognizant fallback, or null if no logo
  * should be displayed or if the logo.dev token is missing/invalid.
  */
-export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoDevToken}) => {
+export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoServiceToken}) => {
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const iconSuggestion = useSettingsStore((state) => state.settings.branding.iconSuggestion)
     const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
@@ -69,8 +69,8 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoDevTok
 
     // "auto": use logo.dev service
     const logoUrl =
-        logoDevToken && customer?.trim().length > 0
-            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}?token=${logoDevToken}&theme=light&format=png&size=75`
+        logoServiceToken && customer?.trim().length > 0
+            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}?token=${logoServiceToken}&theme=light&format=png&size=75`
             : null
 
     return logoUrl ? (
