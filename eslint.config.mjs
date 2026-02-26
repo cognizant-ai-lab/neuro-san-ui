@@ -402,6 +402,8 @@ const config = [
             "func-style": "off",
             "id-length": "off",
             "init-declarations": "off",
+            // Indicate that the findBy and getBy calls are implicit assertions
+            "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
             "line-comment-position": "off",
             "lines-around-comment": "off",
             "max-lines": "off",
