@@ -31,7 +31,7 @@ import {navigateToUrl} from "../../../utils/BrowserNavigation"
 
 const MOCK_EMAIL_ADDRESS = "helloWorld@mock.com"
 const MOCK_USER = "mock-user"
-const MOCK_LOGO_DEV_TOKEN = "mock-logo-dev-token"
+const MOCK_LOGO_SERVICE_TOKEN = "mock-logo-dev-token"
 const LOGO = "mock-title"
 
 describe("Navbar", () => {
@@ -53,7 +53,7 @@ describe("Navbar", () => {
                     }}
                     authenticationType=""
                     signOut={jest.fn()}
-                    logoDevToken={MOCK_LOGO_DEV_TOKEN}
+                    logoDevToken={MOCK_LOGO_SERVICE_TOKEN}
                     supportEmailAddress={MOCK_EMAIL_ADDRESS}
                 />
             </ThemeProvider>

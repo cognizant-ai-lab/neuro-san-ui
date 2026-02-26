@@ -38,7 +38,7 @@ describe("Environment API handler", () => {
         process.env["AUTH0_CLIENT_ID"] = "test-client-id"
         process.env["AUTH0_DOMAIN"] = "test-domain.auth0.com"
         process.env["SUPPORT_EMAIL_ADDRESS"] = "support@example.com"
-        process.env["LOGO_DEV_TOKEN"] = "test-logo-dev-token"
+        process.env["LOGO_SERVICE_TOKEN"] = "test-logo-dev-token"
 
         const {req, res} = createMocks()
 
@@ -62,7 +62,7 @@ describe("Environment API handler", () => {
         delete process.env["AUTH0_CLIENT_ID"]
         delete process.env["AUTH0_DOMAIN"]
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
-        delete process.env["LOGO_DEV_TOKEN"]
+        delete process.env["LOGO_SERVICE_TOKEN"]
 
         const {req, res} = createMocks()
 
@@ -84,7 +84,7 @@ describe("Environment API handler", () => {
         process.env["AUTH0_CLIENT_ID"] = ""
         process.env["AUTH0_DOMAIN"] = ""
         process.env["SUPPORT_EMAIL_ADDRESS"] = ""
-        process.env["LOGO_DEV_TOKEN"] = ""
+        process.env["LOGO_SERVICE_TOKEN"] = ""
 
         const {req, res} = createMocks()
 
@@ -106,7 +106,7 @@ describe("Environment API handler", () => {
         delete process.env["AUTH0_CLIENT_ID"]
         delete process.env["AUTH0_DOMAIN"]
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
-        delete process.env["LOGO_DEV_TOKEN"]
+        delete process.env["LOGO_SERVICE_TOKEN"]
 
         const {req, res} = createMocks({
             method: "POST",
