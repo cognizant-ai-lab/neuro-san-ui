@@ -21,10 +21,10 @@ import dagre from "@dagrejs/dagre"
 import cloneDeep from "lodash-es/cloneDeep.js"
 import {Edge, EdgeProps, MarkerType, Node as RFNode} from "reactflow"
 
+import {AgentConversation} from "./AgentConversations"
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation} from "../../utils/agentConversations"
 import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Utils"
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5

@@ -27,9 +27,9 @@ import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
+import {AgentConversation} from "./AgentConversations"
 import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
-import {AgentConversation} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
