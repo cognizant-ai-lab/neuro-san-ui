@@ -35,6 +35,7 @@ import {
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
+import {TEMPORARY_NETWORK_FOLDER} from "../../../components/MultiAgentAccelerator/const"
 import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {useEnvironmentStore} from "../../../state/Environment"
@@ -265,6 +266,23 @@ describe("SideBar", () => {
         for (const tag of deepAgentData.tags) {
             await screen.findByText(tag)
         }
+    })
+
+    it("Should handle temporary networks correctly", async () => {
+        renderSidebarComponent({
+            networks: [
+                ...LIST_NETWORKS_RESPONSE,
+                {
+                    agent_name: `${TEMPORARY_NETWORK_FOLDER}/temp_network1`,
+                    description: "",
+                    tags: ["tag1", "tag2", "tag3"],
+                },
+            ],
+            newlyAddedTemporaryNetworks: new Set(`${TEMPORARY_NETWORK_FOLDER}/temp_network1`),
+        })
+
+        // Item should be auto-expanded as it's a newly added temporary network
+        await screen.findByText(cleanUpAgentName("temp_network1"))
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {

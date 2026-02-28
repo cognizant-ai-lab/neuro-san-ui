@@ -21,9 +21,12 @@ import Slide from "@mui/material/Slide"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
+import {AgentConversation, extractConversations} from "./AgentConversations"
+import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
 import {TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
+import {AgentReservation, extractReservations} from "./TemporaryNetworks"
 import {
     getAgentIconSuggestions,
     getAgentNetworks,
@@ -32,11 +35,10 @@ import {
 } from "../../controller/agent/Agent"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {AgentConversation, AgentReservation, processChatChunk} from "../../utils/agentConversations"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
-import {cleanUpAgentName} from "../AgentChat/Utils"
+import {chatMessageFromChunk, cleanUpAgentName} from "../AgentChat/Utils"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 interface MultiAgentAcceleratorProps {
@@ -112,7 +114,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
-    const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
+    const [currentConversations, setCurrentConversations] = useState<AgentConversation[]>([])
 
     // State to hold thought bubble edges - avoids duplicates across layout recalculations
     const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
@@ -278,27 +280,37 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [temporaryNetworks])
 
     const onChunkReceived = useCallback((chunk: string): boolean => {
-        const result = processChatChunk(chunk, agentCountsRef.current, conversationsRef.current)
-        if (result.success) {
-            agentCountsRef.current = result.newCounts
-            conversationsRef.current = result.newConversations
-            setCurrentConversations(result.newConversations)
-
-            // Handle agent reservations (temporary networks) that come in through the chat stream.
-            if (result.agentReservations?.length > 0) {
-                const newTemporaryNetworks = convertReservationsToNetworks(result.agentReservations)
-                const currentNetworks = useTempNetworksStore.getState().tempNetworks
-                useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
-
-                // record the new temporary networks so we can select them for the user. For now, we only
-                // care about the first one.
-                setNewlyAddedTemporaryNetworks(
-                    new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name))
-                )
-            }
+        // Extract ChatMessage structure
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) {
+            return true
         }
 
-        return result.success
+        // Conversations between agents
+        const result = extractConversations(chatMessage, conversationsRef.current)
+        if (result != null) {
+            conversationsRef.current = result
+            setCurrentConversations(result)
+        }
+
+        // Agent hit counts
+        agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
+
+        // Temporary networks/reservations
+        const reservationsResult = extractReservations(chatMessage)
+
+        // Handle agent reservations (temporary networks) that come in through the chat stream.
+        if (reservationsResult?.length > 0) {
+            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult)
+            const currentNetworks = useTempNetworksStore.getState().tempNetworks
+            useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+
+            // record the new temporary networks so we can select them for the user. For now, we only
+            // care about the first one.
+            setNewlyAddedTemporaryNetworks(new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name)))
+        }
+
+        return result != null && reservationsResult != null
     }, [])
 
     const onStreamingStarted = useCallback((): void => {

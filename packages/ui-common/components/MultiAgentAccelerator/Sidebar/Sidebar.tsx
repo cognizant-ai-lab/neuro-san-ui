@@ -195,7 +195,7 @@ export const Sidebar: FC<SidebarProps> = ({
 
     useEffect(() => {
         // If we got a new temporary network, select it and expand the temporary category in the tree view
-        if (newlyAddedTemporaryNetworks && newlyAddedTemporaryNetworks.size > 0) {
+        if (newlyAddedTemporaryNetworks?.size > 0) {
             const firstItem = newlyAddedTemporaryNetworks.values().next().value
             if (firstItem) {
                 setSelectedItems([firstItem])
@@ -204,6 +204,12 @@ export const Sidebar: FC<SidebarProps> = ({
             setExpandedItems((prev) =>
                 prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
             )
+
+            // scroll first network into view
+            const element = document.getElementById(firstItem)
+            if (element) {
+                element.scrollIntoView({behavior: "smooth", block: "center"})
+            }
         }
     }, [newlyAddedTemporaryNetworks])
 

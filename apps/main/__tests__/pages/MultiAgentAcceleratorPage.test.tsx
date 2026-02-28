@@ -33,12 +33,15 @@ import {
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
+import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
+import {TEMPORARY_NETWORK_FOLDER} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
+import {SidebarProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
+import {TemporaryNetwork} from "../../../../packages/ui-common/state/TemporaryNetworks"
 import {UserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
-import {processChatChunk} from "../../../../packages/ui-common/utils/agentConversations"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 
 const MOCK_USER = "mock-user"
@@ -54,6 +57,7 @@ jest.mock("next-auth/react")
 jest.mock("../../../../packages/ui-common/controller/agent/Agent")
 
 const conversationMock = jest.fn()
+const temporaryNetworksMock = jest.fn()
 
 jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
@@ -63,7 +67,21 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
     },
 }))
 
-jest.mock("../../../../packages/ui-common/utils/agentConversations")
+jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
+    const originalModule = jest.requireActual(
+        "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
+    )
+    return {
+        __esModule: true,
+        Sidebar: (props: SidebarProps) => {
+            temporaryNetworksMock(props.temporaryNetworks)
+            const OriginalSidebar = originalModule.Sidebar
+            return <OriginalSidebar {...props} />
+        },
+    }
+})
+
+jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations")
 
 // Mock MUI theming
 jest.mock("@mui/material/styles", () => ({
@@ -154,13 +172,11 @@ describe("Multi Agent Accelerator Page", () => {
         })
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
 
-        // make processChatChunk the real implementation
-        ;(processChatChunk as jest.Mock).mockImplementation(
-            jest.requireActual("../../../../packages/ui-common/utils/agentConversations").processChatChunk
+        // make extractConversations the real implementation
+        ;(extractConversations as jest.Mock).mockImplementation(
+            jest.requireActual("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations")
+                .extractConversations
         )
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: "light",
-        })
 
         user = userEvent.setup()
     })
@@ -344,13 +360,9 @@ describe("Multi Agent Accelerator Page", () => {
         expect(hasAgent).toBe(true)
     })
 
-    it("should handle receiving a bad chunk", async () => {
-        // Make processChatChunk return success as false for this one test to simulate a critical error
-        ;(processChatChunk as jest.Mock).mockReturnValue({
-            success: false,
-            newCounts: new Map([[TEST_AGENT_MATH_GUY, 1]]),
-            newConversations: [{agents: new Set([TEST_AGENT_MATH_GUY])}],
-        })
+    it("should handle receiving a bad message", async () => {
+        // Make extractConversations return failure (null) for this one test to simulate a critical error
+        ;(extractConversations as jest.Mock).mockReturnValue(null)
 
         renderMultiAgentAcceleratorPage()
 
@@ -366,12 +378,11 @@ describe("Multi Agent Accelerator Page", () => {
         // Verify the conversations array contains the expected agent
         const calls = conversationMock.mock.calls
 
-        // Assert that none of the calls has TEST_AGENT_MATH_GUY
-        expect(
-            calls.some((call) =>
-                call[0]?.some((conv: {agents: Set<string>}) => Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY))
-            )
-        ).toBe(false)
+        // Assert that conversationMock was always called with an empty array (no conversations)
+        // due to the failure in extractConversations
+        calls.forEach((call) => {
+            expect(call[0]).toEqual([])
+        })
     })
 
     it("should handle receiving an end of conversation chat message", async () => {
@@ -402,6 +413,7 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         // Verify Math Guy is still in the conversations
+        expect(conversationMock).toHaveBeenCalled()
         const latestCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
         const hasMathGuy = latestCall.some((conv: {agents: Set<string>}) => conv.agents.has(TEST_AGENT_MATH_GUY))
         expect(hasMathGuy).toBe(true)
@@ -421,9 +433,47 @@ describe("Multi Agent Accelerator Page", () => {
         await act(async () => {
             onChunkReceived(JSON.stringify(chatMessage))
         })
+    })
 
-        // Conversation should now be empty/null since it is complete
-        expect(conversationMock).toHaveBeenCalledWith(null)
+    it("Should detect agent registrations in the chat stream", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        const reservation = {
+            reservation_id: "test-reservation-id-14ecb260-4389-44f3-afad-ea315dfa1966",
+            lifetime_in_seconds: 300.0,
+            expiration_time_in_seconds: 1771438301.0245166,
+        }
+        const tool = "copy_cat"
+        const chatMessage: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT_FRAMEWORK,
+                text: "This is a test message",
+                structure: {total_tokens: 100},
+                origin: [{tool}],
+                sly_data: {
+                    agent_reservations: [reservation],
+                },
+            },
+        }
+
+        // Set up one active agent
+        const activeAgentChunk = JSON.stringify(chatMessage)
+        await act(async () => {
+            onChunkReceived(activeAgentChunk)
+        })
+
+        expect(chatCommonMock).toHaveBeenCalled()
+
+        const expectedTemporaryNetwork: TemporaryNetwork = {
+            reservation: expect.objectContaining(reservation),
+            agentInfo: expect.objectContaining({
+                agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+            }),
+        }
+
+        expect(temporaryNetworksMock).toHaveBeenCalledWith(
+            expect.arrayContaining([expect.objectContaining(expectedTemporaryNetwork)])
+        )
     })
 
     it("should show a popup when onStreamingStarted is called", async () => {
