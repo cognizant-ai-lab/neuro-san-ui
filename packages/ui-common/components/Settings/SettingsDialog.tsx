@@ -83,101 +83,95 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const handleBrandingApply = async () => {
         setIsBrandingApplying(true)
 
+        updateSettings({
+            branding: {
+                customer: customerInput,
+            },
+        })
+
+        let brandingSuggestions
         try {
-            updateSettings({
-                branding: {
-                    customer: customerInput,
-                },
-            })
-
-            const brandingSuggestions = await getBrandingSuggestions(customerInput)
-            if (!brandingSuggestions) {
-                console.warn(`Failed to fetch branding colors for customer "${customerInput}"`)
-                sendNotification(
-                    NotificationType.error,
-                    `Failed to fetch branding colors for "${customerInput}". Please check the name and try again.`
-                )
-                return
-            }
-
-            updateSettings({
-                appearance: {
-                    rangePalette: "brand",
-                },
-            })
-
-            if (brandingSuggestions["plasma"]) {
-                updateSettings({
-                    appearance: {
-                        plasmaColor: brandingSuggestions["plasma"],
-                    },
-                })
-                plasmaColorCheckmark.trigger()
-            }
-
-            if (brandingSuggestions["nodeColor"]) {
-                updateSettings({
-                    appearance: {
-                        agentNodeColor: brandingSuggestions["nodeColor"],
-                    },
-                })
-                agentNodeColorCheckmark.trigger()
-            }
-
-            // primary
-            if (brandingSuggestions["primary"]) {
-                updateSettings({
-                    branding: {
-                        primary: brandingSuggestions["primary"],
-                    },
-                })
-            }
-
-            // secondary
-            if (brandingSuggestions["secondary"]) {
-                updateSettings({
-                    branding: {
-                        secondary: brandingSuggestions["secondary"],
-                    },
-                })
-            }
-
-            // background
-            if (brandingSuggestions["background"]) {
-                updateSettings({
-                    branding: {
-                        background: brandingSuggestions["background"],
-                    },
-                })
-            }
-
-            if (Array.isArray(brandingSuggestions["rangePalette"])) {
-                updateSettings({
-                    branding: {
-                        rangePalette: brandingSuggestions["rangePalette"],
-                    },
-                })
-            }
-
-            if (brandingSuggestions["iconSuggestion"]) {
-                updateSettings({
-                    branding: {
-                        iconSuggestion: brandingSuggestions["iconSuggestion"],
-                    },
-                })
-            }
-
-            brandingCheckmark.trigger()
-        } catch (error) {
-            console.warn(`Failed to fetch branding colors for customer "${customerInput}":`, error)
+            brandingSuggestions = await getBrandingSuggestions(customerInput)
+        } catch (e) {
+            console.warn(`Failed to fetch branding suggestions for customer "${customerInput}"`, e)
             sendNotification(
                 NotificationType.error,
-                `Failed to fetch branding colors for "${customerInput}". Please check the name and try again.`
+                `Failed to fetch branding suggestions for "${customerInput}"`,
+                "Please check the name and try again. If the problem persists, there may be an issue with the " +
+                    "branding service."
             )
             return
-        } finally {
-            setIsBrandingApplying(false)
         }
+
+        updateSettings({
+            appearance: {
+                rangePalette: "brand",
+            },
+        })
+
+        if (brandingSuggestions["plasma"]) {
+            updateSettings({
+                appearance: {
+                    plasmaColor: brandingSuggestions["plasma"],
+                },
+            })
+            plasmaColorCheckmark.trigger()
+        }
+
+        if (brandingSuggestions["nodeColor"]) {
+            updateSettings({
+                appearance: {
+                    agentNodeColor: brandingSuggestions["nodeColor"],
+                },
+            })
+            agentNodeColorCheckmark.trigger()
+        }
+
+        // primary
+        if (brandingSuggestions["primary"]) {
+            updateSettings({
+                branding: {
+                    primary: brandingSuggestions["primary"],
+                },
+            })
+        }
+
+        // secondary
+        if (brandingSuggestions["secondary"]) {
+            updateSettings({
+                branding: {
+                    secondary: brandingSuggestions["secondary"],
+                },
+            })
+        }
+
+        // background
+        if (brandingSuggestions["background"]) {
+            updateSettings({
+                branding: {
+                    background: brandingSuggestions["background"],
+                },
+            })
+        }
+
+        if (Array.isArray(brandingSuggestions["rangePalette"])) {
+            updateSettings({
+                branding: {
+                    rangePalette: brandingSuggestions["rangePalette"],
+                },
+            })
+        }
+
+        if (brandingSuggestions["iconSuggestion"]) {
+            updateSettings({
+                branding: {
+                    iconSuggestion: brandingSuggestions["iconSuggestion"],
+                },
+            })
+        }
+
+        brandingCheckmark.trigger()
+        setIsBrandingApplying(false)
     }
 
     // Effect to keep input in sync with state store
