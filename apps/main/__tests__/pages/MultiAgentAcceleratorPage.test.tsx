@@ -38,10 +38,15 @@ import {extractConversations} from "../../../../packages/ui-common/components/Mu
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {SidebarProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
-import {getAgentNetworks, testConnection} from "../../../../packages/ui-common/controller/agent/Agent"
+import {
+    getAgentNetworks,
+    getNetworkIconSuggestions,
+    testConnection,
+} from "../../../../packages/ui-common/controller/agent/Agent"
 import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import {TemporaryNetwork} from "../../../../packages/ui-common/state/TemporaryNetworks"
+import {useSettingsStore} from "../../../../packages/ui-common/state/Settings"
+import {TemporaryNetwork, useTempNetworksStore} from "../../../../packages/ui-common/state/TemporaryNetworks"
 import {UserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
 import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
 
@@ -59,6 +64,7 @@ jest.mock("../../../../packages/ui-common/controller/agent/Agent")
 
 const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
+const networkIconSuggestionsMock = jest.fn()
 
 jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
@@ -76,6 +82,7 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Sideb
         __esModule: true,
         Sidebar: (props: SidebarProps) => {
             temporaryNetworksMock(props.temporaryNetworks)
+            networkIconSuggestionsMock(props.networkIconSuggestions)
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
         },
@@ -180,6 +187,10 @@ describe("Multi Agent Accelerator Page", () => {
         )
 
         user = userEvent.setup()
+
+        // Reset zustand stores
+        useTempNetworksStore.setState({tempNetworks: []})
+        useSettingsStore.getState().resetSettings()
     })
 
     it.each([false, true])(
@@ -474,9 +485,7 @@ describe("Multi Agent Accelerator Page", () => {
             }),
         }
 
-        expect(temporaryNetworksMock).toHaveBeenCalledWith(
-            expect.arrayContaining([expect.objectContaining(expectedTemporaryNetwork)])
-        )
+        expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
 
         await act(async () => {
             onStreamingComplete()
@@ -484,6 +493,38 @@ describe("Multi Agent Accelerator Page", () => {
 
         const expectedAlertText = `A temporary network "${cleanUpAgentName(agentName)}" has been created.`
         await screen.findByText(expectedAlertText)
+    })
+
+    it("Should pass along network icon suggestions to the sidebar", async () => {
+        const iconSuggestions = [
+            {
+                tool: "copy_cat",
+                icon_url: "Copy",
+            },
+            {
+                tool: "date_time_provider",
+                icon_url: "DateTime",
+            },
+        ]
+        ;(getNetworkIconSuggestions as jest.Mock).mockResolvedValue(iconSuggestions)
+
+        renderMultiAgentAcceleratorPage()
+
+        await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+        await waitFor(() => expect(networkIconSuggestionsMock).toHaveBeenCalledWith(iconSuggestions))
+    })
+
+    it("Should handle getNetworkIconSuggestions failure gracefully", async () => {
+        ;(getNetworkIconSuggestions as jest.Mock).mockRejectedValue(new Error("Failed to fetch icon suggestions"))
+        const warnSpy = jest.spyOn(console, "warn").mockImplementation()
+        renderMultiAgentAcceleratorPage()
+        await waitFor(() => {
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining("Unable to get network icon suggestions"),
+                expect.any(Error)
+            )
+        })
     })
 
     it("Should handle receiving something that isn't a ChatMessage", async () => {

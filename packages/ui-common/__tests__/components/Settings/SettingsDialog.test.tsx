@@ -238,15 +238,17 @@ describe("SettingsDialog", () => {
         const primary = "#778899"
         const secondary = "#AA0011"
         const background = "#AA0022"
+        const iconSuggestion = "Hourglass"
 
         global.fetch = mockFetch(
             {
-                plasma,
-                nodeColor,
-                primary,
-                secondary,
                 background,
+                iconSuggestion,
+                nodeColor,
+                plasma,
+                primary,
                 rangePalette: palette,
+                secondary,
             },
             true
         )
@@ -273,6 +275,7 @@ describe("SettingsDialog", () => {
         expect(brandingSettings.secondary).toBe(secondary)
         expect(brandingSettings.background).toBe(background)
         expect(brandingSettings.rangePalette).toEqual(palette)
+        expect(brandingSettings.iconSuggestion).toBe(iconSuggestion)
 
         // Now try using Enter to submit a new customer name and check that it also applies branding
         const newCustomerName = "Acme 2"
@@ -313,7 +316,7 @@ describe("SettingsDialog", () => {
         expect(brandingSettings.rangePalette).toEqual(null)
     })
 
-    it("Handles exception when retrieving branding colors", async () => {
+    it("Handles exception when retrieving branding suggestions", async () => {
         const networkError = "Network error"
         global.fetch = jest.fn().mockRejectedValue(new Error(networkError))
         render(
@@ -330,10 +333,8 @@ describe("SettingsDialog", () => {
         await enterCustomerName(customerName)
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
-            expect.stringContaining("Failed to fetch branding colors"),
-            expect.objectContaining({
-                message: expect.stringContaining(networkError),
-            })
+            expect.stringMatching(new RegExp(`Failed to fetch branding suggestions.*"${customerName}"`, "u")),
+            expect.objectContaining({message: networkError})
         )
     })
 })
