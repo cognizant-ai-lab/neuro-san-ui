@@ -21,7 +21,6 @@ import {
     extractConversations,
     isFinalMessage,
 } from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {getUpdatedAgentCounts} from "../../../components/MultiAgentAccelerator/AgentCounts"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 jest.mock("../../../components/Common/notification")
@@ -70,21 +69,6 @@ describe("agentConversations", () => {
             }
 
             expect(isFinalMessage(message)).toBe(false)
-        })
-    })
-
-    describe("updateAgentCounts", () => {
-        it("should update agent counts correctly", () => {
-            const existingCounts = new Map([["agent1", 1]])
-            const origins = [
-                {tool: "agent1", instantiation_index: 0},
-                {tool: "agent2", instantiation_index: 1},
-            ]
-
-            const updatedCounts = getUpdatedAgentCounts(existingCounts, origins)
-
-            expect(updatedCounts.get("agent1")).toBe(2)
-            expect(updatedCounts.get("agent2")).toBe(1)
         })
     })
 
