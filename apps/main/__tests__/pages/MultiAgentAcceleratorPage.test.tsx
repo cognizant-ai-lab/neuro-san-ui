@@ -33,6 +33,7 @@ import {
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
+import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentChat/Utils"
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
@@ -110,7 +111,7 @@ const MATH_GUY_MESSAGE: ChatResponse = {
 }
 
 let setIsAwaitingLlm: (val: boolean) => void
-let onChunkReceived: (chunk: string) => void
+let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
 let onStreamingComplete: () => void
 
@@ -464,16 +465,33 @@ describe("Multi Agent Accelerator Page", () => {
 
         expect(chatCommonMock).toHaveBeenCalled()
 
+        const agentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+
         const expectedTemporaryNetwork: TemporaryNetwork = {
             reservation: expect.objectContaining(reservation),
             agentInfo: expect.objectContaining({
-                agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+                agent_name: agentName,
             }),
         }
 
         expect(temporaryNetworksMock).toHaveBeenCalledWith(
             expect.arrayContaining([expect.objectContaining(expectedTemporaryNetwork)])
         )
+
+        await act(async () => {
+            onStreamingComplete()
+        })
+
+        const expectedAlertText = `A temporary network "${cleanUpAgentName(agentName)}" has been created.`
+        await screen.findByText(expectedAlertText)
+    })
+
+    it("Should handle receiving something that isn't a ChatMessage", async () => {
+        renderMultiAgentAcceleratorPage()
+        await act(async () => {
+            const result = onChunkReceived("I am not a ChatMessage")
+            expect(result).toEqual(true)
+        })
     })
 
     it("should show a popup when onStreamingStarted is called", async () => {
