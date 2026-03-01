@@ -204,12 +204,6 @@ export const Sidebar: FC<SidebarProps> = ({
             setExpandedItems((prev) =>
                 prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
             )
-
-            // scroll first network into view
-            const element = document.getElementById(firstItem)
-            if (element) {
-                element.scrollIntoView({behavior: "smooth", block: "center"})
-            }
         }
     }, [newlyAddedTemporaryNetworks])
 
