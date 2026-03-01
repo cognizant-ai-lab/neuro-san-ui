@@ -1,5 +1,4 @@
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {NotificationType, sendNotification} from "../Common/notification"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -22,23 +21,19 @@ export type AgentReservation = {
 // We expect the agent reservations to be stored in sly_data under this key
 const AGENT_RESERVATIONS_KEY = "agent_reservations"
 
+/**
+ * Extracts agent reservations from a chat message, if they exist.
+ * @param message The chat message to extract reservations from. We expect reservations to be present in messages of
+ * type AGENT_FRAMEWORK only.
+ * @return An array of AgentReservation objects if reservations are found, or an empty array if not found or
+ * if the message is not of the expected type.
+ */
 export const extractReservations = (message: ChatMessage): AgentReservation[] => {
-    try {
-        // Check for temp networks ("reservations") in sly_data
-
-        if (
-            message?.type === ChatMessageType.AGENT_FRAMEWORK &&
-            message?.sly_data && // check for agent_reservations key in slyData
-            AGENT_RESERVATIONS_KEY in message.sly_data
-        ) {
-            return message.sly_data[AGENT_RESERVATIONS_KEY] as AgentReservation[]
-        } else {
-            // Not the type of message that would contain reservations, or no reservations found, return empty array
-            return []
-        }
-    } catch (error) {
-        sendNotification(NotificationType.error, "Agent conversation error")
-        console.error("Agent conversation error:", error)
-        return null
+    // Check for temp networks ("reservations") in sly_data
+    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_RESERVATIONS_KEY]) {
+        return message.sly_data[AGENT_RESERVATIONS_KEY] as AgentReservation[]
+    } else {
+        // Not the type of message that would contain reservations, or no reservations found, return empty array
+        return []
     }
 }
