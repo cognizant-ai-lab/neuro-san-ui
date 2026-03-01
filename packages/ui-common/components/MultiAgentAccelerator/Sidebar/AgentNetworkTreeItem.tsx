@@ -148,7 +148,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         fontWeight: isParent ? "bold" : "normal",
                                         fontSize: isParent ? "1rem" : "0.9rem",
                                         color: isParent ? "var(--heading-color)" : null,
-                                        opacity: isExpired ? 0.5 : 1,
+                                        opacity: isExpired ? 0.25 : 1,
                                         "&:hover": {
                                             textDecoration: "underline",
                                         },
