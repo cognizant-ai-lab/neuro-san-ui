@@ -39,6 +39,7 @@ import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName} from "../AgentChat/Utils"
+import {MUIAlert} from "../Common/MUIAlert"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 interface MultiAgentAcceleratorProps {
@@ -121,6 +122,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
     >(new Map())
 
+    // For controlling alert when temporary network is created
+    const [alertContents, setAlertContents] = useState<string | null>(null)
+
     const customURLCallback = useCallback(
         (url: string) => {
             setNeuroSanURL(url || backendNeuroSanApiUrl)
@@ -184,6 +188,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setNetworkIconSuggestions({})
                 }
             }
+
+            // Always use hourglass icon for temp networks
             if (temporaryNetworks?.length > 0) {
                 setNetworkIconSuggestions({
                     ...networkIconSuggestions,
@@ -317,6 +323,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Reset agent counts
         agentCountsRef.current = new Map()
 
+        setAlertContents(null)
+
         // Show info popup only once per session
         if (!haveShownPopup) {
             sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
@@ -330,19 +338,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const onStreamingComplete = useCallback((): void => {
         const network = newlyAddedTemporaryNetworks?.values().next().value
         if (network?.length > 0) {
+            // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
             const agentNameDisplay = cleanUpAgentName(network)
-            sendNotification(
-                NotificationType.info,
-                "New temporary network created",
-                `A temporary network "${agentNameDisplay}" has been created.`
-            )
+            setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
         }
 
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
         resetState()
-    }, [])
+    }, [newlyAddedTemporaryNetworks])
 
     const getLeftPanel = () => {
         return (
@@ -490,27 +495,39 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
     return (
-        <Grid
-            id="multi-agent-accelerator-grid"
-            container
-            columns={18}
-            sx={{
-                border: "solid 1px #CFCFDC",
-                borderRadius: "var(--bs-border-radius)",
-                display: "flex",
-                flex: 1,
-                height: "85%",
-                marginTop: "1rem",
-                overflow: "hidden",
-                padding: "1rem",
-                justifyContent: isAwaitingLlm ? "center" : "unset",
-                position: "relative",
-            }}
-        >
-            {getLeftPanel()}
-            {getCenterPanel()}
-            {getRightPanel()}
-            {getStopButton()}
-        </Grid>
+        <>
+            {alertContents?.length > 0 && (
+                <MUIAlert
+                    id="temporary-network-created-alert"
+                    closeable={true}
+                    severity="success"
+                    sx={{marginTop: "1rem", marginBottom: 0}}
+                >
+                    {alertContents}
+                </MUIAlert>
+            )}
+            <Grid
+                id="multi-agent-accelerator-grid"
+                container
+                columns={18}
+                sx={{
+                    border: "solid 1px #CFCFDC",
+                    borderRadius: "var(--bs-border-radius)",
+                    display: "flex",
+                    flex: 1,
+                    height: "85%",
+                    marginTop: "1rem",
+                    overflow: "hidden",
+                    padding: "1rem",
+                    justifyContent: isAwaitingLlm ? "center" : "unset",
+                    position: "relative",
+                }}
+            >
+                {getLeftPanel()}
+                {getCenterPanel()}
+                {getRightPanel()}
+                {getStopButton()}
+            </Grid>
+        </>
     )
 }
