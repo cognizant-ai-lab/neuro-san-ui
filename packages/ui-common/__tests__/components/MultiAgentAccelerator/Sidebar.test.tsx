@@ -38,6 +38,7 @@ import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../components/MultiAgentAccelerator/const"
 import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
+import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../state/Environment"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
@@ -67,7 +68,7 @@ describe("SideBar", () => {
 
     // Provide a suggested icon for first network, and an invalid icon name for the second network
     // to test error handling
-    const networkIconSuggestions = {
+    const networkIconSuggestions: NetworkIconSuggestions = {
         [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
     }
 

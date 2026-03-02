@@ -48,6 +48,7 @@ import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult, removeTh
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
+import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -63,7 +64,7 @@ interface ActiveThoughtBubble extends AgentConversationBase {
 
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
-    readonly agentIconSuggestions?: Record<string, string>
+    readonly agentIconSuggestions?: AgentIconSuggestions
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
