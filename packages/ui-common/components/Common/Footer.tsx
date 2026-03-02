@@ -2,7 +2,8 @@ import {styled, SxProps} from "@mui/material/styles"
 import {FC, useState} from "react"
 
 import {ConfirmationModal} from "./ConfirmationModal"
-import {CONTACT_US_CONFIRMATION_DIALOG_TEXT, CONTACT_US_CONFIRMATION_DIALOG_TITLE} from "../../const"
+import {getContactUsConfirmationText} from "../../const"
+import {navigateToUrl} from "../../utils/BrowserNavigation"
 
 const HeaderLineFive = styled("h5")({
     fontWeight: "bold",
@@ -55,16 +56,16 @@ export const Footer: FC<FooterProps> = ({supportEmailAddress, sx}) => {
         <>
             {emailDialogOpen && (
                 <ConfirmationModal
-                    content={CONTACT_US_CONFIRMATION_DIALOG_TEXT}
+                    content={getContactUsConfirmationText(supportEmailAddress)}
                     handleCancel={() => {
                         setEmailDialogOpen(false)
                     }}
                     handleOk={() => {
-                        window.location.href = `mailto:${supportEmailAddress}`
+                        navigateToUrl(`mailto:${supportEmailAddress}`)
                         setEmailDialogOpen(false)
                     }}
                     id="email-dialog"
-                    title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}
+                    title="Contact Us"
                 />
             )}
             <FooterContainer sx={sx}>
