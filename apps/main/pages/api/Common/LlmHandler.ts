@@ -7,6 +7,8 @@ import {ChatOpenAI} from "@langchain/openai"
 import httpStatus from "http-status"
 import type {NextApiRequest, NextApiResponse} from "next"
 
+import {ErrorResponse} from "./Types"
+
 interface LLMHandlerOptions {
     readonly promptTemplate: ChatPromptTemplate
     readonly extractVariables: (req: NextApiRequest) => Record<string, unknown>
@@ -15,13 +17,14 @@ interface LLMHandlerOptions {
 /**
  * Handles LLM requests using LangChain and OpenAI.
  *
+ * @template T - The expected response type from the LLM
  * @param req - Next.js API request
  * @param res - Next.js API response
  * @param options - Configuration for the handler
  */
-export const handleLLMRequest = async (
+export const handleLLMRequest = async <T>(
     req: NextApiRequest,
-    res: NextApiResponse,
+    res: NextApiResponse<T | ErrorResponse>,
     {promptTemplate, extractVariables}: LLMHandlerOptions
 ): Promise<void> => {
     if (req.method !== "POST") {

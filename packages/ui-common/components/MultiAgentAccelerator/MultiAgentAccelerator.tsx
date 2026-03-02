@@ -33,6 +33,8 @@ import {
     getConnectivity,
     getNetworkIconSuggestions,
 } from "../../controller/agent/Agent"
+import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
+import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -94,10 +96,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Track newly added temp networks so we can highlight them
     const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
 
-    const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
+    const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
-    const [agentIconSuggestions, setAgentIconSuggestions] = useState<Record<string, string>>({})
+    const [agentIconSuggestions, setAgentIconSuggestions] = useState<AgentIconSuggestions | null>(null)
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
@@ -214,7 +216,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
-                    setAgentIconSuggestions({})
+                    setAgentIconSuggestions(null)
                     closeNotification()
                 } catch (e) {
                     const networkName = cleanUpAgentName(selectedNetwork)
@@ -239,7 +241,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setAgentIconSuggestions(agentIconSuggestionsTmp)
                 } catch (e) {
                     console.warn("Unable to get agent icon suggestions:", e)
-                    setAgentIconSuggestions({})
+                    setAgentIconSuggestions(null)
                 }
             }
         })()
