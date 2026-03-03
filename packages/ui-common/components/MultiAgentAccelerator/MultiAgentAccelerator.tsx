@@ -16,6 +16,7 @@ limitations under the License.
 
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
+import Collapse from "@mui/material/Collapse"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
@@ -518,7 +519,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }
     return (
         <>
-            {alertContents?.length > 0 && (
+            <Collapse
+                in={alertContents?.length > 0}
+                timeout={1000}
+            >
                 <MUIAlert
                     id="temporary-network-created-alert"
                     closeable={true}
@@ -527,7 +531,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 >
                     {alertContents}
                 </MUIAlert>
-            )}
+            </Collapse>
             {confirmationModalOpen && (
                 <ConfirmationModal
                     id="delete-network-confirmation-modal"
