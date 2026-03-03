@@ -194,14 +194,19 @@ export const Sidebar: FC<SidebarProps> = ({
         {} as Record<string, Date>
     )
 
-    const [selectedItems, setSelectedItems] = useState<string[]>([])
+    const [selectedItem, setSelectedItem] = useState<string | null>(null)
+
+    const handleSelectedItemsChange = (_event: unknown, itemId: string | null) => {
+        setSelectedItem(itemId)
+        setSelectedNetwork(itemId)
+    }
 
     useEffect(() => {
         // If we got a new temporary network, select it and expand the temporary category in the tree view
         if (newlyAddedTemporaryNetworks?.size > 0) {
             const firstItem = newlyAddedTemporaryNetworks.values().next().value
             if (firstItem) {
-                setSelectedItems([firstItem])
+                setSelectedItem(firstItem)
                 setSelectedNetwork(firstItem)
             }
             setExpandedItems((prev) =>
@@ -266,8 +271,9 @@ export const Sidebar: FC<SidebarProps> = ({
                     items={treeViewItems}
                     expandedItems={expandedItems}
                     onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-                    selectedItems={selectedItems}
-                    onSelectedItemsChange={(_event, itemIds) => setSelectedItems(itemIds as string[])}
+                    multiSelect={false}
+                    onSelectedItemsChange={handleSelectedItemsChange}
+                    selectedItems={selectedItem}
                     slots={{
                         item: AgentNetworkTreeItem as RichTreeViewSlots["item"],
                     }}

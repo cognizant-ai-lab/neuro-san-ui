@@ -134,7 +134,12 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                 <TreeItemContent
                     key={labelString}
                     {...getContentProps()}
-                    {...(isParent || shouldDisableTree || isExpired ? {} : {onClick: () => selectNetworkHandler(path)})}
+                    onClick={(e) => {
+                        getContentProps().onClick?.(e)
+                        if (!isParent && !shouldDisableTree && !isExpired) {
+                            selectNetworkHandler(path)
+                        }
+                    }}
                     sx={{
                         cursor: isExpired ? "not-allowed" : "pointer",
                     }}
