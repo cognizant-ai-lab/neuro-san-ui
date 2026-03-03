@@ -189,15 +189,18 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                             ) : null}
                         </Box>
                         {isChild && isTemporaryNetwork && (
-                            <Tooltip title="Delete network">
+                            <Tooltip title={isExpired ? "Expired" : "Delete network"}>
                                 <Delete
                                     onClick={(e) => {
+                                        if (isExpired) {
+                                            return
+                                        }
                                         e.stopPropagation()
                                         onDeleteNetwork?.(itemId)
                                     }}
                                     sx={{
+                                        cursor: isExpired ? "not-allowed" : "pointer",
                                         fontSize: "1rem",
-                                        cursor: "pointer",
                                         "&:hover": {color: theme.palette.warning.main},
                                     }}
                                 />
