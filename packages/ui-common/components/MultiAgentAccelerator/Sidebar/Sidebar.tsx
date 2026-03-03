@@ -70,6 +70,7 @@ export interface SidebarProps {
     readonly isAwaitingLlm: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
+    readonly onDeleteNetwork?: (network: string) => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
     readonly newlyAddedTemporaryNetworks?: Set<string>
@@ -87,6 +88,7 @@ export const Sidebar: FC<SidebarProps> = ({
     networkIconSuggestions,
     networks,
     newlyAddedTemporaryNetworks,
+    onDeleteNetwork,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -273,10 +275,11 @@ export const Sidebar: FC<SidebarProps> = ({
                     // Reference: https://github.com/mui/mui-x/issues/13351
                     slotProps={{
                         item: {
+                            networkIconSuggestions,
                             nodeIndex,
+                            onDeleteNetwork,
                             setSelectedNetwork,
                             shouldDisableTree: isAwaitingLlm,
-                            networkIconSuggestions,
                             temporaryNetworkExpirationTimes,
                         } as AgentNetworkNodeProps,
                     }}

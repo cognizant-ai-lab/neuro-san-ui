@@ -25,6 +25,8 @@ import {
     LEVEL_2_FOLDER,
     LEVEL_2_FOLDER_DISPLAY,
     LIST_NETWORKS_RESPONSE,
+    TEMPORARY_NETWORK,
+    TEMPORARY_NETWORK_NAME,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
@@ -35,7 +37,6 @@ import {
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {TEMPORARY_NETWORK_FOLDER} from "../../../components/MultiAgentAccelerator/const"
 import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
@@ -72,12 +73,15 @@ describe("SideBar", () => {
         [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
     }
 
+    const onDeleteNetworkMock = jest.fn()
+
     const defaultProps: SidebarProps = {
         customURLCallback: jest.fn(),
         id: "test-flow-id",
         isAwaitingLlm: false,
         networks: LIST_NETWORKS_RESPONSE,
         networkIconSuggestions,
+        onDeleteNetwork: onDeleteNetworkMock,
         setSelectedNetwork: jest.fn(),
     }
 
@@ -86,7 +90,7 @@ describe("SideBar", () => {
      * @param overrides An object of any prop overrides
      * @return The props for the Sidebar component
      */
-    const renderSidebarComponent = (overrides = {}) => {
+    const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}) => {
         const props: SidebarProps = {...defaultProps, ...overrides}
         render(
             <SnackbarProvider>
@@ -271,19 +275,31 @@ describe("SideBar", () => {
 
     it("Should handle temporary networks correctly", async () => {
         renderSidebarComponent({
-            networks: [
-                ...LIST_NETWORKS_RESPONSE,
-                {
-                    agent_name: `${TEMPORARY_NETWORK_FOLDER}/temp_network1`,
-                    description: "",
-                    tags: ["tag1", "tag2", "tag3"],
-                },
-            ],
-            newlyAddedTemporaryNetworks: new Set(`${TEMPORARY_NETWORK_FOLDER}/temp_network1`),
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set(TEMPORARY_NETWORK.agentInfo.agent_name),
         })
 
         // Item should be auto-expanded as it's a newly added temporary network
-        await screen.findByText(cleanUpAgentName("temp_network1"))
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+    })
+
+    it("Should allow deleting temporary networks", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set(TEMPORARY_NETWORK.agentInfo.agent_name),
+        })
+
+        const networkTreeItem = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        // Find the delete icon within the same tree item
+        const treeItem = networkTreeItem.closest('[role="treeitem"]')
+        const deleteIcon = within(treeItem as HTMLElement).getByTestId("DeleteIcon")
+        await user.click(deleteIcon)
+
+        // onDeleteNetwork should be called with the correct network name
+        expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {

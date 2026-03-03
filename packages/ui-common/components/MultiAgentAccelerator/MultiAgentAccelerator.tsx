@@ -41,6 +41,7 @@ import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName} from "../AgentChat/Utils"
+import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIAlert} from "../Common/MUIAlert"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
@@ -118,6 +119,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
     const [currentConversations, setCurrentConversations] = useState<AgentConversation[]>([])
+
+    const [networkToBeDeleted, setNetworkToBeDeleted] = useState<string | null>(null)
 
     // State to hold thought bubble edges - avoids duplicates across layout recalculations
     const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
@@ -343,6 +346,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
             const agentNameDisplay = cleanUpAgentName(network)
             setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
+
+            // Set a timer to clear the alert after a few seconds so it doesn't overstay its welcome
+            setTimeout(() => {
+                setAlertContents(null)
+            }, 10_000) // Clear after 10 seconds
         }
 
         // When streaming is complete, clean up any refs and state
@@ -350,6 +358,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setCurrentConversations(null)
         resetState()
     }, [newlyAddedTemporaryNetworks])
+
+    const onDeleteNetwork = useCallback(() => {
+        useTempNetworksStore
+            .getState()
+            .setTempNetworks(temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkToBeDeleted))
+    }, [temporaryNetworks])
+
+    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean | undefined>()
 
     const getLeftPanel = () => {
         return (
@@ -377,6 +393,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                        onDeleteNetwork={(networkId) => {
+                            setNetworkToBeDeleted(networkId)
+                            setConfirmationModalOpen(true)
+                        }}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
@@ -507,6 +527,20 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 >
                     {alertContents}
                 </MUIAlert>
+            )}
+            {confirmationModalOpen && (
+                <ConfirmationModal
+                    id="delete-network-confirmation-modal"
+                    content={
+                        `The network "${cleanUpAgentName(networkToBeDeleted)}" will be deleted. ` +
+                        "This action cannot be undone. Are you sure you want to proceed?"
+                    }
+                    handleCancel={() => {
+                        setConfirmationModalOpen(false)
+                    }}
+                    handleOk={onDeleteNetwork}
+                    title="Delete Network"
+                />
             )}
             <Grid
                 id="multi-agent-accelerator-grid"
