@@ -1,7 +1,10 @@
 /**
  * Common test data for agent-related tests, for consistency.
  */
+
 import {cleanUpAgentName} from "../../packages/ui-common/components/AgentChat/Utils"
+import {TEMPORARY_NETWORK_FOLDER} from "../../packages/ui-common/components/MultiAgentAccelerator/const"
+import {TemporaryNetwork} from "../../packages/ui-common/state/TemporaryNetworks"
 
 // Define some test agents and associated display names
 export const TEST_AGENT_MATH_GUY = "math-guy"
@@ -50,3 +53,18 @@ export const LIST_NETWORKS_RESPONSE = [
         tags: ["deep-agent-tag1", "deep-agent-tag2"],
     },
 ]
+
+export const TEMPORARY_NETWORK_NAME = "temp_network1"
+
+export const TEMPORARY_NETWORK: TemporaryNetwork = {
+    reservation: {
+        reservation_id: "temp-reservation-1",
+        lifetime_in_seconds: 3600,
+        expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
+    },
+    agentInfo: {
+        agent_name: `${TEMPORARY_NETWORK_FOLDER}/${TEMPORARY_NETWORK_NAME}`,
+        description: "",
+        tags: ["tag1", "tag2", "tag3"],
+    },
+}
