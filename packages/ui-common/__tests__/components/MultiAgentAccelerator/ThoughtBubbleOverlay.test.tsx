@@ -28,60 +28,8 @@ describe("ThoughtBubbleOverlay", () => {
 
     let user: UserEvent
 
-    // Ensure requestAnimationFrame exists in the test environment to avoid
-    // ReferenceError in some JSDOM setups. We'll polyfill if missing and restore after.
-    let _polyfilledRAF = false
-    let _origRAF: typeof global.requestAnimationFrame | undefined
-    let _origCAF: typeof global.cancelAnimationFrame | undefined
-
-    // Helper-typed view of global to avoid `any` usages in tests
-    // Use a narrower type that extends the global object so we only assert
-    // the presence of the RAF/CAF properties we need.
-    type GlobalWithRAF = typeof globalThis & {
-        requestAnimationFrame?: typeof global.requestAnimationFrame
-        cancelAnimationFrame?: typeof global.cancelAnimationFrame
-    }
-    const globalWithRAF = global as unknown as GlobalWithRAF
-
-    beforeAll(() => {
-        if (globalWithRAF.requestAnimationFrame === undefined) {
-            _polyfilledRAF = true
-            _origRAF = globalWithRAF.requestAnimationFrame
-            _origCAF = globalWithRAF.cancelAnimationFrame
-
-            // Polyfill using a counter and a map for timeouts so we don't rely on
-            // casting `setTimeout` to `number` (which is incorrect in Node).
-            let _rafCounter = 0
-            const _rafTimeouts = new Map<number, ReturnType<typeof setTimeout>>()
-            globalWithRAF.requestAnimationFrame = (cb: FrameRequestCallback) => {
-                _rafCounter += 1
-                const id = _rafCounter
-                const timeout = setTimeout(() => {
-                    _rafTimeouts.delete(id)
-                    cb(Date.now())
-                }, 0)
-                _rafTimeouts.set(id, timeout)
-                return id
-            }
-            globalWithRAF.cancelAnimationFrame = (id: number) => {
-                const t = _rafTimeouts.get(id)
-                if (t !== undefined) {
-                    clearTimeout(t)
-                    _rafTimeouts.delete(id)
-                }
-            }
-        }
-    })
-
     beforeEach(() => {
         user = userEvent.setup()
-    })
-
-    afterAll(() => {
-        if (_polyfilledRAF) {
-            globalWithRAF.requestAnimationFrame = _origRAF
-            globalWithRAF.cancelAnimationFrame = _origCAF
-        }
     })
 
     const mockNodes = [
@@ -428,6 +376,11 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle hover state changes", async () => {
+        // Use fake timers so the 200ms debounce in handleHoverChange is deterministic.
+        jest.useFakeTimers()
+        // Re-initialise userEvent with advanceTimers so pointer-event delays
+        // stay in sync with fake timers.
+        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const onBubbleHoverChange = jest.fn()
         const edges = [createMockEdge("edge1", "node1", "node2", "Hover test message")]
 
@@ -443,20 +396,16 @@ describe("ThoughtBubbleOverlay", () => {
         const bubble = screen.getByText("Hover test message")
 
         // Hover over the bubble
-        await user.hover(bubble)
+        await localUser.hover(bubble)
         expect(onBubbleHoverChange).toHaveBeenCalledWith("edge1")
 
-        // Unhover - should delay before calling with null
-        await user.unhover(bubble)
-        // Wait for the 200ms delay wrapped in act
+        // Unhover - advance past the 200ms debounce deterministically
+        await localUser.unhover(bubble)
         await act(async () => {
-            await new Promise<void>((resolve) => {
-                setTimeout(() => {
-                    resolve()
-                }, 250)
-            })
+            jest.advanceTimersByTime(250)
         })
         expect(onBubbleHoverChange).toHaveBeenCalledWith(null)
+        jest.useRealTimers()
     })
 
     it("Should handle multiple rapid hover state changes", async () => {

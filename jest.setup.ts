@@ -48,9 +48,7 @@ class ResizeObserver {
     }
 
     observe(target: Element) {
-        window.setTimeout(() => {
-            this.callback([{target} as globalThis.ResizeObserverEntry], this)
-        }, 0)
+        this.callback([{target} as globalThis.ResizeObserverEntry], this)
     }
 
     // Just a stub for testing so disable warnings
