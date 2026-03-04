@@ -262,10 +262,7 @@ export const layoutRadial = (
                     // Use current conversations for node highlighting (cleared at end)
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
-                    agentIconSuggestion:
-                        agentIconSuggestions && "suggestions" in agentIconSuggestions
-                            ? agentIconSuggestions.suggestions[nodeId]
-                            : undefined,
+                    agentIconSuggestion: agentIconSuggestions?.[nodeId],
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
                 style: {
@@ -323,10 +320,7 @@ export const layoutLinear = (
                 getConversations: () => currentConversations,
                 isAwaitingLlm,
                 depth: undefined, // Depth will be computed later,
-                agentIconSuggestion:
-                    agentIconSuggestions && "suggestions" in agentIconSuggestions
-                        ? agentIconSuggestions.suggestions[nodeId]
-                        : undefined,
+                agentIconSuggestion: agentIconSuggestions?.[nodeId],
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {
