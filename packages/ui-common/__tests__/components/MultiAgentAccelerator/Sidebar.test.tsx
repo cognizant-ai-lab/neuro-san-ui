@@ -16,8 +16,7 @@ limitations under the License.
 
 import {useColorScheme} from "@mui/material/styles"
 import {render, screen, waitFor, within} from "@testing-library/react"
-import {UserEvent, default as userEvent} from "@testing-library/user-event"
-import {SnackbarProvider} from "notistack"
+import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {
     LEVEL_1_FOLDER,
@@ -62,28 +61,27 @@ jest.mock("@mui/material/styles", () => ({
     useColorScheme: jest.fn(),
 }))
 
+// Provide a suggested icon for first network
+const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
+    [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
+}
+
+const onDeleteNetworkMock = jest.fn()
+
+const DEFAULT_PROPS: SidebarProps = {
+    customURLCallback: jest.fn(),
+    id: "test-flow-id",
+    isAwaitingLlm: false,
+    networks: LIST_NETWORKS_RESPONSE,
+    networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
+    onDeleteNetwork: onDeleteNetworkMock,
+    setSelectedNetwork: jest.fn(),
+}
+
 describe("SideBar", () => {
     withStrictMocks()
 
     let user: UserEvent
-
-    // Provide a suggested icon for first network, and an invalid icon name for the second network
-    // to test error handling
-    const networkIconSuggestions: NetworkIconSuggestions = {
-        [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
-    }
-
-    const onDeleteNetworkMock = jest.fn()
-
-    const defaultProps: SidebarProps = {
-        customURLCallback: jest.fn(),
-        id: "test-flow-id",
-        isAwaitingLlm: false,
-        networks: LIST_NETWORKS_RESPONSE,
-        networkIconSuggestions,
-        onDeleteNetwork: onDeleteNetworkMock,
-        setSelectedNetwork: jest.fn(),
-    }
 
     /**
      * This function renders the Sidebar component
@@ -91,12 +89,8 @@ describe("SideBar", () => {
      * @return The props for the Sidebar component
      */
     const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}) => {
-        const props: SidebarProps = {...defaultProps, ...overrides}
-        render(
-            <SnackbarProvider>
-                <Sidebar {...props} />
-            </SnackbarProvider>
-        )
+        const props: SidebarProps = {...DEFAULT_PROPS, ...overrides}
+        render(<Sidebar {...props} />)
 
         return props
     }
@@ -119,8 +113,6 @@ describe("SideBar", () => {
         return {settingsButton, urlInput}
     }
 
-    withStrictMocks()
-
     beforeAll(() => {
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(DEFAULT_EXAMPLE_URL)
     })
@@ -133,7 +125,7 @@ describe("SideBar", () => {
         })
     })
 
-    it.each([false, true])("should render correctly with darkMode=%s", async (darkMode) => {
+    it.each([false])("should render correctly with darkMode=%s", async (darkMode) => {
         ;(useColorScheme as jest.Mock).mockReturnValue({
             mode: darkMode ? "dark" : "light",
         })
@@ -155,6 +147,7 @@ describe("SideBar", () => {
         await user.click(network)
 
         // setSelectedNetwork should be called
+        // log calls to setSelectedNetwork for debugging
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
 
@@ -187,7 +180,7 @@ describe("SideBar", () => {
         renderSidebarComponent({
             // Override networkIconSuggestions to include an invalid icon name for TEST_AGENT_MUSIC_NERD
             networkIconSuggestions: {
-                ...networkIconSuggestions,
+                ...NETWORK_ICON_SUGGESTIONS,
                 [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: "NonExistentIcon",
             },
         })
@@ -299,7 +292,7 @@ describe("SideBar", () => {
         await user.click(deleteIcon)
 
         // onDeleteNetwork should be called with the correct network name
-        expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
+        expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name, false)
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {

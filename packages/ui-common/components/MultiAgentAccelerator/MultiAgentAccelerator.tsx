@@ -360,13 +360,19 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         resetState()
     }, [newlyAddedTemporaryNetworks])
 
-    const onDeleteNetwork = useCallback(() => {
-        useTempNetworksStore
-            .getState()
-            .setTempNetworks(temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkToBeDeleted))
-    }, [temporaryNetworks])
+    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
 
-    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean | undefined>()
+    const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
+        if (isExpired) {
+            // It's expired so just delete it without confirmation
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks(temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkId))
+        } else {
+            setNetworkToBeDeleted(networkId)
+            setConfirmationModalOpen(true)
+        }
+    }
 
     const getLeftPanel = () => {
         return (
@@ -394,9 +400,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onDeleteNetwork={(networkId) => {
-                            setNetworkToBeDeleted(networkId)
-                            setConfirmationModalOpen(true)
+                        onDeleteNetwork={(networkId, isExpired) => {
+                            handleDeleteNetwork(networkId, isExpired)
                         }}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
@@ -517,6 +522,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             </>
         )
     }
+
     return (
         <>
             <Collapse
@@ -541,8 +547,19 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }
                     handleCancel={() => {
                         setConfirmationModalOpen(false)
+                        setNetworkToBeDeleted(null)
                     }}
-                    handleOk={onDeleteNetwork}
+                    handleOk={() => {
+                        useTempNetworksStore
+                            .getState()
+                            .setTempNetworks(
+                                temporaryNetworks.filter(
+                                    (network) => network.agentInfo.agent_name !== networkToBeDeleted
+                                )
+                            )
+                        setNetworkToBeDeleted(null)
+                        setConfirmationModalOpen(false)
+                    }}
                     title="Delete Network"
                 />
             )}
