@@ -68,7 +68,7 @@ const config: Config.InitialOptions = {
         "!**/next-env.d.ts",
         "!**/next.config.ts",
     ],
-    coverageReporters: ["text-summary"],
+    // coverageReporters: ["text-summary"],
 
     coverageThreshold: {
         global: {
