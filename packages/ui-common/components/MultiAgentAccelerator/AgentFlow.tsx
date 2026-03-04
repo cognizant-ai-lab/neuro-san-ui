@@ -33,13 +33,14 @@ import {
     EdgeTypes,
     NodeChange,
     ReactFlow,
+    Node as RFNode,
     NodeTypes as RFNodeTypes,
     useReactFlow,
     useStore,
 } from "@xyflow/react"
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
-import {AgentNode, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
+import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
@@ -393,7 +394,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         ]
     )
 
-    const [nodes, setNodes] = useState(layoutResult.nodes)
+    const [nodes, setNodes] = useState<RFNode<AgentNodeProps>[]>(layoutResult.nodes)
 
     // Sync up the nodes with the layout result
     useEffect(() => {
@@ -417,7 +418,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const onNodesChange = useCallback((changes: NodeChange[]) => {
         setNodes((ns) =>
-            applyNodeChanges(
+            applyNodeChanges<RFNode<AgentNodeProps>>(
                 // For now, we only allow dragging, no updates
                 changes.filter((c) => c.type === "position"),
                 ns
