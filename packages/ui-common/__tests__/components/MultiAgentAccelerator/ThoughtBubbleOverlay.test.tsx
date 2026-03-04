@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {render, screen} from "@testing-library/react"
+import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import type {Edge, Node as RFNode} from "@xyflow/react"
-import {act} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleOverlay} from "../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay"
