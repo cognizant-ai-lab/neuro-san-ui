@@ -2,7 +2,6 @@ import {styled} from "@mui/material/styles"
 import type {Edge, Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
-import {AgentNodeProps} from "./AgentNode"
 import {ThoughtBubbleEdgeData} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
@@ -245,11 +244,11 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         if (!nodes || !Array.isArray(nodes)) return set
 
         for (const node of nodes) {
-            const getConversations = (node.data as Partial<AgentNodeProps>)?.getConversations
+            const getConversations = node.data?.["getConversations"]
             if (typeof getConversations === "function") {
                 const convs = getConversations()
                 if (Array.isArray(convs)) {
-                    const hasSelf = convs.some((conv) => conv?.agents?.has?.(node.id) === true)
+                    const hasSelf = convs.some((conv) => conv?.agents?.has?.(node.id))
                     if (hasSelf) {
                         set.add(node.id)
                     }

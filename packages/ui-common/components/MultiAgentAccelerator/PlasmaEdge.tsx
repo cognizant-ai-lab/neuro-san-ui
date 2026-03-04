@@ -154,7 +154,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
         return () => {
             if (animationRef.current !== undefined) cancelAnimationFrame(animationRef.current)
         }
-    }, [edgePath, width, height, x, y])
+    }, [edgePath, width, height, plasmaColor, x, y])
 
     return (
         <>
