@@ -42,9 +42,7 @@ const tagsToColors = new Map<string, TagColor>()
 
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly nodeIndex: Map<string, AgentInfo>
-    readonly onDeleteNetwork?: (network: string) => void
-    readonly setSelectedNetwork: (itemId: string) => void
-    readonly shouldDisableTree: boolean
+    readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
 }
@@ -71,8 +69,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     networkIconSuggestions,
     nodeIndex,
     onDeleteNetwork,
-    setSelectedNetwork,
-    shouldDisableTree,
     temporaryNetworkExpirationTimes,
 }) => {
     const theme = useTheme()
@@ -87,10 +83,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
 
     const isParent = Array.isArray(children) && children.length > 0
     const isChild = !isParent
-
-    const selectNetworkHandler = (network: string) => {
-        setSelectedNetwork?.(network)
-    }
 
     const agentNode = nodeIndex?.get(itemId)
 
@@ -113,8 +105,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
 
-    // retrieve path for this network
-    const path = isChild ? agentNode?.agent_name : null
     const iconNameSuggestion = isChild ? networkIconSuggestions?.[itemId] : null
 
     let muiIconElement = null
@@ -134,12 +124,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                 <TreeItemContent
                     key={labelString}
                     {...getContentProps()}
-                    onClick={(e) => {
-                        getContentProps().onClick?.(e)
-                        if (!isParent && !shouldDisableTree && !isExpired) {
-                            selectNetworkHandler(path)
-                        }
-                    }}
                     sx={{
                         cursor: isExpired ? "not-allowed" : "pointer",
                     }}
@@ -194,17 +178,14 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                             ) : null}
                         </Box>
                         {isChild && isTemporaryNetwork && (
-                            <Tooltip title={isExpired ? "Expired" : "Delete network"}>
+                            <Tooltip title="Delete network">
                                 <Delete
                                     onClick={(e) => {
-                                        if (isExpired) {
-                                            return
-                                        }
                                         e.stopPropagation()
-                                        onDeleteNetwork?.(itemId)
+                                        onDeleteNetwork?.(itemId, isExpired)
                                     }}
                                     sx={{
-                                        cursor: isExpired ? "not-allowed" : "pointer",
+                                        cursor: "pointer",
                                         fontSize: "1rem",
                                         "&:hover": {color: theme.palette.warning.main},
                                     }}

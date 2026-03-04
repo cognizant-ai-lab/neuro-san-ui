@@ -70,7 +70,7 @@ export interface SidebarProps {
     readonly isAwaitingLlm: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
-    readonly onDeleteNetwork?: (network: string) => void
+    readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
     readonly newlyAddedTemporaryNetworks?: Set<string>
@@ -197,8 +197,16 @@ export const Sidebar: FC<SidebarProps> = ({
     const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
     const handleSelectedItemsChange = (_event: unknown, itemId: string | null) => {
-        setSelectedItem(itemId)
-        setSelectedNetwork(itemId)
+        if (!itemId) {
+            return
+        }
+
+        // Only select leaf nodes (items without children) as networks
+        const isFolder = treeViewItems.some((item) => item.id === itemId && item.children?.length)
+        if (!isFolder) {
+            setSelectedItem(itemId)
+            setSelectedNetwork(itemId)
+        }
     }
 
     useEffect(() => {
@@ -208,10 +216,10 @@ export const Sidebar: FC<SidebarProps> = ({
             if (firstItem) {
                 setSelectedItem(firstItem)
                 setSelectedNetwork(firstItem)
+                setExpandedItems((prev) =>
+                    prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
+                )
             }
-            setExpandedItems((prev) =>
-                prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
-            )
         }
     }, [newlyAddedTemporaryNetworks])
 
@@ -274,6 +282,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     multiSelect={false}
                     onSelectedItemsChange={handleSelectedItemsChange}
                     selectedItems={selectedItem}
+                    disableSelection={isAwaitingLlm}
                     slots={{
                         item: AgentNetworkTreeItem as RichTreeViewSlots["item"],
                     }}
@@ -284,8 +293,6 @@ export const Sidebar: FC<SidebarProps> = ({
                             networkIconSuggestions,
                             nodeIndex,
                             onDeleteNetwork,
-                            setSelectedNetwork,
-                            shouldDisableTree: isAwaitingLlm,
                             temporaryNetworkExpirationTimes,
                         } as AgentNetworkNodeProps,
                     }}
