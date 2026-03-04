@@ -1,15 +1,15 @@
 import {styled} from "@mui/material/styles"
-import type {Edge, Node as RFNode} from "@xyflow/react"
+import type {Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
-import {ThoughtBubbleEdgeData} from "./ThoughtBubbleEdge"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
 // #region: Types
 
 interface ThoughtBubbleOverlayProps {
     readonly nodes: RFNode[]
-    readonly edges: Edge[]
+    readonly edges: ThoughtBubbleEdgeShape[]
     readonly showThoughtBubbles?: boolean
     readonly isStreaming?: boolean
     readonly onBubbleHoverChange?: (bubbleId: string | null) => void
@@ -154,7 +154,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const thoughtBubbleEdges = useMemo(
         () =>
             edges.filter((e) => {
-                const text = (e?.data as ThoughtBubbleEdgeData)?.text
+                const text = e.data?.text
                 return typeof text === "string" && text.length > 0
             }),
         [edges]
@@ -319,12 +319,12 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Calculate line coordinates - measurement only. Can be called from rAF/update loop.
     const calculateLineCoordinates = useCallback(
         (
-            edge: Edge,
+            edge: ThoughtBubbleEdgeShape,
             bubbleIndex: number,
             agentRectCache?: Map<string, DOMRect>
         ): {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null => {
             // Skip HUMAN conversation types - no lines for human bubbles
-            if ((edge.data as ThoughtBubbleEdgeData)?.type === ChatMessageType.HUMAN) {
+            if (edge.data?.type === ChatMessageType.HUMAN) {
                 return null
             }
 
@@ -347,7 +347,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Determine which agents to point to. If the edge supplies an `agents` array in
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
-            const potentialAgents = (edge.data as ThoughtBubbleEdgeData)?.agents
+            const potentialAgents = edge.data?.agents
             const candidate = edge.target || edge.source
             const fallback: string[] = candidate ? [candidate] : []
             let agentIds: string[] = Array.isArray(potentialAgents) ? potentialAgents : fallback
@@ -400,7 +400,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         () =>
             allBubbleIds
                 .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
-                .filter((edge): edge is Edge => edge !== undefined),
+                .filter((edge): edge is ThoughtBubbleEdgeShape => edge !== undefined),
         [allBubbleIds, sortedEdges, edges]
     )
 
@@ -516,7 +516,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                     opacity: 1,
                 }}
             >
-                {renderableBubbles.map((edge: Edge, index: number) => {
+                {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
                     // Per-bubble staggered animation delay in milliseconds (for line animations)
                     const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
 
@@ -572,8 +572,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 })}
             </svg>
 
-            {renderableBubbles.map((edge: Edge, index: number) => {
-                const text = (edge.data as ThoughtBubbleEdgeData)?.text
+            {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
+                const text = edge.data?.text
                 if (typeof text !== "string") return null
 
                 // Per-bubble staggered animation delay in milliseconds

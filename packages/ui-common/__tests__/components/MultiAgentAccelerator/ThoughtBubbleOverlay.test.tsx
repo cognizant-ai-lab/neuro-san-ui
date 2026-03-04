@@ -16,9 +16,10 @@ limitations under the License.
 
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import type {Edge, Node as RFNode} from "@xyflow/react"
+import type {Node as RFNode} from "@xyflow/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
@@ -46,13 +47,16 @@ describe("ThoughtBubbleOverlay", () => {
         },
     ]
 
-    const createMockEdge = (id: string, source: string, target: string, text: string) => ({
-        id,
-        source,
-        target,
-        data: {text},
-        type: "thoughtBubbleEdge",
-    })
+    const createMockEdge = (id: string, source: string, target: string, text: string): ThoughtBubbleEdgeShape => {
+        const edge: ThoughtBubbleEdgeShape = {
+            id,
+            source,
+            target,
+            data: {text},
+            type: "thoughtBubbleEdge",
+        }
+        return edge
+    }
 
     it("Should render nothing when showThoughtBubbles is false", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
@@ -69,7 +73,9 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should render thought bubbles when showThoughtBubbles is true", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Invoking Agent with inquiry")]
+        const edges: ThoughtBubbleEdgeShape[] = [
+            createMockEdge("edge1", "node1", "node2", "Invoking Agent with inquiry"),
+        ]
 
         render(
             <ThoughtBubbleOverlay
@@ -87,7 +93,7 @@ describe("ThoughtBubbleOverlay", () => {
     // Should this be a requirement? One consideration is that thought bubbles show HUMAN messages but the chart does
     // not.
     it("Should handle edges with no source node gracefully", () => {
-        const edges = [createMockEdge("edge1", "nonexistent", "node2", "Test message")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "nonexistent", "node2", "Test message")]
 
         const {container} = render(
             <ThoughtBubbleOverlay
@@ -102,7 +108,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should return null when nodes is null", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {container} = render(
             <ThoughtBubbleOverlay
@@ -118,7 +124,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle empty nodes array", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {container} = render(
             <ThoughtBubbleOverlay
@@ -148,7 +154,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should render connecting line for each bubble", () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test with arrow")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test with arrow")]
 
         // Ensure the target agent reports itself as active via getConversations so
         // connecting lines are rendered under the new behavior.
@@ -207,7 +213,7 @@ describe("ThoughtBubbleOverlay", () => {
         const shortText = "Short message"
         const longText = "Invoking Agent with inquiry: This is very long text that will be truncated when displayed"
 
-        const edges = [
+        const edges: ThoughtBubbleEdgeShape[] = [
             createMockEdge("edge1", "node1", "node2", shortText),
             createMockEdge("edge2", "node1", "node2", longText),
         ]
@@ -226,16 +232,28 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edges with null or undefined data", () => {
-        const edges = [
-            {id: "edge1", source: "node1", target: "node2", data: null, type: "thoughtBubbleEdge"},
-            {id: "edge2", source: "node1", target: "node2", data: undefined, type: "thoughtBubbleEdge"},
+        const edges: ThoughtBubbleEdgeShape[] = [
+            {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                data: {text: null as unknown as string},
+                type: "thoughtBubbleEdge",
+            },
+            {
+                id: "edge2",
+                source: "node1",
+                target: "node2",
+                data: {text: undefined as unknown as string},
+                type: "thoughtBubbleEdge",
+            },
             createMockEdge("edge3", "node1", "node2", "Valid message"),
         ]
 
         render(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
-                edges={edges as Edge[]}
+                edges={edges}
                 showThoughtBubbles={true}
             />
         )
@@ -246,7 +264,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should update when edges are added or removed", () => {
-        const edges = [
+        const edges: ThoughtBubbleEdgeShape[] = [
             createMockEdge("edge1", "node1", "node2", "First message"),
             createMockEdge("edge2", "node1", "node2", "Second message"),
         ]
@@ -293,13 +311,13 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should not render lines for HUMAN type edges", () => {
-        const humanEdge = {
+        const humanEdge: ThoughtBubbleEdgeShape = {
             id: "edge-human",
             source: "node1",
             target: "node2",
             data: {text: "Human message", type: ChatMessageType.HUMAN, agents: ["node2"]},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const agentEl = document.createElement("div")
         agentEl.dataset["id"] = "node2"
@@ -334,13 +352,13 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should return null when edge.data.agents is empty", () => {
-        const edgeEmptyAgents = {
+        const edgeEmptyAgents: ThoughtBubbleEdgeShape = {
             id: "edge-empty-agents",
             source: undefined,
             target: undefined,
             data: {text: "No agents", type: ChatMessageType.AI, agents: []},
             type: "thoughtBubbleEdge",
-        } as unknown as Edge
+        }
 
         const {container} = render(
             <ThoughtBubbleOverlay
@@ -355,13 +373,13 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edges with complex node data gracefully", () => {
-        const edge = {
+        const edge: ThoughtBubbleEdgeShape = {
             id: "edge-complex",
             source: "node1",
             target: "node2",
             data: {text: "Complex edge", type: ChatMessageType.AI, agents: ["node2"]},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         expect(() =>
             render(
@@ -381,7 +399,7 @@ describe("ThoughtBubbleOverlay", () => {
         // stay in sync with fake timers.
         const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const onBubbleHoverChange = jest.fn()
-        const edges = [createMockEdge("edge1", "node1", "node2", "Hover test message")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Hover test message")]
 
         render(
             <ThoughtBubbleOverlay
@@ -409,7 +427,7 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle multiple rapid hover state changes", async () => {
         const onBubbleHoverChange = jest.fn()
-        const edges = [
+        const edges: ThoughtBubbleEdgeShape[] = [
             createMockEdge("edge1", "node1", "node2", "First bubble"),
             createMockEdge("edge2", "node1", "node2", "Second bubble"),
         ]
@@ -436,7 +454,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edges with same source and target node", () => {
-        const edges = [createMockEdge("edge1", "node1", "node1", "Self-referencing edge")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node1", "Self-referencing edge")]
 
         render(
             <ThoughtBubbleOverlay
@@ -451,7 +469,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle onBubbleHoverChange not provided", async () => {
-        const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
+        const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         render(
             <ThoughtBubbleOverlay
@@ -472,8 +490,8 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edges changing while a bubble is hovered", async () => {
-        const edges1 = [createMockEdge("edge1", "node1", "node2", "Original message")]
-        const edges2 = [createMockEdge("edge2", "node1", "node2", "Updated message")]
+        const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Original message")]
+        const edges2: ThoughtBubbleEdgeShape[] = [createMockEdge("edge2", "node1", "node2", "Updated message")]
 
         const {rerender} = render(
             <ThoughtBubbleOverlay
@@ -500,9 +518,9 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle rapid edge additions and removals (timeout clearing)", () => {
-        const edges1 = [createMockEdge("edge1", "node1", "node2", "Message 1")]
-        const edges2 = [createMockEdge("edge2", "node1", "node2", "Message 2")]
-        const edges3 = [createMockEdge("edge3", "node1", "node2", "Message 3")]
+        const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
+        const edges2: ThoughtBubbleEdgeShape[] = [createMockEdge("edge2", "node1", "node2", "Message 2")]
+        const edges3: ThoughtBubbleEdgeShape[] = [createMockEdge("edge3", "node1", "node2", "Message 3")]
 
         const {rerender} = render(
             <ThoughtBubbleOverlay
@@ -536,7 +554,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edges with empty text string", () => {
-        const edges = [
+        const edges: ThoughtBubbleEdgeShape[] = [
             createMockEdge("edge1", "node1", "node2", ""),
             createMockEdge("edge2", "node1", "node2", "Valid message"),
         ]
@@ -557,17 +575,35 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edges with non-string text data", () => {
-        const edges = [
-            {id: "edge1", source: "node1", target: "node2", data: {text: 123}, type: "thoughtBubbleEdge"},
-            {id: "edge2", source: "node1", target: "node2", data: {text: true}, type: "thoughtBubbleEdge"},
-            {id: "edge3", source: "node1", target: "node2", data: {text: null}, type: "thoughtBubbleEdge"},
+        const edges: ThoughtBubbleEdgeShape[] = [
+            {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                data: {text: 123 as unknown as string},
+                type: "thoughtBubbleEdge",
+            },
+            {
+                id: "edge2",
+                source: "node1",
+                target: "node2",
+                data: {text: true as unknown as string},
+                type: "thoughtBubbleEdge",
+            },
+            {
+                id: "edge3",
+                source: "node1",
+                target: "node2",
+                data: {text: null as unknown as string},
+                type: "thoughtBubbleEdge",
+            },
             createMockEdge("edge4", "node1", "node2", "Valid message"),
         ]
 
         render(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
-                edges={edges as Edge[]}
+                edges={edges}
                 showThoughtBubbles={true}
             />
         )
@@ -640,8 +676,8 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle exiting bubbles that are not in current edges", () => {
-        const edges1: Edge[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
-        const edges2: Edge[] = [] // Remove all edges
+        const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
+        const edges2: ThoughtBubbleEdgeShape[] = [] // Remove all edges
 
         const {rerender} = render(
             <ThoughtBubbleOverlay
@@ -740,15 +776,21 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should skip rendering bubbles with null text after filtering", () => {
-        const edges = [
-            {id: "edge1", source: "node1", target: "node2", data: {text: null}, type: "thoughtBubbleEdge"},
+        const edges: ThoughtBubbleEdgeShape[] = [
+            {
+                id: "edge1",
+                source: "node1",
+                target: "node2",
+                data: {text: null as unknown as string},
+                type: "thoughtBubbleEdge",
+            },
             createMockEdge("edge2", "node1", "node2", "Valid message"),
         ]
 
         render(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
-                edges={edges as Edge[]}
+                edges={edges}
                 showThoughtBubbles={true}
             />
         )
@@ -1014,13 +1056,13 @@ describe("ThoughtBubbleOverlay", () => {
         jest.setSystemTime(0)
 
         // HUMAN type should skip lines entirely
-        const humanEdge = {
+        const humanEdge: ThoughtBubbleEdgeShape = {
             id: "edge-human",
             source: "node1",
             target: "node2",
-            data: {text: "hi", type: "HUMAN"},
+            data: {text: "hi", type: ChatMessageType.HUMAN},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const {container, rerender} = render(
             <ThoughtBubbleOverlay
@@ -1127,13 +1169,13 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("renders a non-human thought bubble (AI type)", () => {
-        const edge = {
+        const edge: ThoughtBubbleEdgeShape = {
             id: "edge-1",
             source: "agent-1",
             target: "agent-2",
             data: {text: "Hello world", type: ChatMessageType.AI, agents: ["agent-2"]},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const {container} = render(
             <ThoughtBubbleOverlay
@@ -1163,13 +1205,13 @@ describe("ThoughtBubbleOverlay", () => {
             type: "agentNode",
         } as unknown as RFNode
 
-        const edge = {
+        const edge: ThoughtBubbleEdgeShape = {
             id: "edge-2",
             source: "agent-1",
             target: "agent-2",
             data: {text: "Active agent bubble", type: ChatMessageType.AI, agents: ["agent-2"]},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const now = Date.now()
         const spy = jest.spyOn(Date, "now").mockImplementation(() => now + 10000)
@@ -1347,13 +1389,13 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should render bubble when edge.data.agents is an empty array (no targets)", () => {
-        const edge = {
+        const edge: ThoughtBubbleEdgeShape = {
             id: "edge-no-agents",
             source: "node1",
             target: "node2",
             data: {text: "No agents", type: ChatMessageType.AI, agents: []},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const {container} = render(
             <ThoughtBubbleOverlay
@@ -1389,13 +1431,17 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle edge.data.agents containing null/undefined entries gracefully", () => {
-        const edge = {
+        const edge: ThoughtBubbleEdgeShape = {
             id: "edge-null-agents",
             source: "node1",
             target: "node2",
-            data: {text: "Null agents", type: ChatMessageType.AI, agents: [null, undefined, "node2"]},
+            data: {
+                text: "Null agents",
+                type: ChatMessageType.AI,
+                agents: [null, undefined, "node2"] as unknown as string[],
+            },
             type: "thoughtBubbleEdge",
-        } as unknown as Edge
+        }
 
         const agentEl = document.createElement("div")
         agentEl.dataset["id"] = "node2"
@@ -1430,13 +1476,13 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useFakeTimers()
         jest.setSystemTime(0)
 
-        const dupEdge = {
+        const dupEdge: ThoughtBubbleEdgeShape = {
             id: "edge-dup-agents",
             source: "node1",
             target: "node2",
             data: {text: "Dup agents", type: ChatMessageType.AI, agents: ["node2", "node2"]},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const agentEl = document.createElement("div")
         agentEl.dataset["id"] = "node2"
@@ -1549,13 +1595,13 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useFakeTimers()
         jest.setSystemTime(0)
 
-        const singleAgentEdge = {
+        const singleAgentEdge: ThoughtBubbleEdgeShape = {
             id: "edge-single-agent",
             source: "node1",
             target: undefined,
             data: {text: "Single agent string", type: ChatMessageType.AI, agents: "node2" as unknown as string[]},
             type: "thoughtBubbleEdge",
-        } as Edge
+        }
 
         const agentEl = document.createElement("div")
         agentEl.dataset["id"] = "node2"

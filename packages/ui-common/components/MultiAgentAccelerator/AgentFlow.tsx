@@ -402,6 +402,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const edges = layoutResult.edges
 
+    // Make sure to extract only thought bubble edges for the overlay.
+    const thoughtBubbleEdgesForOverlay = useMemo(
+        () => edges.filter((e): e is ThoughtBubbleEdgeShape => e.type === "thoughtBubbleEdge"),
+        [edges]
+    )
+
     useEffect(() => {
         // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
         setTimeout(() => {
@@ -726,7 +732,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             </ReactFlow>
             <ThoughtBubbleOverlay
                 nodes={nodes}
-                edges={edges}
+                edges={thoughtBubbleEdgesForOverlay}
                 showThoughtBubbles={showThoughtBubbles}
                 isStreaming={isStreaming}
                 onBubbleHoverChange={handleBubbleHoverChange}
