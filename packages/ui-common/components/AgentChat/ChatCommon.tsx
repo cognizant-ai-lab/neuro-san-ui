@@ -29,7 +29,7 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {SxProps, useColorScheme} from "@mui/material/styles"
+import {SxProps, useColorScheme, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -237,6 +237,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
+
+    // Theming/Dark mode
+    const theme = useTheme()
+    const shadowColor = theme.palette.mode === "dark" ? "255, 255, 255" : "0, 0, 0"
 
     // Previous user query (for "regenerate" feature)
     const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
@@ -463,8 +467,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     marginBottom: "1rem",
                     display: showThinking || isFinalAnswer ? "block" : "none",
                     boxShadow: isFinalAnswer
-                        ? `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 
-                                    0 9px 28px 8px rgba(0, 0, 0, 0.05)`
+                        ? `0 6px 16px 0 rgba(${shadowColor}, 0.08), 0 3px 6px -4px rgba(${shadowColor}, 0.12), 
+                                    0 9px 28px 8px rgba(${shadowColor}, 0.05)`
                         : "none",
                 }}
             />

@@ -60,7 +60,9 @@ export const Snackbar = ({
     const handleCloseSnackbar = () => closeSnackbar(id)
     const icon = iconVariant[variant]
 
+    // Theming/Dark mode
     const theme = useTheme()
+    const shadowColor = theme.palette.mode === "dark" ? "255, 255, 255" : "0, 0, 0"
 
     return (
         <SnackbarContent
@@ -70,13 +72,14 @@ export const Snackbar = ({
             <Box
                 className={`${variant}-snackbar-notification`}
                 id={`${id}-snackbar-box`}
+                data-testid={`${id}-snackbar-box`}
                 sx={{
                     background: theme.palette.background.paper,
                     borderColor: "transparent",
                     borderRadius: "var(--bs-border-radius)",
                     borderWidth: "1px",
-                    boxShadow: `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12),
-                                            0 9px 28px 8px rgba(0, 0, 0, 0.05)`,
+                    boxShadow: `0 6px 16px 0 rgba(${shadowColor}, 0.08), 0 3px 6px -4px rgba(${shadowColor}, 0.12),
+                                            0 9px 28px 8px rgba(${shadowColor}, 0.05)`,
                     maxWidth: "450px",
                     minWidth: "250px",
                     padding: "0.9rem",
