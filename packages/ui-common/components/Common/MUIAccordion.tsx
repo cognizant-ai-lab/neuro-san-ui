@@ -18,7 +18,7 @@ import ArrowForwardIosSharpIcon from "@mui/icons-material/ArrowForwardIosSharp"
 import MuiAccordion, {AccordionProps} from "@mui/material/Accordion"
 import MuiAccordionDetails from "@mui/material/AccordionDetails"
 import MuiAccordionSummary, {accordionSummaryClasses, AccordionSummaryProps} from "@mui/material/AccordionSummary"
-import {styled, SxProps, Theme} from "@mui/material/styles"
+import {styled, SxProps} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {FC, ReactNode, SyntheticEvent, useCallback, useState} from "react"
 
@@ -77,7 +77,7 @@ export interface MUIAccordionProps {
     expandOnlyOnePanel?: boolean
     id: string
     items: MUIAccordionItem[]
-    sx?: SxProps<Theme>
+    sx?: SxProps
 }
 // #endregion: Types
 

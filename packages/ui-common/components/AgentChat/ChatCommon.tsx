@@ -29,7 +29,7 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {SxProps, Theme, useColorScheme} from "@mui/material/styles"
+import {SxProps, useColorScheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -342,7 +342,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         sx: [
                             itemAsAccordion.props.sx,
                             {display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none"},
-                        ] as SxProps<Theme>,
+                        ] as SxProps,
                     })
                 }
                 return item

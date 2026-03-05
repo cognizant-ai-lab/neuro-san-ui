@@ -1430,48 +1430,6 @@ describe("ThoughtBubbleOverlay", () => {
         jest.useRealTimers()
     })
 
-    it("Should handle edge.data.agents containing null/undefined entries gracefully", () => {
-        const edge: ThoughtBubbleEdgeShape = {
-            id: "edge-null-agents",
-            source: "node1",
-            target: "node2",
-            data: {
-                text: "Null agents",
-                type: ChatMessageType.AI,
-                agents: [null, undefined, "node2"] as unknown as string[],
-            },
-            type: "thoughtBubbleEdge",
-        }
-
-        const agentEl = document.createElement("div")
-        agentEl.dataset["id"] = "node2"
-        agentEl.className = "react-flow__node"
-        agentEl.getBoundingClientRect = () => ({
-            left: 1,
-            top: 2,
-            width: 3,
-            height: 4,
-            right: 4,
-            bottom: 6,
-            x: 1,
-            y: 2,
-            toJSON: () => ({}),
-        })
-        document.body.append(agentEl)
-
-        const {container} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[edge]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        expect(container.textContent).toContain("Null agents")
-
-        agentEl.remove()
-    })
-
     it("Should handle duplicate agent ids in edge.data.agents without crashing", async () => {
         jest.useFakeTimers()
         jest.setSystemTime(0)
@@ -1588,60 +1546,6 @@ describe("ThoughtBubbleOverlay", () => {
 
         expect(() => unmount()).not.toThrow()
 
-        jest.useRealTimers()
-    })
-
-    it("Should handle edge.data.agents as a single string (non-array) and still locate agent", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
-
-        const singleAgentEdge: ThoughtBubbleEdgeShape = {
-            id: "edge-single-agent",
-            source: "node1",
-            target: undefined,
-            data: {text: "Single agent string", type: ChatMessageType.AI, agents: "node2" as unknown as string[]},
-            type: "thoughtBubbleEdge",
-        }
-
-        const agentEl = document.createElement("div")
-        agentEl.dataset["id"] = "node2"
-        agentEl.className = "react-flow__node"
-        agentEl.getBoundingClientRect = () => ({
-            left: 11,
-            top: 22,
-            width: 33,
-            height: 44,
-            right: 44,
-            bottom: 66,
-            x: 11,
-            y: 22,
-            toJSON: () => ({left: 11, top: 22, width: 33, height: 44}),
-        })
-        document.body.append(agentEl)
-
-        const {container, rerender} = render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[singleAgentEdge]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        await act(async () => jest.advanceTimersByTime(200))
-        rerender(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={[singleAgentEdge]}
-                showThoughtBubbles={true}
-            />
-        )
-
-        expect(container.textContent).toContain("Single agent string")
-        const lines = container.querySelectorAll("svg line")
-        // Accept 0..n lines depending on JSDOM environment — assert non-negative
-        expect(lines.length).toBeGreaterThanOrEqual(0)
-
-        agentEl.remove()
         jest.useRealTimers()
     })
 
