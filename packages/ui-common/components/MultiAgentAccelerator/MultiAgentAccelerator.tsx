@@ -51,7 +51,7 @@ interface MultiAgentAcceleratorProps {
     readonly backendNeuroSanApiUrl: string
 }
 
-// Display expired temporary networks for this amount of time after they expire
+// Display expired temporary networks for this amount of time after they expire so users can see what happened
 const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
 
 /**
@@ -232,6 +232,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     )
                     setAgentsInNetwork([])
                 }
+            } else {
+                setAgentsInNetwork([])
             }
         })()
     }, [neuroSanURL, selectedNetwork])
@@ -279,6 +281,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
         const interval = setInterval(() => {
             const now = Date.now() / 1000 // convert to seconds since epoch
+
+            // Remove networks that have been expired for more than GRACE_PERIOD_MS
             useTempNetworksStore
                 .getState()
                 .setTempNetworks(
@@ -286,6 +290,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         (n) => n.reservation.expiration_time_in_seconds > now - GRACE_PERIOD_MS / 1000
                     )
                 )
+
+            // Figure out which networks have expired on the server (not including our grace period) so we can
+            // deselect them if they're currently selected
+            const expiredNetwork = temporaryNetworks.filter(
+                (network) => network.reservation.expiration_time_in_seconds <= now
+            )
+            // If the selected network is one of the expired ones, deselect it
+            if (expiredNetwork.some((n) => n.agentInfo.agent_name === selectedNetwork)) {
+                setSelectedNetwork(null)
+                agentCountsRef.current = new Map()
+            }
         }, 10_000) // check every 10s
 
         return () => clearInterval(interval)
@@ -471,6 +486,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }}
                 >
                     <ChatCommon
+                        key={selectedNetwork ?? "no-network"}
                         ref={chatRef}
                         neuroSanURL={neuroSanURL}
                         id="agent-network-ui"
