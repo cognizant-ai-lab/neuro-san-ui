@@ -105,12 +105,12 @@ export const buildTreeViewItems = (
         addNetworkToTree(temporaryNetwork.agentInfo, treeViewItems, uncategorized, map, nodeIndex)
     )
 
-    // Add "Uncategorized" to the result if it has children
+    // Add "Uncategorized" to the result if there are any such networks
     if (uncategorized.children.length > 0) {
         treeViewItems.push(uncategorized)
     }
 
-    // Sort all nodes in the tree recursively
+    // Sort all nodes in the tree
     sortTreeNodes(treeViewItems)
 
     return {treeViewItems, nodeIndex}
