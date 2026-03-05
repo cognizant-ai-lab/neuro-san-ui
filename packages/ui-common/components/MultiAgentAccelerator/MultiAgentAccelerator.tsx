@@ -41,7 +41,7 @@ import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetwo
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
-import {chatMessageFromChunk, cleanUpAgentName} from "../AgentChat/Utils"
+import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Utils"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIAlert} from "../Common/MUIAlert"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
@@ -358,7 +358,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         const network = newlyAddedTemporaryNetworks?.values().next().value
         if (network?.length > 0) {
             // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
-            const agentNameDisplay = cleanUpAgentName(network)
+            const agentNameDisplay = cleanUpAgentName(removeTrailingUuid(network))
             setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
 
             // Set a timer to clear the alert after a few seconds so it doesn't overstay its welcome

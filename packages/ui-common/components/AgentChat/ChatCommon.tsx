@@ -29,7 +29,7 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {useColorScheme} from "@mui/material/styles"
+import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -57,7 +57,7 @@ import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
-import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
+import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "./Utils"
 import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "./VoiceChat/VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
@@ -70,7 +70,6 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
-import {isDarkMode} from "../../Theme/Theme"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
@@ -235,6 +234,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         handleStop,
     }))
 
+    // MUI theme
+    const theme = useTheme()
+
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
 
@@ -319,8 +321,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const {mode, systemMode} = useColorScheme()
-    const darkMode = isDarkMode(mode, systemMode)
+    const darkMode = theme.palette.mode === "dark"
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
@@ -471,13 +472,15 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         )
     }
 
-    /**
-     * Introduce the agent to the user with a friendly greeting
-     */
+    const agentDisplayName = cleanUpAgentName(removeTrailingUuid(targetAgent))
+
     const introduceAgent = () => {
+        /**
+         * Introduce the agent to the user with a friendly greeting
+         */
         updateOutput(
             <UserQueryDisplay
-                userQuery={cleanUpAgentName(targetAgent)}
+                userQuery={agentDisplayName}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
             />
@@ -944,6 +947,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         }
     }
 
+    const getPlaceholder = () =>
+        !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
+
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -964,8 +970,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        zIndex: 10,
+                        zIndex: theme.zIndex.modal - 1,
                         cursor: "not-allowed",
+                        // Capture all pointer events to prevent interaction with the chat when no agent is selected
                         pointerEvents: "all",
                     }}
                 />
@@ -1150,7 +1157,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                         autoComplete="off"
                         id="user-input"
                         multiline={true}
-                        placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
+                        placeholder={getPlaceholder()}
                         ref={chatInputRef}
                         sx={{
                             border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",

@@ -216,23 +216,21 @@ export const Sidebar: FC<SidebarProps> = ({
         // If we got a new temporary network, select it and expand the temporary category in the tree view
         if (newlyAddedTemporaryNetworks?.size > 0) {
             const firstItem = newlyAddedTemporaryNetworks.values().next().value
-            if (firstItem) {
-                setSelectedItem(firstItem)
-                setSelectedNetwork(firstItem)
-                setExpandedItems((prev) =>
-                    prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
-                )
-                highlightTimeout = setTimeout(() => {
-                    const selectedNode = document.querySelector("[role=treeitem][aria-checked=true]")
-                    if (selectedNode) {
-                        selectedNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
-                        selectedNode.classList.add("sparkle-highlight")
-                        removeHighlightTimeout = setTimeout(() => {
-                            selectedNode.classList.remove("sparkle-highlight")
-                        }, 5000)
-                    }
-                }, 50)
-            }
+            setSelectedItem(firstItem)
+            setSelectedNetwork(firstItem)
+            setExpandedItems((prev) =>
+                prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
+            )
+            highlightTimeout = setTimeout(() => {
+                const selectedNode = document.querySelector("[role=treeitem][aria-checked=true]")
+                if (selectedNode) {
+                    selectedNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
+                    selectedNode.classList.add("sparkle-highlight")
+                    removeHighlightTimeout = setTimeout(() => {
+                        selectedNode.classList.remove("sparkle-highlight")
+                    }, 5000)
+                }
+            }, 50)
         }
 
         return () => {
