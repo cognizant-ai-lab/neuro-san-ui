@@ -210,6 +210,9 @@ export const Sidebar: FC<SidebarProps> = ({
     }
 
     useEffect(() => {
+        let highlightTimeout: ReturnType<typeof setTimeout>
+        let removeHighlightTimeout: ReturnType<typeof setTimeout>
+
         // If we got a new temporary network, select it and expand the temporary category in the tree view
         if (newlyAddedTemporaryNetworks?.size > 0) {
             const firstItem = newlyAddedTemporaryNetworks.values().next().value
@@ -219,12 +222,49 @@ export const Sidebar: FC<SidebarProps> = ({
                 setExpandedItems((prev) =>
                     prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
                 )
+                highlightTimeout = setTimeout(() => {
+                    const selectedNode = document.querySelector("[role=treeitem][aria-checked=true]")
+                    if (selectedNode) {
+                        selectedNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
+                        selectedNode.classList.add("sparkle-highlight")
+                        removeHighlightTimeout = setTimeout(() => {
+                            selectedNode.classList.remove("sparkle-highlight")
+                        }, 5000)
+                    }
+                }, 50)
             }
+        }
+
+        return () => {
+            clearTimeout(highlightTimeout)
+            clearTimeout(removeHighlightTimeout)
         }
     }, [newlyAddedTemporaryNetworks])
 
     return (
         <>
+            <style>
+                {`
+                .sparkle-highlight {
+                  background: linear-gradient(90deg, gold, orange, cyan, magenta, gold);
+                  background-size: 400% 100%;
+                  animation: sparkle 5s ease; 
+                  background-clip: padding-box;
+                  border-radius: 4px;
+                  opacity: 1;
+                }
+                @keyframes sparkle {
+                  0%   { background-position: 0% 50%; opacity: 1; }
+                  10%  { background-position: 33% 50%; opacity: 1; }
+                  20%  { background-position: 66% 50%; opacity: 1; }
+                  30%  { background-position: 100% 50%; opacity: 1; }
+                  60%  { background-position: 100% 50%; opacity: 1; }
+                  80%  { background-position: 100% 50%; opacity: 0.7; }
+                  90%  { background-position: 100% 50%; opacity: 0.4; }
+                  100% { background-position: 100% 50%; opacity: 0.25; }
+                }
+              `}
+            </style>
             <aside
                 id={`${id}-sidebar`}
                 style={{
