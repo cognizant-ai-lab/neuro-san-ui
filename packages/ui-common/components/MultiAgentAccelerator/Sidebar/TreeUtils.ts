@@ -2,14 +2,21 @@ import {TreeViewBaseItem} from "@mui/x-tree-view/models"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
+import {cleanUpAgentName} from "../../AgentChat/Utils"
+
+export type NodeIndex = Map<string, {agentInfo: AgentInfo; displayName: string}>
 
 /**
  * Iteratively sort all children of tree nodes using a queue-based approach
  * @param nodes - Array of tree nodes to sort
  */
-const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
-    // Sort the top level nodes first
-    nodes.sort((a, b) => a.label.localeCompare(b.label))
+const sortTreeNodes = (nodes: TreeViewBaseItem[], nodeIndex: NodeIndex): void => {
+    // Sort the top level nodes first. We sort by displayName because that's what the user sees
+    nodes.sort((a, b) => {
+        const aDisplayName = nodeIndex.get(a.id)?.displayName ?? a.label
+        const bDisplayName = nodeIndex.get(b.id)?.displayName ?? b.label
+        return aDisplayName.localeCompare(bDisplayName)
+    })
 
     // Use a queue for breadth-first traversal to avoid recursion
     const queue: TreeViewBaseItem[] = [...nodes]
@@ -20,7 +27,11 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[]): void => {
         index += 1
 
         if (node.children && node.children.length > 0) {
-            node.children.sort((a, b) => a.label.localeCompare(b.label))
+            node.children.sort((a, b) => {
+                const aDisplayName = nodeIndex.get(a.id)?.displayName ?? a.label
+                const bDisplayName = nodeIndex.get(b.id)?.displayName ?? b.label
+                return aDisplayName.localeCompare(bDisplayName)
+            })
             queue.push(...node.children)
         }
     }
@@ -34,13 +45,14 @@ const addNetworkToTree = (
     result: TreeViewBaseItem[],
     uncategorized: TreeViewBaseItem,
     map: Map<string, TreeViewBaseItem>,
-    nodeIndex: Map<string, AgentInfo>
+    nodeIndex: NodeIndex,
+    displayNameCounts: Map<string, number>
 ): void => {
     const parts = network.agent_name.split("/")
 
     if (parts.length === 1) {
         uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
-        nodeIndex.set(network.agent_name, network)
+        nodeIndex.set(network.agent_name, {agentInfo: network, displayName: cleanUpAgentName(network.agent_name)})
     } else {
         let currentLevel = result
 
@@ -52,7 +64,13 @@ const addNetworkToTree = (
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    nodeIndex.set(nodeId, network)
+                    const guidRegex = /-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u
+                    const agentNameWithoutGuid = part.replace(guidRegex, "")
+                    const cleanedName = cleanUpAgentName(agentNameWithoutGuid)
+                    const count = displayNameCounts.get(cleanedName) || 0
+                    displayNameCounts.set(cleanedName, count + 1)
+                    const displayName = count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
+                    nodeIndex.set(nodeId, {agentInfo: network, displayName})
                 }
 
                 if (index === 0) {
@@ -82,12 +100,12 @@ const addNetworkToTree = (
 export const buildTreeViewItems = (
     networks: readonly AgentInfo[],
     temporaryNetworks: readonly TemporaryNetwork[]
-): {treeViewItems: TreeViewBaseItem[]; nodeIndex: Map<string, AgentInfo>} => {
+): {treeViewItems: TreeViewBaseItem[]; nodeIndex: NodeIndex} => {
     // Map to keep track of created nodes in a tree structure
-    const map = new Map<string, TreeViewBaseItem>()
+    const treeBuilderMap = new Map<string, TreeViewBaseItem>()
 
     // Index to quickly look up AgentInfo by node ID without having to traverse the tree
-    const nodeIndex = new Map<string, AgentInfo>()
+    const nodeIndex: NodeIndex = new Map()
 
     // Resulting tree view items, ready for consumption by RichTreeView
     const treeViewItems: TreeViewBaseItem[] = []
@@ -95,14 +113,25 @@ export const buildTreeViewItems = (
     // Special parent node for networks that aren't in any folder
     const uncategorized: TreeViewBaseItem = {id: "uncategorized", label: "Uncategorized", children: []}
 
+    const displayNameCounts = new Map<string, number>()
+
     // Build a tree structure from the flat list of networks.
     // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
     // structure from that.
-    networks.forEach((network) => addNetworkToTree(network, treeViewItems, uncategorized, map, nodeIndex))
+    networks.forEach((network) =>
+        addNetworkToTree(network, treeViewItems, uncategorized, treeBuilderMap, nodeIndex, displayNameCounts)
+    )
 
     // Now handle temporary networks
     temporaryNetworks?.forEach((temporaryNetwork) =>
-        addNetworkToTree(temporaryNetwork.agentInfo, treeViewItems, uncategorized, map, nodeIndex)
+        addNetworkToTree(
+            temporaryNetwork.agentInfo,
+            treeViewItems,
+            uncategorized,
+            treeBuilderMap,
+            nodeIndex,
+            displayNameCounts
+        )
     )
 
     // Add "Uncategorized" to the result if there are any such networks
@@ -111,7 +140,7 @@ export const buildTreeViewItems = (
     }
 
     // Sort all nodes in the tree
-    sortTreeNodes(treeViewItems)
+    sortTreeNodes(treeViewItems, nodeIndex)
 
     return {treeViewItems, nodeIndex}
 }

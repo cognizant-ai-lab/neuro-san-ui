@@ -18,7 +18,7 @@ import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
-import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {NodeIndex} from "./TreeUtils"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
 
 // Palette of colors we can use for tags
@@ -41,7 +41,7 @@ type TagColor = (typeof TAG_COLORS)[number]
 const tagsToColors = new Map<string, TagColor>()
 
 export interface AgentNetworkNodeProps extends TreeItemProps {
-    readonly nodeIndex: Map<string, AgentInfo>
+    readonly nodeIndex: NodeIndex
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
@@ -75,6 +75,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
 
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
+    const displayLabel = nodeIndex.get(itemId)?.displayName || cleanUpAgentName(labelString)
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
@@ -84,7 +85,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isParent = Array.isArray(children) && children.length > 0
     const isChild = !isParent
 
-    const agentNode = nodeIndex?.get(itemId)
+    const agentNode = nodeIndex?.get(itemId)?.agentInfo
 
     // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
     // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
@@ -151,7 +152,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             },
                                         }}
                                     >
-                                        {cleanUpAgentName(labelString)}
+                                        {displayLabel}
                                     </TreeItemLabel>
                                 </Box>
                             </Tooltip>
