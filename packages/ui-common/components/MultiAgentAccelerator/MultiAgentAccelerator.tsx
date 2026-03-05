@@ -194,18 +194,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setNetworkIconSuggestions({})
                 }
             }
-
-            // Always use hourglass icon for temp networks
-            if (temporaryNetworks?.length > 0) {
-                setNetworkIconSuggestions({
-                    ...networkIconSuggestions,
-                    ...Object.fromEntries(
-                        temporaryNetworks.map((network) => [network.agentInfo.agent_name, "HourglassTop"])
-                    ),
-                })
-            }
         })()
-    }, [networks, temporaryNetworks])
+    }, [networks])
 
     useEffect(() => {
         ;(async () => {
@@ -331,6 +321,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult)
             const currentNetworks = useTempNetworksStore.getState().tempNetworks
             useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+
+            // Set recommended icon (hourglass) for new temporary networks
+            setNetworkIconSuggestions((prev) => ({
+                ...prev,
+                ...Object.fromEntries(
+                    newTemporaryNetworks.map((network) => [network.agentInfo.agent_name, "HourglassTop"])
+                ),
+            }))
 
             // record the new temporary networks so we can select them for the user. For now, we only
             // care about the first one.
