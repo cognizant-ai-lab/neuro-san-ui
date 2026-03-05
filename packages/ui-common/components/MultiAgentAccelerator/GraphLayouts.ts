@@ -409,7 +409,7 @@ export const layoutLinear = (
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const globalBubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbles = globalBubbleEdges.filter((edge: Edge) =>
+    const thoughtBubbles = globalBubbleEdges.filter((edge: ThoughtBubbleEdgeShape) =>
         filteredEdges.every((existing: Edge) => existing.id !== edge.id)
     )
 
