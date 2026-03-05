@@ -80,9 +80,3 @@ retention policy.
 
 Run `./build_scripts/CommitCheck.sh` from the repo root before committing. It
 exercises the same checks as CI so you can catch issues early.
-
-## Legacy Codefresh Files
-
-The `build.yml`, `deploy-trigger.yml`, and `deploy.yml` files in this directory
-are remnants of the former Codefresh-based pipeline. They are no longer used and
-are retained only for historical reference.
