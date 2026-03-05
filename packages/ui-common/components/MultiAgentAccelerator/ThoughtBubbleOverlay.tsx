@@ -574,7 +574,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
                 const text = edge.data?.text
-                if (typeof text !== "string") return null
+                if (!text) return null
 
                 // Per-bubble staggered animation delay in milliseconds
                 const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
