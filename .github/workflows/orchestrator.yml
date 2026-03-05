@@ -38,7 +38,7 @@ on:
 
 permissions:
     id-token: write
-    contents: write
+    contents: read
 
 jobs:
     setup:
@@ -109,6 +109,8 @@ jobs:
         runs-on: ubuntu-latest
         needs: [setup, deploy]
         if: github.event_name == 'release'
+        permissions:
+            contents: write
         steps:
             - name: Checkout main branch
               uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
