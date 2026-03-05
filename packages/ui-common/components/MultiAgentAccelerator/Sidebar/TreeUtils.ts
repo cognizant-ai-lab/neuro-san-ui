@@ -2,7 +2,7 @@ import {TreeViewBaseItem} from "@mui/x-tree-view/models"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
-import {cleanUpAgentName} from "../../AgentChat/Utils"
+import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Utils"
 
 export type NodeIndex = Map<string, {agentInfo: AgentInfo; displayName: string}>
 
@@ -64,9 +64,8 @@ const addNetworkToTree = (
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    const guidRegex = /-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u
-                    const agentNameWithoutGuid = part.replace(guidRegex, "")
-                    const cleanedName = cleanUpAgentName(agentNameWithoutGuid)
+                    const agentNameWithoutUuid = removeTrailingUuid(part)
+                    const cleanedName = cleanUpAgentName(agentNameWithoutUuid)
                     const count = displayNameCounts.get(cleanedName) || 0
                     displayNameCounts.set(cleanedName, count + 1)
                     const displayName = count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
