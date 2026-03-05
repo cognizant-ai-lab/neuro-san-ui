@@ -365,9 +365,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
             // It's expired so just delete it without confirmation
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks(temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkId))
+            const tempNetworksWithoutThisOne = temporaryNetworks.filter(
+                (network) => network.agentInfo.agent_name !== networkId
+            )
+            useTempNetworksStore.getState().setTempNetworks(tempNetworksWithoutThisOne)
         } else {
             setNetworkToBeDeleted(networkId)
             setConfirmationModalOpen(true)
@@ -400,9 +401,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onDeleteNetwork={(networkId, isExpired) => {
-                            handleDeleteNetwork(networkId, isExpired)
-                        }}
+                        onDeleteNetwork={handleDeleteNetwork}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
