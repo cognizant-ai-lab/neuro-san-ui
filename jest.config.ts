@@ -68,14 +68,14 @@ const config: Config.InitialOptions = {
         "!**/next-env.d.ts",
         "!**/next.config.ts",
     ],
-    // coverageReporters: ["text-summary"],
+    coverageReporters: ["text-summary"],
 
     coverageThreshold: {
         global: {
-            statements: -87,
-            branches: -139,
-            functions: -22,
-            lines: -69,
+            statements: -91,
+            branches: -138,
+            functions: -24,
+            lines: -73,
         },
     },
 

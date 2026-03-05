@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {useColorScheme} from "@mui/material/styles"
-import {act, render, screen, waitFor} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
@@ -23,6 +23,7 @@ import {forwardRef} from "react"
 
 import {
     LIST_NETWORKS_RESPONSE,
+    TEMPORARY_NETWORK,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
@@ -65,6 +66,7 @@ jest.mock("../../../../packages/ui-common/controller/agent/Agent")
 const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
 const networkIconSuggestionsMock = jest.fn()
+let onDeleteNetwork: (a: string, b: boolean) => void
 
 jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
@@ -83,6 +85,7 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Sideb
         Sidebar: (props: SidebarProps) => {
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
+            onDeleteNetwork = props.onDeleteNetwork
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
         },
@@ -114,6 +117,20 @@ const MATH_GUY_MESSAGE: ChatResponse = {
         type: ChatMessageType.AI,
         text: "This is a test message",
         origin: [{tool: TEST_AGENT_MATH_GUY}],
+    },
+}
+
+const reservation = TEMPORARY_NETWORK.reservation
+
+const RESERVATION_CHAT_MESSAGE: ChatResponse = {
+    response: {
+        type: ChatMessageType.AGENT_FRAMEWORK,
+        text: "This is a test message",
+        structure: {total_tokens: 100},
+        origin: [{tool: "copy_cat"}],
+        sly_data: {
+            agent_reservations: [reservation],
+        },
     },
 }
 
@@ -450,28 +467,9 @@ describe("Multi Agent Accelerator Page", () => {
     it("Should detect agent registrations in the chat stream", async () => {
         renderMultiAgentAcceleratorPage()
 
-        const reservation = {
-            reservation_id: "test-reservation-id-14ecb260-4389-44f3-afad-ea315dfa1966",
-            lifetime_in_seconds: 300.0,
-            expiration_time_in_seconds: 1771438301.0245166,
-        }
-        const tool = "copy_cat"
-        const chatMessage: ChatResponse = {
-            response: {
-                type: ChatMessageType.AGENT_FRAMEWORK,
-                text: "This is a test message",
-                structure: {total_tokens: 100},
-                origin: [{tool}],
-                sly_data: {
-                    agent_reservations: [reservation],
-                },
-            },
-        }
-
-        // Set up one active agent
-        const activeAgentChunk = JSON.stringify(chatMessage)
+        // Set up a temporary network
         await act(async () => {
-            onChunkReceived(activeAgentChunk)
+            onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
         })
 
         expect(chatCommonMock).toHaveBeenCalled()
@@ -493,6 +491,77 @@ describe("Multi Agent Accelerator Page", () => {
 
         const expectedAlertText = `A temporary network "${cleanUpAgentName(agentName)}" has been created.`
         await screen.findByText(expectedAlertText)
+    })
+
+    it("Should handle deletion of temporary networks", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        // Set up a temporary network
+        await act(async () => {
+            onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+        })
+
+        const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+        await waitFor(() => {
+            expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        agentInfo: expect.objectContaining({
+                            agent_name: expectedAgentName,
+                        }),
+                    }),
+                ])
+            )
+        })
+
+        temporaryNetworksMock.mockClear()
+
+        // Simulate user deleting the temporary network
+        await act(async () => onDeleteNetwork(expectedAgentName, false))
+
+        // Should be a confirmation modal
+        const modal = screen.getByTestId("delete-network-confirmation-modal-confirm-main")
+        const confirmButton = within(modal).getByRole("button", {name: "Confirm"})
+        await user.click(confirmButton)
+
+        // Modal should close and temporary network should be removed
+        expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
+
+        // Make sure network deleted
+        expect(temporaryNetworksMock).toHaveBeenCalledWith([])
+    })
+
+    it("Should handle deleting expired temporary networks without confirmation", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        // Set up a temporary network
+        await act(async () => {
+            onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+        })
+
+        const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+        await waitFor(() => {
+            expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        agentInfo: expect.objectContaining({
+                            agent_name: expectedAgentName,
+                        }),
+                    }),
+                ])
+            )
+        })
+
+        temporaryNetworksMock.mockClear()
+
+        // Simulate user deleting the expired temporary network
+        await act(async () => onDeleteNetwork(expectedAgentName, true))
+
+        // Should delete without confirmation
+        expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
+
+        // Make sure network deleted
+        expect(temporaryNetworksMock).toHaveBeenCalledWith([])
     })
 
     it("Should pass along network icon suggestions to the sidebar", async () => {

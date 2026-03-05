@@ -125,7 +125,7 @@ describe("SideBar", () => {
         })
     })
 
-    it.each([false])("should render correctly with darkMode=%s", async (darkMode) => {
+    it.each([false, true])("should render correctly with darkMode=%s", async (darkMode) => {
         ;(useColorScheme as jest.Mock).mockReturnValue({
             mode: darkMode ? "dark" : "light",
         })
@@ -147,7 +147,6 @@ describe("SideBar", () => {
         await user.click(network)
 
         // setSelectedNetwork should be called
-        // log calls to setSelectedNetwork for debugging
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
 
