@@ -3,7 +3,7 @@ import {FC} from "react"
 
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
-export interface ThoughtBubbleEdgeData extends Record<string, unknown> {
+interface ThoughtBubbleEdgeData extends Record<string, unknown> {
     text?: string
     showAlways?: boolean
     conversationId?: string
