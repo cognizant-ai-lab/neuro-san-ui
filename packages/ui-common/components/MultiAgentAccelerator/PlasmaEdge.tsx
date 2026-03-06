@@ -91,7 +91,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
 }: EdgeProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const pathRef = useRef<SVGPathElement>(null)
-    const animationRef = useRef<number | undefined>(undefined)
+    const animationRef = useRef<number>(null)
     const particles = useRef<ReturnType<typeof createFunnelParticleOnPath>[]>([])
     const plasmaColor = useSettingsStore((state) => state.settings.appearance.plasmaColor)
 
