@@ -14,66 +14,69 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-# neuro-ui Deployment Process
+# neuro-san-ui CI/CD
 
-This directory contains a number of Codefresh pipeline YAMLs and shell scripts that together form the basis of our
-CI/CD deployment of the neuro-ui application.
-This README will describe the processes and pipelines that orchestrate this work.
+This directory contains shell scripts used by the GitHub Actions workflows in
+`.github/workflows/`. Together they form the CI/CD pipeline for the
+neuro-san-ui application and the `@cognizant-ai-lab/ui-common` npm package.
 
-## Automatic Deployment to dev Environment at Merge to Main
+## How the Pipeline Works
 
-When a PR for the neuro-ui repo is approved via the Github UI, a user can then choose to Merge that new code into the
-main branch. When the merge to main occurs, the pipeline `deploy-trigger.yml` is triggered, the defining yaml being
-named the same as the pipeline. This pipeline is simply an orchestration step which provides the desired version
-and environment name to the `build` and `deploy` pipelines. The `build` pipeline is triggered with the provided git
-SHA. This pipeline builds the neuro-ui image and pushes the newly built image to the appropriate registry
-in our ECR on AWS.
+All CI/CD is driven by the **Orchestrator** workflow
+(`.github/workflows/orchestrator.yml`). It decides what to run based on the
+trigger:
 
-Once the image is built, the `deploy` pipeline is triggered, with the version and environment name passed in as
-variables. This pipeline runs a script `deploy_to_cluster.py` which updates the deployment manifest files which
-are ultimately synced to the desired environment by a separate process in our ArgoCD system.
+| Trigger            | Steps                 | Deploy target |
+| ------------------ | --------------------- | ------------- |
+| Push to any branch | Test                  | —             |
+| Push to `main`     | Test → Build → Deploy | `dev`         |
+| GitHub Release     | Test → Build → Deploy | `staging`     |
 
-## Automatic Deployment to staging Environment at Github Release
+1. **Test** (`.github/workflows/test.yml`) — ESLint, ShellCheck, Prettier,
+   knip, hadolint, Docker build check, TypeScript compilation, and Jest unit
+   tests. All checks run with `continue-on-error` and are rolled up at the end
+   so every failure is visible in a single run.
+2. **Build** (`.github/workflows/build.yml`) — Builds the Docker image and
+   pushes it to Amazon ECR. Version tagging is handled by
+   `determine_version.sh`.
+3. **Deploy** — The Orchestrator sends a `repository_dispatch` event to
+   `cognizant-ai-lab/neuro-san-deploy`, which updates the UI image tag in the
+   target environment.
 
-When we gather a number of new fixes or features in the neuro-ui main branch, we as a team decide to make a release
-to get these features tested on our staging environment, and eventually onto the production environment.
-To accomplish this task, we use the same three pipelines mentioned above `deploy-trigger`, `build`, and `deploy`.
-We use the Github Release mechanism which is accessed via the Github UI as a manual step.
-The operator will supply a new SemVer tag during this process, and accept the auto-generated release notes.
-Once the release is created, the aforementioned pipelines are triggered, but this time using the `staging`
-environment name and the newly created SemVer tag as the version. The entire process takes approximately
-15-20 minutes. Upon completion, the new release is ready for testing on the staging environment.
+### npm Package Publishing
 
-## Manual Deployment to production Environment
+The **Publish UI Common** workflow (`.github/workflows/publish.yml`) publishes
+`@cognizant-ai-lab/ui-common` to the public npm registry:
 
-Since all the images for a given version were built in the previous Staging build step, we only need to run the
-`deploy` pipeline. To do so, the operator navigates to the Codefresh pipeline and sets two pipeline variables
-`DEPLOY_ENVIRONMENT` and `UNILEAF_VERSION`. For production, the environment name is currently `prod`
-while the version will be the exact version string just tested on staging.
+| Trigger                            | Version format            | dist-tag      |
+| ---------------------------------- | ------------------------- | ------------- |
+| Push to `main` (ui-common changes) | `<base>-main.<sha>.<run>` | `main`        |
+| GitHub Release                     | `<release-tag>`           | `latest`      |
+| Manual dispatch                    | `<base>-pr.<sha>.<run>`   | user-selected |
 
-## Manual Deployment of Arbitrary Version to Arbitrary Environment
+After a push-to-main publish, the workflow triggers `cognizant-ai-lab/neuro-ui`
+via `repository_dispatch` so it can pick up the new snapshot.
 
-If needed, the `deploy-trigger` and `deploy` pipelines can be run manually with the user providing the version
-(git SHA) and desired environment name. This is done rarely but on occasion there may be a new feature that is
-difficult for a developer to test without a full cluster deploy, so we can switch dev to some arbitrary git SHA
-for testing.
+### npm Package Cleanup
 
-## Hot Fix Deployment
+The **Cull NPM Packages** workflow (`.github/workflows/cull-npm-packages.yml`)
+runs weekly to remove old dev versions of `@cognizant-ai-lab/ui-common`.
+Release versions are never deleted. See `cull_npm_packages.sh` for the
+retention policy.
 
-The process outlined above pushes/releases only the `main` branch into our environment(s).
-In the event of a needed hot fix after a release and after `main` has already progressed with new features that are
-untested or otherwise not ready for prime time, we use a Hot Fix process.
+## Scripts
 
-1. The developer creating the fix will pull the latest released tag and branch off that.
-2. They will create the fix and PR the changes.
-3. Upon review, the PR is merged into the hot-fix branch. Note, it is smoother if the developer does _not_ tag the
-   branch. That will be done in the next step.
-4. Using the Github UI, a new release is created.
+| Script                       | Purpose                                                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `determine_version.sh`       | Computes the image version, deploy environment, and build/deploy flags from the GitHub event type and ref. |
+| `compute_publish_version.sh` | Computes the npm package version and dist-tag for `@cognizant-ai-lab/ui-common` publishing.                |
+| `set_package_version.sh`     | Writes a version string into a `package.json` file (used before `npm publish`).                            |
+| `cull_npm_packages.sh`       | Cleans up old dev npm packages from the npmjs.org registry.                                                |
+| `run_eslint.sh`              | Runs ESLint with a zero-warning threshold.                                                                 |
+| `run_shellcheck.sh`          | Runs ShellCheck on all `.sh` files in the repo (excluding `node_modules`).                                 |
+| `CommitCheck.sh`             | Local pre-commit quality checks (tsc, knip, prettier, eslint, jest).                                       |
 
-- Choose a tag: create a new tag and use the appropriate SemVer value
-- Target: the hot-fix branch
+## Local Quality Checks
 
-5. The automatic deployment to staging is triggered only for the `main` branch, so the operator will need to manually
-   run the `deploy-trigger` using the correct new version.
-6. After the images are built, the operator needs to run the `deploy` pipeline with the correct version and namespace.
-7. Once the staging release passes testing, the operator releases to production in the same way as outlined above.
+Run `./build_scripts/CommitCheck.sh` from the repo root before committing. It
+exercises the same checks as CI so you can catch issues early.
