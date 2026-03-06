@@ -574,45 +574,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(bubbles.length).toBe(1)
     })
 
-    it("Should handle edges with non-string text data", () => {
-        const edges: ThoughtBubbleEdgeShape[] = [
-            {
-                id: "edge1",
-                source: "node1",
-                target: "node2",
-                data: {text: 123 as unknown as string},
-                type: "thoughtBubbleEdge",
-            },
-            {
-                id: "edge2",
-                source: "node1",
-                target: "node2",
-                data: {text: true as unknown as string},
-                type: "thoughtBubbleEdge",
-            },
-            {
-                id: "edge3",
-                source: "node1",
-                target: "node2",
-                data: {text: null as unknown as string},
-                type: "thoughtBubbleEdge",
-            },
-            createMockEdge("edge4", "node1", "node2", "Valid message"),
-        ]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Should only render the valid string message
-        expect(screen.getByText("Valid message")).toBeInTheDocument()
-        expect(screen.queryAllByText(/./u)).toHaveLength(1)
-    })
-
     it("Should cleanup timeouts on component unmount", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 

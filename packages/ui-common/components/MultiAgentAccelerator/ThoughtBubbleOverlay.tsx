@@ -155,7 +155,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         () =>
             edges.filter((e) => {
                 const text = e.data?.text
-                return typeof text === "string" && text.length > 0
+                return typeof text === "string" && text?.length > 0
             }),
         [edges]
     )

@@ -339,7 +339,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network
-    const bubbleAgentIds = useMemo(() => {
+    const bubbleAgentIds: Set<string> = useMemo(() => {
         const ids = new Set<string>()
         activeThoughtBubbles.forEach((bubble) => {
             bubble.agents.forEach((agentId) => ids.add(agentId))
@@ -347,7 +347,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return ids
     }, [activeThoughtBubbles])
 
-    const mergedAgentsInNetwork = useMemo(() => {
+    const mergedAgentsInNetwork: ConnectivityInfo[] = useMemo(() => {
         // Add any missing agents from bubbles as minimal ConnectivityInfo
         const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
         const missing = Array.from(bubbleAgentIds).filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
@@ -404,7 +404,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const edges = layoutResult.edges
 
     // Make sure to extract only thought bubble edges for the overlay.
-    const thoughtBubbleEdgesForOverlay = useMemo(
+    const thoughtBubbleEdgesForOverlay: ThoughtBubbleEdgeShape[] = useMemo(
         () => edges.filter((e): e is ThoughtBubbleEdgeShape => e.type === "thoughtBubbleEdge"),
         [edges]
     )
