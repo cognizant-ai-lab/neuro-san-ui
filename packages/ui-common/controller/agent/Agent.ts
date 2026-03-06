@@ -18,6 +18,7 @@ limitations under the License.
  * Controller module for interacting with the Agent LLM API.
  */
 
+import {TEMPORARY_NETWORK_FOLDER} from "../../components/MultiAgentAccelerator/const"
 import {
     AgentInfo,
     ApiPaths,
@@ -48,8 +49,8 @@ import {NetworkIconSuggestions} from "../Types/NetworkIconSuggestions"
 const insertTargetAgent = (agent: string, path: string) => {
     let agentTmp = agent
     // Remove "temporary" prefix from network name if it exists since the server doesn't know about that convention
-    if (agentTmp.startsWith("temporary/")) {
-        agentTmp = agentTmp.replace("temporary/", "")
+    if (agentTmp.startsWith(`${TEMPORARY_NETWORK_FOLDER}/`)) {
+        agentTmp = agentTmp.replace(`${TEMPORARY_NETWORK_FOLDER}/`, "")
     }
 
     return path.replace("{agent_name}", agentTmp)

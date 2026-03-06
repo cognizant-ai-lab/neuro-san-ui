@@ -359,7 +359,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setIsStreaming(true)
     }, [haveShownPopup])
 
-    const onStreamingComplete = useCallback((): void => {
+    const onStreamingComplete = useCallback(() => {
+        // When streaming is complete, clean up any refs and state
+        conversationsRef.current = null
+        setCurrentConversations(null)
+        resetState()
+
         const network = newlyAddedTemporaryNetworks?.values().next().value
         if (network?.length > 0) {
             // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
@@ -367,15 +372,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
 
             // Set a timer to clear the alert after a few seconds so it doesn't overstay its welcome
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 setAlertContents(null)
             }, 10_000) // Clear after 10 seconds
-        }
 
-        // When streaming is complete, clean up any refs and state
-        conversationsRef.current = null
-        setCurrentConversations(null)
-        resetState()
+            return () => clearTimeout(timeoutId)
+        } else {
+            return undefined
+        }
     }, [newlyAddedTemporaryNetworks])
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
