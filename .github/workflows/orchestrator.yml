@@ -135,6 +135,9 @@ jobs:
                       echo "No version change needed."
                   else
                       git commit -m "Bump ui-common version to ${{ needs.setup.outputs.version }}"
-                      git pull --rebase origin main
+                      git pull --ff-only origin main || {
+                          echo "::error::Cannot fast-forward; main has diverged. Manual intervention needed."
+                          exit 1
+                      }
                       git push origin main
                   fi
