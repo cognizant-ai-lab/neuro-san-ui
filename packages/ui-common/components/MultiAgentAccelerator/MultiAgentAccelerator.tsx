@@ -560,7 +560,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 <ConfirmationModal
                     id="delete-network-confirmation-modal"
                     content={
-                        `The network "${cleanUpAgentName(networkToBeDeleted)}" will be deleted. ` +
+                        `The network "${cleanUpAgentName(removeTrailingUuid(networkToBeDeleted))}" will be deleted. ` +
                         "This action cannot be undone. Are you sure you want to proceed?"
                     }
                     handleCancel={() => {
