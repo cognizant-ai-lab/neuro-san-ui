@@ -148,7 +148,7 @@ describe("ChatCommon", () => {
         await user.click(sendButton)
     }
 
-    it.each(["light", "dark"] as PaletteMode[])("Should render correctly with darkMode=%s", async (darkMode) => {
+    it.each(["light", "dark"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
         renderChatCommonComponent({}, darkMode)
 
         expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
@@ -400,7 +400,7 @@ describe("ChatCommon", () => {
         expect(console.error).toHaveBeenCalledTimes(3)
     })
 
-    it("Should correctly an abort error correctly", async () => {
+    it("Should handle an abort error correctly", async () => {
         renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new (class extends Error {
@@ -419,6 +419,28 @@ describe("ChatCommon", () => {
 
         // For abort errors, we don't display the error block since they are handled differently
         expect(screen.queryByText(/Error occurred:/u)).not.toBeInTheDocument()
+    })
+
+    it("Should handle other types of errors than AbortError correctly", async () => {
+        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+
+        jest.spyOn(console, "error").mockImplementation()
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
+            throw new (class extends Error {
+                constructor(message?: string) {
+                    super(message)
+                    this.name = "SomeOtherError"
+                }
+            })("Some other error occurred")
+        })
+
+        await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
+
+        // Should be retries when not "Abort" error
+        expect(sendLlmRequest).toHaveBeenCalledTimes(3)
+
+        // For errors other than Abort, we display an error block
+        screen.getAllByText(/Error occurred: SomeOtherError: Some other error occurred/u)
     })
 
     it("Should correctly handle a chunk with an error block in the structure field", async () => {
@@ -622,12 +644,12 @@ describe("ChatCommon", () => {
             callback(JSON.stringify(chatResponses[1]))
         })
 
-        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
-
         // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
         const showThinkingButton = document.getElementById("show-thinking-button")
         expect(showThinkingButton).toBeInTheDocument()
         await user.click(showThinkingButton)
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
 
         // All responses should be visible when "show thinking" is enabled
         await waitFor(() => {

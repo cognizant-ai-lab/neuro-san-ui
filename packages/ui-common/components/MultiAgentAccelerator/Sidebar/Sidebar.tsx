@@ -201,12 +201,20 @@ export const Sidebar: FC<SidebarProps> = ({
             return
         }
 
-        // Only select leaf nodes (items without children) as networks
-        const isFolder = treeViewItems.some((item) => item.id === itemId && item.children?.length)
-        if (!isFolder) {
-            setSelectedItem(itemId)
-            setSelectedNetwork(itemId)
+        // Only select leaf nodes (items in nodeIndex) as networks
+        const isLeafNode = nodeIndex.has(itemId)
+        if (!isLeafNode) {
+            return
         }
+
+        // Don't allow selecting expired temporary networks
+        const expirationTime = temporaryNetworkExpirationTimes[itemId]
+        if (expirationTime && expirationTime < new Date()) {
+            return
+        }
+
+        setSelectedItem(itemId)
+        setSelectedNetwork(itemId)
     }
 
     useEffect(() => {

@@ -825,9 +825,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 if (wasAborted) {
                     // AbortErrors are handled elsewhere. We also want to stop retries here.
                     break
-                }
-
-                if (!wasAborted) {
+                } else {
                     if (error instanceof Error) {
                         console.error(error, error.stack)
                     }

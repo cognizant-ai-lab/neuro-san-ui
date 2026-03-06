@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
@@ -55,12 +55,6 @@ jest.mock("../../../controller/agent/Agent")
 // Simulated Neuro-san version for testing
 const TEST_VERSION = "1.2.3.4a"
 
-// Mock MUI theming
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useColorScheme: jest.fn(),
-}))
-
 // Provide a suggested icon for first network
 const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
     [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
@@ -86,11 +80,22 @@ describe("SideBar", () => {
     /**
      * This function renders the Sidebar component
      * @param overrides An object of any prop overrides
+     * @param mode The color scheme mode, either "light" or "dark". Defaults to "light".
      * @return The props for the Sidebar component
      */
-    const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}) => {
+    const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}, mode: PaletteMode = "light") => {
         const props: SidebarProps = {...DEFAULT_PROPS, ...overrides}
-        render(<Sidebar {...props} />)
+        render(
+            <ThemeProvider
+                theme={createTheme({
+                    palette: {
+                        mode: mode ?? "light",
+                    },
+                })}
+            >
+                <Sidebar {...props} />
+            </ThemeProvider>
+        )
 
         return props
     }
@@ -120,17 +125,10 @@ describe("SideBar", () => {
     beforeEach(() => {
         user = userEvent.setup()
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: "light",
-        })
     })
 
-    it.each([false, true])("should render correctly with darkMode=%s", async (darkMode) => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: darkMode ? "dark" : "light",
-        })
-
-        const {setSelectedNetwork} = renderSidebarComponent()
+    it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
+        const {setSelectedNetwork} = renderSidebarComponent({}, mode)
 
         // Make sure the heading is present
         await screen.findByText("Agent Networks")
@@ -269,7 +267,7 @@ describe("SideBar", () => {
         renderSidebarComponent({
             networks: [...LIST_NETWORKS_RESPONSE],
             temporaryNetworks: [TEMPORARY_NETWORK],
-            newlyAddedTemporaryNetworks: new Set(TEMPORARY_NETWORK.agentInfo.agent_name),
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
         })
 
         // Item should be auto-expanded as it's a newly added temporary network
@@ -280,7 +278,7 @@ describe("SideBar", () => {
         renderSidebarComponent({
             networks: [...LIST_NETWORKS_RESPONSE],
             temporaryNetworks: [TEMPORARY_NETWORK],
-            newlyAddedTemporaryNetworks: new Set(TEMPORARY_NETWORK.agentInfo.agent_name),
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
         })
 
         const networkTreeItem = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))

@@ -272,18 +272,20 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         const interval = setInterval(() => {
             const now = Date.now() / 1000 // convert to seconds since epoch
 
+            const currentTemporaryNetworks = useTempNetworksStore.getState().tempNetworks
+
             // Remove networks that have been expired for more than GRACE_PERIOD_MS
             useTempNetworksStore
                 .getState()
                 .setTempNetworks(
-                    temporaryNetworks.filter(
+                    currentTemporaryNetworks.filter(
                         (n) => n.reservation.expiration_time_in_seconds > now - GRACE_PERIOD_MS / 1000
                     )
                 )
 
             // Figure out which networks have expired on the server (not including our grace period) so we can
             // deselect them if they're currently selected
-            const expiredNetwork = temporaryNetworks.filter(
+            const expiredNetwork = currentTemporaryNetworks.filter(
                 (network) => network.reservation.expiration_time_in_seconds <= now
             )
             // If the selected network is one of the expired ones, deselect it
@@ -294,7 +296,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }, 10_000) // check every 10s
 
         return () => clearInterval(interval)
-    }, [temporaryNetworks])
+    }, [temporaryNetworks, selectedNetwork])
 
     const onChunkReceived = useCallback((chunk: string): boolean => {
         // Extract ChatMessage structure
@@ -335,12 +337,15 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             setNewlyAddedTemporaryNetworks(new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name)))
         }
 
-        return result != null && reservationsResult != null
+        return true
     }, [])
 
     const onStreamingStarted = useCallback((): void => {
         // Reset agent counts
         agentCountsRef.current = new Map()
+
+        // Reset newly added temporary networks
+        setNewlyAddedTemporaryNetworks(new Set())
 
         setAlertContents(null)
 
