@@ -226,7 +226,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     }, [])
 
     // Sort edges to prioritize frontman's edges first
-    const sortedEdges = useMemo(() => {
+    const sortedEdges: ThoughtBubbleEdgeShape[] = useMemo(() => {
         if (!frontmanNode) return thoughtBubbleEdges
         const frontmanEdges = thoughtBubbleEdges.filter(
             (e) => e.source === frontmanNode.id || e.target === frontmanNode.id
@@ -239,7 +239,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
     // Determine which agents are currently "active" using the same logic as AgentNode.
     // An agent is active if any current conversation includes that agent's id.
-    const activeAgentIds = useMemo(() => {
+    const activeAgentIds: Set<string> = useMemo(() => {
         const set = new Set<string>()
         if (!nodes || !Array.isArray(nodes)) return set
 
@@ -400,7 +400,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         () =>
             allBubbleIds
                 .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
-                .filter((edge): edge is ThoughtBubbleEdgeShape => edge !== undefined),
+                .filter((edge) => edge !== undefined),
         [allBubbleIds, sortedEdges, edges]
     )
 
