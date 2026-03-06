@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
+import {createTheme, ThemeProvider, useColorScheme, useTheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
@@ -37,6 +37,7 @@ import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../
 jest.mock("@mui/material/styles", () => ({
     ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
+    useTheme: jest.fn(),
 }))
 
 // Mock agent API
@@ -112,6 +113,9 @@ describe("ChatCommon", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
+
+        // default theme mock for tests not explicitly controlling it
+        ;(useTheme as jest.Mock).mockReturnValue({palette: {mode: "light"}})
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue({
@@ -585,6 +589,46 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
 
         expect(await screen.findByText("Final Answer")).toBeInTheDocument()
+    })
+
+    // verify box shadow color branch from ChatCommon.processLogLine
+    it("applies a light-mode shadow to the final answer accordion by default", async () => {
+        // light theme shadow
+        ;(useTheme as jest.Mock).mockReturnValue({palette: {mode: "light"}})
+        renderChatCommonComponent()
+
+        const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
+        const chatResponse = {response: responseMessage}
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test query")
+
+        const finalDiv = await screen.findByText("Final Answer")
+        const parentAccordion = finalDiv.closest(".MuiAccordion-root")
+        expect(parentAccordion).toBeInTheDocument()
+        const computed = window.getComputedStyle(parentAccordion)
+        expect(computed.boxShadow).toContain("rgba(0, 0, 0, 0.08)")
+    })
+
+    it("switches to a white shadow color in dark mode for the final answer accordion", async () => {
+        ;(useTheme as jest.Mock).mockReturnValue({palette: {mode: "dark"}})
+        renderChatCommonComponent()
+
+        const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
+        const chatResponse = {response: responseMessage}
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test query")
+
+        const finalDiv = await screen.findByText("Final Answer")
+        const parentAccordion = finalDiv.closest(".MuiAccordion-root")
+        expect(parentAccordion).toBeInTheDocument()
+        const computed = window.getComputedStyle(parentAccordion)
+        expect(computed.boxShadow).toContain("rgba(255, 255, 255, 0.08)")
     })
 
     it("Should handle 'show thinking' button correctly", async () => {

@@ -1,5 +1,4 @@
-import {render, renderHook, screen} from "@testing-library/react"
-import {act} from "react-dom/test-utils"
+import {act, render, renderHook, screen} from "@testing-library/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {FadingCheckmark, useCheckmarkFade} from "../../../components/Settings/FadingCheckmark"

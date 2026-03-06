@@ -1,14 +1,15 @@
 import {styled} from "@mui/material/styles"
+import type {Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
-import type {Edge, Node as RFNode} from "reactflow"
 
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
 // #region: Types
 
 interface ThoughtBubbleOverlayProps {
     readonly nodes: RFNode[]
-    readonly edges: Edge[]
+    readonly edges: ThoughtBubbleEdgeShape[]
     readonly showThoughtBubbles?: boolean
     readonly isStreaming?: boolean
     readonly onBubbleHoverChange?: (bubbleId: string | null) => void
@@ -21,7 +22,6 @@ interface ThoughtBubbleProps {
     readonly isVisible?: boolean
     readonly isExiting?: boolean
 }
-// Note: Removed BubblePosition interface - no longer needed for right-side positioning
 
 // #endregion: Types
 
@@ -154,10 +154,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     const thoughtBubbleEdges = useMemo(
         () =>
             edges.filter((e) => {
-                if (typeof e?.data?.text !== "string") {
-                    return false
-                }
-                return e.data.text
+                const text = e.data?.text
+                return typeof text === "string" && text?.length > 0
             }),
         [edges]
     )
@@ -165,7 +163,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Find frontman node (depth === 0, similar to isFrontman logic in AgentNode.tsx)
     const frontmanNode = useMemo(() => {
         if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return null
-        return nodes.find((n) => n.data?.depth === 0)
+        return nodes.find((n) => n.data["depth"] === 0)
     }, [nodes])
 
     // Handle bubble lifecycle (appear/disappear animations)
@@ -228,7 +226,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     }, [])
 
     // Sort edges to prioritize frontman's edges first
-    const sortedEdges = useMemo(() => {
+    const sortedEdges: ThoughtBubbleEdgeShape[] = useMemo(() => {
         if (!frontmanNode) return thoughtBubbleEdges
         const frontmanEdges = thoughtBubbleEdges.filter(
             (e) => e.source === frontmanNode.id || e.target === frontmanNode.id
@@ -241,16 +239,16 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
     // Determine which agents are currently "active" using the same logic as AgentNode.
     // An agent is active if any current conversation includes that agent's id.
-    const activeAgentIds = useMemo(() => {
+    const activeAgentIds: Set<string> = useMemo(() => {
         const set = new Set<string>()
         if (!nodes || !Array.isArray(nodes)) return set
 
         for (const node of nodes) {
-            const getConversations = node.data?.getConversations
+            const getConversations = node.data?.["getConversations"]
             if (typeof getConversations === "function") {
                 const convs = getConversations()
                 if (Array.isArray(convs)) {
-                    const hasSelf = convs.some((conv) => Boolean(conv?.agents?.has?.(node.id)))
+                    const hasSelf = convs.some((conv) => conv?.agents?.has?.(node.id))
                     if (hasSelf) {
                         set.add(node.id)
                     }
@@ -321,7 +319,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Calculate line coordinates - measurement only. Can be called from rAF/update loop.
     const calculateLineCoordinates = useCallback(
         (
-            edge: Edge,
+            edge: ThoughtBubbleEdgeShape,
             bubbleIndex: number,
             agentRectCache?: Map<string, DOMRect>
         ): {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null => {
@@ -349,9 +347,10 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Determine which agents to point to. If the edge supplies an `agents` array in
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
-            let agentIds: string[] = Array.isArray(edge.data?.agents)
-                ? (edge.data?.agents as string[])
-                : [edge.target || edge.source].filter(Boolean)
+            const potentialAgents = edge.data?.agents
+            const candidate = edge.target || edge.source
+            const fallback: string[] = candidate ? [candidate] : []
+            let agentIds: string[] = Array.isArray(potentialAgents) ? potentialAgents : fallback
 
             if (agentIds.length === 0) return null
 
@@ -401,7 +400,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         () =>
             allBubbleIds
                 .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
-                .filter((edge): edge is Edge => edge !== undefined),
+                .filter((edge) => edge !== undefined),
         [allBubbleIds, sortedEdges, edges]
     )
 
@@ -517,7 +516,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                     opacity: 1,
                 }}
             >
-                {renderableBubbles.map((edge: Edge, index: number) => {
+                {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
                     // Per-bubble staggered animation delay in milliseconds (for line animations)
                     const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
 
@@ -573,7 +572,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 })}
             </svg>
 
-            {renderableBubbles.map((edge: Edge, index: number) => {
+            {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
                 const text = edge.data?.text
                 if (!text) return null
 

@@ -19,7 +19,7 @@ import {act, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {forwardRef} from "react"
+import {Ref} from "react"
 
 import {
     LIST_NETWORKS_RESPONSE,
@@ -98,7 +98,7 @@ let onStreamingComplete: () => void
 
 jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon", () => ({
     __esModule: true,
-    ChatCommon: forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
+    ChatCommon: (props: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
         chatCommonMock(props)
         setIsAwaitingLlm = props.setIsAwaitingLlm
         onChunkReceived = props.onChunkReceived
@@ -106,14 +106,14 @@ jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon", () =
         onStreamingComplete = props.onStreamingComplete
 
         // handleStop ref
-        ;(ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
+        ;(props.ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
         return (
             <div
                 id="test-chat-common"
                 data-testid="test-chat-common"
             />
         )
-    }),
+    },
 }))
 
 window.fetch = mockFetch({})

@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {render} from "@testing-library/react"
-import {act} from "react-dom/test-utils"
-import {Position} from "reactflow"
+import {act, render} from "@testing-library/react"
+import {Position} from "@xyflow/react"
 
 import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
 

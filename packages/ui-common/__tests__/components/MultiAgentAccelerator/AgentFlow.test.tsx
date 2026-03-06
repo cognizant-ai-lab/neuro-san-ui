@@ -17,8 +17,8 @@ limitations under the License.
 import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {EdgeProps, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
-import {EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
