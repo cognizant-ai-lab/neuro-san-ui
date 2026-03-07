@@ -602,10 +602,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     display: "flex",
                     flex: 1,
                     height: "85%",
+                    justifyContent: isAwaitingLlm ? "center" : "unset",
                     marginTop: "1rem",
                     overflow: "hidden",
                     padding: "1rem",
-                    justifyContent: isAwaitingLlm ? "center" : "unset",
                     position: "relative",
                 }}
             >
