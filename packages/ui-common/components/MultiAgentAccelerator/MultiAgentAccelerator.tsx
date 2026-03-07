@@ -324,14 +324,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             const currentNetworks = useTempNetworksStore.getState().tempNetworks
             useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
 
-            // Set recommended icon (hourglass) for new temporary networks
-            setNetworkIconSuggestions((prev) => ({
-                ...prev,
-                ...Object.fromEntries(
-                    newTemporaryNetworks.map((network) => [network.agentInfo.agent_name, "HourglassTop"])
-                ),
-            }))
-
             // record the new temporary networks so we can select them for the user. For now, we only
             // care about the first one.
             setNewlyAddedTemporaryNetworks(new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name)))
@@ -360,27 +352,33 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback(() => {
-        // When streaming is complete, clean up any refs and state
-        conversationsRef.current = null
-        setCurrentConversations(null)
-        resetState()
-
         const network = newlyAddedTemporaryNetworks?.values().next().value
         if (network?.length > 0) {
             // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
             const agentNameDisplay = cleanUpAgentName(removeTrailingUuid(network))
             setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
+        }
 
+        // When streaming is complete, clean up any refs and state
+        conversationsRef.current = null
+        setCurrentConversations(null)
+        resetState()
+    }, [newlyAddedTemporaryNetworks])
+
+    useEffect(() => {
+        if (alertContents?.length > 0) {
             // Set a timer to clear the alert after a few seconds so it doesn't overstay its welcome
-            const timeoutId = setTimeout(() => {
+            const timeoutId = window.setTimeout(() => {
                 setAlertContents(null)
-            }, 10_000) // Clear after 10 seconds
+            }, 10_000)
 
-            return () => clearTimeout(timeoutId)
+            return () => {
+                window.clearTimeout(timeoutId)
+            }
         } else {
             return undefined
         }
-    }, [newlyAddedTemporaryNetworks])
+    }, [alertContents])
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
 
@@ -545,46 +543,51 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
+    const getConfirmationModal = () =>
+        confirmationModalOpen ? (
+            <ConfirmationModal
+                id="delete-network-confirmation-modal"
+                content={
+                    `The network "${cleanUpAgentName(removeTrailingUuid(networkToBeDeleted))}" will be deleted. ` +
+                    "This action cannot be undone. Are you sure you want to proceed?"
+                }
+                handleCancel={() => {
+                    setConfirmationModalOpen(false)
+                    setNetworkToBeDeleted(null)
+                }}
+                handleOk={() => {
+                    useTempNetworksStore
+                        .getState()
+                        .setTempNetworks(
+                            temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkToBeDeleted)
+                        )
+                    setNetworkToBeDeleted(null)
+                    setConfirmationModalOpen(false)
+                }}
+                title="Delete Network"
+            />
+        ) : null
+
+    const getAlert = () => (
+        <Collapse
+            in={alertContents?.length > 0}
+            timeout={1000}
+        >
+            <MUIAlert
+                id="temporary-network-created-alert"
+                closeable={true}
+                severity="success"
+                sx={{marginTop: "1rem", marginBottom: 0}}
+            >
+                {alertContents}
+            </MUIAlert>
+        </Collapse>
+    )
+
     return (
         <>
-            <Collapse
-                in={alertContents?.length > 0}
-                timeout={1000}
-            >
-                <MUIAlert
-                    id="temporary-network-created-alert"
-                    closeable={true}
-                    severity="success"
-                    sx={{marginTop: "1rem", marginBottom: 0}}
-                >
-                    {alertContents}
-                </MUIAlert>
-            </Collapse>
-            {confirmationModalOpen && (
-                <ConfirmationModal
-                    id="delete-network-confirmation-modal"
-                    content={
-                        `The network "${cleanUpAgentName(removeTrailingUuid(networkToBeDeleted))}" will be deleted. ` +
-                        "This action cannot be undone. Are you sure you want to proceed?"
-                    }
-                    handleCancel={() => {
-                        setConfirmationModalOpen(false)
-                        setNetworkToBeDeleted(null)
-                    }}
-                    handleOk={() => {
-                        useTempNetworksStore
-                            .getState()
-                            .setTempNetworks(
-                                temporaryNetworks.filter(
-                                    (network) => network.agentInfo.agent_name !== networkToBeDeleted
-                                )
-                            )
-                        setNetworkToBeDeleted(null)
-                        setConfirmationModalOpen(false)
-                    }}
-                    title="Delete Network"
-                />
-            )}
+            {getAlert()}
+            {getConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"
                 container
