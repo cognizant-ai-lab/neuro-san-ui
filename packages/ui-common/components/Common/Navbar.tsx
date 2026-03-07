@@ -153,7 +153,7 @@ export const Navbar = ({
             alignItems="center"
             sx={{
                 ...MENU_ITEM_TEXT_PROPS,
-                padding: "0.25rem",
+                padding: "0.5rem",
             }}
         >
             {settingsDialogOpen && (

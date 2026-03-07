@@ -122,7 +122,11 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
                 More information may be available in the browser console. Please include such information in your report
                 if possible.
             </Box>
-            <Footer supportEmailAddress={supportEmailAddress} />
+            <Footer
+                supportEmailAddress={supportEmailAddress}
+                logoLinkUrl="https://www.cognizant.com/"
+                logoUrl="/cognizant-logo-white.svg"
+            />
         </>
     )
 }

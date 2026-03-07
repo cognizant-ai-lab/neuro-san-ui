@@ -96,7 +96,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     // Cast once so JSX accepts it even if React types are temporarily mismatched
     const ErrorBoundaryComponent = ErrorBoundary as unknown as ComponentType<{
         readonly id: string
-        readonly children: React.ReactNode
+        readonly children: ReactNode
     }>
 
     const {
@@ -128,8 +128,6 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     const [pageTitle, setPageTitle] = useState<string>(DEFAULT_APP_NAME)
 
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
-
-    const isContainedInViewport = Component.isContainedInViewport ?? false
 
     const primary = useSettingsStore((state) => state.settings.branding.primary)
     const secondary = useSettingsStore((state) => state.settings.branding.secondary)
@@ -328,17 +326,18 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                             maxWidth={false}
                             sx={{
                                 flex: 1,
-                                height: isContainedInViewport ? "100%" : "auto",
-                                paddingBottom: "5rem",
+                                minHeight: "90%",
                             }}
                         >
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
-                            <Footer
-                                supportEmailAddress={supportEmailAddress}
-                                sx={{borderTop: "none", marginTop: "4rem"}}
-                            />
                         </Container>
+                        <Footer
+                            supportEmailAddress={supportEmailAddress}
+                            logoLinkUrl="https://www.cognizant.com/"
+                            logoUrl="/cognizant-logo-white.svg"
+                            sx={{borderTop: "none", marginTop: 0}}
+                        />
                     </ErrorBoundaryComponent>
                 </SessionProvider>
             </>
