@@ -9,7 +9,13 @@ describe("Footer", () => {
     withStrictMocks()
 
     it("Renders correctly", () => {
-        render(<Footer supportEmailAddress="test@example.com" />)
+        render(
+            <Footer
+                logoLinkUrl="www.example.com/"
+                logoUrl="/logo.svg"
+                supportEmailAddress="test@example.com"
+            />
+        )
 
         // Check for headers in the footer (as it were)
         screen.getByText("Team")
@@ -24,7 +30,13 @@ describe("Footer", () => {
     it("Handles Contact Us click", async () => {
         const supportEmailAddress = "test@example.com"
 
-        render(<Footer supportEmailAddress={supportEmailAddress} />)
+        render(
+            <Footer
+                supportEmailAddress={supportEmailAddress}
+                logoUrl="/logo.svg"
+                logoLinkUrl="www.example.com"
+            />
+        )
 
         const contactUsLink = screen.getByText("Contact Us")
         expect(contactUsLink).toBeInTheDocument()
