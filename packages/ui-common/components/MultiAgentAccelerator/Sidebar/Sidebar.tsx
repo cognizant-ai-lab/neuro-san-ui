@@ -37,7 +37,7 @@ import {
 } from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
-import {buildTreeViewItems} from "./TreeUtils"
+import {buildTreeViewItems} from "./TreeBuilder"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -230,6 +230,10 @@ export const Sidebar: FC<SidebarProps> = ({
                 prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
             )
             highlightTimeout = setTimeout(() => {
+                // Scroll the selected node into view and add an animation to draw the user's attention to it.
+                // Hacky: use a DOM query to find the node. I tried the various ways to do this programmatically
+                // in MUI RichTreeView including the imperative API (https://mui.com/x/react-tree-view/rich-tree-view/selection/#imperative-api)
+                // but couldn't get it to work so resorting to this for now.
                 const selectedNode = document.querySelector("[role=treeitem][aria-checked=true]")
                 if (selectedNode) {
                     selectedNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})

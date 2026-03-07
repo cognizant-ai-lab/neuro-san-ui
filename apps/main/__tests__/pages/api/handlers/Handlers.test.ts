@@ -1,4 +1,5 @@
 import {ChatPromptTemplate} from "@langchain/core/prompts"
+import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 import {createMocks} from "node-mocks-http"
 
@@ -6,7 +7,6 @@ import agentIconSuggestionsHandler from "../../../../pages/api/agentIconSuggesti
 import brandingHandler from "../../../../pages/api/branding"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"
 import networkIconSuggestionsHandler from "../../../../pages/api/networkIconSuggestions"
-
 jest.mock("../../../../pages/api/Common/LlmHandler")
 
 describe("branding API handler", () => {
@@ -28,7 +28,7 @@ describe("branding API handler", () => {
         ;(handleLLMRequest as jest.Mock).mockImplementationOnce(async (request, response, args) => {
             // exercise the supplied extractVariables function
             const variables = args.extractVariables(request)
-            response.status(200)
+            response.status(httpStatus.OK)
             response.end(JSON.stringify({variables}))
         })
 
@@ -38,7 +38,7 @@ describe("branding API handler", () => {
             promptTemplate: expect.any(ChatPromptTemplate),
             extractVariables: expect.any(Function),
         })
-        expect(res._getStatusCode()).toBe(200)
+        expect(res._getStatusCode()).toBe(httpStatus.OK)
     })
 
     it("handles unexpected errors gracefully", async () => {
@@ -48,13 +48,13 @@ describe("branding API handler", () => {
         })
 
         ;(handleLLMRequest as jest.Mock).mockImplementationOnce(async (_req, response) => {
-            response.status(500)
+            response.status(httpStatus.INTERNAL_SERVER_ERROR)
             response.end("Internal Server Error")
         })
 
         await brandingHandler(req, res)
 
-        expect(res._getStatusCode()).toBe(500)
+        expect(res._getStatusCode()).toBe(httpStatus.INTERNAL_SERVER_ERROR)
         expect(res._getData()).toContain("Internal Server Error")
     })
 })

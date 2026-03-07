@@ -18,7 +18,7 @@ import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
-import {NodeIndex} from "./TreeUtils"
+import {NodeIndex} from "./TreeBuilder"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
 
 // Palette of colors we can use for tags
@@ -106,7 +106,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
 
-    const iconNameSuggestion = isChild ? networkIconSuggestions?.[itemId] : null
+    const iconNameSuggestion = isTemporaryNetwork ? "HourglassTop" : isChild ? networkIconSuggestions?.[itemId] : null
 
     let muiIconElement = null
     if (iconNameSuggestion && MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {

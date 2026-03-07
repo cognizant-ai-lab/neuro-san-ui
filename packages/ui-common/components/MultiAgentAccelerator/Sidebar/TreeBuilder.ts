@@ -22,6 +22,7 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[], nodeIndex: NodeIndex): void =>
     const queue: TreeViewBaseItem[] = [...nodes]
     let index = 0
 
+    // For each node in the queue, sort its children and add them to the end of the queue
     while (index < queue.length) {
         const node = queue[index]
         index += 1
@@ -50,31 +51,44 @@ const addNetworkToTree = (
 ): void => {
     const parts = network.agent_name.split("/")
 
+    // If there's only one part, it means this network isn't in any folder, so we add it directly under "Uncategorized"
     if (parts.length === 1) {
         uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
         nodeIndex.set(network.agent_name, {agentInfo: network, displayName: cleanUpAgentName(network.agent_name)})
     } else {
+        // Otherwise, we need to build out the tree structure based on the parts of the agent_name. Some paths might
+        // already exist if we've processed another network that shares the same parent folders,
+        // so we check the map to avoid duplicating nodes.
         let currentLevel = result
 
         parts.forEach((part, index) => {
+            // Build the full path ID by joining all parts up to the current position
             const nodeId = parts.slice(0, index + 1).join("/")
             let node = map.get(nodeId)
 
             if (!node) {
+                // If we haven't created a node for this path yet, create it and add it to the map
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    const agentNameWithoutUuid = removeTrailingUuid(part)
-                    const cleanedName = cleanUpAgentName(agentNameWithoutUuid)
+                    const cleanedName = cleanUpAgentName(removeTrailingUuid(part))
+
+                    // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3", etc.)
                     const count = displayNameCounts.get(cleanedName) || 0
                     displayNameCounts.set(cleanedName, count + 1)
                     const displayName = count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
+
+                    // Add the AgentInfo to the nodeIndex for quick lookup later, using the full path as the key
                     nodeIndex.set(nodeId, {agentInfo: network, displayName})
                 }
 
+                // If this is a top-level node (index 0), add it directly to the result.
+                // Otherwise, find its parent and add it there.
                 if (index === 0) {
+                    // Top-level node, add directly to result
                     currentLevel.push(node)
                 } else {
+                    // Not a top-level node, find parent and add to its children
                     const parentId = parts.slice(0, index).join("/")
                     const parentNode = map.get(parentId)
                     if (parentNode) {
@@ -83,6 +97,7 @@ const addNetworkToTree = (
                 }
             }
 
+            // Move down to the next level of the tree for the next iteration
             currentLevel = node.children
         })
     }
