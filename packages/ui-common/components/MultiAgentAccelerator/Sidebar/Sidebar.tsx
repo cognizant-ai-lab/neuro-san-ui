@@ -47,16 +47,40 @@ import {getZIndex} from "../../../utils/zIndexLayers"
 import {TEMPORARY_NETWORK_FOLDER} from "../const"
 
 // Animation for the sparkle effect when a new temporary network is added.
-const sparkle = keyframes({
-    "0%": {backgroundPosition: "0% 50%", opacity: 1},
-    "10%": {backgroundPosition: "33% 50%", opacity: 1},
-    "20%": {backgroundPosition: "66% 50%", opacity: 1},
-    "30%": {backgroundPosition: "100% 50%", opacity: 1},
-    "60%": {backgroundPosition: "100% 50%", opacity: 1},
-    "80%": {backgroundPosition: "100% 50%", opacity: 0.7},
-    "90%": {backgroundPosition: "100% 50%", opacity: 0.4},
-    "100%": {backgroundPosition: "100% 50%", opacity: 0.25},
-})
+const sparkle = keyframes`
+    0% {
+        background-position: 0% 50%;
+        opacity: 1;
+    }
+    10% {
+        background-position: 33% 50%;
+        opacity: 1;
+    }
+    20% {
+        background-position: 66% 50%;
+        opacity: 1;
+    }
+    30% {
+        background-position: 100% 50%;
+        opacity: 1;
+    }
+    60% {
+        background-position: 100% 50%;
+        opacity: 1;
+    }
+    80% {
+        background-position: 100% 50%;
+        opacity: 0.7;
+    }
+    90% {
+        background-position: 100% 50%;
+        opacity: 0.4;
+    }
+    100% {
+        background-position: 100% 50%;
+        opacity: 0.25;
+    }
+`
 
 // #region: Styled Components
 

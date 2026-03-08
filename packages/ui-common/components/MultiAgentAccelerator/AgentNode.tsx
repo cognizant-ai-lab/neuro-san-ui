@@ -195,7 +195,9 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     const color = autoAgentIconColor ? theme.palette.getContrastText(backgroundColor) : agentNodeIconColor
 
     // Choose a glow color that contrasts with the background for visibility.
-    const glowColor = isLightColor(backgroundColor) ? theme.palette.common.black : theme.palette.common.white
+    const glowColor = isLightColor(theme.palette.background.default)
+        ? theme.palette.common.black
+        : theme.palette.common.white
 
     return (
         <>
