@@ -53,7 +53,7 @@ const AGENT_ICON_SIZE = "2.25rem"
 const FRONTMAN_ICON_SIZE = "4.5rem"
 
 // Pulsing glow animation for when an agent is active.
-const getGlowKeyframes = (color: string) => keyframes`
+const glowKeyFrames = (color: string) => keyframes`
     0% {
         box-shadow: 0 0 10px 4px ${color};
         opacity: 0.6;
@@ -72,7 +72,6 @@ const getGlowKeyframes = (color: string) => keyframes`
 const AnimatedNode = styled("div", {
     shouldForwardProp: (prop) => prop !== "glowColor" && prop !== "isActive",
 })<{glowColor: string; isActive: boolean}>(({glowColor, isActive}) => ({
-    "--glow-color": glowColor,
     alignItems: "center",
     borderRadius: "50%",
     display: "flex",
@@ -81,7 +80,7 @@ const AnimatedNode = styled("div", {
     shapeOutside: "circle(50%)",
     textAlign: "center",
     ...(isActive && {
-        animation: `${getGlowKeyframes(glowColor)} 2s infinite`,
+        animation: `${glowKeyFrames(glowColor)} 2s infinite`,
     }),
 }))
 
