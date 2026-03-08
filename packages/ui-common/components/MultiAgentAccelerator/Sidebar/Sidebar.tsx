@@ -22,7 +22,7 @@ import Button from "@mui/material/Button"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import Popover from "@mui/material/Popover"
-import {styled, useTheme} from "@mui/material/styles"
+import {keyframes, styled, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -46,12 +46,57 @@ import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {TEMPORARY_NETWORK_FOLDER} from "../const"
 
+// Animation for the sparkle effect when a new temporary network is added.
+const sparkle = keyframes({
+    "0%": {backgroundPosition: "0% 50%", opacity: 1},
+    "10%": {backgroundPosition: "33% 50%", opacity: 1},
+    "20%": {backgroundPosition: "66% 50%", opacity: 1},
+    "30%": {backgroundPosition: "100% 50%", opacity: 1},
+    "60%": {backgroundPosition: "100% 50%", opacity: 1},
+    "80%": {backgroundPosition: "100% 50%", opacity: 0.7},
+    "90%": {backgroundPosition: "100% 50%", opacity: 0.4},
+    "100%": {backgroundPosition: "100% 50%", opacity: 0.25},
+})
+
 // #region: Styled Components
 
 const PrimaryButton = styled(Button)({
     marginLeft: "0.5rem",
     marginTop: "2px",
 })
+
+// Styled component for Sidebar aside element, including styles for the sparkle highlight animation
+// when a new temporary network is added.
+const SidebarAside = styled("aside")({
+    borderRightStyle: "solid",
+    borderRightWidth: "1px",
+    height: "100%",
+    overflowY: "auto",
+    paddingRight: "0.75rem",
+
+    "& .sparkle-highlight": {
+        background: "linear-gradient(90deg, gold, orange, cyan, magenta, gold)",
+        backgroundSize: "400% 100%",
+        animation: `${sparkle} 5s ease`,
+        backgroundClip: "padding-box",
+        borderRadius: "4px",
+        opacity: 1,
+    },
+})
+
+// Styled component for the sidebar heading, which is sticky at the top of the sidebar.
+const SidebarHeading = styled("h2")(({theme}) => ({
+    backgroundColor: theme.palette.background.default,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    fontSize: "1.125rem",
+    fontWeight: "bold",
+    marginBottom: "0.25rem",
+    paddingBottom: "0.75rem",
+    position: "sticky",
+    top: 0,
+    zIndex: getZIndex(1, theme),
+}))
 
 // #endregion: Styled Components
 
@@ -253,53 +298,8 @@ export const Sidebar: FC<SidebarProps> = ({
 
     return (
         <>
-            <style>
-                {`
-                .sparkle-highlight {
-                  background: linear-gradient(90deg, gold, orange, cyan, magenta, gold);
-                  background-size: 400% 100%;
-                  animation: sparkle 5s ease; 
-                  background-clip: padding-box;
-                  border-radius: 4px;
-                  opacity: 1;
-                }
-                @keyframes sparkle {
-                  0%   { background-position: 0% 50%; opacity: 1; }
-                  10%  { background-position: 33% 50%; opacity: 1; }
-                  20%  { background-position: 66% 50%; opacity: 1; }
-                  30%  { background-position: 100% 50%; opacity: 1; }
-                  60%  { background-position: 100% 50%; opacity: 1; }
-                  80%  { background-position: 100% 50%; opacity: 0.7; }
-                  90%  { background-position: 100% 50%; opacity: 0.4; }
-                  100% { background-position: 100% 50%; opacity: 0.25; }
-                }
-              `}
-            </style>
-            <aside
-                id={`${id}-sidebar`}
-                style={{
-                    borderRightStyle: "solid",
-                    borderRightWidth: "1px",
-                    height: "100%",
-                    overflowY: "auto",
-                    paddingRight: "0.75rem",
-                }}
-            >
-                <h2
-                    id={`${id}-heading`}
-                    style={{
-                        backgroundColor: theme.palette.background.default,
-                        borderBottomStyle: "solid",
-                        borderBottomWidth: "1px",
-                        fontSize: "1.125rem",
-                        fontWeight: "bold",
-                        marginBottom: "0.25rem",
-                        paddingBottom: "0.75rem",
-                        position: "sticky",
-                        top: 0,
-                        zIndex: getZIndex(1, theme),
-                    }}
-                >
+            <SidebarAside id={`${id}-sidebar`}>
+                <SidebarHeading id={`${id}-heading`}>
                     Agent Networks
                     <Button
                         aria-label="Agent Network Settings"
@@ -323,7 +323,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             />
                         </Tooltip>
                     </Button>
-                </h2>
+                </SidebarHeading>
                 <RichTreeView
                     key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
@@ -347,7 +347,7 @@ export const Sidebar: FC<SidebarProps> = ({
                         } as AgentNetworkNodeProps,
                     }}
                 />
-            </aside>
+            </SidebarAside>
             <Popover
                 id="agent-network-settings-popover"
                 open={settingsPopoverOpen}

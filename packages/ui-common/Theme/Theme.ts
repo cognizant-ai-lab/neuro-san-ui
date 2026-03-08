@@ -34,3 +34,25 @@ export const adjustBrightness = (color: string, percent: number): string => {
 
     return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`
 }
+
+/**
+ * Helper function to determine if a color is light
+ *
+ * @param hexColor - The hex color string (e.g., "#RRGGBB" or "#RGB")
+ * @returns true if the color is light (per luminance calculation), false otherwise
+ */
+export const isLightColor = (hexColor: string): boolean => {
+    // Remove # if present
+    const hex = hexColor.replace("#", "")
+
+    // Convert to RGB
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+
+    // Calculate relative luminance (perceived brightness)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+    // Return true if light (threshold 0.5)
+    return luminance > 0.5
+}
