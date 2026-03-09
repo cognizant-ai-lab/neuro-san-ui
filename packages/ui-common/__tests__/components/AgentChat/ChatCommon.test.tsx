@@ -642,7 +642,7 @@ describe("ChatCommon", () => {
     })
 
     it("switches to a white shadow color in dark mode for the final answer accordion", async () => {
-        renderChatCommonComponent()
+        renderChatCommonComponent({}, "dark")
 
         const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
         const chatResponse = {response: responseMessage}
