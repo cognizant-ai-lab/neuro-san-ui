@@ -871,7 +871,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         // Add ID block for agent
         updateOutput(
             <UserQueryDisplay
-                userQuery={cleanUpAgentName(targetAgent)}
+                userQuery={cleanUpAgentName(removeTrailingUuid(targetAgent))}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
             />

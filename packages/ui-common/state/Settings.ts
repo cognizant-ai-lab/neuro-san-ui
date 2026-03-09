@@ -50,6 +50,9 @@ interface Settings {
         readonly iconSuggestion: string | null
         readonly logoSource: "none" | "generic" | "auto" | null
     }
+    readonly behavior: {
+        readonly enableZenMode: boolean
+    }
 }
 
 /**
@@ -81,6 +84,9 @@ export const DEFAULT_SETTINGS: Settings = {
         primary: null,
         rangePalette: null,
         secondary: null,
+    },
+    behavior: {
+        enableZenMode: true,
     },
 }
 

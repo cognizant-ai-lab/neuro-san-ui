@@ -1,6 +1,7 @@
 import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import Checkbox from "@mui/material/Checkbox"
 import CircularProgress from "@mui/material/CircularProgress"
 import Divider from "@mui/material/Divider"
 import FormLabel from "@mui/material/FormLabel"
@@ -61,6 +62,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const [customerInput, setCustomerInput] = useState<string>(customer)
     const [isBrandingApplying, setIsBrandingApplying] = useState<boolean>(false)
     const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
+
+    // Zen mode
+    const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
+    const enableZenModeCheckmark = useCheckmarkFade()
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -228,6 +233,30 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     border: "1px solid",
                 }}
             >
+                <Box sx={{marginBottom: 3}}>
+                    <Typography
+                        variant="h6"
+                        sx={{marginBottom: 1}}
+                    >
+                        Behavior
+                    </Typography>
+                    {}
+
+                    <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
+                        <FormLabel>Enable &quot;Zen&quot; mode:</FormLabel>
+                        {/* eslint-disable-next-line max-len */}
+                        <Tooltip title="Hides most of the UI during animations of agent network animations, providing a more immersive experience.">
+                            <Checkbox
+                                checked={enableZenMode}
+                                onChange={(_, checked) => {
+                                    updateSettings({behavior: {enableZenMode: checked}})
+                                    enableZenModeCheckmark.trigger()
+                                }}
+                            />
+                        </Tooltip>
+                        <FadingCheckmark show={enableZenModeCheckmark.show} />
+                    </Box>
+                </Box>
                 <Box sx={{marginBottom: 3}}>
                     <Typography
                         variant="h6"

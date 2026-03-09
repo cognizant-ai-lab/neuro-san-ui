@@ -37,6 +37,7 @@ import {
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
@@ -53,6 +54,9 @@ interface MultiAgentAcceleratorProps {
 
 // Display expired temporary networks for this amount of time after they expire so users can see what happened
 const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
+
+// Animation time for the left and right panels to slide in or out when launching the animation
+const GROW_ANIMATION_TIME_MS = 800
 
 /**
  * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
@@ -81,8 +85,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     backendNeuroSanApiUrl,
     userInfo,
 }): ReactJSX.Element => {
-    // Animation time for the left and right panels to slide in or out when launching the animation
-    const GROW_ANIMATION_TIME_MS = 800
+    const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
@@ -93,6 +96,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
 
+    // List of known temporary networks (agent reservations) received from the backend
     const temporaryNetworks = useTempNetworksStore((state) => state.tempNetworks)
 
     // Track newly added temp networks so we can highlight them
@@ -399,7 +403,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return (
             <Slide
                 id="multi-agent-accelerator-grid-sidebar-slide"
-                in={!isAwaitingLlm}
+                in={!enableZenMode || !isAwaitingLlm}
                 direction="right"
                 timeout={GROW_ANIMATION_TIME_MS}
                 onExited={() => {
@@ -408,7 +412,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             >
                 <Grid
                     id="multi-agent-accelerator-grid-sidebar"
-                    size={isStreaming ? 0 : 3.25}
+                    size={enableZenMode && isStreaming ? 0 : 3.25}
                     sx={{
                         height: "100%",
                     }}
@@ -437,7 +441,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return (
             <Grid
                 id="multi-agent-accelerator-grid-agent-flow"
-                size={isStreaming ? 18 : 8.25}
+                size={enableZenMode && isStreaming ? 18 : 8.25}
                 sx={{
                     height: "100%",
                 }}
@@ -476,7 +480,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return (
             <Slide
                 id="multi-agent-accelerator-grid-agent-chat-common-slide"
-                in={!isAwaitingLlm}
+                in={!enableZenMode || !isAwaitingLlm}
                 direction="left"
                 timeout={GROW_ANIMATION_TIME_MS}
                 onExited={() => {
@@ -485,7 +489,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             >
                 <Grid
                     id="multi-agent-accelerator-grid-agent-chat-common"
-                    size={isStreaming ? 0 : 6.5}
+                    size={enableZenMode && isStreaming ? 0 : 6.5}
                     sx={{
                         height: "100%",
                     }}
@@ -513,7 +517,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const getStopButton = () => {
         return (
             <>
-                {isAwaitingLlm && (
+                {isAwaitingLlm && enableZenMode && (
                     <Box
                         id="stop-button-container"
                         sx={{
