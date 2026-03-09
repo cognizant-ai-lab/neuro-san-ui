@@ -240,12 +240,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     >
                         Behavior
                     </Typography>
-                    {}
-
                     <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
                         <FormLabel>Enable &quot;Zen&quot; mode:</FormLabel>
                         {/* eslint-disable-next-line max-len */}
-                        <Tooltip title="Hides most of the UI during animations of agent network animations, providing a more immersive experience.">
+                        <Tooltip title="Hides most of the UI during agent network animations, providing a more immersive experience.">
                             <Checkbox
                                 checked={enableZenMode}
                                 data-testid="zen-mode-checkbox"
