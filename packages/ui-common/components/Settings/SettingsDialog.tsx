@@ -248,6 +248,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         <Tooltip title="Hides most of the UI during animations of agent network animations, providing a more immersive experience.">
                             <Checkbox
                                 checked={enableZenMode}
+                                data-testid="zen-mode-checkbox"
                                 onChange={(_, checked) => {
                                     updateSettings({behavior: {enableZenMode: checked}})
                                     enableZenModeCheckmark.trigger()
