@@ -40,15 +40,16 @@ import {
 } from "@xyflow/react"
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
+import {AgentConversation, AgentConversationBase} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult, removeThoughtBubbleEdge} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
+import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
-import {AgentConversation, AgentConversationBase} from "../../utils/agentConversations"
 import {getZIndex} from "../../utils/zIndexLayers"
 
 // #region: Types
@@ -62,7 +63,7 @@ interface ActiveThoughtBubble extends AgentConversationBase {
 
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
-    readonly agentIconSuggestions?: Record<string, string>
+    readonly agentIconSuggestions?: AgentIconSuggestions
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string

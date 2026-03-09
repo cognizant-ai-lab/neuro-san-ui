@@ -29,16 +29,14 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {SxProps, useColorScheme, useTheme} from "@mui/material/styles"
+import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
 import {
-    cloneElement,
     CSSProperties,
     Dispatch,
     isValidElement,
-    ReactElement,
     ReactNode,
     Ref,
     SetStateAction,
@@ -57,7 +55,7 @@ import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
-import {chatMessageFromChunk, checkError, cleanUpAgentName} from "./Utils"
+import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "./Utils"
 import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "./VoiceChat/VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
@@ -70,10 +68,9 @@ import {
     ConnectivityResponse,
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
-import {isDarkMode} from "../../Theme/Theme"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
-import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
+import {MUIAccordion} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
 
@@ -235,12 +232,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         handleStop,
     }))
 
-    // User LLM chat input
-    const [chatInput, setChatInput] = useState<string>("")
-
-    // Theming/Dark mode
+    // MUI theme
     const theme = useTheme()
     const shadowColor = theme.palette.mode === "dark" ? "255, 255, 255" : "0, 0, 0"
+
+    // User LLM chat input
+    const [chatInput, setChatInput] = useState<string>("")
 
     // Previous user query (for "regenerate" feature)
     const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
@@ -323,8 +320,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const {mode, systemMode} = useColorScheme()
-    const darkMode = isDarkMode(mode, systemMode)
+    const darkMode = theme.palette.mode === "dark"
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
@@ -335,24 +331,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Clean up function
         return () => cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
     }, [])
-
-    // Hide/show existing accordions based on showThinking state
-    useEffect(() => {
-        setChatOutput((currentOutput) =>
-            currentOutput.map((item) => {
-                if (isValidElement(item) && item.type === MUIAccordion) {
-                    const itemAsAccordion = item as ReactElement<MUIAccordionProps>
-                    return cloneElement(itemAsAccordion, {
-                        sx: [
-                            itemAsAccordion.props.sx,
-                            {display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none"},
-                        ] as SxProps,
-                    })
-                }
-                return item
-            })
-        )
-    }, [showThinking, darkMode])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -465,7 +443,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 sx={{
                     fontSize: "large",
                     marginBottom: "1rem",
-                    display: showThinking || isFinalAnswer ? "block" : "none",
                     boxShadow: isFinalAnswer
                         ? `0 6px 16px 0 rgba(${shadowColor}, 0.08), 0 3px 6px -4px rgba(${shadowColor}, 0.12), 
                                     0 9px 28px 8px rgba(${shadowColor}, 0.05)`
@@ -475,13 +452,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         )
     }
 
-    /**
-     * Introduce the agent to the user with a friendly greeting
-     */
+    const agentDisplayName = cleanUpAgentName(removeTrailingUuid(targetAgent))
+
     const introduceAgent = () => {
+        /**
+         * Introduce the agent to the user with a friendly greeting
+         */
         updateOutput(
             <UserQueryDisplay
-                userQuery={cleanUpAgentName(targetAgent)}
+                userQuery={agentDisplayName}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
             />
@@ -613,7 +592,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         }}
                         items={[
                             {
-                                title: "Agent Details",
+                                title: "Network Details",
                                 content: [
                                     `My description is: "${agentFunction?.function?.description}"`,
                                     <h6
@@ -826,9 +805,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 if (wasAborted) {
                     // AbortErrors are handled elsewhere. We also want to stop retries here.
                     break
-                }
-
-                if (!wasAborted) {
+                } else {
                     if (error instanceof Error) {
                         console.error(error, error.stack)
                     }
@@ -948,6 +925,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }
 
+    const getPlaceholder = () =>
+        !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
+
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -956,252 +936,294 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 flexDirection: "column",
                 flexGrow: 1,
                 height: "100%",
+                position: "relative",
             }}
         >
-            {title && (
+            {!targetAgent && (
                 <Box
-                    id={`llm-chat-title-container-${id}`}
+                    id="chat-disabled-overlay"
                     sx={{
-                        alignItems: "center",
-                        borderTopLeftRadius: "var(--bs-border-radius)",
-                        borderTopRightRadius: "var(--bs-border-radius)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        paddingLeft: "1rem",
-                        paddingRight: "0.5rem",
-                        paddingTop: "0.25rem",
-                        paddingBottom: "0.25rem",
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: theme.zIndex.modal - 1,
+                        cursor: "not-allowed",
+                        // Capture all pointer events to prevent interaction with the chat when no agent is selected
+                        pointerEvents: "all",
                     }}
-                >
-                    <Typography
-                        id={`llm-chat-title-${id}-text`}
-                        sx={{fontSize: "0.9rem"}}
-                    >
-                        {title}
-                    </Typography>
-                    {onClose && (
-                        <IconButton
-                            data-testid={`close-button-${id}`}
-                            id={`close-button-${id}`}
-                            onClick={onClose}
-                        >
-                            <CloseIcon id={`close-icon-${id}`} />
-                        </IconButton>
-                    )}
-                </Box>
+                />
             )}
             <Box
-                id="llm-response-div"
+                id="chat-content"
                 sx={{
-                    ...divStyle,
-                    border: "var(--bs-border-width) var(--bs-border-style)",
-                    borderRadius: "var(--bs-border-radius)",
                     display: "flex",
+                    flexDirection: "column",
                     flexGrow: 1,
                     height: "100%",
-                    margin: "10px",
-                    position: "relative",
-                    overflowY: "auto",
+                    opacity: targetAgent ? 1 : 0.4,
+                    pointerEvents: targetAgent ? "auto" : "none",
                 }}
             >
-                <Tooltip
-                    id="show-thinking"
-                    title={showThinking ? "Displaying agent thinking" : "Hiding agent thinking"}
-                >
-                    <span id="show-thinking-span">
-                        <LlmChatOptionsButton
-                            enabled={showThinking}
-                            id="show-thinking-button"
-                            onClick={() => setShowThinking(!showThinking)}
-                            posRight={150}
-                            disabled={isAwaitingLlm}
-                        >
-                            <AccountTreeIcon
-                                id="show-thinking-icon"
-                                sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                            />
-                        </LlmChatOptionsButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="enable-autoscroll"
-                    title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
-                >
-                    <LlmChatOptionsButton
-                        enabled={autoScrollEnabled}
-                        id="autoscroll-button"
-                        onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
-                        posRight={80}
+                {title && (
+                    <Box
+                        id={`llm-chat-title-container-${id}`}
+                        sx={{
+                            alignItems: "center",
+                            borderTopLeftRadius: "var(--bs-border-radius)",
+                            borderTopRightRadius: "var(--bs-border-radius)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            paddingLeft: "1rem",
+                            paddingRight: "0.5rem",
+                            paddingTop: "0.25rem",
+                            paddingBottom: "0.25rem",
+                        }}
                     >
-                        <VerticalAlignBottomIcon
-                            id="autoscroll-icon"
-                            sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                        />
-                    </LlmChatOptionsButton>
-                </Tooltip>
-                <Tooltip
-                    id="wrap-tooltip"
-                    title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
-                >
-                    <LlmChatOptionsButton
-                        enabled={shouldWrapOutput}
-                        id="wrap-button"
-                        onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
-                        posRight={10}
-                    >
-                        <WrapTextIcon
-                            id="wrap-icon"
-                            sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                        />
-                    </LlmChatOptionsButton>
-                </Tooltip>
-                <Box
-                    id="llm-responses"
-                    ref={chatOutputRef}
-                    sx={{
-                        backgroundColor: backgroundColor || undefined,
-                        borderWidth: "1px",
-                        borderRadius: "0.5rem",
-                        fontSize: "smaller",
-                        resize: "none",
-                        overflowY: "auto", // Enable vertical scrollbar
-                        paddingBottom: "60px",
-                        paddingTop: "7.5px",
-                        paddingLeft: "15px",
-                        paddingRight: "15px",
-                        width: "100%",
-                    }}
-                    tabIndex={-1}
-                >
-                    <FormattedMarkdown
-                        id={`${id}-formatted-markdown`}
-                        nodesList={chatOutput}
-                        style={darkMode ? atelierDuneDark : a11yLight}
-                        wrapLongLines={shouldWrapOutput}
-                    />
-                    {isAwaitingLlm && (
-                        <Box
-                            id="awaitingOutputContainer"
-                            sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                        <Typography
+                            id={`llm-chat-title-${id}-text`}
+                            sx={{fontSize: "0.9rem"}}
                         >
-                            <span
-                                id="working-span"
-                                style={{marginRight: "1rem"}}
+                            {title}
+                        </Typography>
+                        {onClose && (
+                            <IconButton
+                                data-testid={`close-button-${id}`}
+                                id={`close-button-${id}`}
+                                onClick={onClose}
                             >
-                                Working...
-                            </span>
-                            <CircularProgress
-                                id="awaitingOutputSpinner"
-                                sx={{
-                                    color: "var(--bs-primary)",
-                                }}
-                                size="1rem"
-                            />
-                        </Box>
-                    )}
-                </Box>
-
-                <ControlButtons
-                    clearChatOnClickCallback={() => {
-                        setChatOutput([])
-                        chatHistory.current = []
-                        chatContext.current = null
-                        setPreviousUserQuery("")
-                        currentResponse.current = ""
-                        lastAIMessage.current = ""
-                        introduceAgent()
-                    }}
-                    enableClearChatButton={enableClearChatButton}
-                    isAwaitingLlm={isAwaitingLlm}
-                    handleSend={handleSend}
-                    handleStop={handleStop}
-                    previousUserQuery={previousUserQuery}
-                    shouldEnableRegenerateButton={shouldEnableRegenerateButton}
-                />
-            </Box>
-            <Box
-                id="user-input-div"
-                style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
-            >
-                <Input
-                    autoComplete="off"
-                    id="user-input"
-                    multiline={true}
-                    placeholder={agentPlaceholders[targetAgent] || `Chat with ${cleanUpAgentName(targetAgent)}`}
-                    ref={chatInputRef}
+                                <CloseIcon id={`close-icon-${id}`} />
+                            </IconButton>
+                        )}
+                    </Box>
+                )}
+                <Box
+                    id="llm-response-div"
                     sx={{
-                        border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
+                        ...divStyle,
+                        border: "var(--bs-border-width) var(--bs-border-style)",
                         borderRadius: "var(--bs-border-radius)",
                         display: "flex",
                         flexGrow: 1,
-                        fontSize: "smaller",
-                        marginRight: "0.75rem",
-                        paddingBottom: "0.5rem",
-                        paddingTop: "0.5rem",
-                        paddingLeft: "1rem",
-                        paddingRight: "1rem",
-                        transition: "margin-right 0.2s",
+                        height: "100%",
+                        margin: "10px",
+                        position: "relative",
+                        overflowY: "auto",
                     }}
-                    onChange={(event) => {
-                        setChatInput(event.target.value)
-                    }}
-                    onKeyDown={async (event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
-                            event.preventDefault()
-                            await handleSend(chatInput)
-                        }
-                    }}
-                    value={chatInput}
-                    endAdornment={
-                        <InputAdornment
-                            id="input-adornments"
-                            position="end"
-                            disableTypography={true}
+                >
+                    <Tooltip
+                        id="show-thinking"
+                        title={showThinking ? "Displaying agent thinking" : "Hiding agent thinking"}
+                    >
+                        <span id="show-thinking-span">
+                            <LlmChatOptionsButton
+                                enabled={showThinking}
+                                id="show-thinking-button"
+                                onClick={() => setShowThinking(!showThinking)}
+                                posRight={150}
+                                disabled={isAwaitingLlm}
+                            >
+                                <AccountTreeIcon
+                                    id="show-thinking-icon"
+                                    sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
+                                />
+                            </LlmChatOptionsButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip
+                        id="enable-autoscroll"
+                        title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
+                    >
+                        <LlmChatOptionsButton
+                            enabled={autoScrollEnabled}
+                            id="autoscroll-button"
+                            onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+                            posRight={80}
                         >
-                            {/* Voice processing spinner - shows only when actively speaking */}
-                            {voiceInputState.isProcessingSpeech && (
+                            <VerticalAlignBottomIcon
+                                id="autoscroll-icon"
+                                sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
+                            />
+                        </LlmChatOptionsButton>
+                    </Tooltip>
+                    <Tooltip
+                        id="wrap-tooltip"
+                        title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
+                    >
+                        <LlmChatOptionsButton
+                            enabled={shouldWrapOutput}
+                            id="wrap-button"
+                            onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
+                            posRight={10}
+                        >
+                            <WrapTextIcon
+                                id="wrap-icon"
+                                sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
+                            />
+                        </LlmChatOptionsButton>
+                    </Tooltip>
+                    <Box
+                        id="llm-responses"
+                        ref={chatOutputRef}
+                        sx={{
+                            backgroundColor: backgroundColor || undefined,
+                            borderWidth: "1px",
+                            borderRadius: "0.5rem",
+                            fontSize: "smaller",
+                            resize: "none",
+                            overflowY: "auto", // Enable vertical scrollbar
+                            paddingBottom: "60px",
+                            paddingTop: "7.5px",
+                            paddingLeft: "15px",
+                            paddingRight: "15px",
+                            width: "100%",
+                        }}
+                        tabIndex={-1}
+                    >
+                        <FormattedMarkdown
+                            id={`${id}-formatted-markdown`}
+                            nodesList={chatOutput.map((item) => {
+                                if (isValidElement(item) && item.type === MUIAccordion) {
+                                    const shouldShow = showThinking || item.key === finalAnswerKey.current
+                                    return (
+                                        <Box
+                                            key={item.key}
+                                            sx={{display: shouldShow ? "block" : "none"}}
+                                        >
+                                            {item}
+                                        </Box>
+                                    )
+                                }
+                                return item
+                            })}
+                            style={darkMode ? atelierDuneDark : a11yLight}
+                            wrapLongLines={shouldWrapOutput}
+                        />
+                        {isAwaitingLlm && (
+                            <Box
+                                id="awaitingOutputContainer"
+                                sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                            >
+                                <span
+                                    id="working-span"
+                                    style={{marginRight: "1rem"}}
+                                >
+                                    Working...
+                                </span>
                                 <CircularProgress
-                                    size={16}
+                                    id="awaitingOutputSpinner"
                                     sx={{
                                         color: "var(--bs-primary)",
-                                        marginRight: "0.5rem",
                                     }}
+                                    size="1rem"
                                 />
-                            )}
-                            <IconButton
-                                id="clear-input-button"
-                                onClick={() => {
-                                    setChatInput("")
-                                }}
-                                sx={{
-                                    color: "var(--bs-primary)",
-                                    opacity: userInputEmpty ? "25%" : "100%",
-                                }}
-                                disabled={userInputEmpty}
-                                tabIndex={-1}
-                                edge="end"
+                            </Box>
+                        )}
+                    </Box>
+
+                    <ControlButtons
+                        clearChatOnClickCallback={() => {
+                            setChatOutput([])
+                            chatHistory.current = []
+                            chatContext.current = null
+                            setPreviousUserQuery("")
+                            currentResponse.current = ""
+                            lastAIMessage.current = ""
+                            introduceAgent()
+                        }}
+                        enableClearChatButton={enableClearChatButton}
+                        isAwaitingLlm={isAwaitingLlm}
+                        handleSend={handleSend}
+                        handleStop={handleStop}
+                        previousUserQuery={previousUserQuery}
+                        shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+                    />
+                </Box>
+                <Box
+                    id="user-input-div"
+                    style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
+                >
+                    <Input
+                        autoComplete="off"
+                        id="user-input"
+                        multiline={true}
+                        placeholder={getPlaceholder()}
+                        ref={chatInputRef}
+                        sx={{
+                            border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
+                            borderRadius: "var(--bs-border-radius)",
+                            display: "flex",
+                            flexGrow: 1,
+                            fontSize: "smaller",
+                            marginRight: "0.75rem",
+                            paddingBottom: "0.5rem",
+                            paddingTop: "0.5rem",
+                            paddingLeft: "1rem",
+                            paddingRight: "1rem",
+                            transition: "margin-right 0.2s",
+                        }}
+                        onChange={(event) => {
+                            setChatInput(event.target.value)
+                        }}
+                        onKeyDown={async (event) => {
+                            if (event.key === "Enter" && !event.shiftKey) {
+                                event.preventDefault()
+                                await handleSend(chatInput)
+                            }
+                        }}
+                        value={chatInput}
+                        endAdornment={
+                            <InputAdornment
+                                id="input-adornments"
+                                position="end"
+                                disableTypography={true}
                             >
-                                <ClearIcon id="clear-input-icon" />
-                            </IconButton>
-                        </InputAdornment>
-                    }
-                />
+                                {/* Voice processing spinner - shows only when actively speaking */}
+                                {voiceInputState.isProcessingSpeech && (
+                                    <CircularProgress
+                                        size={16}
+                                        sx={{
+                                            color: "var(--bs-primary)",
+                                            marginRight: "0.5rem",
+                                        }}
+                                    />
+                                )}
+                                <IconButton
+                                    id="clear-input-button"
+                                    onClick={() => {
+                                        setChatInput("")
+                                    }}
+                                    sx={{
+                                        color: "var(--bs-primary)",
+                                        opacity: userInputEmpty ? "25%" : "100%",
+                                    }}
+                                    disabled={userInputEmpty}
+                                    tabIndex={-1}
+                                    edge="end"
+                                >
+                                    <ClearIcon id="clear-input-icon" />
+                                </IconButton>
+                            </InputAdornment>
+                        }
+                    />
 
-                {/* Microphone Button */}
-                <MicrophoneButton
-                    isMicOn={isMicOn}
-                    onMicToggle={setIsMicOn}
-                    speechRecognitionRef={speechRecognitionRef}
-                    voiceInputState={voiceInputState}
-                    setVoiceInputState={setVoiceInputState}
-                />
+                    {/* Microphone Button */}
+                    <MicrophoneButton
+                        isMicOn={isMicOn}
+                        onMicToggle={setIsMicOn}
+                        speechRecognitionRef={speechRecognitionRef}
+                        voiceInputState={voiceInputState}
+                        setVoiceInputState={setVoiceInputState}
+                    />
 
-                {/* Send Button */}
-                <SendButton
-                    enableSendButton={shouldEnableSendButton}
-                    id="submit-query-button"
-                    onClickCallback={() => handleSend(chatInput)}
-                />
+                    {/* Send Button */}
+                    <SendButton
+                        enableSendButton={shouldEnableSendButton}
+                        id="submit-query-button"
+                        onClickCallback={() => handleSend(chatInput)}
+                    />
+                </Box>
             </Box>
         </Box>
     )

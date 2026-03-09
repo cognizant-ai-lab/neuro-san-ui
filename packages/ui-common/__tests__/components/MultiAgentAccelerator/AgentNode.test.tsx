@@ -20,11 +20,11 @@ import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentNode, AgentNodeProps} from "../../../components/MultiAgentAccelerator/AgentNode"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {PALETTES} from "../../../Theme/Palettes"
-import {AgentConversation} from "../../../utils/agentConversations"
 
 // Mock the Handle component since we don't want to invite reactflow (now @xyflow/react) to this party
 jest.mock("@xyflow/react", () => ({
@@ -100,8 +100,8 @@ describe("AgentNode", () => {
 
         expect(style.backgroundColor).toBe(hexToRgb(expectedColor))
 
-        // Non-active node should not have animation
-        expect(style.animation).toBe("none")
+        // Inactive node should not have animation
+        expect(style.animation).toBe("")
     })
 
     it("Should render animation if active agent", async () => {
@@ -122,7 +122,7 @@ describe("AgentNode", () => {
 
         // Active node should have animation
         const style = window.getComputedStyle(agentNodeDiv)
-        expect(style.animation).toBe("glow 2.0s infinite")
+        expect(style.animation).toMatch(/animation-\w+ 2s infinite/u)
     })
 
     it.each([

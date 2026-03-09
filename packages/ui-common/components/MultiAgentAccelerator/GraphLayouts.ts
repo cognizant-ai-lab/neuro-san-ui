@@ -21,11 +21,12 @@ import dagre from "@dagrejs/dagre"
 import {Edge, MarkerType, Node as RFNode} from "@xyflow/react"
 import cloneDeep from "lodash-es/cloneDeep.js"
 
+import {AgentConversation} from "./AgentConversations"
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
+import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation} from "../../utils/agentConversations"
 import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Utils"
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
@@ -155,7 +156,7 @@ export const layoutRadial = (
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    agentIconSuggestions: Record<string, string> = {}
+    agentIconSuggestions: AgentIconSuggestions = null
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge[] = []
@@ -293,7 +294,7 @@ export const layoutLinear = (
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    agentIconSuggestions: Record<string, string> = {}
+    agentIconSuggestions: AgentIconSuggestions = null
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge[] = []
@@ -303,22 +304,22 @@ export const layoutLinear = (
     const childAgents = getChildAgents(parentAgents)
     const frontman = getFrontman(parentAgents, childAgents)
 
-    agentsInNetwork.forEach(({origin: originOfNode}) => {
-        const parentIds = getParents(originOfNode, parentAgents)
-        const isFrontman = frontman?.origin === originOfNode
+    agentsInNetwork.forEach(({origin: nodeId}) => {
+        const parentIds = getParents(nodeId, parentAgents)
+        const isFrontman = frontman?.origin === nodeId
 
         nodesInNetwork.push({
-            id: originOfNode,
+            id: nodeId,
             type: AGENT_NODE_TYPE_NAME,
             data: {
                 agentCounts,
-                agentName: cleanUpAgentName(originOfNode),
-                displayAs: agentsInNetwork.find((a) => a.origin === originOfNode)?.display_as,
+                agentName: cleanUpAgentName(nodeId),
+                displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
                 // Use current conversations for node highlighting (cleared at end)
                 getConversations: () => currentConversations,
                 isAwaitingLlm,
                 depth: undefined, // Depth will be computed later,
-                agentIconSuggestion: agentIconSuggestions?.[originOfNode],
+                agentIconSuggestion: agentIconSuggestions?.[nodeId],
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {
@@ -333,16 +334,16 @@ export const layoutLinear = (
         if (!isFrontman) {
             for (const parentNode of parentIds) {
                 // Add edges from parents to node
-                const isEdgeAnimated = areInSameConversation(currentConversations, parentNode, originOfNode)
+                const isEdgeAnimated = areInSameConversation(currentConversations, parentNode, nodeId)
 
                 // Include all edges here, since dagre needs them to compute the layout correctly.
                 // We will filter them later if we're in "awaiting LLM" mode.
                 edgesInNetwork.push(
                     getEdgeProperties(
                         parentNode,
-                        originOfNode,
+                        nodeId,
                         `${parentNode}-right-handle`,
-                        `${originOfNode}-left-handle`,
+                        `${nodeId}-left-handle`,
                         isEdgeAnimated
                     )
                 )

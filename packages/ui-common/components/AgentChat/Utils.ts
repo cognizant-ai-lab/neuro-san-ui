@@ -67,8 +67,12 @@ export const checkError: (chatMessageJson: object) => string | null = (chatMessa
     }
 }
 
+export const removeTrailingUuid = (agentName: string): string => {
+    return agentName?.replace(/-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u, "")
+}
+
 /**
- * Convert FOO_BAR to more human "Foo Bar"
+ * Convert FOO_BAR to more human "Foo Bar".
  * @param agentName Agent name in SNAKE_CASE format.
  * @returns User-friendly agent name.
  */

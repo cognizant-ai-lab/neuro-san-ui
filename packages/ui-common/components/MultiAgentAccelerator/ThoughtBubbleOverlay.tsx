@@ -437,7 +437,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Guard against unexpected DOM errors during measurement
             // Do not throw to avoid breaking the app
 
-            console.debug("ThoughtBubbleOverlay: updateAllLines error", err)
+            console.error("ThoughtBubbleOverlay: updateAllLines error", err)
         }
     }, [renderableBubbles, bubbleStates, calculateLineCoordinates])
 

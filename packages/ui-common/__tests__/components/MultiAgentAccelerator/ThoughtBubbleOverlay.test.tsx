@@ -1252,7 +1252,7 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should catch and debug-log errors from updateAllLines without throwing", async () => {
         // This test forces updateAllLines to encounter a DOM write error (setAttribute)
-        // and verifies the component swallows the error and logs via console.debug.
+        // and verifies the component swallows the error and logs via console.error.
         jest.useFakeTimers()
         jest.setSystemTime(0)
 
@@ -1275,7 +1275,7 @@ describe("ThoughtBubbleOverlay", () => {
         })
         document.body.append(agentEl)
 
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation(() => undefined)
+        const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
 
         // Render component normally first so React can mount without our failure injection
         const {rerender} = render(
@@ -1338,11 +1338,11 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         // Expect console.debug to have been called because updateAllLines catches and logs errors
-        expect(debugSpy).toHaveBeenCalled()
+        expect(errorSpy).toHaveBeenCalled()
 
         // Restore globals
         ;(Element.prototype as unknown as {setAttribute: (n: string, v: string) => void}).setAttribute = origSetAttr
-        debugSpy.mockRestore()
+        errorSpy.mockRestore()
         global.requestAnimationFrame = origRAF
         global.cancelAnimationFrame = origCAF
         agentEl.remove()

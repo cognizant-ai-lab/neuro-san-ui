@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {render, screen, waitFor, within} from "@testing-library/react"
-import {UserEvent, default as userEvent} from "@testing-library/user-event"
-import {SnackbarProvider} from "notistack"
+import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {
     LEVEL_1_FOLDER,
@@ -25,6 +24,8 @@ import {
     LEVEL_2_FOLDER,
     LEVEL_2_FOLDER_DISPLAY,
     LIST_NETWORKS_RESPONSE,
+    TEMPORARY_NETWORK,
+    TEMPORARY_NETWORK_NAME,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
@@ -37,6 +38,7 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
+import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../state/Environment"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
@@ -53,43 +55,46 @@ jest.mock("../../../controller/agent/Agent")
 // Simulated Neuro-san version for testing
 const TEST_VERSION = "1.2.3.4a"
 
-// Mock MUI theming
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useColorScheme: jest.fn(),
-}))
+// Provide a suggested icon for first network
+const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
+    [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
+}
+
+const onDeleteNetworkMock = jest.fn()
+
+const DEFAULT_PROPS: SidebarProps = {
+    customURLCallback: jest.fn(),
+    id: "test-flow-id",
+    isAwaitingLlm: false,
+    networks: LIST_NETWORKS_RESPONSE,
+    networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
+    onDeleteNetwork: onDeleteNetworkMock,
+    setSelectedNetwork: jest.fn(),
+}
 
 describe("SideBar", () => {
     withStrictMocks()
 
     let user: UserEvent
 
-    // Provide a suggested icon for first network, and an invalid icon name for the second network
-    // to test error handling
-    const networkIconSuggestions = {
-        [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
-    }
-
-    const defaultProps: SidebarProps = {
-        customURLCallback: jest.fn(),
-        id: "test-flow-id",
-        isAwaitingLlm: false,
-        networks: LIST_NETWORKS_RESPONSE,
-        networkIconSuggestions,
-        setSelectedNetwork: jest.fn(),
-    }
-
     /**
      * This function renders the Sidebar component
      * @param overrides An object of any prop overrides
+     * @param mode The color scheme mode, either "light" or "dark". Defaults to "light".
      * @return The props for the Sidebar component
      */
-    const renderSidebarComponent = (overrides = {}) => {
-        const props: SidebarProps = {...defaultProps, ...overrides}
+    const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}, mode: PaletteMode = "light") => {
+        const props: SidebarProps = {...DEFAULT_PROPS, ...overrides}
         render(
-            <SnackbarProvider>
+            <ThemeProvider
+                theme={createTheme({
+                    palette: {
+                        mode: mode ?? "light",
+                    },
+                })}
+            >
                 <Sidebar {...props} />
-            </SnackbarProvider>
+            </ThemeProvider>
         )
 
         return props
@@ -113,8 +118,6 @@ describe("SideBar", () => {
         return {settingsButton, urlInput}
     }
 
-    withStrictMocks()
-
     beforeAll(() => {
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(DEFAULT_EXAMPLE_URL)
     })
@@ -122,17 +125,10 @@ describe("SideBar", () => {
     beforeEach(() => {
         user = userEvent.setup()
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: "light",
-        })
     })
 
-    it.each([false, true])("should render correctly with darkMode=%s", async (darkMode) => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: darkMode ? "dark" : "light",
-        })
-
-        const {setSelectedNetwork} = renderSidebarComponent()
+    it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
+        const {setSelectedNetwork} = renderSidebarComponent({}, mode)
 
         // Make sure the heading is present
         await screen.findByText("Agent Networks")
@@ -181,7 +177,7 @@ describe("SideBar", () => {
         renderSidebarComponent({
             // Override networkIconSuggestions to include an invalid icon name for TEST_AGENT_MUSIC_NERD
             networkIconSuggestions: {
-                ...networkIconSuggestions,
+                ...NETWORK_ICON_SUGGESTIONS,
                 [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: "NonExistentIcon",
             },
         })
@@ -265,6 +261,35 @@ describe("SideBar", () => {
         for (const tag of deepAgentData.tags) {
             await screen.findByText(tag)
         }
+    })
+
+    it("Should handle temporary networks correctly", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+        })
+
+        // Item should be auto-expanded as it's a newly added temporary network
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+    })
+
+    it("Should allow deleting temporary networks", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+        })
+
+        const networkTreeItem = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        // Find the delete icon within the same tree item
+        const treeItem = networkTreeItem.closest('[role="treeitem"]')
+        const deleteIcon = within(treeItem as HTMLElement).getByTestId("DeleteIcon")
+        await user.click(deleteIcon)
+
+        // onDeleteNetwork should be called with the correct network name
+        expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name, false)
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {

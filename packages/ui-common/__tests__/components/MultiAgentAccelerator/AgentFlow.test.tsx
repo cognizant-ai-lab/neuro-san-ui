@@ -227,10 +227,9 @@ describe("AgentFlow", () => {
         // agent1 first div is the one with the style
         const agent1ChildDiv = agent1Node.children[0] as HTMLDivElement
 
-        // make sure agent1 has style animation: glow 2.0s infinite
-        expect(agent1ChildDiv).toHaveStyle({
-            animation: "glow 2.0s infinite",
-        })
+        // make sure agent1 has the expected animation
+        const computedStyleAgent1 = window.getComputedStyle(agent1ChildDiv)
+        expect(computedStyleAgent1.animation).toMatch(/animation-\w+ 2s infinite/u)
 
         // agent3 is active so should be highlighted
         const agent3Node = container.querySelector('[data-id="agent3"]')
@@ -239,18 +238,15 @@ describe("AgentFlow", () => {
         // agent3 first div is the one with the style
         const agent3ChildDiv = agent3Node.children[0] as HTMLDivElement
 
-        // make sure agent3 has style animation: glow 2.0s infinite
-        expect(agent3ChildDiv).toHaveStyle({
-            animation: "glow 2.0s infinite",
-        })
+        // make sure agent3 has the expected animation
+        const computedStyleAgent3 = window.getComputedStyle(agent3ChildDiv)
+        expect(computedStyleAgent3.animation).toMatch(/animation-\w+ 2s infinite/u)
 
         // agent2 is not "active" so should not have the pulsing animation
         const agent2Div = container.querySelector('[data-id="agent2"]')
         expect(agent2Div).toBeInTheDocument()
         const agent2ChildDiv = agent2Div.children[0] as HTMLDivElement
-        expect(agent2ChildDiv).toHaveStyle({
-            animation: "none",
-        })
+        expect(agent2ChildDiv.style.animation).toBe("")
     })
 
     it("Should handle an empty agent list", async () => {

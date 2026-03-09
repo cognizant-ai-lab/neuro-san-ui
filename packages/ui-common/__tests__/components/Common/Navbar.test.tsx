@@ -24,7 +24,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Navbar} from "../../../components/Common/Navbar"
-import {CONTACT_US_CONFIRMATION_DIALOG_TEXT} from "../../../const"
+import {getContactUsConfirmationText} from "../../../const"
 import {useSettingsStore} from "../../../state/Settings"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 import {navigateToUrl} from "../../../utils/BrowserNavigation"
@@ -76,7 +76,7 @@ describe("Navbar", () => {
         const contactUsItem = await screen.findByText("Contact Us")
         await user.click(contactUsItem)
 
-        await screen.findByText(CONTACT_US_CONFIRMATION_DIALOG_TEXT)
+        await screen.findByText(getContactUsConfirmationText(MOCK_EMAIL_ADDRESS))
         await screen.findByText("Confirm")
     })
 
