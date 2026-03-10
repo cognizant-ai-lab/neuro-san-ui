@@ -19,13 +19,11 @@ export const LOGO: string = "Neuro® AI"
 
 export const NEURO_SAN_UI_VERSION = process.env["NEXT_PUBLIC_NEURO_SAN_UI_VERSION"] ?? "Unknown Version"
 
-export const CONTACT_US_CONFIRMATION_DIALOG_TITLE = "Contact Us"
-
-export const CONTACT_US_CONFIRMATION_DIALOG_TEXT =
+export const getContactUsConfirmationText = (email: string): string =>
     "Would you like to send the Cognizant Neuro AI support team an email? " +
     "You will need to have an email client installed on your device in order " +
     "to continue. If you don't have an email client, you can still contact us at " +
-    "NeuroAiSupport@cognizant.com using a web based email client."
+    `${email} using a web based email client.`
 
 /**
  * The default user image to use when the user does not have a profile picture.

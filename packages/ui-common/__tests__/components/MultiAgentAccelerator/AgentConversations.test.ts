@@ -15,24 +15,15 @@ limitations under the License.
 */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {chatMessageFromChunk} from "../../../components/AgentChat/Utils"
-import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {
     AgentConversation,
     createConversation,
+    extractConversations,
     isFinalMessage,
-    processChatChunk,
-    updateAgentCounts,
-} from "../../../utils/agentConversations"
-
-// Mock the chatMessageFromChunk utility
-jest.mock("../../../components/AgentChat/Utils", () => ({
-    chatMessageFromChunk: jest.fn(),
-}))
+} from "../../../components/MultiAgentAccelerator/AgentConversations"
+import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 jest.mock("../../../components/Common/notification")
-
-const mockChatMessageFromChunk = jest.mocked(chatMessageFromChunk)
 
 describe("agentConversations", () => {
     withStrictMocks()
@@ -81,32 +72,22 @@ describe("agentConversations", () => {
         })
     })
 
-    describe("updateAgentCounts", () => {
-        it("should update agent counts correctly", () => {
-            const existingCounts = new Map([["agent1", 1]])
-            const origins = [
-                {tool: "agent1", instantiation_index: 0},
-                {tool: "agent2", instantiation_index: 1},
+    describe("extractConversations", () => {
+        it("should handle message without origin info", () => {
+            const chatMessage: ChatMessage = {
+                type: ChatMessageType.AI,
+                origin: null,
+                text: "Processing...",
+            }
+
+            const existingConversations: AgentConversation[] = [
+                createConversation(["agent1"], "Existing conversation", ChatMessageType.AGENT),
             ]
 
-            const updatedCounts = updateAgentCounts(existingCounts, origins)
+            const result = extractConversations(chatMessage, existingConversations)
 
-            expect(updatedCounts.get("agent1")).toBe(2)
-            expect(updatedCounts.get("agent2")).toBe(1)
-        })
-    })
-
-    describe("processChatChunk", () => {
-        it("should handle chunk without origin info", () => {
-            mockChatMessageFromChunk.mockReturnValue({
-                origin: [],
-            })
-
-            const result = processChatChunk("test chat chunk", new Map(), null)
-
-            expect(result.success).toBe(true)
-            expect(result.newConversations).toBeNull()
-            expect(result.newCounts).toEqual(new Map())
+            // A message without origin should not modify existing conversations
+            expect(result).toEqual(existingConversations)
         })
 
         it("should create new conversation for new agents", () => {
@@ -115,18 +96,18 @@ describe("agentConversations", () => {
                 {tool: "agent2", instantiation_index: 1},
             ]
 
-            mockChatMessageFromChunk.mockReturnValue({
+            const chatMessage: ChatMessage = {
                 type: ChatMessageType.AI,
                 origin: mockOrigin,
                 text: "Processing...",
-            })
+            }
 
-            const result = processChatChunk("test chat chunk", new Map(), [])
+            const result = extractConversations(chatMessage, [])
 
-            expect(result.success).toBe(true)
-            expect(result.newConversations).toHaveLength(1)
-            expect(result.newConversations[0].agents.has("agent1")).toBe(true)
-            expect(result.newConversations[0].agents.has("agent2")).toBe(true)
+            expect(result).not.toBeNull()
+            expect(result).toHaveLength(1)
+            expect(result[0].agents.has("agent1")).toBe(true)
+            expect(result[0].agents.has("agent2")).toBe(true)
         })
 
         it("should remove agents on final message", () => {
@@ -136,19 +117,19 @@ describe("agentConversations", () => {
 
             const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
 
-            mockChatMessageFromChunk.mockReturnValue({
+            const chatMessage: ChatMessage = {
                 type: ChatMessageType.AGENT,
                 origin: mockOriginFinal,
                 structure: {total_tokens: 100},
                 text: "",
-            })
+            }
 
-            const result = processChatChunk("final chat chunk", new Map(), conversationsWithAgents)
+            const result = extractConversations(chatMessage, conversationsWithAgents)
 
-            expect(result.success).toBe(true)
-            expect(result.newConversations).toHaveLength(1)
-            expect(result.newConversations[0].agents.has("agent1")).toBe(false)
-            expect(result.newConversations[0].agents.has("agent2")).toBe(true)
+            expect(result).not.toBeNull()
+            expect(result).toHaveLength(1)
+            expect(result[0].agents.has("agent1")).toBe(false)
+            expect(result[0].agents.has("agent2")).toBe(true)
         })
 
         it("should remove empty conversations", () => {
@@ -158,66 +139,53 @@ describe("agentConversations", () => {
 
             const mockOriginFinal = [{tool: "agent1", instantiation_index: 0}]
 
-            mockChatMessageFromChunk.mockReturnValue({
+            const chatMessage = {
                 type: ChatMessageType.AGENT,
                 origin: mockOriginFinal,
                 structure: {total_tokens: 100},
                 text: "",
-            })
+            }
 
-            const result = processChatChunk("final chat chunk", new Map(), conversationsWithAgent)
+            const result = extractConversations(chatMessage, conversationsWithAgent)
 
-            expect(result.success).toBe(true)
-
-            // Should set to null when no conversations remain
-            expect(result.newConversations).toBeNull()
-        })
-
-        it("should handle errors gracefully", () => {
-            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
-
-            mockChatMessageFromChunk.mockImplementation(() => {
-                throw new Error("Parsing error")
-            })
-
-            const result = processChatChunk("invalid chat chunk", new Map(), null)
-
-            expect(result.success).toBe(false)
-            expect(consoleErrorSpy).toHaveBeenCalledWith("Agent conversation error:", expect.any(Error))
+            // Should set to empty when no conversations remain
+            expect(result).toEqual([])
         })
 
         it("should use structure.params.inquiry when present", () => {
             const mockOrigin = [{tool: "agentX", instantiation_index: 0}]
 
-            mockChatMessageFromChunk.mockReturnValue({
+            const inquiry = "Inquiry text here"
+            const chatMessage = {
                 type: ChatMessageType.AGENT,
                 origin: mockOrigin,
-                structure: {params: {inquiry: "Inquiry text here"}},
+                structure: {params: {inquiry}},
                 text: "This text should be ignored",
-            })
+            }
 
-            const result = processChatChunk("chunk with inquiry", new Map(), [])
+            const result = extractConversations(chatMessage, [])
 
-            expect(result.success).toBe(true)
-            expect(result.newConversations).toHaveLength(1)
-            expect(result.newConversations[0].text).toBe("Inquiry text here")
+            expect(result).not.toBeNull()
+            expect(result).toHaveLength(1)
+            expect(result[0].text).toBe(inquiry)
         })
 
         it("should fall back to chat message text when no inquiry present", () => {
             const mockOrigin = [{tool: "agentY", instantiation_index: 0}]
 
-            mockChatMessageFromChunk.mockReturnValue({
+            const text = "Chat message text used"
+            const chatMessage = {
                 type: ChatMessageType.AI,
                 origin: mockOrigin,
                 structure: {params: {}},
-                text: "Chat message text used",
-            })
+                text,
+            }
 
-            const result = processChatChunk("chunk without inquiry", new Map(), [])
+            const result = extractConversations(chatMessage, [])
 
-            expect(result.success).toBe(true)
-            expect(result.newConversations).toHaveLength(1)
-            expect(result.newConversations[0].text).toBe("Chat message text used")
+            expect(result).not.toBeNull()
+            expect(result).toHaveLength(1)
+            expect(result[0].text).toBe(text)
         })
     })
 })

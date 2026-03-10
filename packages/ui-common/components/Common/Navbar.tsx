@@ -36,9 +36,8 @@ import {CustomerLogo, getCognizantLogoImage} from "./CustomerLogo"
 import {LoadingSpinner} from "./LoadingSpinner"
 import {
     authenticationEnabled,
-    CONTACT_US_CONFIRMATION_DIALOG_TEXT,
-    CONTACT_US_CONFIRMATION_DIALOG_TITLE,
     DEFAULT_USER_IMAGE,
+    getContactUsConfirmationText,
     NEURO_SAN_UI_VERSION,
 } from "../../const"
 import {useSettingsStore} from "../../state/Settings"
@@ -341,7 +340,7 @@ export const Navbar = ({
             {emailDialogOpen ? (
                 <ConfirmationModal
                     id="email-dialog"
-                    content={CONTACT_US_CONFIRMATION_DIALOG_TEXT}
+                    content={getContactUsConfirmationText(supportEmailAddress)}
                     handleCancel={() => {
                         setEmailDialogOpen(false)
                     }}
@@ -349,7 +348,7 @@ export const Navbar = ({
                         navigateToUrl(`mailto:${supportEmailAddress}`)
                         setEmailDialogOpen(false)
                     }}
-                    title={CONTACT_US_CONFIRMATION_DIALOG_TITLE}
+                    title="Contact Us"
                 />
             ) : null}
 

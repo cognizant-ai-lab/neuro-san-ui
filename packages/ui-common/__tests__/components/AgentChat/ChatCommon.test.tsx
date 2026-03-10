@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
@@ -32,12 +32,6 @@ import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
-
-// Mock MUI theming
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useColorScheme: jest.fn(),
-}))
 
 // Mock agent API
 jest.mock("../../../controller/agent/Agent")
@@ -77,6 +71,7 @@ const LONG_QUERY_TEXT = "Long query".repeat(10)
 
 describe("ChatCommon", () => {
     const SAMPLE_QUERY_TEXT = "Sample query 1"
+    const MODAL_Z_INDEX = 11
 
     let user: UserEvent
 
@@ -90,13 +85,19 @@ describe("ChatCommon", () => {
         userImage: "",
     }
 
-    const renderChatCommonComponent = (overrides = {}) => {
+    const renderChatCommonComponent = (overrides = {}, mode: PaletteMode = "light") => {
         render(
             <ThemeProvider
                 theme={createTheme({
                     colorSchemes: {
                         light: {palette: {text: {primary: "#112233"}}},
                         dark: {palette: {text: {primary: "#445566"}}},
+                    },
+                    palette: {
+                        mode: mode ?? "light",
+                    },
+                    zIndex: {
+                        modal: MODAL_Z_INDEX,
                     },
                 })}
             >
@@ -129,9 +130,6 @@ describe("ChatCommon", () => {
                 sample_queries: [SAMPLE_QUERY_TEXT, LONG_QUERY_TEXT, "Query 3", "Query 4", "Query 5", "Query 6"],
             },
         })
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: "light",
-        })
     })
 
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
@@ -150,13 +148,8 @@ describe("ChatCommon", () => {
         await user.click(sendButton)
     }
 
-    it.each([false, true])("Should render correctly with darkMode=%s", async (darkMode) => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: darkMode ? "dark" : "light",
-            systemMode: darkMode ? "dark" : "light",
-        })
-
-        renderChatCommonComponent()
+    it.each(["light", "dark"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
+        renderChatCommonComponent({}, darkMode)
 
         expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
 
@@ -322,33 +315,36 @@ describe("ChatCommon", () => {
         await waitFor(() => expect(mockSendFunction).toHaveBeenCalledWith(fullStrToCheck))
     })
 
-    it("Should handle receiving chunks from Neuro-san agents correctly", async () => {
-        const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        const testResponseText = '"Response text from LLM"'
+    it.each(["light", "dark"] as PaletteMode[])(
+        "Should handle receiving chunks from Neuro-san agents correctly",
+        async (darkMode) => {
+            const onChunkReceivedMock = jest.fn().mockReturnValue(true)
+            const testResponseText = '"Response text from LLM"'
 
-        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock})
+            renderChatCommonComponent({onChunkReceived: onChunkReceivedMock}, darkMode)
 
-        const chatResponse: ChatResponse = {
-            response: {
-                type: ChatMessageType.AGENT_FRAMEWORK,
-                text: testResponseText,
-                origin: [{tool: "testTool", instantiation_index: 1}],
-                sly_data: {answer: 42},
-            },
+            const chatResponse: ChatResponse = {
+                response: {
+                    type: ChatMessageType.AGENT_FRAMEWORK,
+                    text: testResponseText,
+                    origin: [{tool: "testTool", instantiation_index: 1}],
+                    sly_data: {answer: 42},
+                },
+            }
+
+            const chunk = JSON.stringify(chatResponse)
+            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+                callback(chunk)
+            })
+
+            const query = "Sample test query for chunk handling"
+            await sendQuery(TEST_AGENT_MATH_GUY, query)
+
+            expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+            expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
+            expect(onChunkReceivedMock).toHaveBeenCalledWith(chunk)
         }
-
-        const chunk = JSON.stringify(chatResponse)
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
-            callback(chunk)
-        })
-
-        const query = "Sample test query for chunk handling"
-        await sendQuery(TEST_AGENT_MATH_GUY, query)
-
-        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
-        expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
-        expect(onChunkReceivedMock).toHaveBeenCalledWith(chunk)
-    })
+    )
 
     it("Should handle receiving chunks from legacy agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
@@ -404,7 +400,7 @@ describe("ChatCommon", () => {
         expect(console.error).toHaveBeenCalledTimes(3)
     })
 
-    it("Should correctly an abort error correctly", async () => {
+    it("Should handle an abort error correctly", async () => {
         renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new (class extends Error {
@@ -423,6 +419,28 @@ describe("ChatCommon", () => {
 
         // For abort errors, we don't display the error block since they are handled differently
         expect(screen.queryByText(/Error occurred:/u)).not.toBeInTheDocument()
+    })
+
+    it("Should handle other types of errors than AbortError correctly", async () => {
+        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+
+        jest.spyOn(console, "error").mockImplementation()
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
+            throw new (class extends Error {
+                constructor(message?: string) {
+                    super(message)
+                    this.name = "SomeOtherError"
+                }
+            })("Some other error occurred")
+        })
+
+        await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
+
+        // Should be retries when not "Abort" error
+        expect(sendLlmRequest).toHaveBeenCalledTimes(3)
+
+        // For errors other than Abort, we display an error block
+        screen.getAllByText(/Error occurred: SomeOtherError: Some other error occurred/u)
     })
 
     it("Should correctly handle a chunk with an error block in the structure field", async () => {
@@ -520,6 +538,23 @@ describe("ChatCommon", () => {
         expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))).toBeInTheDocument()
     })
 
+    it("Should refuse interaction when no target agent is set", async () => {
+        const mockSendFunction = jest.fn()
+        renderChatCommonComponent({onSend: mockSendFunction, targetAgent: null})
+
+        // Should be no "Chat with"
+        expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
+
+        const overlay = document.getElementById("chat-disabled-overlay")
+        expect(overlay).toBeInTheDocument()
+        expect(overlay).toHaveStyle({
+            position: "absolute",
+            zIndex: MODAL_Z_INDEX - 1,
+            cursor: "not-allowed",
+            pointerEvents: "all",
+        })
+    })
+
     it("Should handle Stop correctly", async () => {
         const setAwaitingLlmMock = jest.fn()
         renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true})
@@ -609,12 +644,12 @@ describe("ChatCommon", () => {
             callback(JSON.stringify(chatResponses[1]))
         })
 
-        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
-
         // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
         const showThinkingButton = document.getElementById("show-thinking-button")
         expect(showThinkingButton).toBeInTheDocument()
         await user.click(showThinkingButton)
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
 
         // All responses should be visible when "show thinking" is enabled
         await waitFor(() => {

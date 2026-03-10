@@ -525,6 +525,7 @@ const config = [
             "testing-library/no-node-access": "off",
 
             // Don't care about these rules in tests
+            "max-classes-per-file": "off",
             "@next/next/no-img-element": "off",
             "react/display-name": "off",
             "react/no-array-index-key": "off",

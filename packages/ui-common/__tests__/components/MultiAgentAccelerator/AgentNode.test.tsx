@@ -95,8 +95,8 @@ describe("AgentNode", () => {
 
         expect(style.backgroundColor).toBe(hexToRgb(expectedColor))
 
-        // Non-active node should not have animation
-        expect(style.animation).toBe("none")
+        // Inactive node should not have animation
+        expect(style.animation).toBe("")
     })
 
     it("Should render animation if active agent", async () => {
@@ -117,7 +117,7 @@ describe("AgentNode", () => {
 
         // Active node should have animation
         const style = window.getComputedStyle(agentNodeDiv)
-        expect(style.animation).toBe("glow 2.0s infinite")
+        expect(style.animation).toMatch(/animation-\w+ 2s infinite/u)
     })
 
     it.each([

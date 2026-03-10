@@ -1,4 +1,4 @@
-import {adjustBrightness} from "../../../Theme/Theme"
+import {adjustBrightness, isLightColor} from "../../../Theme/Theme"
 
 describe("adjustBrightness", () => {
     it("returns the same color if the input is not a valid hex color", () => {
@@ -26,5 +26,23 @@ describe("adjustBrightness", () => {
     it("clamps RGB values to valid ranges", () => {
         expect(adjustBrightness("#ff0000", 100)).toBe("#ffffff")
         expect(adjustBrightness("#00ff00", -200)).toBe("#000000")
+    })
+})
+
+describe("isLightColor", () => {
+    it("Deems white a light color", () => {
+        expect(isLightColor("#ffffff")).toBe(true)
+    })
+
+    it("Deems black a dark color", () => {
+        expect(isLightColor("#000000")).toBe(false)
+    })
+
+    it("Deems a light gray a light color", () => {
+        expect(isLightColor("#cccccc")).toBe(true)
+    })
+
+    it("Deems a dark gray a dark color", () => {
+        expect(isLightColor("#333333")).toBe(false)
     })
 })

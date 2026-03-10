@@ -22,7 +22,7 @@ import Button from "@mui/material/Button"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import Popover from "@mui/material/Popover"
-import {styled, useTheme} from "@mui/material/styles"
+import {keyframes, styled, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -36,12 +36,51 @@ import {
     useState,
 } from "react"
 
-import {AgentNetworkNode, AgentNetworkNodeProps} from "./AgentNetworkTreeItem"
-import {buildTreeViewItems} from "./TreeUtils"
+import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
+import {buildTreeViewItems} from "./TreeBuilder"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
+import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
+import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {TEMPORARY_NETWORK_FOLDER} from "../const"
+
+// Animation for the sparkle effect when a new temporary network is added.
+const sparkle = keyframes`
+    0% {
+        background-position: 0% 50%;
+        opacity: 1;
+    }
+    10% {
+        background-position: 33% 50%;
+        opacity: 1;
+    }
+    20% {
+        background-position: 66% 50%;
+        opacity: 1;
+    }
+    30% {
+        background-position: 100% 50%;
+        opacity: 1;
+    }
+    60% {
+        background-position: 100% 50%;
+        opacity: 1;
+    }
+    80% {
+        background-position: 100% 50%;
+        opacity: 0.7;
+    }
+    90% {
+        background-position: 100% 50%;
+        opacity: 0.4;
+    }
+    100% {
+        background-position: 100% 50%;
+        opacity: 0.25;
+    }
+`
 
 // #region: Styled Components
 
@@ -49,6 +88,39 @@ const PrimaryButton = styled(Button)({
     marginLeft: "0.5rem",
     marginTop: "2px",
 })
+
+// Styled component for Sidebar aside element, including styles for the sparkle highlight animation
+// when a new temporary network is added.
+const SidebarAside = styled("aside")({
+    borderRightStyle: "solid",
+    borderRightWidth: "1px",
+    height: "100%",
+    overflowY: "auto",
+    paddingRight: "0.75rem",
+
+    "& .sparkle-highlight": {
+        background: "linear-gradient(90deg, gold, orange, cyan, magenta, gold)",
+        backgroundSize: "400% 100%",
+        animation: `${sparkle} 5s ease`,
+        backgroundClip: "padding-box",
+        borderRadius: "4px",
+        opacity: 1,
+    },
+})
+
+// Styled component for the sidebar heading, which is sticky at the top of the sidebar.
+const SidebarHeading = styled("h2")(({theme}) => ({
+    backgroundColor: theme.palette.background.default,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    fontSize: "1.125rem",
+    fontWeight: "bold",
+    marginBottom: "0.25rem",
+    paddingBottom: "0.75rem",
+    position: "sticky",
+    top: 0,
+    zIndex: getZIndex(1, theme),
+}))
 
 // #endregion: Styled Components
 
@@ -63,23 +135,31 @@ enum CONNECTION_STATUS {
 export interface SidebarProps {
     readonly customURLCallback: (url: string) => void
     readonly customURLLocalStorage?: string
-    readonly networkIconSuggestions?: Record<string, string>
     readonly id: string
     readonly isAwaitingLlm: boolean
+    readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
+    readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly setSelectedNetwork: (network: string) => void
+    readonly temporaryNetworks?: readonly TemporaryNetwork[]
+    readonly newlyAddedTemporaryNetworks?: Set<string>
 }
 
 // #endregion: Types
 
+const EMPTY_ARRAY: TemporaryNetwork[] = []
+
 export const Sidebar: FC<SidebarProps> = ({
     customURLCallback,
     customURLLocalStorage,
-    networkIconSuggestions,
     id,
     isAwaitingLlm,
+    networkIconSuggestions,
     networks,
+    newlyAddedTemporaryNetworks,
+    onDeleteNetwork,
     setSelectedNetwork,
+    temporaryNetworks = EMPTY_ARRAY,
 }) => {
     // Get default URL from the environment store.
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
@@ -92,6 +172,8 @@ export const Sidebar: FC<SidebarProps> = ({
     const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
+
+    const [expandedItems, setExpandedItems] = useState<string[]>([])
 
     // Theming/Dark mode
     const theme = useTheme()
@@ -172,35 +254,76 @@ export const Sidebar: FC<SidebarProps> = ({
         void fetchVersion()
     }, [])
 
-    const {treeViewItems, index} = buildTreeViewItems(networks)
+    const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
+    const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(
+        (acc, tempNetwork) => {
+            acc[tempNetwork.agentInfo.agent_name] = new Date(tempNetwork.reservation.expiration_time_in_seconds * 1000)
+            return acc
+        },
+        {} as Record<string, Date>
+    )
+
+    const [selectedItem, setSelectedItem] = useState<string | null>(null)
+
+    const handleSelectedItemsChange = (_event: unknown, itemId: string | null) => {
+        if (!itemId) {
+            return
+        }
+
+        // Only select leaf nodes (items in nodeIndex) as networks
+        const isLeafNode = nodeIndex.has(itemId)
+        if (!isLeafNode) {
+            return
+        }
+
+        // Don't allow selecting expired temporary networks
+        const expirationTime = temporaryNetworkExpirationTimes[itemId]
+        if (expirationTime && expirationTime < new Date()) {
+            return
+        }
+
+        setSelectedItem(itemId)
+        setSelectedNetwork(itemId)
+    }
+
+    useEffect(() => {
+        let highlightTimeout: ReturnType<typeof setTimeout>
+        let removeHighlightTimeout: ReturnType<typeof setTimeout>
+
+        // If we got a new temporary network, select it and expand the temporary category in the tree view
+        if (newlyAddedTemporaryNetworks?.size > 0) {
+            const firstItem = newlyAddedTemporaryNetworks.values().next().value
+            setSelectedItem(firstItem)
+            setSelectedNetwork(firstItem)
+            setExpandedItems((prev) =>
+                prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
+            )
+            highlightTimeout = setTimeout(() => {
+                // Scroll the selected node into view and add an animation to draw the user's attention to it.
+                // Hacky: use a DOM query to find the node. I tried the various ways to do this programmatically
+                // in MUI RichTreeView including the imperative API (https://mui.com/x/react-tree-view/rich-tree-view/selection/#imperative-api)
+                // but couldn't get it to work so resorting to this for now.
+                const selectedNode = document.querySelector("[role=treeitem][aria-checked=true]")
+                if (selectedNode) {
+                    selectedNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
+                    selectedNode.classList.add("sparkle-highlight")
+                    removeHighlightTimeout = setTimeout(() => {
+                        selectedNode.classList.remove("sparkle-highlight")
+                    }, 5000)
+                }
+            }, 50)
+        }
+
+        return () => {
+            clearTimeout(highlightTimeout)
+            clearTimeout(removeHighlightTimeout)
+        }
+    }, [newlyAddedTemporaryNetworks])
 
     return (
         <>
-            <aside
-                id={`${id}-sidebar`}
-                style={{
-                    borderRightStyle: "solid",
-                    borderRightWidth: "1px",
-                    height: "100%",
-                    overflowY: "auto",
-                    paddingRight: "0.75rem",
-                }}
-            >
-                <h2
-                    id={`${id}-heading`}
-                    style={{
-                        backgroundColor: theme.palette.background.default,
-                        borderBottomStyle: "solid",
-                        borderBottomWidth: "1px",
-                        fontSize: "1.125rem",
-                        fontWeight: "bold",
-                        marginBottom: "0.25rem",
-                        paddingBottom: "0.75rem",
-                        position: "sticky",
-                        top: 0,
-                        zIndex: getZIndex(1, theme),
-                    }}
-                >
+            <SidebarAside id={`${id}-sidebar`}>
+                <SidebarHeading id={`${id}-heading`}>
                     Agent Networks
                     <Button
                         aria-label="Agent Network Settings"
@@ -224,25 +347,31 @@ export const Sidebar: FC<SidebarProps> = ({
                             />
                         </Tooltip>
                     </Button>
-                </h2>
+                </SidebarHeading>
                 <RichTreeView
                     key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
                     items={treeViewItems}
+                    expandedItems={expandedItems}
+                    onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+                    multiSelect={false}
+                    onSelectedItemsChange={handleSelectedItemsChange}
+                    selectedItems={selectedItem}
+                    disableSelection={isAwaitingLlm}
                     slots={{
-                        item: AgentNetworkNode as RichTreeViewSlots["item"],
+                        item: AgentNetworkTreeItem as RichTreeViewSlots["item"],
                     }}
                     // Pass custom props to tree items via slotProps.
                     // Reference: https://github.com/mui/mui-x/issues/13351
                     slotProps={{
                         item: {
-                            nodeIndex: index,
-                            setSelectedNetwork,
-                            shouldDisableTree: isAwaitingLlm,
                             networkIconSuggestions,
+                            nodeIndex,
+                            onDeleteNetwork,
+                            temporaryNetworkExpirationTimes,
                         } as AgentNetworkNodeProps,
                     }}
                 />
-            </aside>
+            </SidebarAside>
             <Popover
                 id="agent-network-settings-popover"
                 open={settingsPopoverOpen}

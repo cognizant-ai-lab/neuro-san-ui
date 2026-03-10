@@ -16,30 +16,63 @@ limitations under the License.
 
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
+import Collapse from "@mui/material/Collapse"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Edge, EdgeProps, ReactFlowProvider} from "reactflow"
 
+import {AgentConversation, extractConversations} from "./AgentConversations"
+import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
+import {TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
+import {AgentReservation, extractReservations} from "./TemporaryNetworks"
 import {
     getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
 } from "../../controller/agent/Agent"
+import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
+import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
-import {AgentConversation, processChatChunk} from "../../utils/agentConversations"
+import {useSettingsStore} from "../../state/Settings"
+import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
-import {cleanUpAgentName} from "../AgentChat/Utils"
+import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Utils"
+import {ConfirmationModal} from "../Common/ConfirmationModal"
+import {MUIAlert} from "../Common/MUIAlert"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
+}
+
+// Display expired temporary networks for this amount of time after they expire so users can see what happened
+const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
+
+// Animation time for the left and right panels to slide in or out when launching the animation
+const GROW_ANIMATION_TIME_MS = 800
+
+/**
+ * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
+ * in the tree.
+ * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
+ * @returns List of TemporaryNetwork objects that can be displayed in the UI
+ */
+const convertReservationsToNetworks = (agentReservations: AgentReservation[]): TemporaryNetwork[] => {
+    return agentReservations.map((reservation) => ({
+        reservation,
+        agentInfo: {
+            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+            origin: reservation.reservation_id,
+            status: "active",
+        },
+    }))
 }
 
 /**
@@ -52,8 +85,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     backendNeuroSanApiUrl,
     userInfo,
 }): ReactJSX.Element => {
-    // Animation time for the left and right panels to slide in or out when launching the animation
-    const GROW_ANIMATION_TIME_MS = 800
+    const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
@@ -63,10 +95,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
-    const [networkIconSuggestions, setNetworkIconSuggestions] = useState<Record<string, string>>({})
+
+    // List of known temporary networks (agent reservations) received from the backend
+    const temporaryNetworks = useTempNetworksStore((state) => state.tempNetworks)
+
+    // Track newly added temp networks so we can highlight them
+    const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
+
+    const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
-    const [agentIconSuggestions, setAgentIconSuggestions] = useState<Record<string, string>>({})
+    const [agentIconSuggestions, setAgentIconSuggestions] = useState<AgentIconSuggestions | null>(null)
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
@@ -84,12 +123,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
-    const [currentConversations, setCurrentConversations] = useState<AgentConversation[] | null>(null)
+    const [currentConversations, setCurrentConversations] = useState<AgentConversation[]>([])
+
+    const [networkToBeDeleted, setNetworkToBeDeleted] = useState<string | null>(null)
 
     // State to hold thought bubble edges - avoids duplicates across layout recalculations
     const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
         Map<string, {edge: Edge<EdgeProps>; timestamp: number}>
     >(new Map())
+
+    // For controlling alert when temporary network is created
+    const [alertContents, setAlertContents] = useState<string | null>(null)
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -170,7 +214,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         .concat()
                         .sort((a, b) => a?.origin.localeCompare(b?.origin))
                     setAgentsInNetwork(agentsInNetworkSorted)
-                    setAgentIconSuggestions({})
+                    setAgentIconSuggestions(null)
                     closeNotification()
                 } catch (e) {
                     const networkName = cleanUpAgentName(selectedNetwork)
@@ -182,6 +226,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     )
                     setAgentsInNetwork([])
                 }
+            } else {
+                setAgentsInNetwork([])
             }
         })()
     }, [neuroSanURL, selectedNetwork])
@@ -195,7 +241,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setAgentIconSuggestions(agentIconSuggestionsTmp)
                 } catch (e) {
                     console.warn("Unable to get agent icon suggestions:", e)
-                    setAgentIconSuggestions({})
+                    setAgentIconSuggestions(null)
                 }
             }
         })()
@@ -223,20 +269,81 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [isAwaitingLlm])
 
+    // Reaper: remove temporary networks that have been expired for more than GRACE_PERIOD_MS
+    useEffect(() => {
+        if (temporaryNetworks.length === 0) return undefined
+
+        const interval = setInterval(() => {
+            const now = Date.now() / 1000 // convert to seconds since epoch
+
+            const currentTemporaryNetworks = useTempNetworksStore.getState().tempNetworks
+
+            // Remove networks that have been expired for more than GRACE_PERIOD_MS
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks(
+                    currentTemporaryNetworks.filter(
+                        (n) => n.reservation.expiration_time_in_seconds > now - GRACE_PERIOD_MS / 1000
+                    )
+                )
+
+            // Figure out which networks have expired on the server (not including our grace period) so we can
+            // deselect them if they're currently selected
+            const expiredNetwork = currentTemporaryNetworks.filter(
+                (network) => network.reservation.expiration_time_in_seconds <= now
+            )
+            // If the selected network is one of the expired ones, deselect it
+            if (expiredNetwork.some((n) => n.agentInfo.agent_name === selectedNetwork)) {
+                setSelectedNetwork(null)
+                agentCountsRef.current = new Map()
+            }
+        }, 10_000) // check every 10s
+
+        return () => clearInterval(interval)
+    }, [temporaryNetworks, selectedNetwork])
+
     const onChunkReceived = useCallback((chunk: string): boolean => {
-        const result = processChatChunk(chunk, agentCountsRef.current, conversationsRef.current)
-        if (result.success) {
-            agentCountsRef.current = result.newCounts
-            conversationsRef.current = result.newConversations
-            setCurrentConversations(result.newConversations)
+        // Extract ChatMessage structure
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) {
+            return true
         }
 
-        return result.success
+        // Conversations between agents
+        const result = extractConversations(chatMessage, conversationsRef.current)
+        if (result != null) {
+            conversationsRef.current = result
+            setCurrentConversations(result)
+        }
+
+        // Agent hit counts
+        agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
+
+        // Temporary networks/reservations
+        const reservationsResult = extractReservations(chatMessage)
+
+        // Handle agent reservations (temporary networks) that come in through the chat stream.
+        if (reservationsResult?.length > 0) {
+            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult)
+            const currentNetworks = useTempNetworksStore.getState().tempNetworks
+            useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+
+            // record the new temporary networks so we can select them for the user. For now, we only
+            // care about the first one.
+            setNewlyAddedTemporaryNetworks(new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name)))
+        }
+
+        return true
     }, [])
 
     const onStreamingStarted = useCallback((): void => {
         // Reset agent counts
         agentCountsRef.current = new Map()
+
+        // Reset newly added temporary networks
+        setNewlyAddedTemporaryNetworks(new Set())
+
+        setAlertContents(null)
 
         // Show info popup only once per session
         if (!haveShownPopup) {
@@ -248,18 +355,55 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setIsStreaming(true)
     }, [haveShownPopup])
 
-    const onStreamingComplete = useCallback((): void => {
+    const onStreamingComplete = useCallback(() => {
+        const network = newlyAddedTemporaryNetworks?.values().next().value
+        if (network?.length > 0) {
+            // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
+            const agentNameDisplay = cleanUpAgentName(removeTrailingUuid(network))
+            setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
+        }
+
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
         resetState()
-    }, [])
+    }, [newlyAddedTemporaryNetworks])
+
+    useEffect(() => {
+        if (alertContents?.length > 0) {
+            // Set a timer to clear the alert after a few seconds so it doesn't overstay its welcome
+            const timeoutId = window.setTimeout(() => {
+                setAlertContents(null)
+            }, 10_000)
+
+            return () => {
+                window.clearTimeout(timeoutId)
+            }
+        } else {
+            return undefined
+        }
+    }, [alertContents])
+
+    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+
+    const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
+        if (isExpired) {
+            // It's expired so just delete it without confirmation
+            const tempNetworksWithoutThisOne = temporaryNetworks.filter(
+                (network) => network.agentInfo.agent_name !== networkId
+            )
+            useTempNetworksStore.getState().setTempNetworks(tempNetworksWithoutThisOne)
+        } else {
+            setNetworkToBeDeleted(networkId)
+            setConfirmationModalOpen(true)
+        }
+    }
 
     const getLeftPanel = () => {
         return (
             <Slide
                 id="multi-agent-accelerator-grid-sidebar-slide"
-                in={!isAwaitingLlm}
+                in={!enableZenMode || !isAwaitingLlm}
                 direction="right"
                 timeout={GROW_ANIMATION_TIME_MS}
                 onExited={() => {
@@ -268,7 +412,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             >
                 <Grid
                     id="multi-agent-accelerator-grid-sidebar"
-                    size={isStreaming ? 0 : 3.25}
+                    size={enableZenMode && isStreaming ? 0 : 3.25}
                     sx={{
                         height: "100%",
                     }}
@@ -280,10 +424,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         isAwaitingLlm={isAwaitingLlm}
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
+                        newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                        onDeleteNetwork={handleDeleteNetwork}
                         setSelectedNetwork={(newNetwork) => {
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
                         }}
+                        temporaryNetworks={temporaryNetworks}
                     />
                 </Grid>
             </Slide>
@@ -294,7 +441,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return (
             <Grid
                 id="multi-agent-accelerator-grid-agent-flow"
-                size={isStreaming ? 18 : 8.25}
+                size={enableZenMode && isStreaming ? 18 : 8.25}
                 sx={{
                     height: "100%",
                 }}
@@ -333,7 +480,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return (
             <Slide
                 id="multi-agent-accelerator-grid-agent-chat-common-slide"
-                in={!isAwaitingLlm}
+                in={!enableZenMode || !isAwaitingLlm}
                 direction="left"
                 timeout={GROW_ANIMATION_TIME_MS}
                 onExited={() => {
@@ -342,12 +489,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             >
                 <Grid
                     id="multi-agent-accelerator-grid-agent-chat-common"
-                    size={isStreaming ? 0 : 6.5}
+                    size={enableZenMode && isStreaming ? 0 : 6.5}
                     sx={{
                         height: "100%",
                     }}
                 >
                     <ChatCommon
+                        key={selectedNetwork ?? "no-network"}
                         ref={chatRef}
                         neuroSanURL={neuroSanURL}
                         id="agent-network-ui"
@@ -369,7 +517,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const getStopButton = () => {
         return (
             <>
-                {isAwaitingLlm && (
+                {isAwaitingLlm && enableZenMode && (
                     <Box
                         id="stop-button-container"
                         sx={{
@@ -398,28 +546,74 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             </>
         )
     }
-    return (
-        <Grid
-            id="multi-agent-accelerator-grid"
-            container
-            columns={18}
-            sx={{
-                border: "solid 1px #CFCFDC",
-                borderRadius: "var(--bs-border-radius)",
-                display: "flex",
-                flex: 1,
-                height: "85%",
-                marginTop: "1rem",
-                overflow: "hidden",
-                padding: "1rem",
-                justifyContent: isAwaitingLlm ? "center" : "unset",
-                position: "relative",
-            }}
+
+    const getConfirmationModal = () =>
+        confirmationModalOpen ? (
+            <ConfirmationModal
+                id="delete-network-confirmation-modal"
+                content={
+                    `The network "${cleanUpAgentName(removeTrailingUuid(networkToBeDeleted))}" will be deleted. ` +
+                    "This action cannot be undone. Are you sure you want to proceed?"
+                }
+                handleCancel={() => {
+                    setConfirmationModalOpen(false)
+                    setNetworkToBeDeleted(null)
+                }}
+                handleOk={() => {
+                    useTempNetworksStore
+                        .getState()
+                        .setTempNetworks(
+                            temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkToBeDeleted)
+                        )
+                    setNetworkToBeDeleted(null)
+                    setConfirmationModalOpen(false)
+                }}
+                title="Delete Network"
+            />
+        ) : null
+
+    const getAlert = () => (
+        <Collapse
+            in={alertContents?.length > 0}
+            timeout={1000}
         >
-            {getLeftPanel()}
-            {getCenterPanel()}
-            {getRightPanel()}
-            {getStopButton()}
-        </Grid>
+            <MUIAlert
+                id="temporary-network-created-alert"
+                closeable={true}
+                severity="success"
+                sx={{marginTop: "1rem", marginBottom: 0}}
+            >
+                {alertContents}
+            </MUIAlert>
+        </Collapse>
+    )
+
+    return (
+        <>
+            {getAlert()}
+            {getConfirmationModal()}
+            <Grid
+                id="multi-agent-accelerator-grid"
+                container
+                columns={18}
+                sx={{
+                    border: "solid 1px #CFCFDC",
+                    borderRadius: "var(--bs-border-radius)",
+                    display: "flex",
+                    flex: 1,
+                    height: "85%",
+                    marginTop: "1rem",
+                    overflow: "hidden",
+                    padding: "1rem",
+                    justifyContent: isAwaitingLlm ? "center" : "unset",
+                    position: "relative",
+                }}
+            >
+                {getLeftPanel()}
+                {getCenterPanel()}
+                {getRightPanel()}
+                {getStopButton()}
+            </Grid>
+        </>
     )
 }

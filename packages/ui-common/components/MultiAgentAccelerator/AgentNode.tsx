@@ -21,15 +21,16 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
-import {useTheme} from "@mui/material/styles"
+import {keyframes, styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
 import {Handle, NodeProps, Position} from "reactflow"
 
+import {AgentConversation} from "./AgentConversations"
 import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
-import {AgentConversation} from "../../utils/agentConversations"
+import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
 export interface AgentNodeProps {
@@ -50,6 +51,38 @@ export const NODE_WIDTH = 100
 // These are used to set the size of the icons displayed in the agent nodes.
 const AGENT_ICON_SIZE = "2.25rem"
 const FRONTMAN_ICON_SIZE = "4.5rem"
+
+// Pulsing glow animation for when an agent is active.
+const glowKeyFrames = (color: string) => keyframes`
+    0% {
+        box-shadow: 0 0 10px 4px ${color};
+        opacity: 0.6;
+    }
+    50% {
+        box-shadow: 0 0 30px 12px ${color};
+        opacity: 0.9;
+    }
+    100% {
+        box-shadow: 0 0 10px 4px ${color};
+        opacity: 1.0;
+    }
+`
+
+// Styled component for the agent nodes, applies glow animation if active
+const AnimatedNode = styled("div", {
+    shouldForwardProp: (prop) => prop !== "glowColor" && prop !== "isActive",
+})<{glowColor: string; isActive: boolean}>(({glowColor, isActive}) => ({
+    alignItems: "center",
+    borderRadius: "50%",
+    display: "flex",
+    justifyContent: "center",
+    position: "relative",
+    shapeOutside: "circle(50%)",
+    textAlign: "center",
+    ...(isActive && {
+        animation: `${glowKeyFrames(glowColor)} 2s infinite`,
+    }),
+}))
 
 /**
  * A node representing an agent in the network for use in react-flow.
@@ -108,18 +141,6 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
         backgroundColor = palette[colorIndex]
     }
 
-    // Animation style for making active agent glow and pulse
-    // TODO: more idiomatic MUI/style= way of doing this?
-    const glowAnimation = isActiveAgent
-        ? `@keyframes glow {
-            0% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 0.60; }
-            50% { box-shadow: 0 0 30px 12px ${backgroundColor}; opacity: 0.90; }
-            100% { box-shadow: 0 0 10px 4px ${backgroundColor}; opacity: 1.0; }
-        }`
-        : "none"
-
-    const boxShadow = isActiveAgent ? "0 0 30px 12px var(--bs-primary), 0 0 60px 24px var(--bs-primary)" : undefined
-
     // Hide handles when awaiting LLM response ("zen mode")
     const handleVisibility = isAwaitingLlm ? "none" : "block"
 
@@ -173,29 +194,26 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
     // Determine icon color based on settings. If auto color is enabled, use contrasting color for readability.
     const color = autoAgentIconColor ? theme.palette.getContrastText(backgroundColor) : agentNodeIconColor
 
+    // Choose a glow color that contrasts with the background for visibility.
+    const glowColor = isLightColor(theme.palette.background.default)
+        ? theme.palette.common.black
+        : theme.palette.common.white
+
     return (
         <>
-            <div
+            <AnimatedNode
                 id={agentId}
                 data-testid={agentId}
-                style={{
-                    alignItems: "center",
-                    animation: isActiveAgent ? "glow 2.0s infinite" : "none",
+                glowColor={glowColor}
+                isActive={isActiveAgent}
+                sx={{
                     backgroundColor,
-                    borderRadius: "50%",
-                    boxShadow,
                     color,
-                    display: "flex",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
-                    justifyContent: "center",
-                    shapeOutside: "circle(50%)",
-                    textAlign: "center",
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),
-                    position: "relative",
                 }}
             >
-                <style id={`${agentId}-glow-animation`}>{glowAnimation}</style>
                 {getDisplayAsIcon()}
                 <Handle
                     id={`${agentId}-left-handle`}
@@ -221,7 +239,7 @@ export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentN
                     type="source"
                     style={{display: handleVisibility}}
                 />
-            </div>
+            </AnimatedNode>
             <Tooltip
                 id={`${agentId}-tooltip`}
                 title={agentName}

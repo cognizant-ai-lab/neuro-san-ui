@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {closeSnackbar, enqueueSnackbar, SnackbarKey, SnackbarOrigin, VariantType} from "notistack"
+import {closeSnackbar, enqueueSnackbar, SnackbarOrigin, VariantType} from "notistack"
 import {JSX as ReactJSX} from "react"
 import {renderToString} from "react-dom/server"
 
@@ -31,8 +31,8 @@ const ERROR_WARNING_NOTIFICATION_DURATION_MS = 15_000
 // Display info notification popups for this many seconds
 const SUCCESS_NOTIFICATION_DURATION_MS = 5000
 
-export const closeNotification = (snackbarId?: SnackbarKey) => {
-    closeSnackbar(snackbarId)
+export const closeNotification = () => {
+    closeSnackbar()
 }
 
 /**

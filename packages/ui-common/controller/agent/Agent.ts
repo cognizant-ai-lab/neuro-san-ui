@@ -18,6 +18,7 @@ limitations under the License.
  * Controller module for interacting with the Agent LLM API.
  */
 
+import {TEMPORARY_NETWORK_FOLDER} from "../../components/MultiAgentAccelerator/const"
 import {
     AgentInfo,
     ApiPaths,
@@ -33,6 +34,9 @@ import {
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest} from "../llm/LlmChat"
+import {AgentIconSuggestions} from "../Types/AgentIconSuggestions"
+import {BrandingSuggestions} from "../Types/Branding"
+import {NetworkIconSuggestions} from "../Types/NetworkIconSuggestions"
 
 /**
  * Insert the target agent name into the path. The paths Api enum contains values like:
@@ -43,7 +47,13 @@ import {sendLlmRequest} from "../llm/LlmChat"
  * @returns The path with the target agent name inserted.
  */
 const insertTargetAgent = (agent: string, path: string) => {
-    return path.replace("{agent_name}", agent)
+    let agentTmp = agent
+    // Remove "temporary" prefix from network name if it exists since the server doesn't know about that convention
+    if (agentTmp.startsWith(`${TEMPORARY_NETWORK_FOLDER}/`)) {
+        agentTmp = agentTmp.replace(`${TEMPORARY_NETWORK_FOLDER}/`, "")
+    }
+
+    return path.replace("{agent_name}", agentTmp)
 }
 
 export interface TestConnectionResult {
@@ -87,17 +97,13 @@ export const testConnection = async (url: string): Promise<TestConnectionResult>
 /**
  * Utility function to send POST requests with JSON body and handle errors.
  * Used for getting LLM suggestions for icons and branding colors.
+ * @template T The expected response type from the server.
  * @param endpoint The API endpoint to send the request to.
  * @param body The request body to send, which will be stringified to JSON.
- * @param errorMessage The error message to include if the request fails.
  * @returns The response from the server parsed as JSON.
  * @throws An error if the request fails or the response is not ok.
  */
-const postJsonRequest = async (
-    endpoint: string,
-    body: Record<string, unknown>,
-    errorMessage: string
-): Promise<Record<string, string>> => {
+const postJsonRequest = async <T>(endpoint: string, body: Record<string, unknown>): Promise<T> => {
     const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -106,11 +112,12 @@ const postJsonRequest = async (
         body: JSON.stringify(body),
     })
 
-    if (!response.ok) {
-        throw new Error(`${errorMessage}: ${response.statusText}`)
+    const jsonResponse = await response.json()
+    if (!response.ok || jsonResponse.error) {
+        throw new Error(jsonResponse.error || response.statusText)
     }
 
-    return response.json()
+    return jsonResponse
 }
 
 /**
@@ -118,8 +125,8 @@ const postJsonRequest = async (
  * @param networks The list of networks to get icon suggestions for.
  * @returns A promise that resolves to a record mapping network names to icon names.
  */
-export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]): Promise<Record<string, string>> =>
-    postJsonRequest("/api/networkIconSuggestions", {networks}, "Failed to get network icon suggestions")
+export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]): Promise<NetworkIconSuggestions> =>
+    postJsonRequest<Exclude<NetworkIconSuggestions, "error">>("/api/networkIconSuggestions", {networks})
 
 /**
  * Get LLM suggestions for agent icons based on their descriptions from Neuro-san
@@ -127,15 +134,11 @@ export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]):
  * tools, and connections.
  * @return A promise that resolves to a record mapping agent names to suggested icon names.
  */
-export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse): Promise<Record<string, string>> =>
-    postJsonRequest(
-        "/api/agentIconSuggestions",
-        {
-            connectivity_info: connectivity.connectivity_info,
-            metadata: connectivity.metadata,
-        },
-        "Failed to get network icon suggestions"
-    )
+export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse): Promise<AgentIconSuggestions> =>
+    postJsonRequest<AgentIconSuggestions>("/api/agentIconSuggestions", {
+        connectivity_info: connectivity.connectivity_info,
+        metadata: connectivity.metadata,
+    })
 
 /**
  * Get LLM suggestions for branding colors based on the company name. This is used to customize the UI colors
@@ -143,8 +146,8 @@ export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse
  * @param company The name of the company to get branding color suggestions for.
  * @returns A promise that resolves to a record mapping color types (e.g. "primary", "secondary") to hex color codes.
  */
-export const getBrandingSuggestions = async (company: string): Promise<Record<string, string>> =>
-    postJsonRequest("/api/branding", {company}, "Failed to get branding color suggestions")
+export const getBrandingSuggestions = async (company: string): Promise<BrandingSuggestions> =>
+    postJsonRequest<BrandingSuggestions>("/api/branding", {company})
 
 /**
  * Get the list of available agent networks from the concierge service.

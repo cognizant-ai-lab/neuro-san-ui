@@ -2,8 +2,10 @@
 // eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
+import Delete from "@mui/icons-material/Delete"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
+import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {
     TreeItemContent,
@@ -14,10 +16,11 @@ import {
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
-import {FC} from "react"
+import {FC, useRef} from "react"
 
-import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {NodeIndex} from "./TreeBuilder"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
+
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -38,10 +41,19 @@ type TagColor = (typeof TAG_COLORS)[number]
 const tagsToColors = new Map<string, TagColor>()
 
 export interface AgentNetworkNodeProps extends TreeItemProps {
-    readonly nodeIndex: Map<string, AgentInfo>
-    readonly setSelectedNetwork: (network: string) => void
-    readonly shouldDisableTree: boolean
+    readonly nodeIndex: NodeIndex
+    readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly networkIconSuggestions: Record<string, string>
+    readonly temporaryNetworkExpirationTimes?: Record<string, Date>
+}
+
+/**
+ * Helper function to determine if a temporary network is expired based on its expiration date
+ * @param expirationDate - Date object representing the expiration time of the temporary network
+ * @returns boolean indicating whether the temporary network is expired
+ */
+const isTemporaryNetworkExpired = (expirationDate: Date): boolean => {
+    return Date.now() > expirationDate.getTime()
 }
 
 /**
@@ -49,30 +61,31 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
  * @param props - see AgentNetworkNode interface
  * @returns JSX.Element containing the custom tree item
  */
-export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
+export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     children,
     disabled,
     itemId,
     label,
-    nodeIndex,
-    setSelectedNetwork,
-    shouldDisableTree,
     networkIconSuggestions,
+    nodeIndex,
+    onDeleteNetwork,
+    temporaryNetworkExpirationTimes,
 }) => {
+    const theme = useTheme()
+
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
+    const displayLabel = nodeIndex.get(itemId)?.displayName || cleanUpAgentName(labelString)
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
 
+    const rootRef = useRef<HTMLLIElement>(null)
+
     const isParent = Array.isArray(children) && children.length > 0
     const isChild = !isParent
 
-    const selectNetworkHandler = (network: string) => {
-        setSelectedNetwork?.(network)
-    }
-
-    const agentNode = nodeIndex?.get(itemId)
+    const agentNode = nodeIndex?.get(itemId)?.agentInfo
 
     // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
     // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
@@ -88,10 +101,12 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
         }
     }
 
-    // retrieve path for this network
+    // Determine if expired (temporary networks only)
+    const expirationTime = temporaryNetworkExpirationTimes?.[itemId]
+    const isTemporaryNetwork = Boolean(expirationTime)
+    const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
 
-    const path = isChild ? agentNode?.agent_name : null
-    const iconNameSuggestion = isChild ? networkIconSuggestions?.[itemId] : null
+    const iconNameSuggestion = isTemporaryNetwork ? "HourglassTop" : isChild ? networkIconSuggestions?.[itemId] : null
 
     let muiIconElement = null
     if (iconNameSuggestion && MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
@@ -103,50 +118,81 @@ export const AgentNetworkNode: FC<AgentNetworkNodeProps> = ({
 
     return (
         <TreeItemProvider {...getContextProviderProps()}>
-            <TreeItemRoot {...getRootProps()}>
+            <TreeItemRoot
+                {...getRootProps()}
+                ref={rootRef}
+            >
                 <TreeItemContent
                     key={labelString}
                     {...getContentProps()}
-                    {...(isParent || shouldDisableTree ? {} : {onClick: () => selectNetworkHandler(path)})}
+                    sx={{
+                        cursor: isExpired ? "not-allowed" : "pointer",
+                    }}
                 >
-                    <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
+                    <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%"}}>
                         <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
-                            {muiIconElement}
-                            <TreeItemLabel
-                                {...getLabelProps()}
-                                sx={{
-                                    fontWeight: isParent ? "bold" : "normal",
-                                    fontSize: isParent ? "1rem" : "0.9rem",
-                                    color: isParent ? "var(--heading-color)" : null,
-                                    "&:hover": {
-                                        textDecoration: "underline",
-                                    },
-                                }}
-                            >
-                                {cleanUpAgentName(labelString)}
-                            </TreeItemLabel>
-                        </Box>
-                        {isChild && tags?.length > 0 ? (
                             <Tooltip
-                                title={tags
-                                    .slice()
-                                    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
-                                    .map((tag) => (
-                                        <Chip
-                                            key={tag}
-                                            label={tag}
-                                            style={{
-                                                margin: "0.25rem",
-                                                backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
-                                            }}
-                                        />
-                                    ))}
-                                placement="right"
-                                arrow={true}
+                                title={
+                                    isChild && isExpired
+                                        ? "Expired"
+                                        : expirationTime && `Expires at ${expirationTime.toLocaleString()}`
+                                }
                             >
-                                <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
+                                <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
+                                    {muiIconElement}
+                                    <TreeItemLabel
+                                        {...getLabelProps()}
+                                        sx={{
+                                            fontWeight: isParent ? "bold" : "normal",
+                                            fontSize: isParent ? "1rem" : "0.9rem",
+                                            color: isParent ? "var(--heading-color)" : null,
+                                            opacity: isExpired ? 0.25 : 1,
+                                            "&:hover": {
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        {displayLabel}
+                                    </TreeItemLabel>
+                                </Box>
                             </Tooltip>
-                        ) : null}
+                            {isChild && tags?.length > 0 ? (
+                                <Tooltip
+                                    title={tags
+                                        .slice()
+                                        .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                        .map((tag) => (
+                                            <Chip
+                                                key={tag}
+                                                label={tag}
+                                                style={{
+                                                    margin: "0.25rem",
+                                                    backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
+                                                }}
+                                            />
+                                        ))}
+                                    placement="right"
+                                    arrow={true}
+                                >
+                                    <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
+                                </Tooltip>
+                            ) : null}
+                        </Box>
+                        {isChild && isTemporaryNetwork && (
+                            <Tooltip title="Delete network">
+                                <Delete
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDeleteNetwork?.(itemId, isExpired)
+                                    }}
+                                    sx={{
+                                        cursor: "pointer",
+                                        fontSize: "1rem",
+                                        "&:hover": {color: theme.palette.warning.main},
+                                    }}
+                                />
+                            </Tooltip>
+                        )}
                     </Box>
                 </TreeItemContent>
                 {children && <TreeItemGroupTransition {...getGroupTransitionProps()} />}
