@@ -597,7 +597,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 container
                 columns={18}
                 sx={{
-                    border: "solid 1px #CFCFDC",
                     borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flex: 1,
@@ -605,7 +604,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     justifyContent: isAwaitingLlm ? "center" : "unset",
                     marginTop: "1rem",
                     overflow: "hidden",
-                    padding: "1rem",
                     position: "relative",
                 }}
             >
