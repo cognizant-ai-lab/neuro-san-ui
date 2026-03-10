@@ -71,7 +71,7 @@ interface MUIAccordionItem {
     title: ReactNode
 }
 
-export interface MUIAccordionProps {
+interface MUIAccordionProps {
     arrowPosition?: "left" | "right"
     defaultExpandedPanelKey?: number
     expandOnlyOnePanel?: boolean
