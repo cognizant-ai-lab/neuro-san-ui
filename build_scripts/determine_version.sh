@@ -61,7 +61,9 @@ if [[ "$EVENT_NAME" == "release" ]]; then
         exit 1
     fi
     
-    VERSION="$TAG_NAME"
+    # Strip leading "v" prefix (e.g. "v1.3.4" → "1.3.4") so
+    # package.json and ECR tags get a clean semver string.
+    VERSION="${TAG_NAME#v}"
     DEPLOY_ENV="staging"
     SHOULD_BUILD="true"
     SHOULD_DEPLOY="true"
