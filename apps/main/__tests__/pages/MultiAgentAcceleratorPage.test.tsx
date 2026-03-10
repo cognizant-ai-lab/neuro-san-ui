@@ -343,6 +343,29 @@ describe("Multi Agent Accelerator Page", () => {
         expect(await screen.findByTestId("test-chat-common")).not.toBeVisible()
     })
 
+    it("should correctly handle Zen mode being disabled", async () => {
+        // Disable Zen mode
+        useSettingsStore.getState().updateSettings({behavior: {enableZenMode: false}})
+
+        renderMultiAgentAcceleratorPage()
+
+        screen.getByText("Agent Networks")
+
+        await act(async () => {
+            setIsAwaitingLlm(true)
+        })
+
+        // Panels should all still be visible even with isAwaitingLlm true because Zen mode is disabled
+        // Left panel: should be hidden in Zen mode
+        expect(document.getElementById("multi-agent-accelerator-sidebar-sidebar")).toBeVisible()
+
+        // Center panel: Agent Flow. Should always be visible
+        expect(document.getElementById("multi-agent-accelerator-agent-flow-container")).toBeVisible()
+
+        // Right panel: Chat window should be hidden in Zen mode
+        expect(await screen.findByTestId("test-chat-common")).toBeVisible()
+    })
+
     it("calls handleStopMock on Escape key when isAwaitingLlm is true", async () => {
         renderMultiAgentAcceleratorPage()
 

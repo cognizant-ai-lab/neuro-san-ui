@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from "@testing-library/react"
+import {fireEvent, render, screen, within} from "@testing-library/react"
 import {UserEvent} from "@testing-library/user-event"
 import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
 
@@ -157,6 +157,28 @@ describe("SettingsDialog", () => {
 
         // Now should be true
         expect(useSettingsStore.getState().settings.appearance.autoAgentIconColor).toBe(true)
+    })
+
+    it("Allows toggling Zen mode", async () => {
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Default: Zen mode should be enabled
+        expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(true)
+
+        const zenModeToggle = screen.getByTestId("zen-mode-checkbox")
+
+        const checkBoxElement = within(zenModeToggle).getByRole("checkbox")
+
+        expect(checkBoxElement).toBeChecked()
+
+        await user.click(checkBoxElement)
+
+        expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
     })
 
     it("resets settings to default when reset button is confirmed", async () => {

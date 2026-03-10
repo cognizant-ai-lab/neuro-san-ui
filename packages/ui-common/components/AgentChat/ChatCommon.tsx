@@ -851,7 +851,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Add ID block for agent
         updateOutput(
             <UserQueryDisplay
-                userQuery={cleanUpAgentName(targetAgent)}
+                userQuery={cleanUpAgentName(removeTrailingUuid(targetAgent))}
                 title={targetAgent}
                 userImage={AGENT_IMAGE}
             />
