@@ -597,7 +597,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 container
                 columns={18}
                 sx={{
-                    borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flex: 1,
                     height: "85%",
