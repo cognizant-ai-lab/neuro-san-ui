@@ -325,6 +325,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                             id="body-container"
                             maxWidth={false}
                             sx={{
+                                border: "solid 1px #CFCFDC",
                                 flex: 1,
                                 minHeight: "90%",
                             }}
