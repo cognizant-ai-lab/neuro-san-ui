@@ -406,7 +406,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Make sure to extract only thought bubble edges for the overlay.
     const thoughtBubbleEdgesForOverlay: ThoughtBubbleEdgeShape[] = useMemo(
-        () => edges.filter((e): e is ThoughtBubbleEdgeShape => e.type === "thoughtBubbleEdge"),
+        () => edges.filter((e) => e.type === "thoughtBubbleEdge") as ThoughtBubbleEdgeShape[],
         [edges]
     )
 
