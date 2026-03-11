@@ -122,8 +122,6 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
 
     const includeBreadcrumbs = Component.withBreadcrumbs ?? true
 
-    const isContainedInViewport = Component.isContainedInViewport ?? false
-
     const primary = useSettingsStore((state) => state.settings.branding.primary)
     const secondary = useSettingsStore((state) => state.settings.branding.secondary)
     const background = useSettingsStore((state) => state.settings.branding.background)
@@ -320,18 +318,20 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                             id="body-container"
                             maxWidth={false}
                             sx={{
+                                border: `solid 1px ${theme.palette.grey[300]}`,
                                 flex: 1,
-                                height: isContainedInViewport ? "100%" : "auto",
-                                paddingBottom: "5rem",
+                                minHeight: "90%",
                             }}
                         >
                             {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
                             {getAppComponent()}
-                            <Footer
-                                supportEmailAddress={supportEmailAddress}
-                                sx={{borderTop: "none", marginTop: "4rem"}}
-                            />
                         </Container>
+                        <Footer
+                            supportEmailAddress={supportEmailAddress}
+                            logoLinkUrl="https://www.cognizant.com/"
+                            logoUrl="/cognizant-logo-white.svg"
+                            sx={{borderTop: "none", marginTop: 0}}
+                        />
                     </ErrorBoundary>
                 </SessionProvider>
             </>

@@ -31,7 +31,6 @@ const OuterContainer = styled("div")({
     flexDirection: "column",
     height: "100%",
     overflow: "auto",
-    paddingBottom: "2rem",
     width: "100%",
 })
 
@@ -221,7 +220,11 @@ export default function Index(): ReactElement {
                         </NeuroAIToolsContainer>
                     </div>
                 </BodyContent>
-                <Footer supportEmailAddress={supportEmailAddress} />
+                <Footer
+                    supportEmailAddress={supportEmailAddress}
+                    logoLinkUrl="https://www.cognizant.com/"
+                    logoUrl="/cognizant-logo-white.svg"
+                />
             </OuterContainer>
         </div>
     )
