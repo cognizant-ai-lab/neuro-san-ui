@@ -12,7 +12,7 @@ const HeaderLine = styled("h6")({
 
 const LinkDivider = styled("div")({
     border: "1px solid var(--bs-accent3-medium)",
-    marginBottom: "1.2rem",
+    marginBottom: "0.5rem",
     width: "2.4rem",
 })
 
@@ -114,7 +114,7 @@ export const Footer: FC<FooterProps> = ({logoLinkUrl, logoUrl, supportEmailAddre
                         href={null}
                         onClick={() => setEmailDialogOpen(true)}
                         rel="noopener noreferrer"
-                        sx={{cursor: "pointer", textDecoration: "underline"}}
+                        sx={{cursor: "pointer"}}
                     >
                         Contact Us
                     </FooterItemLink>
