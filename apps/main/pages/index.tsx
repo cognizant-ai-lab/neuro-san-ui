@@ -31,7 +31,6 @@ const OuterContainer = styled("div")({
     flexDirection: "column",
     height: "100%",
     overflow: "auto",
-    // paddingBottom: "2rem",
     width: "100%",
 })
 
