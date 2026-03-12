@@ -347,10 +347,9 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Determine which agents to point to. If the edge supplies an `agents` array in
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
-            const potentialAgents = edge.data?.agents
-            const candidate = edge.target || edge.source
-            const fallback: string[] = candidate ? [candidate] : []
-            let agentIds: string[] = Array.isArray(potentialAgents) ? potentialAgents : fallback
+            let agentIds: string[] = Array.isArray(edge.data?.agents)
+                ? edge.data?.agents
+                : [edge.target || edge.source].filter(Boolean)
 
             if (agentIds.length === 0) return null
 

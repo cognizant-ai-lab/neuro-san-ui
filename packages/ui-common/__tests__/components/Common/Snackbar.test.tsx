@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useTheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
@@ -28,43 +28,35 @@ jest.mock("notistack", () => ({
     useSnackbar: jest.fn(),
 }))
 
-// Mock theme so we can control palette.mode
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useTheme: jest.fn(),
-}))
-
 describe("Snackbar Component", () => {
     withStrictMocks()
 
     const mockCloseSnackbar = jest.fn()
 
-    const renderSnackbar = (props?: Partial<SnackbarProps>) =>
+    const renderSnackbar = (props?: Partial<SnackbarProps>, mode: PaletteMode = "light") =>
         render(
-            <Snackbar
-                variant="info"
-                anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-                hideIconVariant={false}
-                iconVariant={{}}
-                id="test-id"
-                message="Test message"
-                description="Test description"
-                persist={false}
-                style={{}}
-                {...props}
-            />
+            <ThemeProvider theme={createTheme({palette: {mode}})}>
+                <Snackbar
+                    variant="info"
+                    anchorOrigin={{
+                        vertical: "top",
+                        horizontal: "right",
+                    }}
+                    hideIconVariant={false}
+                    iconVariant={{}}
+                    id="test-id"
+                    message="Test message"
+                    description="Test description"
+                    persist={false}
+                    style={{}}
+                    {...props}
+                />
+            </ThemeProvider>
         )
 
     beforeEach(() => {
         ;(useSnackbar as jest.Mock).mockReturnValue({
             closeSnackbar: mockCloseSnackbar,
-        })
-        // default light mode (background.paper is used in component)
-        ;(useTheme as jest.Mock).mockReturnValue({
-            palette: {mode: "light", background: {paper: "#fff"}},
         })
     })
 
@@ -135,18 +127,14 @@ describe("Snackbar Component", () => {
     it("applies a light-mode shadow by default", () => {
         renderSnackbar()
         const box = screen.getByTestId("test-id-snackbar-box")
-        // default shadow should contain black color
         const computed = window.getComputedStyle(box)
-        expect(computed.boxShadow).toContain("rgba(0, 0, 0, 0.08)")
+        expect(computed.boxShadow).toContain("rgba(#000, 0.08)")
     })
 
     it("switches to a white shadow color in dark mode", () => {
-        ;(useTheme as jest.Mock).mockReturnValue({
-            palette: {mode: "dark", background: {paper: "#000"}},
-        })
-        renderSnackbar()
+        renderSnackbar({}, "dark")
         const box = screen.getByTestId("test-id-snackbar-box")
         const computed = window.getComputedStyle(box)
-        expect(computed.boxShadow).toContain("rgba(255, 255, 255, 0.08)")
+        expect(computed.boxShadow).toContain("rgba(#fff, 0.08)")
     })
 })

@@ -62,7 +62,7 @@ export const Snackbar = ({
 
     // Theming/Dark mode
     const theme = useTheme()
-    const shadowColor = theme.palette.mode === "dark" ? "255, 255, 255" : "0, 0, 0"
+    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
 
     return (
         <SnackbarContent

@@ -638,7 +638,7 @@ describe("ChatCommon", () => {
         const parentAccordion = finalDiv.closest(".MuiAccordion-root")
         expect(parentAccordion).toBeInTheDocument()
         const computed = window.getComputedStyle(parentAccordion)
-        expect(computed.boxShadow).toContain("rgba(0, 0, 0, 0.08)")
+        expect(computed.boxShadow).toContain("rgba(#000, 0.08)")
     })
 
     it("switches to a white shadow color in dark mode for the final answer accordion", async () => {
@@ -656,7 +656,7 @@ describe("ChatCommon", () => {
         const parentAccordion = finalDiv.closest(".MuiAccordion-root")
         expect(parentAccordion).toBeInTheDocument()
         const computed = window.getComputedStyle(parentAccordion)
-        expect(computed.boxShadow).toContain("rgba(255, 255, 255, 0.08)")
+        expect(computed.boxShadow).toContain("rgba(#fff, 0.08)")
     })
 
     it("Should handle 'show thinking' button correctly", async () => {

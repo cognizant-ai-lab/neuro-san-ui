@@ -234,7 +234,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // MUI theme
     const theme = useTheme()
-    const shadowColor = theme.palette.mode === "dark" ? "255, 255, 255" : "0, 0, 0"
+    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
 
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
