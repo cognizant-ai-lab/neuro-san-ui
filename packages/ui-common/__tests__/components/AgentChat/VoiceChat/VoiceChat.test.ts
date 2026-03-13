@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type {Dispatch, MutableRefObject, SetStateAction} from "react"
+import type {Dispatch, RefObject, SetStateAction} from "react"
 
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
 import {
@@ -261,7 +261,7 @@ describe("VoiceChat utils", () => {
     describe("Speech Recognition Event Handlers", () => {
         let mockSetChatInput: jest.MockedFunction<Dispatch<SetStateAction<string>>>
         let mockSetVoiceInputState: jest.MockedFunction<Dispatch<SetStateAction<SpeechRecognitionState>>>
-        let speechRecognitionRef: MutableRefObject<SpeechRecognition | null>
+        let speechRecognitionRef: RefObject<SpeechRecognition | null>
 
         beforeEach(() => {
             mockSetChatInput = jest.fn()
@@ -538,7 +538,7 @@ describe("VoiceChat utils", () => {
         })
 
         it("should handle null speech recognition gracefully", () => {
-            const speechRecognitionRef: MutableRefObject<SpeechRecognition | null> = {current: null}
+            const speechRecognitionRef: RefObject<SpeechRecognition | null> = {current: null}
             const handlers: SpeechRecognitionHandlers | null = null
 
             expect(() => {

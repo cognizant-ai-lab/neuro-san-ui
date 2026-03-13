@@ -16,20 +16,17 @@ limitations under the License.
 
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
-export interface AgentConversationBase {
+export interface AgentConversation {
     // The specific agents involved in this conversation path
     agents: Set<string>
+    // Unique identifier for the conversation
+    id: string
     // Timestamp when the conversation started
     startedAt: Date
     // The conversation text to display in thought bubbles
     text?: string
     // The conversation type
     type: ChatMessageType
-}
-
-export interface AgentConversation extends AgentConversationBase {
-    // Unique identifier for the conversation
-    id: string
 }
 
 export const isFinalMessage = (chatMessage: {

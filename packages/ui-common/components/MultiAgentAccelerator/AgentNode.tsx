@@ -24,8 +24,9 @@ import TravelExploreIcon from "@mui/icons-material/TravelExplore"
 import {keyframes, styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
+import {Handle, NodeProps, Position} from "@xyflow/react"
+import type {Node as RFNode} from "@xyflow/react"
 import {FC} from "react"
-import {Handle, NodeProps, Position} from "reactflow"
 
 import {AgentConversation} from "./AgentConversations"
 import {useSettingsStore} from "../../state/Settings"
@@ -33,7 +34,7 @@ import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
-export interface AgentNodeProps {
+export interface AgentNodeProps extends Record<string, unknown> {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
     readonly depth: number
@@ -88,7 +89,7 @@ const AnimatedNode = styled("div", {
  * A node representing an agent in the network for use in react-flow.
  * @param props See AgentNodeProps
  */
-export const AgentNode: FC<NodeProps<AgentNodeProps>> = (props: NodeProps<AgentNodeProps>) => {
+export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProps<RFNode<AgentNodeProps>>) => {
     const theme = useTheme()
 
     // Agent node color from settings store

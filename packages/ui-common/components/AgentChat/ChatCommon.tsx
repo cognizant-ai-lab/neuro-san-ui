@@ -34,13 +34,11 @@ import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
 import {
-    cloneElement,
     CSSProperties,
     Dispatch,
-    forwardRef,
     isValidElement,
-    ReactElement,
     ReactNode,
+    Ref,
     SetStateAction,
     useEffect,
     useImperativeHandle,
@@ -72,7 +70,7 @@ import {
 } from "../../generated/neuro-san/NeuroSanClient"
 import {hashString, hasOnlyWhitespace} from "../../utils/text"
 import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
-import {MUIAccordion, MUIAccordionProps} from "../Common/MUIAccordion"
+import {MUIAccordion} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
 
@@ -204,7 +202,7 @@ const QUERY_TRUNCATE_LENGTH = 80
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
-export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, ref) => {
+export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const slyData = useRef<Record<string, unknown>>({})
 
     const {
@@ -236,6 +234,7 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
 
     // MUI theme
     const theme = useTheme()
+    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
 
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -332,24 +331,6 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
         // Clean up function
         return () => cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
     }, [])
-
-    // Hide/show existing accordions based on showThinking state
-    useEffect(() => {
-        setChatOutput((currentOutput) =>
-            currentOutput.map((item) => {
-                if (isValidElement(item) && item.type === MUIAccordion) {
-                    const itemAsAccordion = item as ReactElement<MUIAccordionProps>
-                    return cloneElement(itemAsAccordion, {
-                        sx: {
-                            ...item.props.sx,
-                            display: showThinking || item.key === finalAnswerKey?.current ? "block" : "none",
-                        },
-                    })
-                }
-                return item
-            })
-        )
-    }, [showThinking, darkMode])
 
     // Sync ref with state variable for use within timer etc.
     useEffect(() => {
@@ -462,10 +443,9 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                 sx={{
                     fontSize: "large",
                     marginBottom: "1rem",
-                    display: showThinking || isFinalAnswer ? "block" : "none",
                     boxShadow: isFinalAnswer
-                        ? `0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 
-                                    0 9px 28px 8px rgba(0, 0, 0, 0.05)`
+                        ? `0 6px 16px 0 rgba(${shadowColor}, 0.08), 0 3px 6px -4px rgba(${shadowColor}, 0.12), 
+                                    0 9px 28px 8px rgba(${shadowColor}, 0.05)`
                         : "none",
                 }}
             />
@@ -1103,7 +1083,20 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
                     >
                         <FormattedMarkdown
                             id={`${id}-formatted-markdown`}
-                            nodesList={chatOutput}
+                            nodesList={chatOutput.map((item) => {
+                                if (isValidElement(item) && item.type === MUIAccordion) {
+                                    const shouldShow = showThinking || item.key === finalAnswerKey.current
+                                    return (
+                                        <Box
+                                            key={item.key}
+                                            sx={{display: shouldShow ? "block" : "none"}}
+                                        >
+                                            {item}
+                                        </Box>
+                                    )
+                                }
+                                return item
+                            })}
                             style={darkMode ? atelierDuneDark : a11yLight}
                             wrapLongLines={shouldWrapOutput}
                         />
@@ -1234,8 +1227,4 @@ export const ChatCommon = forwardRef<ChatCommonHandle, ChatCommonProps>((props, 
             </Box>
         </Box>
     )
-})
-
-// Set a useful display name for the component for debugging purposes. We have to do it here because we're using
-// forwardRef in the main definition.
-ChatCommon.displayName = "ChatCommon"
+}

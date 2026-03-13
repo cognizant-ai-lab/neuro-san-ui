@@ -14,15 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
-import {EdgeProps, ReactFlowProvider} from "reactflow"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {PALETTES} from "../../../Theme/Palettes"
 
@@ -101,12 +102,14 @@ describe("AgentFlow", () => {
         setThoughtBubbleEdges: jest.fn(),
     }
 
-    const renderAgentFlowComponent = (overrides = {}) => {
+    const renderAgentFlowComponent = (overrides = {}, mode: PaletteMode = "light") => {
         const props = {...defaultProps, ...overrides}
         return render(
-            <ReactFlowProvider>
-                <AgentFlow {...props} />
-            </ReactFlowProvider>
+            <ThemeProvider theme={createTheme({palette: {mode}})}>
+                <ReactFlowProvider>
+                    <AgentFlow {...props} />
+                </ReactFlowProvider>
+            </ThemeProvider>
         )
     }
 
@@ -126,15 +129,27 @@ describe("AgentFlow", () => {
         })
     }
 
-    it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: darkMode ? "dark" : "light",
+    // Simulates React's functional-setState pattern so tests can inspect the resulting Map.
+    const createThoughtBubbleEdgesStore = () => {
+        let map = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+        const mockSetThoughtBubbleEdges = jest.fn((updater: unknown) => {
+            if (typeof updater === "function") {
+                map = (updater as (prev: typeof map) => typeof map)(map)
+            }
         })
+        return {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap: () => map}
+    }
 
-        const {container} = renderAgentFlowComponent()
+    it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
+        const mode = darkMode ? "dark" : "light"
+        const {container} = renderAgentFlowComponent({}, mode)
 
         expect(await screen.findByText(cleanUpAgentName("React Flow"))).toBeInTheDocument()
         verifyAgentNodes(container)
+
+        const legend = container.querySelector("#test-flow-id-legend")
+        const computed = window.getComputedStyle(legend)
+        expect(computed.boxShadow).toContain(darkMode ? "#fff" : "#000")
     })
 
     it("Should allow switching between heatmap and depth displays", async () => {
@@ -325,6 +340,40 @@ describe("AgentFlow", () => {
 
         // Should not show radial guides SVG with only one node
         expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+    })
+
+    it("Should handle radial guides toggle when layout is linear", async () => {
+        const {container} = renderAgentFlowComponent()
+
+        // First click to switch to linear layout
+        const linearButton = container.querySelector("#linear-layout-button")
+        expect(linearButton).toBeInTheDocument()
+        await user.click(linearButton)
+
+        const radialGuidesButton = container.querySelector("#radial-guides-button")
+        expect(radialGuidesButton).toBeInTheDocument()
+
+        // Button should be disabled when layout is linear
+        expect(radialGuidesButton).toHaveAttribute("disabled")
+    })
+
+    it("Should toggle radial guides on and off", async () => {
+        const {container} = renderAgentFlowComponent()
+
+        const radialGuidesButton = container.querySelector("#radial-guides-button")
+        expect(radialGuidesButton).toBeInTheDocument()
+
+        // Click to toggle radial guides off
+        await user.click(radialGuidesButton)
+
+        // Radial guides should not be visible
+        expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+
+        // Click again to toggle radial guides back on
+        await user.click(radialGuidesButton)
+
+        // Radial guides should be visible again
+        expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
     })
 
     it("Should render ThoughtBubbleOverlay component", () => {
@@ -718,44 +767,6 @@ describe("AgentFlow", () => {
         verifyAgentNodes(container)
     })
 
-    it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", async () => {
-        jest.useFakeTimers()
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        const conversationsWithText = [
-            {
-                id: "conv-timeout-test",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Test timeout message",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    isStreaming={true}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
-        act(() => {
-            jest.advanceTimersByTime(11000)
-        })
-
-        // The cleanup should have been triggered
-        // Note: The actual cleanup logic depends on the effect firing
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-
-        jest.useRealTimers()
-    })
-
     it("Should handle empty thought bubble edges map", () => {
         const {container} = renderAgentFlowComponent({
             thoughtBubbleEdges: new Map(),
@@ -815,18 +826,18 @@ describe("AgentFlow", () => {
     })
 
     it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
+        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
         // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
         const manyConversations = Array.from({length: 6}, (_, i) => ({
             id: `conv-${i}`,
             agents: new Set(["agent1", "agent2"]),
-            startedAt: new Date(Date.now() + i * 1000), // Different startedAts
+            startedAt: new Date(Date.now() + i * 1000), // Different startedAts so oldest is conv-0
             text: `{"inquiry": "Message ${i}"}`, // Unique messages
             type: ChatMessageType.AGENT,
         }))
 
-        const {container} = render(
+        render(
             <ReactFlowProvider>
                 <AgentFlow
                     {...defaultProps}
@@ -838,24 +849,24 @@ describe("AgentFlow", () => {
             </ReactFlowProvider>
         )
 
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-
-        // setThoughtBubbleEdges should be called for each conversation
-        // Including calls to add edges and potentially remove old ones
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        // Map must be capped at MAX_THOUGHT_BUBBLES (5)
+        expect(getThoughtBubbleEdgesMap().size).toBeLessThanOrEqual(5)
+        // Oldest bubble (conv-0) should have been evicted
+        expect(getThoughtBubbleEdgesMap().has("conv-0")).toBe(false)
+        // Newest bubble (conv-5) should still be present
+        expect(getThoughtBubbleEdgesMap().has("conv-5")).toBe(true)
     })
 
-    it("Should call removeThoughtBubbleEdgeHelper when cleaning up expired bubbles", async () => {
+    it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
         jest.useFakeTimers()
-        const mockSetThoughtBubbleEdges = jest.fn()
+        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
         const conversationsWithText = [
             {
-                id: "conv-expire-test",
+                id: "conv-timeout-test",
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Test expiration",
+                text: "Invoking Agent with inquiry: Test timeout message",
                 type: ChatMessageType.AGENT,
             },
         ]
@@ -872,80 +883,19 @@ describe("AgentFlow", () => {
             </ReactFlowProvider>
         )
 
-        // Fast-forward time by 11 seconds to trigger cleanup
+        // After initial render the bubble should have been added
+        expect(getThoughtBubbleEdgesMap().size).toBe(1)
+        expect(getThoughtBubbleEdgesMap().has("conv-timeout-test")).toBe(true)
+
+        // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
         act(() => {
             jest.advanceTimersByTime(11000)
         })
 
-        // The removeThoughtBubbleEdgeHelper should have been called via setThoughtBubbleEdges
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        // The bubble should have been removed from the map after expiry
+        expect(getThoughtBubbleEdgesMap().size).toBe(0)
 
         jest.useRealTimers()
-    })
-
-    it("Should handle radial guides toggle when layout is linear", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        // First click to switch to linear layout
-        const linearButton = container.querySelector("#linear-layout-button")
-        expect(linearButton).toBeInTheDocument()
-        await user.click(linearButton)
-
-        const radialGuidesButton = container.querySelector("#radial-guides-button")
-        expect(radialGuidesButton).toBeInTheDocument()
-
-        // Button should be disabled when layout is linear
-        expect(radialGuidesButton).toHaveAttribute("disabled")
-    })
-
-    it("Should add and remove edges via helper functions", () => {
-        let capturedEdgesMap: Map<string, {edge: EdgeProps; startedAt: number}> | null = null
-        const mockSetThoughtBubbleEdges = jest.fn((updater) => {
-            if (typeof updater === "function") {
-                const currentMap = capturedEdgesMap || new Map()
-                capturedEdgesMap = updater(currentMap)
-            }
-        })
-
-        const conversationsWithText = [
-            {
-                id: "helper-test-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Helper test",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const {rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={null}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Add conversations to trigger addThoughtBubbleEdgeHelper
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    thoughtBubbleEdges={capturedEdgesMap || new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // setThoughtBubbleEdges should have been called with an updater function
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-
-        // Verify the edge was added
-        expect(capturedEdgesMap).not.toBeNull()
-        expect(capturedEdgesMap.size).toBeGreaterThan(0)
     })
 
     it("Should handle hover state changes for thought bubbles", () => {
@@ -963,25 +913,6 @@ describe("AgentFlow", () => {
 
         // Component should render with thought bubble overlay
         expect(container.querySelector('[data-testid="mock-thought-bubble-overlay"]')).toBeInTheDocument()
-    })
-
-    it("Should toggle radial guides on and off", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        const radialGuidesButton = container.querySelector("#radial-guides-button")
-        expect(radialGuidesButton).toBeInTheDocument()
-
-        // Click to toggle radial guides off
-        await user.click(radialGuidesButton)
-
-        // Radial guides should not be visible
-        expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
-
-        // Click again to toggle radial guides back on
-        await user.click(radialGuidesButton)
-
-        // Radial guides should be visible again
-        expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
     })
 
     it("Should prevent expired bubbles from being removed when hovered", async () => {
@@ -1035,6 +966,61 @@ describe("AgentFlow", () => {
         expect(screen.getByTestId("mock-thought-bubble-overlay")).toBeInTheDocument()
 
         __MockThoughtBubbleOverlayImpl = previousImpl
+        jest.useRealTimers()
+    })
+
+    it("Should drop expired bubbles first when overflow limit is reached", () => {
+        jest.useFakeTimers()
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current fake time
+        const initialConversations = Array.from({length: 5}, (_, i) => ({
+            id: `conv-expire-overflow-${i}`,
+            agents: new Set(["agent1", "agent2"]),
+            startedAt: new Date(),
+            text: `Invoking Agent with inquiry: Initial overflow message ${i}`,
+            type: ChatMessageType.AGENT,
+        }))
+
+        const {rerender} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={initialConversations}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Advance 1 second past THOUGHT_BUBBLE_TIMEOUT_MS (which is 10 seconds), so those 5 bubbles are expired.
+        act(() => {
+            jest.advanceTimersByTime(11000)
+        })
+
+        // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
+        const extraConversation = {
+            id: "conv-expire-overflow-extra",
+            agents: new Set(["agent2", "agent3"]),
+            startedAt: new Date(),
+            text: "Invoking Agent with inquiry: Extra overflow message",
+            type: ChatMessageType.AGENT,
+        }
+
+        rerender(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={[...initialConversations, extraConversation]}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // setThoughtBubbleEdges should have been called (for both add and remove paths).
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
         jest.useRealTimers()
     })
 

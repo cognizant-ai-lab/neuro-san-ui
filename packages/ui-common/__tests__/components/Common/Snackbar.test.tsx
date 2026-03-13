@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
@@ -32,23 +33,25 @@ describe("Snackbar Component", () => {
 
     const mockCloseSnackbar = jest.fn()
 
-    const renderSnackbar = (props?: Partial<SnackbarProps>) =>
+    const renderSnackbar = (props?: Partial<SnackbarProps>, mode: PaletteMode = "light") =>
         render(
-            <Snackbar
-                variant="info"
-                anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-                hideIconVariant={false}
-                iconVariant={{}}
-                id="test-id"
-                message="Test message"
-                description="Test description"
-                persist={false}
-                style={{}}
-                {...props}
-            />
+            <ThemeProvider theme={createTheme({palette: {mode}})}>
+                <Snackbar
+                    variant="info"
+                    anchorOrigin={{
+                        vertical: "top",
+                        horizontal: "right",
+                    }}
+                    hideIconVariant={false}
+                    iconVariant={{}}
+                    id="test-id"
+                    message="Test message"
+                    description="Test description"
+                    persist={false}
+                    style={{}}
+                    {...props}
+                />
+            </ThemeProvider>
         )
 
     beforeEach(() => {
@@ -119,5 +122,19 @@ describe("Snackbar Component", () => {
         renderSnackbar({description: ""})
 
         expect(screen.queryByText("Test description")).not.toBeInTheDocument()
+    })
+
+    it("applies a light-mode shadow by default", () => {
+        renderSnackbar()
+        const box = screen.getByTestId("test-id-snackbar-box")
+        const computed = window.getComputedStyle(box)
+        expect(computed.boxShadow).toContain("rgba(#000, 0.08)")
+    })
+
+    it("switches to a white shadow color in dark mode", () => {
+        renderSnackbar({}, "dark")
+        const box = screen.getByTestId("test-id-snackbar-box")
+        const computed = window.getComputedStyle(box)
+        expect(computed.boxShadow).toContain("rgba(#fff, 0.08)")
     })
 })

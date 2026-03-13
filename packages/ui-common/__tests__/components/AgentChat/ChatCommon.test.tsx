@@ -622,6 +622,43 @@ describe("ChatCommon", () => {
         expect(await screen.findByText("Final Answer")).toBeInTheDocument()
     })
 
+    // verify box shadow color branch from ChatCommon.processLogLine
+    it("applies a light-mode shadow to the final answer accordion by default", async () => {
+        renderChatCommonComponent()
+
+        const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
+        const chatResponse = {response: responseMessage}
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test query")
+
+        const finalDiv = await screen.findByText("Final Answer")
+        const parentAccordion = finalDiv.closest(".MuiAccordion-root")
+        expect(parentAccordion).toBeInTheDocument()
+        const computed = window.getComputedStyle(parentAccordion)
+        expect(computed.boxShadow).toContain("rgba(#000, 0.08)")
+    })
+
+    it("switches to a white shadow color in dark mode for the final answer accordion", async () => {
+        renderChatCommonComponent({}, "dark")
+
+        const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
+        const chatResponse = {response: responseMessage}
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test query")
+
+        const finalDiv = await screen.findByText("Final Answer")
+        const parentAccordion = finalDiv.closest(".MuiAccordion-root")
+        expect(parentAccordion).toBeInTheDocument()
+        const computed = window.getComputedStyle(parentAccordion)
+        expect(computed.boxShadow).toContain("rgba(#fff, 0.08)")
+    })
+
     it("Should handle 'show thinking' button correctly", async () => {
         renderChatCommonComponent()
 
