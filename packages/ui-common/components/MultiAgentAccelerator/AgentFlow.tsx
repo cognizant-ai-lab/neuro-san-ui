@@ -146,7 +146,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 if (text) processedText.add(text)
             }
 
-            let next: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}> | null = null
+            let edgesMap: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}> | null = null
 
             for (const conv of currentConversations) {
                 const convText = conv.text?.trim()
@@ -158,7 +158,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     !processedText.has(convText) &&
                     !processedConversationIdsRef.current.has(conv.id)
                 ) {
-                    if (!next) next = new Map(prev)
+                    if (!edgesMap) edgesMap = new Map(prev)
 
                     processedConversationIdsRef.current.add(conv.id)
                     processedText.add(convText)
@@ -177,11 +177,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         },
                         style: {pointerEvents: "none" as const},
                     }
-                    addThoughtBubbleEdge(next, conv.id, edge) // also enforces MAX_GLOBAL_THOUGHT_BUBBLES
+                    addThoughtBubbleEdge(edgesMap, conv.id, edge) // also enforces MAX_GLOBAL_THOUGHT_BUBBLES
                 }
             }
 
-            return next ?? prev
+            return edgesMap ?? prev
         })
     }, [currentConversations, showThoughtBubbles, setThoughtBubbleEdges])
 
@@ -193,15 +193,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             const now = Date.now()
             setThoughtBubbleEdges((prev) => {
                 let changed = false
-                const next = new Map(prev)
+                const edgesMap = new Map(prev)
                 for (const [convId, entry] of prev) {
                     const isHovered = hoveredBubbleIdRef.current === `thought-bubble-${convId}`
                     if (!isHovered && now - entry.timestamp >= THOUGHT_BUBBLE_TIMEOUT_MS) {
-                        next.delete(convId)
+                        edgesMap.delete(convId)
                         changed = true
                     }
                 }
-                return changed ? next : prev
+                return changed ? edgesMap : prev
             })
         }, 1000)
 
