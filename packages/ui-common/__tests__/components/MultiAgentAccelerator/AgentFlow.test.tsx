@@ -17,12 +17,13 @@ limitations under the License.
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {EdgeProps, ReactFlowProvider} from "@xyflow/react"
+import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {PALETTES} from "../../../Theme/Palettes"
 
@@ -129,8 +130,8 @@ describe("AgentFlow", () => {
     }
 
     // Simulates React's functional-setState pattern so tests can inspect the resulting Map.
-    const makeEdgesCaptor = () => {
-        let map = new Map<string, {edge: EdgeProps; timestamp: number}>()
+    const createThoughtBubbleEdgesStore = () => {
+        let map = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
         const setter = jest.fn((updater: unknown) => {
             if (typeof updater === "function") {
                 map = (updater as (prev: typeof map) => typeof map)(map)
@@ -791,7 +792,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
-        const {setter: mockSetThoughtBubbleEdges, getMap} = makeEdgesCaptor()
+        const {setter: mockSetThoughtBubbleEdges, getMap} = createThoughtBubbleEdgesStore()
 
         // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
         const manyConversations = Array.from({length: 6}, (_, i) => ({
@@ -824,7 +825,7 @@ describe("AgentFlow", () => {
 
     it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
         jest.useFakeTimers()
-        const {setter: mockSetThoughtBubbleEdges, getMap} = makeEdgesCaptor()
+        const {setter: mockSetThoughtBubbleEdges, getMap} = createThoughtBubbleEdgesStore()
 
         const conversationsWithText = [
             {
@@ -879,7 +880,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should add and remove edges via helper functions", () => {
-        const {setter: mockSetThoughtBubbleEdges, getMap} = makeEdgesCaptor()
+        const {setter: mockSetThoughtBubbleEdges, getMap} = createThoughtBubbleEdgesStore()
 
         const conversationsWithText = [
             {
