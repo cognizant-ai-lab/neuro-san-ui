@@ -128,6 +128,17 @@ describe("AgentFlow", () => {
         })
     }
 
+    // Simulates React's functional-setState pattern so tests can inspect the resulting Map.
+    const makeEdgesCaptor = () => {
+        let map = new Map<string, {edge: EdgeProps; timestamp: number}>()
+        const setter = jest.fn((updater: unknown) => {
+            if (typeof updater === "function") {
+                map = (updater as (prev: typeof map) => typeof map)(map)
+            }
+        })
+        return {setter, getMap: () => map}
+    }
+
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
         const mode = darkMode ? "dark" : "light"
         const {container} = renderAgentFlowComponent({}, mode)
@@ -721,44 +732,6 @@ describe("AgentFlow", () => {
         verifyAgentNodes(container)
     })
 
-    it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", async () => {
-        jest.useFakeTimers()
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        const conversationsWithText = [
-            {
-                id: "conv-timeout-test",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Test timeout message",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    isStreaming={true}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
-        act(() => {
-            jest.advanceTimersByTime(11000)
-        })
-
-        // The cleanup should have been triggered
-        // Note: The actual cleanup logic depends on the effect firing
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-
-        jest.useRealTimers()
-    })
-
     it("Should handle empty thought bubble edges map", () => {
         const {container} = renderAgentFlowComponent({
             thoughtBubbleEdges: new Map(),
@@ -818,18 +791,18 @@ describe("AgentFlow", () => {
     })
 
     it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
+        const {setter: mockSetThoughtBubbleEdges, getMap} = makeEdgesCaptor()
 
         // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
         const manyConversations = Array.from({length: 6}, (_, i) => ({
             id: `conv-${i}`,
             agents: new Set(["agent1", "agent2"]),
-            startedAt: new Date(Date.now() + i * 1000), // Different startedAts
+            startedAt: new Date(Date.now() + i * 1000), // Different startedAts so oldest is conv-0
             text: `{"inquiry": "Message ${i}"}`, // Unique messages
             type: ChatMessageType.AGENT,
         }))
 
-        const {container} = render(
+        render(
             <ReactFlowProvider>
                 <AgentFlow
                     {...defaultProps}
@@ -841,24 +814,24 @@ describe("AgentFlow", () => {
             </ReactFlowProvider>
         )
 
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-
-        // setThoughtBubbleEdges should be called for each conversation
-        // Including calls to add edges and potentially remove old ones
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        // Map must be capped at MAX_THOUGHT_BUBBLES (5)
+        expect(getMap().size).toBeLessThanOrEqual(5)
+        // Oldest bubble (conv-0) should have been evicted
+        expect(getMap().has("conv-0")).toBe(false)
+        // Newest bubble (conv-5) should still be present
+        expect(getMap().has("conv-5")).toBe(true)
     })
 
-    it("Should call removeThoughtBubbleEdgeHelper when cleaning up expired bubbles", async () => {
+    it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
         jest.useFakeTimers()
-        const mockSetThoughtBubbleEdges = jest.fn()
+        const {setter: mockSetThoughtBubbleEdges, getMap} = makeEdgesCaptor()
 
         const conversationsWithText = [
             {
-                id: "conv-expire-test",
+                id: "conv-timeout-test",
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Test expiration",
+                text: "Invoking Agent with inquiry: Test timeout message",
                 type: ChatMessageType.AGENT,
             },
         ]
@@ -875,13 +848,17 @@ describe("AgentFlow", () => {
             </ReactFlowProvider>
         )
 
-        // Fast-forward time by 11 seconds to trigger cleanup
+        // After initial render the bubble should have been added
+        expect(getMap().size).toBe(1)
+        expect(getMap().has("conv-timeout-test")).toBe(true)
+
+        // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
         act(() => {
             jest.advanceTimersByTime(11000)
         })
 
-        // The removeThoughtBubbleEdgeHelper should have been called via setThoughtBubbleEdges
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        // The bubble should have been removed from the map after expiry
+        expect(getMap().size).toBe(0)
 
         jest.useRealTimers()
     })
@@ -902,13 +879,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should add and remove edges via helper functions", () => {
-        let capturedEdgesMap: Map<string, {edge: EdgeProps; startedAt: number}> | null = null
-        const mockSetThoughtBubbleEdges = jest.fn((updater) => {
-            if (typeof updater === "function") {
-                const currentMap = capturedEdgesMap || new Map()
-                capturedEdgesMap = updater(currentMap)
-            }
-        })
+        const {setter: mockSetThoughtBubbleEdges, getMap} = makeEdgesCaptor()
 
         const conversationsWithText = [
             {
@@ -937,7 +908,7 @@ describe("AgentFlow", () => {
                 <AgentFlow
                     {...defaultProps}
                     currentConversations={conversationsWithText}
-                    thoughtBubbleEdges={capturedEdgesMap || new Map()}
+                    thoughtBubbleEdges={getMap()}
                     setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
                 />
             </ReactFlowProvider>
@@ -947,8 +918,7 @@ describe("AgentFlow", () => {
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
 
         // Verify the edge was added
-        expect(capturedEdgesMap).not.toBeNull()
-        expect(capturedEdgesMap.size).toBeGreaterThan(0)
+        expect(getMap().size).toBeGreaterThan(0)
     })
 
     it("Should handle hover state changes for thought bubbles", () => {

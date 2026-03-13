@@ -237,14 +237,14 @@ describe("ThoughtBubbleOverlay", () => {
                 id: "edge1",
                 source: "node1",
                 target: "node2",
-                data: {text: null as unknown as string},
+                data: {text: null},
                 type: "thoughtBubbleEdge",
             },
             {
                 id: "edge2",
                 source: "node1",
                 target: "node2",
-                data: {text: undefined as unknown as string},
+                data: {text: undefined},
                 type: "thoughtBubbleEdge",
             },
             createMockEdge("edge3", "node1", "node2", "Valid message"),
@@ -258,9 +258,10 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        // Should only render the valid message
         expect(screen.getByText("Valid message")).toBeInTheDocument()
         expect(screen.queryAllByText(/./u)).toHaveLength(1) // Only one text node
+        expect(screen.queryByText("null")).not.toBeInTheDocument()
+        expect(screen.queryByText("undefined")).not.toBeInTheDocument()
     })
 
     it("Should update when edges are added or removed", () => {
@@ -736,30 +737,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(screen.getByText("Third")).toBeInTheDocument()
     })
 
-    it("Should skip rendering bubbles with null text after filtering", () => {
-        const edges: ThoughtBubbleEdgeShape[] = [
-            {
-                id: "edge1",
-                source: "node1",
-                target: "node2",
-                data: {text: null as unknown as string},
-                type: "thoughtBubbleEdge",
-            },
-            createMockEdge("edge2", "node1", "node2", "Valid message"),
-        ]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-            />
-        )
-
-        // Should only render the valid message
-        expect(screen.getByText("Valid message")).toBeInTheDocument()
-    })
-
     it("Should render connecting line with correct animation state", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
@@ -770,7 +747,7 @@ describe("ThoughtBubbleOverlay", () => {
                 ...mockNodes[1],
                 data: {...mockNodes[1].data, getConversations: () => [{agents: new Set(["node2"])}]},
             },
-        ] as unknown as RFNode[]
+        ]
 
         const agentEl = document.createElement("div")
         agentEl.dataset["id"] = "node2"
@@ -974,7 +951,7 @@ describe("ThoughtBubbleOverlay", () => {
                 ...mockNodes[1],
                 data: {...mockNodes[1].data, getConversations: () => [{agents: new Set(["node2"])}]},
             },
-        ] as unknown as RFNode[]
+        ]
 
         const {container, rerender} = render(
             <ThoughtBubbleOverlay
@@ -1068,7 +1045,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         const {container: c2, rerender: r2} = render(
             <ThoughtBubbleOverlay
-                nodes={nodesWithProvider as unknown as RFNode[]}
+                nodes={nodesWithProvider}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
             />
@@ -1077,7 +1054,7 @@ describe("ThoughtBubbleOverlay", () => {
         await act(async () => jest.advanceTimersByTime(200))
         r2(
             <ThoughtBubbleOverlay
-                nodes={nodesWithProvider as unknown as RFNode[]}
+                nodes={nodesWithProvider}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
             />
@@ -1164,7 +1141,7 @@ describe("ThoughtBubbleOverlay", () => {
             },
             position: {x: 0, y: 0},
             type: "agentNode",
-        } as unknown as RFNode
+        }
 
         const edge: ThoughtBubbleEdgeShape = {
             id: "edge-2",
@@ -1222,7 +1199,7 @@ describe("ThoughtBubbleOverlay", () => {
                 ...mockNodes[1],
                 data: {...mockNodes[1].data, getConversations: () => [{agents: new Set(["node2"])}]},
             },
-        ] as unknown as RFNode[]
+        ]
 
         const {rerender, unmount} = render(
             <ThoughtBubbleOverlay
