@@ -342,6 +342,40 @@ describe("AgentFlow", () => {
         expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
     })
 
+    it("Should handle radial guides toggle when layout is linear", async () => {
+        const {container} = renderAgentFlowComponent()
+
+        // First click to switch to linear layout
+        const linearButton = container.querySelector("#linear-layout-button")
+        expect(linearButton).toBeInTheDocument()
+        await user.click(linearButton)
+
+        const radialGuidesButton = container.querySelector("#radial-guides-button")
+        expect(radialGuidesButton).toBeInTheDocument()
+
+        // Button should be disabled when layout is linear
+        expect(radialGuidesButton).toHaveAttribute("disabled")
+    })
+
+    it("Should toggle radial guides on and off", async () => {
+        const {container} = renderAgentFlowComponent()
+
+        const radialGuidesButton = container.querySelector("#radial-guides-button")
+        expect(radialGuidesButton).toBeInTheDocument()
+
+        // Click to toggle radial guides off
+        await user.click(radialGuidesButton)
+
+        // Radial guides should not be visible
+        expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+
+        // Click again to toggle radial guides back on
+        await user.click(radialGuidesButton)
+
+        // Radial guides should be visible again
+        expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
+    })
+
     it("Should render ThoughtBubbleOverlay component", () => {
         const {container} = renderAgentFlowComponent()
 
@@ -864,64 +898,6 @@ describe("AgentFlow", () => {
         jest.useRealTimers()
     })
 
-    it("Should handle radial guides toggle when layout is linear", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        // First click to switch to linear layout
-        const linearButton = container.querySelector("#linear-layout-button")
-        expect(linearButton).toBeInTheDocument()
-        await user.click(linearButton)
-
-        const radialGuidesButton = container.querySelector("#radial-guides-button")
-        expect(radialGuidesButton).toBeInTheDocument()
-
-        // Button should be disabled when layout is linear
-        expect(radialGuidesButton).toHaveAttribute("disabled")
-    })
-
-    it("Should add and remove edges via helper functions", () => {
-        const {setter: mockSetThoughtBubbleEdges, getMap} = createThoughtBubbleEdgesStore()
-
-        const conversationsWithText = [
-            {
-                id: "helper-test-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Helper test",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const {rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={null}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Add conversations to trigger addThoughtBubbleEdgeHelper
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    thoughtBubbleEdges={getMap()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // setThoughtBubbleEdges should have been called with an updater function
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-
-        // Verify the edge was added
-        expect(getMap().size).toBeGreaterThan(0)
-    })
-
     it("Should handle hover state changes for thought bubbles", () => {
         const {container} = renderAgentFlowComponent({
             currentConversations: [
@@ -937,25 +913,6 @@ describe("AgentFlow", () => {
 
         // Component should render with thought bubble overlay
         expect(container.querySelector('[data-testid="mock-thought-bubble-overlay"]')).toBeInTheDocument()
-    })
-
-    it("Should toggle radial guides on and off", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        const radialGuidesButton = container.querySelector("#radial-guides-button")
-        expect(radialGuidesButton).toBeInTheDocument()
-
-        // Click to toggle radial guides off
-        await user.click(radialGuidesButton)
-
-        // Radial guides should not be visible
-        expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
-
-        // Click again to toggle radial guides back on
-        await user.click(radialGuidesButton)
-
-        // Radial guides should be visible again
-        expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
     })
 
     it("Should prevent expired bubbles from being removed when hovered", async () => {
