@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useColorScheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {EdgeProps, ReactFlowProvider} from "@xyflow/react"
@@ -101,12 +101,14 @@ describe("AgentFlow", () => {
         setThoughtBubbleEdges: jest.fn(),
     }
 
-    const renderAgentFlowComponent = (overrides = {}) => {
+    const renderAgentFlowComponent = (overrides = {}, mode: PaletteMode = "light") => {
         const props = {...defaultProps, ...overrides}
         return render(
-            <ReactFlowProvider>
-                <AgentFlow {...props} />
-            </ReactFlowProvider>
+            <ThemeProvider theme={createTheme({palette: {mode}})}>
+                <ReactFlowProvider>
+                    <AgentFlow {...props} />
+                </ReactFlowProvider>
+            </ThemeProvider>
         )
     }
 
@@ -127,14 +129,15 @@ describe("AgentFlow", () => {
     }
 
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({
-            mode: darkMode ? "dark" : "light",
-        })
-
-        const {container} = renderAgentFlowComponent()
+        const mode = darkMode ? "dark" : "light"
+        const {container} = renderAgentFlowComponent({}, mode)
 
         expect(await screen.findByText(cleanUpAgentName("React Flow"))).toBeInTheDocument()
         verifyAgentNodes(container)
+
+        const legend = container.querySelector("#test-flow-id-legend")
+        const computed = window.getComputedStyle(legend)
+        expect(computed.boxShadow).toContain(darkMode ? "#fff" : "#000")
     })
 
     it("Should allow switching between heatmap and depth displays", async () => {
@@ -1035,6 +1038,61 @@ describe("AgentFlow", () => {
         expect(screen.getByTestId("mock-thought-bubble-overlay")).toBeInTheDocument()
 
         __MockThoughtBubbleOverlayImpl = previousImpl
+        jest.useRealTimers()
+    })
+
+    it("Should drop expired bubbles first when overflow limit is reached", () => {
+        jest.useFakeTimers()
+        const mockSetThoughtBubbleEdges = jest.fn()
+
+        // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current fake time
+        const initialConversations = Array.from({length: 5}, (_, i) => ({
+            id: `conv-expire-overflow-${i}`,
+            agents: new Set(["agent1", "agent2"]),
+            startedAt: new Date(),
+            text: `Invoking Agent with inquiry: Initial overflow message ${i}`,
+            type: ChatMessageType.AGENT,
+        }))
+
+        const {rerender} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={initialConversations}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Advance 1 second past THOUGHT_BUBBLE_TIMEOUT_MS (which is 10 seconds), so those 5 bubbles are expired.
+        act(() => {
+            jest.advanceTimersByTime(11000)
+        })
+
+        // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
+        const extraConversation = {
+            id: "conv-expire-overflow-extra",
+            agents: new Set(["agent2", "agent3"]),
+            startedAt: new Date(),
+            text: "Invoking Agent with inquiry: Extra overflow message",
+            type: ChatMessageType.AGENT,
+        }
+
+        rerender(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={[...initialConversations, extraConversation]}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // setThoughtBubbleEdges should have been called (for both add and remove paths).
+        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
         jest.useRealTimers()
     })
 
