@@ -16,7 +16,6 @@ limitations under the License.
 
 import {act, render, screen} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import type {Node as RFNode} from "@xyflow/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
@@ -171,7 +170,7 @@ describe("ThoughtBubbleOverlay", () => {
                     ],
                 },
             },
-        ] as unknown as RFNode[]
+        ]
 
         // Add DOM element for agent so line coordinates can be calculated
         const agentEl = document.createElement("div")
