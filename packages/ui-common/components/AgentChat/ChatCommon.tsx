@@ -29,7 +29,7 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {useTheme} from "@mui/material/styles"
+import {alpha, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -444,8 +444,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     fontSize: "large",
                     marginBottom: "1rem",
                     boxShadow: isFinalAnswer
-                        ? `0 6px 16px 0 rgba(${shadowColor}, 0.08), 0 3px 6px -4px rgba(${shadowColor}, 0.12), 
-                                    0 9px 28px 8px rgba(${shadowColor}, 0.05)`
+                        ? `0 6px 16px 0 ${alpha(shadowColor, 0.08)}, 0 3px 6px -4px ${alpha(shadowColor, 0.12)}, 
+                                    0 9px 28px 8px ${alpha(shadowColor, 0.05)}`
                         : "none",
                 }}
             />

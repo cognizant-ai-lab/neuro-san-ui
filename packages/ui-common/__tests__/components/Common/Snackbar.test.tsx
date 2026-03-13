@@ -128,13 +128,13 @@ describe("Snackbar Component", () => {
         renderSnackbar()
         const box = screen.getByTestId("test-id-snackbar-box")
         const computed = window.getComputedStyle(box)
-        expect(computed.boxShadow).toContain("rgba(#000, 0.08)")
+        expect(computed.boxShadow).toContain("rgba(0, 0, 0, 0.08)")
     })
 
     it("switches to a white shadow color in dark mode", () => {
         renderSnackbar({}, "dark")
         const box = screen.getByTestId("test-id-snackbar-box")
         const computed = window.getComputedStyle(box)
-        expect(computed.boxShadow).toContain("rgba(#fff, 0.08)")
+        expect(computed.boxShadow).toContain("rgba(255, 255, 255, 0.08)")
     })
 })

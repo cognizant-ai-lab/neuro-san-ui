@@ -17,7 +17,7 @@ limitations under the License.
 import CloseIcon from "@mui/icons-material/Close"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
-import {styled, useTheme} from "@mui/material/styles"
+import {alpha, styled, useTheme} from "@mui/material/styles"
 import {CustomContentProps, SnackbarContent, useSnackbar} from "notistack"
 import {JSX as ReactJSX, Ref} from "react"
 
@@ -78,8 +78,8 @@ export const Snackbar = ({
                     borderColor: "transparent",
                     borderRadius: "var(--bs-border-radius)",
                     borderWidth: "1px",
-                    boxShadow: `0 6px 16px 0 rgba(${shadowColor}, 0.08), 0 3px 6px -4px rgba(${shadowColor}, 0.12),
-                                            0 9px 28px 8px rgba(${shadowColor}, 0.05)`,
+                    boxShadow: `0 6px 16px 0 ${alpha(shadowColor, 0.08)}, 0 3px 6px -4px ${alpha(shadowColor, 0.12)},
+                                            0 9px 28px 8px ${alpha(shadowColor, 0.05)}`,
                     maxWidth: "450px",
                     minWidth: "250px",
                     padding: "0.9rem",
