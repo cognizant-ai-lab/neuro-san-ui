@@ -426,6 +426,9 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle multiple rapid hover state changes", async () => {
+        // Use fake timers to prevent the 200ms debounce from leaking into subsequent tests.
+        jest.useFakeTimers()
+        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const onBubbleHoverChange = jest.fn()
         const edges: ThoughtBubbleEdgeShape[] = [
             createMockEdge("edge1", "node1", "node2", "First bubble"),
@@ -445,12 +448,18 @@ describe("ThoughtBubbleOverlay", () => {
         const bubble2 = screen.getByText("Second bubble")
 
         // Rapid hover changes
-        await user.hover(bubble1)
-        await user.hover(bubble2)
-        await user.unhover(bubble2)
+        await localUser.hover(bubble1)
+        await localUser.hover(bubble2)
+        await localUser.unhover(bubble2)
+
+        // Advance past the 200ms debounce so the timeout fires and no timers leak.
+        await act(async () => {
+            jest.advanceTimersByTime(250)
+        })
 
         // Should not crash and should handle multiple hover changes
         expect(onBubbleHoverChange).toHaveBeenCalled()
+        jest.useRealTimers()
     })
 
     it("Should handle edges with same source and target node", () => {
@@ -469,6 +478,11 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle onBubbleHoverChange not provided", async () => {
+        // Use fake timers so the 200ms timeout callback fires deterministically.
+        // This covers the false branch of `if (onBubbleHoverChange)` inside the timeout
+        // (i.e. when no callback is provided) and prevents timer leakage between tests.
+        jest.useFakeTimers()
+        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         render(
@@ -483,10 +497,17 @@ describe("ThoughtBubbleOverlay", () => {
         const bubble = screen.getByText("Test message")
 
         // Hover should not crash even without callback
-        await user.hover(bubble)
-        await user.unhover(bubble)
+        await localUser.hover(bubble)
+        await localUser.unhover(bubble)
+
+        // Advance past the 200ms debounce so the timeout callback fires and
+        // exercises the `else` branch where onBubbleHoverChange is absent.
+        await act(async () => {
+            jest.advanceTimersByTime(250)
+        })
 
         expect(bubble).toBeInTheDocument()
+        jest.useRealTimers()
     })
 
     it("Should handle edges changing while a bubble is hovered", async () => {
