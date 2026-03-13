@@ -132,12 +132,12 @@ describe("AgentFlow", () => {
     // Simulates React's functional-setState pattern so tests can inspect the resulting Map.
     const createThoughtBubbleEdgesStore = () => {
         let map = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-        const setter = jest.fn((updater: unknown) => {
+        const mockSetThoughtBubbleEdges = jest.fn((updater: unknown) => {
             if (typeof updater === "function") {
                 map = (updater as (prev: typeof map) => typeof map)(map)
             }
         })
-        return {setter, getMap: () => map}
+        return {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap: () => map}
     }
 
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
@@ -826,7 +826,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
-        const {setter: mockSetThoughtBubbleEdges, getMap} = createThoughtBubbleEdgesStore()
+        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
         // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
         const manyConversations = Array.from({length: 6}, (_, i) => ({
@@ -850,16 +850,16 @@ describe("AgentFlow", () => {
         )
 
         // Map must be capped at MAX_THOUGHT_BUBBLES (5)
-        expect(getMap().size).toBeLessThanOrEqual(5)
+        expect(getThoughtBubbleEdgesMap().size).toBeLessThanOrEqual(5)
         // Oldest bubble (conv-0) should have been evicted
-        expect(getMap().has("conv-0")).toBe(false)
+        expect(getThoughtBubbleEdgesMap().has("conv-0")).toBe(false)
         // Newest bubble (conv-5) should still be present
-        expect(getMap().has("conv-5")).toBe(true)
+        expect(getThoughtBubbleEdgesMap().has("conv-5")).toBe(true)
     })
 
     it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
         jest.useFakeTimers()
-        const {setter: mockSetThoughtBubbleEdges, getMap} = createThoughtBubbleEdgesStore()
+        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
         const conversationsWithText = [
             {
@@ -884,8 +884,8 @@ describe("AgentFlow", () => {
         )
 
         // After initial render the bubble should have been added
-        expect(getMap().size).toBe(1)
-        expect(getMap().has("conv-timeout-test")).toBe(true)
+        expect(getThoughtBubbleEdgesMap().size).toBe(1)
+        expect(getThoughtBubbleEdgesMap().has("conv-timeout-test")).toBe(true)
 
         // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
         act(() => {
@@ -893,7 +893,7 @@ describe("AgentFlow", () => {
         })
 
         // The bubble should have been removed from the map after expiry
-        expect(getMap().size).toBe(0)
+        expect(getThoughtBubbleEdgesMap().size).toBe(0)
 
         jest.useRealTimers()
     })
