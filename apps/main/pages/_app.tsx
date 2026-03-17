@@ -205,6 +205,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
             if (!res.ok) {
                 // This is bad: it means we saw the ALB header, but it's not in the right format so we're stuck
                 console.error(`Failed to fetch user info: ${res.status} ${res.statusText}`)
+                return
             }
 
             const response: UserInfoResponse = await res.json()
