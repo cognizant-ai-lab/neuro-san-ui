@@ -212,7 +212,7 @@ export default function Index(): ReactElement {
                                     id="explore-agent-networks-link-anchor"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    href={`/projects?${buildQueryString()}`}
+                                    href="#"
                                 >
                                     <LaunchButton id="neuro-san-button">Explore agent networks</LaunchButton>
                                 </a>

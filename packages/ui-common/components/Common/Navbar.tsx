@@ -73,6 +73,9 @@ export interface NavbarProps {
 
     // Optional logo.dev token for customer branding
     readonly logoServiceToken?: string
+
+    // Optional flag to show/hide the settings button, defaults to true
+    readonly showSettingsButton?: boolean
 }
 
 const MENU_ITEM_TEXT_PROPS = {
@@ -99,6 +102,7 @@ export const Navbar = ({
     logoServiceToken,
     pathname,
     query,
+    showSettingsButton = true,
     signOut,
     supportEmailAddress,
     userInfo,
@@ -452,19 +456,21 @@ export const Navbar = ({
                 />
             </Tooltip>
             {/* Settings */}
-            <Tooltip title="Settings">
-                <SettingsIcon
-                    sx={{
-                        ...MENU_ITEM_TEXT_PROPS,
-                        marginRight: "1rem",
-                        fontSize: "1rem",
-                        cursor: "pointer",
-                    }}
-                    onClick={() => {
-                        setSettingsDialogOpen(true)
-                    }}
-                />
-            </Tooltip>
+            {showSettingsButton && (
+                <Tooltip title="Settings">
+                    <SettingsIcon
+                        sx={{
+                            ...MENU_ITEM_TEXT_PROPS,
+                            marginRight: "1rem",
+                            fontSize: "1rem",
+                            cursor: "pointer",
+                        }}
+                        onClick={() => {
+                            setSettingsDialogOpen(true)
+                        }}
+                    />
+                </Tooltip>
+            )}
         </Grid>
     ) : (
         <LoadingSpinner id="navbar-loading-spinner" />

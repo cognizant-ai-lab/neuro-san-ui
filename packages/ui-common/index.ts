@@ -18,6 +18,7 @@ limitations under the License.
  * Export modules so they can be imported with simpler paths in the consumer
  */
 
+export * from "./Theme/Theme"
 export * from "./components/AgentChat/ChatCommon"
 export * from "./components/AgentChat/ControlButtons"
 export * from "./components/AgentChat/LlmChatButton"
@@ -49,6 +50,7 @@ export * from "./controller/agent/Agent"
 export * from "./controller/llm/LlmChat"
 export * from "./generated/neuro-san/NeuroSanClient"
 export * from "./state/Environment"
+export * from "./state/Settings"
 export * from "./state/UserInfo"
 export * from "./utils/Authentication"
 export * from "./utils/text"
