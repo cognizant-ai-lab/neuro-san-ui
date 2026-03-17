@@ -20,7 +20,7 @@
         "@xyflow/react": "12.10.1",
         "http-status": "1.7.3",
         "lodash-es": "4.17.23",
-        "next": "16.1.6",
+        "next": "16.1.7",
         "next-auth": "5.0.0-beta.30",
         "notistack": "3.0.2",
         "react-markdown": "10.1.0",

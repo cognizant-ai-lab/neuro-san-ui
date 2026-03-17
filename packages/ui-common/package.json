@@ -15,7 +15,7 @@
         "http-status": "1.7.3",
         "jsonrepair": "3.8.0",
         "lodash-es": "4.17.23",
-        "next": "16.1.6",
+        "next": "16.1.7",
         "notistack": "3.0.2",
         "react-dom": "19.2.4",
         "react-markdown": "10.1.0",
