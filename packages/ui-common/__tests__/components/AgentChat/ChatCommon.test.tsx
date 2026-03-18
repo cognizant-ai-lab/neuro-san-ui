@@ -30,7 +30,7 @@ import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCo
 import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
 import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
-import {sendLlmRequest} from "../../../controller/llm/LlmChat"
+import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 
 // Mock agent API
@@ -1146,12 +1146,14 @@ describe("ChatCommon", () => {
         // Verify sendLlmRequest was called with extraParams
         // The legacyAgentEndpoint may be undefined if not provided
         expect(sendLlmRequest).toHaveBeenCalledWith(
-            expect.any(Function), // handleChunk
-            expect.any(Object), // signal
-            undefined, // legacyAgentEndpoint (can be undefined)
-            testExtraParams, // extraParams
-            expect.any(String), // query
-            expect.any(Array) // chatHistory
+            expect.any(Function),
+            expect.any(Object),
+            undefined,
+            testExtraParams,
+            expect.any(String),
+            expect.any(Array),
+            null,
+            StreamingUnit.Chunk
         )
     })
 
