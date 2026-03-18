@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {act, render, screen} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {default as userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
@@ -25,10 +25,10 @@ import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 describe("ThoughtBubbleOverlay", () => {
     withStrictMocks()
 
-    let user: UserEvent
-
-    beforeEach(() => {
-        user = userEvent.setup()
+    afterEach(() => {
+        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
+        // into subsequent tests.
+        jest.useRealTimers()
     })
 
     const mockNodes = [
@@ -422,12 +422,13 @@ describe("ThoughtBubbleOverlay", () => {
             jest.advanceTimersByTime(250)
         })
         expect(onBubbleHoverChange).toHaveBeenCalledWith(null)
-        jest.useRealTimers()
     })
 
     it("Should handle multiple rapid hover state changes", async () => {
-        // Use fake timers to prevent the 200ms debounce from leaking into subsequent tests.
+        // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
         jest.useFakeTimers()
+        // Must be created after jest.useFakeTimers() with advanceTimers so userEvent's
+        // own internal pointer-event delays are driven by fake time, not real setTimeout.
         const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const onBubbleHoverChange = jest.fn()
         const edges: ThoughtBubbleEdgeShape[] = [
@@ -452,14 +453,13 @@ describe("ThoughtBubbleOverlay", () => {
         await localUser.hover(bubble2)
         await localUser.unhover(bubble2)
 
-        // Advance past the 200ms debounce so the timeout fires and no timers leak.
+        // Advance past the 200ms debounce so all queued timers fire and no timers leak.
         await act(async () => {
             jest.advanceTimersByTime(250)
         })
 
         // Should not crash and should handle multiple hover changes
         expect(onBubbleHoverChange).toHaveBeenCalled()
-        jest.useRealTimers()
     })
 
     it("Should handle edges with same source and target node", () => {
@@ -478,10 +478,10 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should handle onBubbleHoverChange not provided", async () => {
-        // Use fake timers so the 200ms timeout callback fires deterministically.
-        // This covers the false branch of `if (onBubbleHoverChange)` inside the timeout
-        // (i.e. when no callback is provided) and prevents timer leakage between tests.
+        // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
         jest.useFakeTimers()
+        // Must be created after jest.useFakeTimers() with advanceTimers so userEvent's
+        // own internal pointer-event delays are driven by fake time, not real setTimeout.
         const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
@@ -500,17 +500,21 @@ describe("ThoughtBubbleOverlay", () => {
         await localUser.hover(bubble)
         await localUser.unhover(bubble)
 
-        // Advance past the 200ms debounce so the timeout callback fires and
-        // exercises the `else` branch where onBubbleHoverChange is absent.
+        // Advance past the debounce so the timeout callback fires and covers
+        // the branch where onBubbleHoverChange is absent.
         await act(async () => {
             jest.advanceTimersByTime(250)
         })
 
         expect(bubble).toBeInTheDocument()
-        jest.useRealTimers()
     })
 
     it("Should handle edges changing while a bubble is hovered", async () => {
+        // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
+        jest.useFakeTimers()
+        // Must be created after jest.useFakeTimers() with advanceTimers so userEvent's
+        // own internal pointer-event delays are driven by fake time, not real setTimeout.
+        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
         const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Original message")]
         const edges2: ThoughtBubbleEdgeShape[] = [createMockEdge("edge2", "node1", "node2", "Updated message")]
 
@@ -523,7 +527,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         const bubble = screen.getByText("Original message")
-        await user.hover(bubble)
+        await localUser.hover(bubble)
 
         // Change edges while hovering
         rerender(
@@ -1006,7 +1010,6 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Cleanup
         agentEl.remove()
-        jest.useRealTimers()
     })
 
     it("Should not render lines for HUMAN message type or when agent is not active via getConversations", async () => {
@@ -1081,8 +1084,6 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         expect(c2.querySelectorAll("svg line").length).toBe(0)
-
-        jest.useRealTimers()
     })
 
     it("Should use fallback bubble coordinates when bubble DOM element is missing", async () => {
@@ -1122,8 +1123,6 @@ describe("ThoughtBubbleOverlay", () => {
         const y1 = lines.length > 0 ? lines[0].getAttribute("y1") : null
         expect([null, String(800 - 20 - 260)]).toContain(x1)
         expect([null, String(70 + 78 / 2)]).toContain(y1)
-
-        jest.useRealTimers()
     })
 
     it("renders a non-human thought bubble (AI type)", () => {
@@ -1244,7 +1243,6 @@ describe("ThoughtBubbleOverlay", () => {
         spy.mockRestore()
         a.remove()
         expect(() => unmount()).not.toThrow()
-        jest.useRealTimers()
     })
 
     it("Should catch and debug-log errors from updateAllLines without throwing", async () => {
@@ -1343,7 +1341,6 @@ describe("ThoughtBubbleOverlay", () => {
         global.requestAnimationFrame = origRAF
         global.cancelAnimationFrame = origCAF
         agentEl.remove()
-        jest.useRealTimers()
     })
 
     it("Should render bubble when edge.data.agents is an empty array (no targets)", () => {
@@ -1384,8 +1381,6 @@ describe("ThoughtBubbleOverlay", () => {
         await act(async () => jest.advanceTimersByTime(50))
 
         expect(() => unmount()).not.toThrow()
-
-        jest.useRealTimers()
     })
 
     it("Should handle duplicate agent ids in edge.data.agents without crashing", async () => {
@@ -1441,7 +1436,6 @@ describe("ThoughtBubbleOverlay", () => {
         consoleErrSpy.mockRestore()
 
         agentEl.remove()
-        jest.useRealTimers()
     })
 
     it("Should not crash when unmounting immediately while streaming is running", async () => {
@@ -1460,8 +1454,6 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Immediately unmount while streaming RAF loop may be active
         expect(() => unmount()).not.toThrow()
-
-        jest.useRealTimers()
     })
 
     it("Should toggle streaming on and off without errors", async () => {
@@ -1503,8 +1495,6 @@ describe("ThoughtBubbleOverlay", () => {
         ).not.toThrow()
 
         expect(() => unmount()).not.toThrow()
-
-        jest.useRealTimers()
     })
 
     it("Should remove bubble after exit animation timeout when edges are removed (alternate)", async () => {
@@ -1533,8 +1523,6 @@ describe("ThoughtBubbleOverlay", () => {
         await act(async () => jest.advanceTimersByTime(450))
 
         expect(container.textContent).not.toContain("Exit remove")
-
-        jest.useRealTimers()
     })
 
     it("Should tolerate agent elements with no bounding rect (containerRect falsy)", () => {

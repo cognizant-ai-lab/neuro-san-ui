@@ -1265,4 +1265,98 @@ describe("AgentFlow", () => {
         // Should render without errors when edges are cleared (covers thoughtBubbleEdges.size === 0 branch)
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
     })
+
+    it("Should deduplicate thought bubbles using processedText when prev map is non-empty", () => {
+        // Uses createThoughtBubbleEdgesStore so the updater function is actually executed,
+        // ensuring prev.values() is iterated on the second render.
+        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
+
+        const firstConversations = [
+            {
+                id: "conv-dedup-1",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: First unique message",
+                type: ChatMessageType.AGENT,
+            },
+        ]
+
+        const {rerender} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={firstConversations}
+                    isStreaming={true}
+                    thoughtBubbleEdges={new Map()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // After the first render, the map should have one entry
+        expect(getThoughtBubbleEdgesMap().size).toBe(1)
+        expect(getThoughtBubbleEdgesMap().has("conv-dedup-1")).toBe(true)
+
+        // Rerender with a different conversation — prev is now non-empty so the
+        // processedText Set and the for-loop over prev.values() execute.
+        const secondConversations = [
+            {
+                id: "conv-dedup-2",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Second unique message",
+                type: ChatMessageType.AGENT,
+            },
+        ]
+
+        rerender(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    currentConversations={secondConversations}
+                    isStreaming={true}
+                    thoughtBubbleEdges={getThoughtBubbleEdgesMap()}
+                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Both bubbles should now be present — deduplication did not falsely suppress the new one
+        expect(getThoughtBubbleEdgesMap().size).toBe(2)
+        expect(getThoughtBubbleEdgesMap().has("conv-dedup-2")).toBe(true)
+    })
+
+    it("Should add missing bubble agents as minimal nodes in the flow", () => {
+        // When thoughtBubbleEdges references an agent not in agentsInNetwork,
+        // mergedAgentsInNetwork creates a minimal ConnectivityInfo for it.
+        const ghostAgentEdgesMap = new Map()
+        ghostAgentEdgesMap.set("conv-ghost", {
+            edge: {
+                id: "thought-bubble-conv-ghost",
+                source: "agent1",
+                target: "ghost-agent",
+                type: "thoughtBubbleEdge",
+                data: {
+                    text: "Ghost agent message",
+                    showAlways: true,
+                    conversationId: "conv-ghost",
+                    agents: ["agent1", "ghost-agent"], // ghost-agent is not in NETWORK
+                },
+            },
+            timestamp: Date.now(),
+        })
+
+        const {container} = render(
+            <ReactFlowProvider>
+                <AgentFlow
+                    {...defaultProps}
+                    thoughtBubbleEdges={ghostAgentEdgesMap}
+                    setThoughtBubbleEdges={jest.fn()}
+                />
+            </ReactFlowProvider>
+        )
+
+        // Should render without errors; ghost-agent node should be added to the flow
+        expect(container).toBeInTheDocument()
+    })
 })
