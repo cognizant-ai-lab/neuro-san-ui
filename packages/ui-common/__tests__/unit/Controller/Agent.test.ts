@@ -25,7 +25,7 @@ import {
     testConnection,
     TestConnectionResult,
 } from "../../../controller/agent/Agent"
-import {sendLlmRequest} from "../../../controller/llm/LlmChat"
+import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {
     ApiPaths,
     // eslint-disable-next-line camelcase
@@ -152,7 +152,8 @@ describe("Controller/Agent/sendChatQuery", () => {
             expectedRequestParams,
             null,
             null,
-            username
+            username,
+            StreamingUnit.Chunk
         )
 
         if (mockChunks) {

@@ -59,7 +59,7 @@ import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} 
 import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "./VoiceChat/VoiceChat"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
-import {sendLlmRequest} from "../../controller/llm/LlmChat"
+import {sendLlmRequest, StreamingUnit} from "../../controller/llm/LlmChat"
 import {
     ChatContext,
     ChatMessage,
@@ -781,7 +781,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         legacyAgentEndpoint,
                         extraParams,
                         query,
-                        chatHistory.current
+                        chatHistory.current,
+                        null,
+                        StreamingUnit.Chunk
                     )
                 } else {
                     // It's a Neuro-san agent.
@@ -796,7 +798,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         handleChunk,
                         chatContext.current,
                         slyDataWithUserName,
-                        currentUser
+                        currentUser,
+                        StreamingUnit.Line
                     )
                 }
             } catch (error: unknown) {
