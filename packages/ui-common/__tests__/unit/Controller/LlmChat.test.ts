@@ -17,7 +17,28 @@ limitations under the License.
 import httpStatus from "http-status"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {sendLlmRequest} from "../../../controller/llm/LlmChat"
+import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
+
+const mockFetch = (mockChunks: Uint8Array<ArrayBuffer>[]) => {
+    let readIndex = 0
+
+    global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        body: {
+            getReader: () => ({
+                read: async () => {
+                    if (readIndex < mockChunks.length) {
+                        const returnValue = {done: false, value: mockChunks[readIndex]}
+                        readIndex += 1
+                        return returnValue
+                    } else {
+                        return {done: true, value: null}
+                    }
+                },
+            }),
+        },
+    })
+}
 
 describe("LlmChat", () => {
     withStrictMocks()
@@ -32,34 +53,105 @@ describe("LlmChat", () => {
         global.fetch = originalFetch
     })
 
-    it("should invoke the callback for each chunk received", async () => {
-        const mockChunks = [new TextEncoder().encode("chunk1"), new TextEncoder().encode("chunk2")]
-        let readIndex = 0
+    const encoder = new TextEncoder()
 
-        global.fetch = jest.fn().mockResolvedValue({
-            ok: true,
-            body: {
-                getReader: () => ({
-                    read: async () => {
-                        if (readIndex < mockChunks.length) {
-                            const returnValue = {done: false, value: mockChunks[readIndex]}
-                            readIndex += 1
-                            return returnValue
-                        }
-                        return {done: true, value: undefined}
-                    },
-                }),
-            },
-        })
+    it("should invoke the callback for each chunk received", async () => {
+        const mockChunks = [encoder.encode("chunk1"), encoder.encode("chunk2"), encoder.encode("")]
+        mockFetch(mockChunks)
 
         const callback = jest.fn()
-        const result = await sendLlmRequest(callback, null, "dummy URL", {}, "dummy query", [], "dummyUserId")
+        const result = await sendLlmRequest(
+            callback,
+            null,
+            "dummy URL",
+            {},
+            "dummy query",
+            [],
+            "dummyUserId",
+            StreamingUnit.Chunk
+        )
 
         // For callbacks, the function returns null
         expect(result).toBeNull()
 
         expect(callback).toHaveBeenCalledTimes(mockChunks.length)
         expect(callback).toHaveBeenNthCalledWith(1, "chunk1")
+    })
+
+    it("should batch up chunks until newline if streaming unit is Line", async () => {
+        const mockChunks = [encoder.encode("chunk1"), encoder.encode("chunk2\n"), encoder.encode("chunk3")]
+        mockFetch(mockChunks)
+
+        const callback = jest.fn()
+        const result = await sendLlmRequest(
+            callback,
+            null,
+            "dummy URL",
+            {},
+            "dummy query",
+            [],
+            "dummyUserId",
+            StreamingUnit.Line
+        )
+
+        // For callbacks, the function returns null
+        expect(result).toBeNull()
+
+        expect(callback).toHaveBeenCalledTimes(2)
+        expect(callback).toHaveBeenNthCalledWith(1, "chunk1chunk2")
+        expect(callback).toHaveBeenNthCalledWith(2, "chunk3")
+    })
+
+    it("should handle no remainder chunks in Line mode", async () => {
+        const mockChunks = [encoder.encode("chunk1"), encoder.encode("chunk2\n")]
+        mockFetch(mockChunks)
+
+        const callback = jest.fn()
+        const result = await sendLlmRequest(
+            callback,
+            null,
+            "dummy URL",
+            {},
+            "dummy query",
+            [],
+            "dummyUserId",
+            StreamingUnit.Line
+        )
+
+        // For callbacks, the function returns null
+        expect(result).toBeNull()
+
+        expect(callback).toHaveBeenCalledTimes(1)
+        expect(callback).toHaveBeenNthCalledWith(1, "chunk1chunk2")
+    })
+
+    it("should skip empty lines", async () => {
+        const mockChunks = [
+            encoder.encode("chunk1"),
+            encoder.encode("\n"),
+            encoder.encode("chunk2\n"),
+            encoder.encode("\n"),
+        ]
+        mockFetch(mockChunks)
+
+        const callback = jest.fn()
+        const result = await sendLlmRequest(
+            callback,
+            null,
+            "dummy URL",
+            {},
+            "dummy query",
+            [],
+            "dummyUserId",
+            StreamingUnit.Line
+        )
+
+        // For callbacks, the function returns null
+        expect(result).toBeNull()
+
+        expect(callback).toHaveBeenCalledTimes(2)
+        expect(callback).toHaveBeenNthCalledWith(1, "chunk1")
+        expect(callback).toHaveBeenNthCalledWith(2, "chunk2")
     })
 
     it("should throw if fetch throws", async () => {
