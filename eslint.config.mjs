@@ -1,19 +1,3 @@
-/*
-Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
@@ -46,8 +30,6 @@ const config = [
     // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
     {rules: {...next.configs["recommended-legacy"].rules}},
     {rules: {...next.configs["core-web-vitals-legacy"].rules}},
-
-    // Equivalent to plugin:@typescript-eslint/all, expressed as flat config.
     ...typescriptEslint.configs["flat/all"],
 
     {rules: {...eslintPluginImport.configs.recommended.rules}},
@@ -58,10 +40,11 @@ const config = [
     {rules: {...jest.configs.recommended.rules}},
     {rules: {...reactHooks.configs.recommended.rules}},
     {rules: {...eslintPluginReact.configs.all.rules}},
+    // This next one has to be included or else the React rules will complain that "React is not in scope".
+    // But those rules are wrong -- as of React 17, "React" automatically gets included in the transpilation
+    // process and doesn't *need* to be in scope.
     {rules: {...eslintPluginReact.configs["jsx-runtime"].rules}},
 
-    // Equivalent to extending "prettier" (kept here to preserve rule-order precedence), and then re-applied below
-    // exactly as in main.
     eslintConfigPrettier,
 
     {
@@ -532,7 +515,6 @@ const config = [
             "react/no-multi-comp": "off",
         },
     },
-    eslintConfigPrettier,
     {
         // re-enable these rules _after_ prettier since prettier disables them
         rules: {
