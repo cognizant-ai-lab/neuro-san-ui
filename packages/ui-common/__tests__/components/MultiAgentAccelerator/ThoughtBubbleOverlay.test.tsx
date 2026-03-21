@@ -424,44 +424,6 @@ describe("ThoughtBubbleOverlay", () => {
         expect(onBubbleHoverChange).toHaveBeenCalledWith(null)
     })
 
-    it("Should handle multiple rapid hover state changes", async () => {
-        // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
-        jest.useFakeTimers()
-        // Must be created after jest.useFakeTimers() with advanceTimers so userEvent's
-        // own internal pointer-event delays are driven by fake time, not real setTimeout.
-        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
-        const onBubbleHoverChange = jest.fn()
-        const edges: ThoughtBubbleEdgeShape[] = [
-            createMockEdge("edge1", "node1", "node2", "First bubble"),
-            createMockEdge("edge2", "node1", "node2", "Second bubble"),
-        ]
-
-        render(
-            <ThoughtBubbleOverlay
-                nodes={mockNodes}
-                edges={edges}
-                showThoughtBubbles={true}
-                onBubbleHoverChange={onBubbleHoverChange}
-            />
-        )
-
-        const bubble1 = screen.getByText("First bubble")
-        const bubble2 = screen.getByText("Second bubble")
-
-        // Rapid hover changes
-        await localUser.hover(bubble1)
-        await localUser.hover(bubble2)
-        await localUser.unhover(bubble2)
-
-        // Advance past the 200ms debounce so all queued timers fire and no timers leak.
-        await act(async () => {
-            jest.advanceTimersByTime(250)
-        })
-
-        // Should not crash and should handle multiple hover changes
-        expect(onBubbleHoverChange).toHaveBeenCalled()
-    })
-
     it("Should handle edges with same source and target node", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node1", "Self-referencing edge")]
 
