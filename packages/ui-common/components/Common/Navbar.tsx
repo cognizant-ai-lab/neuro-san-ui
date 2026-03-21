@@ -170,19 +170,21 @@ export const Navbar = ({
             )}
             <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                 <CustomerLogo logoServiceToken={logoServiceToken} />
-                <Typography
-                    id="customer-branding"
-                    sx={{
-                        fontSize: "20px",
-                        fontWeight: "600",
-                        paddingLeft: "0.15rem",
-                        width: "200px",
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    {customer}
-                </Typography>
+                {customer && (
+                    <Typography
+                        id="customer-branding"
+                        sx={{
+                            fontSize: "20px",
+                            fontWeight: "600",
+                            paddingLeft: "0.15rem",
+                            width: "200px",
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                    >
+                        {customer}
+                    </Typography>
+                )}
             </Box>
 
             {/*App title*/}
