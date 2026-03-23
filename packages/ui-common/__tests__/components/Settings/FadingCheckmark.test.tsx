@@ -5,6 +5,13 @@ import {FadingCheckmark, useCheckmarkFade} from "../../../components/Settings/Fa
 
 describe("useCheckmarkFade", () => {
     withStrictMocks()
+
+    afterEach(() => {
+        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
+        // into subsequent tests.
+        jest.useRealTimers()
+    })
+
     it("shows the checkmark when trigger is called", () => {
         const {result} = renderHook(() => useCheckmarkFade())
 
@@ -28,7 +35,6 @@ describe("useCheckmarkFade", () => {
         })
 
         expect(result.current.show).toBe(false)
-        jest.useRealTimers()
     })
 
     it("clears timeout on unmount", () => {
@@ -42,7 +48,6 @@ describe("useCheckmarkFade", () => {
         unmount()
 
         expect(jest.getTimerCount()).toBe(0)
-        jest.useRealTimers()
     })
 
     it("allows multiple invocations (idempotency)", () => {
@@ -74,7 +79,6 @@ describe("useCheckmarkFade", () => {
 
         // All timers should be cleared
         expect(jest.getTimerCount()).toBe(0)
-        jest.useRealTimers()
     })
 })
 
