@@ -180,4 +180,17 @@ describe("AgentNode", () => {
         renderAgentNode({displayAs})
         await screen.findByTestId(expectedTestId)
     })
+
+    it("renders a custom MUI icon when agentIconSuggestion is a valid icon name", async () => {
+        // "Star" is a real named export in @mui/icons-material; MUI renders it with testid "StarIcon"
+        renderAgentNode({agentIconSuggestion: "Star"})
+        await screen.findByTestId("StarIcon")
+    })
+
+    it("warns and falls back to default icon when agentIconSuggestion is invalid", async () => {
+        const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined)
+        renderAgentNode({agentIconSuggestion: "NotARealMuiIconAtAll"})
+        expect(warnSpy).toHaveBeenCalledWith("Invalid MUI icon suggestion: NotARealMuiIconAtAll")
+        warnSpy.mockRestore()
+    })
 })

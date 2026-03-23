@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
-import {render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {
@@ -125,6 +125,12 @@ describe("SideBar", () => {
     beforeEach(() => {
         user = userEvent.setup()
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
+    })
+
+    afterEach(() => {
+        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
+        // into subsequent tests.
+        jest.useRealTimers()
     })
 
     it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
@@ -516,5 +522,54 @@ describe("SideBar", () => {
         renderSidebarComponent({networks: []})
         await screen.findByText("Agent Networks")
         expect(screen.queryByRole("button", {name: TEST_AGENT_MATH_GUY})).not.toBeInTheDocument()
+    })
+
+    it("Should add sparkle-highlight to the selected treeitem after the 50ms timeout", async () => {
+        // Fake timers make the 50ms highlight callback fire deterministically.
+        jest.useFakeTimers()
+
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+        })
+
+        // Flush pending state updates; findByText succeeds on the first poll (element
+        // already present), so no fake-timer conflict.
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+        // MUI renders the selected treeitem with aria-checked="true".
+        const treeItem = screen.getByRole("treeitem", {checked: true})
+
+        // Fire the pending 50ms timer — covers the true arm of `if (selectedNode)`.
+        // runOnlyPendingTimers fires only timers already in the queue, so the
+        // 5000ms sparkle-remove timer registered inside the callback won't fire here.
+        act(() => {
+            jest.runOnlyPendingTimers()
+        })
+
+        expect(treeItem.classList.contains("sparkle-highlight")).toBe(true)
+    })
+
+    it("Should be a no-op when the highlight callback finds no matching treeitem", async () => {
+        // Fake timers make the 50ms callback fire deterministically.
+        jest.useFakeTimers()
+
+        // Render with empty networks so there are NO treeitem elements in the DOM.
+        // When the 50ms timer fires, querySelector returns null → covers the false
+        // arm of `if (selectedNode)` in the highlight callback.
+        renderSidebarComponent({
+            networks: [],
+            temporaryNetworks: [],
+            newlyAddedTemporaryNetworks: new Set(["any-name"]),
+        })
+
+        await screen.findByText("Agent Networks")
+
+        // Fire the 50ms timer — selectedNode is null, so the callback is a no-op.
+        act(() => {
+            jest.runOnlyPendingTimers()
+        })
+
+        expect(screen.queryByRole("treeitem")).not.toBeInTheDocument()
     })
 })
