@@ -140,7 +140,15 @@ describe("Navbar", () => {
     it("does not display customer branding text when customer is not set", async () => {
         renderNavbar()
 
-        expect(screen.queryByText("customer-branding")).not.toBeInTheDocument()
+        expect(screen.queryByTestId("customer-branding")).not.toBeInTheDocument()
+    })
+
+    it("does not display customer branding text when customer is whitespace only", async () => {
+        useSettingsStore.getState().updateSettings({branding: {customer: "   "}})
+
+        renderNavbar()
+
+        expect(screen.queryByTestId("customer-branding")).not.toBeInTheDocument()
     })
 
     it("renders the Navbar with the provided logo (Neuro® AI Multi-Agent Accelerator)", async () => {
