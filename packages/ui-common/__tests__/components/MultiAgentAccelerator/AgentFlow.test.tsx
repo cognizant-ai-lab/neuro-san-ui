@@ -85,6 +85,12 @@ describe("AgentFlow", () => {
         })
     })
 
+    afterEach(() => {
+        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
+        // into subsequent tests.
+        jest.useRealTimers()
+    })
+
     const defaultProps: AgentFlowProps = {
         agentsInNetwork: NETWORK,
         id: "test-flow-id",
@@ -894,8 +900,6 @@ describe("AgentFlow", () => {
 
         // The bubble should have been removed from the map after expiry
         expect(getThoughtBubbleEdgesMap().size).toBe(0)
-
-        jest.useRealTimers()
     })
 
     it("Should handle hover state changes for thought bubbles", () => {
@@ -966,7 +970,6 @@ describe("AgentFlow", () => {
         expect(screen.getByTestId("mock-thought-bubble-overlay")).toBeInTheDocument()
 
         __MockThoughtBubbleOverlayImpl = previousImpl
-        jest.useRealTimers()
     })
 
     it("Should drop expired bubbles first when overflow limit is reached", () => {
@@ -1020,8 +1023,6 @@ describe("AgentFlow", () => {
 
         // setThoughtBubbleEdges should have been called (for both add and remove paths).
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-
-        jest.useRealTimers()
     })
 
     it("Should handle conversations with empty text strings", () => {
