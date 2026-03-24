@@ -155,9 +155,9 @@ describe("AgentNode", () => {
     })
 
     it.each([
-        ["handles should display in regular mode", false, "block"],
-        ["handles should not display in Zen mode", true, "none"],
-    ])("%s", async (_description, isAwaitingLlm, expectedDisplay) => {
+        ["handles should display in regular mode", false, "visible"],
+        ["handles should not display in Zen mode", true, "hidden"],
+    ])("%s", async (_description, isAwaitingLlm, expectedVisibility) => {
         renderAgentNode({
             isAwaitingLlm,
             depth: 3,
@@ -167,7 +167,7 @@ describe("AgentNode", () => {
         for (const pos of positions) {
             const handle = await screen.findByTestId(`handle-source-${AGENT_ID}-${pos}-handle`)
             expect(handle).toBeInTheDocument()
-            expect(handle).toHaveStyle({display: expectedDisplay})
+            expect(handle).toHaveStyle({visibility: expectedVisibility})
         }
     })
 
