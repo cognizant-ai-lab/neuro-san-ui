@@ -142,8 +142,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         backgroundColor = palette[colorIndex]
     }
 
-    // Hide handles when awaiting LLM response ("zen mode")
-    const handleVisibility = isAwaitingLlm ? "none" : "block"
+    // Hide handles when awaiting LLM response ("zen mode").
+    const handleVisibility = isAwaitingLlm ? "hidden" : "visible"
 
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
@@ -220,25 +220,25 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                     id={`${agentId}-left-handle`}
                     position={Position.Left}
                     type="source"
-                    style={{display: handleVisibility}}
+                    style={{visibility: handleVisibility}}
                 />
                 <Handle
                     id={`${agentId}-right-handle`}
                     position={Position.Right}
                     type="source"
-                    style={{display: handleVisibility}}
+                    style={{visibility: handleVisibility}}
                 />
                 <Handle
                     id={`${agentId}-top-handle`}
                     position={Position.Top}
                     type="source"
-                    style={{display: handleVisibility}}
+                    style={{visibility: handleVisibility}}
                 />
                 <Handle
                     id={`${agentId}-bottom-handle`}
                     position={Position.Bottom}
                     type="source"
-                    style={{display: handleVisibility}}
+                    style={{visibility: handleVisibility}}
                 />
             </AnimatedNode>
             <Tooltip
