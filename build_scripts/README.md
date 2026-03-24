@@ -54,16 +54,6 @@ The **Publish UI Common** workflow (`.github/workflows/publish.yml`) publishes
 | GitHub Release                     | `<release-tag>`           | `latest`      |
 | Manual dispatch                    | `<base>-pr.<sha>.<run>`   | user-selected |
 
-After a push-to-main publish, the workflow triggers `cognizant-ai-lab/neuro-ui`
-via `repository_dispatch` so it can pick up the new snapshot.
-
-### npm Package Cleanup
-
-The **Cull NPM Packages** workflow (`.github/workflows/cull-npm-packages.yml`)
-runs weekly to remove old dev versions of `@cognizant-ai-lab/ui-common`.
-Release versions are never deleted. See `cull_npm_packages.sh` for the
-retention policy.
-
 ## Scripts
 
 | Script                       | Purpose                                                                                                    |
@@ -71,7 +61,6 @@ retention policy.
 | `determine_version.sh`       | Computes the image version, deploy environment, and build/deploy flags from the GitHub event type and ref. |
 | `compute_publish_version.sh` | Computes the npm package version and dist-tag for `@cognizant-ai-lab/ui-common` publishing.                |
 | `set_package_version.sh`     | Writes a version string into a `package.json` file (used before `npm publish`).                            |
-| `cull_npm_packages.sh`       | Cleans up old dev npm packages from the npmjs.org registry.                                                |
 | `run_eslint.sh`              | Runs ESLint with a zero-warning threshold.                                                                 |
 | `run_shellcheck.sh`          | Runs ShellCheck on all `.sh` files in the repo (excluding `node_modules`).                                 |
 | `CommitCheck.sh`             | Local pre-commit quality checks (tsc, knip, prettier, eslint, jest).                                       |
