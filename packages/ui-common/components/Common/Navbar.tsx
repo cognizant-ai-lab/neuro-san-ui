@@ -149,6 +149,7 @@ export const Navbar = ({
     // Customer for branding
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const primary = useSettingsStore((state) => state.settings.branding.primary)
+    const hasCustomer = customer?.trim().length > 0
 
     return hydrated ? (
         <Grid
@@ -170,19 +171,21 @@ export const Navbar = ({
             )}
             <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                 <CustomerLogo logoServiceToken={logoServiceToken} />
-                <Typography
-                    id="customer-branding"
-                    sx={{
-                        fontSize: "20px",
-                        fontWeight: "600",
-                        paddingLeft: "0.15rem",
-                        width: "200px",
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    {customer}
-                </Typography>
+                {hasCustomer && (
+                    <Typography
+                        data-testid="customer-branding"
+                        sx={{
+                            fontSize: "20px",
+                            fontWeight: "600",
+                            paddingLeft: "0.15rem",
+                            width: "200px",
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                    >
+                        {customer}
+                    </Typography>
+                )}
             </Box>
 
             {/*App title*/}
@@ -190,7 +193,7 @@ export const Navbar = ({
                 id={id}
                 sx={{display: "flex", alignItems: "center"}}
             >
-                {customer ? getCognizantLogoImage() : null}
+                {hasCustomer ? getCognizantLogoImage() : null}
                 <Typography
                     id="nav-bar-brand"
                     sx={{
@@ -437,7 +440,7 @@ export const Navbar = ({
             <Tooltip
                 id="dark-mode-toggle"
                 title={
-                    customer
+                    hasCustomer
                         ? "Dark mode toggle is not available when customer branding is active. Reset via Settings menu."
                         : "Toggle dark mode"
                 }
@@ -447,11 +450,11 @@ export const Navbar = ({
                     sx={{
                         marginRight: "1rem",
                         fontSize: "1rem",
-                        cursor: customer ? "not-allowed" : "pointer",
+                        cursor: hasCustomer ? "not-allowed" : "pointer",
                         color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)",
                     }}
                     onClick={() => {
-                        !customer && setMode(darkMode ? "light" : "dark")
+                        !hasCustomer && setMode(darkMode ? "light" : "dark")
                     }}
                 />
             </Tooltip>

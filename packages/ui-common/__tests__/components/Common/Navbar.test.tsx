@@ -127,6 +127,30 @@ describe("Navbar", () => {
         expect(logoImage).toHaveAttribute("src", expect.stringMatching(new RegExp(`logo.dev.*${customer}`, "u")))
     })
 
+    it("displays the customer branding text when customer is set", async () => {
+        const customer = "Acme"
+        useSettingsStore.getState().updateSettings({branding: {customer}})
+
+        renderNavbar()
+
+        const customerBranding = await screen.findByText(customer)
+        expect(customerBranding).toBeVisible()
+    })
+
+    it("does not display customer branding text when customer is not set", async () => {
+        renderNavbar()
+
+        expect(screen.queryByTestId("customer-branding")).not.toBeInTheDocument()
+    })
+
+    it("does not display customer branding text when customer is whitespace only", async () => {
+        useSettingsStore.getState().updateSettings({branding: {customer: "   "}})
+
+        renderNavbar()
+
+        expect(screen.queryByTestId("customer-branding")).not.toBeInTheDocument()
+    })
+
     it("renders the Navbar with the provided logo (Neuro® AI Multi-Agent Accelerator)", async () => {
         renderNavbar("/multiAgentAccelerator")
 
