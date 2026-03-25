@@ -94,32 +94,32 @@ jobs:
             - name: Run ESLint
               id: eslint
               run: |
-                  ./build_scripts/run_eslint.sh || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  ./build_scripts/run_eslint.sh
 
             - name: Run ShellCheck
               id: shellcheck
-              if: always()
+              if: success() || failure()
               run: |
-                  ./build_scripts/run_shellcheck.sh || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  ./build_scripts/run_shellcheck.sh
 
             - name: Run Prettier (formatting check)
               id: prettier
-              if: always()
+              if: success() || failure()
               run: |
                   yarn check-format --version
-                  yarn check-format || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  yarn check-format
 
             - name: Run knip (unused dependencies/exports check)
               id: knip
-              if: always()
+              if: success() || failure()
               run: |
                   yarn knip --version
-                  yarn knip || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  yarn knip
 
             - name: Lint Dockerfiles (hadolint)
               uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5
               id: hadolint
-              if: always()
+              if: success() || failure()
               with:
                   dockerfile: apps/main/Dockerfile
                   recursive: true
@@ -127,27 +127,27 @@ jobs:
 
             - name: Docker build check
               id: dockerbuild
-              if: always()
+              if: success() || failure()
               run: |
-                  docker build --quiet --check --file apps/main/Dockerfile . > /dev/null || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  docker build --quiet --check --file apps/main/Dockerfile . > /dev/null
 
             - name: Run TypeScript compilation
               id: tsc
-              if: always()
+              if: success() || failure()
               run: |
                   yarn tsc --version
-                  yarn tsc || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  yarn tsc
 
             - name: Run unit tests
               id: unit
-              if: always()
+              if: success() || failure()
               run: |
                   node --version
                   yarn test --version
-                  yarn test || echo "outcome=failure" >> $GITHUB_OUTPUT
+                  yarn test
 
             - name: Roll up QA results and set final job status
-              if: always()
+              if: success() || failure()
               env:
                   STATUS_eslint: ${{ steps.eslint.outcome }}
                   STATUS_shellcheck: ${{ steps.shellcheck.outcome }}
