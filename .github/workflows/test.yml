@@ -94,27 +94,27 @@ jobs:
             - name: Run ESLint
               id: eslint
               run: |
-                  ./build_scripts/run_eslint.sh
+                  ./build_scripts/run_eslint.sh || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Run ShellCheck
               id: shellcheck
               if: always()
               run: |
-                  ./build_scripts/run_shellcheck.sh
+                  ./build_scripts/run_shellcheck.sh || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Run Prettier (formatting check)
               id: prettier
               if: always()
               run: |
                   yarn check-format --version
-                  yarn check-format
+                  yarn check-format || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Run knip (unused dependencies/exports check)
               id: knip
               if: always()
               run: |
                   yarn knip --version
-                  yarn knip
+                  yarn knip || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Lint Dockerfiles (hadolint)
               uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5
@@ -129,14 +129,14 @@ jobs:
               id: dockerbuild
               if: always()
               run: |
-                  docker build --quiet --check --file apps/main/Dockerfile . > /dev/null
+                  docker build --quiet --check --file apps/main/Dockerfile . > /dev/null || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Run TypeScript compilation
               id: tsc
               if: always()
               run: |
                   yarn tsc --version
-                  yarn tsc
+                  yarn tsc || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Run unit tests
               id: unit
@@ -144,7 +144,7 @@ jobs:
               run: |
                   node --version
                   yarn test --version
-                  yarn test
+                  yarn test || echo "outcome=failure" >> $GITHUB_OUTPUT
 
             - name: Roll up QA results and set final job status
               if: always()
