@@ -93,26 +93,25 @@ jobs:
 
             - name: Run ESLint
               id: eslint
-              continue-on-error: true
               run: |
                   ./build_scripts/run_eslint.sh
 
             - name: Run ShellCheck
               id: shellcheck
-              continue-on-error: true
+              if: always()
               run: |
                   ./build_scripts/run_shellcheck.sh
 
             - name: Run Prettier (formatting check)
               id: prettier
-              continue-on-error: true
+              if: always()
               run: |
                   yarn check-format --version
                   yarn check-format
 
             - name: Run knip (unused dependencies/exports check)
               id: knip
-              continue-on-error: true
+              if: always()
               run: |
                   yarn knip --version
                   yarn knip
@@ -120,7 +119,7 @@ jobs:
             - name: Lint Dockerfiles (hadolint)
               uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5
               id: hadolint
-              continue-on-error: true
+              if: always()
               with:
                   dockerfile: apps/main/Dockerfile
                   recursive: true
@@ -128,20 +127,20 @@ jobs:
 
             - name: Docker build check
               id: dockerbuild
-              continue-on-error: true
+              if: always()
               run: |
                   docker build --quiet --check --file apps/main/Dockerfile . > /dev/null
 
             - name: Run TypeScript compilation
               id: tsc
-              continue-on-error: true
+              if: always()
               run: |
                   yarn tsc --version
                   yarn tsc
 
             - name: Run unit tests
               id: unit
-              continue-on-error: true
+              if: always()
               run: |
                   node --version
                   yarn test --version
