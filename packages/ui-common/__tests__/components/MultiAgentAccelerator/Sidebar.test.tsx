@@ -541,8 +541,7 @@ describe("SideBar", () => {
             jest.runOnlyPendingTimers()
         })
 
-        // .toContain was requested but it doesn't seem to work here?
-        expect(treeItem.classList.contains("sparkle-highlight")).toBe(true)
+        expect(treeItem).toHaveClass("sparkle-highlight")
     })
 
     it("Should be a no-op when the highlight callback finds no matching treeitem", async () => {
