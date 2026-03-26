@@ -1436,6 +1436,7 @@ __metadata:
     jest-fail-on-console: "npm:3.3.1"
     jest-silent-reporter: "npm:0.6.0"
     knip: "npm:5.63.1"
+    next: "npm:16.2.1"
     prettier: "npm:3.6.2"
     react: "npm:19.2.4"
     react-dom: "npm:19.2.4"
@@ -1462,7 +1463,6 @@ __metadata:
     eslint-config-next: "npm:16.1.6"
     http-status: "npm:1.7.3"
     lodash-es: "npm:4.17.23"
-    next: "npm:16.2.1"
     next-auth: "npm:5.0.0-beta.30"
     node-mocks-http: "npm:1.17.2"
     notistack: "npm:3.0.2"
@@ -1498,7 +1498,6 @@ __metadata:
     http-status: "npm:1.7.3"
     jsonrepair: "npm:3.8.0"
     lodash-es: "npm:4.17.23"
-    next: "npm:16.2.1"
     notistack: "npm:3.0.2"
     openapi-typescript: "npm:7.8.0"
     react-dom: "npm:19.2.4"
@@ -1514,6 +1513,7 @@ __metadata:
     "@mui/material": ^7.3.1
     "@mui/system": ^7.3.1
     "@mui/x-tree-view": ^8.22.0
+    next: ^16.2.1
     next-auth: 5.0.0-beta.30
     react: ^19.2.4
     react-dom: ^19.2.4
