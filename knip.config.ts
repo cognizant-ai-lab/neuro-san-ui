@@ -96,7 +96,7 @@ const config: KnipConfig = {
 
         // Declared at root for visibility/version governance; used by apps/main
         "next",
-        
+
         // Used by Next.js image optimization,
         "sharp",
 
