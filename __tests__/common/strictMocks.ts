@@ -32,6 +32,7 @@ export const withStrictMocks = (options: StrictMockOptions = {}) => {
     beforeEach(() => {
         jest.resetAllMocks()
         jest.restoreAllMocks()
+        jest.useRealTimers()
         if (resetModules) {
             jest.resetModules()
         }

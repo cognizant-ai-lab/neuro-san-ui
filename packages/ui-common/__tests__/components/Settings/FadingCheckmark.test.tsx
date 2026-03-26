@@ -6,12 +6,6 @@ import {FadingCheckmark, useCheckmarkFade} from "../../../components/Settings/Fa
 describe("useCheckmarkFade", () => {
     withStrictMocks()
 
-    afterEach(() => {
-        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
-        // into subsequent tests.
-        jest.useRealTimers()
-    })
-
     it("shows the checkmark when trigger is called", () => {
         const {result} = renderHook(() => useCheckmarkFade())
 

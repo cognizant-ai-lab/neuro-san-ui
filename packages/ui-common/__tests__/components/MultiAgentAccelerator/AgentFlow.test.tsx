@@ -85,12 +85,6 @@ describe("AgentFlow", () => {
         })
     })
 
-    afterEach(() => {
-        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
-        // into subsequent tests.
-        jest.useRealTimers()
-    })
-
     const defaultProps: AgentFlowProps = {
         agentsInNetwork: NETWORK,
         id: "test-flow-id",
@@ -407,6 +401,34 @@ describe("AgentFlow", () => {
         // When awaiting LLM, legend and controls should not be rendered
         expect(container.querySelector("#test-flow-id-legend")).not.toBeInTheDocument()
         expect(container.querySelector("#radial-layout-button")).not.toBeInTheDocument()
+    })
+
+    // There is also a test in GraphLayouts.test.ts
+    // TODO: This doesn't seem like it would catch the display: none vs visibility: hidden issue we recently had.
+    it("Should render plasma edges between agents in conversation when isAwaitingLlm is true", () => {
+        // agent1 and agent2 are connected in NETWORK (agent1 -> agent2)
+        // Placing both in the same conversation with a valid type triggers plasma edges
+        const conversationsWithPlasma = [
+            {
+                id: "plasma-conv",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                type: ChatMessageType.AGENT,
+            },
+        ]
+
+        const {container} = renderAgentFlowComponent({
+            isAwaitingLlm: true,
+            currentConversations: conversationsWithPlasma,
+        })
+
+        // The edge between agent1 (source) and agent2 (target) has id "agent2-edge-agent1"
+        // ReactFlow wraps each edge in a group element with data-id matching the edge id
+        const plasmaEdgeWrapper = container.querySelector('[data-id="agent2-edge-agent1"]')
+        expect(plasmaEdgeWrapper).toBeVisible()
+
+        // The PlasmaEdge mock renders a <g data-testid="mock-plasma-edge" />
+        expect(plasmaEdgeWrapper.querySelector('[data-testid="mock-plasma-edge"]')).toBeVisible()
     })
 
     it("Should render legend and controls when not awaiting LLM", () => {
