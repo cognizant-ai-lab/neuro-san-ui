@@ -25,12 +25,6 @@ import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 describe("ThoughtBubbleOverlay", () => {
     withStrictMocks()
 
-    afterEach(() => {
-        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
-        // into subsequent tests.
-        jest.useRealTimers()
-    })
-
     const mockNodes = [
         {
             id: "node1",

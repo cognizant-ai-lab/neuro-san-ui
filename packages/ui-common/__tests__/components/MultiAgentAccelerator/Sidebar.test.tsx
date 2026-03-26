@@ -127,12 +127,6 @@ describe("SideBar", () => {
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
     })
 
-    afterEach(() => {
-        // Restore real timers after every test so that any test calling jest.useFakeTimers() cannot leak fake timers
-        // into subsequent tests.
-        jest.useRealTimers()
-    })
-
     it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
         const {setSelectedNetwork} = renderSidebarComponent({}, mode)
 
@@ -547,6 +541,7 @@ describe("SideBar", () => {
             jest.runOnlyPendingTimers()
         })
 
+        // .toContain was requested but it doesn't seem to work here?
         expect(treeItem.classList.contains("sparkle-highlight")).toBe(true)
     })
 
