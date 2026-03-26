@@ -5,7 +5,7 @@ import {FC, ReactElement} from "react"
 
 import {useSettingsStore} from "../../state/Settings"
 
-export interface CustomerLogoProps {
+interface CustomerLogoProps {
     readonly fallbackElement?: ReactElement | string
     readonly logoServiceToken?: string
 }
@@ -45,9 +45,6 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoServic
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const iconSuggestion = useSettingsStore((state) => state.settings.branding.iconSuggestion)
     const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
-
-    // Deliberate linter violation
-    const x = 1
 
     // null: render Cognizant logo (default)
     if (logoSource === null) {
