@@ -93,6 +93,7 @@ jobs:
 
             - name: Run ESLint
               id: eslint
+              if: success() || failure()
               run: |
                   ./build_scripts/run_eslint.sh
 
@@ -145,41 +146,3 @@ jobs:
                   node --version
                   yarn test --version
                   yarn test
-
-            - name: Roll up QA results and set final job status
-              if: success() || failure()
-              env:
-                  STATUS_eslint: ${{ steps.eslint.outcome }}
-                  STATUS_shellcheck: ${{ steps.shellcheck.outcome }}
-                  STATUS_prettier: ${{ steps.prettier.outcome }}
-                  STATUS_knip: ${{ steps.knip.outcome }}
-                  STATUS_hadolint: ${{ steps.hadolint.outcome }}
-                  STATUS_dockerbuild: ${{ steps.dockerbuild.outcome }}
-                  STATUS_tsc: ${{ steps.tsc.outcome }}
-                  STATUS_unit: ${{ steps.unit.outcome }}
-              run: |
-                  failures=()
-                  summarize() {
-                    step_id="$1"; step_name="$2"
-                    status_var="STATUS_${step_id}"
-                    status_value="${!status_var:-unknown}"
-                    if [ "$status_value" = "failure" ] || [ "$status_value" = "cancelled" ]; then
-                      failures+=("$step_name")
-                    fi
-                    echo "- ${step_name}: ${status_value}" >> "$GITHUB_STEP_SUMMARY"
-                  }
-
-                  echo "### Quality and Test Results" >> "$GITHUB_STEP_SUMMARY"
-                  summarize eslint "ESLint"
-                  summarize shellcheck "ShellCheck"
-                  summarize prettier "Prettier"
-                  summarize hadolint "hadolint"
-                  summarize dockerbuild "dockerbuild"
-                  summarize knip "knip"
-                  summarize tsc "TypeScript Compile"
-                  summarize unit "Unit Tests"
-
-                  if [ ${#failures[@]} -gt 0 ]; then
-                    echo "Failures detected: ${failures[*]}" >> "$GITHUB_STEP_SUMMARY"
-                    exit 1
-                  fi

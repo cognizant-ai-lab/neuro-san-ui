@@ -5,7 +5,7 @@ import {FC, ReactElement} from "react"
 
 import {useSettingsStore} from "../../state/Settings"
 
-interface CustomerLogoProps {
+export interface CustomerLogoProps {
     readonly fallbackElement?: ReactElement | string
     readonly logoServiceToken?: string
 }
