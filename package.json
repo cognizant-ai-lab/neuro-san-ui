@@ -62,7 +62,6 @@
         "jest-fail-on-console": "3.3.1",
         "jest-silent-reporter": "0.6.0",
         "knip": "5.63.1",
-        "next": "16.2.1",
         "prettier": "3.6.2",
         "react": "19.2.4",
         "react-dom": "19.2.4",
