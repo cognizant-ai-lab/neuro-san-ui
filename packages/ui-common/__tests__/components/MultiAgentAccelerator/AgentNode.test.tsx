@@ -181,7 +181,6 @@ describe("AgentNode", () => {
         await screen.findByTestId(expectedTestId)
     })
 
-    // Are these tests repeated somewhere? I don't see other code exercising the agentIconSuggestion prop?
     it("renders a custom MUI icon when agentIconSuggestion is a valid icon name", async () => {
         // "Star" is a real named export in @mui/icons-material; MUI renders it with testid "StarIcon"
         renderAgentNode({agentIconSuggestion: "Star"})
