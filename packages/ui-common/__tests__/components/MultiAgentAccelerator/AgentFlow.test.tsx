@@ -403,8 +403,7 @@ describe("AgentFlow", () => {
         expect(container.querySelector("#radial-layout-button")).not.toBeInTheDocument()
     })
 
-    // There is also a test in GraphLayouts.test.ts
-    // TODO: This doesn't seem like it would catch the display: none vs visibility: hidden issue we recently had.
+    // There is also a test in GraphLayouts.test.ts related to plasma edges.
     it("Should render plasma edges between agents in conversation when isAwaitingLlm is true", () => {
         // agent1 and agent2 are connected in NETWORK (agent1 -> agent2)
         // Placing both in the same conversation with a valid type triggers plasma edges
