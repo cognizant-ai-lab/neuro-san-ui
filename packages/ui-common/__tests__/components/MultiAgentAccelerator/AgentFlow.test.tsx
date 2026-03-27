@@ -29,17 +29,21 @@ import {PALETTES} from "../../../Theme/Palettes"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
+const mockPlasmaEdgeTestId = "mock-plasma-edge"
+const mockThoughtBubbleEdgeTestId = "mock-thought-bubble-edge"
+const mockThoughtBubbleOverlayTestId = "mock-thought-bubble-overlay"
+
 jest.mock("@mui/material/styles", () => ({
     ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
 
 jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
-    PlasmaEdge: () => <g data-testid="mock-plasma-edge" />,
+    PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
 }))
 
 jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleEdge", () => ({
-    ThoughtBubbleEdge: () => <g data-testid="mock-thought-bubble-edge" />,
+    ThoughtBubbleEdge: () => <g data-testid={mockThoughtBubbleEdgeTestId} />,
 }))
 
 // Provide a mutable implementation for the ThoughtBubbleOverlay mock so individual
@@ -50,7 +54,7 @@ type ThoughtBubbleOverlayProps = {
 }
 
 const defaultMockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = () => (
-    <div data-testid="mock-thought-bubble-overlay" />
+    <div data-testid={mockThoughtBubbleOverlayTestId} />
 )
 
 let __MockThoughtBubbleOverlayImpl: FC<ThoughtBubbleOverlayProps> = defaultMockThoughtBubbleOverlay
@@ -377,9 +381,9 @@ describe("AgentFlow", () => {
     })
 
     it("Should render ThoughtBubbleOverlay component", () => {
-        const {container} = renderAgentFlowComponent()
+        renderAgentFlowComponent()
 
-        expect(container.querySelector('[data-testid="mock-thought-bubble-overlay"]')).toBeInTheDocument()
+        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
     })
 
     it("Should have a thought bubble toggle button", async () => {
@@ -426,8 +430,7 @@ describe("AgentFlow", () => {
         const plasmaEdgeWrapper = container.querySelector('[data-id="agent2-edge-agent1"]')
         expect(plasmaEdgeWrapper).toBeVisible()
 
-        // The PlasmaEdge mock renders a <g data-testid="mock-plasma-edge" />
-        expect(plasmaEdgeWrapper.querySelector('[data-testid="mock-plasma-edge"]')).toBeVisible()
+        expect(screen.getByTestId(mockPlasmaEdgeTestId)).toBeVisible()
     })
 
     it("Should render legend and controls when not awaiting LLM", () => {
@@ -477,14 +480,14 @@ describe("AgentFlow", () => {
         renderAgentFlowComponent()
 
         // ThoughtBubbleOverlay should be rendered (it's mocked)
-        expect(screen.getByTestId("mock-thought-bubble-overlay")).toBeInTheDocument()
+        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
     })
 
     it("Should render ThoughtBubbleEdge in edge types", () => {
         renderAgentFlowComponent()
 
         // Component should render without errors
-        expect(screen.getByTestId("mock-thought-bubble-overlay")).toBeInTheDocument()
+        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
     })
 
     it("Should handle conversations with multiple agents", () => {
@@ -924,7 +927,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle hover state changes for thought bubbles", () => {
-        const {container} = renderAgentFlowComponent({
+        renderAgentFlowComponent({
             currentConversations: [
                 {
                     id: "hover-test-conv",
@@ -937,7 +940,7 @@ describe("AgentFlow", () => {
         })
 
         // Component should render with thought bubble overlay
-        expect(container.querySelector('[data-testid="mock-thought-bubble-overlay"]')).toBeInTheDocument()
+        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
     })
 
     it("Should prevent expired bubbles from being removed when hovered", async () => {
@@ -963,7 +966,7 @@ describe("AgentFlow", () => {
                     onBubbleHoverChange("thought-bubble-hover-prevent-expire-conv")
                 }
             }, [onBubbleHoverChange])
-            return <div data-testid="mock-thought-bubble-overlay" />
+            return <div data-testid={mockThoughtBubbleOverlayTestId} />
         }
 
         const previousImpl = __MockThoughtBubbleOverlayImpl
@@ -988,7 +991,7 @@ describe("AgentFlow", () => {
 
         // The bubble should not be removed because it's being hovered
         // We can verify by checking that the component still renders
-        expect(screen.getByTestId("mock-thought-bubble-overlay")).toBeInTheDocument()
+        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
 
         __MockThoughtBubbleOverlayImpl = previousImpl
     })
