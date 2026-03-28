@@ -93,26 +93,26 @@ jobs:
 
             - name: Run ESLint
               id: eslint
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   ./build_scripts/run_eslint.sh
 
             - name: Run ShellCheck
               id: shellcheck
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   ./build_scripts/run_shellcheck.sh
 
             - name: Run Prettier (formatting check)
               id: prettier
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   yarn check-format --version
                   yarn check-format
 
             - name: Run knip (unused dependencies/exports check)
               id: knip
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   yarn knip --version
                   yarn knip
@@ -120,7 +120,7 @@ jobs:
             - name: Lint Dockerfiles (hadolint)
               uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5
               id: hadolint
-              continue-on-error: true
+              if: success() || failure()
               with:
                   dockerfile: apps/main/Dockerfile
                   recursive: true
@@ -128,59 +128,21 @@ jobs:
 
             - name: Docker build check
               id: dockerbuild
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   docker build --quiet --check --file apps/main/Dockerfile . > /dev/null
 
             - name: Run TypeScript compilation
               id: tsc
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   yarn tsc --version
                   yarn tsc
 
             - name: Run unit tests
               id: unit
-              continue-on-error: true
+              if: success() || failure()
               run: |
                   node --version
                   yarn test --version
                   yarn test
-
-            - name: Roll up QA results and set final job status
-              if: always()
-              env:
-                  STATUS_eslint: ${{ steps.eslint.outcome }}
-                  STATUS_shellcheck: ${{ steps.shellcheck.outcome }}
-                  STATUS_prettier: ${{ steps.prettier.outcome }}
-                  STATUS_knip: ${{ steps.knip.outcome }}
-                  STATUS_hadolint: ${{ steps.hadolint.outcome }}
-                  STATUS_dockerbuild: ${{ steps.dockerbuild.outcome }}
-                  STATUS_tsc: ${{ steps.tsc.outcome }}
-                  STATUS_unit: ${{ steps.unit.outcome }}
-              run: |
-                  failures=()
-                  summarize() {
-                    step_id="$1"; step_name="$2"
-                    status_var="STATUS_${step_id}"
-                    status_value="${!status_var:-unknown}"
-                    if [ "$status_value" = "failure" ] || [ "$status_value" = "cancelled" ]; then
-                      failures+=("$step_name")
-                    fi
-                    echo "- ${step_name}: ${status_value}" >> "$GITHUB_STEP_SUMMARY"
-                  }
-
-                  echo "### Quality and Test Results" >> "$GITHUB_STEP_SUMMARY"
-                  summarize eslint "ESLint"
-                  summarize shellcheck "ShellCheck"
-                  summarize prettier "Prettier"
-                  summarize hadolint "hadolint"
-                  summarize dockerbuild "dockerbuild"
-                  summarize knip "knip"
-                  summarize tsc "TypeScript Compile"
-                  summarize unit "Unit Tests"
-
-                  if [ ${#failures[@]} -gt 0 ]; then
-                    echo "Failures detected: ${failures[*]}" >> "$GITHUB_STEP_SUMMARY"
-                    exit 1
-                  fi
