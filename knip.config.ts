@@ -100,6 +100,9 @@ const config: KnipConfig = {
         // Used by Next.js image optimization,
         "sharp",
 
+        // Declared in apps/main to satisfy @mui/x-tree-view required peer dep; not directly imported
+        "@mui/system",
+
         // Used by Jest for TS format config file
         "ts-node",
     ],
