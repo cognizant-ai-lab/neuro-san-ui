@@ -59,6 +59,11 @@ const config: KnipConfig = {
         // Duplicate export: revisit later (legit issue)
         "packages/ui-common/components/MultiAgentAccelerator/const.ts",
 
+        // Used by another workspace (shared package-level exports)
+        "packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator.tsx",
+        "packages/ui-common/components/Common/Navbar.tsx",
+        "packages/ui-common/utils/title.ts",
+
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Types.ts",
 
@@ -79,9 +84,6 @@ const config: KnipConfig = {
         // Used by Jest
         "babel-jest",
 
-        // Declared in apps/main to satisfy eslint-config-next peer dep; lint itself runs from root
-        "eslint",
-
         // Used by eslint
         "eslint-config-next",
 
@@ -100,12 +102,21 @@ const config: KnipConfig = {
         // Used by Next.js image optimization,
         "sharp",
 
-        // Declared in apps/main to satisfy @mui/x-tree-view required peer dep; not directly imported
-        "@mui/system",
-
         // Used by Jest for TS format config file
         "ts-node",
     ],
+
+    workspaces: {
+        "apps/main": {
+            ignoreDependencies: [
+                // Declared to satisfy eslint-config-next peer dep; lint itself runs from root
+                "eslint",
+
+                // Declared to satisfy @mui/x-tree-view required peer dep; not directly imported
+                "@mui/system",
+            ],
+        },
+    },
 }
 
 export default config
