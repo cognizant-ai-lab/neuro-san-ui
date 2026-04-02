@@ -26,7 +26,7 @@ import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
 import {TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {AgentReservation, extractReservations} from "./TemporaryNetworks"
+import {AgentReservation, extractNetworkDefinition, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
@@ -61,9 +61,14 @@ const GROW_ANIMATION_TIME_MS = 800
  * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
  * in the tree.
  * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
+ * @param networkDefinition Optional network definition object that may be included in the same message as the
+ * reservations. Note: for now we assume that all reservations are associated with the same network definition.
  * @returns List of TemporaryNetwork objects that can be displayed in the UI
  */
-const convertReservationsToNetworks = (agentReservations: AgentReservation[]): TemporaryNetwork[] => {
+const convertReservationsToNetworks = (
+    agentReservations: AgentReservation[],
+    networkDefinition: object
+): TemporaryNetwork[] => {
     return agentReservations.map((reservation) => ({
         reservation,
         agentInfo: {
@@ -71,6 +76,7 @@ const convertReservationsToNetworks = (agentReservations: AgentReservation[]): T
             origin: reservation.reservation_id,
             status: "active",
         },
+        networkDefinition,
     }))
 }
 
@@ -212,15 +218,15 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setAgentsInNetwork(agentsInNetworkSorted)
                     setAgentIconSuggestions(null)
                     closeNotification()
-                } catch (e) {
+                } catch {
                     const networkName = cleanUpAgentName(selectedNetwork)
-                    sendNotification(
-                        NotificationType.error,
-                        "Connection error",
-                        `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid ` +
-                            `Multi-Agent Accelerator Server. Error: ${e}.`
-                    )
-                    setAgentsInNetwork([])
+                    // sendNotification(
+                    //     NotificationType.error,
+                    //     "Connection error",
+                    //     `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid ` +
+                    //         `Multi-Agent Accelerator Server. Error: ${e}.`
+                    // )
+                    // setAgentsInNetwork([])
                 }
             } else {
                 setAgentsInNetwork([])
@@ -305,6 +311,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             return true
         }
 
+        // console.debug(`Received chat message of type ${chatMessage.type} from origin ${chatMessage.origin}`)
+
         // Conversations between agents
         const result = extractConversations(chatMessage, conversationsRef.current)
         if (result != null) {
@@ -320,13 +328,27 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
         // Handle agent reservations (temporary networks) that come in through the chat stream.
         if (reservationsResult?.length > 0) {
-            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult)
+            // Retrieve network definition, if present
+            const networkDefinition = extractNetworkDefinition(chatMessage)
+
+            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkDefinition)
+
             const currentNetworks = useTempNetworksStore.getState().tempNetworks
             useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
 
             // record the new temporary networks so we can select them for the user. For now, we only
             // care about the first one.
             setNewlyAddedTemporaryNetworks(new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name)))
+        }
+
+        if (selectedNetwork === "agent_network_designer") {
+            const networkProgress = extractNetworkDefinition(chatMessage)
+            if (networkProgress) {
+                const networkProgressString = JSON.stringify(networkProgress)
+                console.debug(`Received network progress update: ${networkProgressString}`)
+            } else {
+                console.debug("Received chat message with no network progress update.", chatMessage)
+            }
         }
 
         return true
@@ -399,6 +421,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
                         setSelectedNetwork={(newNetwork) => {
+                            console.debug(`Selected network ${newNetwork}.`)
                             agentCountsRef.current = new Map()
                             setSelectedNetwork(newNetwork)
                         }}

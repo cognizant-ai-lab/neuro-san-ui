@@ -1,4 +1,4 @@
-import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatMessage, ChatMessageType, ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -21,6 +21,9 @@ export type AgentReservation = {
 // We expect the agent reservations to be stored in sly_data under this key
 const AGENT_RESERVATIONS_KEY = "agent_reservations"
 
+// We expect the agent network definition to be stored in sly_data under this key, if it is provided by the backend
+const AGENT_NETWORK_DEFINITION = "agent_network_definition"
+
 /**
  * Extracts agent reservations from a chat message, if they exist.
  * @param message The chat message to extract reservations from. We expect reservations to be present in messages of
@@ -35,5 +38,29 @@ export const extractReservations = (message: ChatMessage): AgentReservation[] =>
     } else {
         // Not the type of message that would contain reservations, or no reservations found, return empty array
         return []
+    }
+}
+
+/**
+ * Extracts the agent network definition from a chat message, if it exists.
+ * @param message The chat message to extract network definition from.
+ * We expect the network definition to be present in messages of type AGENT_FRAMEWORK only.
+ * @return The network definition object, or null if not found or not the right type of message.
+ */
+export const extractNetworkDefinition = (message: ChatMessage): object => {
+    // Check for agent network definitions in sly_data
+    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_DEFINITION]) {
+        return message.sly_data[AGENT_NETWORK_DEFINITION] as object
+    } else {
+        // Not the type of message that would contain reservations, or no reservations found, return empty array
+        return null
+    }
+}
+
+export const extractNetworkProgress = (message: ChatMessage): {network: ConnectivityInfo} => {
+    if (message?.type === ChatMessageType.AGENT_PROGRESS && message?.structure?.["connectivity_info"]) {
+        return {network: message.structure["connectivity_info"]}
+    } else {
+        return null
     }
 }

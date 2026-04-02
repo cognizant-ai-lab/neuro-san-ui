@@ -1,8 +1,9 @@
 // Need to disable restricted imports because we want to import all MUI icons dynamically
-// eslint-disable-next-line no-restricted-imports
+
 import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Delete from "@mui/icons-material/Delete"
+import DownloadIcon from "@mui/icons-material/Download"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import {useTheme} from "@mui/material/styles"
@@ -45,6 +46,7 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
+    readonly temporaryNetworkDefinitions?: Record<string, object>
 }
 
 /**
@@ -70,6 +72,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     nodeIndex,
     onDeleteNetwork,
     temporaryNetworkExpirationTimes,
+    temporaryNetworkDefinitions,
 }) => {
     const theme = useTheme()
 
@@ -105,6 +108,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const expirationTime = temporaryNetworkExpirationTimes?.[itemId]
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
+    const networkDefinition = isTemporaryNetwork ? temporaryNetworkDefinitions?.[itemId] : null
 
     const iconNameSuggestion = isTemporaryNetwork ? "HourglassTop" : isChild ? networkIconSuggestions?.[itemId] : null
 
@@ -177,6 +181,33 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
                                 </Tooltip>
                             ) : null}
+                            {isTemporaryNetwork && networkDefinition && (
+                                <Tooltip title={!isExpired && "Download network definition"}>
+                                    <DownloadIcon
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (isExpired) {
+                                                return
+                                            }
+
+                                            const blob = new Blob([JSON.stringify(networkDefinition, null, 2)], {
+                                                // type: "application/json",
+                                            })
+                                            const url = URL.createObjectURL(blob)
+                                            const a = document.createElement("a")
+                                            a.href = url
+                                            a.download = `${labelString}-network-definition.json`
+                                            a.click()
+                                            URL.revokeObjectURL(url)
+                                        }}
+                                        sx={{
+                                            fontSize: "0.75rem",
+                                            color: "var(--bs-secondary)",
+                                            "&:hover": {color: "var(--bs-secondary-dark)"},
+                                        }}
+                                    />
+                                </Tooltip>
+                            )}
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Tooltip title="Delete network">

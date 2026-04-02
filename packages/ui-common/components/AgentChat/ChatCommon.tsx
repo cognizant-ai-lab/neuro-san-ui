@@ -746,6 +746,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     </MUIAlert>
                 )
                 succeeded.current = false
+            } else if (chatMessage.structure["answer"]) {
+                const agentName =
+                    chatMessage.origin?.length > 0
+                        ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
+                        : "Agent message"
+                updateOutput(processLogLine(chatMessage.structure["answer"] as string, agentName, chatMessage.type))
             }
         } else if (chatMessage?.text?.trim() !== "") {
             // Not an error, so output it if it has text. The backend sometimes sends messages with no text content,
@@ -897,6 +903,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // Display prominent "Final Answer" message if we have one
             if (lastAIMessage.current) {
+                console.debug("Outputting final answer")
                 // Legacy agents text is a bit messy and doesn't add a blank line, so we add it here
                 if (isLegacyAgentType(targetAgent)) {
                     updateOutput("    \n\n")
