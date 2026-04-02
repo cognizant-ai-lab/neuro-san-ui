@@ -21,5 +21,6 @@
 
 # Build stuff
 **/dist/
+package.tgz
 yarn-error.log
 .yarn
