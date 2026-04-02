@@ -88,6 +88,10 @@ const handleStreamingCallback = async (
     }
 }
 
+const FAKE_IT = false
+// const FAKE_RESPONSE_FILE = "/santa.json"
+const FAKE_RESPONSE_FILE = "/mnp.json"
+
 /**
  * Send a request to an LLM and stream the response to a callback.
  * @param callback The callback function to be called when a chunk of data is received from the server.
@@ -112,20 +116,26 @@ export const sendLlmRequest = async (
     userId?: string,
     streamingUnit: StreamingUnit = StreamingUnit.Chunk
 ) => {
-    const res = await fetch(fetchUrl, {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            ...(userId && {user_id: userId}), // Only include user query if it exists (optional)
-        },
-        body: JSON.stringify({
-            ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)
-            ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
-            ...params,
-        }),
-        signal,
-    })
+    console.debug(`Sending LLM request to ${fetchUrl} with StreamingUnit ${StreamingUnit[streamingUnit]}`)
+    let res
+    if (!FAKE_IT) {
+        res = await fetch(fetchUrl, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                ...(userId && {user_id: userId}), // Only include user query if it exists (optional)
+            },
+            body: JSON.stringify({
+                ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)
+                ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
+                ...params,
+            }),
+            signal,
+        })
+    } else {
+        res = await fetch(FAKE_RESPONSE_FILE)
+    }
 
     // Check if the request was successful
     if (!res.ok) {
