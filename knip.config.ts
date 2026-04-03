@@ -84,9 +84,6 @@ const config: KnipConfig = {
         // Used by Jest
         "babel-jest",
 
-        // Declared in apps/main to satisfy eslint-config-next peer dep; lint itself runs from root
-        "eslint",
-
         // Used by eslint
         "eslint-config-next",
 
@@ -104,9 +101,6 @@ const config: KnipConfig = {
 
         // Used by Next.js image optimization,
         "sharp",
-
-        // Declared in apps/main to satisfy @mui/x-tree-view required peer dep; not directly imported
-        "@mui/system",
 
         // Used by Jest for TS format config file
         "ts-node",
