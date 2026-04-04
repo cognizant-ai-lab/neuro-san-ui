@@ -1,4 +1,4 @@
-import {ChatMessage, ChatMessageType, ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -53,14 +53,6 @@ export const extractNetworkDefinition = (message: ChatMessage): object => {
         return message.sly_data[AGENT_NETWORK_DEFINITION] as object
     } else {
         // Not the type of message that would contain reservations, or no reservations found, return empty array
-        return null
-    }
-}
-
-export const extractNetworkProgress = (message: ChatMessage): {network: ConnectivityInfo} => {
-    if (message?.type === ChatMessageType.AGENT_PROGRESS && message?.structure?.["connectivity_info"]) {
-        return {network: message.structure["connectivity_info"]}
-    } else {
         return null
     }
 }
