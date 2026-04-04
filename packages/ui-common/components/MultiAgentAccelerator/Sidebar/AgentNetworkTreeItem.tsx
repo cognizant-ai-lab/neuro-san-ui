@@ -1,5 +1,5 @@
 // Need to disable restricted imports because we want to import all MUI icons dynamically
-
+// eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Delete from "@mui/icons-material/Delete"
@@ -191,12 +191,12 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             }
 
                                             const blob = new Blob([JSON.stringify(networkDefinition, null, 2)], {
-                                                // type: "application/json",
+                                                type: "application/json",
                                             })
                                             const url = URL.createObjectURL(blob)
                                             const a = document.createElement("a")
                                             a.href = url
-                                            a.download = `${labelString}-network-definition.json`
+                                            a.download = `${labelString}-network-definition.hocon`
                                             a.click()
                                             URL.revokeObjectURL(url)
                                         }}
