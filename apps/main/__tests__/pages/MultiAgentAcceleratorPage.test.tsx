@@ -503,6 +503,7 @@ describe("Multi Agent Accelerator Page", () => {
             agentInfo: expect.objectContaining({
                 agent_name: agentName,
             }),
+            networkDefinition: null,
         }
 
         expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
