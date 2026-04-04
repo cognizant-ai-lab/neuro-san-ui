@@ -67,4 +67,5 @@ export const TEMPORARY_NETWORK: TemporaryNetwork = {
         description: "",
         tags: ["tag1", "tag2", "tag3"],
     },
+    networkDefinition: null,
 }
