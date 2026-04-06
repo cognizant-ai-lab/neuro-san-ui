@@ -34,7 +34,6 @@ import {
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
-import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentChat/Utils"
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
@@ -507,13 +506,6 @@ describe("Multi Agent Accelerator Page", () => {
         }
 
         expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
-
-        await act(async () => {
-            onStreamingComplete()
-        })
-
-        const expectedAlertText = `A temporary network "${cleanUpAgentName(agentName)}" has been created.`
-        await screen.findByText(expectedAlertText)
     })
 
     it("Should handle deletion of temporary networks", async () => {

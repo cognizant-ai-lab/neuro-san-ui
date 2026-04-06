@@ -16,7 +16,6 @@ limitations under the License.
 
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
-import Collapse from "@mui/material/Collapse"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
 import {ReactFlowProvider} from "@xyflow/react"
@@ -45,7 +44,6 @@ import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Utils"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
-import {MUIAlert} from "../Common/MUIAlert"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 interface MultiAgentAcceleratorProps {
@@ -132,9 +130,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
         Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     >(new Map())
-
-    // For controlling alert when temporary network is created
-    const [alertContents, setAlertContents] = useState<string | null>(null)
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -344,8 +339,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Reset newly added temporary networks
         setNewlyAddedTemporaryNetworks(new Set())
 
-        setAlertContents(null)
-
         // Show info popup only once per session
         if (!haveShownPopup) {
             sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
@@ -357,33 +350,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback(() => {
-        const network = newlyAddedTemporaryNetworks?.values().next().value
-        if (network?.length > 0) {
-            // We show an Alert after streaming completes (in case of Zen mode where the user might miss it)
-            const agentNameDisplay = cleanUpAgentName(removeTrailingUuid(network))
-            setAlertContents(`A temporary network "${agentNameDisplay}" has been created.`)
-        }
-
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
         resetState()
     }, [newlyAddedTemporaryNetworks])
-
-    useEffect(() => {
-        if (alertContents?.length > 0) {
-            // Set a timer to clear the alert after a few seconds so it doesn't overstay its welcome
-            const timeoutId = window.setTimeout(() => {
-                setAlertContents(null)
-            }, 10_000)
-
-            return () => {
-                window.clearTimeout(timeoutId)
-            }
-        } else {
-            return undefined
-        }
-    }, [alertContents])
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
 
@@ -573,25 +544,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
-    const getAlert = () => (
-        <Collapse
-            in={alertContents?.length > 0}
-            timeout={1000}
-        >
-            <MUIAlert
-                id="temporary-network-created-alert"
-                closeable={true}
-                severity="success"
-                sx={{marginTop: "1rem", marginBottom: 0}}
-            >
-                {alertContents}
-            </MUIAlert>
-        </Collapse>
-    )
-
     return (
         <>
-            {getAlert()}
             {getConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"
