@@ -133,6 +133,16 @@ const RESERVATION_CHAT_MESSAGE: ChatResponse = {
     },
 }
 
+const NETWORK_DEFINITION_CHAT_MESSAGE: ChatResponse = {
+    response: {
+        ...RESERVATION_CHAT_MESSAGE.response,
+        sly_data: {
+            ...RESERVATION_CHAT_MESSAGE.response.sly_data,
+            agent_network_definition: TEMPORARY_NETWORK.agentInfo,
+        },
+    },
+}
+
 let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
@@ -507,6 +517,21 @@ describe("Multi Agent Accelerator Page", () => {
         }
 
         expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
+    })
+
+    it("Should detect network definitions in the chat stream", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        // Process the chunk with the network definition
+        await act(async () => {
+            onChunkReceived(JSON.stringify(NETWORK_DEFINITION_CHAT_MESSAGE))
+        })
+
+        expect(temporaryNetworksMock).toHaveBeenCalledWith([
+            expect.objectContaining({
+                networkDefinition: NETWORK_DEFINITION_CHAT_MESSAGE.response.sly_data?.["agent_network_definition"],
+            }),
+        ])
     })
 
     it("Should handle deletion of temporary networks", async () => {
