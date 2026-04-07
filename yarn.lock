@@ -1436,6 +1436,7 @@ __metadata:
     jest-fail-on-console: "npm:3.3.1"
     jest-silent-reporter: "npm:0.6.0"
     knip: "npm:5.63.1"
+    lodash: "npm:4.18.1"
     prettier: "npm:3.6.2"
     react: "npm:19.2.4"
     react-dom: "npm:19.2.4"
@@ -8781,7 +8782,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.21":
+"lodash@npm:4.18.1, lodash@npm:^4.17.21":
   version: 4.18.1
   resolution: "lodash@npm:4.18.1"
   checksum: 10c0/757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
