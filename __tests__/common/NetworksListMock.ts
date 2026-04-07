@@ -56,16 +56,18 @@ export const LIST_NETWORKS_RESPONSE = [
 
 export const TEMPORARY_NETWORK_NAME = "temp_network1"
 
+const agentInfo = {
+    agent_name: `${TEMPORARY_NETWORK_FOLDER}/${TEMPORARY_NETWORK_NAME}`,
+    description: "",
+    tags: ["tag1", "tag2", "tag3"],
+}
+
 export const TEMPORARY_NETWORK: TemporaryNetwork = {
     reservation: {
         reservation_id: "temp-reservation-1",
         lifetime_in_seconds: 3600,
         expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
     },
-    agentInfo: {
-        agent_name: `${TEMPORARY_NETWORK_FOLDER}/${TEMPORARY_NETWORK_NAME}`,
-        description: "",
-        tags: ["tag1", "tag2", "tag3"],
-    },
-    networkDefinition: null,
+    agentInfo,
+    networkDefinition: agentInfo,
 }

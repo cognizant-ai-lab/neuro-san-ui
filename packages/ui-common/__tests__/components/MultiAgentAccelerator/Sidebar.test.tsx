@@ -61,6 +61,7 @@ const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
 }
 
 const onDeleteNetworkMock = jest.fn()
+const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
     customURLCallback: jest.fn(),
@@ -69,7 +70,7 @@ const DEFAULT_PROPS: SidebarProps = {
     networks: LIST_NETWORKS_RESPONSE,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
     onDeleteNetwork: onDeleteNetworkMock,
-    setSelectedNetwork: jest.fn(),
+    setSelectedNetwork: setSelectedNetworkMock,
 }
 
 describe("SideBar", () => {
@@ -264,14 +265,85 @@ describe("SideBar", () => {
     })
 
     it("Should handle temporary networks correctly", async () => {
+        // Mock URL methods directly (they don't exist in JSDOM by default)
+        const createObjectUrlMock = jest.fn()
+        const revokeObjectURLMock = jest.fn()
+        const originalCreateObjectURL = global.URL.createObjectURL
+        const originalRevokeObjectURL = global.URL.revokeObjectURL
+
+        global.URL.createObjectURL = createObjectUrlMock
+        global.URL.revokeObjectURL = revokeObjectURLMock
+
+        // Mock HTMLAnchorElement.prototype.click
+        const originalAnchorClick = HTMLAnchorElement.prototype.click
+        HTMLAnchorElement.prototype.click = jest.fn()
+
+        // Blob needs manual handling since it's a constructor
+        const blobMock = jest.fn()
+        const originalBlob = global.Blob
+        global.Blob = blobMock
+
+        try {
+            renderSidebarComponent({
+                networks: [...LIST_NETWORKS_RESPONSE],
+                temporaryNetworks: [TEMPORARY_NETWORK],
+                newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            })
+
+            // Item should be auto-expanded as it's a newly added temporary network
+            await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+            // Should be an icon to download the network
+            const downloadButton = screen.getByTestId("DownloadIcon")
+            await user.click(downloadButton)
+
+            // Make sure correct Blob was created
+            expect(blobMock).toHaveBeenCalledWith([JSON.stringify(TEMPORARY_NETWORK.networkDefinition, null, 2)], {
+                type: "application/json",
+            })
+
+            expect(revokeObjectURLMock).toHaveBeenCalled()
+        } finally {
+            /* It's safe to disable the warning here since we're not doing any async operations between reading
+            and writing the values. */
+            /* eslint-disable require-atomic-updates */
+            global.URL.createObjectURL = originalCreateObjectURL
+            global.URL.revokeObjectURL = originalRevokeObjectURL
+            HTMLAnchorElement.prototype.click = originalAnchorClick
+            global.Blob = originalBlob
+            /* eslint-enable require-atomic-updates */
+        }
+    })
+
+    it("Should handle expired temporary networks correctly", async () => {
         renderSidebarComponent({
             networks: [...LIST_NETWORKS_RESPONSE],
-            temporaryNetworks: [TEMPORARY_NETWORK],
+            temporaryNetworks: [
+                {
+                    ...TEMPORARY_NETWORK,
+                    reservation: {
+                        ...TEMPORARY_NETWORK.reservation,
+                        // Set expiration time in the past to simulate expired network
+                        expiration_time_in_seconds: Math.floor(Date.now() / 1000) - 3600,
+                    },
+                },
+            ],
             newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
         })
 
-        // Item should be auto-expanded as it's a newly added temporary network
-        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+        // Should be displayed even if expired
+        const tempNetworkName = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+        await user.hover(tempNetworkName)
+
+        // Tooltip should indicate that the network is expired
+        await screen.findByText(/Expired/u)
+
+        setSelectedNetworkMock.mockClear()
+
+        // Clicking the expired network should have no effect
+        await user.click(tempNetworkName)
+
+        expect(setSelectedNetworkMock).not.toHaveBeenCalled()
     })
 
     it("Should allow deleting temporary networks", async () => {
