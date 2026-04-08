@@ -47,12 +47,12 @@ export const extractReservations = (message: ChatMessage): AgentReservation[] =>
  * We expect the network definition to be present in messages of type AGENT_FRAMEWORK only.
  * @return The network definition object, or null if not found or not the right type of message.
  */
-export const extractNetworkDefinition = (message: ChatMessage): Record<string, unknown> => {
+export const extractNetworkDefinition = (message: ChatMessage): Record<string, unknown> | null => {
     // Check for agent network definitions in sly_data
     if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_DEFINITION]) {
         return message.sly_data[AGENT_NETWORK_DEFINITION] as Record<string, unknown>
     } else {
-        // Not the type of message that would contain reservations, or no reservations found, return empty array
+        // Not the type of message that would contain a network definition, or no network definition found, return null
         return null
     }
 }

@@ -6,6 +6,7 @@ import Delete from "@mui/icons-material/Delete"
 import DownloadIcon from "@mui/icons-material/Download"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
+import IconButton from "@mui/material/IconButton"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {
@@ -20,6 +21,7 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {NodeIndex} from "./TreeBuilder"
+import {toSafeFilename} from "../../../utils/File"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
 
 // Palette of colors we can use for tags
@@ -46,7 +48,7 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
-    readonly temporaryNetworkDefinitions?: Record<string, object>
+    readonly temporaryNetworkDefinitions?: Record<string, unknown>
 }
 
 /**
@@ -182,30 +184,41 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 </Tooltip>
                             ) : null}
                             {isTemporaryNetwork && networkDefinition && (
-                                <Tooltip title={!isExpired && "Download network definition"}>
-                                    <DownloadIcon
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            if (isExpired) {
-                                                return
-                                            }
+                                <Tooltip title={isExpired ? "Network expired" : "Download network definition"}>
+                                    <span>
+                                        <IconButton
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                if (isExpired) {
+                                                    return
+                                                }
 
-                                            const blob = new Blob([JSON.stringify(networkDefinition, null, 2)], {
-                                                type: "application/json",
-                                            })
-                                            const url = URL.createObjectURL(blob)
-                                            const a = document.createElement("a")
-                                            a.href = url
-                                            a.download = `${labelString}-network-definition.hocon`
-                                            a.click()
-                                            URL.revokeObjectURL(url)
-                                        }}
-                                        sx={{
-                                            fontSize: "0.75rem",
-                                            color: "var(--bs-secondary)",
-                                            "&:hover": {color: "var(--bs-secondary-dark)"},
-                                        }}
-                                    />
+                                                const blob = new Blob([JSON.stringify(networkDefinition, null, 2)], {
+                                                    type: "application/json",
+                                                })
+                                                const url = URL.createObjectURL(blob)
+                                                const a = document.createElement("a")
+                                                a.href = url
+                                                a.download = `${toSafeFilename(labelString)}-network-definition.json`
+                                                a.click()
+                                                URL.revokeObjectURL(url)
+                                            }}
+                                            disabled={isExpired}
+                                            aria-label="Download network definition"
+                                            size="small"
+                                            sx={{
+                                                padding: 0,
+                                                color: "var(--bs-secondary)",
+                                                "&:hover": {color: "var(--bs-secondary-dark)"},
+                                                "&.Mui-disabled": {
+                                                    color: "var(--bs-secondary)",
+                                                    opacity: 0.3,
+                                                },
+                                            }}
+                                        >
+                                            <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             )}
                         </Box>

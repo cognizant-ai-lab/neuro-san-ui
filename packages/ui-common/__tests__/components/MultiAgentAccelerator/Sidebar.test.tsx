@@ -266,7 +266,8 @@ describe("SideBar", () => {
 
     it("Should handle temporary networks correctly", async () => {
         // Mock URL methods directly (they don't exist in JSDOM by default)
-        const createObjectUrlMock = jest.fn()
+        const objectUrl = "blob:http://localhost/fake-blob-url"
+        const createObjectUrlMock = jest.fn().mockReturnValue(objectUrl)
         const revokeObjectURLMock = jest.fn()
         const originalCreateObjectURL = global.URL.createObjectURL
         const originalRevokeObjectURL = global.URL.revokeObjectURL
@@ -302,7 +303,7 @@ describe("SideBar", () => {
                 type: "application/json",
             })
 
-            expect(revokeObjectURLMock).toHaveBeenCalled()
+            expect(revokeObjectURLMock).toHaveBeenCalledWith(objectUrl)
         } finally {
             /* It's safe to disable the warning here since we're not doing any async operations between reading
             and writing the values. */
