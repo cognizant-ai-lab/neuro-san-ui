@@ -30,6 +30,7 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
     - Example on mac: `brew install node@22`
     - For Ubuntu, see this link: https://joshtronic.com/2024/05/26/ubuntu-nodejs-22-install/
     - Make sure that the node executable is in your path. You can do this by typing `node --version`.
+    - Make sure you have the exact Node.js version specified in `.nvmrc` or you will encounter errors.
 - Install `yarn` on your development host. Instructions for all platforms are [here](https://classic.yarnpkg.com/lang/en/docs)
     - Example using current version on mac: `brew install yarn`
     - For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
