@@ -69,7 +69,7 @@ const GROW_ANIMATION_TIME_MS = 800
  */
 const convertReservationsToNetworks = (
     agentReservations: AgentReservation[],
-    networkDefinition: object
+    networkDefinition: Record<string, unknown> | null
 ): TemporaryNetwork[] => {
     return agentReservations.map((reservation) => ({
         reservation,

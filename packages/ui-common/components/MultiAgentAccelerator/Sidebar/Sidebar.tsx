@@ -264,11 +264,11 @@ export const Sidebar: FC<SidebarProps> = ({
     )
 
     const temporaryNetworkDefinitions = temporaryNetworks.reduce(
-        (acc, tempNetwork) => {
+        (acc: Record<string, Record<string, unknown> | null>, tempNetwork) => {
             acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkDefinition
             return acc
         },
-        {} as Record<string, object>
+        {}
     )
 
     const [selectedItem, setSelectedItem] = useState<string | null>(null)
