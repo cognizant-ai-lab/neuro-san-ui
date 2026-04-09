@@ -26,7 +26,7 @@ import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
 import {TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {AgentReservation, extractNetworkDefinition, extractReservations} from "./TemporaryNetworks"
+import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
@@ -61,7 +61,7 @@ const GROW_ANIMATION_TIME_MS = 800
  * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
  * in the tree.
  * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
- * @param networkDefinition Optional network definition object that may be included in the same message as the
+ * @param networkHocon Optional network HOCON string that may be included in the same message as the
  * reservations. Note: for now we assume that all reservations are associated with the same network definition.
  * This will fail if ever we get multiple reservations for different networks in a single chat stream, but that is
  * not a valid scenario currently; we are focusing on Agent Network Design which has a simple output.
@@ -69,7 +69,7 @@ const GROW_ANIMATION_TIME_MS = 800
  */
 const convertReservationsToNetworks = (
     agentReservations: AgentReservation[],
-    networkDefinition: Record<string, unknown> | null
+    networkHocon: string | null
 ): TemporaryNetwork[] => {
     return agentReservations.map((reservation) => ({
         reservation,
@@ -78,7 +78,7 @@ const convertReservationsToNetworks = (
             origin: reservation.reservation_id,
             status: "active",
         },
-        networkDefinition,
+        networkHocon,
     }))
 }
 
@@ -329,9 +329,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Handle agent reservations (temporary networks) that come in through the chat stream.
         if (reservationsResult?.length > 0) {
             // Retrieve network definition, if present
-            const networkDefinition = extractNetworkDefinition(chatMessage)
+            const networkHocon = extractNetworkHocon(chatMessage)
 
-            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkDefinition)
+            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkHocon)
 
             const currentNetworks = useTempNetworksStore.getState().tempNetworks
             useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])

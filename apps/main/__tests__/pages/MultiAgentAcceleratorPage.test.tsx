@@ -36,7 +36,11 @@ import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
-import {TEMPORARY_NETWORK_FOLDER} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
+import {
+    AGENT_NETWORK_HOCON,
+    AGENT_RESERVATIONS_KEY,
+    TEMPORARY_NETWORK_FOLDER,
+} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {SidebarProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {
     getAgentNetworks,
@@ -128,17 +132,17 @@ const RESERVATION_CHAT_MESSAGE: ChatResponse = {
         structure: {total_tokens: 100},
         origin: [{tool: "copy_cat"}],
         sly_data: {
-            agent_reservations: [reservation],
+            [AGENT_RESERVATIONS_KEY]: [reservation],
         },
     },
 }
 
-const NETWORK_DEFINITION_CHAT_MESSAGE: ChatResponse = {
+const NETWORK_HOCON_CHAT_MESSAGE: ChatResponse = {
     response: {
         ...RESERVATION_CHAT_MESSAGE.response,
         sly_data: {
             ...RESERVATION_CHAT_MESSAGE.response.sly_data,
-            agent_network_definition: TEMPORARY_NETWORK.agentInfo,
+            [AGENT_NETWORK_HOCON]: JSON.stringify(TEMPORARY_NETWORK.networkHocon, null, 2),
         },
     },
 }
@@ -513,23 +517,23 @@ describe("Multi Agent Accelerator Page", () => {
             agentInfo: expect.objectContaining({
                 agent_name: agentName,
             }),
-            networkDefinition: null,
+            networkHocon: null,
         }
 
         expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
     })
 
-    it("Should detect network definitions in the chat stream", async () => {
+    it("Should detect network hocon in the chat stream", async () => {
         renderMultiAgentAcceleratorPage()
 
-        // Process the chunk with the network definition
+        // Process the chunk with the network hocon
         await act(async () => {
-            onChunkReceived(JSON.stringify(NETWORK_DEFINITION_CHAT_MESSAGE))
+            onChunkReceived(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
         })
 
         expect(temporaryNetworksMock).toHaveBeenCalledWith([
             expect.objectContaining({
-                networkDefinition: NETWORK_DEFINITION_CHAT_MESSAGE.response.sly_data?.["agent_network_definition"],
+                networkHocon: NETWORK_HOCON_CHAT_MESSAGE.response.sly_data?.[AGENT_NETWORK_HOCON],
             }),
         ])
     })

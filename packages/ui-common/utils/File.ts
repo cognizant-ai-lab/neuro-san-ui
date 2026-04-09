@@ -57,17 +57,7 @@ export const getFileName = (path: string): string =>
 export const downloadFile = (messageContents: string | Uint8Array, fileName: string) => {
     const downloadLink = document.createElement("a")
 
-    // Generates a downloadable blob of the contents to be downloaded along with a url for the anchor tag
-    const blobParts: (string | Uint8Array)[] = []
-
-    // For string types, we prepend the UNICODE BOM to the file: https://en.wikipedia.org/wiki/Byte_order_mark
-    const bomHeader = "\uFEFF"
-    if (typeof messageContents === "string") {
-        blobParts.push(bomHeader)
-    }
-    blobParts.push(messageContents)
-
-    const blob = new Blob(blobParts as BlobPart[])
+    const blob = new Blob([messageContents] as BlobPart[])
 
     // Apply the url and filename to the anchor tag
     downloadLink.href = URL.createObjectURL(blob)
@@ -77,4 +67,6 @@ export const downloadFile = (messageContents: string | Uint8Array, fileName: str
     document.body.append(downloadLink)
     downloadLink.click()
     downloadLink.remove()
+
+    URL.revokeObjectURL(downloadLink.href)
 }

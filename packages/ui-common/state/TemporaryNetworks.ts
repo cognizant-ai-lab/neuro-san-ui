@@ -28,7 +28,7 @@ type AgentReservation = {
 export type TemporaryNetwork = {
     readonly reservation: AgentReservation
     readonly agentInfo: AgentInfo
-    readonly networkDefinition?: Record<string, unknown>
+    readonly networkHocon?: string | null
 }
 
 /**

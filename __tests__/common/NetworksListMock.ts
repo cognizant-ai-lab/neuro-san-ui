@@ -69,5 +69,5 @@ export const TEMPORARY_NETWORK: TemporaryNetwork = {
         expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
     },
     agentInfo,
-    networkDefinition: agentInfo,
+    networkHocon: JSON.stringify(agentInfo, null, 2),
 }
