@@ -27,3 +27,9 @@ export const LEVEL_SPACING = 150
 // they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
 // temporary.
 export const TEMPORARY_NETWORK_FOLDER = "temporary"
+
+// We expect the agent reservations to be stored in sly_data under this key
+export const AGENT_RESERVATIONS_KEY = "agent_reservations"
+
+// We expect the agent network HOCON to be stored in sly_data under this key, if it is provided by the backend
+export const AGENT_NETWORK_HOCON = "agent_network_hocon_text"

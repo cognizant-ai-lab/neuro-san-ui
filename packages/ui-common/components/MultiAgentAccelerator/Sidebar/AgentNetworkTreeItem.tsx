@@ -21,7 +21,7 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {NodeIndex} from "./TreeBuilder"
-import {toSafeFilename} from "../../../utils/File"
+import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {cleanUpAgentName} from "../../AgentChat/Utils"
 
 // Palette of colors we can use for tags
@@ -48,7 +48,7 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
-    readonly temporaryNetworkDefinitions?: Record<string, unknown>
+    readonly temporaryNetworkHoconStrings?: Record<string, string | null>
 }
 
 /**
@@ -74,7 +74,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     nodeIndex,
     onDeleteNetwork,
     temporaryNetworkExpirationTimes,
-    temporaryNetworkDefinitions,
+    temporaryNetworkHoconStrings,
 }) => {
     const theme = useTheme()
 
@@ -110,7 +110,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const expirationTime = temporaryNetworkExpirationTimes?.[itemId]
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
-    const networkDefinition = isTemporaryNetwork ? temporaryNetworkDefinitions?.[itemId] : null
+    const networkHocon = isTemporaryNetwork ? temporaryNetworkHoconStrings?.[itemId] : null
 
     const iconNameSuggestion = isTemporaryNetwork ? "HourglassTop" : isChild ? networkIconSuggestions?.[itemId] : null
 
@@ -183,7 +183,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
                                 </Tooltip>
                             ) : null}
-                            {isTemporaryNetwork && networkDefinition && (
+                            {isTemporaryNetwork && networkHocon && (
                                 <Tooltip title={isExpired ? "Network expired" : "Download network definition"}>
                                     <span>
                                         <IconButton
@@ -193,15 +193,8 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                     return
                                                 }
 
-                                                const blob = new Blob([JSON.stringify(networkDefinition, null, 2)], {
-                                                    type: "application/json",
-                                                })
-                                                const url = URL.createObjectURL(blob)
-                                                const a = document.createElement("a")
-                                                a.href = url
-                                                a.download = `${toSafeFilename(labelString)}-network-definition.json`
-                                                a.click()
-                                                URL.revokeObjectURL(url)
+                                                const fileName = `${toSafeFilename(labelString)}.hocon`
+                                                downloadFile(networkHocon, fileName)
                                             }}
                                             disabled={isExpired}
                                             aria-label="Download network definition"

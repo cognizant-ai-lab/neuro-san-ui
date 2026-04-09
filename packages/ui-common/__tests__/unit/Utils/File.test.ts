@@ -82,26 +82,50 @@ describe("splitFileName", () => {
 
 describe("downloadFile", () => {
     it("should create a download link with the correct filename and content", () => {
-        const oldCreateObjectURL = global.URL.createObjectURL
-        const testUrl = "http://example.com/test_object_url"
-        global.URL.createObjectURL = jest.fn(() => testUrl)
+        // Mock URL methods directly (they don't exist in JSDOM by default)
+        const objectUrl = "blob:http://localhost/fake-blob-url"
+        const createObjectUrlMock = jest.fn().mockReturnValue(objectUrl)
+        const revokeObjectURLMock = jest.fn()
+        const originalCreateObjectURL = global.URL.createObjectURL
+        const originalRevokeObjectURL = global.URL.revokeObjectURL
 
-        const appendChildSpy = jest.spyOn(global.document.body, "append")
+        global.URL.createObjectURL = createObjectUrlMock
+        global.URL.revokeObjectURL = revokeObjectURLMock
+
+        // Mock HTMLAnchorElement.prototype.click
+        const originalAnchorClick = HTMLAnchorElement.prototype.click
+
+        const clickMock = jest.fn()
+        HTMLAnchorElement.prototype.click = clickMock
+
+        // Mock Blob constructor
+        const blobMock = jest.fn()
+        const originalBlob = global.Blob
+        global.Blob = blobMock
 
         const fileName = "hello.txt"
-        downloadFile("Hello, world!", fileName)
+        const textToWrite = "Hello, world!"
+        try {
+            downloadFile(textToWrite, fileName)
 
-        expect(appendChildSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                download: fileName,
-                href: testUrl,
-            })
-        )
+            // Make sure correct Blob was created
+            expect(blobMock).toHaveBeenCalledWith([textToWrite])
 
-        // undo spy
-        appendChildSpy.mockRestore()
+            expect(revokeObjectURLMock).toHaveBeenCalledWith(objectUrl)
 
-        // restore the original URL.createObjectURL
-        global.URL.createObjectURL = oldCreateObjectURL
+            expect(clickMock).toHaveBeenCalled()
+        } finally {
+            global.URL.createObjectURL = originalCreateObjectURL
+            global.URL.revokeObjectURL = originalRevokeObjectURL
+            HTMLAnchorElement.prototype.click = originalAnchorClick
+            global.Blob = originalBlob
+        }
+
+        // Make sure correct Blob was created
+        expect(blobMock).toHaveBeenCalledWith([textToWrite])
+
+        expect(revokeObjectURLMock).toHaveBeenCalledWith(objectUrl)
+
+        expect(clickMock).toHaveBeenCalled()
     })
 })

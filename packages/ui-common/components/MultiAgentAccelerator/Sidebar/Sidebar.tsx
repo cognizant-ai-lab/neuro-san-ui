@@ -263,13 +263,10 @@ export const Sidebar: FC<SidebarProps> = ({
         {} as Record<string, Date>
     )
 
-    const temporaryNetworkDefinitions = temporaryNetworks.reduce(
-        (acc: Record<string, Record<string, unknown> | null>, tempNetwork) => {
-            acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkDefinition
-            return acc
-        },
-        {}
-    )
+    const temporaryNetworkHoconStrings = temporaryNetworks.reduce((acc: Record<string, string | null>, tempNetwork) => {
+        acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkHocon
+        return acc
+    }, {})
 
     const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
@@ -376,7 +373,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             nodeIndex,
                             onDeleteNetwork,
                             temporaryNetworkExpirationTimes,
-                            temporaryNetworkDefinitions,
+                            temporaryNetworkHoconStrings,
                         } as AgentNetworkNodeProps,
                     }}
                 />

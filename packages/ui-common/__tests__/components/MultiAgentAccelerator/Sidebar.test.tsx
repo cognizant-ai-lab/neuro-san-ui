@@ -40,6 +40,7 @@ import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/S
 import {testConnection} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../state/Environment"
+import {downloadFile} from "../../../utils/File"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
 const AGENT_SERVER_ADDRESS = "Agent server address"
@@ -51,6 +52,10 @@ const TEST_EXAMPLE_URL = "https://test.example.com"
 const TOOLTIP_EXAMPLE_URL = "https://tooltip.example.com"
 
 jest.mock("../../../controller/agent/Agent")
+jest.mock("../../../utils/File", () => ({
+    ...jest.requireActual("../../../utils/File"),
+    downloadFile: jest.fn(),
+}))
 
 // Simulated Neuro-san version for testing
 const TEST_VERSION = "1.2.3.4a"
@@ -265,55 +270,20 @@ describe("SideBar", () => {
     })
 
     it("Should handle temporary networks correctly", async () => {
-        // Mock URL methods directly (they don't exist in JSDOM by default)
-        const objectUrl = "blob:http://localhost/fake-blob-url"
-        const createObjectUrlMock = jest.fn().mockReturnValue(objectUrl)
-        const revokeObjectURLMock = jest.fn()
-        const originalCreateObjectURL = global.URL.createObjectURL
-        const originalRevokeObjectURL = global.URL.revokeObjectURL
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+        })
 
-        global.URL.createObjectURL = createObjectUrlMock
-        global.URL.revokeObjectURL = revokeObjectURLMock
+        // Item should be auto-expanded as it's a newly added temporary network
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
 
-        // Mock HTMLAnchorElement.prototype.click
-        const originalAnchorClick = HTMLAnchorElement.prototype.click
-        HTMLAnchorElement.prototype.click = jest.fn()
+        // Should be an icon to download the network
+        const downloadButton = screen.getByTestId("DownloadIcon")
+        await user.click(downloadButton)
 
-        // Blob needs manual handling since it's a constructor
-        const blobMock = jest.fn()
-        const originalBlob = global.Blob
-        global.Blob = blobMock
-
-        try {
-            renderSidebarComponent({
-                networks: [...LIST_NETWORKS_RESPONSE],
-                temporaryNetworks: [TEMPORARY_NETWORK],
-                newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
-            })
-
-            // Item should be auto-expanded as it's a newly added temporary network
-            await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
-
-            // Should be an icon to download the network
-            const downloadButton = screen.getByTestId("DownloadIcon")
-            await user.click(downloadButton)
-
-            // Make sure correct Blob was created
-            expect(blobMock).toHaveBeenCalledWith([JSON.stringify(TEMPORARY_NETWORK.networkDefinition, null, 2)], {
-                type: "application/json",
-            })
-
-            expect(revokeObjectURLMock).toHaveBeenCalledWith(objectUrl)
-        } finally {
-            /* It's safe to disable the warning here since we're not doing any async operations between reading
-            and writing the values. */
-            /* eslint-disable require-atomic-updates */
-            global.URL.createObjectURL = originalCreateObjectURL
-            global.URL.revokeObjectURL = originalRevokeObjectURL
-            HTMLAnchorElement.prototype.click = originalAnchorClick
-            global.Blob = originalBlob
-            /* eslint-enable require-atomic-updates */
-        }
+        expect(downloadFile).toHaveBeenCalledWith(TEMPORARY_NETWORK.networkHocon, `${TEMPORARY_NETWORK_NAME}.hocon`)
     })
 
     it("Should handle expired temporary networks correctly", async () => {

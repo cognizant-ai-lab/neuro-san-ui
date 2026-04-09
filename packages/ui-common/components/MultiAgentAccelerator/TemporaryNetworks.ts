@@ -1,3 +1,4 @@
+import {AGENT_NETWORK_HOCON, AGENT_RESERVATIONS_KEY} from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
 /**
@@ -18,12 +19,6 @@ export type AgentReservation = {
     readonly expiration_time_in_seconds: number
 }
 
-// We expect the agent reservations to be stored in sly_data under this key
-const AGENT_RESERVATIONS_KEY = "agent_reservations"
-
-// We expect the agent network definition to be stored in sly_data under this key, if it is provided by the backend
-const AGENT_NETWORK_DEFINITION = "agent_network_definition"
-
 /**
  * Extracts agent reservations from a chat message, if they exist.
  * @param message The chat message to extract reservations from. We expect reservations to be present in messages of
@@ -42,17 +37,17 @@ export const extractReservations = (message: ChatMessage): AgentReservation[] =>
 }
 
 /**
- * Extracts the agent network definition from a chat message, if it exists.
- * @param message The chat message to extract network definition from.
+ * Extracts the agent network HOCON from a chat message, if it exists.
+ * @param message The chat message to extract network HOCON from.
  * We expect the network definition to be present in messages of type AGENT_FRAMEWORK only.
- * @return The network definition object, or null if not found or not the right type of message.
+ * @return The network HOCON as a string, or null if not found or not the right type of message.
  */
-export const extractNetworkDefinition = (message: ChatMessage): Record<string, unknown> | null => {
-    // Check for agent network definitions in sly_data
-    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_DEFINITION]) {
-        return message.sly_data[AGENT_NETWORK_DEFINITION] as Record<string, unknown>
+export const extractNetworkHocon = (message: ChatMessage): string | null => {
+    // Check for agent network HOCON in sly_data
+    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_HOCON]) {
+        return message.sly_data[AGENT_NETWORK_HOCON] as string
     } else {
-        // Not the type of message that would contain a network definition, or no network definition found, return null
+        // Not the type of message that would contain a network HOCON, or no network HOCON found, return null
         return null
     }
 }
