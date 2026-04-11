@@ -25,8 +25,10 @@
     "devDependencies": {
         "@babel/core": "7.23.7",
         "@babel/preset-env": "7.28.3",
+        "@testing-library/react": "16.3.0",
+        "@testing-library/user-event": "14.6.1",
         "@types/lodash-es": "4.17.12",
-        "@types/node": "20.11.5",
+        "@types/node": "22.17.1",
         "@types/react": "19.2.14",
         "@types/react-dom": "19.2.3",
         "@types/react-syntax-highlighter": "15.5.13",
