@@ -1,13 +1,12 @@
+// @ts-check
+
 import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
-import typescriptEslint from "@typescript-eslint/eslint-plugin"
-// @ts-expect-error: parser has no types, but works
-import tsParser from "@typescript-eslint/parser"
+import {defineConfig} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import eslintPluginImport from "eslint-plugin-import"
-// eslint-disable-next-line no-shadow
-import jest from "eslint-plugin-jest"
+import eslintJest from "eslint-plugin-jest"
 import jestDom from "eslint-plugin-jest-dom"
 import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions"
 import eslintPluginReact from "eslint-plugin-react"
@@ -15,10 +14,9 @@ import reactHooks from "eslint-plugin-react-hooks"
 import testingLibrary from "eslint-plugin-testing-library"
 import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
+import typescriptEslint from "typescript-eslint"
 
-const config = [
-    preferArrowFunctions.configs["all"],
-    eslintPluginUnicorn.configs.all,
+export default defineConfig([
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
@@ -27,17 +25,20 @@ const config = [
     // "rules" section below.
     js.configs.all,
 
+    preferArrowFunctions.configs.all,
+    eslintPluginUnicorn.configs.all,
+
     // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
     {rules: {...next.configs["recommended-legacy"].rules}},
     {rules: {...next.configs["core-web-vitals-legacy"].rules}},
-    ...typescriptEslint.configs["flat/all"],
+    typescriptEslint.configs.all,
 
-    {rules: {...eslintPluginImport.configs.recommended.rules}},
+    eslintPluginImport.flatConfigs.recommended,
     {
         rules: {...eslintPluginImport.configs.typescript.rules},
         settings: {...eslintPluginImport.configs.typescript.settings},
     },
-    {rules: {...jest.configs.recommended.rules}},
+    {rules: {...eslintJest.configs.recommended.rules}},
     {rules: {...reactHooks.configs.recommended.rules}},
     {rules: {...eslintPluginReact.configs.all.rules}},
     // This next one has to be included or else the React rules will complain that "React is not in scope".
@@ -50,11 +51,10 @@ const config = [
     {
         plugins: {
             "@next/next": next,
-            "@typescript-eslint": typescriptEslint,
+            "typescript-eslint": typescriptEslint.plugin,
             "jest-dom": jestDom,
             "react-hooks": reactHooks,
-            import: fixupPluginRules(eslintPluginImport),
-            jest,
+            jest: eslintJest,
             react: fixupPluginRules(eslintPluginReact),
             "testing-library": testingLibrary,
         },
@@ -77,7 +77,6 @@ const config = [
                 SpeechRecognitionErrorEvent: "readonly",
             },
 
-            parser: tsParser,
             ecmaVersion: 2022,
             sourceType: "module",
 
@@ -554,7 +553,4 @@ const config = [
             "@typescript-eslint/no-empty-interface": "error",
         },
     },
-]
-
-// Has to be exported for ESLint to use it
-export default config
+])
