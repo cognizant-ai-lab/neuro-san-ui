@@ -1,9 +1,7 @@
 // @ts-check
 
-import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
-import next from "@next/eslint-plugin-next"
-import {defineConfig} from "eslint/config"
+import {globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import eslintPluginImport from "eslint-plugin-import"
 import eslintJest from "eslint-plugin-jest"
@@ -15,8 +13,9 @@ import testingLibrary from "eslint-plugin-testing-library"
 import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
+import nextPlugin from "@next/eslint-plugin-next"
 
-export default defineConfig([
+export default [
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
@@ -25,37 +24,39 @@ export default defineConfig([
     // "rules" section below.
     js.configs.all,
 
-    preferArrowFunctions.configs.all,
+    preferArrowFunctions.configs["all"],
     eslintPluginUnicorn.configs.all,
 
-    // See: https://nextjs.org/docs/pages/building-your-application/configuring/eslint
-    {rules: {...next.configs["recommended-legacy"].rules}},
-    {rules: {...next.configs["core-web-vitals-legacy"].rules}},
     typescriptEslint.configs.all,
 
     eslintPluginImport.flatConfigs.recommended,
-    {
-        rules: {...eslintPluginImport.configs.typescript.rules},
-        settings: {...eslintPluginImport.configs.typescript.settings},
-    },
-    {rules: {...eslintJest.configs.recommended.rules}},
-    {rules: {...reactHooks.configs.recommended.rules}},
-    {rules: {...eslintPluginReact.configs.all.rules}},
+    eslintPluginImport.configs.typescript,
+
+    eslintJest.configs["flat/recommended"],
+    reactHooks.configs.flat.recommended,
+    eslintPluginReact.configs.flat["recommended"],
+
     // This next one has to be included or else the React rules will complain that "React is not in scope".
     // But those rules are wrong -- as of React 17, "React" automatically gets included in the transpilation
     // process and doesn't *need* to be in scope.
-    {rules: {...eslintPluginReact.configs["jsx-runtime"].rules}},
+    eslintPluginReact.configs.flat["jsx-runtime"],
 
     eslintConfigPrettier,
 
+    globalIgnores([
+        // Default ignores of eslint-config-next:
+        ".next/**",
+        "out/**",
+        "build/**",
+        "next-env.d.ts",
+    ]),
     {
         plugins: {
-            "@next/next": next,
             "typescript-eslint": typescriptEslint.plugin,
             "jest-dom": jestDom,
-            "react-hooks": reactHooks,
+            "@next/next": nextPlugin,
             jest: eslintJest,
-            react: fixupPluginRules(eslintPluginReact),
+            react: eslintPluginReact,
             "testing-library": testingLibrary,
         },
         linterOptions: {
@@ -88,7 +89,7 @@ export default defineConfig([
 
         settings: {
             react: {
-                version: "detect",
+                version: "19",
             },
             "import/resolver": {
                 node: true,
@@ -103,6 +104,8 @@ export default defineConfig([
         },
 
         rules: {
+            ...nextPlugin.configs.recommended.rules,
+
             // Turn on some optional, stricter settings for this rule
             "react/jsx-key": [
                 "error",
@@ -338,6 +341,7 @@ export default defineConfig([
             "@typescript-eslint/no-duplicate-type-constituents": "off",
             "@typescript-eslint/no-extraneous-class": "off",
             "@typescript-eslint/no-floating-promises": "off",
+            "@typescript-eslint/no-for-in-array": "off",
             "@typescript-eslint/no-implied-eval": "off",
             "@typescript-eslint/no-invalid-this": "off",
             "@typescript-eslint/no-magic-numbers": "off",
@@ -347,39 +351,37 @@ export default defineConfig([
             "@typescript-eslint/no-throw-literal": "off",
             "@typescript-eslint/no-unnecessary-condition": "off",
             "@typescript-eslint/no-unnecessary-qualifier": "off",
+            "@typescript-eslint/no-unnecessary-type-arguments": "off",
             "@typescript-eslint/no-unsafe-argument": "off",
             "@typescript-eslint/no-unsafe-assignment": "off",
             "@typescript-eslint/no-unsafe-call": "off",
+            "@typescript-eslint/no-unsafe-enum-comparison": "off",
             "@typescript-eslint/no-unsafe-member-access": "off",
             "@typescript-eslint/no-unsafe-return": "off",
-            "@typescript-eslint/no-unnecessary-type-arguments": "off",
-            "@typescript-eslint/no-unsafe-enum-comparison": "off",
-            "@typescript-eslint/non-nullable-type-assertion-style": "off",
-            "@typescript-eslint/prefer-includes": "off",
             "@typescript-eslint/no-unsafe-type-assertion": "off",
             "@typescript-eslint/no-use-before-define": "off",
-            "@typescript-eslint/prefer-readonly": "off",
-            "@typescript-eslint/prefer-reduce-type-parameter": "off",
-            "@typescript-eslint/prefer-return-this-type": "off",
-            "@typescript-eslint/prefer-string-starts-ends-with": "off",
-            "@typescript-eslint/require-array-sort-compare": "off",
-            "@typescript-eslint/switch-exhaustiveness-check": "off",
-            "@typescript-eslint/unbound-method": "off",
-            "@typescript-eslint/no-for-in-array": "off",
+            "@typescript-eslint/non-nullable-type-assertion-style": "off",
             "@typescript-eslint/object-curly-spacing": "off",
             "@typescript-eslint/prefer-destructuring": "off",
             "@typescript-eslint/prefer-enum-initializers": "off",
+            "@typescript-eslint/prefer-includes": "off",
             "@typescript-eslint/prefer-nullish-coalescing": "off",
+            "@typescript-eslint/prefer-readonly": "off",
             "@typescript-eslint/prefer-readonly-parameter-types": "off",
+            "@typescript-eslint/prefer-reduce-type-parameter": "off",
+            "@typescript-eslint/prefer-return-this-type": "off",
+            "@typescript-eslint/prefer-string-starts-ends-with": "off",
             "@typescript-eslint/promise-function-async": "off",
+            "@typescript-eslint/require-array-sort-compare": "off",
             "@typescript-eslint/require-await": "off",
             "@typescript-eslint/restrict-plus-operands": "off",
             "@typescript-eslint/restrict-template-expressions": "off",
             "@typescript-eslint/sort-type-constituents": "off",
             "@typescript-eslint/strict-boolean-expressions": "off",
+            "@typescript-eslint/switch-exhaustiveness-check": "off",
+            "@typescript-eslint/unbound-method": "off",
             "arrow-body-style": "off",
             "capitalized-comments": "off",
-            complexity: "off",
             "func-names": "off",
             "func-style": "off",
             "id-length": "off",
@@ -409,8 +411,11 @@ export default defineConfig([
             "no-void": "off",
             "one-var": "off",
             "prefer-destructuring": "off",
-            radix: "off",
             "react-hooks/exhaustive-deps": "off",
+            "react-hooks/preserve-manual-memoization": "off",
+            "react-hooks/purity": "off",
+            "react-hooks/refs": "off",
+            "react-hooks/set-state-in-effect": "off",
             "react/button-has-type": "off",
             "react/destructuring-assignment": "off",
             "react/forbid-component-props": "off",
@@ -444,36 +449,38 @@ export default defineConfig([
             "require-await": "off",
             "sort-keys": "off",
             "spaced-comment": "off",
-            "unicorn/consistent-existence-index-check": "off",
-            "unicorn/no-await-expression-member": "off",
-            "unicorn/no-static-only-class": "off",
-            "unicorn/prefer-set-has": "off",
-            "unicorn/prefer-string-raw": "off",
-            "unicorn/no-useless-undefined": "off",
-            "unicorn/prefer-node-protocol": "off",
-            "unicorn/prefer-string-slice": "off",
-            "unicorn/no-named-default": "off",
-            "unicorn/no-array-reduce": "off",
-            "unicorn/no-useless-switch-case": "off",
-            "unicorn/prefer-at": "off",
-            "unicorn/prefer-string-replace-all": "off",
-            "unicorn/consistent-destructuring": "off",
-            "unicorn/numeric-separators-style": "off",
-            "unicorn/prefer-query-selector": "off",
             "unicorn/catch-error-name": "off",
-            "unicorn/prefer-ternary": "off",
+            "unicorn/consistent-destructuring": "off",
+            "unicorn/consistent-existence-index-check": "off",
             "unicorn/consistent-function-scoping": "off",
-            "unicorn/no-negated-condition": "off",
-            "unicorn/prefer-spread": "off",
-            "unicorn/no-zero-fractions": "off",
-            "unicorn/prefer-number-properties": "off",
-            "unicorn/prefer-global-this": "off",
-            "unicorn/switch-case-braces": "off",
-            "unicorn/no-array-for-each": "off",
-            "unicorn/no-keyword-prefix": "off",
             "unicorn/filename-case": "off",
+            "unicorn/no-array-for-each": "off",
+            "unicorn/no-array-reduce": "off",
+            "unicorn/no-await-expression-member": "off",
+            "unicorn/no-keyword-prefix": "off",
+            "unicorn/no-named-default": "off",
+            "unicorn/no-negated-condition": "off",
             "unicorn/no-null": "off",
+            "unicorn/no-static-only-class": "off",
+            "unicorn/no-useless-switch-case": "off",
+            "unicorn/no-useless-undefined": "off",
+            "unicorn/no-zero-fractions": "off",
+            "unicorn/numeric-separators-style": "off",
+            "unicorn/prefer-at": "off",
+            "unicorn/prefer-global-this": "off",
+            "unicorn/prefer-node-protocol": "off",
+            "unicorn/prefer-number-properties": "off",
+            "unicorn/prefer-query-selector": "off",
+            "unicorn/prefer-set-has": "off",
+            "unicorn/prefer-spread": "off",
+            "unicorn/prefer-string-raw": "off",
+            "unicorn/prefer-string-replace-all": "off",
+            "unicorn/prefer-string-slice": "off",
+            "unicorn/prefer-ternary": "off",
             "unicorn/prevent-abbreviations": "off",
+            "unicorn/switch-case-braces": "off",
+            complexity: "off",
+            radix: "off",
         },
     },
     {
@@ -553,4 +560,4 @@ export default defineConfig([
             "@typescript-eslint/no-empty-interface": "error",
         },
     },
-])
+]

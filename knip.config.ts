@@ -84,9 +84,6 @@ const config: KnipConfig = {
         // Used by Jest
         "babel-jest",
 
-        // Used by eslint
-        "eslint-config-next",
-
         // Used by yarn lint-summary script
         "eslint-formatter-summary",
 
