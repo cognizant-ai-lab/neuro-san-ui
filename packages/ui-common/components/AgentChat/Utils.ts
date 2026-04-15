@@ -25,6 +25,7 @@ export const KNOWN_MESSAGE_TYPES: ChatMessageType[] = [
     ChatMessageType.AI,
     ChatMessageType.AGENT,
     ChatMessageType.AGENT_FRAMEWORK,
+    ChatMessageType.AGENT_PROGRESS,
     ChatMessageType.HUMAN,
     ChatMessageType.SYSTEM,
 ]
