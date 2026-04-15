@@ -17,13 +17,16 @@ limitations under the License.
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
+import Popper from "@mui/material/Popper"
 import Slide from "@mui/material/Slide"
+import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
+import {extractNetworkProgress} from "./AgentNetworkDesigner"
 import {TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
@@ -112,6 +115,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
+
+    // Agents in network under construction by Agent Network Designer -
+    // updated in real time as we receive progress messages from the backend.
+    const [agentsInNetworkDesigner, setAgentsInNetworkDesigner] = useState<ConnectivityInfo[]>([])
+
     const [agentIconSuggestions, setAgentIconSuggestions] = useState<AgentIconSuggestions | null>(null)
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
@@ -165,6 +173,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
+
+    const isNetworkDesignerMode = selectedNetwork === "agent_network_designer"
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -323,6 +333,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Agent hit counts
         agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
 
+        // Agent network designer progress messages
+        if (isNetworkDesignerMode) {
+            const networkInProgress = extractNetworkProgress(chatMessage)
+            if (networkInProgress?.length > 0) {
+                setAgentsInNetworkDesigner(networkInProgress)
+            }
+        }
+
         // Temporary networks/reservations
         const reservationsResult = extractReservations(chatMessage)
 
@@ -350,6 +368,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
         // Reset newly added temporary networks
         setNewlyAddedTemporaryNetworks(new Set())
+
+        // Reset Agent Network Designer preview
+        setAgentsInNetworkDesigner([])
 
         // Show info popup only once per session
         if (!haveShownPopup) {
@@ -448,6 +469,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             agentsInNetwork={agentsInNetwork}
                             agentIconSuggestions={agentIconSuggestions}
                             id="multi-agent-accelerator-agent-flow"
+                            key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                             isStreaming={isStreaming}
@@ -558,6 +580,63 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     return (
         <>
+            <Popper
+                open={isStreaming && isNetworkDesignerMode}
+                anchorEl={null}
+                sx={{
+                    width: "600px",
+                    height: "600px",
+                    zIndex: 9999,
+                }}
+            >
+                <ReactFlowProvider>
+                    <Box
+                        id="multi-agent-accelerator-agent-flow-container"
+                        sx={{
+                            border: "4px solid var(--bs-yellow)",
+                            display: "flex",
+                            flexDirection: "column",
+                            color: "white",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            background: "var(--bs-secondary)",
+                            width: "100%",
+                            height: "100%",
+                            opacity: "95%",
+                            maxWidth: 1000,
+                            margin: "0 auto",
+                        }}
+                    >
+                        <Typography
+                            variant="h6"
+                            sx={{padding: "0.5rem 1rem", fontWeight: "bold", color: "white"}}
+                        >
+                            Network Preview
+                        </Typography>
+                        {agentsInNetworkDesigner?.length > 0 ? (
+                            <AgentFlow
+                                id="and-network-preview"
+                                key="and-network-preview"
+                                agentsInNetwork={agentsInNetworkDesigner}
+                                isAgentNetworkDesignerMode={true}
+                                isAwaitingLlm={false}
+                                isStreaming={false}
+                                thoughtBubbleEdges={new Map()}
+                                setThoughtBubbleEdges={() => {
+                                    // test
+                                }}
+                            />
+                        ) : (
+                            <Typography
+                                variant="body1"
+                                sx={{color: "white"}}
+                            >
+                                Agent Network Designer progress will appear here once it starts streaming...
+                            </Typography>
+                        )}
+                    </Box>
+                </ReactFlowProvider>
+            </Popper>
             {getConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"

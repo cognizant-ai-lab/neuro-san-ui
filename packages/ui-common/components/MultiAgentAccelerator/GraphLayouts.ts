@@ -155,6 +155,7 @@ export const layoutRadial = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
+    isAgentNetworkDesignerMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: AgentIconSuggestions = null
 ): LayoutResult => {
@@ -244,7 +245,7 @@ export const layoutRadial = (
                     const isEdgeAnimated = areInSameConversation(currentConversations, nodeId, graphNode.id)
 
                     // Add edge from parent to node
-                    if (!isAwaitingLlm || isEdgeAnimated) {
+                    if (!isAwaitingLlm || isAgentNetworkDesignerMode || isEdgeAnimated) {
                         edgesInNetwork.push(
                             getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, isEdgeAnimated)
                         )

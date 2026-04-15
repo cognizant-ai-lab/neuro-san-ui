@@ -61,6 +61,7 @@ export interface AgentFlowProps {
     readonly currentConversations?: AgentConversation[] | null
     readonly id: string
     readonly isAwaitingLlm?: boolean
+    readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
     readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     readonly setThoughtBubbleEdges: Dispatch<
@@ -85,6 +86,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     agentsInNetwork,
     currentConversations,
     id,
+    isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isStreaming,
     thoughtBubbleEdges,
@@ -255,6 +257,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
+                      isAgentNetworkDesignerMode,
                       thoughtBubbleEdges,
                       agentIconSuggestions
                   ),
@@ -276,6 +279,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Sync up the nodes with the layout result
     useEffect(() => {
         setNodes(layoutResult.nodes)
+        void fitView()
     }, [layoutResult.nodes])
 
     const edges = layoutResult.edges
@@ -601,9 +605,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             >
                 {!isAwaitingLlm && (
                     <>
-                        {agentsInNetwork?.length ? getLegend() : null}
+                        {agentsInNetwork?.length && !isAgentNetworkDesignerMode ? getLegend() : null}
                         <Background id={`${id}-background`} />
-                        {getControls()}
+                        {!isAgentNetworkDesignerMode && getControls()}
                         {shouldShowRadialGuides ? getRadialGuides() : null}
                     </>
                 )}

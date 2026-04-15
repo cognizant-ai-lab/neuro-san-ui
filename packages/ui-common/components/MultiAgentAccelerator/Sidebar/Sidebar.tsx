@@ -298,8 +298,8 @@ export const Sidebar: FC<SidebarProps> = ({
         // If we got a new temporary network, select it and expand the temporary category in the tree view
         if (newlyAddedTemporaryNetworks?.size > 0) {
             const firstItem = newlyAddedTemporaryNetworks.values().next().value
-            setSelectedItem(firstItem)
-            setSelectedNetwork(firstItem)
+            // setSelectedItem(firstItem)
+            // setSelectedNetwork(firstItem)
             setExpandedItems((prev) =>
                 prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
             )

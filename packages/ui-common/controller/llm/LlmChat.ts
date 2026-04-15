@@ -38,55 +38,48 @@ const handleStreamingCallback = async (
     const reader = res.body.getReader()
     const utf8decoder = new TextDecoder("utf-8")
 
+    // DEBUG: slow down streaming for debugging
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+    const DEBUG_CHUNK_DELAY_MS = 50
+
     let buffer = ""
     while (true) {
         const {done, value} = await reader.read()
 
-        // If the caller wants to process chunk by chunk, send it to the callback immediately.
         if (streamingUnit === StreamingUnit.Chunk) {
             if (done) {
-                break // End of stream
+                break
             }
-
-            // Decode chunk from server and send to callback
             const chunk = utf8decoder.decode(value)
             callback(chunk)
+            await sleep(DEBUG_CHUNK_DELAY_MS) // DEBUG
         } else {
-            // Otherwise, accumulate in buffer until we have a full line (delimited by newline character)
-            // to send to the callback.
             if (done) {
-                // Handle any remaining data in buffer (last line without newline)
                 if (buffer.trim().length > 0) {
                     callback(buffer)
+                    await sleep(DEBUG_CHUNK_DELAY_MS) // DEBUG
                 }
-                break // End of stream
+                break
             }
 
-            // Decode chunk from server. Note: pass stream: true to handle multibyte characters that may be split
-            // across chunks
             const chunk = utf8decoder.decode(value, {stream: true})
-
-            // Append chunk to buffer
             buffer += chunk
 
-            // Process all complete lines in the buffer
             let newlineIndex
             while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-                // Extract the complete line (without the newline)
                 const line = buffer.substring(0, newlineIndex).trim()
-
-                // Keep the rest for next iteration
                 buffer = buffer.substring(newlineIndex + 1)
-
-                // Skip empty lines
                 if (line.length > 0) {
-                    // Send the current line
                     callback(line)
+                    await sleep(DEBUG_CHUNK_DELAY_MS) // DEBUG
                 }
             }
         }
     }
 }
+
+const FAKE_IT = true
+const FAKE_RESPONSE_FILE = "/santa.json"
 
 /**
  * Send a request to an LLM and stream the response to a callback.
@@ -112,20 +105,26 @@ export const sendLlmRequest = async (
     userId?: string,
     streamingUnit: StreamingUnit = StreamingUnit.Chunk
 ) => {
-    const res = await fetch(fetchUrl, {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            ...(userId && {user_id: userId}), // Only include user query if it exists (optional)
-        },
-        body: JSON.stringify({
-            ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)
-            ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
-            ...params,
-        }),
-        signal,
-    })
+    console.debug(`Sending LLM request to ${fetchUrl} with StreamingUnit ${StreamingUnit[streamingUnit]}`)
+    let res
+    if (!FAKE_IT) {
+        res = await fetch(fetchUrl, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                ...(userId && {user_id: userId}), // Only include user query if it exists (optional)
+            },
+            body: JSON.stringify({
+                ...(chatHistory && {chatHistory}), // Only include chat history if it exists (optional)
+                ...(userQuery && {userQuery}), // Only include user query if it exists (optional)
+                ...params,
+            }),
+            signal,
+        })
+    } else {
+        res = await fetch(FAKE_RESPONSE_FILE)
+    }
 
     // Check if the request was successful
     if (!res.ok) {
