@@ -631,7 +631,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 variant="body1"
                                 sx={{color: "white"}}
                             >
-                                Agent Network Designer progress will appear here once it starts streaming...
+                                Awaiting status from Agent Network Designer...
                             </Typography>
                         )}
                     </Box>

@@ -279,7 +279,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Sync up the nodes with the layout result
     useEffect(() => {
         setNodes(layoutResult.nodes)
-        void fitView()
     }, [layoutResult.nodes])
 
     const edges = layoutResult.edges
@@ -297,12 +296,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }, 50)
     }, [agentsInNetwork, layout])
 
-    const onNodesChange = useCallback((changes: NodeChange[]) => {
-        setNodes((ns) =>
+    const onNodesChange = useCallback((changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
+        setNodes((currentNodes) =>
             applyNodeChanges<RFNode<AgentNodeProps>>(
-                // For now, we only allow dragging, no updates
-                changes.filter((c) => c.type === "position"),
-                ns
+                // For now, we only allow dragging, no updates. In agent network designer mode, doesn't make sense
+                // to allow position changes since the user isn't actually manipulating a real network
+                changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
+                currentNodes
             )
         )
     }, [])
