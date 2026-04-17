@@ -213,9 +213,10 @@ describe("GraphLayouts", () => {
             {origin: "b", tools: []},
         ]
 
-        const agentCounts = new Map<string, number>()
-        agentCounts.set("a", 1)
-        agentCounts.set("b", 1)
+        const agentCounts = new Map<string, number>([
+            ["a", 1],
+            ["b", 1],
+        ])
 
         // currentConversations indicates a conversation between a and b
         const conversations = [
@@ -244,9 +245,10 @@ describe("GraphLayouts", () => {
                 {origin: "b", tools: []},
             ]
 
-            const agentCounts = new Map<string, number>()
-            agentCounts.set("a", 1)
-            agentCounts.set("b", 1)
+            const agentCounts = new Map<string, number>([
+                ["a", 1],
+                ["b", 1],
+            ])
 
             // For each supported type in KNOWN_MESSAGE_TYPES_FOR_PLASMA ensure a plasma edge is produced
             KNOWN_MESSAGE_TYPES_FOR_PLASMA.forEach((msgType) => {
@@ -275,9 +277,10 @@ describe("GraphLayouts", () => {
                 {origin: "b", tools: []},
             ]
 
-            const agentCounts = new Map<string, number>()
-            agentCounts.set("a", 1)
-            agentCounts.set("b", 1)
+            const agentCounts = new Map<string, number>([
+                ["a", 1],
+                ["b", 1],
+            ])
 
             const conversations = [
                 {

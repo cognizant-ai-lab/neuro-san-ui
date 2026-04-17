@@ -33,13 +33,14 @@ const config: KnipConfig = {
     // Opt-in to all issues types
     include: [
         "binaries",
-        "classMembers",
+        "catalog",
         "dependencies",
         "devDependencies",
         "duplicates",
         "enumMembers",
         "exports",
         "files",
+        "namespaceMembers",
         "nsExports",
         "nsTypes",
         "optionalPeerDependencies",
@@ -49,25 +50,11 @@ const config: KnipConfig = {
     ],
 
     ignore: [
-        // Temporarily unused pending migration from Pinecone to pgvector
-        "packages/ui-common/components/ChatBot/ChatBot.tsx",
-        "packages/ui-common/controller/llm/endpoints.ts",
-
         // Used in a sneaky way by jest
         "babel.jest.config.cjs",
 
-        // Duplicate export: revisit later (legit issue)
-        "packages/ui-common/components/MultiAgentAccelerator/const.ts",
-
-        // Used by another workspace (shared package-level exports)
-        "packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator.tsx",
-        "packages/ui-common/components/Common/Navbar.tsx",
-        "packages/ui-common/utils/title.ts",
-
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Types.ts",
-
-        "**/dist/**",
 
         // Used by CommitCheck script
         "jest_quiet.config.ts",
@@ -83,9 +70,6 @@ const config: KnipConfig = {
 
         // Used by Jest
         "babel-jest",
-
-        // Used by yarn lint-summary script
-        "eslint-formatter-summary",
 
         // Used internally by eslint
         "globals",
@@ -108,9 +92,6 @@ const config: KnipConfig = {
             ignoreDependencies: [
                 // Declared to satisfy eslint-config-next peer dep; lint itself runs from root
                 "eslint",
-
-                // Declared to satisfy @mui/x-tree-view required peer dep; not directly imported
-                "@mui/system",
             ],
         },
     },

@@ -776,17 +776,21 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle thought bubble edges in the layout", () => {
-        const thoughtBubbleEdgesMap = new Map()
-        thoughtBubbleEdgesMap.set("test-edge", {
-            edge: {
-                id: "thought-bubble-test",
-                source: "agent1",
-                target: "agent2",
-                type: "thoughtBubbleEdge",
-                data: {text: "Test thought bubble"},
-            },
-            startedAt: Date.now(),
-        })
+        const thoughtBubbleEdgesMap = new Map([
+            [
+                "test-edge",
+                {
+                    edge: {
+                        id: "thought-bubble-test",
+                        source: "agent1",
+                        target: "agent2",
+                        type: "thoughtBubbleEdge",
+                        data: {text: "Test thought bubble"},
+                    },
+                    startedAt: Date.now(),
+                },
+            ],
+        ])
 
         const {container} = renderAgentFlowComponent({
             thoughtBubbleEdges: thoughtBubbleEdgesMap,
@@ -808,23 +812,27 @@ describe("AgentFlow", () => {
 
     it("Should prevent duplicate thought bubbles using thoughtBubbleEdges", () => {
         const mockSetThoughtBubbleEdges = jest.fn()
-        const existingEdgesMap = new Map()
+        const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+            [
+                "conv-1",
+                {
+                    edge: {
+                        id: "thought-bubble-conv-1",
+                        source: "agent1",
+                        target: "agent2",
+                        type: "thoughtBubbleEdge",
+                        data: {
+                            text: '{"inquiry": "What is the weather?"}',
+                            showAlways: true,
+                            conversationId: "conv-1",
+                        },
+                    },
+                    timestamp: Date.now(),
+                },
+            ],
+        ])
 
         // Pre-populate with an existing edge
-        existingEdgesMap.set("conv-1", {
-            edge: {
-                id: "thought-bubble-conv-1",
-                source: "agent1",
-                target: "agent2",
-                type: "thoughtBubbleEdge",
-                data: {
-                    text: '{"inquiry": "What is the weather?"}',
-                    showAlways: true,
-                    conversationId: "conv-1",
-                },
-            },
-            startedAt: Date.now(),
-        })
 
         const duplicateConversations = [
             {
@@ -1120,23 +1128,27 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle thought bubble edges without text field", () => {
-        const existingEdgesMap = new Map()
+        const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+            [
+                "edge-without-text",
+                {
+                    edge: {
+                        id: "thought-bubble-no-text",
+                        source: "agent1",
+                        target: "agent2",
+                        type: "thoughtBubbleEdge",
+                        data: {
+                            // No text field
+                            showAlways: true,
+                            conversationId: "no-text-conv",
+                        },
+                    },
+                    timestamp: Date.now(),
+                },
+            ],
+        ])
 
         // Add an edge without text (to test the "if (edgeText)" branch)
-        existingEdgesMap.set("edge-without-text", {
-            edge: {
-                id: "thought-bubble-no-text",
-                source: "agent1",
-                target: "agent2",
-                type: "thoughtBubbleEdge",
-                data: {
-                    // No text field
-                    showAlways: true,
-                    conversationId: "no-text-conv",
-                },
-            },
-            timestamp: Date.now(),
-        })
 
         const conversationsWithText = [
             {
@@ -1249,17 +1261,21 @@ describe("AgentFlow", () => {
         }
 
         // Render with edges present (non-empty map)
-        const edgesMap = new Map()
-        edgesMap.set("edge-1", {
-            edge: {
-                id: "test-edge-1",
-                source: "agent1",
-                target: "agent2",
-                type: "thoughtBubbleEdge",
-                data: {text: "Test"},
-            },
-            timestamp: Date.now(),
-        })
+        const edgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+            [
+                "edge-1",
+                {
+                    edge: {
+                        id: "test-edge-1",
+                        source: "agent1",
+                        target: "agent2",
+                        type: "thoughtBubbleEdge",
+                        data: {text: "Test"},
+                    },
+                    timestamp: Date.now(),
+                },
+            ],
+        ])
 
         const {rerender} = render(
             <ReactFlowProvider>

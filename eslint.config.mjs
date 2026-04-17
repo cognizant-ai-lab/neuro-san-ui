@@ -1,7 +1,9 @@
 // @ts-check
 
+import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
-import {globalIgnores} from "eslint/config"
+import next from "@next/eslint-plugin-next"
+import {defineConfig, globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import eslintPluginImport from "eslint-plugin-import"
 import eslintJest from "eslint-plugin-jest"
@@ -13,9 +15,8 @@ import testingLibrary from "eslint-plugin-testing-library"
 import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
-import nextPlugin from "@next/eslint-plugin-next"
 
-export default [
+export default defineConfig([
     {
         ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
     },
@@ -24,13 +25,19 @@ export default [
     // "rules" section below.
     js.configs.all,
 
+    // See: https://github.com/typescript-eslint/typescript-eslint/issues/9724
+    // and https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/pull/70
+    // @ts-expect-error see issues linked above
     preferArrowFunctions.configs["all"],
     eslintPluginUnicorn.configs.all,
 
     typescriptEslint.configs.all,
 
-    eslintPluginImport.flatConfigs.recommended,
-    eslintPluginImport.configs.typescript,
+    {rules: {...eslintPluginImport.configs.recommended.rules}},
+    {
+        rules: {...eslintPluginImport.configs.typescript.rules},
+        settings: {...eslintPluginImport.configs.typescript.settings},
+    },
 
     eslintJest.configs["flat/recommended"],
     reactHooks.configs.flat.recommended,
@@ -54,7 +61,8 @@ export default [
         plugins: {
             "typescript-eslint": typescriptEslint.plugin,
             "jest-dom": jestDom,
-            "@next/next": nextPlugin,
+            "@next/next": next,
+            import: fixupPluginRules(eslintPluginImport),
             jest: eslintJest,
             react: eslintPluginReact,
             "testing-library": testingLibrary,
@@ -104,7 +112,7 @@ export default [
         },
 
         rules: {
-            ...nextPlugin.configs.recommended.rules,
+            ...next.configs.recommended.rules,
 
             // Turn on some optional, stricter settings for this rule
             "react/jsx-key": [
@@ -229,6 +237,7 @@ export default [
             "prefer-spread": "error",
             "preserve-caught-error": "warn",
             "react/jsx-curly-brace-presence": "error",
+            "react/no-multi-comp": ["error", {ignoreStateless: false}],
             "react/no-array-index-key": "error",
             "react/no-object-type-as-default-prop": "error",
             "react/self-closing-comp": "error",
@@ -257,6 +266,7 @@ export default [
                 },
             ],
 
+            // TODO: fix and enable this. ** for __tests__ ?
             "import/no-extraneous-dependencies": [
                 "off",
                 {
@@ -456,6 +466,7 @@ export default [
             "unicorn/filename-case": "off",
             "unicorn/no-array-for-each": "off",
             "unicorn/no-array-reduce": "off",
+            "unicorn/no-array-sort": "off",
             "unicorn/no-await-expression-member": "off",
             "unicorn/no-keyword-prefix": "off",
             "unicorn/no-named-default": "off",
@@ -494,11 +505,8 @@ export default [
         files: ["**/__tests__/**/*.{js,ts,jsx,tsx}"],
 
         // Pull in RTL plugin
-        ...testingLibrary.configs["flat/react"],
+        // ...testingLibrary.configs["flat/react"].rules,
         rules: {
-            // Pull in RTL rules
-            ...testingLibrary.configs["flat/react"].rules,
-
             // Indicate that the findBy calls are implicit assertions
             "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
 
@@ -560,4 +568,4 @@ export default [
             "@typescript-eslint/no-empty-interface": "error",
         },
     },
-]
+])

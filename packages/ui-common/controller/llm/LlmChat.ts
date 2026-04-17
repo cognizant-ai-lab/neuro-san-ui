@@ -36,7 +36,7 @@ const handleStreamingCallback = async (
     streamingUnit: StreamingUnit
 ) => {
     const reader = res.body.getReader()
-    const utf8decoder = new TextDecoder("utf8")
+    const utf8decoder = new TextDecoder("utf-8")
 
     let buffer = ""
     while (true) {

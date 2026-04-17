@@ -936,7 +936,6 @@ describe("ChatCommon", () => {
             [TEST_AGENT_MATH_GUY]: customPlaceholder,
         }
 
-        // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
             renderChatCommonComponent({
                 agentPlaceholders: customPlaceholders,

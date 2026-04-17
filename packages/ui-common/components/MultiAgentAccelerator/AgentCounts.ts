@@ -1,4 +1,4 @@
-import {Origin} from "../../generated/neuro-san/NeuroSanClient"
+import {Origin as NSOrigin} from "../../generated/neuro-san/NeuroSanClient"
 
 /**
  * Given a map of agent counts and a list of origins, return an updated map of agent counts that includes the
@@ -12,7 +12,7 @@ import {Origin} from "../../generated/neuro-san/NeuroSanClient"
  */
 export const getUpdatedAgentCounts = (
     agentCountsMap: Map<string, number>,
-    origins: readonly Origin[]
+    origins: readonly NSOrigin[]
 ): Map<string, number> => {
     if (!origins?.length) {
         // If there are no origins, return the existing counts map without modification
