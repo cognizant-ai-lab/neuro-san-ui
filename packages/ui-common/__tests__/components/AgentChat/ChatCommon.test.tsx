@@ -936,14 +936,11 @@ describe("ChatCommon", () => {
             [TEST_AGENT_MATH_GUY]: customPlaceholder,
         }
 
-        await act(async () => {
-            renderChatCommonComponent({
-                agentPlaceholders: customPlaceholders,
-            })
+        renderChatCommonComponent({
+            agentPlaceholders: customPlaceholders,
         })
 
-        const userInput = screen.getByPlaceholderText(customPlaceholder)
-        expect(userInput).toBeInTheDocument()
+        await screen.findByPlaceholderText(customPlaceholder)
     })
 
     it("Should handle onStreamingStarted and onStreamingComplete callbacks", async () => {

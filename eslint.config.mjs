@@ -3,7 +3,7 @@
 import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
-import {defineConfig, globalIgnores} from "eslint/config"
+import {defineConfig} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import eslintPluginImport from "eslint-plugin-import"
 import eslintJest from "eslint-plugin-jest"
@@ -33,6 +33,8 @@ export default defineConfig([
 
     typescriptEslint.configs.all,
 
+    // Have to configure import plugin in the "legacy" way due to:
+    // https://github.com/import-js/eslint-plugin-import/issues/3227
     {rules: {...eslintPluginImport.configs.recommended.rules}},
     {
         rules: {...eslintPluginImport.configs.typescript.rules},
@@ -50,18 +52,13 @@ export default defineConfig([
 
     eslintConfigPrettier,
 
-    globalIgnores([
-        // Default ignores of eslint-config-next:
-        ".next/**",
-        "out/**",
-        "build/**",
-        "next-env.d.ts",
-    ]),
     {
         plugins: {
             "typescript-eslint": typescriptEslint.plugin,
             "jest-dom": jestDom,
             "@next/next": next,
+            // Have to configure import plugin in the "legacy" way due to:
+            // https://github.com/import-js/eslint-plugin-import/issues/3227
             import: fixupPluginRules(eslintPluginImport),
             jest: eslintJest,
             react: eslintPluginReact,
@@ -97,6 +94,10 @@ export default defineConfig([
 
         settings: {
             react: {
+                // If we use "detect" here, we get this error:
+                // TypeError: Error while loading rule 'react/no-direct-mutation-state':
+                // contextOrFilename.getFilename is not a function
+                // See: https://github.com/vercel/next.js/issues/89764#issuecomment-3928272828
                 version: "19",
             },
             "import/resolver": {
@@ -351,7 +352,6 @@ export default defineConfig([
             "@typescript-eslint/no-duplicate-type-constituents": "off",
             "@typescript-eslint/no-extraneous-class": "off",
             "@typescript-eslint/no-floating-promises": "off",
-            "@typescript-eslint/no-for-in-array": "off",
             "@typescript-eslint/no-implied-eval": "off",
             "@typescript-eslint/no-invalid-this": "off",
             "@typescript-eslint/no-magic-numbers": "off",
@@ -361,37 +361,39 @@ export default defineConfig([
             "@typescript-eslint/no-throw-literal": "off",
             "@typescript-eslint/no-unnecessary-condition": "off",
             "@typescript-eslint/no-unnecessary-qualifier": "off",
-            "@typescript-eslint/no-unnecessary-type-arguments": "off",
             "@typescript-eslint/no-unsafe-argument": "off",
             "@typescript-eslint/no-unsafe-assignment": "off",
             "@typescript-eslint/no-unsafe-call": "off",
-            "@typescript-eslint/no-unsafe-enum-comparison": "off",
             "@typescript-eslint/no-unsafe-member-access": "off",
             "@typescript-eslint/no-unsafe-return": "off",
+            "@typescript-eslint/no-unnecessary-type-arguments": "off",
+            "@typescript-eslint/no-unsafe-enum-comparison": "off",
+            "@typescript-eslint/non-nullable-type-assertion-style": "off",
+            "@typescript-eslint/prefer-includes": "off",
             "@typescript-eslint/no-unsafe-type-assertion": "off",
             "@typescript-eslint/no-use-before-define": "off",
-            "@typescript-eslint/non-nullable-type-assertion-style": "off",
-            "@typescript-eslint/object-curly-spacing": "off",
-            "@typescript-eslint/prefer-destructuring": "off",
-            "@typescript-eslint/prefer-enum-initializers": "off",
-            "@typescript-eslint/prefer-includes": "off",
-            "@typescript-eslint/prefer-nullish-coalescing": "off",
             "@typescript-eslint/prefer-readonly": "off",
-            "@typescript-eslint/prefer-readonly-parameter-types": "off",
             "@typescript-eslint/prefer-reduce-type-parameter": "off",
             "@typescript-eslint/prefer-return-this-type": "off",
             "@typescript-eslint/prefer-string-starts-ends-with": "off",
-            "@typescript-eslint/promise-function-async": "off",
             "@typescript-eslint/require-array-sort-compare": "off",
+            "@typescript-eslint/switch-exhaustiveness-check": "off",
+            "@typescript-eslint/unbound-method": "off",
+            "@typescript-eslint/no-for-in-array": "off",
+            "@typescript-eslint/object-curly-spacing": "off",
+            "@typescript-eslint/prefer-destructuring": "off",
+            "@typescript-eslint/prefer-enum-initializers": "off",
+            "@typescript-eslint/prefer-nullish-coalescing": "off",
+            "@typescript-eslint/prefer-readonly-parameter-types": "off",
+            "@typescript-eslint/promise-function-async": "off",
             "@typescript-eslint/require-await": "off",
             "@typescript-eslint/restrict-plus-operands": "off",
             "@typescript-eslint/restrict-template-expressions": "off",
             "@typescript-eslint/sort-type-constituents": "off",
             "@typescript-eslint/strict-boolean-expressions": "off",
-            "@typescript-eslint/switch-exhaustiveness-check": "off",
-            "@typescript-eslint/unbound-method": "off",
             "arrow-body-style": "off",
             "capitalized-comments": "off",
+            complexity: "off",
             "func-names": "off",
             "func-style": "off",
             "id-length": "off",
@@ -421,6 +423,7 @@ export default defineConfig([
             "no-void": "off",
             "one-var": "off",
             "prefer-destructuring": "off",
+            radix: "off",
             "react-hooks/exhaustive-deps": "off",
             "react-hooks/preserve-manual-memoization": "off",
             "react-hooks/purity": "off",
@@ -459,39 +462,37 @@ export default defineConfig([
             "require-await": "off",
             "sort-keys": "off",
             "spaced-comment": "off",
-            "unicorn/catch-error-name": "off",
-            "unicorn/consistent-destructuring": "off",
             "unicorn/consistent-existence-index-check": "off",
-            "unicorn/consistent-function-scoping": "off",
-            "unicorn/filename-case": "off",
-            "unicorn/no-array-for-each": "off",
+            "unicorn/no-await-expression-member": "off",
+            "unicorn/no-static-only-class": "off",
+            "unicorn/prefer-set-has": "off",
+            "unicorn/prefer-string-raw": "off",
+            "unicorn/no-useless-undefined": "off",
+            "unicorn/prefer-node-protocol": "off",
+            "unicorn/prefer-string-slice": "off",
+            "unicorn/no-named-default": "off",
             "unicorn/no-array-reduce": "off",
             "unicorn/no-array-sort": "off",
-            "unicorn/no-await-expression-member": "off",
-            "unicorn/no-keyword-prefix": "off",
-            "unicorn/no-named-default": "off",
-            "unicorn/no-negated-condition": "off",
-            "unicorn/no-null": "off",
-            "unicorn/no-static-only-class": "off",
             "unicorn/no-useless-switch-case": "off",
-            "unicorn/no-useless-undefined": "off",
-            "unicorn/no-zero-fractions": "off",
-            "unicorn/numeric-separators-style": "off",
             "unicorn/prefer-at": "off",
-            "unicorn/prefer-global-this": "off",
-            "unicorn/prefer-node-protocol": "off",
-            "unicorn/prefer-number-properties": "off",
-            "unicorn/prefer-query-selector": "off",
-            "unicorn/prefer-set-has": "off",
-            "unicorn/prefer-spread": "off",
-            "unicorn/prefer-string-raw": "off",
             "unicorn/prefer-string-replace-all": "off",
-            "unicorn/prefer-string-slice": "off",
+            "unicorn/consistent-destructuring": "off",
+            "unicorn/numeric-separators-style": "off",
+            "unicorn/prefer-query-selector": "off",
+            "unicorn/catch-error-name": "off",
             "unicorn/prefer-ternary": "off",
-            "unicorn/prevent-abbreviations": "off",
+            "unicorn/consistent-function-scoping": "off",
+            "unicorn/no-negated-condition": "off",
+            "unicorn/prefer-spread": "off",
+            "unicorn/no-zero-fractions": "off",
+            "unicorn/prefer-number-properties": "off",
+            "unicorn/prefer-global-this": "off",
             "unicorn/switch-case-braces": "off",
-            complexity: "off",
-            radix: "off",
+            "unicorn/no-array-for-each": "off",
+            "unicorn/no-keyword-prefix": "off",
+            "unicorn/filename-case": "off",
+            "unicorn/no-null": "off",
+            "unicorn/prevent-abbreviations": "off",
         },
     },
     {
@@ -505,8 +506,11 @@ export default defineConfig([
         files: ["**/__tests__/**/*.{js,ts,jsx,tsx}"],
 
         // Pull in RTL plugin
-        // ...testingLibrary.configs["flat/react"].rules,
+        ...testingLibrary.configs["flat/react"],
         rules: {
+            // Pull in RTL rules
+            ...testingLibrary.configs["flat/react"].rules,
+
             // Indicate that the findBy calls are implicit assertions
             "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
 
