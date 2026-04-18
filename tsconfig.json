@@ -1,6 +1,3 @@
-// Alas we have to exclude this file from prettier due to NextJS messing with it and overwriting it in a way that
-// prettier doesn't like.
-// See: https://github.com/vercel/next.js/issues/39921 and https://github.com/vercel/next.js/discussions/39942
 {
     "compilerOptions": {
         "allowJs": true,
