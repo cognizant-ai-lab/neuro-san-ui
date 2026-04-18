@@ -17,6 +17,12 @@
 # by the change. For example, you might run this utility on the new branch with the changes, and then on the main
 # branch, and compare the outputs to see what rules have changed.
 
+# See https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html for what these do
+set -o errexit
+set -o errtrace
+set -o nounset
+set -o pipefail
+
 FILE_TYPES=("js" "ts" "tsx" "mjs" "cjs")
 
 # Check if jq is installed
