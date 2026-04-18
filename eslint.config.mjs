@@ -41,7 +41,7 @@ export default defineConfig([
 
     eslintJest.configs["flat/recommended"],
     reactHooks.configs.flat.recommended,
-    eslintPluginReact.configs.flat["recommended"],
+    eslintPluginReact.configs.flat["all"],
 
     // This next one has to be included or else the React rules will complain that "React is not in scope".
     // But those rules are wrong -- as of React 17, "React" automatically gets included in the transpilation
@@ -265,13 +265,12 @@ export default defineConfig([
                 },
             ],
 
-            // TODO: fix and enable this. ** for __tests__ ?
             "import/no-extraneous-dependencies": [
-                "off",
+                "error",
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["__tests__/**", "jest*.*", "eslint.config.mjs"],
+                    devDependencies: ["**/__tests__/**", "jest*.*", "eslint.config.mjs", "knip.config.ts"],
                 },
             ],
 
@@ -430,6 +429,8 @@ export default defineConfig([
             "react/button-has-type": "off",
             "react/destructuring-assignment": "off",
             "react/forbid-component-props": "off",
+            // Causes an error: "context.getSourceCode is not a function" -- ESLint 10 issue?
+            "react/forward-ref-uses-ref": "off",
             "react/function-component-definition": "off",
             "react/jsx-boolean-value": "off",
             "react/jsx-closing-bracket-location": "off",
