@@ -360,7 +360,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
 
         return true
-    }, [])
+    }, [isNetworkDesignerMode])
 
     const onStreamingStarted = useCallback((): void => {
         // Reset agent counts
