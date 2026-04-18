@@ -3,7 +3,7 @@
 import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
-import {defineConfig} from "eslint/config"
+import {defineConfig, globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import eslintPluginImport from "eslint-plugin-import"
 import eslintJest from "eslint-plugin-jest"
@@ -17,9 +17,7 @@ import globals from "globals"
 import typescriptEslint from "typescript-eslint"
 
 export default defineConfig([
-    {
-        ignores: ["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"],
-    },
+    globalIgnores(["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"]),
 
     // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
     // "rules" section below.
