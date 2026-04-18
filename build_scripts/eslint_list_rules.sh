@@ -5,7 +5,7 @@ FILE_TYPES=("js" "ts" "tsx" "mjs" "cjs")
 echo "{"
 first=true
 for ext in "${FILE_TYPES[@]}"; do
-    config=$(yarn eslint --print-config "dummy.$ext" | jq '."rules"')
+    config=$(yarn eslint --print-config "dummy.$ext" | jq --sort-keys '."rules"')
     if [ -n "$config" ]; then
         if [ "$first" = true ]; then
             first=false
