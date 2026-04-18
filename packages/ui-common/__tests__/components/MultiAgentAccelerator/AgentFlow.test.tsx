@@ -22,6 +22,7 @@ import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
+import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -89,17 +90,18 @@ describe("AgentFlow", () => {
         })
     })
 
+    const currentConversations2: AgentConversation[] = [
+        {
+            id: "test-conv-1",
+            agents: new Set(["agent1"]),
+            startedAt: new Date(),
+            type: ChatMessageType.AGENT,
+        },
+    ]
     const defaultProps: AgentFlowProps = {
         agentsInNetwork: NETWORK,
         id: "test-flow-id",
-        currentConversations: [
-            {
-                id: "test-conv-1",
-                agents: new Set(["agent1"]),
-                startedAt: new Date(),
-                type: ChatMessageType.AGENT,
-            },
-        ],
+        currentConversations: currentConversations2,
         isAwaitingLlm: false,
         isStreaming: false,
         thoughtBubbleEdges: new Map(),
@@ -776,7 +778,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle thought bubble edges in the layout", () => {
-        const thoughtBubbleEdgesMap = new Map([
+        const thoughtBubbleEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
             [
                 "test-edge",
                 {
@@ -787,7 +789,7 @@ describe("AgentFlow", () => {
                         type: "thoughtBubbleEdge",
                         data: {text: "Test thought bubble"},
                     },
-                    startedAt: Date.now(),
+                    timestamp: Date.now(),
                 },
             ],
         ])
@@ -834,7 +836,7 @@ describe("AgentFlow", () => {
 
         // Pre-populate with an existing edge
 
-        const duplicateConversations = [
+        const duplicateConversations: AgentConversation[] = [
             {
                 id: "conv-2",
                 agents: new Set(["agent2", "agent3"]),
@@ -867,7 +869,7 @@ describe("AgentFlow", () => {
         const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
         // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
-        const manyConversations = Array.from({length: 6}, (_, i) => ({
+        const manyConversations: AgentConversation[] = Array.from({length: 6}, (_, i) => ({
             id: `conv-${i}`,
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(Date.now() + i * 1000), // Different startedAts so oldest is conv-0
@@ -899,7 +901,7 @@ describe("AgentFlow", () => {
         jest.useFakeTimers()
         const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
-        const conversationsWithText = [
+        const conversationsWithText: AgentConversation[] = [
             {
                 id: "conv-timeout-test",
                 agents: new Set(["agent1", "agent2"]),
@@ -935,15 +937,17 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle hover state changes for thought bubbles", () => {
+        const currentConversations: AgentConversation[] = [
+            {
+                id: "hover-test-conv",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Hover test",
+                type: ChatMessageType.AGENT,
+            },
+        ]
         renderAgentFlowComponent({
-            currentConversations: [
-                {
-                    id: "hover-test-conv",
-                    agents: new Set(["agent1", "agent2"]),
-                    startedAt: new Date(),
-                    text: "Invoking Agent with inquiry: Hover test",
-                },
-            ],
+            currentConversations,
             isStreaming: true,
         })
 
@@ -956,7 +960,7 @@ describe("AgentFlow", () => {
         const mockSetThoughtBubbleEdges = jest.fn()
 
         // Create a conversation that will be added as a thought bubble
-        const conversationsWithText = [
+        const conversationsWithText: AgentConversation[] = [
             {
                 id: "hover-prevent-expire-conv",
                 agents: new Set(["agent1", "agent2"]),
@@ -1009,7 +1013,7 @@ describe("AgentFlow", () => {
         const mockSetThoughtBubbleEdges = jest.fn()
 
         // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current fake time
-        const initialConversations = Array.from({length: 5}, (_, i) => ({
+        const initialConversations: AgentConversation[] = Array.from({length: 5}, (_, i) => ({
             id: `conv-expire-overflow-${i}`,
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(),
@@ -1034,7 +1038,7 @@ describe("AgentFlow", () => {
         })
 
         // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
-        const extraConversation = {
+        const extraConversation: AgentConversation = {
             id: "conv-expire-overflow-extra",
             agents: new Set(["agent2", "agent3"]),
             startedAt: new Date(),
@@ -1058,12 +1062,13 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle conversations with empty text strings", () => {
-        const conversationsWithEmptyText = [
+        const conversationsWithEmptyText: AgentConversation[] = [
             {
                 id: "empty-text-conv",
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "",
+                type: ChatMessageType.AGENT,
             },
         ]
 
@@ -1075,12 +1080,13 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle conversations with whitespace-only text", () => {
-        const conversationsWithWhitespace = [
+        const conversationsWithWhitespace: AgentConversation[] = [
             {
                 id: "whitespace-conv",
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
                 text: "   \n\t   ",
+                type: ChatMessageType.AI,
             },
         ]
 
@@ -1092,7 +1098,7 @@ describe("AgentFlow", () => {
     })
 
     it("Should handle case-insensitive duplicate detection in thought bubbles", () => {
-        const conversationsWithCaseVariations = [
+        const conversationsWithCaseVariations: AgentConversation[] = [
             {
                 id: "conv-case-1",
                 agents: new Set(["agent1", "agent2"]),
@@ -1150,7 +1156,7 @@ describe("AgentFlow", () => {
 
         // Add an edge without text (to test the "if (edgeText)" branch)
 
-        const conversationsWithText = [
+        const conversationsWithText: AgentConversation[] = [
             {
                 id: "new-conv",
                 agents: new Set(["agent2", "agent3"]),
@@ -1179,19 +1185,20 @@ describe("AgentFlow", () => {
         const mockSetThoughtBubbleEdges = jest.fn()
 
         // First render with a conversation that has text
+        const currentConversations: AgentConversation[] = [
+            {
+                id: "conv-with-text",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: First message",
+                type: ChatMessageType.AGENT,
+            },
+        ]
         const {rerender} = render(
             <ReactFlowProvider>
                 <AgentFlow
                     {...defaultProps}
-                    currentConversations={[
-                        {
-                            id: "conv-with-text",
-                            agents: new Set(["agent1", "agent2"]),
-                            startedAt: new Date(),
-                            text: "Invoking Agent with inquiry: First message",
-                            type: ChatMessageType.AGENT,
-                        },
-                    ]}
+                    currentConversations={currentConversations}
                     thoughtBubbleEdges={new Map()}
                     setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
                 />
@@ -1200,18 +1207,19 @@ describe("AgentFlow", () => {
 
         // Now render with a conversation that has undefined text
         // This tests the b.text || "" fallback in the normalizeText usage
+        const currentConversations1: AgentConversation[] = [
+            {
+                id: "conv-no-text",
+                agents: new Set(["agent2", "agent3"]),
+                startedAt: new Date(),
+                type: ChatMessageType.AGENT,
+            },
+        ]
         rerender(
             <ReactFlowProvider>
                 <AgentFlow
                     {...defaultProps}
-                    currentConversations={[
-                        {
-                            id: "conv-no-text",
-                            agents: new Set(["agent2", "agent3"]),
-                            startedAt: new Date(),
-                            type: ChatMessageType.AGENT,
-                        },
-                    ]}
+                    currentConversations={currentConversations1}
                     thoughtBubbleEdges={new Map()}
                     setThoughtBubbleEdges={jest.fn()}
                 />
@@ -1225,7 +1233,7 @@ describe("AgentFlow", () => {
     it("Should not add duplicate conversations with same ID", () => {
         const mockSetThoughtBubbleEdges = jest.fn()
 
-        const conversation = {
+        const conversation: AgentConversation = {
             id: "conv-duplicate-id",
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(),
@@ -1252,7 +1260,7 @@ describe("AgentFlow", () => {
     it("Should handle clearing thoughtBubbleEdges map", () => {
         const mockSetThoughtBubbleEdges = jest.fn()
 
-        const conversation1 = {
+        const conversation1: AgentConversation = {
             id: "conv-clear-test",
             agents: new Set(["agent1", "agent2"]),
             startedAt: new Date(),
