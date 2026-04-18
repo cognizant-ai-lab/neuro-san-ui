@@ -5,9 +5,7 @@ FILE_TYPES=("js" "ts" "tsx" "mjs" "cjs")
 echo "{"
 first=true
 for ext in "${FILE_TYPES[@]}"; do
-    tmpfile=$(mktemp --tmpdir=. --suffix=".$ext")
-    config=$(yarn eslint --print-config "$tmpfile")
-    rm -f "$tmpfile"
+    config=$(yarn eslint --print-config "dummy.$ext" | jq '."rules"')
     if [ -n "$config" ]; then
         if [ "$first" = true ]; then
             first=false
