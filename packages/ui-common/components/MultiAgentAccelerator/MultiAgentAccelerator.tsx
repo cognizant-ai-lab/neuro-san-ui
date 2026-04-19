@@ -316,48 +316,51 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return () => clearInterval(interval)
     }, [temporaryNetworks, selectedNetwork])
 
-    const onChunkReceived = useCallback((chunk: string): boolean => {
-        // Extract ChatMessage structure
-        const chatMessage = chatMessageFromChunk(chunk)
-        if (!chatMessage) {
-            return true
-        }
-
-        // Conversations between agents
-        const result = extractConversations(chatMessage, conversationsRef.current)
-        if (result != null) {
-            conversationsRef.current = result
-            setCurrentConversations(result)
-        }
-
-        // Agent hit counts
-        agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
-
-        // Agent network designer progress messages
-        if (isNetworkDesignerMode) {
-            const networkInProgress = extractNetworkProgress(chatMessage)
-            if (networkInProgress?.length > 0) {
-                setAgentsInNetworkDesigner(networkInProgress)
+    const onChunkReceived = useCallback(
+        (chunk: string): boolean => {
+            // Extract ChatMessage structure
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (!chatMessage) {
+                return true
             }
-        }
 
-        // Temporary networks/reservations
-        const reservationsResult = extractReservations(chatMessage)
+            // Conversations between agents
+            const result = extractConversations(chatMessage, conversationsRef.current)
+            if (result != null) {
+                conversationsRef.current = result
+                setCurrentConversations(result)
+            }
 
-        // Handle agent reservations (temporary networks) that come in through the chat stream.
-        if (reservationsResult?.length > 0) {
-            // Retrieve network definition, if present
-            const networkHocon = extractNetworkHocon(chatMessage)
+            // Agent hit counts
+            agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
 
-            const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkHocon)
+            // Agent network designer progress messages
+            if (isNetworkDesignerMode) {
+                const networkInProgress = extractNetworkProgress(chatMessage)
+                if (networkInProgress?.length > 0) {
+                    setAgentsInNetworkDesigner(networkInProgress)
+                }
+            }
 
-            const currentNetworks = useTempNetworksStore.getState().tempNetworks
-            useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+            // Temporary networks/reservations
+            const reservationsResult = extractReservations(chatMessage)
 
-            // record the new temporary networks so we can select them for the user. For now, we only
-            // care about the first one.
-            setNewlyAddedTemporaryNetworks(new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name)))
-        }
+            // Handle agent reservations (temporary networks) that come in through the chat stream.
+            if (reservationsResult?.length > 0) {
+                // Retrieve network definition, if present
+                const networkHocon = extractNetworkHocon(chatMessage)
+
+                const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkHocon)
+
+                const currentNetworks = useTempNetworksStore.getState().tempNetworks
+                useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+
+                // record the new temporary networks so we can select them for the user. For now, we only
+                // care about the first one.
+                setNewlyAddedTemporaryNetworks(
+                    new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name))
+                )
+            }
 
         return true
     }, [isNetworkDesignerMode])
@@ -386,6 +389,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
+        setAgentsInNetworkDesigner([])
         resetState()
     }, [newlyAddedTemporaryNetworks])
 
