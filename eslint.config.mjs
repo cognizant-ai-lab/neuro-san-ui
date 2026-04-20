@@ -17,7 +17,7 @@ import globals from "globals"
 import typescriptEslint from "typescript-eslint"
 
 export default defineConfig([
-    globalIgnores(["**/.next", "**/coverage", "**/generated", "**/embed", "**/dist", "**/babel.jest.config.cjs"]),
+    globalIgnores(["**/.next", "**/coverage", "**/generated", "**/dist", "**/babel.jest.config.cjs"]),
 
     // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
     // "rules" section below.
