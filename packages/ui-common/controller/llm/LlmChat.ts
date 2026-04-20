@@ -40,7 +40,7 @@ const handleStreamingCallback = async (
 
     // DEBUG: slow down streaming for debugging
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-    const DEBUG_CHUNK_DELAY_MS = 500
+    const DEBUG_CHUNK_DELAY_MS = 50
 
     let buffer = ""
     while (true) {
