@@ -89,7 +89,8 @@ const PrimaryButton = styled(Button)({
     marginTop: "2px",
 })
 
-const SPARKLE_HIGHLIGHT_CLASS = "sparkle-highlight"
+// Name for sparkle animation CSS class
+export const SPARKLE_HIGHLIGHT_CLASS = "sparkle-highlight"
 
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.

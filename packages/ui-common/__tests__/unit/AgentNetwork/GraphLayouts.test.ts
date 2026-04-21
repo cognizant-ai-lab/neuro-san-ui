@@ -70,7 +70,7 @@ describe("GraphLayouts", () => {
     ]
 
     it("Should generate a linear layout", () => {
-        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, null, false, new Map())
+        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, null, false, false, new Map())
 
         expect(nodes).toHaveLength(3)
         expect(edges).toHaveLength(2)
@@ -96,7 +96,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should generate a radial layout", () => {
-        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, null, false, new Map())
+        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, null, false, false, new Map())
 
         expect(nodes).toHaveLength(7)
         expect(edges).toHaveLength(6)
@@ -161,7 +161,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle cycles in the graph", () => {
-        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, null, false, new Map())
+        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, null, false, false, new Map())
 
         expect(nodes).toHaveLength(4)
 
@@ -188,7 +188,7 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle direct and transitive dependencies in the graph", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, null, false, new Map())
+        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, null, false, false, new Map())
 
         // Check nodes
         expect(nodes).toHaveLength(3)
@@ -228,7 +228,7 @@ describe("GraphLayouts", () => {
             },
         ]
 
-        const params: Parameters<typeof layoutLinear> = [agentCounts, agents, conversations, true, new Map()]
+        const params: Parameters<typeof layoutLinear> = [agentCounts, agents, conversations, true, false, new Map()]
         const {edges} = layoutLinear(...params)
 
         // There should be at least one edge in the array since a->b is a conversation agent edge
@@ -261,7 +261,7 @@ describe("GraphLayouts", () => {
                     },
                 ]
 
-                const {edges} = layoutFunction(agentCounts, agents, conversations, true, new Map())
+                const {edges} = layoutFunction(agentCounts, agents, conversations, true, false, new Map())
 
                 // Expect an animated/plasma edge to exist for the conversation between a -> b
                 expect(edges.some((e) => e.source === "a" && e.target === "b" && e.type === "plasmaEdge")).toBeTruthy()
@@ -291,7 +291,7 @@ describe("GraphLayouts", () => {
                 },
             ]
 
-            const {edges} = layoutFunction(agentCounts, agents, conversations, true, new Map())
+            const {edges} = layoutFunction(agentCounts, agents, conversations, true, false, new Map())
 
             // Since HUMAN is omitted from KNOWN_MESSAGE_TYPES_FOR_PLASMA, there should be no plasma edge
             expect(edges.some((e) => e.type === "plasmaEdge")).toBeFalsy()
@@ -305,7 +305,7 @@ describe("GraphLayouts", () => {
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
     ])("Should handle a degenerate single-node graph in $name layout", async ({layoutFunction}) => {
-        const {nodes, edges} = layoutFunction(new Map(), singleNodeNetwork, null, false, new Map())
+        const {nodes, edges} = layoutFunction(new Map(), singleNodeNetwork, null, false, false, new Map())
 
         expect(nodes).toHaveLength(1)
         expect(edges).toHaveLength(0)
@@ -319,7 +319,7 @@ describe("GraphLayouts", () => {
     ])("Should handle a disconnected graph in $name layout", ({layoutFunction}) => {
         // We don't really support this case; "should never happen". This test is to make sure we at least
         // don't crash. This also exercises the (invalid) "multiple frontmen" case
-        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, null, false, new Map())
+        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, null, false, false, new Map())
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
@@ -351,7 +351,7 @@ describe("GraphLayouts", () => {
         it("Should add and retrieve global thought bubble edges", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(1)
@@ -368,7 +368,7 @@ describe("GraphLayouts", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
             removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1")
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(0)
@@ -387,7 +387,7 @@ describe("GraphLayouts", () => {
                 addThoughtBubbleEdge(thoughtBubbleEdgesMap, `conv${i}`, mockEdgeMultiple)
             }
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(5)
@@ -432,7 +432,7 @@ describe("GraphLayouts", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv2", mockEdge2)
             thoughtBubbleEdgesMap.clear()
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(0)
@@ -452,7 +452,7 @@ describe("GraphLayouts", () => {
             }
             addThoughtBubbleEdge(singleNodeMap, "conv-x", bubble)
 
-            const {edges} = layoutFunction(new Map(), [{origin: "A", tools: []}], null, true, singleNodeMap)
+            const {edges} = layoutFunction(new Map(), [{origin: "A", tools: []}], null, true, false, singleNodeMap)
             const bubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
             expect(bubbleEdges).toHaveLength(1)
             expect(bubbleEdges[0].id).toBe("tb1")
@@ -477,7 +477,7 @@ describe("GraphLayouts", () => {
                 {origin: "agent2", tools: []},
             ]
 
-            const {edges} = layoutFunction(new Map(), agents, null, false, tbMap)
+            const {edges} = layoutFunction(new Map(), agents, null, false, false, tbMap)
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
             expect(thoughtBubbleEdges).toHaveLength(1)
             expect(thoughtBubbleEdges[0].id).toBe("should-add")
@@ -503,7 +503,7 @@ describe("GraphLayouts", () => {
                     {origin: "B", tools: []},
                 ]
 
-                const {edges} = layoutFunction(new Map(), agents, null, false, tbMap)
+                const {edges} = layoutFunction(new Map(), agents, null, false, false, tbMap)
 
                 const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
                 expect(thoughtBubbleEdges).toHaveLength(0)
