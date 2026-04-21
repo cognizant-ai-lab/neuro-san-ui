@@ -244,7 +244,9 @@ export const layoutRadial = (
                     // Plasma edges based on currentConversations (live, cleared at network end)
                     const isEdgeAnimated = areInSameConversation(currentConversations, nodeId, graphNode.id)
 
-                    // Add edge from parent to node
+                    // Add edge from parent to node.
+                    // We always show animated edges, all edges when in "idle mode" (not awaiting LLM),
+                    // and all edges in the designer mode preview.
                     if (!isAwaitingLlm || isAgentNetworkDesignerMode || isEdgeAnimated) {
                         edgesInNetwork.push(
                             getEdgeProperties(graphNode.id, nodeId, sourceHandle, targetHandle, isEdgeAnimated)
@@ -294,6 +296,7 @@ export const layoutLinear = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
+    isAgentNetworkDesignerMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: AgentIconSuggestions = null
 ): LayoutResult => {
@@ -403,11 +406,12 @@ export const layoutLinear = (
         }
     })
 
-    // If we're in "awaiting LLM" mode, we filter edges to only include those that are between conversation agents.
-    // Use currentConversations (plasma edges are live and clear at network end)
-    const filteredEdges = isAwaitingLlm
-        ? edgesInNetwork.filter((edge) => areInSameConversation(currentConversations, edge.source, edge.target))
-        : edgesInNetwork
+    // If we're in "awaiting LLM" mode, but not Agent Network Designer mode, we filter edges to only include those
+    // that are between conversation agents. Use currentConversations (plasma edges are live and clear at network end)
+    const filteredEdges =
+        isAwaitingLlm && !isAgentNetworkDesignerMode
+            ? edgesInNetwork.filter((edge) => areInSameConversation(currentConversations, edge.source, edge.target))
+            : edgesInNetwork
 
     // Add thought bubble edges from cache to avoid duplicates across layout recalculations
     const globalBubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)

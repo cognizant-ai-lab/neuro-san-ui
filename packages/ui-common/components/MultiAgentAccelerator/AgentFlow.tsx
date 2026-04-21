@@ -249,6 +249,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
+                      isAgentNetworkDesignerMode,
                       thoughtBubbleEdges,
                       agentIconSuggestions
                   )

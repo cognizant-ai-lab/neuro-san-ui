@@ -36,7 +36,7 @@ import {
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {Sidebar, SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
+import {Sidebar, SidebarProps, SPARKLE_HIGHLIGHT_CLASS} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../state/Environment"
@@ -573,10 +573,10 @@ describe("SideBar", () => {
 
         // Flush pending state updates; findByText succeeds on the first poll (element
         // already present), so no fake-timer conflict.
-        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
-        // MUI renders the selected treeitem with aria-checked="true".
-        const treeItem = screen.getByRole("treeitem", {checked: true})
-
+        const treeItem = (await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))).closest(
+            '[role="treeitem"]'
+        )
+        // screen.debug()
         // Fire the pending 50ms timer — covers the true arm of `if (selectedNode)`.
         // runOnlyPendingTimers fires only timers already in the queue, so the
         // 5000ms sparkle-remove timer registered inside the callback won't fire here.
@@ -584,7 +584,7 @@ describe("SideBar", () => {
             jest.runOnlyPendingTimers()
         })
 
-        expect(treeItem).toHaveClass("sparkle-highlight")
+        expect(treeItem).toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
     })
 
     it("Should be a no-op when the highlight callback finds no matching treeitem", async () => {
