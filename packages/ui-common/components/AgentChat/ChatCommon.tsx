@@ -873,7 +873,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     id="initiating-orchestration-accordion"
                     items={[
                         {
-                            title: `Contacting ${cleanUpAgentName(targetAgent)}...`,
+                            title: `Contacting ${cleanUpAgentName(removeTrailingUuid(targetAgent))}...`,
                             content: `Query: ${queryToSend}`,
                         },
                     ]}
