@@ -174,6 +174,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
+    // Special mode of operation where user is using Agent Network Designer to create a new network
     const isNetworkDesignerMode = selectedNetwork === "agent_network_designer"
 
     // Handle external stop button click - stops streaming and exits zen mode
@@ -362,8 +363,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 )
             }
 
-        return true
-    }, [isNetworkDesignerMode])
+            return true
+        },
+        [isNetworkDesignerMode]
+    )
 
     const onStreamingStarted = useCallback((): void => {
         // Reset agent counts
@@ -582,65 +585,73 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
+    /**
+     * Popper to show real-time progress of the Agent Network Designer output as we receive it from the backend.
+     * Only displayed when Agent Network Designer is active.
+     */
+    const getProgressPopper = () => (
+        <Popper
+            open={isStreaming && isNetworkDesignerMode}
+            anchorEl={null}
+            sx={{
+                width: "600px",
+                height: "600px",
+                zIndex: 9999,
+            }}
+        >
+            <ReactFlowProvider>
+                <Box
+                    id="multi-agent-accelerator-agent-flow-container"
+                    sx={{
+                        border: "4px solid var(--bs-yellow)",
+                        display: "flex",
+                        flexDirection: "column",
+                        color: "white",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        background: "var(--bs-secondary)",
+                        width: "100%",
+                        height: "100%",
+                        opacity: "95%",
+                        maxWidth: 1000,
+                        margin: "0 auto",
+                    }}
+                >
+                    <Typography
+                        variant="h6"
+                        sx={{padding: "0.5rem 1rem", fontWeight: "bold", color: "white"}}
+                    >
+                        Network Preview
+                    </Typography>
+                    {agentsInNetworkDesigner?.length > 0 ? (
+                        <AgentFlow
+                            id="and-network-preview"
+                            key="and-network-preview"
+                            agentsInNetwork={agentsInNetworkDesigner}
+                            isAgentNetworkDesignerMode={true}
+                            isAwaitingLlm={false}
+                            isStreaming={false}
+                            thoughtBubbleEdges={new Map()}
+                            setThoughtBubbleEdges={() => {
+                                // test
+                            }}
+                        />
+                    ) : (
+                        <Typography
+                            variant="body1"
+                            sx={{color: "white"}}
+                        >
+                            Awaiting status from Agent Network Designer...
+                        </Typography>
+                    )}
+                </Box>
+            </ReactFlowProvider>
+        </Popper>
+    )
+
     return (
         <>
-            <Popper
-                open={isStreaming && isNetworkDesignerMode}
-                anchorEl={null}
-                sx={{
-                    width: "600px",
-                    height: "600px",
-                    zIndex: 9999,
-                }}
-            >
-                <ReactFlowProvider>
-                    <Box
-                        id="multi-agent-accelerator-agent-flow-container"
-                        sx={{
-                            border: "4px solid var(--bs-yellow)",
-                            display: "flex",
-                            flexDirection: "column",
-                            color: "white",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            background: "var(--bs-secondary)",
-                            width: "100%",
-                            height: "100%",
-                            opacity: "95%",
-                            maxWidth: 1000,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <Typography
-                            variant="h6"
-                            sx={{padding: "0.5rem 1rem", fontWeight: "bold", color: "white"}}
-                        >
-                            Network Preview
-                        </Typography>
-                        {agentsInNetworkDesigner?.length > 0 ? (
-                            <AgentFlow
-                                id="and-network-preview"
-                                key="and-network-preview"
-                                agentsInNetwork={agentsInNetworkDesigner}
-                                isAgentNetworkDesignerMode={true}
-                                isAwaitingLlm={false}
-                                isStreaming={false}
-                                thoughtBubbleEdges={new Map()}
-                                setThoughtBubbleEdges={() => {
-                                    // test
-                                }}
-                            />
-                        ) : (
-                            <Typography
-                                variant="body1"
-                                sx={{color: "white"}}
-                            >
-                                Awaiting status from Agent Network Designer...
-                            </Typography>
-                        )}
-                    </Box>
-                </ReactFlowProvider>
-            </Popper>
+            {getProgressPopper()}
             {getConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"
