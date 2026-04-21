@@ -127,9 +127,9 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
             <TreeItemRoot
                 {...getRootProps()}
                 ref={rootRef}
+                data-itemid={itemId}
             >
                 <TreeItemContent
-                    key={labelString}
                     {...getContentProps()}
                     sx={{
                         cursor: isExpired ? "not-allowed" : "pointer",

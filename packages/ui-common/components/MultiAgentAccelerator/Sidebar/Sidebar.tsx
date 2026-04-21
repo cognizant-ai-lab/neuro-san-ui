@@ -89,6 +89,8 @@ const PrimaryButton = styled(Button)({
     marginTop: "2px",
 })
 
+const SPARKLE_HIGHLIGHT_CLASS = "sparkle-highlight"
+
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.
 const SidebarAside = styled("aside")({
@@ -98,7 +100,7 @@ const SidebarAside = styled("aside")({
     overflowY: "auto",
     paddingRight: "0.75rem",
 
-    "& .sparkle-highlight": {
+    [`& .${SPARKLE_HIGHLIGHT_CLASS}`]: {
         background: "linear-gradient(90deg, gold, orange, cyan, magenta, gold)",
         backgroundSize: "400% 100%",
         animation: `${sparkle} 5s ease`,
@@ -295,25 +297,24 @@ export const Sidebar: FC<SidebarProps> = ({
         let highlightTimeout: ReturnType<typeof setTimeout>
         let removeHighlightTimeout: ReturnType<typeof setTimeout>
 
-        // If we got a new temporary network, select it and expand the temporary category in the tree view
+        // If we got a new temporary network, expand the temporary category in the tree view
         if (newlyAddedTemporaryNetworks?.size > 0) {
             const firstItem = newlyAddedTemporaryNetworks.values().next().value
-            // setSelectedItem(firstItem)
-            // setSelectedNetwork(firstItem)
             setExpandedItems((prev) =>
                 prev.includes(TEMPORARY_NETWORK_FOLDER) ? prev : [...prev, TEMPORARY_NETWORK_FOLDER]
             )
             highlightTimeout = setTimeout(() => {
-                // Scroll the selected node into view and add an animation to draw the user's attention to it.
-                // Hacky: use a DOM query to find the node. I tried the various ways to do this programmatically
-                // in MUI RichTreeView including the imperative API (https://mui.com/x/react-tree-view/rich-tree-view/selection/#imperative-api)
-                // but couldn't get it to work so resorting to this for now.
-                const selectedNode = document.querySelector("[role=treeitem][aria-checked=true]")
-                if (selectedNode) {
-                    selectedNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
-                    selectedNode.classList.add("sparkle-highlight")
+                /* Scroll the selected node into view and add an animation to draw the user's attention to it.
+                Hacky: use a DOM query to find the node. I tried the various ways to do this programmatically
+                in MUI RichTreeView including the imperative API (https://mui.com/x/react-tree-view/rich-tree-view/selection/#imperative-api)
+                but couldn't get it to work so resorting to this for now.
+                */
+                const temporaryNetworkNode = document.querySelector(`[data-itemid="${firstItem}"]`)
+                if (temporaryNetworkNode) {
+                    temporaryNetworkNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
+                    temporaryNetworkNode.classList.add(SPARKLE_HIGHLIGHT_CLASS)
                     removeHighlightTimeout = setTimeout(() => {
-                        selectedNode.classList.remove("sparkle-highlight")
+                        temporaryNetworkNode.classList.remove(SPARKLE_HIGHLIGHT_CLASS)
                     }, 5000)
                 }
             }, 50)
