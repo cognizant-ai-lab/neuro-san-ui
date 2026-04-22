@@ -33,3 +33,9 @@ export const AGENT_RESERVATIONS_KEY = "agent_reservations"
 
 // We expect the agent network HOCON to be stored in sly_data under this key, if it is provided by the backend
 export const AGENT_NETWORK_HOCON = "agent_network_hocon_text"
+
+// The key in the message structure where connectivity info is stored for agent progress messages
+export const AGENT_PROGRESS_CONNECTIVITY_KEY = "connectivity_info"
+
+// Agent name for the special "Agent Network Designer" network
+export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"

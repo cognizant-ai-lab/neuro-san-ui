@@ -26,8 +26,8 @@ import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
-import {extractNetworkProgress} from "./AgentNetworkDesigner"
-import {TEMPORARY_NETWORK_FOLDER} from "./const"
+import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
+import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -175,7 +175,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
     // Special mode of operation where user is using Agent Network Designer to create a new network
-    const isNetworkDesignerMode = selectedNetwork === "agent_network_designer"
+    const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -337,7 +337,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             // Agent network designer progress messages
             if (isNetworkDesignerMode) {
-                const networkInProgress = extractNetworkProgress(chatMessage)
+                const networkInProgress = extractAgentNetworkDesignerProgress(chatMessage)
                 if (networkInProgress?.length > 0) {
                     setAgentsInNetworkDesigner(networkInProgress)
                 }
