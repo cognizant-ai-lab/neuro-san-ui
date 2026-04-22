@@ -235,6 +235,26 @@ describe("GraphLayouts", () => {
         expect(edges).toEqual(expect.arrayContaining([expect.objectContaining({source: "a", target: "b"})]))
     })
 
+    it.each([
+        {layoutFunction: layoutRadial, name: "radial"},
+        {layoutFunction: layoutLinear, name: "linear"},
+    ])('$name layout includes all edges when in Agent Network Designer preview mode"', ({layoutFunction}) => {
+        const agents: ConnectivityInfo[] = [
+            {origin: "a", tools: ["b", "c"]},
+            {origin: "b", tools: []},
+            {origin: "c", tools: []},
+        ]
+
+        // Should include all edges from a->b and a->c since we're simulating Agent Network Designer mode
+        const {edges} = layoutFunction(new Map(), agents, null, true, true, new Map())
+        expect(edges).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({source: "a", target: "b"}),
+                expect.objectContaining({source: "a", target: "c"}),
+            ])
+        )
+    })
+
     describe("Plasma edges and known message types", () => {
         it.each([
             {layoutFunction: layoutRadial, name: "radial"},

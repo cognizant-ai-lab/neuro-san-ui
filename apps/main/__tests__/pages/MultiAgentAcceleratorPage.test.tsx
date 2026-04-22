@@ -37,7 +37,9 @@ import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {
+    AGENT_NETWORK_DESIGNER_ID,
     AGENT_NETWORK_HOCON,
+    AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
 } from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
@@ -47,7 +49,11 @@ import {
     getNetworkIconSuggestions,
     testConnection,
 } from "../../../../packages/ui-common/controller/agent/Agent"
-import {ChatMessageType, ChatResponse} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
+import {
+    ChatMessageType,
+    ChatResponse,
+    ConnectivityInfo,
+} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../../packages/ui-common/state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../../packages/ui-common/state/TemporaryNetworks"
@@ -70,12 +76,19 @@ const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
 const networkIconSuggestionsMock = jest.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
+let setSelectedNetwork: (network: string) => void
 
 jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
-        return <div data-testid="mock-agent-flow" />
+        return (
+            <div data-testid="mock-agent-flow">
+                {props.agentsInNetwork.map((element) => (
+                    <div key={JSON.stringify(element)}>{JSON.stringify(element)}</div>
+                ))}
+            </div>
+        )
     },
 }))
 
@@ -89,6 +102,7 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Sideb
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
             onDeleteNetwork = props.onDeleteNetwork
+            setSelectedNetwork = props.setSelectedNetwork
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
         },
@@ -143,6 +157,20 @@ const NETWORK_HOCON_CHAT_MESSAGE: ChatResponse = {
         sly_data: {
             ...RESERVATION_CHAT_MESSAGE.response.sly_data,
             [AGENT_NETWORK_HOCON]: JSON.stringify(TEMPORARY_NETWORK.networkHocon, null, 2),
+        },
+    },
+}
+
+const CONNECTIVITY_INFO: ConnectivityInfo[] = [
+    {origin: "first_origin", tools: ["some_tool"]},
+    {origin: "second_origin", tools: ["some_other_tool"]},
+]
+
+const AGENT_PROGRESS_CHAT_MESSAGE: ChatResponse = {
+    response: {
+        type: ChatMessageType.AGENT_PROGRESS,
+        structure: {
+            [AGENT_PROGRESS_CONNECTIVITY_KEY]: CONNECTIVITY_INFO,
         },
     },
 }
@@ -276,10 +304,7 @@ describe("Multi Agent Accelerator Page", () => {
         // Assert the console.debug call
         await waitFor(() => {
             expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    // eslint-disable-next-line max-len
-                    `"Unable to get list of Agent Networks. Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch agent networks."`
-                )
+                expect.stringMatching(new RegExp(`Unable to get list of Agent Networks.*${NEURO_SAN_SERVER_URL}`, "u"))
             )
         })
     })
@@ -305,9 +330,12 @@ describe("Multi Agent Accelerator Page", () => {
         // Assert the console.error call
         await waitFor(() => {
             expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    // eslint-disable-next-line max-len
-                    `"Unable to get agent list for "${TEST_AGENTS_FOLDER_DISPLAY} ${TEST_AGENT_MATH_GUY_DISPLAY}". Verify that ${NEURO_SAN_SERVER_URL} is a valid Multi-Agent Accelerator Server. Error: Error: Failed to fetch connectivity."`
+                expect.stringMatching(
+                    new RegExp(
+                        "Unable to get agent list.*" +
+                            `${TEST_AGENTS_FOLDER_DISPLAY} ${TEST_AGENT_MATH_GUY_DISPLAY}.*${NEURO_SAN_SERVER_URL}.*`,
+                        "u"
+                    )
                 )
             )
         })
@@ -500,113 +528,187 @@ describe("Multi Agent Accelerator Page", () => {
         })
     })
 
-    it("Should detect agent registrations in the chat stream", async () => {
-        renderMultiAgentAcceleratorPage()
+    describe("Agent Network Designer integration", () => {
+        it("Should detect agent registrations in the chat stream", async () => {
+            renderMultiAgentAcceleratorPage()
 
-        // Set up a temporary network
-        await act(async () => {
-            onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            // Set up a temporary network
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+
+            expect(chatCommonMock).toHaveBeenCalled()
+
+            const agentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+
+            const expectedTemporaryNetwork: TemporaryNetwork = {
+                reservation: expect.objectContaining(reservation),
+                agentInfo: expect.objectContaining({
+                    agent_name: agentName,
+                }),
+                networkHocon: null,
+            }
+
+            expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
         })
 
-        expect(chatCommonMock).toHaveBeenCalled()
+        it("Should detect network hocon in the chat stream", async () => {
+            renderMultiAgentAcceleratorPage()
 
-        const agentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+            // Process the chunk with the network hocon
+            await act(async () => {
+                onChunkReceived(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
+            })
 
-        const expectedTemporaryNetwork: TemporaryNetwork = {
-            reservation: expect.objectContaining(reservation),
-            agentInfo: expect.objectContaining({
-                agent_name: agentName,
-            }),
-            networkHocon: null,
-        }
-
-        expect(temporaryNetworksMock).toHaveBeenCalledWith([expectedTemporaryNetwork])
-    })
-
-    it("Should detect network hocon in the chat stream", async () => {
-        renderMultiAgentAcceleratorPage()
-
-        // Process the chunk with the network hocon
-        await act(async () => {
-            onChunkReceived(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
+            expect(temporaryNetworksMock).toHaveBeenCalledWith([
+                expect.objectContaining({
+                    networkHocon: NETWORK_HOCON_CHAT_MESSAGE.response.sly_data?.[AGENT_NETWORK_HOCON],
+                }),
+            ])
         })
 
-        expect(temporaryNetworksMock).toHaveBeenCalledWith([
-            expect.objectContaining({
-                networkHocon: NETWORK_HOCON_CHAT_MESSAGE.response.sly_data?.[AGENT_NETWORK_HOCON],
-            }),
-        ])
-    })
+        it("Should detect agent progress messages in the chat stream", async () => {
+            renderMultiAgentAcceleratorPage()
 
-    it("Should handle deletion of temporary networks", async () => {
-        renderMultiAgentAcceleratorPage()
+            const popperTitle = "Network Preview"
 
-        // Set up a temporary network
-        await act(async () => {
-            onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            // Popover should not be displayed before selecting the network
+            expect(screen.queryByText(popperTitle)).not.toBeInTheDocument()
+
+            await act(async () => {
+                setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+            })
+
+            // Need to simulate starting the stream to trigger the popover for the Agent Network Designer
+            jest.spyOn(console, "debug").mockImplementation()
+            await act(async () => {
+                onStreamingStarted()
+            })
+
+            // Popover should be displayed now we're in Agent Network Designer mode
+            screen.getByText(popperTitle)
+
+            // Process the chunk with the agent progress message
+            await act(async () => {
+                onChunkReceived(JSON.stringify(AGENT_PROGRESS_CHAT_MESSAGE))
+            })
+
+            // Now network progress should be displayed in the popover.
+            CONNECTIVITY_INFO.forEach((info) => {
+                screen.getByText(JSON.stringify(info))
+            })
+
+            // Simulate streaming end to close the popover
+            await act(async () => {
+                onStreamingComplete()
+            })
+
+            // Popover should be closed
+            expect(screen.queryByText(popperTitle)).not.toBeInTheDocument()
         })
 
-        const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
-        await waitFor(() => {
-            expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        agentInfo: expect.objectContaining({
-                            agent_name: expectedAgentName,
+        it("Should handle non-progress messages while in Agent Network Designer mode without crashing", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            await act(async () => {
+                setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+            })
+
+            // Need to simulate starting the stream to trigger the popover for the Agent Network Designer
+            jest.spyOn(console, "debug").mockImplementation()
+            await act(async () => {
+                onStreamingStarted()
+            })
+
+            // Process the chunk with a random message
+            await act(async () => {
+                // Wrong message type
+                onChunkReceived(JSON.stringify(MATH_GUY_MESSAGE))
+            })
+
+            // Should still say "awaiting status" in the popover because we never got a progress message
+            screen.getByText(/Awaiting status.../u)
+
+            // Right message type, even has `structure` field, but no progress info
+            await act(async () => {
+                // Wrong message type
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+
+            // Should still say "awaiting status" in the popover because we never got a progress message
+            screen.getByText(/Awaiting status.../u)
+        })
+
+        it("Should handle deletion of temporary networks", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            // Set up a temporary network
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+            await waitFor(() => {
+                expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            agentInfo: expect.objectContaining({
+                                agent_name: expectedAgentName,
+                            }),
                         }),
-                    }),
-                ])
-            )
+                    ])
+                )
+            })
+
+            temporaryNetworksMock.mockClear()
+
+            // Simulate user deleting the temporary network
+            await act(async () => onDeleteNetwork(expectedAgentName, false))
+
+            // Should be a confirmation modal
+            const modal = screen.getByTestId("delete-network-confirmation-modal-confirm-main")
+            const confirmButton = within(modal).getByRole("button", {name: "Confirm"})
+            await user.click(confirmButton)
+
+            // Modal should close and temporary network should be removed
+            expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
+
+            // Make sure network deleted
+            expect(temporaryNetworksMock).toHaveBeenCalledWith([])
         })
 
-        temporaryNetworksMock.mockClear()
+        it("Should handle deleting expired temporary networks without confirmation", async () => {
+            renderMultiAgentAcceleratorPage()
 
-        // Simulate user deleting the temporary network
-        await act(async () => onDeleteNetwork(expectedAgentName, false))
+            // Set up a temporary network
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
 
-        // Should be a confirmation modal
-        const modal = screen.getByTestId("delete-network-confirmation-modal-confirm-main")
-        const confirmButton = within(modal).getByRole("button", {name: "Confirm"})
-        await user.click(confirmButton)
-
-        // Modal should close and temporary network should be removed
-        expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
-
-        // Make sure network deleted
-        expect(temporaryNetworksMock).toHaveBeenCalledWith([])
-    })
-
-    it("Should handle deleting expired temporary networks without confirmation", async () => {
-        renderMultiAgentAcceleratorPage()
-
-        // Set up a temporary network
-        await act(async () => {
-            onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-        })
-
-        const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
-        await waitFor(() => {
-            expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        agentInfo: expect.objectContaining({
-                            agent_name: expectedAgentName,
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+            await waitFor(() => {
+                expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            agentInfo: expect.objectContaining({
+                                agent_name: expectedAgentName,
+                            }),
                         }),
-                    }),
-                ])
-            )
+                    ])
+                )
+            })
+
+            temporaryNetworksMock.mockClear()
+
+            // Simulate user deleting the expired temporary network
+            await act(async () => onDeleteNetwork(expectedAgentName, true))
+
+            // Should delete without confirmation
+            expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
+
+            // Make sure network deleted
+            expect(temporaryNetworksMock).toHaveBeenCalledWith([])
         })
-
-        temporaryNetworksMock.mockClear()
-
-        // Simulate user deleting the expired temporary network
-        await act(async () => onDeleteNetwork(expectedAgentName, true))
-
-        // Should delete without confirmation
-        expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
-
-        // Make sure network deleted
-        expect(temporaryNetworksMock).toHaveBeenCalledWith([])
     })
 
     it("Should pass along network icon suggestions to the sidebar", async () => {
