@@ -9,11 +9,12 @@ import {ChatMessage, ChatMessageType, ConnectivityInfo} from "../../generated/ne
  * @returns An array of ConnectivityInfo objects if the message contains network progress information, or an empty
  * array if not
  */
-export const extractAgentNetworkDesignerProgress = (message: ChatMessage): ConnectivityInfo[] | null => {
-    if (message?.type === ChatMessageType.AGENT_PROGRESS && message?.structure?.[AGENT_PROGRESS_CONNECTIVITY_KEY]) {
-        return message?.structure?.[AGENT_PROGRESS_CONNECTIVITY_KEY] as ConnectivityInfo[]
+export const extractAgentNetworkDesignerProgress = (message: ChatMessage): ConnectivityInfo[] => {
+    const agentProgress = message?.structure?.[AGENT_PROGRESS_CONNECTIVITY_KEY] as ConnectivityInfo[]
+    if (message?.type === ChatMessageType.AGENT_PROGRESS && agentProgress) {
+        return agentProgress
     } else {
-        // Not the type of message that would contain reservations, or no reservations found, return empty array
+        // Not the type of message that would contain network progress information, or the key is not present
         return []
     }
 }

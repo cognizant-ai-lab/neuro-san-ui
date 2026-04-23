@@ -86,9 +86,10 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
         conversationMock(props.currentConversations)
         return (
             <div data-testid="mock-agent-flow">
-                {props.agentsInNetwork.map((element) => (
-                    <div key={JSON.stringify(element)}>{JSON.stringify(element)}</div>
-                ))}
+                {props.agentsInNetwork.map((element) => {
+                    const json = JSON.stringify(element)
+                    return <div key={json}>{json}</div>
+                })}
             </div>
         )
     },
@@ -575,7 +576,7 @@ describe("Multi Agent Accelerator Page", () => {
             const popperTitle = "Network Preview"
 
             // Popover should not be displayed before selecting the network
-            expect(screen.queryByText(popperTitle)).not.toBeInTheDocument()
+            expect(screen.queryByText(popperTitle)).not.toBeVisible()
 
             await act(async () => {
                 setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
@@ -606,7 +607,7 @@ describe("Multi Agent Accelerator Page", () => {
             })
 
             // Popover should be closed
-            expect(screen.queryByText(popperTitle)).not.toBeInTheDocument()
+            expect(screen.queryByText(popperTitle)).not.toBeVisible()
         })
 
         it("Should handle non-progress messages while in Agent Network Designer mode without crashing", async () => {

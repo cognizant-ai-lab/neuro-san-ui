@@ -267,6 +267,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             agentIconSuggestions,
             coloringOption,
             currentConversations,
+            isAgentNetworkDesignerMode,
             isAwaitingLlm,
             layout,
             mergedAgentsInNetwork,
@@ -297,16 +298,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }, 50)
     }, [agentsInNetwork, layout])
 
-    const onNodesChange = useCallback((changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
-        setNodes((currentNodes) =>
-            applyNodeChanges<RFNode<AgentNodeProps>>(
-                // For now, we only allow dragging, no updates. In agent network designer mode, doesn't make sense
-                // to allow position changes since the user isn't actually manipulating a real network
-                changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
-                currentNodes
+    const onNodesChange = useCallback(
+        (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
+            setNodes((currentNodes) =>
+                applyNodeChanges<RFNode<AgentNodeProps>>(
+                    // For now, we only allow dragging, no updates. In agent network designer mode, doesn't make sense
+                    // to allow position changes since the user isn't actually manipulating a real network
+                    changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
+                    currentNodes
+                )
             )
-        )
-    }, [])
+        },
+        [isAgentNetworkDesignerMode]
+    )
 
     const transform = useStore((state) => state.transform)
 
