@@ -184,7 +184,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 </Tooltip>
                             ) : null}
                             {isTemporaryNetwork && networkHocon && (
-                                <Tooltip title={isExpired ? "Network expired" : "Download network definition"}>
+                                <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
                                     <span>
                                         <IconButton
                                             onClick={(e) => {

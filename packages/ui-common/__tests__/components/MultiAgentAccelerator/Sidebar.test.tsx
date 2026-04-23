@@ -585,9 +585,16 @@ describe("SideBar", () => {
         })
 
         expect(treeItem).toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
+
+        act(() => {
+            jest.advanceTimersByTime(5001)
+        })
+
+        // Make sure the sparkle highlight class is removed after the next timer runs
+        expect(treeItem).not.toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
     })
 
-    it("Should be a no-op when the highlight callback finds no matching treeitem", async () => {
+    it("Should be a no-op when the highlight callback finds no matching tree item", async () => {
         // Fake timers make the 50ms callback fire deterministically.
         jest.useFakeTimers()
 
