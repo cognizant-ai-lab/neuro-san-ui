@@ -215,13 +215,14 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             return newState
         })
-    }, [thoughtBubbleEdges])
+    }, [bubbleStates, thoughtBubbleEdges])
 
     // Cleanup timeouts on unmount
     useEffect(() => {
+        const timeouts = animationTimeouts.current
         return () => {
-            animationTimeouts.current.forEach((timeout) => clearTimeout(timeout))
-            animationTimeouts.current.clear()
+            timeouts.forEach((timeout) => clearTimeout(timeout))
+            timeouts.clear()
         }
     }, [])
 
