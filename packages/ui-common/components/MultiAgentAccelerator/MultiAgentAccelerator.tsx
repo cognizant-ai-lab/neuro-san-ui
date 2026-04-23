@@ -17,8 +17,8 @@ limitations under the License.
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
-import Popper from "@mui/material/Popper"
 import Slide from "@mui/material/Slide"
+import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
@@ -43,6 +43,7 @@ import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
+import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Utils"
@@ -62,6 +63,9 @@ export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
 
 // Animation time for the left and right panels to slide in or out when launching the animation
 const GROW_ANIMATION_TIME_MS = 800
+
+// Optimization to avoid creating a new empty map on every render
+const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
 
 /**
  * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
@@ -98,6 +102,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     backendNeuroSanApiUrl,
     userInfo,
 }): ReactJSX.Element => {
+    // MUI theme
+    const theme = useTheme()
+
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
@@ -359,8 +366,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 const currentNetworks = useTempNetworksStore.getState().tempNetworks
                 useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
 
-                // record the new temporary networks so we can select them for the user. For now, we only
-                // care about the first one.
+                // Record the new temporary networks so we can highlight them for the user.
+                // For now, we only care about the first one since that's the only active use case
                 setNewlyAddedTemporaryNetworks(
                     new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name))
                 )
@@ -397,7 +404,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setCurrentConversations(null)
         setAgentsInNetworkDesigner([])
         resetState()
-    }, [newlyAddedTemporaryNetworks])
+    }, [])
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
 
@@ -593,31 +600,31 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
      * Only displayed when Agent Network Designer is active.
      */
     const getProgressPopper = () => (
-        <Popper
-            open={isStreaming && isNetworkDesignerMode}
-            anchorEl={null}
+        <Box
             sx={{
+                display: isStreaming && isNetworkDesignerMode ? "block" : "none",
+                position: "absolute",
+                top: 0,
+                left: 0,
                 width: "600px",
                 height: "600px",
-                zIndex: 9999,
+                zIndex: getZIndex(2, theme),
             }}
         >
             <ReactFlowProvider>
                 <Box
-                    id="multi-agent-accelerator-agent-flow-container"
                     sx={{
+                        alignItems: "center",
+                        background: "var(--bs-secondary)",
                         border: "4px solid var(--bs-yellow)",
                         display: "flex",
                         flexDirection: "column",
-                        color: "white",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        background: "var(--bs-secondary)",
-                        width: "100%",
                         height: "100%",
-                        opacity: "95%",
-                        maxWidth: 1000,
+                        justifyContent: "center",
                         margin: "0 auto",
+                        maxWidth: 1000,
+                        opacity: "95%",
+                        width: "100%",
                     }}
                 >
                     <Typography
@@ -634,7 +641,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isAgentNetworkDesignerMode={true}
                             isAwaitingLlm={false}
                             isStreaming={false}
-                            thoughtBubbleEdges={new Map()}
+                            thoughtBubbleEdges={EMPTY_THOUGHT_BUBBLE_EDGES}
                         />
                     ) : (
                         <Typography
@@ -646,7 +653,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     )}
                 </Box>
             </ReactFlowProvider>
-        </Popper>
+        </Box>
     )
 
     return (
