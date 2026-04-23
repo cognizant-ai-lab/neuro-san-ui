@@ -561,7 +561,7 @@ describe("SideBar", () => {
         expect(screen.queryByRole("button", {name: TEST_AGENT_MATH_GUY})).not.toBeInTheDocument()
     })
 
-    it("Should add sparkle-highlight to the selected treeitem after the 50ms timeout", async () => {
+    it("Should add sparkle-highlight to the selected tree item after the 50ms timeout", async () => {
         // Fake timers make the 50ms highlight callback fire deterministically.
         jest.useFakeTimers()
 
@@ -576,7 +576,7 @@ describe("SideBar", () => {
         const treeItem = (await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))).closest(
             '[role="treeitem"]'
         )
-        // screen.debug()
+
         // Fire the pending 50ms timer — covers the true arm of `if (selectedNode)`.
         // runOnlyPendingTimers fires only timers already in the queue, so the
         // 5000ms sparkle-remove timer registered inside the callback won't fire here.
