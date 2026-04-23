@@ -54,8 +54,11 @@ interface MultiAgentAcceleratorProps {
     readonly backendNeuroSanApiUrl: string
 }
 
+// Check for expired networks every this many milliseconds
+const EXPIRED_NETWORKS_CHECK_INTERVAL_MS = 10 * 1000
+
 // Display expired temporary networks for this amount of time after they expire so users can see what happened
-const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
+export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
 
 // Animation time for the left and right panels to slide in or out when launching the animation
 const GROW_ANIMATION_TIME_MS = 800
@@ -312,7 +315,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setSelectedNetwork(null)
                 agentCountsRef.current = new Map()
             }
-        }, 10_000) // check every 10s
+        }, EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
 
         return () => clearInterval(interval)
     }, [temporaryNetworks, selectedNetwork])
@@ -632,9 +635,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isAwaitingLlm={false}
                             isStreaming={false}
                             thoughtBubbleEdges={new Map()}
-                            setThoughtBubbleEdges={() => {
-                                // test
-                            }}
                         />
                     ) : (
                         <Typography

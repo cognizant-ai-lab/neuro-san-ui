@@ -64,7 +64,7 @@ export interface AgentFlowProps {
     readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
     readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
-    readonly setThoughtBubbleEdges: Dispatch<
+    readonly setThoughtBubbleEdges?: Dispatch<
         SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
     >
 }
@@ -141,7 +141,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     useEffect(() => {
         if (!currentConversations || currentConversations.length === 0) return
 
-        setThoughtBubbleEdges((prev) => {
+        setThoughtBubbleEdges?.((prev) => {
             const processedText = new Set<string>()
             for (const entry of prev.values()) {
                 const text = (entry.edge.data as {text?: string})?.text?.trim()
@@ -193,7 +193,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             if (!isStreamingRef.current) return
 
             const now = Date.now()
-            setThoughtBubbleEdges((prev) => {
+            setThoughtBubbleEdges?.((prev) => {
                 let changed = false
                 const edgesMap = new Map(prev)
                 for (const [convId, entry] of prev) {

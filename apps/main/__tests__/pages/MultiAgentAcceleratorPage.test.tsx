@@ -34,6 +34,7 @@ import {
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
+import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentChat/Utils"
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {
@@ -43,6 +44,7 @@ import {
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
 } from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
+import {GRACE_PERIOD_MS} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {SidebarProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {
     getAgentNetworks,
@@ -137,7 +139,7 @@ const MATH_GUY_MESSAGE: ChatResponse = {
     },
 }
 
-const reservation = TEMPORARY_NETWORK.reservation
+const RESERVATION = TEMPORARY_NETWORK.reservation
 
 const RESERVATION_CHAT_MESSAGE: ChatResponse = {
     response: {
@@ -146,7 +148,7 @@ const RESERVATION_CHAT_MESSAGE: ChatResponse = {
         structure: {total_tokens: 100},
         origin: [{tool: "copy_cat"}],
         sly_data: {
-            [AGENT_RESERVATIONS_KEY]: [reservation],
+            [AGENT_RESERVATIONS_KEY]: [RESERVATION],
         },
     },
 }
@@ -539,10 +541,10 @@ describe("Multi Agent Accelerator Page", () => {
 
             expect(chatCommonMock).toHaveBeenCalled()
 
-            const agentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+            const agentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
 
             const expectedTemporaryNetwork: TemporaryNetwork = {
-                reservation: expect.objectContaining(reservation),
+                reservation: expect.objectContaining(RESERVATION),
                 agentInfo: expect.objectContaining({
                     agent_name: agentName,
                 }),
@@ -647,7 +649,7 @@ describe("Multi Agent Accelerator Page", () => {
                 onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
             })
 
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
             await waitFor(() => {
                 expect(temporaryNetworksMock).toHaveBeenCalledWith(
                     expect.arrayContaining([
@@ -685,7 +687,7 @@ describe("Multi Agent Accelerator Page", () => {
                 onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
             })
 
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
             await waitFor(() => {
                 expect(temporaryNetworksMock).toHaveBeenCalledWith(
                     expect.arrayContaining([
@@ -708,6 +710,122 @@ describe("Multi Agent Accelerator Page", () => {
 
             // Make sure network deleted
             expect(temporaryNetworksMock).toHaveBeenCalledWith([])
+        })
+
+        it("Should handle temporary networks expiring", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            // Set up a temporary network
+            const expirationTimeSeconds = 60
+            const reservation: TemporaryNetwork = {
+                ...TEMPORARY_NETWORK,
+                reservation: {
+                    ...TEMPORARY_NETWORK.reservation,
+                    expiration_time_in_seconds: Math.floor(Date.now() / 1000) + expirationTimeSeconds,
+                },
+            }
+
+            // Simulated chat response for the temp network
+            const reservationChatMessage: ChatResponse = {
+                response: {
+                    ...RESERVATION_CHAT_MESSAGE.response,
+                    sly_data: {
+                        [AGENT_RESERVATIONS_KEY]: [reservation.reservation],
+                    },
+                },
+            }
+
+            // Set up fake timers as the expiration logic relies on timers.
+            jest.useFakeTimers({now: Date.now()})
+
+            // Need a custom userEvent instance that works with fake timers
+            const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+
+            // Feed it the temp networks chunk
+            await act(async () => {
+                onChunkReceived(JSON.stringify(reservationChatMessage))
+            })
+
+            // Make sure network saved to store
+            expect(useTempNetworksStore.getState().tempNetworks.length).toBe(1)
+
+            // Not expired yet so we should see the network
+            const expectedNetworkName = `${TEMPORARY_NETWORK_FOLDER}/${TEMPORARY_NETWORK.reservation.reservation_id}`
+            const temporaryNetworkNode = document.querySelector(`[data-itemid="${expectedNetworkName}"]`)
+            expect(temporaryNetworkNode).not.toBeNull()
+
+            const displayAgentName = cleanUpAgentName(TEMPORARY_NETWORK.reservation.reservation_id)
+
+            // Make sure we see the temp network
+            const tempNetworkItem = await screen.findByText(displayAgentName)
+
+            // Click the network to select it
+            await localUser.click(tempNetworkItem)
+
+            // ChatCommon should be called with the selected network as the target agent -- a bit of an indirect way
+            // to verify that the network was selected. There may be a more elegant way to do this.
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    targetAgent: expectedNetworkName,
+                })
+            )
+
+            // Reset mock calls so we have a clean slate
+            chatCommonMock.mockClear()
+
+            // First time "expired check" runs, it should not be expired yet
+            await act(async () => {
+                jest.runOnlyPendingTimers()
+            })
+
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    targetAgent: expectedNetworkName,
+                })
+            )
+
+            chatCommonMock.mockClear()
+
+            // advanced past expiration time but still within grace period, meaning we show the network but flag it as
+            // expired and do not let the user select it
+            await act(async () => {
+                jest.advanceTimersByTime(expirationTimeSeconds * 1000)
+            })
+
+            // Verify network was de-selected
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    targetAgent: null,
+                })
+            )
+
+            // ...but should still be in the store since we're within the grace period
+            expect(useTempNetworksStore.getState().tempNetworks.length).toBe(1)
+
+            // Mouse over -- should get "expired" Tooltip
+            await localUser.hover(tempNetworkItem)
+            await screen.findByText(/Expired/u)
+
+            // Attempt to select it. Should not be allowed since it's expired
+            chatCommonMock.mockClear()
+            await localUser.click(tempNetworkItem)
+            expect(chatCommonMock).not.toHaveBeenCalled()
+
+            // advanced past grace period, so network should be fully deleted
+            await act(async () => {
+                jest.advanceTimersByTime(GRACE_PERIOD_MS)
+            })
+
+            // run the expiration check again
+            await act(async () => {
+                jest.runOnlyPendingTimers()
+            })
+
+            // Network should be deleted now
+            expect(useTempNetworksStore.getState().tempNetworks.length).toBe(0)
+
+            // ...and removed from the list
+            expect(screen.queryByText(displayAgentName)).not.toBeInTheDocument()
         })
     })
 
