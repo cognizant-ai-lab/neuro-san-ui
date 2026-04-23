@@ -717,8 +717,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             return
         }
 
+        console.log("chatMessage", chatMessage)
+        console.log("chatMessage.sly_data", chatMessage.sly_data)
+        
         // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
         if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
+            console.log("chatMessage.AGENT_FRAMEWORK", chatMessage)
             // Save the chat context, potentially overwriting any previous ones we received during this session.
             // We only care about the last one received.
             chatContext.current = chatMessage.chat_context
@@ -730,6 +734,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Merge slyData.current with incoming chatMessage.sly_data
         if (chatMessage.sly_data) {
             slyData.current = {...slyData.current, ...chatMessage.sly_data}
+            console.log("slyData.current updated", slyData.current)
         }
 
         // Check if there is an error block in the "structure" field of the chat message.
@@ -894,6 +899,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     </MUIAlert>
                 )
             }
+
+            console.log("slyData.current send", slyData.current)
 
             // Display prominent "Final Answer" message if we have one
             if (lastAIMessage.current) {

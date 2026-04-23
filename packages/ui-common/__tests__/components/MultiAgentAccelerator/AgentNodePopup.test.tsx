@@ -1,0 +1,181 @@
+/*
+Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+import {act, render, screen} from "@testing-library/react"
+import {userEvent} from "@testing-library/user-event"
+
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
+
+const AGENT_NAME = "Audit Risk Manager"
+const INITIAL_PROMPT = "Evaluate operational risks and detect anomalies."
+
+const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
+    const onClose = jest.fn()
+    const onSave = jest.fn()
+
+    render(
+        <AgentNodePopup
+            agentName={AGENT_NAME}
+            isOpen={true}
+            onClose={onClose}
+            onSave={onSave}
+            initialPrompt={INITIAL_PROMPT}
+            {...overrides}
+        />
+    )
+
+    return {onClose, onSave}
+}
+
+describe("AgentNodePopup", () => {
+    withStrictMocks()
+
+    it("renders agent name in dialog title and read-only field when open", () => {
+        renderPopup()
+
+        // Dialog title
+        expect(screen.getByText(AGENT_NAME)).toBeInTheDocument()
+
+        // Read-only name field should show the agent name
+        const nameField = screen.getByRole("textbox", {name: /agent/i})
+        expect(nameField).toBeInTheDocument()
+        expect(nameField).toHaveValue(AGENT_NAME)
+        expect(nameField).toHaveAttribute("readonly")
+    })
+
+    it("does not render content when closed", () => {
+        renderPopup({isOpen: false})
+
+        expect(screen.queryByText(AGENT_NAME)).not.toBeInTheDocument()
+        expect(screen.queryByPlaceholderText(/system prompt/i)).not.toBeInTheDocument()
+    })
+
+    it("renders the initial prompt in the editable textarea", () => {
+        renderPopup()
+
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        expect(promptField).toBeInTheDocument()
+        expect(promptField).toHaveValue(INITIAL_PROMPT)
+    })
+
+    it("allows the user to edit the prompt", async () => {
+        const user = userEvent.setup()
+        renderPopup()
+
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        await user.clear(promptField)
+        await user.type(promptField, "New instructions")
+
+        expect(promptField).toHaveValue("New instructions")
+    })
+
+    it("calls onSave with agent name and updated prompt when Save Prompt is clicked", async () => {
+        const user = userEvent.setup()
+        const {onSave} = renderPopup()
+
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        await user.clear(promptField)
+        await user.type(promptField, "Updated prompt text")
+
+        await user.click(screen.getByRole("button", {name: /save prompt/i}))
+
+        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, "Updated prompt text")
+    })
+
+    it("calls onClose and resets prompt to initial value when Cancel is clicked", async () => {
+        const user = userEvent.setup()
+        const {onClose} = renderPopup()
+
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        await user.clear(promptField)
+        await user.type(promptField, "Temporary edit")
+
+        await user.click(screen.getByRole("button", {name: /cancel/i}))
+
+        expect(onClose).toHaveBeenCalled()
+    })
+
+    it("calls onClose when the dialog close icon is clicked", async () => {
+        const user = userEvent.setup()
+        const {onClose} = renderPopup()
+
+        const closeBtn = screen.getByRole("button", {name: /close/i})
+        await user.click(closeBtn)
+
+        expect(onClose).toHaveBeenCalled()
+    })
+
+    it("renders an empty prompt field when no initialPrompt is provided", () => {
+        renderPopup({initialPrompt: undefined})
+
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        expect(promptField).toHaveValue("")
+    })
+
+    it("shows character count helper text", () => {
+        renderPopup()
+
+        // Helper text shows "{length} / 4000"
+        expect(screen.getByText(`${INITIAL_PROMPT.length} / 4000`)).toBeInTheDocument()
+    })
+
+    it("resets prompt to initialPrompt when dialog is reopened", async () => {
+        const user = userEvent.setup()
+        const {rerender} = render(
+            <AgentNodePopup
+                agentName={AGENT_NAME}
+                isOpen={true}
+                onClose={jest.fn()}
+                onSave={jest.fn()}
+                initialPrompt={INITIAL_PROMPT}
+            />
+        )
+
+        // Edit the prompt
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        await user.clear(promptField)
+        await user.type(promptField, "Temporary")
+        // Blur field explicitly so MUI FormControl settles before rerender
+        await user.tab()
+
+        // Close and reopen (simulate isOpen toggling)
+        await act(async () => {
+            rerender(
+                <AgentNodePopup
+                    agentName={AGENT_NAME}
+                    isOpen={false}
+                    onClose={jest.fn()}
+                    onSave={jest.fn()}
+                    initialPrompt={INITIAL_PROMPT}
+                />
+            )
+        })
+        await act(async () => {
+            rerender(
+                <AgentNodePopup
+                    agentName={AGENT_NAME}
+                    isOpen={true}
+                    onClose={jest.fn()}
+                    onSave={jest.fn()}
+                    initialPrompt={INITIAL_PROMPT}
+                />
+            )
+        })
+
+        expect(screen.getByRole("textbox", {name: /system prompt/i})).toHaveValue(INITIAL_PROMPT)
+    })
+})

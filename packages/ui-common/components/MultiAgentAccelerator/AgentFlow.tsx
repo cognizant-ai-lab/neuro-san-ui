@@ -32,6 +32,7 @@ import {
     Controls,
     EdgeTypes,
     NodeChange,
+    NodeMouseHandler,
     ReactFlow,
     Node as RFNode,
     NodeTypes as RFNodeTypes,
@@ -42,6 +43,7 @@ import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, u
 
 import {AgentConversation} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
+import {AgentNodePopup} from "./AgentNodePopup"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
@@ -282,6 +284,25 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     useEffect(() => {
         setNodes(layoutResult.nodes)
     }, [layoutResult.nodes])
+
+    // Track which node the user clicked on so we can open the popup
+    const [selectedAgent, setSelectedAgent] = useState<{agentId: string; agentName: string} | null>(null)
+    const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
+
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
+        setSelectedAgent({agentId: node.id, agentName: node.data.agentName})
+        setIsPopupOpen(true)
+    }, [])
+
+    const handlePopupClose = useCallback(() => {
+        setIsPopupOpen(false)
+    }, [])
+
+    // TODO: wire up API endpoint to persist the prompt
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const handlePopupSave = useCallback((_agentName: string, _prompt: string) => {
+        setIsPopupOpen(false)
+    }, [])
 
     const edges = layoutResult.edges
 
@@ -603,6 +624,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
+                onNodeClick={handleNodeClick}
                 fitView={true}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
@@ -624,6 +646,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 isStreaming={isStreaming}
                 onBubbleHoverChange={handleBubbleHoverChange}
             />
+            {selectedAgent && (
+                <AgentNodePopup
+                    agentName={selectedAgent.agentName}
+                    isOpen={isPopupOpen}
+                    onClose={handlePopupClose}
+                    onSave={handlePopupSave}
+                />
+            )}
         </Box>
     )
 }
