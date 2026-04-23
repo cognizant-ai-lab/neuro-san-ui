@@ -105,7 +105,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         supportEmailAddress,
     } = useEnvironmentStore()
 
-    // Access NextJS router
+    // Access Next.js router
     const {pathname, query} = useRouter()
 
     // Access user info store
@@ -181,7 +181,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         }
 
         void getEnvironment()
-    }, [])
+    }, [setAuth0ClientId, setAuth0Domain, setBackendNeuroSanApiUrl, setLogoServiceToken, setSupportEmailAddress])
 
     useEffect(() => {
         const getUserInfo = async () => {
@@ -225,7 +225,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         }
 
         void getUserInfo()
-    }, [])
+    }, [setCurrentUser, setOidcProvider, setPicture])
 
     const handleSignOut = async () => {
         // Clear our state storage variables

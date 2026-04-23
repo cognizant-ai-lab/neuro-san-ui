@@ -251,11 +251,10 @@ export const Sidebar: FC<SidebarProps> = ({
             const result: TestConnectionResult = await testConnection(urlInput)
             if (result.success) {
                 setTestConnectionResult(result)
-                setConnectionStatus(CONNECTION_STATUS.SUCCESS)
             }
         }
         void fetchVersion()
-    }, [])
+    }, [urlInput])
 
     const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
     const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(

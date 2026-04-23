@@ -191,7 +191,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
         resetState()
-    }, [])
+    }, [resetState])
 
     useEffect(() => {
         ;(async () => {
@@ -255,7 +255,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setAgentsInNetwork([])
             }
         })()
-    }, [neuroSanURL, selectedNetwork])
+    }, [neuroSanURL, selectedNetwork, userInfo.userName])
 
     useEffect(() => {
         ;(async () => {
@@ -270,7 +270,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 }
             }
         })()
-    }, [agentNamesKey])
+    }, [agentNamesKey, agentsInNetwork])
 
     // Set up handler to allow Escape key to stop the interaction with the LLM.
     useEffect(() => {
@@ -404,7 +404,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setCurrentConversations(null)
         setAgentsInNetworkDesigner([])
         resetState()
-    }, [])
+    }, [resetState])
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
 
