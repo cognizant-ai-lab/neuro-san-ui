@@ -169,15 +169,16 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // Handle bubble lifecycle (appear/disappear animations)
     useEffect(() => {
         const currentEdgeIds = new Set(thoughtBubbleEdges.map((e) => e.id))
-        const previousBubbleIds = new Set(bubbleStates.keys())
-
-        // Find new bubbles that should appear
-        const newBubbles = thoughtBubbleEdges.filter((e) => !previousBubbleIds.has(e.id))
-
-        // Find bubbles that should disappear
-        const removingBubbles = Array.from(previousBubbleIds).filter((id) => !currentEdgeIds.has(id))
 
         setBubbleStates((prev) => {
+            const previousBubbleIds = new Set(prev.keys())
+
+            // Find new bubbles that should appear
+            const newBubbles = thoughtBubbleEdges.filter((e) => !previousBubbleIds.has(e.id))
+
+            // Find bubbles that should disappear
+            const removingBubbles = Array.from(previousBubbleIds).filter((id) => !currentEdgeIds.has(id))
+
             const newState = new Map(prev)
 
             // Add new bubbles in entering state. Record when they entered so we can delay showing
@@ -215,7 +216,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             return newState
         })
-    }, [bubbleStates, thoughtBubbleEdges])
+    }, [thoughtBubbleEdges])
 
     // Cleanup timeouts on unmount
     useEffect(() => {

@@ -43,6 +43,7 @@ import {
     useCallback,
     useEffect,
     useImperativeHandle,
+    useMemo,
     useRef,
     useState,
 } from "react"
@@ -199,6 +200,14 @@ const MAX_SAMPLE_QUERIES = 5
 const QUERY_TRUNCATE_LENGTH = 80
 
 /**
+ * Extract the final answer from the response from a legacy agent
+ * @param response The response from the legacy agent
+ * @returns The final answer from the agent, if it exists or null if it doesn't
+ */
+const extractFinalAnswer = (response: string) =>
+    /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
+
+/**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
@@ -227,12 +236,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         onClose,
         neuroSanURL,
     } = props
-
-    // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
-    useImperativeHandle(ref, () => ({
-        handleStop,
-    }))
-
     // MUI theme
     const theme = useTheme()
     const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
@@ -356,14 +359,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
     }, [chatOutput, isAwaitingLlm])
-
-    useEffect(() => {
-        // Clear chat output on change of neuro-san URL
-        // TODO: We want to revise this in the future to not need a useEffect
-        setChatOutput([])
-        currentResponse.current = ""
-        setShowThinking(false)
-    }, [neuroSanURL])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -532,7 +527,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [onChunkReceived, processLogLine, targetAgent, updateOutput]
     )
 
-    const agentDisplayName = cleanUpAgentName(removeTrailingUuid(targetAgent))
+    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
 
     const introduceAgent = useCallback(() => {
         /**
@@ -706,7 +701,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // Add ID block for agent
             updateOutput(
                 <UserQueryDisplay
-                    userQuery={cleanUpAgentName(removeTrailingUuid(targetAgent))}
+                    userQuery={agentDisplayName}
                     title={targetAgent}
                     userImage={AGENT_IMAGE}
                 />
@@ -725,7 +720,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         id="initiating-orchestration-accordion"
                         items={[
                             {
-                                title: `Contacting ${cleanUpAgentName(removeTrailingUuid(targetAgent))}...`,
+                                title: `Contacting ${agentDisplayName}...`,
                                 content: `Query: ${queryToSend}`,
                             },
                         ]}
@@ -780,6 +775,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
         },
         [
+            agentDisplayName,
             currentUser,
             doQueryLoop,
             onSend,
@@ -845,23 +841,26 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     )
 
     useEffect(() => {
-        const newAgent = async () => {
-            if (clearChatOnNewAgent) {
-                // New agent, so clear chat context if desired
-                chatContext.current = null
-                currentResponse.current = ""
-                slyData.current = null
-                setChatOutput([])
-            }
+        if (clearChatOnNewAgent && targetAgent) {
+            chatContext.current = null
+            currentResponse.current = ""
+            slyData.current = null
+            setChatOutput([])
+        }
+    }, [clearChatOnNewAgent, targetAgent])
 
-            // Introduce the agent to the user
+    useEffect(() => {
+        if (targetAgent) {
             introduceAgent()
+        }
+    }, [targetAgent, introduceAgent])
 
-            // if not neuro san agent return since we won't get connectivity info
-            if (isLegacyAgentType(targetAgent)) {
-                return
-            }
+    useEffect(() => {
+        if (!targetAgent || isLegacyAgentType(targetAgent)) {
+            return
+        }
 
+        const fetchAgentDetails = async () => {
             let agentFunction: FunctionResponse
 
             // It is a Neuro-san agent, so get the function and connectivity info
@@ -877,10 +876,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
-                        sx={{
-                            marginTop: "1rem",
-                            marginBottom: "1rem",
-                        }}
+                        sx={{marginTop: "1rem", marginBottom: "1rem"}}
                         items={[
                             {
                                 title: "Network Details",
@@ -910,19 +906,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
-                    `Failed to get connectivity info for ${cleanUpAgentName(targetAgent)}. Error: ${e}`
+                    `Failed to get connectivity info for ${agentDisplayName}. Error: ${e}`
                 )
             }
         }
 
-        if (targetAgent) {
-            void newAgent()
-        }
+        void fetchAgentDetails()
     }, [
-        clearChatOnNewAgent,
+        agentDisplayName,
         currentUser,
         id,
-        introduceAgent,
         neuroSanURL,
         renderConnectivityInfo,
         renderSampleQueries,
@@ -930,7 +923,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         updateOutput,
     ])
 
-    const handleStop = () => {
+    const handleStop = useCallback(() => {
         try {
             controller?.current?.abort()
             controller.current = null
@@ -945,7 +938,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         } finally {
             resetState()
         }
-    }
+    }, [resetState, updateOutput])
+
+    // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
+    useImperativeHandle(
+        ref,
+        () => ({
+            handleStop,
+        }),
+        [handleStop]
+    )
 
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
@@ -959,16 +961,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    /**
-     * Extract the final answer from the response from a legacy agent
-     * @param response The response from the legacy agent
-     * @returns The final answer from the agent, if it exists or null if it doesn't
-     */
-    const extractFinalAnswer = (response: string) =>
-        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
-
     const getPlaceholder = () =>
         !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
+
+    const handleClearChat = useCallback(() => {
+        setChatOutput([])
+        chatHistory.current = []
+        chatContext.current = null
+        setPreviousUserQuery("")
+        currentResponse.current = ""
+        lastAIMessage.current = ""
+        introduceAgent()
+    }, [introduceAgent])
 
     return (
         <Box
@@ -1165,15 +1169,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     </Box>
 
                     <ControlButtons
-                        clearChatOnClickCallback={() => {
-                            setChatOutput([])
-                            chatHistory.current = []
-                            chatContext.current = null
-                            setPreviousUserQuery("")
-                            currentResponse.current = ""
-                            lastAIMessage.current = ""
-                            introduceAgent()
-                        }}
+                        handleClearChat={handleClearChat}
                         enableClearChatButton={enableClearChatButton}
                         isAwaitingLlm={isAwaitingLlm}
                         handleSend={handleSend}
