@@ -44,17 +44,12 @@ const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
 describe("AgentNodePopup", () => {
     withStrictMocks()
 
-    it("renders agent name in dialog title and read-only field when open", () => {
+    it("renders agent name in dialog title when open", () => {
         renderPopup()
 
-        // Dialog title
+        // Agent name shown in dialog title only (no separate read-only field)
         expect(screen.getByText(AGENT_NAME)).toBeInTheDocument()
-
-        // Read-only name field should show the agent name
-        const nameField = screen.getByRole("textbox", {name: /agent/i})
-        expect(nameField).toBeInTheDocument()
-        expect(nameField).toHaveValue(AGENT_NAME)
-        expect(nameField).toHaveAttribute("readonly")
+        expect(screen.queryByRole("textbox", {name: /^agent$/i})).not.toBeInTheDocument()
     })
 
     it("does not render content when closed", () => {
@@ -126,11 +121,11 @@ describe("AgentNodePopup", () => {
         expect(promptField).toHaveValue("")
     })
 
-    it("shows character count helper text", () => {
+    it("renders the system prompt field with no character limit", () => {
         renderPopup()
 
-        // Helper text shows "{length} / 4000"
-        expect(screen.getByText(`${INITIAL_PROMPT.length} / 4000`)).toBeInTheDocument()
+        const promptField = screen.getByRole("textbox", {name: /system prompt/i})
+        expect(promptField).not.toHaveAttribute("maxlength")
     })
 
     it("resets prompt to initialPrompt when dialog is reopened", async () => {

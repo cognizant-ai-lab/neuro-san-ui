@@ -44,14 +44,22 @@ import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, u
 import {AgentConversation} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AgentNodePopup} from "./AgentNodePopup"
-import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {
+    AgentNetworkDefinitionEntry,
+    readAgentNetworkDefinition,
+    writeAgentNetworkDefinition,
+} from "./AgentNetworkDesigner"
+import {AGENT_NETWORK_DEFINITION_KEY, AGENT_NETWORK_DESIGNER_ID, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
+import {sendChatQuery} from "../../controller/agent/Agent"
+import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
+import {NotificationType, sendNotification} from "../Common/notification"
 import {getZIndex} from "../../utils/zIndexLayers"
 
 // #region: Types
@@ -61,10 +69,12 @@ export interface AgentFlowProps {
     readonly agentIconSuggestions?: AgentIconSuggestions
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
+    readonly currentUser?: string
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
+    readonly neuroSanURL?: string
     readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     readonly setThoughtBubbleEdges?: Dispatch<
         SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
@@ -87,10 +97,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     agentIconSuggestions,
     agentsInNetwork,
     currentConversations,
+    currentUser,
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isStreaming,
+    neuroSanURL,
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
 }) => {
@@ -286,11 +298,22 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [layoutResult.nodes])
 
     // Track which node the user clicked on so we can open the popup
-    const [selectedAgent, setSelectedAgent] = useState<{agentId: string; agentName: string} | null>(null)
+    const [selectedAgent, setSelectedAgent] = useState<{
+        agentId: string
+        agentName: string
+        initialPrompt: string
+    } | null>(null)
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
-        setSelectedAgent({agentId: node.id, agentName: node.data.agentName})
+        // Look up the instructions for this agent from the persisted network definition
+        const definition = readAgentNetworkDefinition()
+        const entry = definition.find((e) => e.origin === node.id)
+        setSelectedAgent({
+            agentId: node.id,
+            agentName: node.data.agentName,
+            initialPrompt: entry?.instructions ?? "",
+        })
         setIsPopupOpen(true)
     }, [])
 
@@ -298,11 +321,42 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setIsPopupOpen(false)
     }, [])
 
-    // TODO: wire up API endpoint to persist the prompt
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handlePopupSave = useCallback((_agentName: string, _prompt: string) => {
-        setIsPopupOpen(false)
-    }, [])
+    const handlePopupSave = useCallback(
+        (agentName: string, prompt: string) => {
+            if (!selectedAgent) return
+
+            // Update the definition in localStorage with the new instructions
+            const definition = readAgentNetworkDefinition()
+            const updated = definition.map((entry): AgentNetworkDefinitionEntry =>
+                entry.origin === selectedAgent.agentId ? {...entry, instructions: prompt} : entry
+            )
+            writeAgentNetworkDefinition(updated)
+            setIsPopupOpen(false)
+
+            // POST the updated definition to the Agent Network Designer (fire and forget)
+            if (neuroSanURL && currentUser && updated.length > 0) {
+                sendChatQuery(
+                    neuroSanURL,
+                    new AbortController().signal,
+                    `Update instructions for agent "${agentName}"`,
+                    AGENT_NETWORK_DESIGNER_ID,
+                    () => {},
+                    null,
+                    {[AGENT_NETWORK_DEFINITION_KEY]: updated},
+                    currentUser,
+                    StreamingUnit.Line
+                ).catch((e: unknown) => {
+                    console.error("Failed to submit agent network update:", e)
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to update agent "${agentName}".`,
+                        String(e)
+                    )
+                })
+            }
+        },
+        [selectedAgent, neuroSanURL, currentUser]
+    )
 
     const edges = layoutResult.edges
 
@@ -649,6 +703,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             {selectedAgent && (
                 <AgentNodePopup
                     agentName={selectedAgent.agentName}
+                    initialPrompt={selectedAgent.initialPrompt}
                     isOpen={isPopupOpen}
                     onClose={handlePopupClose}
                     onSave={handlePopupSave}

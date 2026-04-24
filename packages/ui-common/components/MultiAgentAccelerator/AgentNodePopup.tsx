@@ -40,9 +40,6 @@ export interface AgentNodePopupProps {
     readonly initialPrompt?: string
 }
 
-// Max characters allowed in the system prompt textarea
-const MAX_PROMPT_LENGTH = 4000
-
 // #endregion: Types
 
 /**
@@ -85,7 +82,6 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onCl
                 onClick={handleSave}
                 variant="contained"
                 size="small"
-                startIcon={<AutoFixHighIcon />}
             >
                 Save Prompt
             </Button>
@@ -101,30 +97,19 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onCl
             footer={footer}
             paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
         >
-            {/* Agent name — read only */}
-            <TextField
-                id="agent-node-popup-name-field"
-                label="Agent"
-                value={agentName}
-                slotProps={{input: {readOnly: true}}}
-                fullWidth
-                size="small"
-                sx={{mb: 2}}
-            />
-
             {/* System prompt — editable */}
             <TextField
                 id="agent-node-popup-prompt-field"
                 label="System Prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 multiline
                 rows={8}
                 fullWidth
                 size="small"
+                autoFocus
                 placeholder="Enter system prompt / instructions for this agent…"
-                inputProps={{maxLength: MAX_PROMPT_LENGTH}}
-                helperText={`${prompt.length} / ${MAX_PROMPT_LENGTH}`}
             />
         </MUIDialog>
     )

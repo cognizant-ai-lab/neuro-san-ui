@@ -485,11 +485,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
                             agentIconSuggestions={agentIconSuggestions}
+                            currentUser={userInfo.userName}
                             id="multi-agent-accelerator-agent-flow"
                             key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                             isStreaming={isStreaming}
+                            neuroSanURL={neuroSanURL}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />

@@ -39,3 +39,6 @@ export const AGENT_PROGRESS_CONNECTIVITY_KEY = "connectivity_info"
 
 // Agent name for the special "Agent Network Designer" network
 export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"
+
+// The key in sly_data where the agent network definition is stored
+export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"

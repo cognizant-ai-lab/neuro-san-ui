@@ -73,6 +73,11 @@ import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
+import {
+    AgentNetworkDefinitionEntry,
+    writeAgentNetworkDefinition,
+} from "../MultiAgentAccelerator/AgentNetworkDesigner"
+import {AGENT_NETWORK_DEFINITION_KEY} from "../MultiAgentAccelerator/const"
 
 export interface ChatCommonProps {
     /**
@@ -717,24 +722,28 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             return
         }
 
-        console.log("chatMessage", chatMessage)
-        console.log("chatMessage.sly_data", chatMessage.sly_data)
-        
-        // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
-        if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
-            console.log("chatMessage.AGENT_FRAMEWORK", chatMessage)
-            // Save the chat context, potentially overwriting any previous ones we received during this session.
-            // We only care about the last one received.
-            chatContext.current = chatMessage.chat_context
+        // Only AGENT_FRAMEWORK messages can have chat_context and sly_data.
+        if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK) {
+            if (chatMessage.chat_context) {
+                // Save the chat_context, potentially overwriting any previous ones we received during this session.
+                // We only care about the last one received.
+                chatContext.current = chatMessage.chat_context
+            }
+
+            if (chatMessage.sly_data) {
+                // Save the sly_data, potentially overwriting any previous ones we received during this session.
+                // We only care about the last one received.
+                slyData.current = {...slyData.current, ...chatMessage.sly_data}
+
+                // Persist the agent network definition to localStorage so the node editor popup can access it
+                const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
+                if (Array.isArray(networkDefinition)) {
+                    writeAgentNetworkDefinition(networkDefinition as AgentNetworkDefinitionEntry[])
+                }
+            }
 
             // Nothing more to do with this message. It's just a message to give us the chat context, so return
             return
-        }
-
-        // Merge slyData.current with incoming chatMessage.sly_data
-        if (chatMessage.sly_data) {
-            slyData.current = {...slyData.current, ...chatMessage.sly_data}
-            console.log("slyData.current updated", slyData.current)
         }
 
         // Check if there is an error block in the "structure" field of the chat message.
