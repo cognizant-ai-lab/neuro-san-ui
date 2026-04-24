@@ -202,7 +202,7 @@ const QUERY_TRUNCATE_LENGTH = 80
 /**
  * Extract the final answer from the response from a legacy agent
  * @param response The response from the legacy agent
- * @returns The final answer from the agent, if it exists or null if it doesn't
+ * @returns The final answer from the agent, if it exists or undefined if it doesn't
  */
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
