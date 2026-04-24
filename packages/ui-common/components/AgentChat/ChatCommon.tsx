@@ -244,7 +244,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const [chatInput, setChatInput] = useState<string>("")
 
     // Previous user query (for "regenerate" feature)
-    const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
+    const previousUserQuery = useRef<string>("")
 
     // Chat output window contents
     const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
@@ -601,7 +601,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         currentResponse.current = ""
     }, [setIsAwaitingLlm, setPreviousResponse, targetAgent])
 
-    const doQueryLoop = useCallback(
+    /*
+     * The main logic for sending a query to the server, with retries on errors.
+     */
+    const doRetryLoop = useCallback(
         async (query: string) => {
             succeeded.current = false
 
@@ -667,7 +670,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     }
                 }
             } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
-            return {wasAborted}
+            return wasAborted
         },
         [currentUser, extraParams, handleChunk, legacyAgentEndpoint, neuroSanURL, targetAgent, updateOutput]
     )
@@ -675,14 +678,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const handleSend = useCallback(
         async (query: string) => {
             // Record user query in chat history
-            chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery)]
+            chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery.current)]
 
             // Allow parent to intercept and modify the query before sending if needed
             const queryToSend = onSend?.(query) ?? query
 
             // Save query for "regenerate" use. Again we save the real user input, not the modified query. It will again
             // get intercepted and re-modified (if applicable) on "regenerate".
-            setPreviousUserQuery(query)
+            previousUserQuery.current = query
 
             setIsAwaitingLlm(true)
 
@@ -729,7 +732,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 )
             }
             try {
-                const {wasAborted} = await doQueryLoop(queryToSend)
+                // Invoke the logic to send the request and retry as necessary
+                const wasAborted = await doRetryLoop(queryToSend)
 
                 if (!wasAborted && !succeeded.current) {
                     updateOutput(
@@ -777,11 +781,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [
             agentDisplayName,
             currentUser,
-            doQueryLoop,
+            doRetryLoop,
             onSend,
             onStreamingComplete,
             onStreamingStarted,
-            previousUserQuery,
             processLogLine,
             resetState,
             setIsAwaitingLlm,
@@ -856,10 +859,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     }, [targetAgent, introduceAgent])
 
     useEffect(() => {
-        if (!targetAgent || isLegacyAgentType(targetAgent)) {
-            return
-        }
-
         const fetchAgentDetails = async () => {
             let agentFunction: FunctionResponse
 
@@ -911,10 +910,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
         }
 
-        void fetchAgentDetails()
+        if (targetAgent && !isLegacyAgentType(targetAgent)) {
+            void fetchAgentDetails()
+        }
     }, [
         agentDisplayName,
         currentUser,
+        handleSend,
         id,
         neuroSanURL,
         renderConnectivityInfo,
@@ -968,7 +970,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setChatOutput([])
         chatHistory.current = []
         chatContext.current = null
-        setPreviousUserQuery("")
+        previousUserQuery.current = ""
         currentResponse.current = ""
         lastAIMessage.current = ""
         introduceAgent()
@@ -1174,7 +1176,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         isAwaitingLlm={isAwaitingLlm}
                         handleSend={handleSend}
                         handleStop={handleStop}
-                        previousUserQuery={previousUserQuery}
+                        previousUserQuery={previousUserQuery.current}
                         shouldEnableRegenerateButton={shouldEnableRegenerateButton}
                     />
                 </Box>
