@@ -717,19 +717,23 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             return
         }
 
-        // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
-        if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
-            // Save the chat context, potentially overwriting any previous ones we received during this session.
-            // We only care about the last one received.
-            chatContext.current = chatMessage.chat_context
+        // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context and
+        // slyData.
+        if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK) {
+            if (chatMessage.chat_context) {
+                // Save the chat context, potentially overwriting any previous ones we received during this session.
+                // We only care about the last one received.
+                chatContext.current = chatMessage.chat_context
+            }
+
+            if (chatMessage.sly_data) {
+                // Save the slyData, potentially overwriting any previous ones we received during this session.
+                // We only care about the last one received.
+                slyData.current = {...slyData.current, ...chatMessage.sly_data}
+            }
 
             // Nothing more to do with this message. It's just a message to give us the chat context, so return
             return
-        }
-
-        // Merge slyData.current with incoming chatMessage.sly_data
-        if (chatMessage.sly_data) {
-            slyData.current = {...slyData.current, ...chatMessage.sly_data}
         }
 
         // Check if there is an error block in the "structure" field of the chat message.
