@@ -54,7 +54,7 @@ const config: KnipConfig = {
         "babel.jest.config.cjs",
 
         // Temporarily exclude for transition to monorepo (legit issue)
-        "packages/ui-common/components/AgentChat/Types.ts",
+        "packages/ui-common/components/AgentChat/Common/Types.ts",
 
         // Used by CommitCheck script
         "jest_quiet.config.ts",

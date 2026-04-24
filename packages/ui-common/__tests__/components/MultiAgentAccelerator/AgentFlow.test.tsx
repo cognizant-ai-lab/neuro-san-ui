@@ -21,7 +21,7 @@ import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
+import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"

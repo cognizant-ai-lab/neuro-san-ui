@@ -27,7 +27,7 @@ import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACI
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Utils"
+import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Common/Utils"
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 

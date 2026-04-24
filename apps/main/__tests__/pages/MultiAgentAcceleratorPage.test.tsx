@@ -33,8 +33,11 @@ import {
 } from "../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
-import {ChatCommonHandle, ChatCommonProps} from "../../../../packages/ui-common/components/AgentChat/ChatCommon"
-import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentChat/Utils"
+import {
+    ChatCommonHandle,
+    ChatCommonProps,
+} from "../../../../packages/ui-common/components/AgentChat/ChatCommon/ChatCommon"
+import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentChat/Common/Utils"
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {
@@ -183,7 +186,7 @@ let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
 let onStreamingComplete: () => void
 
-jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon", () => ({
+jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon/ChatCommon", () => ({
     __esModule: true,
     ChatCommon: (props: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
         chatCommonMock(props)

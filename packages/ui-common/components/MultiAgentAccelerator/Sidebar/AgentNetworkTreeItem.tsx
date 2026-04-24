@@ -22,7 +22,7 @@ import {FC, useRef} from "react"
 
 import {NodeIndex} from "./TreeBuilder"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
-import {cleanUpAgentName} from "../../AgentChat/Utils"
+import {cleanUpAgentName} from "../../AgentChat/Common/Utils"
 
 // Palette of colors we can use for tags
 const TAG_COLORS = [

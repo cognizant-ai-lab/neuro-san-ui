@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Utils"
+import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Common/Utils"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
 import {
     addThoughtBubbleEdge,
