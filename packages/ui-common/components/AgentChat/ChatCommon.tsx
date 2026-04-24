@@ -717,17 +717,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             return
         }
 
-        // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context and
-        // slyData.
+        // Only AGENT_FRAMEWORK messages can have chat_context and sly_data.
         if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK) {
             if (chatMessage.chat_context) {
-                // Save the chat context, potentially overwriting any previous ones we received during this session.
+                // Save the chat_context, potentially overwriting any previous ones we received during this session.
                 // We only care about the last one received.
                 chatContext.current = chatMessage.chat_context
             }
 
             if (chatMessage.sly_data) {
-                // Save the slyData, potentially overwriting any previous ones we received during this session.
+                // Save the sly_data, potentially overwriting any previous ones we received during this session.
                 // We only care about the last one received.
                 slyData.current = {...slyData.current, ...chatMessage.sly_data}
             }
