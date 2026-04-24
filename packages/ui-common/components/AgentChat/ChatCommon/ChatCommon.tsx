@@ -50,31 +50,32 @@ import {
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
+import {AgentConnectivity} from "./AgentConnectivity"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
+import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
-import {CombinedAgentType, isLegacyAgentType} from "./Types"
 import {UserQueryDisplay} from "./UserQueryDisplay"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "./Utils"
-import {MicrophoneButton} from "./VoiceChat/MicrophoneButton"
-import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "./VoiceChat/VoiceChat"
-import {getAgentFunction, getConnectivity, sendChatQuery} from "../../controller/agent/Agent"
-import {sendLlmRequest, StreamingUnit} from "../../controller/llm/LlmChat"
+import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
+import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {
     ChatContext,
     ChatMessage,
     ChatMessageType,
-    ConnectivityInfo,
     ConnectivityResponse,
     FunctionResponse,
-} from "../../generated/neuro-san/NeuroSanClient"
-import {hashString, hasOnlyWhitespace} from "../../utils/text"
-import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
-import {MUIAccordion} from "../Common/MUIAccordion"
-import {MUIAlert} from "../Common/MUIAlert"
-import {NotificationType, sendNotification} from "../Common/notification"
+} from "../../../generated/neuro-san/NeuroSanClient"
+import {hashString, hasOnlyWhitespace} from "../../../utils/text"
+import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
+import {MUIAccordion} from "../../Common/MUIAccordion"
+import {MUIAlert} from "../../Common/MUIAlert"
+import {NotificationType, sendNotification} from "../../Common/notification"
+import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
+import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
+import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
+import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "../VoiceChat/VoiceChat"
 
 export interface ChatCommonProps {
     /**
@@ -192,12 +193,6 @@ const MAX_AGENT_RETRIES = 3
 export type ChatCommonHandle = {
     handleStop: () => void
 }
-
-// Maximum number of sample queries to show
-const MAX_SAMPLE_QUERIES = 5
-
-// Maximum length of query to show in sample query chips
-const QUERY_TRUNCATE_LENGTH = 80
 
 /**
  * Extract the final answer from the response from a legacy agent
@@ -547,46 +542,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     }, [agentDisplayName, targetAgent, updateOutput])
 
     /**
-     * Render the connectivity info as a list of origins and their tools
-     * @param connectivityInfo The connectivity info to render
-     * @returns A ReactNode representing the connectivity info with agents and their tools
-     */
-    const renderConnectivityInfo = useCallback(
-        (connectivityInfo: ConnectivityInfo[]) => (
-            <>
-                {connectivityInfo
-                    // Don't show connection to self
-                    .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
-                    // Sort by origin name
-                    .sort((a, b) => a.origin.localeCompare(b.origin))
-                    // Render each origin and its tools
-                    .map((info) => (
-                        <li
-                            id={info.origin}
-                            key={info.origin}
-                        >
-                            <b id={info.origin}>{info.origin}</b>
-                            <ul
-                                id={`${info.origin}-tools`}
-                                style={{marginLeft: "8px"}}
-                            >
-                                {info?.tools?.map((tool) => (
-                                    <li
-                                        id={tool}
-                                        key={tool}
-                                    >
-                                        {tool}
-                                    </li>
-                                ))}
-                            </ul>
-                        </li>
-                    ))}
-            </>
-        ),
-        [targetAgent]
-    )
-
-    /**
      * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
      */
     const resetState = useCallback(() => {
@@ -795,54 +750,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         ]
     )
 
-    /**
-     * Render sample queries as clickable chips. Agents may or may not have sample queries defined.
-     * @param sampleQueries The sample queries to render (from "connectivity" API)
-     * @returns A ReactNode representing the sample queries as clickable chips. If a user clicks a chip, it will
-     * send the query to the agent.
-     */
-    const renderSampleQueries = useCallback(
-        (sampleQueries: string[]) => {
-            return sampleQueries?.length > 0 ? (
-                <Box
-                    id="sample-queries-box"
-                    sx={{marginTop: "2rem", marginBottom: "1rem"}}
-                >
-                    {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => (
-                        <Tooltip
-                            id={`tooltip-${query}`}
-                            title={`Click to send query: "${query}"`}
-                            key={`tooltip-${query}`}
-                        >
-                            <Chip
-                                id={`sample-query-${query}`}
-                                key={query}
-                                label={
-                                    query.length > QUERY_TRUNCATE_LENGTH
-                                        ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
-                                        : query
-                                }
-                                onClick={async () => {
-                                    await handleSend(query)
-                                }}
-                                sx={{
-                                    color: "var(--bs-white)",
-                                    marginRight: "1rem",
-                                    marginBottom: "1rem",
-                                    backgroundColor: "var(--bs-accent1-medium)",
-                                    "&:hover": {
-                                        backgroundColor: "var(--bs-accent1-dark)",
-                                    },
-                                }}
-                            />
-                        </Tooltip>
-                    ))}
-                </Box>
-            ) : null
-        },
-        [handleSend]
-    )
-
     useEffect(() => {
         if (clearChatOnNewAgent && targetAgent) {
             chatContext.current = null
@@ -873,35 +780,20 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             try {
                 const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent, currentUser)
                 updateOutput(
-                    <MUIAccordion
-                        id={`${id}-agent-details`}
-                        sx={{marginTop: "1rem", marginBottom: "1rem"}}
-                        items={[
-                            {
-                                title: "Network Details",
-                                content: [
-                                    `My description is: "${agentFunction?.function?.description}"`,
-                                    <h6
-                                        key="item-1"
-                                        id="connectivity-header"
-                                        style={{marginTop: "1rem"}}
-                                    >
-                                        I can connect you to the following agents
-                                    </h6>,
-                                    <ul
-                                        key="item-2"
-                                        id="connectivity-list"
-                                        aria-labelledby="connectivity-header"
-                                        style={{marginTop: "1rem"}}
-                                    >
-                                        {renderConnectivityInfo(connectivity?.connectivity_info.concat())}
-                                    </ul>,
-                                ],
-                            },
-                        ]}
+                    <AgentConnectivity
+                        id={id}
+                        description={agentFunction?.function?.description}
+                        connectivityInfo={connectivity?.connectivity_info}
+                        targetAgent={targetAgent}
                     />
                 )
-                updateOutput(renderSampleQueries((connectivity?.metadata?.["sample_queries"] as string[]) ?? []))
+                const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
+                updateOutput(
+                    <SampleQueries
+                        handleSend={handleSend}
+                        sampleQueries={sampleQueries}
+                    />
+                )
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
@@ -913,17 +805,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         if (targetAgent && !isLegacyAgentType(targetAgent)) {
             void fetchAgentDetails()
         }
-    }, [
-        agentDisplayName,
-        currentUser,
-        handleSend,
-        id,
-        neuroSanURL,
-        renderConnectivityInfo,
-        renderSampleQueries,
-        targetAgent,
-        updateOutput,
-    ])
+    }, [agentDisplayName, currentUser, handleSend, id, neuroSanURL, targetAgent, updateOutput])
 
     const handleStop = useCallback(() => {
         try {

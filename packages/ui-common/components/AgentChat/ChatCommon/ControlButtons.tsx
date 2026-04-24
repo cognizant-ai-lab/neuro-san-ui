@@ -19,7 +19,7 @@ import Loop from "@mui/icons-material/Loop"
 import StopCircle from "@mui/icons-material/StopCircle"
 import {FC} from "react"
 
-import {SmallLlmChatButton} from "./LlmChatButton"
+import {SmallLlmChatButton} from "../Common/LlmChatButton"
 
 // #region: Types
 interface ControlButtonsProps {

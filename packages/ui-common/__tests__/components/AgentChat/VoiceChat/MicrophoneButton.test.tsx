@@ -34,7 +34,7 @@ jest.mock("../../../../components/AgentChat/VoiceChat/VoiceChat", () => ({
 }))
 
 // Mock the LlmChatButton component
-jest.mock("../../../../components/AgentChat/LlmChatButton", () => ({
+jest.mock("../../../../components/AgentChat/Common/LlmChatButton", () => ({
     LlmChatButton: ({
         children,
         onClick,

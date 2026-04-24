@@ -17,7 +17,7 @@ limitations under the License.
 import SendIcon from "@mui/icons-material/Send"
 import {FC} from "react"
 
-import {LlmChatButton} from "./LlmChatButton"
+import {LlmChatButton} from "../Common/LlmChatButton"
 
 // #region: Types
 interface SendButtonProps {

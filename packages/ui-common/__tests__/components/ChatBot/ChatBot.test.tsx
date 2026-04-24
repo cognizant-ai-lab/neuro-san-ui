@@ -11,7 +11,7 @@ jest.mock("../../../utils/Authentication", () => ({
     useAuthentication: jest.fn(),
 }))
 
-jest.mock("../../../components/AgentChat/ChatCommon", () => ({
+jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     ChatCommon: (props: {id: string; title: string; onClose: () => void; backgroundColor: string}) => (
         <div
             data-testid="chat-common"

@@ -2,7 +2,7 @@
  * Common test data for agent-related tests, for consistency.
  */
 
-import {cleanUpAgentName} from "../../packages/ui-common/components/AgentChat/Utils"
+import {cleanUpAgentName} from "../../packages/ui-common/components/AgentChat/Common/Utils"
 import {TEMPORARY_NETWORK_FOLDER} from "../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {TemporaryNetwork} from "../../packages/ui-common/state/TemporaryNetworks"
 

@@ -23,24 +23,24 @@ import {
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
-} from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {USER_AGENTS} from "../../../../../__tests__/common/UserAgentTestUtils"
-import {ChatCommon, ChatCommonHandle} from "../../../components/AgentChat/ChatCommon"
-import {CombinedAgentType, LegacyAgentType} from "../../../components/AgentChat/Types"
-import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
-import {getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
-import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
-import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
+} from "../../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
+import {ChatCommon, ChatCommonHandle} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
+import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
+import {getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
+import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
+import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 
 // Mock agent API
-jest.mock("../../../controller/agent/Agent")
+jest.mock("../../../../controller/agent/Agent")
 
 // Mock llm_chat API
-jest.mock("../../../controller/llm/LlmChat")
+jest.mock("../../../../controller/llm/LlmChat")
 
 // Don't want to send user notifications during tests so mock this
-jest.mock("../../../components/Common/notification")
+jest.mock("../../../../components/Common/notification")
 
 const TEST_USER = "testUser"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY_DISPLAY}`

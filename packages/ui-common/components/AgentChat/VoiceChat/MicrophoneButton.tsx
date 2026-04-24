@@ -19,8 +19,8 @@ import MicOffIcon from "@mui/icons-material/MicOff"
 import Tooltip from "@mui/material/Tooltip"
 import {Dispatch, FC, RefObject, SetStateAction} from "react"
 
-import {LlmChatButton} from "../LlmChatButton"
 import {checkSpeechSupport, SpeechRecognitionState, toggleListening} from "./VoiceChat"
+import {LlmChatButton} from "../Common/LlmChatButton"
 
 // #region: Types
 export interface MicrophoneButtonProps {
