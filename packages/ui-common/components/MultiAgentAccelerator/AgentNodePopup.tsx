@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh"
 import Button from "@mui/material/Button"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
@@ -50,20 +49,20 @@ export interface AgentNodePopupProps {
  * - Saving is a no-op until the API endpoint is wired up; `onSave` receives the current values.
  */
 export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onClose, onSave, initialPrompt = ""}) => {
-    const [prompt, setPrompt] = useState<string>(initialPrompt)
+    const [promptText, setPromptText] = useState<string>(initialPrompt)
 
     // Keep local prompt in sync if initialPrompt changes (e.g. when the API loads it later).
     useEffect(() => {
-        setPrompt(initialPrompt)
+        setPromptText(initialPrompt)
     }, [initialPrompt, isOpen])
 
     const handleSave = () => {
-        onSave(agentName, prompt)
+        onSave(agentName, promptText)
     }
 
     const handleClose = () => {
         // Discard local edits and reset to the initial value on cancel
-        setPrompt(initialPrompt)
+        setPromptText(initialPrompt)
         onClose()
     }
 
@@ -101,8 +100,8 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onCl
             <TextField
                 id="agent-node-popup-prompt-field"
                 label="System Prompt"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
                 multiline
                 rows={8}

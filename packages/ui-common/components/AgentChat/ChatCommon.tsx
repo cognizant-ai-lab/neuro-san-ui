@@ -73,10 +73,7 @@ import {LlmChatOptionsButton} from "../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../Common/MUIAccordion"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
-import {
-    AgentNetworkDefinitionEntry,
-    writeAgentNetworkDefinition,
-} from "../MultiAgentAccelerator/AgentNetworkDesigner"
+import {AgentNetworkDefinitionEntry, writeAgentNetworkDefinition} from "../MultiAgentAccelerator/AgentNetworkDesigner"
 import {AGENT_NETWORK_DEFINITION_KEY} from "../MultiAgentAccelerator/const"
 
 export interface ChatCommonProps {
@@ -908,8 +905,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     </MUIAlert>
                 )
             }
-
-            console.log("slyData.current send", slyData.current)
 
             // Display prominent "Final Answer" message if we have one
             if (lastAIMessage.current) {

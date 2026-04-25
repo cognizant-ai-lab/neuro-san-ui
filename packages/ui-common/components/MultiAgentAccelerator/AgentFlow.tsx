@@ -42,14 +42,21 @@ import {
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
-import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {AgentNodePopup} from "./AgentNodePopup"
 import {
     AgentNetworkDefinitionEntry,
     readAgentNetworkDefinition,
     writeAgentNetworkDefinition,
 } from "./AgentNetworkDesigner"
-import {AGENT_NETWORK_DEFINITION_KEY, AGENT_NETWORK_DESIGNER_ID, BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
+import {AgentNodePopup} from "./AgentNodePopup"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_DESIGNER_ID,
+    BASE_RADIUS,
+    DEFAULT_FRONTMAN_X_POS,
+    DEFAULT_FRONTMAN_Y_POS,
+    LEVEL_SPACING,
+} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -59,8 +66,8 @@ import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
-import {NotificationType, sendNotification} from "../Common/notification"
 import {getZIndex} from "../../utils/zIndexLayers"
+import {NotificationType, sendNotification} from "../Common/notification"
 
 // #region: Types
 
@@ -322,13 +329,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handlePopupSave = useCallback(
-        (agentName: string, prompt: string) => {
+        (agentName: string, promptText: string) => {
             if (!selectedAgent) return
 
             // Update the definition in localStorage with the new instructions
             const definition = readAgentNetworkDefinition()
-            const updated = definition.map((entry): AgentNetworkDefinitionEntry =>
-                entry.origin === selectedAgent.agentId ? {...entry, instructions: prompt} : entry
+            const updated = definition.map(
+                (entry): AgentNetworkDefinitionEntry =>
+                    entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
             )
             writeAgentNetworkDefinition(updated)
             setIsPopupOpen(false)
@@ -340,18 +348,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     new AbortController().signal,
                     `Update instructions for agent "${agentName}"`,
                     AGENT_NETWORK_DESIGNER_ID,
-                    () => {},
+                    () => undefined,
                     null,
                     {[AGENT_NETWORK_DEFINITION_KEY]: updated},
                     currentUser,
                     StreamingUnit.Line
                 ).catch((e: unknown) => {
                     console.error("Failed to submit agent network update:", e)
-                    sendNotification(
-                        NotificationType.error,
-                        `Failed to update agent "${agentName}".`,
-                        String(e)
-                    )
+                    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, String(e))
                 })
             }
         },
