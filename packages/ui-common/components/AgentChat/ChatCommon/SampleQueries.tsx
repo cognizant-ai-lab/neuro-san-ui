@@ -15,7 +15,7 @@ interface SampleQueriesProps {
 }
 
 /**
- * Render sample querreadonly ies as clickable chips. Agents may or may not have sample queries defined.
+ * Render sample queries as clickable chips. Agents may or may not have sample queries defined.
  * @param sampleQueries The sample queries to render (from "connectivity" API)
  * @returns A ReactNode representing the sample queries as clickable chips. If a user clicks a chip, it will
  * send the query to the agent.
