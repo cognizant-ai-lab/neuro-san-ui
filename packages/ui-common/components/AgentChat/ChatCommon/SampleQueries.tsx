@@ -3,6 +3,8 @@ import Chip from "@mui/material/Chip"
 import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
+import {hashString} from "../../../utils/text"
+
 // Maximum number of sample queries to show
 const MAX_SAMPLE_QUERIES = 5
 
@@ -26,32 +28,35 @@ export const SampleQueries: FC<SampleQueriesProps> = ({handleSend, sampleQueries
             id="sample-queries-box"
             sx={{marginTop: "2rem", marginBottom: "1rem"}}
         >
-            {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => (
-                <Tooltip
-                    id={`tooltip-${query}`}
-                    title={`Click to send query: "${query}"`}
-                    key={`tooltip-${query}`}
-                >
-                    <Chip
-                        id={`sample-query-${query}`}
-                        key={query}
-                        label={
-                            query.length > QUERY_TRUNCATE_LENGTH ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...` : query
-                        }
-                        onClick={async () => {
-                            handleSend(query)
-                        }}
-                        sx={{
-                            color: "var(--bs-white)",
-                            marginRight: "1rem",
-                            marginBottom: "1rem",
-                            backgroundColor: "var(--bs-accent1-medium)",
-                            "&:hover": {
-                                backgroundColor: "var(--bs-accent1-dark)",
-                            },
-                        }}
-                    />
-                </Tooltip>
-            ))}
+            {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => {
+                const hashedQuery = hashString(query)
+                return (
+                    <Tooltip
+                        title={`Click to send query: "${hashedQuery}"`}
+                        key={`tooltip-${hashedQuery}`}
+                    >
+                        <Chip
+                            key={hashedQuery}
+                            label={
+                                query.length > QUERY_TRUNCATE_LENGTH
+                                    ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
+                                    : query
+                            }
+                            onClick={async () => {
+                                handleSend(query)
+                            }}
+                            sx={{
+                                color: "var(--bs-white)",
+                                marginRight: "1rem",
+                                marginBottom: "1rem",
+                                backgroundColor: "var(--bs-accent1-medium)",
+                                "&:hover": {
+                                    backgroundColor: "var(--bs-accent1-dark)",
+                                },
+                            }}
+                        />
+                    </Tooltip>
+                )
+            })}
         </Box>
     ) : null

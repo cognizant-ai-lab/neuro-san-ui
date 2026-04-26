@@ -56,7 +56,7 @@ export const LIST_NETWORKS_RESPONSE = [
 
 export const TEMPORARY_NETWORK_NAME = "temp_network1"
 
-const agentInfo = {
+const TEMP_NETWORK_AGENT_INFO = {
     agent_name: `${TEMPORARY_NETWORK_FOLDER}/${TEMPORARY_NETWORK_NAME}`,
     description: "",
     tags: ["tag1", "tag2", "tag3"],
@@ -68,6 +68,6 @@ export const TEMPORARY_NETWORK: TemporaryNetwork = {
         lifetime_in_seconds: 3600,
         expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
     },
-    agentInfo,
-    networkHocon: JSON.stringify(agentInfo, null, 2),
+    agentInfo: TEMP_NETWORK_AGENT_INFO,
+    networkHocon: JSON.stringify(TEMP_NETWORK_AGENT_INFO, null, 2),
 }

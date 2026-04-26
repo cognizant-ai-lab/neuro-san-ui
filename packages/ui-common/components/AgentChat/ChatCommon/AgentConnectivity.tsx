@@ -3,7 +3,7 @@ import {FC} from "react"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {MUIAccordion} from "../../Common/MUIAccordion"
 
-const renderConnectivityInfo = (connectivityInfo: readonly ConnectivityInfo[], targetAgent: string) => (
+const renderConnectivityInfo = (targetAgent: string, connectivityInfo?: readonly ConnectivityInfo[]) => (
     <>
         {connectivityInfo
             // Don't show connection to self
@@ -16,18 +16,13 @@ const renderConnectivityInfo = (connectivityInfo: readonly ConnectivityInfo[], t
                     id={info.origin}
                     key={info.origin}
                 >
-                    <b id={info.origin}>{info.origin}</b>
+                    <b>{info.origin}</b>
                     <ul
                         id={`${info.origin}-tools`}
                         style={{marginLeft: "8px"}}
                     >
                         {info?.tools?.map((tool) => (
-                            <li
-                                id={tool}
-                                key={tool}
-                            >
-                                {tool}
-                            </li>
+                            <li key={tool}>{tool}</li>
                         ))}
                     </ul>
                 </li>
@@ -43,7 +38,7 @@ interface AgentConnectivityProps {
     readonly description: string
 
     // Info on what other agents and tools this agent connects to
-    readonly connectivityInfo: readonly ConnectivityInfo[]
+    readonly connectivityInfo?: readonly ConnectivityInfo[]
 
     // The name of the current agent, used to filter out self from connectivity info
     readonly targetAgent: string
@@ -75,7 +70,7 @@ export const AgentConnectivity: FC<AgentConnectivityProps> = ({connectivityInfo,
                         aria-labelledby="connectivity-header"
                         style={{marginTop: "1rem"}}
                     >
-                        {renderConnectivityInfo(connectivityInfo, targetAgent)}
+                        {renderConnectivityInfo(targetAgent, connectivityInfo)}
                     </ul>,
                 ],
             },

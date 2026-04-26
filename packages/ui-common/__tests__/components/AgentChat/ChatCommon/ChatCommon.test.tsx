@@ -49,6 +49,10 @@ const TEST_TOOL_LAST_FM = "last_fm_tool"
 const TEST_TOOL_SOLVER = "math_solver_tool"
 const TEST_TOOL_CALCULATOR = "calculator_tool"
 
+const CONNECTIVITY_LIST_HEADER = /I can connect you to the following agents/u
+
+const MODAL_Z_INDEX = 11
+
 const getResponseMessage = (type: ChatMessageType, text: string): ChatMessage => ({
     type,
     text,
@@ -66,13 +70,23 @@ const getResponseMessage = (type: ChatMessageType, text: string): ChatMessage =>
     },
 })
 
-// Generate a long query for testing truncation
-const LONG_QUERY_TEXT = "Long query".repeat(10)
+const MOCK_CONNECTIVITY_INFO = {
+    connectivity_info: [
+        {
+            origin: TEST_AGENT_MUSIC_NERD,
+            tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
+        },
+        {
+            origin: TEST_AGENT_MATH_GUY,
+            tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
+        },
+    ],
+    metadata: {
+        sample_queries: ["Sample query 1", "Long query ".repeat(10), "Query 3", "Query 4", "Query 5", "Query 6"],
+    },
+}
 
 describe("ChatCommon", () => {
-    const SAMPLE_QUERY_TEXT = "Sample query 1"
-    const MODAL_Z_INDEX = 11
-
     let user: UserEvent
 
     const defaultProps = {
@@ -94,7 +108,7 @@ describe("ChatCommon", () => {
                         dark: {palette: {text: {primary: "#445566"}}},
                     },
                     palette: {
-                        mode: mode ?? "light",
+                        mode,
                     },
                     zIndex: {
                         modal: MODAL_Z_INDEX,
@@ -115,21 +129,7 @@ describe("ChatCommon", () => {
         user = userEvent.setup()
 
         // Mock getConnectivity to return dummy connectivity info
-        ;(getConnectivity as jest.Mock).mockResolvedValue({
-            connectivity_info: [
-                {
-                    origin: TEST_AGENT_MUSIC_NERD,
-                    tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
-                },
-                {
-                    origin: TEST_AGENT_MATH_GUY,
-                    tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
-                },
-            ],
-            metadata: {
-                sample_queries: [SAMPLE_QUERY_TEXT, LONG_QUERY_TEXT, "Query 3", "Query 4", "Query 5", "Query 6"],
-            },
-        })
+        ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
     })
 
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
@@ -151,36 +151,53 @@ describe("ChatCommon", () => {
     it.each(["light", "dark"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
         renderChatCommonComponent({}, darkMode)
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         // Should have "Clear Chat", "Regenerate" and "Send" buttons
-        expect(screen.getByRole("button", {name: "Clear Chat"})).toBeInTheDocument()
-        expect(screen.getByRole("button", {name: "Regenerate"})).toBeInTheDocument()
-        expect(screen.getByRole("button", {name: "Send"})).toBeInTheDocument()
+        screen.getByRole("button", {name: "Clear Chat"})
+        screen.getByRole("button", {name: "Regenerate"})
+        screen.getByRole("button", {name: "Send"})
 
         // Check that connectivity info is rendered correctly
-        const connectivityList = await screen.findByLabelText("I can connect you to the following agents")
-        expect(connectivityList).toBeInTheDocument()
+        await user.click(await screen.findByText("Network Details")) // Click to expand
+        const connectivityList = screen.getByRole("list", {name: CONNECTIVITY_LIST_HEADER})
 
         // Check that the expected agents are in the connectivity list
-        const musicNerdItem = within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD)
-        expect(musicNerdItem).toBeInTheDocument()
+        within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD)
 
         // Check that the tools for Music Nerd are listed
-        const musicNerdToolsList = document.getElementById(`${TEST_AGENT_MUSIC_NERD}-tools`)
-        expect(musicNerdToolsList).toBeInTheDocument()
 
         // Verify specific tools are present in the list
-        ;[TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM].forEach((tool) => {
-            const toolElement = within(musicNerdToolsList).getByText(tool)
-            expect(toolElement).toBeInTheDocument()
-        })
+        // eslint-disable-next-line newline-per-chained-call -- prettier/eslint fight over this
+        const musicNerdItem = within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD).closest("li")
+
+        MOCK_CONNECTIVITY_INFO.connectivity_info
+            .find((item) => item.origin === TEST_AGENT_MUSIC_NERD)
+            .tools.forEach((tool) => {
+                within(musicNerdItem).getByText(tool)
+            })
 
         // Now math guy
         const mathGuyItem = within(connectivityList).queryByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         // Should not be present since we are chatting with Math Guy, and we don't show agents connecting to themselves
-        expect(mathGuyItem).not.toBeInTheDocument()
+        expect(mathGuyItem).toBeNull()
+    })
+
+    it("Should handle missing connectivity info gracefully", async () => {
+        // Destructure while removing metadata to simulate missing connectivity info
+        const withoutConnectivityInfo = {metadata: MOCK_CONNECTIVITY_INFO.metadata}
+
+        ;(getConnectivity as jest.Mock).mockResolvedValue(withoutConnectivityInfo)
+        renderChatCommonComponent()
+
+        // Check that connectivity info is rendered correctly
+        await user.click(await screen.findByText("Network Details")) // Click to expand
+        const connectivityList = screen.getByRole("list", {name: CONNECTIVITY_LIST_HEADER})
+
+        // Should be no connectivity info rendered
+        expect(within(connectivityList).queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeNull()
+        expect(within(connectivityList).queryByText(TEST_AGENT_MUSIC_NERD)).toBeNull()
     })
 
     it("Should render and send sample queries correctly", async () => {
@@ -188,39 +205,48 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         // Make sure long query chip is truncated
-        const expectedLongQuery = `${LONG_QUERY_TEXT.slice(0, 80)}...`
+        const sampleQueries = MOCK_CONNECTIVITY_INFO.metadata.sample_queries
+        const expectedLongQuery = `${sampleQueries[1].slice(0, 80)}...`
         await screen.findByText(expectedLongQuery)
 
         // Make sure we only display the first 5 queries
-        await screen.findByText("Query 3")
-        await screen.findByText("Query 4")
-        await screen.findByText("Query 5")
-        expect(screen.queryByText("Query 6")).not.toBeInTheDocument()
+        await screen.findByText(sampleQueries[2])
+        await screen.findByText(sampleQueries[3])
+        await screen.findByText(sampleQueries[4])
+        expect(screen.queryByText(sampleQueries[5])).not.toBeInTheDocument()
 
         // Click a sample query
-        const sampleQueryButton = await screen.findByText(SAMPLE_QUERY_TEXT)
+        const sampleQueryButton = await screen.findByText(sampleQueries[0])
         await user.click(sampleQueryButton)
 
         expect(mockSendFunction).toHaveBeenCalledTimes(1)
-        expect(mockSendFunction).toHaveBeenCalledWith(SAMPLE_QUERY_TEXT)
+        expect(mockSendFunction).toHaveBeenCalledWith(sampleQueries[0])
     })
 
     it("Should handle missing sample queries gracefully", async () => {
-        ;(getConnectivity as jest.Mock).mockResolvedValue({
-            connectivity_info: [
-                {
-                    origin: TEST_AGENT_MUSIC_NERD,
-                    tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
-                },
-                {
-                    origin: TEST_AGENT_MATH_GUY,
-                    tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
-                },
-            ],
-        })
+        // Destructure while removing metadata to simulate missing sample queries
+        const withoutMetadata = {connectivity_info: MOCK_CONNECTIVITY_INFO.connectivity_info}
+
+        ;(getConnectivity as jest.Mock).mockResolvedValue(withoutMetadata)
         renderChatCommonComponent()
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+
+        // Should be no sample query chips rendered
+        expect(document.querySelectorAll(".MuiChip-root").length).toBe(0)
+    })
+
+    it("Should handle empty sample queries gracefully", async () => {
+        // Destructure with empty array for sample queries
+        const emptySampleQueriesArray = {
+            connectivity_info: MOCK_CONNECTIVITY_INFO.connectivity_info,
+            sample_queries: [] as unknown[],
+        }
+
+        ;(getConnectivity as jest.Mock).mockResolvedValue(emptySampleQueriesArray)
+        renderChatCommonComponent()
+
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         // Should be no sample query chips rendered
         expect(document.querySelectorAll(".MuiChip-root").length).toBe(0)
@@ -393,11 +419,23 @@ describe("ChatCommon", () => {
         await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
 
         // Should be 3 attempts, so 3 error messages
-        await waitFor(() => {
-            expect(screen.getAllByText(/Error occurred:/u)).toHaveLength(3)
-        })
+        expect(await screen.findAllByText(/Error occurred:/u)).toHaveLength(3)
 
         expect(console.error).toHaveBeenCalledTimes(3)
+        ;(console.error as jest.Mock).mockClear()
+
+        // Now throw something that isn't an Error (which is possible in JavaScript)
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
+            throw "Just a string, not an Error object"
+        })
+
+        await sendQuery(
+            LegacyAgentType.OpportunityFinder,
+            "Sample test query for handling non-Error types thrown during fetch"
+        )
+
+        expect(console.error).not.toHaveBeenCalled()
     })
 
     it("Should handle an abort error correctly", async () => {
@@ -622,9 +660,11 @@ describe("ChatCommon", () => {
         expect(await screen.findByText("Final Answer")).toBeInTheDocument()
     })
 
-    // verify box shadow color branch from ChatCommon.processLogLine
-    it("applies a light-mode shadow to the final answer accordion by default", async () => {
-        renderChatCommonComponent()
+    it.each([
+        {mode: "light" as PaletteMode, expectedShadow: "rgba(0, 0, 0, 0.08)"},
+        {mode: "dark" as PaletteMode, expectedShadow: "rgba(255, 255, 255, 0.08)"},
+    ])("Applies correct shadow depending if final answer in $mode mode", async ({mode, expectedShadow}) => {
+        renderChatCommonComponent({}, mode)
 
         const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
         const chatResponse = {response: responseMessage}
@@ -638,25 +678,7 @@ describe("ChatCommon", () => {
         const parentAccordion = finalDiv.closest(".MuiAccordion-root")
         expect(parentAccordion).toBeInTheDocument()
         const computed = window.getComputedStyle(parentAccordion)
-        expect(computed.boxShadow).toContain("rgba(0, 0, 0, 0.08)")
-    })
-
-    it("switches to a white shadow color in dark mode for the final answer accordion", async () => {
-        renderChatCommonComponent({}, "dark")
-
-        const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
-        const chatResponse = {response: responseMessage}
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
-            callback(JSON.stringify(chatResponse))
-        })
-
-        await sendQuery(TEST_AGENT_MATH_GUY, "test query")
-
-        const finalDiv = await screen.findByText("Final Answer")
-        const parentAccordion = finalDiv.closest(".MuiAccordion-root")
-        expect(parentAccordion).toBeInTheDocument()
-        const computed = window.getComputedStyle(parentAccordion)
-        expect(computed.boxShadow).toContain("rgba(255, 255, 255, 0.08)")
+        expect(computed.boxShadow).toContain(expectedShadow)
     })
 
     it("Should handle 'show thinking' button correctly", async () => {
