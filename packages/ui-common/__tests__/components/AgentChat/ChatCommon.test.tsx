@@ -325,7 +325,7 @@ describe("ChatCommon", () => {
 
             const chatResponse: ChatResponse = {
                 response: {
-                    type: ChatMessageType.AGENT_FRAMEWORK,
+                    type: ChatMessageType.AGENT,
                     text: testResponseText,
                     origin: [{tool: "testTool", instantiation_index: 1}],
                     sly_data: {answer: 42},

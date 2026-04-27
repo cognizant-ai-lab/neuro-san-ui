@@ -496,6 +496,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 if (chatMessage.sly_data) {
                     // Save the sly_data, potentially overwriting any previous ones we received during this session.
                     // We only care about the last one received.
+                    // TODO: Make sure this accumulates all sly_data (may be done in chat history PR?)
                     slyData.current = {...slyData.current, ...chatMessage.sly_data}
 
                     // Persist the agent network definition to localStorage so the node editor popup can access it
