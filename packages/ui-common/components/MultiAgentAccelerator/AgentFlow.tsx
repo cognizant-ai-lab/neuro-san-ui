@@ -118,8 +118,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const {fitView} = useReactFlow()
 
     const handleResize = useCallback(() => {
-        fitView() // Adjusts the view to fit after resizing
-    }, [fitView, isAwaitingLlm])
+        void fitView() // Adjusts the view to fit after resizing
+    }, [fitView])
 
     useEffect(() => {
         window.addEventListener("resize", handleResize)
@@ -229,7 +229,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }, 1000)
 
         return () => clearInterval(cleanupInterval)
-    }, []) // mount/unmount only
+    }, [setThoughtBubbleEdges]) // mount/unmount only
 
     // Shadow color for icon
     const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
@@ -286,13 +286,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         [
             agentCounts,
             agentIconSuggestions,
-            coloringOption,
             currentConversations,
             isAgentNetworkDesignerMode,
             isAwaitingLlm,
+            isHeatmap,
             layout,
             mergedAgentsInNetwork,
-            showThoughtBubbles,
             thoughtBubbleEdges,
         ]
     )
@@ -373,9 +372,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     useEffect(() => {
         // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
         setTimeout(() => {
-            fitView()
+            void fitView()
         }, 50)
-    }, [agentsInNetwork, layout])
+    }, [agentsInNetwork, fitView, layout])
 
     const onNodesChange = useCallback(
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
@@ -400,7 +399,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         () => ({
             agentNode: AgentNode,
         }),
-        [AgentNode]
+        []
     )
 
     const edgeTypes: EdgeTypes = useMemo(
@@ -408,7 +407,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             plasmaEdge: PlasmaEdge,
             thoughtBubbleEdge: ThoughtBubbleEdge,
         }),
-        [PlasmaEdge, ThoughtBubbleEdge]
+        []
     )
 
     // Figure out the maximum depth of the network

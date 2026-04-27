@@ -300,6 +300,8 @@ export default defineConfig([
                 },
             ],
 
+            "react-hooks/exhaustive-deps": "error",
+
             // Rules we're not ready to enable yet
 
             // Requires strict type checks enabled in tsc which we're not ready for yet
@@ -421,7 +423,6 @@ export default defineConfig([
             "one-var": "off",
             "prefer-destructuring": "off",
             radix: "off",
-            "react-hooks/exhaustive-deps": "off",
             "react-hooks/preserve-manual-memoization": "off",
             "react-hooks/purity": "off",
             "react-hooks/refs": "off",

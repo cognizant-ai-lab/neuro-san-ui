@@ -23,7 +23,7 @@ import {SmallLlmChatButton} from "./LlmChatButton"
 
 // #region: Types
 interface ControlButtonsProps {
-    clearChatOnClickCallback: () => void
+    handleClearChat: () => void
     enableClearChatButton: boolean
     isAwaitingLlm: boolean
     handleSend: (query: string) => void
@@ -38,7 +38,7 @@ interface ControlButtonsProps {
  * @returns A fragment containing the Control Buttons.
  */
 export const ControlButtons: FC<ControlButtonsProps> = ({
-    clearChatOnClickCallback,
+    handleClearChat,
     enableClearChatButton,
     isAwaitingLlm,
     handleSend,
@@ -53,7 +53,7 @@ export const ControlButtons: FC<ControlButtonsProps> = ({
                 aria-label="Clear Chat"
                 disabled={!enableClearChatButton}
                 id="clear-chat-button"
-                onClick={clearChatOnClickCallback}
+                onClick={handleClearChat}
                 posBottom={8}
                 posRight={65}
             >

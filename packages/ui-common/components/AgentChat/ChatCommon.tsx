@@ -40,8 +40,10 @@ import {
     ReactNode,
     Ref,
     SetStateAction,
+    useCallback,
     useEffect,
     useImperativeHandle,
+    useMemo,
     useRef,
     useState,
 } from "react"
@@ -200,6 +202,14 @@ const MAX_SAMPLE_QUERIES = 5
 const QUERY_TRUNCATE_LENGTH = 80
 
 /**
+ * Extract the final answer from the response from a legacy agent
+ * @param response The response from the legacy agent
+ * @returns The final answer from the agent, if it exists or undefined if it doesn't
+ */
+const extractFinalAnswer = (response: string) =>
+    /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
+
+/**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
@@ -228,12 +238,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         onClose,
         neuroSanURL,
     } = props
-
-    // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
-    useImperativeHandle(ref, () => ({
-        handleStop,
-    }))
-
     // MUI theme
     const theme = useTheme()
     const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
@@ -242,7 +246,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const [chatInput, setChatInput] = useState<string>("")
 
     // Previous user query (for "regenerate" feature)
-    const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
+    const previousUserQuery = useRef<string>("")
 
     // Chat output window contents
     const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
@@ -356,15 +360,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         if (autoScrollEnabledRef.current && chatOutputRef?.current) {
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
-    }, [chatOutput])
-
-    useEffect(() => {
-        // Clear chat output on change of neuro-san URL
-        // TODO: We want to revise this in the future to not need a useEffect
-        setChatOutput([])
-        currentResponse.current = ""
-        setShowThinking(false)
-    }, [neuroSanURL])
+    }, [chatOutput, isAwaitingLlm])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -378,85 +374,173 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
      * @param summary Used as the "title" for the accordion block. Something like an agent name or "Final Answer"
      * @returns A React component representing the log line (agent message)
      */
-    const processLogLine = (
-        logLine: string,
-        summary: string,
-        messageType: ChatMessageType,
-        isFinalAnswer?: boolean
-    ): ReactNode => {
-        // extract the parts of the line
-        let repairedJson: string
+    const processLogLine = useCallback(
+        (logLine: string, summary: string, messageType: ChatMessageType, isFinalAnswer?: boolean): ReactNode => {
+            // extract the parts of the line
+            let repairedJson: string
 
-        try {
-            // Attempt to parse as JSON
+            try {
+                // Attempt to parse as JSON
 
-            // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
-            repairedJson = jsonrepair(logLine)
+                // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
+                repairedJson = jsonrepair(logLine)
 
-            // Now try to parse it. We don't care about the result, only if it throws on parsing.
-            JSON.parse(repairedJson)
+                // Now try to parse it. We don't care about the result, only if it throws on parsing.
+                JSON.parse(repairedJson)
 
-            repairedJson = repairedJson.replace(/\\n/gu, "\n").replace(/\\"/gu, "'")
-        } catch {
-            // Not valid JSON
-            repairedJson = null
-        }
+                repairedJson = repairedJson.replace(/\\n/gu, "\n").replace(/\\"/gu, "'")
+            } catch {
+                // Not valid JSON
+                repairedJson = null
+            }
 
-        const hashedSummary = hashString(summary)
-        const isAIMessage = messageType === ChatMessageType.AI
+            const hashedSummary = hashString(summary)
+            const isAIMessage = messageType === ChatMessageType.AI
 
-        if (isAIMessage && !isFinalAnswer) {
-            lastAIMessage.current = logLine
-        }
+            if (isAIMessage && !isFinalAnswer) {
+                lastAIMessage.current = logLine
+            }
 
-        if (isFinalAnswer) {
-            // Save key of final answer for highlighting
-            finalAnswerKey.current = hashedSummary
-        }
+            if (isFinalAnswer) {
+                // Save key of final answer for highlighting
+                finalAnswerKey.current = hashedSummary
+            }
 
-        return (
-            <MUIAccordion
-                key={hashedSummary}
-                id={`${hashedSummary}-panel`}
-                defaultExpandedPanelKey={isFinalAnswer ? 1 : null}
-                items={[
-                    {
-                        title: summary,
-                        content: (
-                            <div id={`${summary}-details`}>
-                                {/* If we managed to parse it as JSON, pretty print it */}
-                                {repairedJson ? (
-                                    <SyntaxHighlighter
-                                        id="syntax-highlighter"
-                                        language="json"
-                                        style={darkMode ? atelierDuneDark : a11yLight}
-                                        showLineNumbers={false}
-                                        wrapLongLines={shouldWrapOutput}
-                                    >
-                                        {repairedJson}
-                                    </SyntaxHighlighter>
-                                ) : (
-                                    <ReactMarkdown key={hashString(logLine)}>{logLine}</ReactMarkdown>
-                                )}
-                            </div>
-                        ),
-                    },
-                ]}
-                sx={{
-                    fontSize: "large",
-                    marginBottom: "1rem",
-                    boxShadow: isFinalAnswer
-                        ? `0 6px 16px 0 ${alpha(shadowColor, 0.08)}, 0 3px 6px -4px ${alpha(shadowColor, 0.12)}, 
+            return (
+                <MUIAccordion
+                    key={hashedSummary}
+                    id={`${hashedSummary}-panel`}
+                    defaultExpandedPanelKey={isFinalAnswer ? 1 : null}
+                    items={[
+                        {
+                            title: summary,
+                            content: (
+                                <div id={`${summary}-details`}>
+                                    {/* If we managed to parse it as JSON, pretty print it */}
+                                    {repairedJson ? (
+                                        <SyntaxHighlighter
+                                            id="syntax-highlighter"
+                                            language="json"
+                                            style={darkMode ? atelierDuneDark : a11yLight}
+                                            showLineNumbers={false}
+                                            wrapLongLines={shouldWrapOutput}
+                                        >
+                                            {repairedJson}
+                                        </SyntaxHighlighter>
+                                    ) : (
+                                        <ReactMarkdown key={hashString(logLine)}>{logLine}</ReactMarkdown>
+                                    )}
+                                </div>
+                            ),
+                        },
+                    ]}
+                    sx={{
+                        fontSize: "large",
+                        marginBottom: "1rem",
+                        boxShadow: isFinalAnswer
+                            ? `0 6px 16px 0 ${alpha(shadowColor, 0.08)}, 0 3px 6px -4px ${alpha(shadowColor, 0.12)}, 
                                     0 9px 28px 8px ${alpha(shadowColor, 0.05)}`
-                        : "none",
-                }}
-            />
-        )
-    }
+                            : "none",
+                    }}
+                />
+            )
+        },
+        [a11yLight, atelierDuneDark, darkMode, shadowColor, shouldWrapOutput]
+    )
 
-    const agentDisplayName = cleanUpAgentName(removeTrailingUuid(targetAgent))
+    /**
+     * Handles adding content to the output window.
+     * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
+     * @returns Nothing, but updates the output window with the new content. Updates currentResponse as a side effect.
+     */
+    const updateOutput = useCallback((node: ReactNode) => {
+        currentResponse.current += node
+        setChatOutput((currentOutput) => [...currentOutput, node])
+    }, [])
 
-    const introduceAgent = () => {
+    const handleChunk = useCallback(
+        (chunk: string): void => {
+            // Give container a chance to process the chunk first
+            const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
+            succeeded.current = succeeded.current || onChunkReceivedResult
+
+            // For legacy agents, we either get plain text or Markdown. Just output it as-is.
+            if (isLegacyAgentType(targetAgent)) {
+                // Display output as-is
+                updateOutput(chunk)
+
+                // Check for Final Answer from legacy agent
+                const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
+                if (finalAnswerMatch) {
+                    lastAIMessage.current = finalAnswerMatch
+                }
+                return
+            }
+
+            // For Neuro-san agents, we expect a ChatMessage structure in the chunk.
+            const chatMessage: ChatMessage | null = chatMessageFromChunk(chunk)
+            if (!chatMessage) {
+                // This is an error since Neuro-san agents should send us ChatMessage structures.
+                // But don't want to spam output by logging errors for every bad message.
+                return
+            }
+
+            // Only AGENT_FRAMEWORK messages can have chat_context and sly_data.
+            if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK) {
+                if (chatMessage.chat_context) {
+                    // Save the chat_context, potentially overwriting any previous ones we received during this session.
+                    // We only care about the last one received.
+                    chatContext.current = chatMessage.chat_context
+                }
+
+                if (chatMessage.sly_data) {
+                    // Save the sly_data, potentially overwriting any previous ones we received during this session.
+                    // We only care about the last one received.
+                    slyData.current = {...slyData.current, ...chatMessage.sly_data}
+
+                    // Persist the agent network definition to localStorage so the node editor popup can access it
+                    const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
+                    if (Array.isArray(networkDefinition)) {
+                        writeAgentNetworkDefinition(networkDefinition as AgentNetworkDefinitionEntry[])
+                    }
+                }
+
+                // Nothing more to do with this message. It's just a message to give us the chat context, so return
+                return
+            }
+
+            // Check if there is an error block in the "structure" field of the chat message.
+            if (chatMessage.structure) {
+                // If there is an error block, we should display it as an alert.
+                const errorMessage = checkError(chatMessage.structure)
+                if (errorMessage) {
+                    updateOutput(
+                        <MUIAlert
+                            id="retry-message-alert"
+                            severity="warning"
+                        >
+                            {errorMessage}
+                        </MUIAlert>
+                    )
+                    succeeded.current = false
+                }
+            } else if (chatMessage?.text?.trim() !== "") {
+                // Not an error, so output it if it has text. The backend sometimes sends messages with no text content,
+                // and we don't want to display those to the user.
+                // Agent name is the last tool in the origin array. If it's not there, use a default name.
+                const agentName =
+                    chatMessage.origin?.length > 0
+                        ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
+                        : "Agent message"
+                updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
+            }
+        },
+        [onChunkReceived, processLogLine, targetAgent, updateOutput]
+    )
+
+    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
+
+    const introduceAgent = useCallback(() => {
         /**
          * Introduce the agent to the user with a friendly greeting
          */
@@ -471,43 +555,255 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Random greeting
         const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
         updateOutput(greeting)
-    }
+    }, [agentDisplayName, targetAgent, updateOutput])
 
     /**
      * Render the connectivity info as a list of origins and their tools
      * @param connectivityInfo The connectivity info to render
      * @returns A ReactNode representing the connectivity info with agents and their tools
      */
-    const renderConnectivityInfo = (connectivityInfo: ConnectivityInfo[]) => (
-        <>
-            {connectivityInfo
-                // Don't show connection to self
-                .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
-                // Sort by origin name
-                .sort((a, b) => a.origin.localeCompare(b.origin))
-                // Render each origin and its tools
-                .map((info) => (
-                    <li
-                        id={info.origin}
-                        key={info.origin}
-                    >
-                        <b id={info.origin}>{info.origin}</b>
-                        <ul
-                            id={`${info.origin}-tools`}
-                            style={{marginLeft: "8px"}}
+    const renderConnectivityInfo = useCallback(
+        (connectivityInfo: ConnectivityInfo[]) => (
+            <>
+                {connectivityInfo
+                    // Don't show connection to self
+                    .filter((info) => info.origin.toLowerCase() !== targetAgent.toLowerCase())
+                    // Sort by origin name
+                    .sort((a, b) => a.origin.localeCompare(b.origin))
+                    // Render each origin and its tools
+                    .map((info) => (
+                        <li
+                            id={info.origin}
+                            key={info.origin}
                         >
-                            {info?.tools?.map((tool) => (
-                                <li
-                                    id={tool}
-                                    key={tool}
-                                >
-                                    {tool}
-                                </li>
-                            ))}
-                        </ul>
-                    </li>
-                ))}
-        </>
+                            <b id={info.origin}>{info.origin}</b>
+                            <ul
+                                id={`${info.origin}-tools`}
+                                style={{marginLeft: "8px"}}
+                            >
+                                {info?.tools?.map((tool) => (
+                                    <li
+                                        id={tool}
+                                        key={tool}
+                                    >
+                                        {tool}
+                                    </li>
+                                ))}
+                            </ul>
+                        </li>
+                    ))}
+            </>
+        ),
+        [targetAgent]
+    )
+
+    /**
+     * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
+     */
+    const resetState = useCallback(() => {
+        // Reset state, whatever happened during request
+        setIsAwaitingLlm(false)
+        setChatInput("")
+        lastAIMessage.current = ""
+        finalAnswerRef.current = null
+
+        // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
+        setPreviousResponse?.(targetAgent, currentResponse.current)
+        currentResponse.current = ""
+    }, [setIsAwaitingLlm, setPreviousResponse, targetAgent])
+
+    /*
+     * The main logic for sending a query to the server, with retries on errors.
+     */
+    const doRetryLoop = useCallback(
+        async (query: string) => {
+            succeeded.current = false
+
+            let attemptNumber: number = 0
+            let wasAborted: boolean = false
+
+            do {
+                try {
+                    // Increment the attempt number and set the state to indicate we're awaiting a response
+                    attemptNumber += 1
+
+                    // Check which agent type we are dealing with
+                    if (isLegacyAgentType(targetAgent)) {
+                        // It's a legacy agent (these go directly to the LLM and are different from
+                        // the Neuro-san agents).
+
+                        // Send the chat query to the server. This will block until the stream ends from the server
+                        await sendLlmRequest(
+                            handleChunk,
+                            controller?.current.signal,
+                            legacyAgentEndpoint,
+                            extraParams,
+                            query,
+                            chatHistory.current,
+                            null,
+                            StreamingUnit.Chunk
+                        )
+                    } else {
+                        // It's a Neuro-san agent.
+
+                        // Some coded tools (data generator...) expect the username provided in slyData.
+                        const slyDataWithUserName = {...slyData.current, login: currentUser}
+                        await sendChatQuery(
+                            neuroSanURL,
+                            controller?.current.signal,
+                            query,
+                            targetAgent,
+                            handleChunk,
+                            chatContext.current,
+                            slyDataWithUserName,
+                            currentUser,
+                            StreamingUnit.Line
+                        )
+                    }
+                } catch (error: unknown) {
+                    // Was it due to user aborting the request?
+                    wasAborted = error instanceof Error && error.name === "AbortError"
+                    if (wasAborted) {
+                        // AbortErrors are handled elsewhere. We also want to stop retries here.
+                        break
+                    } else {
+                        if (error instanceof Error) {
+                            console.error(error, error.stack)
+                        }
+                        updateOutput(
+                            <MUIAlert
+                                id="opp-finder-error-occurred-alert"
+                                severity="error"
+                            >
+                                {`Error occurred: ${error}`}
+                            </MUIAlert>
+                        )
+                    }
+                }
+            } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
+            return wasAborted
+        },
+        [currentUser, extraParams, handleChunk, legacyAgentEndpoint, neuroSanURL, targetAgent, updateOutput]
+    )
+
+    const handleSend = useCallback(
+        async (query: string) => {
+            // Record user query in chat history
+            chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery.current)]
+
+            // Allow parent to intercept and modify the query before sending if needed
+            const queryToSend = onSend?.(query) ?? query
+
+            // Save query for "regenerate" use. Again we save the real user input, not the modified query. It will again
+            // get intercepted and re-modified (if applicable) on "regenerate".
+            previousUserQuery.current = query
+
+            setIsAwaitingLlm(true)
+
+            // Always start output by echoing user query.
+            // Note: we display the original user query, not the modified one. The modified one could be a monstrosity
+            // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf
+            // of the user, but currently we do for orchestration.
+            updateOutput(
+                <UserQueryDisplay
+                    userQuery={query}
+                    title={currentUser}
+                    userImage={userImage}
+                />
+            )
+
+            // Add ID block for agent
+            updateOutput(
+                <UserQueryDisplay
+                    userQuery={agentDisplayName}
+                    title={targetAgent}
+                    userImage={AGENT_IMAGE}
+                />
+            )
+
+            // Allow clients to do something when streaming starts
+            onStreamingStarted?.()
+
+            // Set up the abort controller
+            controller.current = new AbortController()
+            setIsAwaitingLlm(true)
+
+            if (showThinking) {
+                updateOutput(
+                    <MUIAccordion
+                        id="initiating-orchestration-accordion"
+                        items={[
+                            {
+                                title: `Contacting ${agentDisplayName}...`,
+                                content: `Query: ${queryToSend}`,
+                            },
+                        ]}
+                        sx={{marginBottom: "1rem"}}
+                    />
+                )
+            }
+            try {
+                // Invoke the logic to send the request and retry as necessary
+                const wasAborted = await doRetryLoop(queryToSend)
+
+                if (!wasAborted && !succeeded.current) {
+                    updateOutput(
+                        <MUIAlert
+                            id="opp-finder-max-retries-exceeded-alert"
+                            severity="error"
+                        >
+                            {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
+                        </MUIAlert>
+                    )
+                }
+
+                // Display prominent "Final Answer" message if we have one
+                if (lastAIMessage.current) {
+                    // Legacy agents text is a bit messy and doesn't add a blank line, so we add it here
+                    if (isLegacyAgentType(targetAgent)) {
+                        updateOutput("    \n\n")
+                    }
+
+                    updateOutput(
+                        <div
+                            id="final-answer-div"
+                            ref={finalAnswerRef}
+                            style={{marginBottom: "1rem"}}
+                        >
+                            {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)}
+                        </div>
+                    )
+                }
+
+                // Add a blank line after response
+                updateOutput("\n")
+
+                // Record bot answer in history.
+                if (currentResponse?.current?.length > 0) {
+                    chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
+                }
+            } finally {
+                resetState()
+
+                // Allow parent components to do something when streaming is complete
+                onStreamingComplete?.()
+            }
+        },
+        [
+            agentDisplayName,
+            currentUser,
+            doRetryLoop,
+            onSend,
+            onStreamingComplete,
+            onStreamingStarted,
+            processLogLine,
+            resetState,
+            setIsAwaitingLlm,
+            showThinking,
+            targetAgent,
+            updateOutput,
+            userImage,
+        ]
     )
 
     /**
@@ -516,63 +812,65 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
      * @returns A ReactNode representing the sample queries as clickable chips. If a user clicks a chip, it will
      * send the query to the agent.
      */
-    const renderSampleQueries = (sampleQueries: string[]) => {
-        return sampleQueries?.length > 0 ? (
-            <Box
-                id="sample-queries-box"
-                sx={{marginTop: "2rem", marginBottom: "1rem"}}
-            >
-                {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => (
-                    <Tooltip
-                        id={`tooltip-${query}`}
-                        title={`Click to send query: "${query}"`}
-                        key={`tooltip-${query}`}
-                    >
-                        <Chip
-                            id={`sample-query-${query}`}
-                            key={query}
-                            label={
-                                query.length > QUERY_TRUNCATE_LENGTH
-                                    ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
-                                    : query
-                            }
-                            onClick={async () => {
-                                await handleSend(query)
-                            }}
-                            sx={{
-                                color: "var(--bs-white)",
-                                marginRight: "1rem",
-                                marginBottom: "1rem",
-                                backgroundColor: "var(--bs-accent1-medium)",
-                                "&:hover": {
-                                    backgroundColor: "var(--bs-accent1-dark)",
-                                },
-                            }}
-                        />
-                    </Tooltip>
-                ))}
-            </Box>
-        ) : null
-    }
+    const renderSampleQueries = useCallback(
+        (sampleQueries: string[]) => {
+            return sampleQueries?.length > 0 ? (
+                <Box
+                    id="sample-queries-box"
+                    sx={{marginTop: "2rem", marginBottom: "1rem"}}
+                >
+                    {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => (
+                        <Tooltip
+                            id={`tooltip-${query}`}
+                            title={`Click to send query: "${query}"`}
+                            key={`tooltip-${query}`}
+                        >
+                            <Chip
+                                id={`sample-query-${query}`}
+                                key={query}
+                                label={
+                                    query.length > QUERY_TRUNCATE_LENGTH
+                                        ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
+                                        : query
+                                }
+                                onClick={async () => {
+                                    await handleSend(query)
+                                }}
+                                sx={{
+                                    color: "var(--bs-white)",
+                                    marginRight: "1rem",
+                                    marginBottom: "1rem",
+                                    backgroundColor: "var(--bs-accent1-medium)",
+                                    "&:hover": {
+                                        backgroundColor: "var(--bs-accent1-dark)",
+                                    },
+                                }}
+                            />
+                        </Tooltip>
+                    ))}
+                </Box>
+            ) : null
+        },
+        [handleSend]
+    )
 
     useEffect(() => {
-        const newAgent = async () => {
-            if (clearChatOnNewAgent) {
-                // New agent, so clear chat context if desired
-                chatContext.current = null
-                currentResponse.current = ""
-                slyData.current = null
-                setChatOutput([])
-            }
+        if (clearChatOnNewAgent && targetAgent) {
+            chatContext.current = null
+            currentResponse.current = ""
+            slyData.current = null
+            setChatOutput([])
+        }
+    }, [clearChatOnNewAgent, targetAgent])
 
-            // Introduce the agent to the user
+    useEffect(() => {
+        if (targetAgent) {
             introduceAgent()
+        }
+    }, [targetAgent, introduceAgent])
 
-            // if not neuro san agent return since we won't get connectivity info
-            if (isLegacyAgentType(targetAgent)) {
-                return
-            }
-
+    useEffect(() => {
+        const fetchAgentDetails = async () => {
             let agentFunction: FunctionResponse
 
             // It is a Neuro-san agent, so get the function and connectivity info
@@ -588,10 +886,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 updateOutput(
                     <MUIAccordion
                         id={`${id}-agent-details`}
-                        sx={{
-                            marginTop: "1rem",
-                            marginBottom: "1rem",
-                        }}
+                        sx={{marginTop: "1rem", marginBottom: "1rem"}}
                         items={[
                             {
                                 title: "Network Details",
@@ -621,42 +916,27 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
-                    `Failed to get connectivity info for ${cleanUpAgentName(targetAgent)}. Error: ${e}`
+                    `Failed to get connectivity info for ${agentDisplayName}. Error: ${e}`
                 )
             }
         }
 
-        if (targetAgent) {
-            void newAgent()
+        if (targetAgent && !isLegacyAgentType(targetAgent)) {
+            void fetchAgentDetails()
         }
-    }, [targetAgent])
+    }, [
+        agentDisplayName,
+        currentUser,
+        handleSend,
+        id,
+        neuroSanURL,
+        renderConnectivityInfo,
+        renderSampleQueries,
+        targetAgent,
+        updateOutput,
+    ])
 
-    /**
-     * Handles adding content to the output window.
-     * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
-     * @returns Nothing, but updates the output window with the new content. Updates currentResponse as a side effect.
-     */
-    const updateOutput = (node: ReactNode) => {
-        currentResponse.current += node
-        setChatOutput((currentOutput) => [...currentOutput, node])
-    }
-
-    /**
-     * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
-     */
-    const resetState = () => {
-        // Reset state, whatever happened during request
-        setIsAwaitingLlm(false)
-        setChatInput("")
-        lastAIMessage.current = ""
-        finalAnswerRef.current = null
-
-        // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
-        setPreviousResponse?.(targetAgent, currentResponse.current)
-        currentResponse.current = ""
-    }
-
-    const handleStop = () => {
+    const handleStop = useCallback(() => {
         try {
             controller?.current?.abort()
             controller.current = null
@@ -671,7 +951,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         } finally {
             resetState()
         }
-    }
+    }, [resetState, updateOutput])
+
+    // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
+    useImperativeHandle(
+        ref,
+        () => ({
+            handleStop,
+        }),
+        [handleStop]
+    )
 
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
@@ -685,262 +974,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
 
-    /**
-     * Extract the final answer from the response from a legacy agent
-     * @param response The response from the legacy agent
-     * @returns The final answer from the agent, if it exists or null if it doesn't
-     */
-    const extractFinalAnswer = (response: string) =>
-        /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
-
-    const handleChunk = (chunk: string): void => {
-        // Give container a chance to process the chunk first
-        const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
-        succeeded.current = succeeded.current || onChunkReceivedResult
-
-        // For legacy agents, we either get plain text or Markdown. Just output it as-is.
-        if (isLegacyAgentType(targetAgent)) {
-            // Display output as-is
-            updateOutput(chunk)
-
-            // Check for Final Answer from legacy agent
-            const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
-            if (finalAnswerMatch) {
-                lastAIMessage.current = finalAnswerMatch
-            }
-            return
-        }
-
-        // For Neuro-san agents, we expect a ChatMessage structure in the chunk.
-        const chatMessage: ChatMessage | null = chatMessageFromChunk(chunk)
-        if (!chatMessage) {
-            // This is an error since Neuro-san agents should send us ChatMessage structures.
-            // But don't want to spam output by logging errors for every bad message.
-            return
-        }
-
-        // Only AGENT_FRAMEWORK messages can have chat_context and sly_data.
-        if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK) {
-            if (chatMessage.chat_context) {
-                // Save the chat_context, potentially overwriting any previous ones we received during this session.
-                // We only care about the last one received.
-                chatContext.current = chatMessage.chat_context
-            }
-
-            if (chatMessage.sly_data) {
-                // Save the sly_data, potentially overwriting any previous ones we received during this session.
-                // We only care about the last one received.
-                slyData.current = {...slyData.current, ...chatMessage.sly_data}
-
-                // Persist the agent network definition to localStorage so the node editor popup can access it
-                const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
-                if (Array.isArray(networkDefinition)) {
-                    writeAgentNetworkDefinition(networkDefinition as AgentNetworkDefinitionEntry[])
-                }
-            }
-
-            // Nothing more to do with this message. It's just a message to give us the chat context, so return
-            return
-        }
-
-        // Check if there is an error block in the "structure" field of the chat message.
-        if (chatMessage.structure) {
-            // If there is an error block, we should display it as an alert.
-            const errorMessage = checkError(chatMessage.structure)
-            if (errorMessage) {
-                updateOutput(
-                    <MUIAlert
-                        id="retry-message-alert"
-                        severity="warning"
-                    >
-                        {errorMessage}
-                    </MUIAlert>
-                )
-                succeeded.current = false
-            }
-        } else if (chatMessage?.text?.trim() !== "") {
-            // Not an error, so output it if it has text. The backend sometimes sends messages with no text content,
-            // and we don't want to display those to the user.
-            // Agent name is the last tool in the origin array. If it's not there, use a default name.
-            const agentName =
-                chatMessage.origin?.length > 0
-                    ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
-                    : "Agent message"
-            updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
-        }
-    }
-
-    const doQueryLoop = async (query: string) => {
-        succeeded.current = false
-
-        let attemptNumber: number = 0
-        let wasAborted: boolean = false
-
-        do {
-            try {
-                // Increment the attempt number and set the state to indicate we're awaiting a response
-                attemptNumber += 1
-
-                // Check which agent type we are dealing with
-                if (isLegacyAgentType(targetAgent)) {
-                    // It's a legacy agent (these go directly to the LLM and are different from the Neuro-san agents).
-
-                    // Send the chat query to the server. This will block until the stream ends from the server
-                    await sendLlmRequest(
-                        handleChunk,
-                        controller?.current.signal,
-                        legacyAgentEndpoint,
-                        extraParams,
-                        query,
-                        chatHistory.current,
-                        null,
-                        StreamingUnit.Chunk
-                    )
-                } else {
-                    // It's a Neuro-san agent.
-
-                    // Some coded tools (data generator...) expect the username provided in slyData.
-                    const slyDataWithUserName = {...slyData.current, login: currentUser}
-                    await sendChatQuery(
-                        neuroSanURL,
-                        controller?.current.signal,
-                        query,
-                        targetAgent,
-                        handleChunk,
-                        chatContext.current,
-                        slyDataWithUserName,
-                        currentUser,
-                        StreamingUnit.Line
-                    )
-                }
-            } catch (error: unknown) {
-                // Was it due to user aborting the request?
-                wasAborted = error instanceof Error && error.name === "AbortError"
-                if (wasAborted) {
-                    // AbortErrors are handled elsewhere. We also want to stop retries here.
-                    break
-                } else {
-                    if (error instanceof Error) {
-                        console.error(error, error.stack)
-                    }
-                    updateOutput(
-                        <MUIAlert
-                            id="opp-finder-error-occurred-alert"
-                            severity="error"
-                        >
-                            {`Error occurred: ${error}`}
-                        </MUIAlert>
-                    )
-                }
-            }
-        } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
-        return {wasAborted}
-    }
-
-    const handleSend = async (query: string) => {
-        // Record user query in chat history
-        chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery)]
-
-        // Allow parent to intercept and modify the query before sending if needed
-        const queryToSend = onSend?.(query) ?? query
-
-        // Save query for "regenerate" use. Again we save the real user input, not the modified query. It will again
-        // get intercepted and re-modified (if applicable) on "regenerate".
-        setPreviousUserQuery(query)
-
-        setIsAwaitingLlm(true)
-
-        // Always start output by echoing user query.
-        // Note: we display the original user query, not the modified one. The modified one could be a monstrosity
-        // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf of the
-        // user, but currently we do for orchestration.
-        updateOutput(
-            <UserQueryDisplay
-                userQuery={query}
-                title={currentUser}
-                userImage={userImage}
-            />
-        )
-
-        // Add ID block for agent
-        updateOutput(
-            <UserQueryDisplay
-                userQuery={cleanUpAgentName(removeTrailingUuid(targetAgent))}
-                title={targetAgent}
-                userImage={AGENT_IMAGE}
-            />
-        )
-
-        // Allow clients to do something when streaming starts
-        onStreamingStarted?.()
-
-        // Set up the abort controller
-        controller.current = new AbortController()
-        setIsAwaitingLlm(true)
-
-        if (showThinking) {
-            updateOutput(
-                <MUIAccordion
-                    id="initiating-orchestration-accordion"
-                    items={[
-                        {
-                            title: `Contacting ${cleanUpAgentName(removeTrailingUuid(targetAgent))}...`,
-                            content: `Query: ${queryToSend}`,
-                        },
-                    ]}
-                    sx={{marginBottom: "1rem"}}
-                />
-            )
-        }
-        try {
-            const {wasAborted} = await doQueryLoop(queryToSend)
-
-            if (!wasAborted && !succeeded.current) {
-                updateOutput(
-                    <MUIAlert
-                        id="opp-finder-max-retries-exceeded-alert"
-                        severity="error"
-                    >
-                        {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
-                    </MUIAlert>
-                )
-            }
-
-            // Display prominent "Final Answer" message if we have one
-            if (lastAIMessage.current) {
-                // Legacy agents text is a bit messy and doesn't add a blank line, so we add it here
-                if (isLegacyAgentType(targetAgent)) {
-                    updateOutput("    \n\n")
-                }
-
-                updateOutput(
-                    <div
-                        id="final-answer-div"
-                        ref={finalAnswerRef}
-                        style={{marginBottom: "1rem"}}
-                    >
-                        {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)}
-                    </div>
-                )
-            }
-
-            // Add a blank line after response
-            updateOutput("\n")
-
-            // Record bot answer in history.
-            if (currentResponse?.current?.length > 0) {
-                chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
-            }
-        } finally {
-            resetState()
-
-            // Allow parent components to do something when streaming is complete
-            onStreamingComplete?.()
-        }
-    }
-
     const getPlaceholder = () =>
         !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
+
+    const handleClearChat = useCallback(() => {
+        setChatOutput([])
+        chatHistory.current = []
+        chatContext.current = null
+        previousUserQuery.current = ""
+        currentResponse.current = ""
+        lastAIMessage.current = ""
+        introduceAgent()
+    }, [introduceAgent])
 
     return (
         <Box
@@ -1137,20 +1182,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     </Box>
 
                     <ControlButtons
-                        clearChatOnClickCallback={() => {
-                            setChatOutput([])
-                            chatHistory.current = []
-                            chatContext.current = null
-                            setPreviousUserQuery("")
-                            currentResponse.current = ""
-                            lastAIMessage.current = ""
-                            introduceAgent()
-                        }}
+                        handleClearChat={handleClearChat}
                         enableClearChatButton={enableClearChatButton}
                         isAwaitingLlm={isAwaitingLlm}
                         handleSend={handleSend}
                         handleStop={handleStop}
-                        previousUserQuery={previousUserQuery}
+                        previousUserQuery={previousUserQuery.current}
                         shouldEnableRegenerateButton={shouldEnableRegenerateButton}
                     />
                 </Box>

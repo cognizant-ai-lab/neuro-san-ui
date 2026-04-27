@@ -70,7 +70,7 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoServic
     // "auto": use logo.dev service
     const logoUrl =
         logoServiceToken && customer?.trim().length > 0
-            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}?token=${logoServiceToken}&theme=light&format=png&size=75`
+            ? `https://img.logo.dev/name/${encodeURIComponent(customer)}?token=${logoServiceToken}&theme=dark&format=png&size=75`
             : null
 
     return logoUrl ? (

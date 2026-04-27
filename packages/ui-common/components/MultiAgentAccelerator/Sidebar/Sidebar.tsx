@@ -179,8 +179,7 @@ export const Sidebar: FC<SidebarProps> = ({
     const [expandedItems, setExpandedItems] = useState<string[]>([])
 
     // Theming/Dark mode
-    const theme = useTheme()
-    const darkMode = theme.palette.mode === "dark"
+    const darkMode = useTheme().palette.mode === "dark"
 
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
@@ -244,18 +243,17 @@ export const Sidebar: FC<SidebarProps> = ({
         setConnectionStatus(CONNECTION_STATUS.IDLE)
     }
 
-    // Get Neuro-san version on initial load
+    // Fetch Neuro-san version on load and whenever the saved URL changes
     useEffect(() => {
         const fetchVersion = async () => {
             // We aren't really trying to test the connection here, just getting the version.
-            const result: TestConnectionResult = await testConnection(urlInput)
+            const result: TestConnectionResult = await testConnection(customURLLocalStorage || backendNeuroSanApiUrl)
             if (result.success) {
                 setTestConnectionResult(result)
-                setConnectionStatus(CONNECTION_STATUS.SUCCESS)
             }
         }
         void fetchVersion()
-    }, [])
+    }, [customURLLocalStorage, backendNeuroSanApiUrl])
 
     const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
     const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(

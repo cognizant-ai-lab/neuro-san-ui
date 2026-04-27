@@ -29,7 +29,7 @@ describe("ControlButtons", () => {
     const mockHandleStop = jest.fn()
 
     const defaultProps = {
-        clearChatOnClickCallback: mockClearChat,
+        handleClearChat: mockClearChat,
         enableClearChatButton: true,
         isAwaitingLlm: false,
         handleSend: mockHandleSend,
@@ -58,7 +58,7 @@ describe("ControlButtons", () => {
         expect(screen.getByRole("button", {name: "Stop"})).toBeInTheDocument()
     })
 
-    it("calls clearChatOnClickCallback when Clear Chat button is clicked", async () => {
+    it("calls handleClearChat when Clear Chat button is clicked", async () => {
         render(<ControlButtons {...defaultProps} />)
         await user.click(screen.getByRole("button", {name: "Clear Chat"}))
         expect(mockClearChat).toHaveBeenCalledTimes(1)
