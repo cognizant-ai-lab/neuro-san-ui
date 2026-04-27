@@ -60,12 +60,12 @@ import {UserQueryDisplay} from "./UserQueryDisplay"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {
-    ChatContext,
     ChatMessage,
     ChatMessageType,
     ConnectivityResponse,
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hashString, hasOnlyWhitespace} from "../../../utils/text"
 import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../../Common/MUIAccordion"
@@ -201,34 +201,36 @@ export type ChatCommonHandle = {
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
+// History buffer sizes
+const MAX_CHAT_HISTORY_ITEMS = 50
+const MAX_CHAT_OUTPUT_ITEMS = MAX_CHAT_HISTORY_ITEMS
+
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
-    const slyData = useRef<Record<string, unknown>>({})
-
     const {
-        id,
+        agentPlaceholders = EMPTY,
+        backgroundColor,
+        clearChatOnNewAgent = false,
         currentUser,
-        userImage,
-        setIsAwaitingLlm,
+        extraParams,
+        id,
         isAwaitingLlm,
+        legacyAgentEndpoint,
+        neuroSanURL,
         onChunkReceived,
-        onStreamingStarted,
-        onStreamingComplete,
+        onClose,
         onSend,
+        onStreamingComplete,
+        onStreamingStarted,
+        setIsAwaitingLlm,
         setPreviousResponse,
         targetAgent,
-        legacyAgentEndpoint,
-        agentPlaceholders = EMPTY,
-        clearChatOnNewAgent = false,
-        extraParams,
-        backgroundColor,
         title,
-        onClose,
-        neuroSanURL,
+        userImage,
     } = props
     // MUI theme
     const theme = useTheme()
@@ -239,9 +241,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // Previous user query (for "regenerate" feature)
     const previousUserQuery = useRef<string>("")
-
-    // Chat output window contents
-    const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
 
     // To accumulate current response, which will be different from the contents of the output window if there is a
     // chat session
@@ -256,7 +255,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
 
-    // For tracking if we're autoscrolling. A button allows the user to enable or disable autoscrolling.
+    // For tracking if we're auto-scrolling. A button allows the user to enable or disable auto-scrolling.
     const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
 
     // ref for same
@@ -271,18 +270,20 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Ref for the final answer key, so we can highlight the accordion
     const finalAnswerKey = useRef<string>("")
 
-    // Use useRef here since we don't want changes in the chat history to trigger a re-render
-    const chatHistory = useRef<BaseMessage[]>([])
+    // Persistent agent chat history store, which is where we store both kinds of chat histories
+    // (see store implementation for details)
+    const storedChatHistory = useAgentChatHistoryStore((state) => state?.history?.[targetAgent])
+    const agentChatHistory = useMemo(
+        () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
+        [storedChatHistory]
+    )
 
-    /* Use useRef here since we don't want changes in the chat context to trigger a re-render
-    Note on ChatContext vs ChatHistory:
-    "Legacy" (not Neuro-san) agents use ChatHistory, which is a collection of messages of various types, Human, AI,
-    System etc. It mimics the langchain field of the same name.
-    Neuro-san agents deal in ChatContext, which is a more complex collection of chat histories, since more agents
-    are involved.
-    Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
-    */
-    const chatContext = useRef<ChatContext>(null)
+    console.debug(`Chat history for agent ${targetAgent}:`, agentChatHistory)
+    const slyData = agentChatHistory?.slyData
+    const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
+    const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
+    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
+
     const finalAnswerRef = useRef<HTMLDivElement>(null)
     const [showThinking, setShowThinking] = useState<boolean>(false)
 
@@ -339,20 +340,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
     }, [])
-
-    // Auto scroll chat output window when new content is added
-    useEffect(() => {
-        // Scroll the final answer into view
-        if (finalAnswerRef.current && !isAwaitingLlm) {
-            const offset = 50
-            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - offset
-            return
-        }
-
-        if (autoScrollEnabledRef.current && chatOutputRef?.current) {
-            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
-        }
-    }, [chatOutput, isAwaitingLlm])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -440,14 +427,73 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [a11yLight, atelierDuneDark, darkMode, shadowColor, shouldWrapOutput]
     )
 
+    const chatHistoryToText = (chatHistory: BaseMessage[]) => {
+        return chatHistory.map((message) => {
+            if (message.type === ChatMessageType.HUMAN) {
+                return (
+                    <MUIAccordion
+                        id="initiating-orchestration-accordion"
+                        key={hashString(message.text)}
+                        items={[
+                            {
+                                title: "Human Message",
+                                content: message.text,
+                            },
+                        ]}
+                        sx={{marginBottom: "1rem"}}
+                    />
+                )
+            } else if (message.type === ChatMessageType.AI) {
+                return (
+                    <MUIAccordion
+                        id="initiating-orchestration-accordion"
+                        key={hashString(message.text)}
+                        items={[
+                            {
+                                title: "AI Message",
+                                content: message.text,
+                            },
+                        ]}
+                        sx={{marginBottom: "1rem"}}
+                    />
+                )
+            } else {
+                return "Unknown message type"
+            }
+        })
+    }
+
+    // Chat output window contents
+    const [chatOutput, setChatOutput] = useState<ReactNode[]>([
+        <div key="recap">{agentChatHistory?.chatHistory?.join("\n") || "No response yet..."}</div>,
+    ])
+
+    // Auto scroll chat output window when new content is added
+    useEffect(() => {
+        // Scroll the final answer into view
+        if (finalAnswerRef.current && !isAwaitingLlm) {
+            const offset = 50
+            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - offset
+            return
+        }
+
+        if (autoScrollEnabledRef.current && chatOutputRef?.current) {
+            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
+        }
+    }, [chatOutput, isAwaitingLlm])
+
     /**
-     * Handles adding content to the output window.
+     * Handles adding content to the output window. We only store the last MAX_CHAT_OUTPUT_ITEMS items to keep
+     * memory usage down.
      * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
      * @returns Nothing, but updates the output window with the new content. Updates currentResponse as a side effect.
      */
     const updateOutput = useCallback((node: ReactNode) => {
         currentResponse.current += node
-        setChatOutput((currentOutput) => [...currentOutput, node])
+        setChatOutput((current) => {
+            const next = [...current, node]
+            return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
+        })
     }, [])
 
     const handleChunk = useCallback(
@@ -481,7 +527,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
                 // Save the chat context, potentially overwriting any previous ones we received during this session.
                 // We only care about the last one received.
-                chatContext.current = chatMessage.chat_context
+                updateChatContext(targetAgent, chatMessage.chat_context)
 
                 // Nothing more to do with this message. It's just a message to give us the chat context, so return
                 return
@@ -489,7 +535,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // Merge slyData.current with incoming chatMessage.sly_data
             if (chatMessage.sly_data) {
-                slyData.current = {...slyData.current, ...chatMessage.sly_data}
+                updateSlyData(targetAgent, {...slyData, ...chatMessage.sly_data})
             }
 
             // Check if there is an error block in the "structure" field of the chat message.
@@ -518,7 +564,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
             }
         },
-        [onChunkReceived, processLogLine, targetAgent, updateOutput]
+        [onChunkReceived, processLogLine, slyData, updateSlyData, targetAgent, updateChatContext, updateOutput]
     )
 
     const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
@@ -582,7 +628,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             legacyAgentEndpoint,
                             extraParams,
                             query,
-                            chatHistory.current,
+                            agentChatHistory.chatHistory,
                             null,
                             StreamingUnit.Chunk
                         )
@@ -590,14 +636,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...slyData.current, login: currentUser}
+                        const slyDataWithUserName = {...slyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
                             query,
                             targetAgent,
                             handleChunk,
-                            chatContext.current,
+                            agentChatHistory.chatContext,
                             slyDataWithUserName,
                             currentUser,
                             StreamingUnit.Line
@@ -626,13 +672,31 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
             return wasAborted
         },
-        [currentUser, extraParams, handleChunk, legacyAgentEndpoint, neuroSanURL, targetAgent, updateOutput]
+        [
+            agentChatHistory,
+            currentUser,
+            extraParams,
+            handleChunk,
+            legacyAgentEndpoint,
+            neuroSanURL,
+            slyData,
+            targetAgent,
+            updateOutput,
+        ]
     )
 
     const handleSend = useCallback(
         async (query: string) => {
-            // Record user query in chat history
-            chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery.current)]
+            // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
+            const updatedHistory = [...agentChatHistory.chatHistory, new HumanMessage(previousUserQuery.current)]
+
+            // Only retain the last MAX_CHAT_HISTORY_ITEMS messages to keep memory usage down.
+            const truncatedUpdatedHistory =
+                updatedHistory.length > MAX_CHAT_HISTORY_ITEMS
+                    ? updatedHistory.slice(-MAX_CHAT_HISTORY_ITEMS)
+                    : updatedHistory
+            console.debug(`Updating chat history for agent ${targetAgent}. New history:`, truncatedUpdatedHistory)
+            updateChatHistory(targetAgent, truncatedUpdatedHistory)
 
             // Allow parent to intercept and modify the query before sending if needed
             const queryToSend = onSend?.(query) ?? query
@@ -723,7 +787,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
                 // Record bot answer in history.
                 if (currentResponse?.current?.length > 0) {
-                    chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
+                    updateChatHistory(targetAgent, [
+                        ...agentChatHistory.chatHistory,
+                        new AIMessage(currentResponse.current),
+                    ])
                 }
             } finally {
                 resetState()
@@ -733,6 +800,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
         },
         [
+            agentChatHistory?.chatHistory,
             agentDisplayName,
             currentUser,
             doRetryLoop,
@@ -744,16 +812,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             setIsAwaitingLlm,
             showThinking,
             targetAgent,
+            updateChatHistory,
             updateOutput,
             userImage,
         ]
     )
 
     useEffect(() => {
-        if (clearChatOnNewAgent && targetAgent) {
-            chatContext.current = null
+        if (clearChatOnNewAgent) {
             currentResponse.current = ""
-            slyData.current = null
             setChatOutput([])
         }
     }, [clearChatOnNewAgent, targetAgent])
@@ -849,13 +916,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const handleClearChat = useCallback(() => {
         setChatOutput([])
-        chatHistory.current = []
-        chatContext.current = null
+        updateChatHistory(targetAgent, [])
+        updateChatContext(targetAgent, {})
         previousUserQuery.current = ""
         currentResponse.current = ""
         lastAIMessage.current = ""
         introduceAgent()
-    }, [introduceAgent])
+    }, [introduceAgent, targetAgent, updateChatContext, updateChatHistory])
 
     return (
         <Box
