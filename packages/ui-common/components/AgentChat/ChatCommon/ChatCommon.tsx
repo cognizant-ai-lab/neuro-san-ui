@@ -53,7 +53,7 @@ import {AgentConnectivity} from "./AgentConnectivity"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
-import {SampleQueries} from "./SampleQueries"
+// import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {UserQueryDisplay} from "./UserQueryDisplay"
@@ -201,9 +201,8 @@ export type ChatCommonHandle = {
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
-// History buffer sizes
-const MAX_CHAT_HISTORY_ITEMS = 50
-const MAX_CHAT_OUTPUT_ITEMS = MAX_CHAT_HISTORY_ITEMS
+// Maximum number of items to keep in the chat output window
+const MAX_CHAT_OUTPUT_ITEMS = 50
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -278,11 +277,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [storedChatHistory]
     )
 
-    console.debug(`Chat history for agent ${targetAgent}:`, agentChatHistory)
-    const slyData = agentChatHistory?.slyData
+    console.debug("agent chat history from store:", agentChatHistory)
+
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
     const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
+    const resetHistory = useAgentChatHistoryStore((state) => state.resetHistory)
 
     const finalAnswerRef = useRef<HTMLDivElement>(null)
     const [showThinking, setShowThinking] = useState<boolean>(false)
@@ -458,15 +458,17 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     />
                 )
             } else {
-                return "Unknown message type"
+                return `Unknown message: ${message.toString()}\n`
             }
         })
     }
 
     // Chat output window contents
     const [chatOutput, setChatOutput] = useState<ReactNode[]>([
-        <div key="recap">{agentChatHistory?.chatHistory?.join("\n") || "No response yet..."}</div>,
+        <div key="recap">{chatHistoryToText(agentChatHistory?.chatHistory)}</div>,
     ])
+
+    // const [chatOutput, setChatOutput] = useState<ReactNode[]>([<div key="recap">History:</div>])
 
     // Auto scroll chat output window when new content is added
     useEffect(() => {
@@ -523,19 +525,21 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
+            console.debug("sly data:", chatMessage.sly_data)
+
+            // Merge slyData.current with incoming chatMessage.sly_data
+            if (chatMessage.sly_data) {
+                console.debug("Received sly_data from agent:", chatMessage.sly_data)
+                updateSlyData(targetAgent, {...agentChatHistory?.slyData, ...chatMessage.sly_data})
+            } else {
+                console.debug("no sly data")
+            }
+
             // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
             if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
                 // Save the chat context, potentially overwriting any previous ones we received during this session.
                 // We only care about the last one received.
                 updateChatContext(targetAgent, chatMessage.chat_context)
-
-                // Nothing more to do with this message. It's just a message to give us the chat context, so return
-                return
-            }
-
-            // Merge slyData.current with incoming chatMessage.sly_data
-            if (chatMessage.sly_data) {
-                updateSlyData(targetAgent, {...slyData, ...chatMessage.sly_data})
             }
 
             // Check if there is an error block in the "structure" field of the chat message.
@@ -564,7 +568,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
             }
         },
-        [onChunkReceived, processLogLine, slyData, updateSlyData, targetAgent, updateChatContext, updateOutput]
+        [
+            onChunkReceived,
+            processLogLine,
+            agentChatHistory?.slyData,
+            updateSlyData,
+            targetAgent,
+            updateChatContext,
+            updateOutput,
+        ]
     )
 
     const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
@@ -636,7 +648,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...slyData, login: currentUser}
+                        const slyDataWithUserName = {...agentChatHistory?.slyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
@@ -679,7 +691,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             handleChunk,
             legacyAgentEndpoint,
             neuroSanURL,
-            slyData,
             targetAgent,
             updateOutput,
         ]
@@ -688,15 +699,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const handleSend = useCallback(
         async (query: string) => {
             // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
-            const updatedHistory = [...agentChatHistory.chatHistory, new HumanMessage(previousUserQuery.current)]
+            const userQueryMessage = new HumanMessage(previousUserQuery.current)
 
-            // Only retain the last MAX_CHAT_HISTORY_ITEMS messages to keep memory usage down.
-            const truncatedUpdatedHistory =
-                updatedHistory.length > MAX_CHAT_HISTORY_ITEMS
-                    ? updatedHistory.slice(-MAX_CHAT_HISTORY_ITEMS)
-                    : updatedHistory
-            console.debug(`Updating chat history for agent ${targetAgent}. New history:`, truncatedUpdatedHistory)
-            updateChatHistory(targetAgent, truncatedUpdatedHistory)
+            console.debug(`Updating chat history for agent ${targetAgent}. New message:`, userQueryMessage)
+            updateChatHistory(targetAgent, [userQueryMessage])
 
             // Allow parent to intercept and modify the query before sending if needed
             const queryToSend = onSend?.(query) ?? query
@@ -787,10 +793,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
                 // Record bot answer in history.
                 if (currentResponse?.current?.length > 0) {
-                    updateChatHistory(targetAgent, [
-                        ...agentChatHistory.chatHistory,
-                        new AIMessage(currentResponse.current),
-                    ])
+                    updateChatHistory(targetAgent, [new AIMessage(currentResponse.current)])
                 }
             } finally {
                 resetState()
@@ -800,7 +803,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
         },
         [
-            agentChatHistory?.chatHistory,
             agentDisplayName,
             currentUser,
             doRetryLoop,
@@ -821,7 +823,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     useEffect(() => {
         if (clearChatOnNewAgent) {
             currentResponse.current = ""
-            setChatOutput([])
         }
     }, [clearChatOnNewAgent, targetAgent])
 
@@ -853,13 +854,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         targetAgent={targetAgent}
                     />
                 )
-                const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
-                updateOutput(
-                    <SampleQueries
-                        handleSend={handleSend}
-                        sampleQueries={sampleQueries}
-                    />
-                )
+                // const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
+                // updateOutput(
+                //     <SampleQueries
+                //         handleSend={handleSend}
+                //         sampleQueries={sampleQueries}
+                //     />
+                // )
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
@@ -916,13 +917,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const handleClearChat = useCallback(() => {
         setChatOutput([])
-        updateChatHistory(targetAgent, [])
-        updateChatContext(targetAgent, {})
+        resetHistory(targetAgent)
         previousUserQuery.current = ""
         currentResponse.current = ""
         lastAIMessage.current = ""
         introduceAgent()
-    }, [introduceAgent, targetAgent, updateChatContext, updateChatHistory])
+    }, [introduceAgent, resetHistory, targetAgent])
 
     return (
         <Box
