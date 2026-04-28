@@ -24,8 +24,8 @@ import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
 import {isDarkMode} from "../../Theme/Theme"
 import {useAuthentication} from "../../utils/Authentication"
 import {getZIndex} from "../../utils/zIndexLayers"
-import {ChatCommon} from "../AgentChat/ChatCommon"
-import {LegacyAgentType} from "../AgentChat/Types"
+import {ChatCommon} from "../AgentChat/ChatCommon/ChatCommon"
+import {LegacyAgentType} from "../AgentChat/Common/Types"
 
 interface ChatBotProps {
     /**

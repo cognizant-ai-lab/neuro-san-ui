@@ -15,13 +15,13 @@ limitations under the License.
 */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentErrorProps} from "../../../components/AgentChat/Types"
+import {AgentErrorProps} from "../../../components/AgentChat/Common/Types"
 import {
     chatMessageFromChunk,
     checkError,
     KNOWN_MESSAGE_TYPES,
     KNOWN_MESSAGE_TYPES_FOR_PLASMA,
-} from "../../../components/AgentChat/Utils"
+} from "../../../components/AgentChat/Common/Utils"
 import {ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
 
 describe("AgentChat/Utils/chatMessageFromChunk", () => {

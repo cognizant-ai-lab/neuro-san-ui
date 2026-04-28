@@ -2,7 +2,7 @@ import {TreeViewBaseItem} from "@mui/x-tree-view/models"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
-import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Utils"
+import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Common/Utils"
 
 export type NodeIndex = Map<string, {agentInfo: AgentInfo; displayName: string}>
 

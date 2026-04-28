@@ -20,7 +20,7 @@ import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighte
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 
-import {hashString} from "../../utils/text"
+import {hashString} from "../../../utils/text"
 
 /**
  * The props for the FormattedMarkdown component.

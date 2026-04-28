@@ -16,7 +16,7 @@ limitations under the License.
 
 import {styled} from "@mui/material/styles"
 
-import {DEFAULT_USER_IMAGE} from "../../const"
+import {DEFAULT_USER_IMAGE} from "../../../const"
 
 // #region: Styled Components
 

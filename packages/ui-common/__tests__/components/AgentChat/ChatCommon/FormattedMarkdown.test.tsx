@@ -16,8 +16,8 @@ limitations under the License.
 
 import {render, screen, waitFor} from "@testing-library/react"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {FormattedMarkdown} from "../../../components/AgentChat/FormattedMarkdown"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {FormattedMarkdown} from "../../../../components/AgentChat/ChatCommon/FormattedMarkdown"
 
 describe("FormattedMarkdown component tests", () => {
     withStrictMocks()

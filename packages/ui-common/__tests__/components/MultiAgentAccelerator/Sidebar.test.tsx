@@ -35,7 +35,7 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../components/AgentChat/Utils"
+import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {Sidebar, SidebarProps, SPARKLE_HIGHLIGHT_CLASS} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
