@@ -1,0 +1,132 @@
+/**
+ * Zustand state store for agent chat conversation history
+ *
+ */
+import {
+    BaseMessage,
+    mapChatMessagesToStoredMessages,
+    mapStoredMessagesToChatMessages,
+    StoredMessage,
+} from "@langchain/core/messages"
+import {create} from "zustand"
+import {persist, PersistStorage, StorageValue} from "zustand/middleware"
+
+import {idbStorage} from "./IndexDBStorage"
+import {ChatContext} from "../generated/neuro-san/NeuroSanClient"
+
+// Define a type to represent sly_data, which is super loose and can be almost anything depending on the agent.
+type SlyData = Record<string, unknown>
+
+const MAX_CHAT_HISTORY_ITEMS = 50
+
+/*
+Note on ChatContext vs ChatHistory:
+    "Legacy" (not Neuro-san) agents use ChatHistory, which is a collection of messages of various types, Human, AI,
+    System etc. It mimics the langchain field of the same name.
+    Neuro-san agents deal in ChatContext, which is a more complex collection of chat histories, since more agents
+are involved.
+    Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
+*/
+export interface AgentChatHistory {
+    readonly chatHistory: BaseMessage[]
+    readonly chatContext: ChatContext
+    readonly slyData: SlyData
+}
+
+/**
+ * State store interface
+ */
+interface ChatHistoryStore {
+    readonly history: Record<string, AgentChatHistory>
+    resetHistory: (agentId: string) => void
+    updateChatContext: (agentId: string, chatContext: ChatContext) => void
+    updateChatHistory: (agentId: string, messages: BaseMessage[]) => void
+    updateSlyData: (agentId: string, slyData: SlyData) => void
+}
+
+const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
+    getItem: async (itemName: string): Promise<StorageValue<ChatHistoryStore> | null> => {
+        const stored = await idbStorage.getItem(itemName)
+        if (!stored) return null
+        // No JSON.parse — IDB returns the object directly
+        const parsed = stored as unknown as StorageValue<ChatHistoryStore>
+        const rehydratedHistory = Object.fromEntries(
+            Object.entries(parsed?.state?.history ?? {}).map(([agentId, entry]) => [
+                agentId,
+                {
+                    ...entry,
+                    chatHistory: entry.chatHistory
+                        ? mapStoredMessagesToChatMessages(entry.chatHistory as unknown as StoredMessage[])
+                        : [],
+                },
+            ])
+        )
+        return {...parsed, state: {...parsed.state, history: rehydratedHistory}}
+    },
+    setItem: async (itemName: string, value: StorageValue<ChatHistoryStore>): Promise<void> => {
+        const serializedHistory = Object.fromEntries(
+            Object.entries(value?.state?.history ?? {}).map(([agentId, entry]) => [
+                agentId,
+                {
+                    ...entry,
+                    chatHistory: entry.chatHistory ? mapChatMessagesToStoredMessages(entry.chatHistory) : [],
+                },
+            ])
+        )
+        const toStore = {state: {history: serializedHistory}, version: value.version}
+        await idbStorage.setItem(itemName, toStore as unknown as string)
+    },
+    removeItem: async (itemName: string): Promise<void> => {
+        await idbStorage.removeItem(itemName)
+    },
+}
+
+/**
+ * The hook that lets apps use the store.
+ * Structure:
+ * <pre>
+ * IndexedDB database: "zustand-store"
+ *   └── object store: "kv"
+ *         └── key: "agent-chat-history"
+ *                 └── value: serialized Map<string, AgentChatHistory>
+ *                       └── key: agentId (string)
+ *                       └── value: { chatHistory, chatContext}
+ * </pre>
+ */
+export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
+    persist(
+        (set) => ({
+            history: {},
+            updateChatContext: (agentId: string, chatContext: ChatContext) =>
+                set((state) => {
+                    const existing = state.history[agentId]
+                    const newHistory = {...state.history, [agentId]: {...existing, chatContext}}
+                    return {history: newHistory}
+                }),
+            updateChatHistory: (agentId: string, messages: BaseMessage[]) =>
+                set((state) => {
+                    const existing = state.history[agentId]
+                    const updated = [...(existing?.chatHistory ?? []), ...messages]
+                    const truncated =
+                        updated.length > MAX_CHAT_HISTORY_ITEMS ? updated.slice(-MAX_CHAT_HISTORY_ITEMS) : updated
+                    return {history: {...state.history, [agentId]: {...existing, chatHistory: truncated}}}
+                }),
+            updateSlyData: (agentId: string, slyData: SlyData) =>
+                set((state) => {
+                    const existing = state.history[agentId]
+                    const mergedSlyData = {...existing?.slyData, ...slyData} // merge here, with fresh state
+                    const newHistory = {...state.history, [agentId]: {...existing, slyData: mergedSlyData}}
+                    return {history: newHistory}
+                }),
+            resetHistory: (agentId: string) =>
+                set((state) => {
+                    const {[agentId]: _, ...rest} = state.history
+                    return {history: rest}
+                }),
+        }),
+        {
+            name: "agent-chat-history",
+            storage: chatHistoryStorage,
+        }
+    )
+)

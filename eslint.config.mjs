@@ -170,6 +170,16 @@ export default defineConfig([
                 },
             ],
 
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {
+                    // Useful for situations like destructuring where you want to ignore certain variables. This way
+                    // it can be made explicit in the name that the variable is intentionally unused.
+                    argsIgnorePattern: "^_",
+                    varsIgnorePattern: "^_",
+                },
+            ],
+
             "@typescript-eslint/prefer-for-of": "error",
 
             camelcase: [
