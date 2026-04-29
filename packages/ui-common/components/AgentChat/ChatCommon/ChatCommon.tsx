@@ -62,6 +62,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {
     ChatMessage,
     ChatMessageType,
+    ConnectivityInfo,
     ConnectivityResponse,
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
@@ -276,6 +277,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [storedChatHistory]
     )
     const [agentSampleQueries, setAgentSampleQueries] = useState<string[]>([])
+
+    const [agentConnectivityInfo, setAgentConnectivityInfo] = useState<{
+        description?: string
+        connectivityInfo?: readonly ConnectivityInfo[]
+    } | null>(null)
+
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
     const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
@@ -826,14 +833,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             try {
                 const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent, currentUser)
-                updateOutput(
-                    <AgentConnectivity
-                        id={id}
-                        description={agentFunction?.function?.description}
-                        connectivityInfo={connectivity?.connectivity_info}
-                        targetAgent={targetAgent}
-                    />
-                )
+                setAgentConnectivityInfo({
+                    description: agentFunction?.function?.description,
+                    connectivityInfo: connectivity?.connectivity_info,
+                })
                 const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
                 setAgentSampleQueries(sampleQueries)
             } catch (e) {
@@ -1072,6 +1075,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             style={darkMode ? atelierDuneDark : a11yLight}
                             wrapLongLines={shouldWrapOutput}
                         />
+                        {agentConnectivityInfo && (
+                            <AgentConnectivity
+                                id={id}
+                                description={agentConnectivityInfo.description}
+                                connectivityInfo={agentConnectivityInfo.connectivityInfo}
+                                targetAgent={targetAgent}
+                            />
+                        )}
                         <SampleQueries
                             disabled={isAwaitingLlm}
                             handleSend={handleSend}
