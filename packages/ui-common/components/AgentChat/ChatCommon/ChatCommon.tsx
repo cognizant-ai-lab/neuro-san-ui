@@ -53,7 +53,6 @@ import {AgentConnectivity} from "./AgentConnectivity"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
-// import {SampleQueries} from "./SampleQueries"
 import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
@@ -276,7 +275,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
         [storedChatHistory]
     )
-
+    const [agentSampleQueries, setAgentSampleQueries] = useState<string[]>([])
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
     const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
@@ -836,12 +835,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     />
                 )
                 const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
-                updateOutput(
-                    <SampleQueries
-                        handleSend={handleSend}
-                        sampleQueries={sampleQueries}
-                    />
-                )
+                setAgentSampleQueries(sampleQueries)
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
@@ -853,7 +847,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         if (targetAgent && !isLegacyAgentType(targetAgent)) {
             void fetchAgentDetails()
         }
-    }, [agentDisplayName, currentUser, handleSend, id, neuroSanURL, targetAgent, updateOutput])
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only want to run this when targetAgent changes
+    }, [targetAgent])
 
     const handleStop = useCallback(() => {
         try {
@@ -1076,6 +1071,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             })}
                             style={darkMode ? atelierDuneDark : a11yLight}
                             wrapLongLines={shouldWrapOutput}
+                        />
+                        <SampleQueries
+                            disabled={isAwaitingLlm}
+                            handleSend={handleSend}
+                            sampleQueries={agentSampleQueries}
                         />
                         {isAwaitingLlm && (
                             <Box

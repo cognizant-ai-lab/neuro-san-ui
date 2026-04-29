@@ -12,6 +12,7 @@ const MAX_SAMPLE_QUERIES = 5
 const QUERY_TRUNCATE_LENGTH = 80
 
 interface SampleQueriesProps {
+    readonly disabled: boolean
     readonly handleSend: (query: string) => void
     readonly sampleQueries: string[]
 }
@@ -22,7 +23,7 @@ interface SampleQueriesProps {
  * @returns A ReactNode representing the sample queries as clickable chips. If a user clicks a chip, it will
  * send the query to the agent.
  */
-export const SampleQueries: FC<SampleQueriesProps> = ({handleSend, sampleQueries}) =>
+export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sampleQueries}) =>
     sampleQueries?.length > 0 ? (
         <Box
             id="sample-queries-box"
@@ -36,6 +37,7 @@ export const SampleQueries: FC<SampleQueriesProps> = ({handleSend, sampleQueries
                         key={`tooltip-${hashedQuery}`}
                     >
                         <Chip
+                            disabled={disabled}
                             key={hashedQuery}
                             label={
                                 query.length > QUERY_TRUNCATE_LENGTH
