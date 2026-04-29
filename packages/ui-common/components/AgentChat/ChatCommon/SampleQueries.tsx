@@ -33,12 +33,11 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                 const hashedQuery = hashString(query)
                 return (
                     <Tooltip
-                        title={`Click to send query: "${hashedQuery}"`}
+                        title={`Click to send query: "${query}"`}
                         key={`tooltip-${hashedQuery}`}
                     >
                         <Chip
                             disabled={disabled}
-                            key={hashedQuery}
                             label={
                                 query.length > QUERY_TRUNCATE_LENGTH
                                     ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
@@ -52,9 +51,7 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                                 marginRight: "1rem",
                                 marginBottom: "1rem",
                                 backgroundColor: "var(--bs-accent1-medium)",
-                                "&:hover": {
-                                    backgroundColor: "var(--bs-accent1-dark)",
-                                },
+                                "&:hover": {backgroundColor: "var(--bs-accent1-dark)"},
                             }}
                         />
                     </Tooltip>
