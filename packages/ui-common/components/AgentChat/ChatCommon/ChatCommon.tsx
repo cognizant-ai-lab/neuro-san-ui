@@ -234,6 +234,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Previous user query (for "regenerate" feature)
     const previousUserQuery = useRef<string>("")
 
+    // Chat output window contents
+    const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
+
     // To accumulate current response, which will be different from the contents of the output window if there is a
     // chat session
     const currentResponse = useRef<string>("")
@@ -317,9 +320,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
 
-    // Chat output window contents
-    const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
-
     useEffect(() => {
         // Set up speech recognition
         const handlers = setupSpeechRecognition(setChatInput, setVoiceInputState, speechRecognitionRef)
@@ -337,6 +337,20 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
     }, [])
+
+    // Auto scroll chat output window when new content is added
+    useEffect(() => {
+        // Scroll the final answer into view
+        if (finalAnswerRef.current && !isAwaitingLlm) {
+            const offset = 50
+            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - offset
+            return
+        }
+
+        if (autoScrollEnabledRef.current && chatOutputRef?.current) {
+            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
+        }
+    }, [chatOutput, isAwaitingLlm])
 
     /**
      * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
@@ -471,20 +485,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [agentChatHistory?.chatHistory]) // eslint-disable-line react-hooks/exhaustive-deps -- only want to do this once
 
-    // Auto scroll chat output window when new content is added
-    useEffect(() => {
-        // Scroll the final answer into view
-        if (finalAnswerRef.current && !isAwaitingLlm) {
-            const offset = 50
-            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - offset
-            return
-        }
-
-        if (autoScrollEnabledRef.current && chatOutputRef?.current) {
-            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
-        }
-    }, [chatOutput, isAwaitingLlm])
-
     const handleChunk = useCallback(
         (chunk: string): void => {
             // Give container a chance to process the chunk first
@@ -516,7 +516,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // Merge slyData.current with incoming chatMessage.sly_data
             if (chatMessage.sly_data) {
-                updateSlyData(targetAgent, {...agentChatHistory?.slyData, ...chatMessage.sly_data})
+                updateSlyData(targetAgent, chatMessage.sly_data)
             }
 
             // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
@@ -553,15 +553,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 currentResponse.current += chatMessage.text
             }
         },
-        [
-            onChunkReceived,
-            processLogLine,
-            agentChatHistory?.slyData,
-            updateSlyData,
-            targetAgent,
-            updateChatContext,
-            updateOutput,
-        ]
+        [onChunkReceived, processLogLine, updateSlyData, targetAgent, updateChatContext, updateOutput]
     )
 
     const introduceAgent = useCallback(() => {
@@ -760,14 +752,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         updateOutput("    \n\n")
                     }
 
-                    const logLine = processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)
                     updateOutput(
                         <div
                             id="final-answer-div"
                             ref={finalAnswerRef}
                             style={{marginBottom: "1rem"}}
                         >
-                            {logLine}
+                            {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)}
                         </div>
                     )
                     // Record bot answer in history.
@@ -1114,7 +1105,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 </Box>
                 <Box
                     id="user-input-div"
-                    style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
+                    sx={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
                 >
                     <Input
                         autoComplete="off"
