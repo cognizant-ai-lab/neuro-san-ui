@@ -211,7 +211,7 @@ const extractFinalAnswer = (response: string) =>
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const slyData = useRef<Record<string, unknown>>({})
-    const [setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
+    const [, setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
     const setNetworkMapRef = useRef(setNetworkMap)
     setNetworkMapRef.current = setNetworkMap
 
@@ -486,15 +486,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // Accumulate sly_data from all message types
             if (chatMessage.sly_data) {
                 slyData.current = {...slyData.current, ...chatMessage.sly_data}
-
-                // Persist the agent network definition to localStorage as a map of networks keyed by agent name
-                const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
-                if (Array.isArray(networkDefinition)) {
-                    setNetworkMapRef.current((prev: unknown) => ({
-                        ...(prev as Record<string, AgentNetworkDefinitionEntry[]>),
-                        [targetAgent]: networkDefinition as AgentNetworkDefinitionEntry[],
-                    }))
-                }
             }
 
             // Only AGENT_FRAMEWORK messages can have chat_context.
@@ -503,6 +494,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     // Save the chat_context, potentially overwriting any previous ones we received during this session.
                     // We only care about the last one received.
                     chatContext.current = chatMessage.chat_context
+                }
+
+                // Persist the agent network definition to localStorage as a map of networks keyed by agent name.
+                // agent_network_definition only arrives on AGENT_FRAMEWORK messages.
+                const networkDefinition = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY]
+                if (Array.isArray(networkDefinition)) {
+                    setNetworkMapRef.current((prev: unknown) => ({
+                        ...(prev as Record<string, AgentNetworkDefinitionEntry[]>),
+                        [targetAgent]: networkDefinition as AgentNetworkDefinitionEntry[],
+                    }))
                 }
 
                 // Nothing more to do with this message. It's just a message to give us the chat context, so return
