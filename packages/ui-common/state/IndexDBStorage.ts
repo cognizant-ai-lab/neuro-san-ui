@@ -13,7 +13,7 @@ they're IndexedDB request objects. The unicorn rule is overly broad here and is 
 import {StateStorage} from "zustand/middleware"
 
 const DB_NAME = "zustand-store"
-const OBJECT_STORE_NAME = "kv"
+const OBJECT_STORE_NAME = "neuro-san-ui"
 
 export const idbStorage: StateStorage = {
     getItem: (itemName) =>

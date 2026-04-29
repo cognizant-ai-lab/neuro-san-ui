@@ -17,7 +17,7 @@ limitations under the License.
 /**
  * See main function description.
  */
-import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
+import {AIMessage, HumanMessage} from "@langchain/core/messages"
 import AccountTreeIcon from "@mui/icons-material/AccountTree"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
@@ -54,6 +54,7 @@ import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
 // import {SampleQueries} from "./SampleQueries"
+import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {UserQueryDisplay} from "./UserQueryDisplay"
@@ -213,7 +214,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const {
         agentPlaceholders = EMPTY,
         backgroundColor,
-        clearChatOnNewAgent = false,
         currentUser,
         extraParams,
         id,
@@ -277,8 +277,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [storedChatHistory]
     )
 
-    console.debug("agent chat history from store:", agentChatHistory)
-
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
     const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
@@ -322,6 +320,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const darkMode = theme.palette.mode === "dark"
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
+
+    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
+
+    // Chat output window contents
+    const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
 
     useEffect(() => {
         // Set up speech recognition
@@ -427,48 +430,51 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [a11yLight, atelierDuneDark, darkMode, shadowColor, shouldWrapOutput]
     )
 
-    const chatHistoryToText = (chatHistory: BaseMessage[]) => {
-        return chatHistory.map((message) => {
-            if (message.type === ChatMessageType.HUMAN) {
-                return (
-                    <MUIAccordion
-                        id="initiating-orchestration-accordion"
-                        key={hashString(message.text)}
-                        items={[
-                            {
-                                title: "Human Message",
-                                content: message.text,
-                            },
-                        ]}
-                        sx={{marginBottom: "1rem"}}
+    /**
+     * Handles adding content to the output window. We only store the last MAX_CHAT_OUTPUT_ITEMS items to keep
+     * memory usage down.
+     * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
+     * @returns Nothing, but updates the output window with the new content.
+     */
+    const updateOutput = useCallback((node: ReactNode) => {
+        setChatOutput((current) => {
+            const next = [...current, node]
+            return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
+        })
+    }, [])
+
+    const recapChatHistory = () => {
+        agentChatHistory.chatHistory.forEach((message) => {
+            if (message.type.toUpperCase() === ChatMessageType.HUMAN) {
+                updateOutput(
+                    <UserQueryDisplay
+                        userQuery={message.text}
+                        title={currentUser}
+                        userImage={userImage}
                     />
                 )
-            } else if (message.type === ChatMessageType.AI) {
-                return (
-                    <MUIAccordion
-                        id="initiating-orchestration-accordion"
-                        key={hashString(message.text)}
-                        items={[
-                            {
-                                title: "AI Message",
-                                content: message.text,
-                            },
-                        ]}
-                        sx={{marginBottom: "1rem"}}
+            } else if (message.type.toUpperCase() === ChatMessageType.AI) {
+                updateOutput(
+                    <UserQueryDisplay
+                        userQuery={`${agentDisplayName}: ${message.text}`}
+                        title={targetAgent}
+                        userImage={AGENT_IMAGE}
                     />
                 )
             } else {
-                return `Unknown message: ${message.toString()}\n`
+                console.warn(`Unrecognized message type in chat history: ${message.type}`)
             }
         })
     }
 
-    // Chat output window contents
-    const [chatOutput, setChatOutput] = useState<ReactNode[]>([
-        <div key="recap">{chatHistoryToText(agentChatHistory?.chatHistory)}</div>,
-    ])
+    const haveDisplayedHistory = useRef<boolean>(false)
 
-    // const [chatOutput, setChatOutput] = useState<ReactNode[]>([<div key="recap">History:</div>])
+    useEffect(() => {
+        if (!haveDisplayedHistory.current && agentChatHistory?.chatHistory?.length > 0) {
+            haveDisplayedHistory.current = true
+            recapChatHistory()
+        }
+    }, [agentChatHistory?.chatHistory]) // eslint-disable-line react-hooks/exhaustive-deps -- only want to do this once
 
     // Auto scroll chat output window when new content is added
     useEffect(() => {
@@ -484,20 +490,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [chatOutput, isAwaitingLlm])
 
-    /**
-     * Handles adding content to the output window. We only store the last MAX_CHAT_OUTPUT_ITEMS items to keep
-     * memory usage down.
-     * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
-     * @returns Nothing, but updates the output window with the new content. Updates currentResponse as a side effect.
-     */
-    const updateOutput = useCallback((node: ReactNode) => {
-        currentResponse.current += node
-        setChatOutput((current) => {
-            const next = [...current, node]
-            return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
-        })
-    }, [])
-
     const handleChunk = useCallback(
         (chunk: string): void => {
             // Give container a chance to process the chunk first
@@ -507,7 +499,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // For legacy agents, we either get plain text or Markdown. Just output it as-is.
             if (isLegacyAgentType(targetAgent)) {
                 // Display output as-is
+                // TODO: how to handle this? don't want to save every single chunk as a separate item in history?!
                 updateOutput(chunk)
+                currentResponse.current += chunk
 
                 // Check for Final Answer from legacy agent
                 const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
@@ -525,14 +519,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
-            console.debug("sly data:", chatMessage.sly_data)
-
             // Merge slyData.current with incoming chatMessage.sly_data
             if (chatMessage.sly_data) {
-                console.debug("Received sly_data from agent:", chatMessage.sly_data)
                 updateSlyData(targetAgent, {...agentChatHistory?.slyData, ...chatMessage.sly_data})
-            } else {
-                console.debug("no sly data")
             }
 
             // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
@@ -566,6 +555,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
                         : "Agent message"
                 updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
+                currentResponse.current += chatMessage.text
             }
         },
         [
@@ -578,8 +568,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             updateOutput,
         ]
     )
-
-    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
 
     const introduceAgent = useCallback(() => {
         /**
@@ -699,9 +687,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const handleSend = useCallback(
         async (query: string) => {
             // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
-            const userQueryMessage = new HumanMessage(previousUserQuery.current)
+            const userQueryMessage = new HumanMessage(query)
 
-            console.debug(`Updating chat history for agent ${targetAgent}. New message:`, userQueryMessage)
             updateChatHistory(targetAgent, [userQueryMessage])
 
             // Allow parent to intercept and modify the query before sending if needed
@@ -777,24 +764,24 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         updateOutput("    \n\n")
                     }
 
+                    const logLine = processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)
                     updateOutput(
                         <div
                             id="final-answer-div"
                             ref={finalAnswerRef}
                             style={{marginBottom: "1rem"}}
                         >
-                            {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)}
+                            {logLine}
                         </div>
                     )
+                    // Record bot answer in history.
+                    if (currentResponse?.current?.length > 0) {
+                        updateChatHistory(targetAgent, [new AIMessage(lastAIMessage.current)])
+                    }
                 }
 
                 // Add a blank line after response
                 updateOutput("\n")
-
-                // Record bot answer in history.
-                if (currentResponse?.current?.length > 0) {
-                    updateChatHistory(targetAgent, [new AIMessage(currentResponse.current)])
-                }
             } finally {
                 resetState()
 
@@ -819,12 +806,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             userImage,
         ]
     )
-
-    useEffect(() => {
-        if (clearChatOnNewAgent) {
-            currentResponse.current = ""
-        }
-    }, [clearChatOnNewAgent, targetAgent])
 
     useEffect(() => {
         if (targetAgent) {
@@ -854,13 +835,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         targetAgent={targetAgent}
                     />
                 )
-                // const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
-                // updateOutput(
-                //     <SampleQueries
-                //         handleSend={handleSend}
-                //         sampleQueries={sampleQueries}
-                //     />
-                // )
+                const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
+                updateOutput(
+                    <SampleQueries
+                        handleSend={handleSend}
+                        sampleQueries={sampleQueries}
+                    />
+                )
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
