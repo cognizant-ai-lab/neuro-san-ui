@@ -211,7 +211,9 @@ const extractFinalAnswer = (response: string) =>
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const slyData = useRef<Record<string, unknown>>({})
-    const [, setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
+    const [setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
+    const setNetworkMapRef = useRef(setNetworkMap)
+    setNetworkMapRef.current = setNetworkMap
 
     const {
         id,
@@ -488,7 +490,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // Persist the agent network definition to localStorage as a map of networks keyed by agent name
                 const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
                 if (Array.isArray(networkDefinition)) {
-                    setNetworkMap((prev: unknown) => ({
+                    setNetworkMapRef.current((prev: unknown) => ({
                         ...(prev as Record<string, AgentNetworkDefinitionEntry[]>),
                         [targetAgent]: networkDefinition as AgentNetworkDefinitionEntry[],
                     }))
@@ -533,7 +535,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
             }
         },
-        [onChunkReceived, processLogLine, setNetworkMap, targetAgent, updateOutput]
+        [onChunkReceived, processLogLine, targetAgent, updateOutput]
     )
 
     const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
