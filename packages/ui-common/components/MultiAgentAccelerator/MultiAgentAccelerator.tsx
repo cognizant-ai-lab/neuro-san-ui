@@ -26,7 +26,8 @@ import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
-import {AGENT_NETWORK_DESIGNER_ID, AGENT_PROGRESS_CONNECTIVITY_KEY, TEMPORARY_NETWORK_FOLDER} from "./const"
+import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
+import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -40,7 +41,6 @@ import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {
     AgentInfo,
-    ChatMessageType,
     ConnectivityInfo,
     ConnectivityResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
@@ -350,8 +350,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
 
             // Agent network designer progress messages
-            if (isNetworkDesignerMode && chatMessage?.type === ChatMessageType.AGENT_PROGRESS) {
-                const networkInProgress = chatMessage.structure?.[AGENT_PROGRESS_CONNECTIVITY_KEY] as ConnectivityInfo[]
+            if (isNetworkDesignerMode) {
+                const networkInProgress = extractAgentNetworkDesignerProgress(chatMessage)
                 if (networkInProgress?.length > 0) {
                     setAgentsInNetworkDesigner(networkInProgress)
                 }
