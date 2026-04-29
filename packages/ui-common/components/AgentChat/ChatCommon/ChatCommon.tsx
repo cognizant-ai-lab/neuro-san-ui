@@ -62,7 +62,6 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {
     ChatMessage,
     ChatMessageType,
-    ConnectivityInfo,
     ConnectivityResponse,
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
@@ -145,12 +144,6 @@ export interface ChatCommonProps {
      * Optional placeholders for input to agents.
      */
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
-
-    /**
-     * Whether to clear the chat window and history when the user starts chatting with a new agent or network.
-     * Defaults to not clearing the chat.
-     */
-    readonly clearChatOnNewAgent?: boolean
 
     /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
@@ -277,11 +270,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [storedChatHistory]
     )
     const [agentSampleQueries, setAgentSampleQueries] = useState<string[]>([])
-
-    const [agentConnectivityInfo, setAgentConnectivityInfo] = useState<{
-        description?: string
-        connectivityInfo?: readonly ConnectivityInfo[]
-    } | null>(null)
 
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
@@ -449,36 +437,37 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         })
     }, [])
 
-    const recapChatHistory = () => {
-        agentChatHistory.chatHistory.forEach((message) => {
-            if (message.type.toUpperCase() === ChatMessageType.HUMAN) {
-                updateOutput(
-                    <UserQueryDisplay
-                        userQuery={message.text}
-                        title={currentUser}
-                        userImage={userImage}
-                    />
-                )
-            } else if (message.type.toUpperCase() === ChatMessageType.AI) {
-                updateOutput(
-                    <UserQueryDisplay
-                        userQuery={`${agentDisplayName}: ${message.text}`}
-                        title={targetAgent}
-                        userImage={AGENT_IMAGE}
-                    />
-                )
-            } else {
-                console.warn(`Unrecognized message type in chat history: ${message.type}`)
-            }
-        })
-    }
-
+    // Keeps track of whether we've already displayed the chat history for this session, to avoid re-displaying
+    // it on every render.
     const haveDisplayedHistory = useRef<boolean>(false)
 
+    // Effect for displaying chat history from previous interactions with the agent.
     useEffect(() => {
         if (!haveDisplayedHistory.current && agentChatHistory?.chatHistory?.length > 0) {
             haveDisplayedHistory.current = true
-            recapChatHistory()
+            agentChatHistory.chatHistory.forEach((message) => {
+                if (message.type.toUpperCase() === ChatMessageType.HUMAN) {
+                    updateOutput(
+                        <UserQueryDisplay
+                            sx={{opacity: 0.5}}
+                            userQuery={message.text}
+                            title={currentUser}
+                            userImage={userImage}
+                        />
+                    )
+                } else if (message.type.toUpperCase() === ChatMessageType.AI) {
+                    updateOutput(
+                        <UserQueryDisplay
+                            sx={{opacity: 0.5}}
+                            userQuery={`${agentDisplayName}: ${message.text}`}
+                            title={targetAgent}
+                            userImage={AGENT_IMAGE}
+                        />
+                    )
+                } else {
+                    console.warn(`Unrecognized message type in chat history: ${message.type}`)
+                }
+            })
         }
     }, [agentChatHistory?.chatHistory]) // eslint-disable-line react-hooks/exhaustive-deps -- only want to do this once
 
@@ -590,7 +579,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Random greeting
         const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
         updateOutput(greeting)
-    }, [agentDisplayName, targetAgent, updateOutput])
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- updateOutput is stable (empty useCallback deps)
+    }, [agentDisplayName, targetAgent])
 
     /**
      * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
@@ -833,10 +823,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             try {
                 const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent, currentUser)
-                setAgentConnectivityInfo({
-                    description: agentFunction?.function?.description,
-                    connectivityInfo: connectivity?.connectivity_info,
-                })
+                updateOutput(
+                    <AgentConnectivity
+                        id={id}
+                        description={agentFunction?.function?.description}
+                        connectivityInfo={connectivity?.connectivity_info}
+                        targetAgent={targetAgent}
+                    />
+                )
                 const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
                 setAgentSampleQueries(sampleQueries)
             } catch (e) {
@@ -902,6 +896,25 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         lastAIMessage.current = ""
         introduceAgent()
     }, [introduceAgent, resetHistory, targetAgent])
+
+    const nodesList = useMemo(
+        () =>
+            chatOutput.map((item) => {
+                if (isValidElement(item) && item.type === MUIAccordion) {
+                    const shouldShow = showThinking || item.key === finalAnswerKey.current
+                    return (
+                        <Box
+                            key={item.key}
+                            sx={{display: shouldShow ? "block" : "none"}}
+                        >
+                            {item}
+                        </Box>
+                    )
+                }
+                return item
+            }),
+        [chatOutput, showThinking]
+    )
 
     return (
         <Box
@@ -1058,31 +1071,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     >
                         <FormattedMarkdown
                             id={`${id}-formatted-markdown`}
-                            nodesList={chatOutput.map((item) => {
-                                if (isValidElement(item) && item.type === MUIAccordion) {
-                                    const shouldShow = showThinking || item.key === finalAnswerKey.current
-                                    return (
-                                        <Box
-                                            key={item.key}
-                                            sx={{display: shouldShow ? "block" : "none"}}
-                                        >
-                                            {item}
-                                        </Box>
-                                    )
-                                }
-                                return item
-                            })}
+                            nodesList={nodesList}
                             style={darkMode ? atelierDuneDark : a11yLight}
                             wrapLongLines={shouldWrapOutput}
                         />
-                        {agentConnectivityInfo && (
-                            <AgentConnectivity
-                                id={id}
-                                description={agentConnectivityInfo.description}
-                                connectivityInfo={agentConnectivityInfo.connectivityInfo}
-                                targetAgent={targetAgent}
-                            />
-                        )}
                         <SampleQueries
                             disabled={isAwaitingLlm}
                             handleSend={handleSend}

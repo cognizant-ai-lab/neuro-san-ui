@@ -530,7 +530,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         onChunkReceived={onChunkReceived}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
-                        clearChatOnNewAgent={true}
                     />
                 </Grid>
             </Slide>
