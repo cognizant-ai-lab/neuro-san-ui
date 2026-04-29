@@ -551,12 +551,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should clear chat when a new agent is selected", async () => {
-        const {rerender} = render(
-            <ChatCommon
-                {...defaultProps}
-                clearChatOnNewAgent={true}
-            />
-        )
+        const {rerender} = render(<ChatCommon {...defaultProps} />)
 
         // Make sure first agent greeting appears
         expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
@@ -564,7 +559,6 @@ describe("ChatCommon", () => {
         rerender(
             <ChatCommon
                 {...defaultProps}
-                clearChatOnNewAgent={true}
                 targetAgent={TEST_AGENT_MUSIC_NERD}
             />
         )
