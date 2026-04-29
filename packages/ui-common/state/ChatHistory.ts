@@ -27,7 +27,7 @@ Note on ChatContext vs ChatHistory:
 are involved.
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
 */
-export interface AgentChatHistory {
+interface AgentChatHistory {
     readonly chatHistory: BaseMessage[]
     readonly chatContext: ChatContext
     readonly slyData: SlyData

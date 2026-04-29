@@ -1275,12 +1275,13 @@ describe("ChatCommon", () => {
 
         await sendQuery(TEST_AGENT_MATH_GUY, "test query for sly_data network map")
 
+        let storedSlyData
         await waitFor(() => {
-            const storedSlyData = useAgentChatHistoryStore.getState().history[TEST_AGENT_MATH_GUY]?.slyData
+            storedSlyData = useAgentChatHistoryStore.getState().history[TEST_AGENT_MATH_GUY]?.slyData
             expect(storedSlyData).toBeDefined()
-            expect(storedSlyData).toHaveProperty("agent_network_definition")
             expect(storedSlyData?.["agent_network_definition"]).toEqual(networkDefinition)
         })
+        expect(storedSlyData).toHaveProperty("agent_network_definition")
     })
 
     it("Should accumulate sly_data from non-AGENT_FRAMEWORK messages", async () => {

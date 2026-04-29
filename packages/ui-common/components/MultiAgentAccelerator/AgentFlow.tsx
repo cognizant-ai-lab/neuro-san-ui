@@ -314,28 +314,31 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     } | null>(null)
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
-    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
-        // Search all history entries for a flat agent_network_definition array containing this node's agent.
-        // The server returns agent_network_definition as a flat array in sly_data, stored under whichever
-        // network key was active at the time — so we search all history entries.
-        let initialPrompt = ""
-        for (const entry of Object.values(allHistory)) {
-            const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
-            if (Array.isArray(definitions)) {
-                const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
-                if (found) {
-                    initialPrompt = found.instructions ?? ""
-                    break
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
+        (_event, node) => {
+            // Search all history entries for a flat agent_network_definition array containing this node's agent.
+            // The server returns agent_network_definition as a flat array in sly_data, stored under whichever
+            // network key was active at the time — so we search all history entries.
+            let initialPrompt = ""
+            for (const entry of Object.values(allHistory)) {
+                const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
+                if (Array.isArray(definitions)) {
+                    const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
+                    if (found) {
+                        initialPrompt = found.instructions ?? ""
+                        break
+                    }
                 }
             }
-        }
-        setSelectedAgent({
-            agentId: node.id,
-            agentName: node.data.agentName,
-            initialPrompt,
-        })
-        setIsPopupOpen(true)
-    }, [allHistory])
+            setSelectedAgent({
+                agentId: node.id,
+                agentName: node.data.agentName,
+                initialPrompt,
+            })
+            setIsPopupOpen(true)
+        },
+        [allHistory]
+    )
 
     const handlePopupClose = useCallback(() => {
         setIsPopupOpen(false)
