@@ -61,8 +61,8 @@ import {sendChatQuery} from "../../controller/agent/Agent"
 import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {usePalette} from "../../Theme/Palettes"
-import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {NotificationType, sendNotification} from "../Common/notification"
 
@@ -131,8 +131,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
 
-    // Persist agent network definitions as a map of networks keyed by agent name
-    const [, setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
+    // Read all chat history to find agent_network_definition regardless of which network key it's under.
+    // The server stores agent_network_definition as a flat array in sly_data, keyed by whichever network
+    // is currently selected — not necessarily AGENT_NETWORK_DESIGNER_ID.
+    const allHistory = useAgentChatHistoryStore((state) => state.history)
+    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
 
     // Track conversation IDs we've already processed to prevent re-adding after expiry
     const processedConversationIdsRef = useRef<Set<string>>(new Set())
@@ -312,17 +315,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
-        // Look up the instructions for this agent from the persisted network definition map
-        const currentMap = JSON.parse(localStorage.getItem(AGENT_NETWORK_DEFINITION_KEY) ?? "{}") as Record<
-            string,
-            AgentNetworkDefinitionEntry[]
-        >
+        // Search all history entries for a flat agent_network_definition array containing this node's agent.
+        // The server returns agent_network_definition as a flat array in sly_data, stored under whichever
+        // network key was active at the time — so we search all history entries.
         let initialPrompt = ""
-        for (const definitions of Object.values(currentMap)) {
+        for (const entry of Object.values(allHistory)) {
+            const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
             if (Array.isArray(definitions)) {
-                const entry = definitions.find((e) => e.origin === node.id)
-                if (entry) {
-                    initialPrompt = entry.instructions ?? ""
+                const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
+                if (found) {
+                    initialPrompt = found.instructions ?? ""
                     break
                 }
             }
@@ -333,7 +335,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             initialPrompt,
         })
         setIsPopupOpen(true)
-    }, [])
+    }, [allHistory])
 
     const handlePopupClose = useCallback(() => {
         setIsPopupOpen(false)
@@ -343,25 +345,28 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (agentName: string, promptText: string) => {
             if (!selectedAgent) return
 
-            // Find which network contains this agent and update its entries in the map
-            const currentMap = JSON.parse(localStorage.getItem(AGENT_NETWORK_DEFINITION_KEY) ?? "{}") as Record<
-                string,
-                AgentNetworkDefinitionEntry[]
-            >
-            const networkKey = Object.keys(currentMap).find(
-                (k) => Array.isArray(currentMap[k]) && currentMap[k].some((e) => e.origin === selectedAgent.agentId)
-            )
-            const updated: AgentNetworkDefinitionEntry[] = networkKey
-                ? currentMap[networkKey].map(
+            // Find which history entry's flat array contains this agent, then update it in place.
+            let networkAgentId: string | undefined
+            let currentDefinitions: AgentNetworkDefinitionEntry[] | undefined
+            for (const [agentId, entry] of Object.entries(allHistory)) {
+                const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
+                if (
+                    Array.isArray(definitions) &&
+                    (definitions as AgentNetworkDefinitionEntry[]).some((e) => e.origin === selectedAgent.agentId)
+                ) {
+                    networkAgentId = agentId
+                    currentDefinitions = definitions as AgentNetworkDefinitionEntry[]
+                    break
+                }
+            }
+            const updated: AgentNetworkDefinitionEntry[] = currentDefinitions
+                ? currentDefinitions.map(
                       (entry): AgentNetworkDefinitionEntry =>
                           entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
                   )
                 : []
-            if (networkKey) {
-                setNetworkMap((prev: unknown) => ({
-                    ...(prev as Record<string, AgentNetworkDefinitionEntry[]>),
-                    [networkKey]: updated,
-                }))
+            if (networkAgentId) {
+                updateSlyData(networkAgentId, {[AGENT_NETWORK_DEFINITION_KEY]: updated})
             }
             setIsPopupOpen(false)
 
@@ -383,7 +388,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 })
             }
         },
-        [selectedAgent, setNetworkMap, neuroSanURL, currentUser]
+        [selectedAgent, allHistory, updateSlyData, neuroSanURL, currentUser]
     )
 
     const edges = layoutResult.edges

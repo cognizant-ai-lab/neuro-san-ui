@@ -30,6 +30,7 @@ import {
 } from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {PALETTES} from "../../../Theme/Palettes"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
@@ -1065,15 +1066,17 @@ describe("AgentFlow", () => {
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
     })
 
-    it("Should update the localStorage network map when a node popup is saved", async () => {
-        localStorage.clear()
-
-        // Seed localStorage with a network map entry for the agent we'll click
+    it("Should update the Zustand store network map when a node popup is saved", async () => {
+        // Seed the Zustand store with a flat array (server format) under a network key
         const initialDefinition: AgentNetworkDefinitionEntry[] = [
             {origin: "agent1", tools: ["agent2"], display_as: "llm_agent", instructions: "Original instructions."},
         ]
-        const mapKey = "test-network"
-        localStorage.setItem(AGENT_NETWORK_DEFINITION_KEY, JSON.stringify({[mapKey]: initialDefinition}))
+        const networkKey = "test-network"
+        act(() => {
+            useAgentChatHistoryStore.getState().updateSlyData(networkKey, {
+                [AGENT_NETWORK_DEFINITION_KEY]: initialDefinition,
+            })
+        })
 
         const {container} = renderAgentFlowComponent()
 
@@ -1094,18 +1097,19 @@ describe("AgentFlow", () => {
             expect(screen.queryByRole("button", {name: "Save Prompt"})).not.toBeInTheDocument()
         })
 
-        // localStorage should still have the network map (setNetworkMap was called)
-        const stored = localStorage.getItem(AGENT_NETWORK_DEFINITION_KEY)
-        expect(stored).not.toBeNull()
-        const parsed = JSON.parse(stored) as Record<string, AgentNetworkDefinitionEntry[]>
-        expect(parsed).toHaveProperty(mapKey)
+        // Zustand store should still have the updated flat array (updateSlyData was called)
+        const storedSlyData = useAgentChatHistoryStore.getState().history[networkKey]?.slyData
+        const storedDefinitions = storedSlyData?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[]
+        expect(storedDefinitions).toBeDefined()
+        expect(storedDefinitions.some((e) => e.origin === "agent1")).toBe(true)
     })
 
     it("Should open and close the node popup without saving", async () => {
-        localStorage.setItem(
-            AGENT_NETWORK_DEFINITION_KEY,
-            JSON.stringify({"test-net": [{origin: "agent1", tools: [], instructions: "Some instructions."}]})
-        )
+        act(() => {
+            useAgentChatHistoryStore.getState().updateSlyData("test-net", {
+                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: "Some instructions."}],
+            })
+        })
         const {container} = renderAgentFlowComponent()
 
         const agent1Node = container.querySelector('[data-id="agent1"]')

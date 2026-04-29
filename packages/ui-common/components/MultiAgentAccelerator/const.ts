@@ -43,6 +43,7 @@ export const AGENT_PROGRESS_CONNECTIVITY_KEY = "connectivity_info"
 export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"
 
 // The key in sly_data where the agent network definition is stored
+// TODO: Do we still want something for this?
 export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
 
 /**

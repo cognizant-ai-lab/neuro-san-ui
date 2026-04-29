@@ -32,6 +32,7 @@ import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
 
 // Mock agent API
 jest.mock("../../../../controller/agent/Agent")
@@ -1248,8 +1249,10 @@ describe("ChatCommon", () => {
         expect(input).toHaveValue("")
     })
 
-    it("Should persist agent network definition to localStorage map when sly_data contains it", async () => {
-        localStorage.clear()
+    it("Should persist agent network definition to Zustand store when sly_data contains it", async () => {
+        act(() => {
+            useAgentChatHistoryStore.getState().resetHistory(TEST_AGENT_MATH_GUY)
+        })
 
         const networkDefinition = [
             {origin: "agent_a", tools: ["agent_b"], display_as: "llm_agent", instructions: "Do things."},
@@ -1273,16 +1276,17 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, "test query for sly_data network map")
 
         await waitFor(() => {
-            const stored = localStorage.getItem("agent_network_definition")
-            expect(stored).not.toBeNull()
-            const parsed = JSON.parse(stored) as Record<string, unknown>
-            expect(parsed).toHaveProperty(TEST_AGENT_MATH_GUY)
-            expect(parsed[TEST_AGENT_MATH_GUY]).toEqual(networkDefinition)
+            const storedSlyData = useAgentChatHistoryStore.getState().history[TEST_AGENT_MATH_GUY]?.slyData
+            expect(storedSlyData).toBeDefined()
+            expect(storedSlyData).toHaveProperty("agent_network_definition")
+            expect(storedSlyData?.["agent_network_definition"]).toEqual(networkDefinition)
         })
     })
 
     it("Should accumulate sly_data from non-AGENT_FRAMEWORK messages", async () => {
-        localStorage.clear()
+        act(() => {
+            useAgentChatHistoryStore.getState().resetHistory(TEST_AGENT_MATH_GUY)
+        })
 
         renderChatCommonComponent()
 
