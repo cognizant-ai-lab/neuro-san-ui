@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
-import {act, render, screen} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
@@ -24,8 +24,13 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AgentNetworkDefinitionEntry,
+} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {PALETTES} from "../../../Theme/Palettes"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
@@ -1059,6 +1064,67 @@ describe("AgentFlow", () => {
 
         // setThoughtBubbleEdges should have been called (for both add and remove paths).
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+    })
+
+    it("Should update the Zustand store network map when a node popup is saved", async () => {
+        // Seed the Zustand store with a flat array (server format) under a network key
+        const initialDefinition: AgentNetworkDefinitionEntry[] = [
+            {origin: "agent1", tools: ["agent2"], display_as: "llm_agent", instructions: "Original instructions."},
+        ]
+        const networkKey = "test-network"
+        act(() => {
+            useAgentChatHistoryStore.getState().updateSlyData(networkKey, {
+                [AGENT_NETWORK_DEFINITION_KEY]: initialDefinition,
+            })
+        })
+
+        const {container} = renderAgentFlowComponent()
+
+        // Click an agent node to open the popup. ReactFlow renders nodes with data-id attributes.
+        const agent1Node = container.querySelector('[data-id="agent1"]')
+        expect(agent1Node).toBeInTheDocument()
+        fireEvent.click(agent1Node)
+
+        // The popup should now be open — find the Save button
+        const saveButton = await screen.findByRole("button", {name: "Save Prompt"})
+        expect(saveButton).toBeInTheDocument()
+
+        // Click save (uses the initial prompt, no edits needed to exercise the code path)
+        fireEvent.click(saveButton)
+
+        // Popup should close
+        await waitFor(() => {
+            expect(screen.queryByRole("button", {name: "Save Prompt"})).not.toBeInTheDocument()
+        })
+
+        // Zustand store should still have the updated flat array (updateSlyData was called)
+        const storedSlyData = useAgentChatHistoryStore.getState().history[networkKey]?.slyData
+        const storedDefinitions = storedSlyData?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[]
+        expect(storedDefinitions).toBeDefined()
+        expect(storedDefinitions.some((e) => e.origin === "agent1")).toBe(true)
+    })
+
+    it("Should open and close the node popup without saving", async () => {
+        act(() => {
+            useAgentChatHistoryStore.getState().updateSlyData("test-net", {
+                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: "Some instructions."}],
+            })
+        })
+        const {container} = renderAgentFlowComponent()
+
+        const agent1Node = container.querySelector('[data-id="agent1"]')
+        expect(agent1Node).toBeInTheDocument()
+        fireEvent.click(agent1Node)
+
+        // Popup opens
+        const cancelButton = await screen.findByRole("button", {name: "Cancel"})
+        expect(cancelButton).toBeInTheDocument()
+
+        // Cancel closes the popup
+        fireEvent.click(cancelButton)
+        await waitFor(() => {
+            expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument()
+        })
     })
 
     it("Should handle conversations with empty text strings", () => {

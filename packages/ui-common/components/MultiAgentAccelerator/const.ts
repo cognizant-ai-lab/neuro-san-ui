@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+
 export const DEFAULT_FRONTMAN_X_POS = 150
 export const DEFAULT_FRONTMAN_Y_POS = 450
 
@@ -39,3 +41,15 @@ export const AGENT_PROGRESS_CONNECTIVITY_KEY = "connectivity_info"
 
 // Agent name for the special "Agent Network Designer" network
 export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"
+
+// The key in sly_data where the agent network definition is stored
+// TODO: Do we still want something for this?
+export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
+
+/**
+ * A single agent entry within an agent network definition, as received in sly_data from the backend.
+ * Extends ConnectivityInfo with an editable instructions field for the Agent Network Designer.
+ */
+export type AgentNetworkDefinitionEntry = ConnectivityInfo & {
+    readonly instructions?: string
+}

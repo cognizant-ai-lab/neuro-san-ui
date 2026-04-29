@@ -210,6 +210,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 sx={{
                     backgroundColor,
                     color,
+                    cursor: "pointer",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),

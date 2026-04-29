@@ -32,6 +32,7 @@ import {
     Controls,
     EdgeTypes,
     NodeChange,
+    NodeMouseHandler,
     ReactFlow,
     Node as RFNode,
     NodeTypes as RFNodeTypes,
@@ -42,15 +43,28 @@ import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, u
 
 import {AgentConversation} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {AgentNodePopup} from "./AgentNodePopup"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_DESIGNER_ID,
+    AgentNetworkDefinitionEntry,
+    BASE_RADIUS,
+    DEFAULT_FRONTMAN_X_POS,
+    DEFAULT_FRONTMAN_Y_POS,
+    LEVEL_SPACING,
+} from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
+import {sendChatQuery} from "../../controller/agent/Agent"
+import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
+import {NotificationType, sendNotification} from "../Common/notification"
 
 // #region: Types
 
@@ -59,10 +73,12 @@ export interface AgentFlowProps {
     readonly agentIconSuggestions?: AgentIconSuggestions
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
+    readonly currentUser?: string
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
+    readonly neuroSanURL?: string
     readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     readonly setThoughtBubbleEdges?: Dispatch<
         SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
@@ -85,10 +101,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     agentIconSuggestions,
     agentsInNetwork,
     currentConversations,
+    currentUser,
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isStreaming,
+    neuroSanURL,
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
 }) => {
@@ -112,6 +130,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
     const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
+
+    // Read all chat history to find agent_network_definition regardless of which network key it's under.
+    // The server stores agent_network_definition as a flat array in sly_data, keyed by whichever network
+    // is currently selected — not necessarily AGENT_NETWORK_DESIGNER_ID.
+    const allHistory = useAgentChatHistoryStore((state) => state.history)
+    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
 
     // Track conversation IDs we've already processed to prevent re-adding after expiry
     const processedConversationIdsRef = useRef<Set<string>>(new Set())
@@ -281,6 +305,94 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     useEffect(() => {
         setNodes(layoutResult.nodes)
     }, [layoutResult.nodes])
+
+    // Track which node the user clicked on so we can open the popup
+    const [selectedAgent, setSelectedAgent] = useState<{
+        agentId: string
+        agentName: string
+        initialPrompt: string
+    } | null>(null)
+    const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
+
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
+        (_event, node) => {
+            // Search all history entries for a flat agent_network_definition array containing this node's agent.
+            // The server returns agent_network_definition as a flat array in sly_data, stored under whichever
+            // network key was active at the time — so we search all history entries.
+            let initialPrompt = ""
+            for (const entry of Object.values(allHistory)) {
+                const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
+                if (Array.isArray(definitions)) {
+                    const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
+                    if (found) {
+                        initialPrompt = found.instructions ?? ""
+                        break
+                    }
+                }
+            }
+            setSelectedAgent({
+                agentId: node.id,
+                agentName: node.data.agentName,
+                initialPrompt,
+            })
+            setIsPopupOpen(true)
+        },
+        [allHistory]
+    )
+
+    const handlePopupClose = useCallback(() => {
+        setIsPopupOpen(false)
+    }, [])
+
+    const handlePopupSave = useCallback(
+        (agentName: string, promptText: string) => {
+            if (!selectedAgent) return
+
+            // Find which history entry's flat array contains this agent, then update it in place.
+            let networkAgentId: string | undefined
+            let currentDefinitions: AgentNetworkDefinitionEntry[] | undefined
+            for (const [agentId, entry] of Object.entries(allHistory)) {
+                const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
+                if (
+                    Array.isArray(definitions) &&
+                    (definitions as AgentNetworkDefinitionEntry[]).some((e) => e.origin === selectedAgent.agentId)
+                ) {
+                    networkAgentId = agentId
+                    currentDefinitions = definitions as AgentNetworkDefinitionEntry[]
+                    break
+                }
+            }
+            const updated: AgentNetworkDefinitionEntry[] = currentDefinitions
+                ? currentDefinitions.map(
+                      (entry): AgentNetworkDefinitionEntry =>
+                          entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
+                  )
+                : []
+            if (networkAgentId) {
+                updateSlyData(networkAgentId, {[AGENT_NETWORK_DEFINITION_KEY]: updated})
+            }
+            setIsPopupOpen(false)
+
+            // POST the updated definition to the Agent Network Designer (errors are handled asynchronously via .catch)
+            if (neuroSanURL && currentUser && updated.length > 0) {
+                sendChatQuery(
+                    neuroSanURL,
+                    new AbortController().signal,
+                    `Update instructions for agent "${agentName}"`,
+                    AGENT_NETWORK_DESIGNER_ID,
+                    () => undefined,
+                    null,
+                    {[AGENT_NETWORK_DEFINITION_KEY]: updated},
+                    currentUser,
+                    StreamingUnit.Line
+                ).catch((e: unknown) => {
+                    console.error("Failed to submit agent network update:", e)
+                    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, String(e))
+                })
+            }
+        },
+        [selectedAgent, allHistory, updateSlyData, neuroSanURL, currentUser]
+    )
 
     const edges = layoutResult.edges
 
@@ -602,6 +714,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
+                onNodeClick={handleNodeClick}
                 fitView={true}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
@@ -623,6 +736,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 isStreaming={isStreaming}
                 onBubbleHoverChange={handleBubbleHoverChange}
             />
+            {selectedAgent && (
+                <AgentNodePopup
+                    agentName={selectedAgent.agentName}
+                    initialPrompt={selectedAgent.initialPrompt}
+                    isOpen={isPopupOpen}
+                    onClose={handlePopupClose}
+                    onSave={handlePopupSave}
+                />
+            )}
         </Box>
     )
 }
