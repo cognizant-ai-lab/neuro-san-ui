@@ -24,8 +24,10 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
-import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/AgentNetworkDesigner"
-import {AGENT_NETWORK_DEFINITION_KEY} from "../../../components/MultiAgentAccelerator/const"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AgentNetworkDefinitionEntry,
+} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {PALETTES} from "../../../Theme/Palettes"

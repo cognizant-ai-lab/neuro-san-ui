@@ -42,12 +42,12 @@ import {
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
-import {AgentNetworkDefinitionEntry} from "./AgentNetworkDesigner"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AgentNodePopup} from "./AgentNodePopup"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
+    AgentNetworkDefinitionEntry,
     BASE_RADIUS,
     DEFAULT_FRONTMAN_X_POS,
     DEFAULT_FRONTMAN_Y_POS,
