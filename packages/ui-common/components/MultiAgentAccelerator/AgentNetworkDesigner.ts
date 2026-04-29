@@ -30,17 +30,6 @@ export const readAgentNetworkDefinition = (): AgentNetworkDefinitionEntry[] => {
     }
 }
 
-/**
- * Writes the agent network definition to localStorage.
- */
-export const writeAgentNetworkDefinition = (definition: AgentNetworkDefinitionEntry[]): void => {
-    try {
-        localStorage.setItem(AGENT_NETWORK_DEFINITION_KEY, JSON.stringify(definition))
-    } catch {
-        // localStorage may be unavailable in some environments (SSR, private browsing, etc.)
-    }
-}
-
 // #endregion: LocalStorage helpers
 
 /**

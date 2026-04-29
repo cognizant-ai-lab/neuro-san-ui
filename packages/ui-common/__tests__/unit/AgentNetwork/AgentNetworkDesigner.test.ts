@@ -18,7 +18,6 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     AgentNetworkDefinitionEntry,
     readAgentNetworkDefinition,
-    writeAgentNetworkDefinition,
 } from "../../../components/MultiAgentAccelerator/AgentNetworkDesigner"
 import {AGENT_NETWORK_DEFINITION_KEY} from "../../../components/MultiAgentAccelerator/const"
 
@@ -57,45 +56,6 @@ describe("AgentNetworkDesigner localStorage helpers", () => {
         it("returns an empty array when the stored value is invalid JSON", () => {
             localStorage.setItem(AGENT_NETWORK_DEFINITION_KEY, "not-valid-json{{{")
             expect(readAgentNetworkDefinition()).toEqual([])
-        })
-    })
-
-    describe("writeAgentNetworkDefinition", () => {
-        it("persists the definition to localStorage", () => {
-            writeAgentNetworkDefinition(SAMPLE_DEFINITION)
-            const raw = localStorage.getItem(AGENT_NETWORK_DEFINITION_KEY)
-            expect(JSON.parse(raw)).toEqual(SAMPLE_DEFINITION)
-        })
-
-        it("overwrites any previously stored definition", () => {
-            writeAgentNetworkDefinition(SAMPLE_DEFINITION)
-
-            const updated = SAMPLE_DEFINITION.map((entry) =>
-                entry.origin === "planning_and_assessment_manager"
-                    ? {...entry, instructions: "Updated instructions."}
-                    : entry
-            )
-            writeAgentNetworkDefinition(updated)
-
-            expect(readAgentNetworkDefinition()).toEqual(updated)
-        })
-
-        it("persists an empty array correctly", () => {
-            writeAgentNetworkDefinition([])
-            expect(readAgentNetworkDefinition()).toEqual([])
-        })
-    })
-
-    describe("round-trip: write then read", () => {
-        it("preserves all fields including instructions", () => {
-            writeAgentNetworkDefinition(SAMPLE_DEFINITION)
-            const result = readAgentNetworkDefinition()
-
-            expect(result).toHaveLength(2)
-            expect(result[0].origin).toBe("north_pole_operations_director")
-            expect(result[0].instructions).toBe("Own end-to-end North Pole operations.")
-            expect(result[1].origin).toBe("planning_and_assessment_manager")
-            expect(result[1].instructions).toBe("Own upstream planning for Santa's Workshop.")
         })
     })
 })

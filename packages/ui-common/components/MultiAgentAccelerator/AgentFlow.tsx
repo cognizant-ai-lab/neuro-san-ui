@@ -42,11 +42,7 @@ import {
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
-import {
-    AgentNetworkDefinitionEntry,
-    readAgentNetworkDefinition,
-    writeAgentNetworkDefinition,
-} from "./AgentNetworkDesigner"
+import {AgentNetworkDefinitionEntry} from "./AgentNetworkDesigner"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AgentNodePopup} from "./AgentNodePopup"
 import {
@@ -66,6 +62,7 @@ import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {usePalette} from "../../Theme/Palettes"
+import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {NotificationType, sendNotification} from "../Common/notification"
 
@@ -133,6 +130,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
     const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
+
+    // Persist agent network definitions as a map of networks keyed by agent name
+    const [, setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
 
     // Track conversation IDs we've already processed to prevent re-adding after expiry
     const processedConversationIdsRef = useRef<Set<string>>(new Set())
@@ -312,13 +312,25 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
-        // Look up the instructions for this agent from the persisted network definition
-        const definition = readAgentNetworkDefinition()
-        const entry = definition.find((e) => e.origin === node.id)
+        // Look up the instructions for this agent from the persisted network definition map
+        const currentMap = JSON.parse(localStorage.getItem(AGENT_NETWORK_DEFINITION_KEY) ?? "{}") as Record<
+            string,
+            AgentNetworkDefinitionEntry[]
+        >
+        let initialPrompt = ""
+        for (const definitions of Object.values(currentMap)) {
+            if (Array.isArray(definitions)) {
+                const entry = definitions.find((e) => e.origin === node.id)
+                if (entry) {
+                    initialPrompt = entry.instructions ?? ""
+                    break
+                }
+            }
+        }
         setSelectedAgent({
             agentId: node.id,
             agentName: node.data.agentName,
-            initialPrompt: entry?.instructions ?? "",
+            initialPrompt,
         })
         setIsPopupOpen(true)
     }, [])
@@ -331,16 +343,29 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (agentName: string, promptText: string) => {
             if (!selectedAgent) return
 
-            // Update the definition in localStorage with the new instructions
-            const definition = readAgentNetworkDefinition()
-            const updated = definition.map(
-                (entry): AgentNetworkDefinitionEntry =>
-                    entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
+            // Find which network contains this agent and update its entries in the map
+            const currentMap = JSON.parse(localStorage.getItem(AGENT_NETWORK_DEFINITION_KEY) ?? "{}") as Record<
+                string,
+                AgentNetworkDefinitionEntry[]
+            >
+            const networkKey = Object.keys(currentMap).find(
+                (k) => Array.isArray(currentMap[k]) && currentMap[k].some((e) => e.origin === selectedAgent.agentId)
             )
-            writeAgentNetworkDefinition(updated)
+            const updated: AgentNetworkDefinitionEntry[] = networkKey
+                ? currentMap[networkKey].map(
+                      (entry): AgentNetworkDefinitionEntry =>
+                          entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
+                  )
+                : []
+            if (networkKey) {
+                setNetworkMap((prev: unknown) => ({
+                    ...(prev as Record<string, AgentNetworkDefinitionEntry[]>),
+                    [networkKey]: updated,
+                }))
+            }
             setIsPopupOpen(false)
 
-            // POST the updated definition to the Agent Network Designer (fire and forget)
+            // POST the updated definition to the Agent Network Designer (errors are handled asynchronously via .catch)
             if (neuroSanURL && currentUser && updated.length > 0) {
                 sendChatQuery(
                     neuroSanURL,
@@ -358,7 +383,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 })
             }
         },
-        [selectedAgent, neuroSanURL, currentUser]
+        [selectedAgent, setNetworkMap, neuroSanURL, currentUser]
     )
 
     const edges = layoutResult.edges

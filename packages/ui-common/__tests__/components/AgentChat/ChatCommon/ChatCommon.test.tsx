@@ -1247,4 +1247,72 @@ describe("ChatCommon", () => {
         }
         expect(input).toHaveValue("")
     })
+
+    it("Should persist agent network definition to localStorage map when sly_data contains it", async () => {
+        localStorage.clear()
+
+        const networkDefinition = [
+            {origin: "agent_a", tools: ["agent_b"], display_as: "llm_agent", instructions: "Do things."},
+        ]
+
+        const chatResponse: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT_FRAMEWORK,
+                text: "",
+                sly_data: {
+                    agent_network_definition: networkDefinition,
+                },
+            },
+        }
+
+        renderChatCommonComponent()
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test query for sly_data network map")
+
+        await waitFor(() => {
+            const stored = localStorage.getItem("agent_network_definition")
+            expect(stored).not.toBeNull()
+            const parsed = JSON.parse(stored) as Record<string, unknown>
+            expect(parsed).toHaveProperty(TEST_AGENT_MATH_GUY)
+            expect(parsed[TEST_AGENT_MATH_GUY]).toEqual(networkDefinition)
+        })
+    })
+
+    it("Should accumulate sly_data from non-AGENT_FRAMEWORK messages", async () => {
+        localStorage.clear()
+
+        const networkDefinition = [
+            {origin: "agent_x", tools: [] as string[], display_as: "llm_agent", instructions: "From AGENT message."},
+        ]
+
+        renderChatCommonComponent()
+
+        const chatResponse: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT,
+                text: "Some agent thinking text",
+                origin: [{tool: "agent_x", instantiation_index: 0}],
+                sly_data: {
+                    agent_network_definition: networkDefinition,
+                },
+            },
+        }
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test sly_data accumulation on AGENT message")
+
+        // sly_data should be accumulated even though the message type is AGENT (not AGENT_FRAMEWORK)
+        await waitFor(() => {
+            const stored = localStorage.getItem("agent_network_definition")
+            expect(stored).not.toBeNull()
+            const parsed = JSON.parse(stored) as Record<string, unknown>
+            expect(parsed).toHaveProperty(TEST_AGENT_MATH_GUY)
+        })
+    })
 })

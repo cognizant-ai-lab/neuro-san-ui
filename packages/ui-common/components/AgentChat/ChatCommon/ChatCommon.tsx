@@ -67,14 +67,12 @@ import {
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
 import {hashString, hasOnlyWhitespace} from "../../../utils/text"
+import {useLocalStorage} from "../../../utils/useLocalStorage"
 import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../../Common/MUIAccordion"
 import {MUIAlert} from "../../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../../Common/notification"
-import {
-    AgentNetworkDefinitionEntry,
-    writeAgentNetworkDefinition,
-} from "../../MultiAgentAccelerator/AgentNetworkDesigner"
+import {AgentNetworkDefinitionEntry} from "../../MultiAgentAccelerator/AgentNetworkDesigner"
 import {AGENT_NETWORK_DEFINITION_KEY} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
@@ -213,6 +211,7 @@ const extractFinalAnswer = (response: string) =>
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const slyData = useRef<Record<string, unknown>>({})
+    const [, setNetworkMap] = useLocalStorage(AGENT_NETWORK_DEFINITION_KEY, {})
 
     const {
         id,
@@ -482,25 +481,26 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
-            // Only AGENT_FRAMEWORK messages can have chat_context and sly_data.
+            // Accumulate sly_data from all message types
+            if (chatMessage.sly_data) {
+                slyData.current = {...slyData.current, ...chatMessage.sly_data}
+
+                // Persist the agent network definition to localStorage as a map of networks keyed by agent name
+                const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
+                if (Array.isArray(networkDefinition)) {
+                    setNetworkMap((prev: unknown) => ({
+                        ...(prev as Record<string, AgentNetworkDefinitionEntry[]>),
+                        [targetAgent]: networkDefinition as AgentNetworkDefinitionEntry[],
+                    }))
+                }
+            }
+
+            // Only AGENT_FRAMEWORK messages can have chat_context.
             if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK) {
                 if (chatMessage.chat_context) {
                     // Save the chat_context, potentially overwriting any previous ones we received during this session.
                     // We only care about the last one received.
                     chatContext.current = chatMessage.chat_context
-                }
-
-                if (chatMessage.sly_data) {
-                    // Save the sly_data, potentially overwriting any previous ones we received during this session.
-                    // We only care about the last one received.
-                    // TODO: Make sure this accumulates all sly_data (may be done in chat history PR?)
-                    slyData.current = {...slyData.current, ...chatMessage.sly_data}
-
-                    // Persist the agent network definition to localStorage so the node editor popup can access it
-                    const networkDefinition = chatMessage.sly_data[AGENT_NETWORK_DEFINITION_KEY]
-                    if (Array.isArray(networkDefinition)) {
-                        writeAgentNetworkDefinition(networkDefinition as AgentNetworkDefinitionEntry[])
-                    }
                 }
 
                 // Nothing more to do with this message. It's just a message to give us the chat context, so return
@@ -533,7 +533,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
             }
         },
-        [onChunkReceived, processLogLine, targetAgent, updateOutput]
+        [onChunkReceived, processLogLine, setNetworkMap, targetAgent, updateOutput]
     )
 
     const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
