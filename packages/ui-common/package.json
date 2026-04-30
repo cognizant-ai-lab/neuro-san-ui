@@ -1,5 +1,6 @@
 {
     "name": "@cognizant-ai-lab/ui-common",
+    "description": "A shared UI component library for Cognizant AI Labs projects",
     "version": "1.2.4",
     "type": "module",
     "scripts": {
