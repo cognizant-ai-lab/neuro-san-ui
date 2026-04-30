@@ -342,8 +342,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     useEffect(() => {
         // Scroll the final answer into view
         if (finalAnswerRef.current && !isAwaitingLlm) {
-            const offset = 50
-            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - offset
+            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - 50
             return
         }
 
@@ -765,6 +764,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     if (currentResponse?.current?.length > 0) {
                         updateChatHistory(targetAgent, [new AIMessage(lastAIMessage.current)])
                     }
+                } else if (isLegacyAgentType(targetAgent) && currentResponse.current.length > 0) {
+                    // It's a legacy agent that didn't provide a "Final Answer", so just record the whole response
+                    // as the bot answer in that case.
+                    updateChatHistory(targetAgent, [new AIMessage(currentResponse.current)])
                 }
 
                 // Add a blank line after response
