@@ -290,7 +290,6 @@ describe("Multi Agent Accelerator Page", () => {
                 expect.objectContaining({
                     currentUser: MOCK_USER,
                     targetAgent: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
-                    clearChatOnNewAgent: true,
                     neuroSanURL: NEURO_SAN_SERVER_URL,
                 })
             )

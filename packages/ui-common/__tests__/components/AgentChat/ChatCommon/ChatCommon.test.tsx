@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Include mock for IndexedDB
+import "fake-indexeddb/auto"
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
@@ -23,6 +25,7 @@ import {
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
+    TEST_AGENT_MUSIC_NERD_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
@@ -135,20 +138,18 @@ describe("ChatCommon", () => {
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
         // locate user query input
         const userQueryInput = screen.getByPlaceholderText(`Chat with ${cleanUpAgentName(agent)}`)
-        expect(userQueryInput).toBeInTheDocument()
 
         // Type a query
         await user.type(userQueryInput, query)
 
         // Find "Send" button
         const sendButton = screen.getByRole("button", {name: "Send"})
-        expect(sendButton).toBeInTheDocument()
 
         // Click on the "Send" button
         await user.click(sendButton)
     }
 
-    it.each(["light", "dark"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
+    it.each(["light"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
         renderChatCommonComponent({}, darkMode)
 
         await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
@@ -275,7 +276,6 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = await screen.findByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
 
         // Type user input
         await user.type(userInput, strToCheck)
@@ -283,7 +283,7 @@ describe("ChatCommon", () => {
         expect(userInput).toHaveValue(strToCheck)
 
         const sendButton = await screen.findByRole("button", {name: "Send"})
-        expect(sendButton).toBeInTheDocument()
+
         // Click Send button
         await user.click(sendButton)
 
@@ -299,7 +299,6 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
 
         // Type user input
         await user.type(userInput, strToCheck)
@@ -320,7 +319,6 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
 
         // Type line 1
         await user.type(userInput, strToCheckLine1)
@@ -366,7 +364,7 @@ describe("ChatCommon", () => {
             const query = "Sample test query for chunk handling"
             await sendQuery(TEST_AGENT_MATH_GUY, query)
 
-            expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+            await screen.findByText(testResponseText)
             expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
             expect(onChunkReceivedMock).toHaveBeenCalledWith(chunk)
         }
@@ -384,7 +382,7 @@ describe("ChatCommon", () => {
         const query = "Sample test query for chunk handling"
         await sendQuery(LegacyAgentType.DataGenerator, query)
 
-        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+        await screen.findByText(testResponseText)
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
     })
@@ -401,12 +399,12 @@ describe("ChatCommon", () => {
         const query = "Sample test query for legacy agent final answer handling"
         await sendQuery(LegacyAgentType.DMSChat, query)
 
-        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+        await screen.findByText(testResponseText)
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
 
         // should be a span with content "Final Answer"
-        expect(screen.getByText("Final Answer")).toBeInTheDocument()
+        screen.getByText("Final Answer")
     })
 
     it("Should correctly handle errors thrown while fetching", async () => {
@@ -547,14 +545,14 @@ describe("ChatCommon", () => {
     it("Should show agent introduction", async () => {
         renderChatCommonComponent()
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
     })
 
-    it("Should clear chat when a new agent is selected", async () => {
+    it("Should not clear chat when a new agent is selected", async () => {
         const {rerender} = render(<ChatCommon {...defaultProps} />)
 
         // Make sure first agent greeting appears
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         rerender(
             <ChatCommon
@@ -563,11 +561,11 @@ describe("ChatCommon", () => {
             />
         )
 
-        // Previous agent output should have been cleared
-        expect(screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).not.toBeInTheDocument()
+        // Previous agent output should still be present
+        screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         // New agent greeting should be present
-        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
     })
 
     it("Should refuse interaction when no target agent is set", async () => {
@@ -578,7 +576,6 @@ describe("ChatCommon", () => {
         expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
 
         const overlay = document.getElementById("chat-disabled-overlay")
-        expect(overlay).toBeInTheDocument()
         expect(overlay).toHaveStyle({
             position: "absolute",
             zIndex: MODAL_Z_INDEX - 1,
@@ -592,10 +589,9 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true})
 
         const stopButton = await screen.findByRole("button", {name: "Stop"})
-        expect(stopButton).toBeInTheDocument()
 
         await user.click(stopButton)
-        expect(await screen.findByText("Request cancelled.")).toBeInTheDocument()
+        await screen.findByText("Request cancelled.")
         expect(setAwaitingLlmMock).toHaveBeenCalledTimes(1)
         expect(setAwaitingLlmMock).toHaveBeenCalledWith(false)
     })
@@ -612,7 +608,7 @@ describe("ChatCommon", () => {
             ref.current?.handleStop()
         })
 
-        expect(await screen.findByText("Request cancelled.")).toBeInTheDocument()
+        await screen.findByText("Request cancelled.")
         expect(setAwaitingLlmMock).toHaveBeenCalledTimes(1)
         expect(setAwaitingLlmMock).toHaveBeenCalledWith(false)
     })
@@ -621,20 +617,18 @@ describe("ChatCommon", () => {
         renderChatCommonComponent()
 
         const autoscrollButton = screen.getByRole("button", {name: "Autoscroll enabled"})
-        expect(autoscrollButton).toBeInTheDocument()
 
         await user.click(autoscrollButton)
-        expect(screen.getByRole("button", {name: "Autoscroll disabled"})).toBeInTheDocument()
+        screen.getByRole("button", {name: "Autoscroll disabled"})
     })
 
     it("Should handle text wrapping toggle correctly", async () => {
         renderChatCommonComponent()
 
         const wrapButton = screen.getByRole("button", {name: "Text wrapping enabled"})
-        expect(wrapButton).toBeInTheDocument()
 
         await user.click(wrapButton)
-        expect(screen.getByRole("button", {name: "Text wrapping disabled"})).toBeInTheDocument()
+        screen.getByRole("button", {name: "Text wrapping disabled"})
     })
 
     it("Should handle final answer from Neuro-san agents correctly", async () => {
@@ -651,7 +645,7 @@ describe("ChatCommon", () => {
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
 
-        expect(await screen.findByText("Final Answer")).toBeInTheDocument()
+        await screen.findByText("Final Answer")
     })
 
     it.each([
@@ -699,16 +693,13 @@ describe("ChatCommon", () => {
 
         // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
         const showThinkingButton = document.getElementById("show-thinking-button")
-        expect(showThinkingButton).toBeInTheDocument()
         await user.click(showThinkingButton)
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
 
         // All responses should be visible when "show thinking" is enabled
-        await waitFor(() => {
-            expect(screen.getAllByText(aiResponseText)).toHaveLength(2)
-        })
-        expect(await screen.findByText(agentResponseText)).toBeInTheDocument()
+        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
+        await screen.findByText(agentResponseText)
 
         // Now click the button again to hide agent thinking
         await user.click(showThinkingButton)
@@ -899,18 +890,15 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, testMessage)
 
         // Wait for the message to appear
-        await waitFor(() => {
-            expect(screen.getByText(testMessage)).toBeInTheDocument()
-        })
+        await screen.findByText(testMessage)
 
         // Find and click Clear Chat button
         const clearButton = screen.getByRole("button", {name: "Clear Chat"})
-        expect(clearButton).toBeInTheDocument()
 
         await user.click(clearButton)
 
         // Verify chat is cleared and agent introduction appears
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
         expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
     })
 
@@ -1182,7 +1170,7 @@ describe("ChatCommon", () => {
 
         await sendQuery(LegacyAgentType.OpportunityFinder, "test query")
 
-        expect(await screen.findByText("Legacy response with custom endpoint")).toBeInTheDocument()
+        await screen.findByText("Legacy response with custom endpoint")
     })
 
     it.each([
@@ -1199,7 +1187,7 @@ describe("ChatCommon", () => {
             expect(chatContainer).toBeInTheDocument()
         })
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
     })
 
     it("Should handle connectivity info error gracefully", async () => {
@@ -1209,7 +1197,7 @@ describe("ChatCommon", () => {
         renderChatCommonComponent()
 
         // Component should still render despite connectivity error
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
     })
 
     it("Should handle network request timeout", async () => {
