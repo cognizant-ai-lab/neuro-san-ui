@@ -207,7 +207,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const {
         agentPlaceholders = EMPTY,
         backgroundColor,
-        clearChatOnNewAgent,
         currentUser,
         extraParams,
         id,
@@ -800,13 +799,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     useEffect(() => {
         if (targetAgent) {
-            if (clearChatOnNewAgent) {
-                setChatOutput([])
-                resetHistory(targetAgent)
-            }
             introduceAgent()
         }
-    }, [targetAgent, clearChatOnNewAgent, introduceAgent, resetHistory])
+    }, [targetAgent, introduceAgent])
 
     useEffect(() => {
         const fetchAgentDetails = async () => {
