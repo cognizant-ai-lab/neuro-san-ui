@@ -1,0 +1,26 @@
+{
+    "name": "@cognizant-ai-lab/dev-common",
+    "description": "Common development configurations and utilities for Cognizant AI Labs UI projects",
+    "version": "1.0.0",
+    "type": "module",
+    "exports": {
+        "./eslint/": "./configs/eslint-base.mjs"
+    },
+    "peerDependencies": {
+        "@eslint/compat": "*",
+        "@eslint/js": "*",
+        "@next/eslint-plugin-next": "*",
+        "eslint": "*",
+        "eslint-config-prettier": "*",
+        "eslint-plugin-import": "*",
+        "eslint-plugin-jest": "*",
+        "eslint-plugin-jest-dom": "*",
+        "eslint-plugin-prefer-arrow-functions": "*",
+        "eslint-plugin-react": "*",
+        "eslint-plugin-react-hooks": "*",
+        "eslint-plugin-testing-library": "*",
+        "eslint-plugin-unicorn": "*",
+        "globals": "*",
+        "typescript-eslint": "*"
+    }
+}
