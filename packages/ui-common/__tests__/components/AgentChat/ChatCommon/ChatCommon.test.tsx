@@ -150,7 +150,7 @@ describe("ChatCommon", () => {
         await user.click(sendButton)
     }
 
-    it.each(["light"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
+    it.each(["light", "dark"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
         renderChatCommonComponent({}, darkMode)
 
         await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
