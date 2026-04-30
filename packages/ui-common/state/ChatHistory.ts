@@ -11,7 +11,7 @@ import {
 import {create} from "zustand"
 import {persist, PersistStorage, StorageValue} from "zustand/middleware"
 
-import {idbStorage} from "./IndexDBStorage"
+import {indexedDBStorage} from "./IndexedDBStorage"
 import {ChatContext} from "../generated/neuro-san/NeuroSanClient"
 
 // Define a type to represent sly_data, which is super loose and can be almost anything depending on the agent.
@@ -62,7 +62,7 @@ interface StoredChatHistoryStore {
  */
 const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
     getItem: async (itemName: string): Promise<StorageValue<ChatHistoryStore> | null> => {
-        const stored = await idbStorage.getItem(itemName)
+        const stored = await indexedDBStorage.getItem(itemName)
         if (!stored) return null
         const parsed = stored as StorageValue<StoredChatHistoryStore>
         const rehydratedHistory = Object.fromEntries(
@@ -87,10 +87,10 @@ const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
             ])
         )
         const toStore = {state: {history: serializedHistory}, version: value.version}
-        await idbStorage.setItem(itemName, toStore)
+        await indexedDBStorage.setItem(itemName, toStore)
     },
     removeItem: async (itemName: string): Promise<void> => {
-        await idbStorage.removeItem(itemName)
+        await indexedDBStorage.removeItem(itemName)
     },
 }
 
