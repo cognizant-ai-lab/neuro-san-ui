@@ -3,15 +3,6 @@
  *
  */
 
-/* Copilot explanation of why it's okay to disable the Unicorn rule here:
-The linter rule unicorn/prefer-add-event-listener is designed for DOM elements like window or HTMLElement,
-where there's a meaningful difference between onerror and addEventListener('error').
-However, IDBRequest, IDBOpenDBRequest, etc. are not DOM event targets in the same sense —
-they're IndexedDB request objects. The unicorn rule is overly broad here and is flagging a false positive.
- */
-/* eslint-disable unicorn/prefer-add-event-listener */
-import {StateStorage} from "zustand/middleware"
-
 const DB_NAME = "zustand-store"
 const OBJECT_STORE_NAME = "neuro-san-ui"
 
@@ -19,8 +10,9 @@ const OBJECT_STORE_NAME = "neuro-san-ui"
  * StateStorage implementation using IndexedDB. Allows us to persist Zustand state in the browser's IndexedDB,
  * which is more robust and has larger storage limits than localStorage.
  */
-export const idbStorage: StateStorage = {
-    getItem: (itemName) =>
+/* eslint-disable unicorn/prefer-add-event-listener -- only applies to DOM event listeners which is not the case here */
+export const idbStorage = {
+    getItem: (itemName: string) =>
         new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, 1)
             request.onupgradeneeded = () => request.result.createObjectStore(OBJECT_STORE_NAME)
@@ -33,7 +25,7 @@ export const idbStorage: StateStorage = {
             }
             request.onerror = () => reject(request.error)
         }),
-    setItem: (itemName, value) =>
+    setItem: (itemName: string, value: unknown) =>
         new Promise<void>((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, 1)
             request.onupgradeneeded = () => request.result.createObjectStore(OBJECT_STORE_NAME)
@@ -46,7 +38,7 @@ export const idbStorage: StateStorage = {
             }
             request.onerror = () => reject(request.error)
         }),
-    removeItem: (itemName) =>
+    removeItem: (itemName: string) =>
         new Promise<void>((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, 1)
             request.onupgradeneeded = () => request.result.createObjectStore(OBJECT_STORE_NAME)
