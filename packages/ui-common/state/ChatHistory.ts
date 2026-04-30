@@ -17,6 +17,8 @@ import {ChatContext} from "../generated/neuro-san/NeuroSanClient"
 // Define a type to represent sly_data, which is super loose and can be almost anything depending on the agent.
 type SlyData = Record<string, unknown>
 
+// Maximum number of messages to keep in the chat history for each agent. Once we reach this limit, we will start
+// dropping old messages.
 const MAX_CHAT_HISTORY_ITEMS = 50
 
 /*
@@ -44,11 +46,16 @@ interface ChatHistoryStore {
     updateSlyData: (agentId: string, slyData: SlyData) => void
 }
 
+/**
+ * Custom storage implementation for persisting the chat history in IndexedDB. We need to do some custom
+ * serialization and deserialization here because the chat history contains complex objects
+ * (langchain BaseMessage and ChatContext) that can't be directly serialized to JSON. We use the langchain API
+ * to help with the serialization and deserialization.
+ */
 const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
     getItem: async (itemName: string): Promise<StorageValue<ChatHistoryStore> | null> => {
         const stored = await idbStorage.getItem(itemName)
         if (!stored) return null
-        // No JSON.parse — IDB returns the object directly
         const parsed = stored as unknown as StorageValue<ChatHistoryStore>
         const rehydratedHistory = Object.fromEntries(
             Object.entries(parsed?.state?.history ?? {}).map(([agentId, entry]) => [
@@ -81,6 +88,9 @@ const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
     },
 }
 
+// Key to use for storing the chat history in IndexedDB
+const STORE_KEY = "agent-chat-history"
+
 /**
  * The hook that lets apps use the store.
  * Structure:
@@ -90,7 +100,7 @@ const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
  *         └── key: "agent-chat-history"
  *                 └── value: serialized Map<string, AgentChatHistory>
  *                       └── key: agentId (string)
- *                       └── value: { chatHistory, chatContext}
+ *                       └── value: {chatHistory, chatContext, slyData}
  * </pre>
  */
 export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
@@ -125,7 +135,7 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                 }),
         }),
         {
-            name: "agent-chat-history",
+            name: STORE_KEY,
             storage: chatHistoryStorage,
         }
     )

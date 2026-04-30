@@ -15,6 +15,10 @@ import {StateStorage} from "zustand/middleware"
 const DB_NAME = "zustand-store"
 const OBJECT_STORE_NAME = "neuro-san-ui"
 
+/**
+ * StateStorage implementation using IndexedDB. Allows us to persist Zustand state in the browser's IndexedDB,
+ * which is more robust and has larger storage limits than localStorage.
+ */
 export const idbStorage: StateStorage = {
     getItem: (itemName) =>
         new Promise((resolve, reject) => {

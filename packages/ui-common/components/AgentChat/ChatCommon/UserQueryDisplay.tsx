@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {styled} from "@mui/material/styles"
+import Box from "@mui/material/Box"
+import {styled, SxProps} from "@mui/material/styles"
 
 import {DEFAULT_USER_IMAGE} from "../../../const"
 
@@ -34,18 +35,20 @@ const UserQueryContainer = styled("div")(({theme}) => ({
 // #endregion: Styled Components
 
 export const UserQueryDisplay = ({
+    sx,
     userQuery,
     title,
     userImage,
 }: {
+    sx?: SxProps
     userQuery: string
     title: string
     userImage: string
 }) => {
     return (
-        <div
+        <Box
             id="user-query-div"
-            style={{marginBottom: "1rem"}}
+            sx={[{marginBottom: "1rem"}, ...(Array.isArray(sx) ? sx : [sx])]}
         >
             <UserQueryContainer id="user-query-container">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -65,6 +68,6 @@ export const UserQueryDisplay = ({
                     {userQuery}
                 </span>
             </UserQueryContainer>
-        </div>
+        </Box>
     )
 }
