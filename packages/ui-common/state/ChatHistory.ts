@@ -46,6 +46,14 @@ interface ChatHistoryStore {
     updateSlyData: (agentId: string, slyData: SlyData) => void
 }
 
+// We need a separate type for how we store the chat history in IndexedDB, to allow for how langchain serializes
+// chat messages.
+type StoredAgentChatHistory = Omit<AgentChatHistory, "chatHistory"> & {readonly chatHistory: StoredMessage[]}
+
+interface StoredChatHistoryStore {
+    readonly history: Record<string, StoredAgentChatHistory>
+}
+
 /**
  * Custom storage implementation for persisting the chat history in IndexedDB. We need to do some custom
  * serialization and deserialization here because the chat history contains complex objects
@@ -56,19 +64,17 @@ const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
     getItem: async (itemName: string): Promise<StorageValue<ChatHistoryStore> | null> => {
         const stored = await idbStorage.getItem(itemName)
         if (!stored) return null
-        const parsed = stored as unknown as StorageValue<ChatHistoryStore>
+        const parsed = stored as StorageValue<StoredChatHistoryStore>
         const rehydratedHistory = Object.fromEntries(
             Object.entries(parsed?.state?.history ?? {}).map(([agentId, entry]) => [
                 agentId,
                 {
                     ...entry,
-                    chatHistory: entry.chatHistory
-                        ? mapStoredMessagesToChatMessages(entry.chatHistory as unknown as StoredMessage[])
-                        : [],
+                    chatHistory: entry.chatHistory ? mapStoredMessagesToChatMessages(entry.chatHistory) : [],
                 },
             ])
         )
-        return {...parsed, state: {...parsed.state, history: rehydratedHistory}}
+        return {...parsed, state: {...parsed.state, history: rehydratedHistory}} as StorageValue<ChatHistoryStore>
     },
     setItem: async (itemName: string, value: StorageValue<ChatHistoryStore>): Promise<void> => {
         const serializedHistory = Object.fromEntries(
@@ -81,7 +87,7 @@ const chatHistoryStorage: PersistStorage<ChatHistoryStore> = {
             ])
         )
         const toStore = {state: {history: serializedHistory}, version: value.version}
-        await idbStorage.setItem(itemName, toStore as unknown as string)
+        await idbStorage.setItem(itemName, toStore)
     },
     removeItem: async (itemName: string): Promise<void> => {
         await idbStorage.removeItem(itemName)
