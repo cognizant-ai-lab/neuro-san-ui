@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import "fake-indexeddb/auto"
+
 /**
  * This function is used to clear and reset all mocks before each test.
  * This helps to ensure that each test is isolated and does not depend on the state of any previous tests, avoiding
@@ -36,5 +38,8 @@ export const withStrictMocks = (options: StrictMockOptions = {}) => {
         if (resetModules) {
             jest.resetModules()
         }
+
+        // Reset IndexedDB mock store
+        globalThis.indexedDB = new IDBFactory()
     })
 }
