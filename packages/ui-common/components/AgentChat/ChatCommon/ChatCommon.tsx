@@ -468,7 +468,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // For legacy agents, we either get plain text or Markdown. Just output it as-is.
             if (isLegacyAgentType(targetAgent)) {
                 // Display output as-is
-                // TODO: how to handle this? don't want to save every single chunk as a separate item in history?!
                 updateOutput(chunk)
                 currentResponse.current += chunk
 
