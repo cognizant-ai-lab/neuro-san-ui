@@ -41,6 +41,7 @@ import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentC
 import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
 import {
+    AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
     AGENT_NETWORK_HOCON,
     AGENT_PROGRESS_CONNECTIVITY_KEY,
@@ -59,6 +60,7 @@ import {
     ChatResponse,
     ConnectivityInfo,
 } from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../../packages/ui-common/state/ChatHistory"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../../packages/ui-common/state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../../packages/ui-common/state/TemporaryNetworks"
@@ -254,6 +256,7 @@ describe("Multi Agent Accelerator Page", () => {
 
         // Reset zustand stores
         useTempNetworksStore.setState({tempNetworks: []})
+        useAgentChatHistoryStore.setState({history: {}})
         useSettingsStore.getState().resetSettings()
     })
 
@@ -570,6 +573,104 @@ describe("Multi Agent Accelerator Page", () => {
                     networkHocon: NETWORK_HOCON_CHAT_MESSAGE.response.sly_data?.[AGENT_NETWORK_HOCON],
                 }),
             ])
+        })
+
+        it("Should store sly_data under the temporary network's own history key", async () => {
+            // When a reservation arrives alongside sly_data that contains agent_network_definition,
+            // that data should be stored under the temporary network's own history key — NOT only
+            // under the Agent Network Designer key.
+            const agentNetworkDefinition = [
+                {origin: "copy_cat", tools: [] as string[], display_as: "llm_agent", instructions: "Copy everything."},
+            ]
+            const reservationWithDefinition: ChatResponse = {
+                response: {
+                    ...RESERVATION_CHAT_MESSAGE.response,
+                    sly_data: {
+                        ...RESERVATION_CHAT_MESSAGE.response.sly_data,
+                        [AGENT_NETWORK_DEFINITION_KEY]: agentNetworkDefinition,
+                    },
+                },
+            }
+
+            renderMultiAgentAcceleratorPage()
+
+            await act(async () => {
+                onChunkReceived(JSON.stringify(reservationWithDefinition))
+            })
+
+            const expectedNetworkKey = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+
+            // The sly_data must be stored under the temporary network's own key
+            const storedSlyData = useAgentChatHistoryStore.getState().history[expectedNetworkKey]?.slyData
+            expect(storedSlyData).toBeDefined()
+            expect(storedSlyData?.[AGENT_NETWORK_DEFINITION_KEY]).toEqual(agentNetworkDefinition)
+        })
+
+        it("Should store sly_data independently for two different temporary networks", async () => {
+            // Each temporary network must have its own independent sly_data entry.
+            const definitionA = [
+                {origin: "agent_alpha", tools: [] as string[], display_as: "llm_agent", instructions: "Network A instructions."},
+            ]
+            const definitionB = [
+                {origin: "agent_beta", tools: [] as string[], display_as: "llm_agent", instructions: "Network B instructions."},
+            ]
+
+            const reservationA = {
+                reservation_id: "res-a",
+                lifetime_in_seconds: 3600,
+                expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
+            }
+            const reservationB = {
+                reservation_id: "res-b",
+                lifetime_in_seconds: 3600,
+                expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
+            }
+
+            const chunkA: ChatResponse = {
+                response: {
+                    type: ChatMessageType.AGENT_FRAMEWORK,
+                    text: "",
+                    origin: [{tool: "copy_cat"}],
+                    sly_data: {
+                        [AGENT_RESERVATIONS_KEY]: [reservationA],
+                        [AGENT_NETWORK_DEFINITION_KEY]: definitionA,
+                    },
+                },
+            }
+            const chunkB: ChatResponse = {
+                response: {
+                    type: ChatMessageType.AGENT_FRAMEWORK,
+                    text: "",
+                    origin: [{tool: "copy_cat"}],
+                    sly_data: {
+                        [AGENT_RESERVATIONS_KEY]: [reservationB],
+                        [AGENT_NETWORK_DEFINITION_KEY]: definitionB,
+                    },
+                },
+            }
+
+            renderMultiAgentAcceleratorPage()
+
+            await act(async () => {
+                onChunkReceived(JSON.stringify(chunkA))
+            })
+            await act(async () => {
+                onChunkReceived(JSON.stringify(chunkB))
+            })
+
+            const keyA = `${TEMPORARY_NETWORK_FOLDER}/${reservationA.reservation_id}`
+            const keyB = `${TEMPORARY_NETWORK_FOLDER}/${reservationB.reservation_id}`
+
+            const slyDataA = useAgentChatHistoryStore.getState().history[keyA]?.slyData
+            const slyDataB = useAgentChatHistoryStore.getState().history[keyB]?.slyData
+
+            // Each network must have its own definition
+            expect(slyDataA?.[AGENT_NETWORK_DEFINITION_KEY]).toEqual(definitionA)
+            expect(slyDataB?.[AGENT_NETWORK_DEFINITION_KEY]).toEqual(definitionB)
+
+            // Sanity: definitions must not bleed across networks
+            expect(slyDataA?.[AGENT_NETWORK_DEFINITION_KEY]).not.toEqual(definitionB)
+            expect(slyDataB?.[AGENT_NETWORK_DEFINITION_KEY]).not.toEqual(definitionA)
         })
 
         it("Should detect agent progress messages in the chat stream", async () => {

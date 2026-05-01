@@ -40,6 +40,7 @@ import {
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -186,6 +187,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Special mode of operation where user is using Agent Network Designer to create a new network
     const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
+
+    // Whether the currently selected network is a temporary network (agent reservation)
+    const isSelectedNetworkTemporary =
+        selectedNetwork !== null && temporaryNetworks.some((n) => n.agentInfo.agent_name === selectedNetwork)
+
+    // Used to copy sly_data into newly created temporary network history entries
+    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -366,6 +374,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 const currentNetworks = useTempNetworksStore.getState().tempNetworks
                 useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
 
+                // Copy the sly_data from this message into each new temporary network's history entry so that
+                // agent_network_definition (and other keys) are available per-network, not just on the designer.
+                if (chatMessage.sly_data) {
+                    for (const network of newTemporaryNetworks) {
+                        updateSlyData(network.agentInfo.agent_name, chatMessage.sly_data)
+                    }
+                }
+
                 // Record the new temporary networks so we can highlight them for the user.
                 // For now, we only care about the first one since that's the only active use case
                 setNewlyAddedTemporaryNetworks(
@@ -375,7 +391,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             return true
         },
-        [isNetworkDesignerMode]
+        [isNetworkDesignerMode, updateSlyData]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -491,6 +507,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                             isStreaming={isStreaming}
+                            isTemporaryNetwork={isSelectedNetworkTemporary}
+                            networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}

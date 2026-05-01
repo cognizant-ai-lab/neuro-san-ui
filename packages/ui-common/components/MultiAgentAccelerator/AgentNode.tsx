@@ -42,6 +42,7 @@ export interface AgentNodeProps extends Record<string, unknown> {
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
     readonly agentIconSuggestion?: string
+    readonly isTemporaryNetwork?: boolean
 }
 
 // Node dimensions
@@ -104,7 +105,16 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {agentCounts, agentName, depth, displayAs, getConversations, agentIconSuggestion, isAwaitingLlm} = data
+    const {
+        agentCounts,
+        agentName,
+        depth,
+        displayAs,
+        getConversations,
+        agentIconSuggestion,
+        isAwaitingLlm,
+        isTemporaryNetwork,
+    } = data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -210,7 +220,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 sx={{
                     backgroundColor,
                     color,
-                    cursor: "pointer",
+                    cursor: isTemporaryNetwork ? "pointer" : "grab",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),

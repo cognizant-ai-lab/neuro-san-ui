@@ -193,4 +193,16 @@ describe("AgentNode", () => {
         expect(warnSpy).toHaveBeenCalledWith("Invalid MUI icon suggestion: NotARealMuiIconAtAll")
         warnSpy.mockRestore()
     })
+
+    it.each([
+        ["temporary network", true, "pointer"],
+        ["non-temporary network", false, "grab"],
+        ["no isTemporaryNetwork prop (default)", undefined, "grab"],
+    ])("cursor is %s when isTemporaryNetwork=%s", (_label, isTemporaryNetwork, expectedCursor) => {
+        renderAgentNode({depth: 1, isTemporaryNetwork})
+
+        const agentNodeDiv = screen.getByTestId(AGENT_ID)
+        const style = window.getComputedStyle(agentNodeDiv)
+        expect(style.cursor).toBe(expectedCursor)
+    })
 })

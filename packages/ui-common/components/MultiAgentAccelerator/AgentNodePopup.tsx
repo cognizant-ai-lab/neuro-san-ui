@@ -51,9 +51,12 @@ export interface AgentNodePopupProps {
 export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onClose, onSave, initialPrompt = ""}) => {
     const [promptText, setPromptText] = useState<string>(initialPrompt)
 
-    // Keep local prompt in sync if initialPrompt changes (e.g. when the API loads it later).
+    // Keep local prompt in sync when the dialog opens or if initialPrompt changes while open.
+    // Guarding on isOpen prevents resetting the text during the close animation, which would cause a visible flash.
     useEffect(() => {
-        setPromptText(initialPrompt)
+        if (isOpen) {
+            setPromptText(initialPrompt)
+        }
     }, [initialPrompt, isOpen])
 
     const handleSave = () => {

@@ -78,6 +78,9 @@ export interface AgentFlowProps {
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
+    readonly isTemporaryNetwork?: boolean
+    /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
+    readonly networkId?: string
     readonly neuroSanURL?: string
     readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     readonly setThoughtBubbleEdges?: Dispatch<
@@ -106,6 +109,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isStreaming,
+    isTemporaryNetwork,
+    networkId,
     neuroSanURL,
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
@@ -275,7 +280,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       isAwaitingLlm,
                       isAgentNetworkDesignerMode,
                       thoughtBubbleEdges,
-                      agentIconSuggestions
+                      agentIconSuggestions,
+                      isTemporaryNetwork
                   )
                 : layoutRadial(
                       isHeatmap ? agentCounts : undefined,
@@ -284,7 +290,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       isAwaitingLlm,
                       isAgentNetworkDesignerMode,
                       thoughtBubbleEdges,
-                      agentIconSuggestions
+                      agentIconSuggestions,
+                      isTemporaryNetwork
                   ),
         [
             agentCounts,
@@ -293,6 +300,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             isAgentNetworkDesignerMode,
             isAwaitingLlm,
             isHeatmap,
+            isTemporaryNetwork,
             layout,
             mergedAgentsInNetwork,
             thoughtBubbleEdges,
@@ -316,19 +324,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
-            // Search all history entries for a flat agent_network_definition array containing this node's agent.
-            // The server returns agent_network_definition as a flat array in sly_data, stored under whichever
-            // network key was active at the time — so we search all history entries.
+            // Popup is only available for temporary networks
+            if (!isTemporaryNetwork) return
+
+            // Look up the agent_network_definition only from this network's own history entry.
             let initialPrompt = ""
-            for (const entry of Object.values(allHistory)) {
-                const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
-                if (Array.isArray(definitions)) {
-                    const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
-                    if (found) {
-                        initialPrompt = found.instructions ?? ""
-                        break
-                    }
-                }
+            const networkEntry = networkId ? allHistory[networkId] : undefined
+            const definitions = networkEntry?.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
+            if (Array.isArray(definitions)) {
+                const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
+                initialPrompt = found?.instructions ?? ""
             }
             setSelectedAgent({
                 agentId: node.id,
@@ -337,7 +342,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             })
             setIsPopupOpen(true)
         },
-        [allHistory]
+        [allHistory, isTemporaryNetwork, networkId]
     )
 
     const handlePopupClose = useCallback(() => {
@@ -348,28 +353,20 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (agentName: string, promptText: string) => {
             if (!selectedAgent) return
 
-            // Find which history entry's flat array contains this agent, then update it in place.
-            let networkAgentId: string | undefined
-            let currentDefinitions: AgentNetworkDefinitionEntry[] | undefined
-            for (const [agentId, entry] of Object.entries(allHistory)) {
-                const definitions = entry.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
-                if (
-                    Array.isArray(definitions) &&
-                    (definitions as AgentNetworkDefinitionEntry[]).some((e) => e.origin === selectedAgent.agentId)
-                ) {
-                    networkAgentId = agentId
-                    currentDefinitions = definitions as AgentNetworkDefinitionEntry[]
-                    break
-                }
-            }
+            // Scope the read and write to this network's own history entry only.
+            const currentDefinitions = networkId
+                ? (allHistory[networkId]?.slyData?.[AGENT_NETWORK_DEFINITION_KEY] as
+                      | AgentNetworkDefinitionEntry[]
+                      | undefined)
+                : undefined
             const updated: AgentNetworkDefinitionEntry[] = currentDefinitions
                 ? currentDefinitions.map(
                       (entry): AgentNetworkDefinitionEntry =>
                           entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
                   )
                 : []
-            if (networkAgentId) {
-                updateSlyData(networkAgentId, {[AGENT_NETWORK_DEFINITION_KEY]: updated})
+            if (networkId) {
+                updateSlyData(networkId, {[AGENT_NETWORK_DEFINITION_KEY]: updated})
             }
             setIsPopupOpen(false)
 
@@ -391,7 +388,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 })
             }
         },
-        [selectedAgent, allHistory, updateSlyData, neuroSanURL, currentUser]
+        [selectedAgent, allHistory, updateSlyData, neuroSanURL, currentUser, networkId]
     )
 
     const edges = layoutResult.edges
