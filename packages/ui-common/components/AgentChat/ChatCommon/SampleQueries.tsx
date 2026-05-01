@@ -6,10 +6,10 @@ import {FC} from "react"
 import {hashString} from "../../../utils/text"
 
 // Maximum number of sample queries to show
-const MAX_SAMPLE_QUERIES = 5
+export const MAX_SAMPLE_QUERIES = 5
 
 // Maximum length of query to show in sample query chips
-const QUERY_TRUNCATE_LENGTH = 80
+export const QUERY_TRUNCATE_LENGTH = 80
 
 interface SampleQueriesProps {
     readonly disabled: boolean
