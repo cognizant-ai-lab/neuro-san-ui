@@ -9,7 +9,13 @@ const OBJECT_STORE_NAME = "neuro-san-ui"
 // Not exactly a sophisticated upgrade function, since it merely creates the object store if it doesn't exist.
 // But good enough for our purposes for now.
 const upgradeDB = (request: IDBOpenDBRequest) => () => {
-    return request.result.createObjectStore(OBJECT_STORE_NAME)
+    const db = request.result
+
+    if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+        return db.createObjectStore(OBJECT_STORE_NAME)
+    }
+
+    return undefined
 }
 
 /**
