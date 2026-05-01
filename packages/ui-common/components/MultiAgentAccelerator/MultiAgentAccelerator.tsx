@@ -27,7 +27,14 @@ import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
 import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
-import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "./const"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_DESIGNER_ID,
+    AGENT_NETWORK_HOCON,
+    AGENT_NETWORK_NAME_KEY,
+    AgentNetworkDefinitionEntry,
+    TEMPORARY_NETWORK_FOLDER,
+} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -40,7 +47,6 @@ import {
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
-import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -80,7 +86,9 @@ const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape
  */
 const convertReservationsToNetworks = (
     agentReservations: AgentReservation[],
-    networkHocon: string | null
+    networkHocon: string | null,
+    agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
+    agentNetworkName?: string
 ): TemporaryNetwork[] => {
     return agentReservations.map((reservation) => ({
         reservation,
@@ -89,7 +97,9 @@ const convertReservationsToNetworks = (
             origin: reservation.reservation_id,
             status: "active",
         },
+        agentNetworkName,
         networkHocon,
+        agentNetworkDefinition,
     }))
 }
 
@@ -192,8 +202,21 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const isSelectedNetworkTemporary =
         selectedNetwork !== null && temporaryNetworks.some((n) => n.agentInfo.agent_name === selectedNetwork)
 
-    // Used to copy sly_data into newly created temporary network history entries
-    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
+    // For temp networks, agent_network_definition and agent_network_name live in localStorage (not IndexedDB slyData).
+    // Supply them as extraSlyData so ChatCommon bounces them back to the backend on every request.
+    const currentTempNetwork = isSelectedNetworkTemporary
+        ? temporaryNetworks.find((n) => n.agentInfo.agent_name === selectedNetwork)
+        : undefined
+    const extraSlyData: Record<string, unknown> | undefined = currentTempNetwork
+        ? {
+              [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
+              // Use the name the backend originally sent, not the local UUID-based key.
+              ...(currentTempNetwork.agentNetworkName
+                  ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
+                  : {}),
+              ...(currentTempNetwork.networkHocon ? {[AGENT_NETWORK_HOCON]: currentTempNetwork.networkHocon} : {}),
+          }
+        : undefined
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -366,21 +389,23 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             // Handle agent reservations (temporary networks) that come in through the chat stream.
             if (reservationsResult?.length > 0) {
-                // Retrieve network definition, if present
+                // Retrieve network definition and HOCON, if present in sly_data
                 const networkHocon = extractNetworkHocon(chatMessage)
+                const agentNetworkDefinition = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
+                    | AgentNetworkDefinitionEntry[]
+                    | undefined
+                // Capture the backend's canonical name so we can bounce it back unchanged on future requests.
+                const agentNetworkName = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
 
-                const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkHocon)
+                const newTemporaryNetworks = convertReservationsToNetworks(
+                    reservationsResult,
+                    networkHocon,
+                    agentNetworkDefinition,
+                    agentNetworkName
+                )
 
                 const currentNetworks = useTempNetworksStore.getState().tempNetworks
                 useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
-
-                // Copy the sly_data from this message into each new temporary network's history entry so that
-                // agent_network_definition (and other keys) are available per-network, not just on the designer.
-                if (chatMessage.sly_data) {
-                    for (const network of newTemporaryNetworks) {
-                        updateSlyData(network.agentInfo.agent_name, chatMessage.sly_data)
-                    }
-                }
 
                 // Record the new temporary networks so we can highlight them for the user.
                 // For now, we only care about the first one since that's the only active use case
@@ -391,7 +416,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             return true
         },
-        [isNetworkDesignerMode, updateSlyData]
+        [isNetworkDesignerMode]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -550,6 +575,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         onChunkReceived={onChunkReceived}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
+                        extraSlyData={extraSlyData}
                     />
                 </Grid>
             </Slide>

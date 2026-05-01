@@ -24,13 +24,10 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
-import {
-    AGENT_NETWORK_DEFINITION_KEY,
-    AgentNetworkDefinitionEntry,
-} from "../../../components/MultiAgentAccelerator/const"
+import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../Theme/Palettes"
 
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
@@ -93,6 +90,18 @@ describe("AgentFlow", () => {
         ;(useColorScheme as jest.Mock).mockReturnValue({
             mode: "light",
         })
+        useTempNetworksStore.getState().setTempNetworks([])
+    })
+
+    // Helper to create a minimal TemporaryNetwork for seeding the store in tests.
+    const makeTempNetwork = (networkId: string, agentNetworkDefinition?: AgentNetworkDefinitionEntry[]) => ({
+        reservation: {
+            reservation_id: networkId,
+            lifetime_in_seconds: 300,
+            expiration_time_in_seconds: Date.now() / 1000 + 300,
+        },
+        agentInfo: {agent_name: networkId, origin: networkId, status: "active" as const},
+        agentNetworkDefinition,
     })
 
     const currentConversations2: AgentConversation[] = [
@@ -1071,11 +1080,10 @@ describe("AgentFlow", () => {
         const initialDefinition: AgentNetworkDefinitionEntry[] = [
             {origin: "agent1", tools: ["agent2"], display_as: "llm_agent", instructions: "Original instructions."},
         ]
+        // Seed the temp networks store with the network and its definition
         const networkKey = "temporary/test-network"
         act(() => {
-            useAgentChatHistoryStore.getState().updateSlyData(networkKey, {
-                [AGENT_NETWORK_DEFINITION_KEY]: initialDefinition,
-            })
+            useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(networkKey, initialDefinition)])
         })
 
         const {container} = renderAgentFlowComponent({
@@ -1089,20 +1097,21 @@ describe("AgentFlow", () => {
         fireEvent.click(agent1Node)
 
         // The popup should now be open — find the Save button
-        const saveButton = await screen.findByRole("button", {name: "Save Prompt"})
+        const saveButton = await screen.findByRole("button", {name: "Save"})
         expect(saveButton).toBeInTheDocument()
 
-        // Click save (uses the initial prompt, no edits needed to exercise the code path)
+        // Click save (uses the initial instructions, no edits needed to exercise the code path)
         fireEvent.click(saveButton)
 
         // Popup should close
         await waitFor(() => {
-            expect(screen.queryByRole("button", {name: "Save Prompt"})).not.toBeInTheDocument()
+            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
         })
 
-        // Zustand store should still have the updated flat array (updateSlyData was called)
-        const storedSlyData = useAgentChatHistoryStore.getState().history[networkKey]?.slyData
-        const storedDefinitions = storedSlyData?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[]
+        // Zustand store should still have the updated definition (updateTempNetworkDefinition was called)
+        const storedDefinitions = useTempNetworksStore
+            .getState()
+            .tempNetworks.find((n) => n.agentInfo.agent_name === networkKey)?.agentNetworkDefinition
         expect(storedDefinitions).toBeDefined()
         expect(storedDefinitions.some((e) => e.origin === "agent1")).toBe(true)
     })
@@ -1110,9 +1119,11 @@ describe("AgentFlow", () => {
     it("Should open and close the node popup without saving", async () => {
         const networkKey = "temporary/test-net"
         act(() => {
-            useAgentChatHistoryStore.getState().updateSlyData(networkKey, {
-                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: "Some instructions."}],
-            })
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks([
+                    makeTempNetwork(networkKey, [{origin: "agent1", tools: [], instructions: "Some instructions."}]),
+                ])
         })
         const {container} = renderAgentFlowComponent({
             isTemporaryNetwork: true,
@@ -1256,21 +1267,14 @@ describe("AgentFlow", () => {
 
     it("Should NOT open popup when clicking an agent node on a non-temporary network", async () => {
         const networkKey = "industry/banking_ops"
-        act(() => {
-            useAgentChatHistoryStore.getState().updateSlyData(networkKey, {
-                [AGENT_NETWORK_DEFINITION_KEY]: [
-                    {origin: "agent1", tools: [], instructions: "Permanent instructions."},
-                ],
-            })
-        })
-        // isTemporaryNetwork defaults to undefined/false
+        // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
         const {container} = renderAgentFlowComponent({networkId: networkKey})
 
         const agent1Node = container.querySelector('[data-id="agent1"]')
         fireEvent.click(agent1Node)
 
         // Popup must not appear
-        expect(screen.queryByRole("button", {name: "Save Prompt"})).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
     })
 
     it("Should read instructions only from the current network, not from another network with same agent", async () => {
@@ -1281,12 +1285,12 @@ describe("AgentFlow", () => {
         const instructionsB = "Instructions specific to Network B."
 
         act(() => {
-            useAgentChatHistoryStore.getState().updateSlyData(networkA, {
-                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: instructionsA}],
-            })
-            useAgentChatHistoryStore.getState().updateSlyData(networkB, {
-                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: instructionsB}],
-            })
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks([
+                    makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: instructionsA}]),
+                    makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: instructionsB}]),
+                ])
         })
 
         // Render with networkB selected
@@ -1299,9 +1303,9 @@ describe("AgentFlow", () => {
         fireEvent.click(agent1Node)
 
         // Popup should show networkB's instructions, not networkA's
-        const promptField = await screen.findByRole("textbox", {name: /system prompt/iu})
-        expect(promptField).toHaveValue(instructionsB)
-        expect(promptField).not.toHaveValue(instructionsA)
+        const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+        expect(instructionsField).toHaveValue(instructionsB)
+        expect(instructionsField).not.toHaveValue(instructionsA)
     })
 
     it("Should save edited instructions only to the current network's history entry", async () => {
@@ -1310,12 +1314,12 @@ describe("AgentFlow", () => {
         const originalInstructions = "Original shared instructions."
 
         act(() => {
-            useAgentChatHistoryStore.getState().updateSlyData(networkA, {
-                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: originalInstructions}],
-            })
-            useAgentChatHistoryStore.getState().updateSlyData(networkB, {
-                [AGENT_NETWORK_DEFINITION_KEY]: [{origin: "agent1", tools: [], instructions: originalInstructions}],
-            })
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks([
+                    makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
+                    makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
+                ])
         })
 
         const {container} = renderAgentFlowComponent({
@@ -1326,26 +1330,26 @@ describe("AgentFlow", () => {
         const agent1Node = container.querySelector('[data-id="agent1"]')
         fireEvent.click(agent1Node)
 
-        // Edit the prompt and save
-        const promptField = await screen.findByRole("textbox", {name: /system prompt/iu})
-        fireEvent.change(promptField, {target: {value: "Updated instructions for Network A."}})
-        fireEvent.click(screen.getByRole("button", {name: "Save Prompt"}))
+        // Edit the instructions and save
+        const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+        fireEvent.change(instructionsField, {target: {value: "Updated instructions for Network A."}})
+        fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
         await waitFor(() => {
-            expect(screen.queryByRole("button", {name: "Save Prompt"})).not.toBeInTheDocument()
+            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
         })
 
         // Network A's instructions should be updated
-        const defA = useAgentChatHistoryStore.getState().history[networkA]?.slyData?.[
-            AGENT_NETWORK_DEFINITION_KEY
-        ] as AgentNetworkDefinitionEntry[]
-        expect(defA.find((e) => e.origin === "agent1")?.instructions).toBe("Updated instructions for Network A.")
+        const defA = useTempNetworksStore
+            .getState()
+            .tempNetworks.find((n) => n.agentInfo.agent_name === networkA)?.agentNetworkDefinition
+        expect(defA?.find((e) => e.origin === "agent1")?.instructions).toBe("Updated instructions for Network A.")
 
         // Network B's instructions must be untouched
-        const defB = useAgentChatHistoryStore.getState().history[networkB]?.slyData?.[
-            AGENT_NETWORK_DEFINITION_KEY
-        ] as AgentNetworkDefinitionEntry[]
-        expect(defB.find((e) => e.origin === "agent1")?.instructions).toBe(originalInstructions)
+        const defB = useTempNetworksStore
+            .getState()
+            .tempNetworks.find((n) => n.agentInfo.agent_name === networkB)?.agentNetworkDefinition
+        expect(defB?.find((e) => e.origin === "agent1")?.instructions).toBe(originalInstructions)
     })
 
     it("Should handle conversations where bubble has no text field", () => {

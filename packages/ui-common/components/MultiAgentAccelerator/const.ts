@@ -45,10 +45,14 @@ export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"
 // The key in sly_data where the agent network definition is stored
 export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
 
+// The key in sly_data where the agent network name is stored
+export const AGENT_NETWORK_NAME_KEY = "agent_network_name"
+
 /**
  * A single agent entry within an agent network definition, as received in sly_data from the backend.
- * Extends ConnectivityInfo with an editable instructions field for the Agent Network Designer.
+ * Extends ConnectivityInfo with editable instructions and description fields for the Agent Network Designer.
  */
 export type AgentNetworkDefinitionEntry = ConnectivityInfo & {
     readonly instructions?: string
+    readonly description?: string
 }

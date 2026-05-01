@@ -170,6 +170,12 @@ export interface ChatCommonProps {
      * The neuro-san server URL
      */
     readonly neuroSanURL?: string
+
+    /**
+     * Extra sly_data entries to merge into each outgoing request. Used by parent components (e.g. temp networks)
+     * to re-supply data that lives outside the IndexedDB slyData store (e.g. localStorage).
+     */
+    readonly extraSlyData?: Record<string, unknown>
 }
 
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
@@ -209,6 +215,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         backgroundColor,
         currentUser,
         extraParams,
+        extraSlyData,
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
@@ -623,7 +630,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...agentChatHistory?.slyData, login: currentUser}
+                        const slyDataWithUserName = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
@@ -663,6 +670,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             agentChatHistory,
             currentUser,
             extraParams,
+            extraSlyData,
             handleChunk,
             legacyAgentEndpoint,
             neuroSanURL,

@@ -21,7 +21,7 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
 
 const AGENT_NAME = "Audit Risk Manager"
-const INITIAL_PROMPT = "Evaluate operational risks and detect anomalies."
+const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
 
 const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
     const onClose = jest.fn()
@@ -33,7 +33,7 @@ const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
             isOpen={true}
             onClose={onClose}
             onSave={onSave}
-            initialPrompt={INITIAL_PROMPT}
+            initialInstructions={INITIAL_INSTRUCTIONS}
             {...overrides}
         />
     )
@@ -56,48 +56,48 @@ describe("AgentNodePopup", () => {
         renderPopup({isOpen: false})
 
         expect(screen.queryByText(AGENT_NAME)).not.toBeInTheDocument()
-        expect(screen.queryByPlaceholderText(/system prompt/iu)).not.toBeInTheDocument()
+        expect(screen.queryByPlaceholderText(/instructions/iu)).not.toBeInTheDocument()
     })
 
-    it("renders the initial prompt in the editable textarea", () => {
+    it("renders the initial instructions in the editable textarea", () => {
         renderPopup()
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        expect(promptField).toBeInTheDocument()
-        expect(promptField).toHaveValue(INITIAL_PROMPT)
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        expect(instructionsField).toBeInTheDocument()
+        expect(instructionsField).toHaveValue(INITIAL_INSTRUCTIONS)
     })
 
-    it("allows the user to edit the prompt", async () => {
+    it("allows the user to edit the instructions", async () => {
         const user = userEvent.setup()
         renderPopup()
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        await user.clear(promptField)
-        await user.type(promptField, "New instructions")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "New instructions")
 
-        expect(promptField).toHaveValue("New instructions")
+        expect(instructionsField).toHaveValue("New instructions")
     })
 
-    it("calls onSave with agent name and updated prompt when Save Prompt is clicked", async () => {
+    it("calls onSave with agent name, updated instructions and description when Save is clicked", async () => {
         const user = userEvent.setup()
         const {onSave} = renderPopup()
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        await user.clear(promptField)
-        await user.type(promptField, "Updated prompt text")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "Updated instructions text")
 
-        await user.click(screen.getByRole("button", {name: /save prompt/iu}))
+        await user.click(screen.getByRole("button", {name: /^save$/iu}))
 
-        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, "Updated prompt text")
+        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, "Updated instructions text", "")
     })
 
-    it("calls onClose and resets prompt to initial value when Cancel is clicked", async () => {
+    it("calls onClose and resets instructions to initial value when Cancel is clicked", async () => {
         const user = userEvent.setup()
         const {onClose} = renderPopup()
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        await user.clear(promptField)
-        await user.type(promptField, "Temporary edit")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "Temporary edit")
 
         await user.click(screen.getByRole("button", {name: /cancel/iu}))
 
@@ -114,21 +114,21 @@ describe("AgentNodePopup", () => {
         expect(onClose).toHaveBeenCalled()
     })
 
-    it("renders an empty prompt field when no initialPrompt is provided", () => {
-        renderPopup({initialPrompt: undefined})
+    it("renders an empty instructions field when no initialInstructions is provided", () => {
+        renderPopup({initialInstructions: undefined})
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        expect(promptField).toHaveValue("")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        expect(instructionsField).toHaveValue("")
     })
 
-    it("renders the system prompt field with no character limit", () => {
+    it("renders the instructions field with no character limit", () => {
         renderPopup()
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        expect(promptField).not.toHaveAttribute("maxlength")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        expect(instructionsField).not.toHaveAttribute("maxlength")
     })
 
-    it("resets prompt to initialPrompt when dialog is reopened", async () => {
+    it("resets instructions to initialInstructions when dialog is reopened", async () => {
         const user = userEvent.setup()
         const {rerender} = render(
             <AgentNodePopup
@@ -136,14 +136,14 @@ describe("AgentNodePopup", () => {
                 isOpen={true}
                 onClose={jest.fn()}
                 onSave={jest.fn()}
-                initialPrompt={INITIAL_PROMPT}
+                initialInstructions={INITIAL_INSTRUCTIONS}
             />
         )
 
-        // Edit the prompt
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        await user.clear(promptField)
-        await user.type(promptField, "Temporary")
+        // Edit the instructions
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "Temporary")
         // Blur field explicitly so MUI FormControl settles before rerender
         await user.tab()
 
@@ -156,7 +156,7 @@ describe("AgentNodePopup", () => {
                     isOpen={false}
                     onClose={jest.fn()}
                     onSave={jest.fn()}
-                    initialPrompt={INITIAL_PROMPT}
+                    initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
         })
@@ -168,19 +168,19 @@ describe("AgentNodePopup", () => {
                     isOpen={true}
                     onClose={jest.fn()}
                     onSave={jest.fn()}
-                    initialPrompt={INITIAL_PROMPT}
+                    initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
         })
 
         await waitFor(() => {
-            expect(screen.getByRole("textbox", {name: /system prompt/iu})).toHaveValue(INITIAL_PROMPT)
+            expect(screen.getByRole("textbox", {name: /^instructions$/iu})).toHaveValue(INITIAL_INSTRUCTIONS)
         })
     })
 
-    it("does not reset prompt while the dialog is still open (no flash on close)", async () => {
+    it("does not reset instructions while the dialog is still open (no flash on close)", async () => {
         // Regression test: before the fix, the useEffect triggered on isOpen *becoming false*,
-        // resetting promptText back to initialPrompt during the MUI exit animation — causing a
+        // resetting instructionsText back to initialInstructions during the MUI exit animation — causing a
         // visible flash of the original value before the dialog fully closed.
         const user = userEvent.setup()
         const {rerender} = render(
@@ -189,16 +189,16 @@ describe("AgentNodePopup", () => {
                 isOpen={true}
                 onClose={jest.fn()}
                 onSave={jest.fn()}
-                initialPrompt={INITIAL_PROMPT}
+                initialInstructions={INITIAL_INSTRUCTIONS}
             />
         )
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        await user.clear(promptField)
-        await user.type(promptField, "My edited instructions")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "My edited instructions")
 
-        // Close the dialog (isOpen → false). With the fix, promptText must NOT be reset to
-        // initialPrompt during the close animation. The underlying DOM node may still exist
+        // Close the dialog (isOpen → false). With the fix, instructionsText must NOT be reset to
+        // initialInstructions during the close animation. The underlying DOM node may still exist
         // in JSDOM (no real CSS animation), so we verify the value is retained — not reset.
         // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
@@ -208,20 +208,20 @@ describe("AgentNodePopup", () => {
                     isOpen={false}
                     onClose={jest.fn()}
                     onSave={jest.fn()}
-                    initialPrompt={INITIAL_PROMPT}
+                    initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
         })
 
         // The textarea remains in JSDOM (no real exit animation), but must hold the edited
-        // value — NOT initialPrompt — proving no flash occurred during close.
-        const fieldAfterClose = screen.getByRole("textbox", {name: /system prompt/iu})
+        // value — NOT initialInstructions — proving no flash occurred during close.
+        const fieldAfterClose = screen.getByRole("textbox", {name: /^instructions$/iu})
         expect(fieldAfterClose).toHaveValue("My edited instructions")
-        expect(fieldAfterClose).not.toHaveValue(INITIAL_PROMPT)
+        expect(fieldAfterClose).not.toHaveValue(INITIAL_INSTRUCTIONS)
     })
 
-    it("syncs prompt when initialPrompt changes while dialog is open", async () => {
-        // When the parent loads the real prompt asynchronously and passes a new initialPrompt
+    it("syncs instructions when initialInstructions changes while dialog is open", async () => {
+        // When the parent loads the real instructions asynchronously and passes new initialInstructions
         // while the dialog is already open, the field should update to reflect it.
         const {rerender} = render(
             <AgentNodePopup
@@ -229,14 +229,14 @@ describe("AgentNodePopup", () => {
                 isOpen={true}
                 onClose={jest.fn()}
                 onSave={jest.fn()}
-                initialPrompt=""
+                initialInstructions=""
             />
         )
 
-        const promptField = screen.getByRole("textbox", {name: /system prompt/iu})
-        expect(promptField).toHaveValue("")
+        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        expect(instructionsField).toHaveValue("")
 
-        // Parent loads the real prompt and passes it in
+        // Parent loads the real instructions and passes them in
         // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
             rerender(
@@ -245,13 +245,13 @@ describe("AgentNodePopup", () => {
                     isOpen={true}
                     onClose={jest.fn()}
                     onSave={jest.fn()}
-                    initialPrompt={INITIAL_PROMPT}
+                    initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
         })
 
         await waitFor(() => {
-            expect(screen.getByRole("textbox", {name: /system prompt/iu})).toHaveValue(INITIAL_PROMPT)
+            expect(screen.getByRole("textbox", {name: /^instructions$/iu})).toHaveValue(INITIAL_INSTRUCTIONS)
         })
     })
 })

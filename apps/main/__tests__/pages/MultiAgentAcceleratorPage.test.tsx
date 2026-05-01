@@ -575,10 +575,10 @@ describe("Multi Agent Accelerator Page", () => {
             ])
         })
 
-        it("Should store sly_data under the temporary network's own history key", async () => {
+        it("Should store agent_network_definition under the temporary network's own store entry", async () => {
             // When a reservation arrives alongside sly_data that contains agent_network_definition,
-            // that data should be stored under the temporary network's own history key — NOT only
-            // under the Agent Network Designer key.
+            // that data should be stored on the temporary network's own entry in the temp-networks
+            // store — NOT in the chat history sly_data.
             const agentNetworkDefinition = [
                 {origin: "copy_cat", tools: [] as string[], display_as: "llm_agent", instructions: "Copy everything."},
             ]
@@ -600,14 +600,16 @@ describe("Multi Agent Accelerator Page", () => {
 
             const expectedNetworkKey = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
 
-            // The sly_data must be stored under the temporary network's own key
-            const storedSlyData = useAgentChatHistoryStore.getState().history[expectedNetworkKey]?.slyData
-            expect(storedSlyData).toBeDefined()
-            expect(storedSlyData?.[AGENT_NETWORK_DEFINITION_KEY]).toEqual(agentNetworkDefinition)
+            // The agent_network_definition must be stored on the temporary network's own entry
+            const storedNetwork = useTempNetworksStore
+                .getState()
+                .tempNetworks.find((n) => n.agentInfo.agent_name === expectedNetworkKey)
+            expect(storedNetwork).toBeDefined()
+            expect(storedNetwork?.agentNetworkDefinition).toEqual(agentNetworkDefinition)
         })
 
-        it("Should store sly_data independently for two different temporary networks", async () => {
-            // Each temporary network must have its own independent sly_data entry.
+        it("Should store agent_network_definition independently for two different temporary networks", async () => {
+            // Each temporary network must have its own independent agentNetworkDefinition entry.
             const definitionA = [
                 {
                     origin: "agent_alpha",
@@ -671,16 +673,20 @@ describe("Multi Agent Accelerator Page", () => {
             const keyA = `${TEMPORARY_NETWORK_FOLDER}/${reservationA.reservation_id}`
             const keyB = `${TEMPORARY_NETWORK_FOLDER}/${reservationB.reservation_id}`
 
-            const slyDataA = useAgentChatHistoryStore.getState().history[keyA]?.slyData
-            const slyDataB = useAgentChatHistoryStore.getState().history[keyB]?.slyData
+            const defA = useTempNetworksStore
+                .getState()
+                .tempNetworks.find((n) => n.agentInfo.agent_name === keyA)?.agentNetworkDefinition
+            const defB = useTempNetworksStore
+                .getState()
+                .tempNetworks.find((n) => n.agentInfo.agent_name === keyB)?.agentNetworkDefinition
 
             // Each network must have its own definition
-            expect(slyDataA?.[AGENT_NETWORK_DEFINITION_KEY]).toEqual(definitionA)
-            expect(slyDataB?.[AGENT_NETWORK_DEFINITION_KEY]).toEqual(definitionB)
+            expect(defA).toEqual(definitionA)
+            expect(defB).toEqual(definitionB)
 
             // Sanity: definitions must not bleed across networks
-            expect(slyDataA?.[AGENT_NETWORK_DEFINITION_KEY]).not.toEqual(definitionB)
-            expect(slyDataB?.[AGENT_NETWORK_DEFINITION_KEY]).not.toEqual(definitionA)
+            expect(defA).not.toEqual(definitionB)
+            expect(defB).not.toEqual(definitionA)
         })
 
         it("Should detect agent progress messages in the chat stream", async () => {

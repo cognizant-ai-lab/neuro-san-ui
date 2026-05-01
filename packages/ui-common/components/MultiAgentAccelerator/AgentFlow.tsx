@@ -47,6 +47,7 @@ import {AgentNodePopup} from "./AgentNodePopup"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
+    AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
     BASE_RADIUS,
     DEFAULT_FRONTMAN_X_POS,
@@ -61,7 +62,7 @@ import {sendChatQuery} from "../../controller/agent/Agent"
 import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {NotificationType, sendNotification} from "../Common/notification"
@@ -136,11 +137,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
 
-    // Read all chat history to find agent_network_definition regardless of which network key it's under.
-    // The server stores agent_network_definition as a flat array in sly_data, keyed by whichever network
-    // is currently selected — not necessarily AGENT_NETWORK_DESIGNER_ID.
-    const allHistory = useAgentChatHistoryStore((state) => state.history)
-    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
+    // Read temporary networks to find agent_network_definition for the currently selected network.
+    const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
+    const updateTempNetworkDefinition = useTempNetworksStore((state) => state.updateTempNetworkDefinition)
 
     // Track conversation IDs we've already processed to prevent re-adding after expiry
     const processedConversationIdsRef = useRef<Set<string>>(new Set())
@@ -318,31 +317,31 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [selectedAgent, setSelectedAgent] = useState<{
         agentId: string
         agentName: string
-        initialPrompt: string
+        initialInstructions: string
+        initialDescription: string
     } | null>(null)
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
-            // Popup is only available for temporary networks
+            // Popup is only available for temporary networks.
             if (!isTemporaryNetwork) return
 
-            // Look up the agent_network_definition only from this network's own history entry.
-            let initialPrompt = ""
-            const networkEntry = networkId ? allHistory[networkId] : undefined
-            const definitions = networkEntry?.slyData?.[AGENT_NETWORK_DEFINITION_KEY]
-            if (Array.isArray(definitions)) {
-                const found = (definitions as AgentNetworkDefinitionEntry[]).find((e) => e.origin === node.id)
-                initialPrompt = found?.instructions ?? ""
-            }
+            // Find the clicked agent's existing instructions and description from the temp network definition.
+            const currentTempNetwork = networkId
+                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
+                : undefined
+            const found = (currentTempNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === node.id)
+
             setSelectedAgent({
                 agentId: node.id,
                 agentName: node.data.agentName,
-                initialPrompt,
+                initialInstructions: found?.instructions ?? "",
+                initialDescription: found?.description ?? "",
             })
             setIsPopupOpen(true)
         },
-        [allHistory, isTemporaryNetwork, networkId]
+        [tempNetworks, isTemporaryNetwork, networkId]
     )
 
     const handlePopupClose = useCallback(() => {
@@ -350,28 +349,31 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handlePopupSave = useCallback(
-        (agentName: string, promptText: string) => {
+        (agentName: string, instructionsText: string, descriptionText: string) => {
             if (!selectedAgent) return
 
-            // Scope the read and write to this network's own history entry only.
-            const currentDefinitions = networkId
-                ? (allHistory[networkId]?.slyData?.[AGENT_NETWORK_DEFINITION_KEY] as
-                      | AgentNetworkDefinitionEntry[]
-                      | undefined)
+            // Find the temp network entry for the currently selected network.
+            const currentTempNetwork = networkId
+                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
                 : undefined
-            const updated: AgentNetworkDefinitionEntry[] = currentDefinitions
-                ? currentDefinitions.map(
-                      (entry): AgentNetworkDefinitionEntry =>
-                          entry.origin === selectedAgent.agentId ? {...entry, instructions: promptText} : entry
-                  )
-                : []
+
+            // Fall back to an empty array if no definition entries exist yet.
+            const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
+
+            // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
+            const updated: AgentNetworkDefinitionEntry[] = currentDefinitions.map((entry) =>
+                entry.origin === selectedAgent.agentId
+                    ? {...entry, instructions: instructionsText, description: descriptionText}
+                    : entry
+            )
             if (networkId) {
-                updateSlyData(networkId, {[AGENT_NETWORK_DEFINITION_KEY]: updated})
+                updateTempNetworkDefinition(networkId, updated)
             }
             setIsPopupOpen(false)
 
-            // POST the updated definition to the Agent Network Designer (errors are handled asynchronously via .catch)
+            // POST the updated definition to the Agent Network Designer
             if (neuroSanURL && currentUser && updated.length > 0) {
+                // Intentionally no await here but errors are handled asynchronously via .catch
                 sendChatQuery(
                     neuroSanURL,
                     new AbortController().signal,
@@ -379,7 +381,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     AGENT_NETWORK_DESIGNER_ID,
                     () => undefined,
                     null,
-                    {[AGENT_NETWORK_DEFINITION_KEY]: updated},
+                    {
+                        [AGENT_NETWORK_DEFINITION_KEY]: updated,
+                        // Use the backend's canonical name, not the local UUID-based key.
+                        ...(currentTempNetwork?.agentNetworkName
+                            ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
+                            : {}),
+                    },
                     currentUser,
                     StreamingUnit.Line
                 ).catch((e: unknown) => {
@@ -388,7 +396,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 })
             }
         },
-        [selectedAgent, allHistory, updateSlyData, neuroSanURL, currentUser, networkId]
+        [selectedAgent, tempNetworks, updateTempNetworkDefinition, neuroSanURL, currentUser, networkId]
     )
 
     const edges = layoutResult.edges
@@ -733,10 +741,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 isStreaming={isStreaming}
                 onBubbleHoverChange={handleBubbleHoverChange}
             />
-            {selectedAgent && (
+            {selectedAgent && !isAwaitingLlm && (
                 <AgentNodePopup
                     agentName={selectedAgent.agentName}
-                    initialPrompt={selectedAgent.initialPrompt}
+                    initialInstructions={selectedAgent.initialInstructions}
+                    initialDescription={selectedAgent.initialDescription}
                     isOpen={isPopupOpen}
                     onClose={handlePopupClose}
                     onSave={handlePopupSave}

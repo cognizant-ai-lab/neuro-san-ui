@@ -30,42 +30,55 @@ export interface AgentNodePopupProps {
     /** Called when the user closes or cancels the dialog without saving. */
     readonly onClose: () => void
     /**
-     * Called when the user saves the edited prompt.
+     * Called when the user saves the edited fields.
      * @param agentName The agent's name (unchanged).
-     * @param prompt The updated prompt text.
+     * @param instructions The updated instructions text.
+     * @param description The updated description text.
      */
-    readonly onSave: (agentName: string, prompt: string) => void
-    /** Initial prompt text shown in the editable field. Defaults to an empty string. */
-    readonly initialPrompt?: string
+    readonly onSave: (agentName: string, instructions: string, description: string) => void
+    /** Initial instructions text shown in the editable field. Defaults to an empty string. */
+    readonly initialInstructions?: string
+    /** Initial description text shown in the editable field. Defaults to an empty string. */
+    readonly initialDescription?: string
 }
 
 // #endregion: Types
 
 /**
- * A popup dialog for viewing and editing an agent node's system prompt / instructions.
+ * A popup dialog for viewing and editing an agent node's instructions and description.
  *
- * - Agent name is displayed read-only.
- * - The system prompt is editable.
+ * - Agent name is displayed read-only in the dialog header.
+ * - Both instructions and description are editable.
  * - Saving is a no-op until the API endpoint is wired up; `onSave` receives the current values.
  */
-export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onClose, onSave, initialPrompt = ""}) => {
-    const [promptText, setPromptText] = useState<string>(initialPrompt)
+export const AgentNodePopup: FC<AgentNodePopupProps> = ({
+    agentName,
+    isOpen,
+    onClose,
+    onSave,
+    initialInstructions = "",
+    initialDescription = "",
+}) => {
+    const [instructionsText, setInstructionsText] = useState<string>(initialInstructions)
+    const [descriptionText, setDescriptionText] = useState<string>(initialDescription)
 
-    // Keep local prompt in sync when the dialog opens or if initialPrompt changes while open.
+    // Keep local fields in sync when the dialog opens or if initial values change while open.
     // Guarding on isOpen prevents resetting the text during the close animation, which would cause a visible flash.
     useEffect(() => {
         if (isOpen) {
-            setPromptText(initialPrompt)
+            setInstructionsText(initialInstructions)
+            setDescriptionText(initialDescription)
         }
-    }, [initialPrompt, isOpen])
+    }, [initialInstructions, initialDescription, isOpen])
 
     const handleSave = () => {
-        onSave(agentName, promptText)
+        onSave(agentName, instructionsText, descriptionText)
     }
 
     const handleClose = () => {
-        // Discard local edits and reset to the initial value on cancel
-        setPromptText(initialPrompt)
+        // Discard local edits and reset to the initial values on cancel
+        setInstructionsText(initialInstructions)
+        setDescriptionText(initialDescription)
         onClose()
     }
 
@@ -85,7 +98,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onCl
                 variant="contained"
                 size="small"
             >
-                Save Prompt
+                Save
             </Button>
         </>
     )
@@ -99,19 +112,33 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({agentName, isOpen, onCl
             footer={footer}
             paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
         >
-            {/* System prompt — editable */}
+            {/* Description — editable */}
             <TextField
-                id="agent-node-popup-prompt-field"
-                label="System Prompt"
-                value={promptText}
-                onChange={(e) => setPromptText(e.target.value)}
+                id="agent-node-popup-description-field"
+                label="Description"
+                value={descriptionText}
+                onChange={(e) => setDescriptionText(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
                 multiline
-                rows={8}
+                rows={6}
+                fullWidth
+                size="small"
+                placeholder="Enter a short description of this agent…"
+            />
+            {/* Instructions — editable */}
+            <TextField
+                sx={{marginTop: 2}}
+                id="agent-node-popup-instructions-field"
+                label="Instructions"
+                value={instructionsText}
+                onChange={(e) => setInstructionsText(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                multiline
+                rows={6}
                 fullWidth
                 size="small"
                 autoFocus
-                placeholder="Enter system prompt / instructions for this agent…"
+                placeholder="Enter instructions for this agent…"
             />
         </MUIDialog>
     )

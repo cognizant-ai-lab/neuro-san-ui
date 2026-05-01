@@ -17,6 +17,7 @@ limitations under the License.
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
+import {AgentNetworkDefinitionEntry} from "../components/MultiAgentAccelerator/const"
 import {AgentInfo} from "../generated/neuro-san/NeuroSanClient"
 
 type AgentReservation = {
@@ -28,7 +29,10 @@ type AgentReservation = {
 export type TemporaryNetwork = {
     readonly reservation: AgentReservation
     readonly agentInfo: AgentInfo
+    /** The agent_network_name as sent by the backend — used when bouncing sly_data back to the backend. */
+    readonly agentNetworkName?: string
     readonly networkHocon?: string | null
+    readonly agentNetworkDefinition?: AgentNetworkDefinitionEntry[]
 }
 
 /**
@@ -37,6 +41,7 @@ export type TemporaryNetwork = {
 interface TempNetworksStore {
     readonly tempNetworks: TemporaryNetwork[]
     readonly setTempNetworks: (tempNetworks: TemporaryNetwork[]) => void
+    readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
 }
 
 /**
@@ -47,6 +52,12 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
         (set) => ({
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
+            updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) =>
+                set((state) => ({
+                    tempNetworks: state.tempNetworks.map((n) =>
+                        n.agentInfo.agent_name === networkName ? {...n, agentNetworkDefinition: definition} : n
+                    ),
+                })),
         }),
         {
             name: "temp-networks",
