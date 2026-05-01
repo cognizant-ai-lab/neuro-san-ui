@@ -129,7 +129,7 @@ describe("ChatCommon", () => {
     }
 
     beforeEach(() => {
-        user = userEvent.setup()
+        user = userEvent.setup({delay: null})
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
