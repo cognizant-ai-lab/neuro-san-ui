@@ -1030,7 +1030,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }}
                 tabIndex={-1}
             >
-                {agentChatHistory?.chatHistory && (
+                {agentChatHistory?.chatHistory?.length > 0 && (
                     <ChatHistory
                         agentDisplayName={agentDisplayName}
                         chatHistoryKey={CHAT_HISTORY_KEY}
