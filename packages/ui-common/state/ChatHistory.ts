@@ -2,12 +2,7 @@
  * Zustand state store for agent chat conversation history
  *
  */
-import {
-    BaseMessage,
-    mapChatMessagesToStoredMessages,
-    mapStoredMessagesToChatMessages,
-    StoredMessage,
-} from "@langchain/core/messages"
+import {BaseMessage, mapChatMessagesToStoredMessages, mapStoredMessagesToChatMessages} from "@langchain/core/messages"
 import {create} from "zustand"
 import {persist, PersistStorage, StorageValue} from "zustand/middleware"
 
@@ -29,8 +24,10 @@ Note on ChatContext vs ChatHistory:
 are involved.
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
 */
-interface AgentChatHistory {
-    readonly chatHistory: BaseMessage[]
+export interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessagesToStoredMessages>> {
+    // We use a generic type here to allow for the fact that the chat history will be stored in a serialized form
+    // determined by langchain
+    readonly chatHistory: T
     readonly chatContext: ChatContext
     readonly slyData: SlyData
 }
@@ -39,19 +36,15 @@ interface AgentChatHistory {
  * State store interface
  */
 interface ChatHistoryStore {
-    readonly history: Record<string, AgentChatHistory>
+    readonly history: Record<string, AgentChatHistory<BaseMessage[]>>
     resetHistory: (agentId: string) => void
     updateChatContext: (agentId: string, chatContext: ChatContext) => void
     updateChatHistory: (agentId: string, messages: BaseMessage[]) => void
     updateSlyData: (agentId: string, slyData: SlyData) => void
 }
 
-// We need a separate type for how we store the chat history in IndexedDB, to allow for how langchain serializes
-// chat messages.
-type StoredAgentChatHistory = Omit<AgentChatHistory, "chatHistory"> & {readonly chatHistory: StoredMessage[]}
-
 interface StoredChatHistoryStore {
-    readonly history: Record<string, StoredAgentChatHistory>
+    readonly history: Record<string, AgentChatHistory<ReturnType<typeof mapChatMessagesToStoredMessages>>>
 }
 
 /**
@@ -101,12 +94,10 @@ const STORE_KEY = "agent-chat-history"
  * The hook that lets apps use the store.
  * Structure:
  * <pre>
- * IndexedDB database: "zustand-store"
- *   └── object store: "kv"
- *         └── key: "agent-chat-history"
- *                 └── value: serialized Map<string, AgentChatHistory>
- *                       └── key: agentId (string)
- *                       └── value: {chatHistory, chatContext, slyData}
+ * IndexedDB database: DB_NAME
+ *   └── object store: OBJECT_STORE_NAME
+ *         └── key: STORE_KEY
+ *                 └── value: {state: {history: {[agentId]: {chatHistory, chatContext, slyData}}}}
  * </pre>
  */
 export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
@@ -130,7 +121,7 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
             updateSlyData: (agentId: string, slyData: SlyData) =>
                 set((state) => {
                     const existing = state.history[agentId]
-                    const mergedSlyData = {...existing?.slyData, ...slyData} // merge here, with fresh state
+                    const mergedSlyData = {...existing?.slyData, ...slyData}
                     const newHistory = {...state.history, [agentId]: {...existing, slyData: mergedSlyData}}
                     return {history: newHistory}
                 }),
