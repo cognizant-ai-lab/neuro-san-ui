@@ -256,7 +256,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setAgentsInNetwork([])
             }
         })()
-    }, [neuroSanURL, selectedNetwork, userInfo.userName])
+    }, [networkDisplayName, neuroSanURL, selectedNetwork, userInfo.userName])
 
     useEffect(() => {
         ;(async () => {

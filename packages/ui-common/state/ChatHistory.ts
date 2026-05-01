@@ -24,7 +24,7 @@ Note on ChatContext vs ChatHistory:
 are involved.
     Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
 */
-export interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessagesToStoredMessages>> {
+interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessagesToStoredMessages>> {
     // We use a generic type here to allow for the fact that the chat history will be stored in a serialized form
     // determined by langchain
     readonly chatHistory: T
