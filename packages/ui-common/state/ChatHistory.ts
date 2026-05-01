@@ -19,7 +19,7 @@ type SlyData = Record<string, unknown>
 
 // Maximum number of messages to keep in the chat history for each agent. Once we reach this limit, we will start
 // dropping old messages.
-const MAX_CHAT_HISTORY_ITEMS = 50
+export const MAX_CHAT_HISTORY_ITEMS = 50
 
 /*
 Note on ChatContext vs ChatHistory:
