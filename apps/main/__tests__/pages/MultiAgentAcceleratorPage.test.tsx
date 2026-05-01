@@ -609,10 +609,20 @@ describe("Multi Agent Accelerator Page", () => {
         it("Should store sly_data independently for two different temporary networks", async () => {
             // Each temporary network must have its own independent sly_data entry.
             const definitionA = [
-                {origin: "agent_alpha", tools: [] as string[], display_as: "llm_agent", instructions: "Network A instructions."},
+                {
+                    origin: "agent_alpha",
+                    tools: [] as string[],
+                    display_as: "llm_agent",
+                    instructions: "Network A instructions.",
+                },
             ]
             const definitionB = [
-                {origin: "agent_beta", tools: [] as string[], display_as: "llm_agent", instructions: "Network B instructions."},
+                {
+                    origin: "agent_beta",
+                    tools: [] as string[],
+                    display_as: "llm_agent",
+                    instructions: "Network B instructions.",
+                },
             ]
 
             const reservationA = {

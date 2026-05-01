@@ -215,11 +215,9 @@ describe("AgentNodePopup", () => {
 
         // The textarea remains in JSDOM (no real exit animation), but must hold the edited
         // value — NOT initialPrompt — proving no flash occurred during close.
-        const fieldAfterClose = screen.queryByRole("textbox", {name: /system prompt/iu})
-        if (fieldAfterClose) {
-            expect(fieldAfterClose).toHaveValue("My edited instructions")
-            expect(fieldAfterClose).not.toHaveValue(INITIAL_PROMPT)
-        }
+        const fieldAfterClose = screen.getByRole("textbox", {name: /system prompt/iu})
+        expect(fieldAfterClose).toHaveValue("My edited instructions")
+        expect(fieldAfterClose).not.toHaveValue(INITIAL_PROMPT)
     })
 
     it("syncs prompt when initialPrompt changes while dialog is open", async () => {
