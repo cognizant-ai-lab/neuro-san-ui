@@ -167,18 +167,18 @@ describe("SettingsDialog", () => {
             />
         )
 
-        // Default: Zen mode should be enabled
-        expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(true)
+        // Default: Zen mode should be disabled
+        expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
 
         const zenModeToggle = screen.getByTestId("zen-mode-checkbox")
 
         const checkBoxElement = within(zenModeToggle).getByRole("checkbox")
 
-        expect(checkBoxElement).toBeChecked()
+        expect(checkBoxElement).not.toBeChecked()
 
         await user.click(checkBoxElement)
-
-        expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
+        expect(checkBoxElement).toBeChecked()
+        expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(true)
     })
 
     it("resets settings to default when reset button is confirmed", async () => {

@@ -145,6 +145,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
+    const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
+
     // Track whether we've shown the info popup so we don't keep bugging the user with it
     const [haveShownPopup, setHaveShownPopup] = useState<boolean>(false)
 
@@ -273,11 +275,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setAgentIconSuggestions(null)
                     closeNotification()
                 } catch (e) {
-                    const networkName = cleanUpAgentName(selectedNetwork)
                     sendNotification(
                         NotificationType.error,
                         "Connection error",
-                        `Unable to get agent list for "${networkName}". Verify that ${neuroSanURL} is a valid ` +
+                        `Unable to get agent list for "${networkDisplayName}". Verify that ${neuroSanURL} is a valid ` +
                             `Multi-Agent Accelerator Server. Error: ${e}.`
                     )
                     setAgentsInNetwork([])
@@ -286,7 +287,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setAgentsInNetwork([])
             }
         })()
-    }, [neuroSanURL, selectedNetwork, userInfo.userName])
+    }, [networkDisplayName, neuroSanURL, selectedNetwork, userInfo.userName])
 
     useEffect(() => {
         ;(async () => {

@@ -86,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
         secondary: null,
     },
     behavior: {
-        enableZenMode: true,
+        enableZenMode: false,
     },
 }
 

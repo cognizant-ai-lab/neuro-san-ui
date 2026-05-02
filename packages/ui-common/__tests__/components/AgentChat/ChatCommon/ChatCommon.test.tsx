@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Include mock for IndexedDB
-import "fake-indexeddb/auto"
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
@@ -30,6 +28,7 @@ import {
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
 import {ChatCommon, ChatCommonHandle} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
@@ -91,6 +90,8 @@ const MOCK_CONNECTIVITY_INFO = {
 }
 
 describe("ChatCommon", () => {
+    withStrictMocks()
+
     let user: UserEvent
 
     const defaultProps = {
@@ -127,13 +128,16 @@ describe("ChatCommon", () => {
         )
     }
 
-    withStrictMocks()
-
     beforeEach(() => {
-        user = userEvent.setup()
+        user = userEvent.setup({delay: null})
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
+
+        // Reset history. TODO: would be nice if withStrictMocks could also reset Zustand stores
+        // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
+        // that we know is relevant to these tests.
+        useAgentChatHistoryStore.setState({history: {}})
     })
 
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
@@ -208,7 +212,7 @@ describe("ChatCommon", () => {
 
         // Make sure long query chip is truncated
         const sampleQueries = MOCK_CONNECTIVITY_INFO.metadata.sample_queries
-        const expectedLongQuery = `${sampleQueries[1].slice(0, 80)}...`
+        const expectedLongQuery = `${sampleQueries[1].slice(0, QUERY_TRUNCATE_LENGTH)}...`
         await screen.findByText(expectedLongQuery)
 
         // Make sure we only display the first 5 queries
@@ -217,12 +221,17 @@ describe("ChatCommon", () => {
         await screen.findByText(sampleQueries[4])
         expect(screen.queryByText(sampleQueries[5])).not.toBeInTheDocument()
 
-        // Click a sample query
-        const sampleQueryButton = await screen.findByText(sampleQueries[0])
-        await user.click(sampleQueryButton)
+        for (const query of sampleQueries.slice(0, MAX_SAMPLE_QUERIES - 1)) {
+            mockSendFunction.mockClear()
+            const truncatedQuery =
+                query.length > QUERY_TRUNCATE_LENGTH ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...` : query
+            // Click a sample query
+            const sampleQueryButton = await screen.findByText(truncatedQuery)
+            await user.click(sampleQueryButton)
 
-        expect(mockSendFunction).toHaveBeenCalledTimes(1)
-        expect(mockSendFunction).toHaveBeenCalledWith(sampleQueries[0])
+            expect(mockSendFunction).toHaveBeenCalledTimes(1)
+            expect(mockSendFunction).toHaveBeenCalledWith(query)
+        }
     })
 
     it("Should handle missing sample queries gracefully", async () => {
@@ -350,7 +359,7 @@ describe("ChatCommon", () => {
 
             const chatResponse: ChatResponse = {
                 response: {
-                    type: ChatMessageType.AGENT,
+                    type: ChatMessageType.AI,
                     text: testResponseText,
                     origin: [{tool: "testTool", instantiation_index: 1}],
                     sly_data: {answer: 42},
@@ -675,6 +684,7 @@ describe("ChatCommon", () => {
 
         // Send two responses, a regular AGENT one and an AI one
         // The initial [] is to make sure the message is not treated as JSON
+        //    See: https://github.com/cognizant-ai-lab/neuro-san-ui/issues/277
         const agentResponseText = "[]Sample Agent response"
         const aiResponseText = "[]Sample AI response"
         const responseMessages = [
@@ -706,12 +716,10 @@ describe("ChatCommon", () => {
         await user.click(showThinkingButton)
 
         // Only the AI response should be visible
-        await waitFor(() => {
-            expect(screen.getAllByText(aiResponseText)).toHaveLength(2)
-        })
+        expect(screen.getAllByText(aiResponseText)).toHaveLength(1)
 
-        // Agent response should be in the DOM but with display: none
-        expect(await screen.findByText(agentResponseText)).not.toBeVisible()
+        // Agent response should not be in the DOM as we disabled "show thinking"
+        expect(screen.queryByText(agentResponseText)).not.toBeInTheDocument()
     })
 
     it("Should handle voice transcription correctly", async () => {
@@ -890,8 +898,8 @@ describe("ChatCommon", () => {
         const testMessage = "test message for clearing"
         await sendQuery(TEST_AGENT_MATH_GUY, testMessage)
 
-        // Wait for the message to appear
-        await screen.findByText(testMessage)
+        // Wait for the message to appear. It appears twice -- once in chat history, once "live"
+        expect(await screen.findAllByText(testMessage)).toHaveLength(2)
 
         // Find and click Clear Chat button
         const clearButton = screen.getByRole("button", {name: "Clear Chat"})
