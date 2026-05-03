@@ -4,7 +4,8 @@
     "version": "1.0.0",
     "type": "module",
     "exports": {
-        "./eslint/": "./configs/eslint-base.mjs"
+        "./eslint": "./configs/eslint.config.mjs",
+        "./build-utils/": "./BuildUtils/"
     },
     "peerDependencies": {
         "@eslint/compat": "*",

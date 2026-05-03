@@ -1,6 +1,8 @@
+// @ts-check
+
 import {defineConfig} from "eslint/config"
 
-import sharedConfig from "./packages/dev-common/configs/eslint.config.mjs"
+import sharedConfig from "./packages/dev-common/Configs/eslint.config.mjs"
 
 export default defineConfig([
     ...sharedConfig,
@@ -9,6 +11,17 @@ export default defineConfig([
             parserOptions: {
                 projectService: true,
             },
+        },
+
+        settings: {
+            next: {
+                rootDir: "apps/main",
+            },
+        },
+
+        rules: {
+            // Override inherit configs as necessary for this project
+            "@next/next/no-html-link-for-pages": ["error", "apps/main/pages"],
         },
     },
 ])

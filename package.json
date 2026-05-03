@@ -15,11 +15,11 @@
         "build:docker": "docker build -f apps/main/Dockerfile -t neuro-san-ui .",
         "check-format": "yarn prettier --check --log-level warn .",
         "clean": "rm -rf dist generated",
-        "commit-check": "./build_scripts/CommitCheck.sh",
+        "commit-check": "packages/dev-common/BuildUtils/CommitCheck.sh",
         "dev": "yarn workspace @cognizant-ai-lab/neuro-san-web run dev",
         "generate": "rm -rf packages/ui-common/generated && cd packages/ui-common && ./build_scripts/do_openapi_generate.sh",
         "lint": "eslint",
-        "lint-rules": "./build_scripts/eslint_list_rules.sh",
+        "lint-rules": "packages/dev-common/BuildUtils/eslint_list_rules.sh",
         "lint-summary": "eslint --format summary",
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
         "test": "jest --config ./jest.config.ts"
