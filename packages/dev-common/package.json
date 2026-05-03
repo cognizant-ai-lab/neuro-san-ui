@@ -3,10 +3,6 @@
     "description": "Common development configurations and utilities for Cognizant AI Labs UI projects",
     "version": "1.0.0",
     "type": "module",
-    "exports": {
-        "./eslint": "./configs/eslint.config.mjs",
-        "./build-utils/": "./BuildUtils/"
-    },
     "peerDependencies": {
         "@eslint/compat": "*",
         "@eslint/js": "*",
@@ -23,5 +19,21 @@
         "eslint-plugin-unicorn": "*",
         "globals": "*",
         "typescript-eslint": "*"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cognizant-ai-lab/neuro-san-ui.git"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org/",
+        "access": "public"
+    },
+    "types": "dist/index.d.ts",
+    "exports": {
+        "./eslint": {
+            "types": "./Configs/eslint.config.d.mts",
+            "default": "./Configs/eslint.config.mjs"
+        },
+        "./build-utils/": "./BuildUtils/"
     }
 }
