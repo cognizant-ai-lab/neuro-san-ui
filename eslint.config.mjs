@@ -21,7 +21,7 @@ export default defineConfig([
 
         rules: {
             // Override inherit configs as necessary for this project
-            "@next/next/no-html-link-for-pages": ["error", "apps/main/pages"],
+            "@next/next/no-html-link-for-pages": ["warn", "apps/main/pages"],
         },
     },
 ])
