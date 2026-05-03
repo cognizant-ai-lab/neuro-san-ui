@@ -108,9 +108,6 @@ export default defineConfig([
                     project: ["./tsconfig.json", "./apps/*/tsconfig.json", "./packages/*/tsconfig.json"],
                 },
             },
-            next: {
-                rootDir: ["apps/*/"],
-            },
         },
 
         rules: {
@@ -172,7 +169,7 @@ export default defineConfig([
                     allowTernary: true,
                 },
             ],
-
+            "@typescript-eslint/no-unused-private-class-members": "error",
             "@typescript-eslint/no-unused-vars": [
                 "error",
                 {
@@ -283,7 +280,7 @@ export default defineConfig([
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["**/__tests__/**", "jest*.*", "**/eslint.config.mjs", "knip.config.ts"],
+                    devDependencies: ["**/__tests__/**", "jest*.*", "eslint.config.mjs", "knip.config.ts"],
                 },
             ],
 
