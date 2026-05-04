@@ -9,6 +9,7 @@ import {MUIAccordion} from "../../Common/MUIAccordion"
 // #region: Types
 interface ChatHistoryProps {
     readonly agentDisplayName: string
+    readonly agentImage: string
     readonly chatHistoryKey: string
     readonly currentUser: string
     readonly id: string
@@ -23,6 +24,7 @@ interface ChatHistoryProps {
  */
 export const ChatHistory: FC<ChatHistoryProps> = ({
     agentDisplayName,
+    agentImage,
     chatHistoryKey,
     currentUser,
     id,
@@ -55,7 +57,7 @@ export const ChatHistory: FC<ChatHistoryProps> = ({
                                 key={itemKey}
                                 sx={{opacity: 0.5}}
                                 title={targetAgent}
-                                userImage={userImage}
+                                userImage={agentImage}
                                 userQuery={`${agentDisplayName}: ${message.text}`}
                             />
                         )
