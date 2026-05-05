@@ -1505,6 +1505,7 @@ __metadata:
     eslint-plugin-react-hooks: "npm:7.1.1"
     eslint-plugin-testing-library: "npm:7.16.2"
     eslint-plugin-unicorn: "npm:64.0.0"
+    fake-indexeddb: "npm:6.2.5"
     globals: "npm:17.4.0"
     jest: "npm:30.3.0"
     jest-environment-jsdom: "npm:30.3.0"
@@ -1573,6 +1574,7 @@ __metadata:
     "@types/react-syntax-highlighter": "npm:15.5.13"
     "@xyflow/react": "npm:12.10.1"
     babel-jest: "npm:30.2.0"
+    fake-indexeddb: "npm:6.2.5"
     fix-esm-import-path: "npm:1.10.3"
     globals: "npm:16.3.0"
     http-status: "npm:1.7.3"
@@ -1587,6 +1589,7 @@ __metadata:
     rehype-raw: "npm:7.0.0"
     rehype-slug: "npm:6.0.0"
     typescript: "npm:5.9.3"
+    uuid: "npm:11.1.0"
     zustand: "npm:4.5.7"
   peerDependencies:
     "@mui/icons-material": ^7.3.1
@@ -6478,6 +6481,13 @@ __metadata:
   version: 3.0.2
   resolution: "extend@npm:3.0.2"
   checksum: 10c0/73bf6e27406e80aa3e85b0d1c4fd987261e628064e170ca781125c0b635a3dabad5e05adbf07595ea0cf1e6c5396cacb214af933da7cbaf24fe75ff14818e8f9
+  languageName: node
+  linkType: hard
+
+"fake-indexeddb@npm:6.2.5":
+  version: 6.2.5
+  resolution: "fake-indexeddb@npm:6.2.5"
+  checksum: 10c0/6c5e2fe84a61daa06d7ad63699d1041fe61847f15f92db12415634b3db94f363a64be9e08a3c3c4434af9c3c0132086b85c4d5dc5e8e06edae1e7daf70ce1f3c
   languageName: node
   linkType: hard
 
@@ -12087,6 +12097,15 @@ __metadata:
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: 10c0/35e1179f872a53227bdf8a827f7911da4c37c0f4091c29b76b1e32473d1670ebe7bcd880b808b7549ba9a5605c233350f800ffab963ee4a4ee346ee983b6019b
+  languageName: node
+  linkType: hard
+
+"uuid@npm:11.1.0":
+  version: 11.1.0
+  resolution: "uuid@npm:11.1.0"
+  bin:
+    uuid: dist/esm/bin/uuid
+  checksum: 10c0/34aa51b9874ae398c2b799c88a127701408cd581ee89ec3baa53509dd8728cbb25826f2a038f9465f8b7be446f0fbf11558862965b18d21c993684297628d4d3
   languageName: node
   linkType: hard
 

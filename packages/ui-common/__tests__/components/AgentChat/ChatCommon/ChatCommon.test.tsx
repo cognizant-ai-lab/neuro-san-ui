@@ -23,15 +23,18 @@ import {
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
+    TEST_AGENT_MUSIC_NERD_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
 import {ChatCommon, ChatCommonHandle} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
 
 // Mock agent API
 jest.mock("../../../../controller/agent/Agent")
@@ -87,6 +90,8 @@ const MOCK_CONNECTIVITY_INFO = {
 }
 
 describe("ChatCommon", () => {
+    withStrictMocks()
+
     let user: UserEvent
 
     const defaultProps = {
@@ -123,26 +128,27 @@ describe("ChatCommon", () => {
         )
     }
 
-    withStrictMocks()
-
     beforeEach(() => {
-        user = userEvent.setup()
+        user = userEvent.setup({delay: null})
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
+
+        // Reset history. TODO: would be nice if withStrictMocks could also reset Zustand stores
+        // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
+        // that we know is relevant to these tests.
+        useAgentChatHistoryStore.setState({history: {}})
     })
 
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
         // locate user query input
         const userQueryInput = screen.getByPlaceholderText(`Chat with ${cleanUpAgentName(agent)}`)
-        expect(userQueryInput).toBeInTheDocument()
 
         // Type a query
         await user.type(userQueryInput, query)
 
         // Find "Send" button
         const sendButton = screen.getByRole("button", {name: "Send"})
-        expect(sendButton).toBeInTheDocument()
 
         // Click on the "Send" button
         await user.click(sendButton)
@@ -206,7 +212,7 @@ describe("ChatCommon", () => {
 
         // Make sure long query chip is truncated
         const sampleQueries = MOCK_CONNECTIVITY_INFO.metadata.sample_queries
-        const expectedLongQuery = `${sampleQueries[1].slice(0, 80)}...`
+        const expectedLongQuery = `${sampleQueries[1].slice(0, QUERY_TRUNCATE_LENGTH)}...`
         await screen.findByText(expectedLongQuery)
 
         // Make sure we only display the first 5 queries
@@ -215,12 +221,17 @@ describe("ChatCommon", () => {
         await screen.findByText(sampleQueries[4])
         expect(screen.queryByText(sampleQueries[5])).not.toBeInTheDocument()
 
-        // Click a sample query
-        const sampleQueryButton = await screen.findByText(sampleQueries[0])
-        await user.click(sampleQueryButton)
+        for (const query of sampleQueries.slice(0, MAX_SAMPLE_QUERIES - 1)) {
+            mockSendFunction.mockClear()
+            const truncatedQuery =
+                query.length > QUERY_TRUNCATE_LENGTH ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...` : query
+            // Click a sample query
+            const sampleQueryButton = await screen.findByText(truncatedQuery)
+            await user.click(sampleQueryButton)
 
-        expect(mockSendFunction).toHaveBeenCalledTimes(1)
-        expect(mockSendFunction).toHaveBeenCalledWith(sampleQueries[0])
+            expect(mockSendFunction).toHaveBeenCalledTimes(1)
+            expect(mockSendFunction).toHaveBeenCalledWith(query)
+        }
     })
 
     it("Should handle missing sample queries gracefully", async () => {
@@ -275,7 +286,6 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = await screen.findByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
 
         // Type user input
         await user.type(userInput, strToCheck)
@@ -283,7 +293,7 @@ describe("ChatCommon", () => {
         expect(userInput).toHaveValue(strToCheck)
 
         const sendButton = await screen.findByRole("button", {name: "Send"})
-        expect(sendButton).toBeInTheDocument()
+
         // Click Send button
         await user.click(sendButton)
 
@@ -299,7 +309,6 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
 
         // Type user input
         await user.type(userInput, strToCheck)
@@ -320,7 +329,6 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({onSend: mockSendFunction})
 
         const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-        expect(userInput).toBeInTheDocument()
 
         // Type line 1
         await user.type(userInput, strToCheckLine1)
@@ -351,7 +359,7 @@ describe("ChatCommon", () => {
 
             const chatResponse: ChatResponse = {
                 response: {
-                    type: ChatMessageType.AGENT_FRAMEWORK,
+                    type: ChatMessageType.AI,
                     text: testResponseText,
                     origin: [{tool: "testTool", instantiation_index: 1}],
                     sly_data: {answer: 42},
@@ -366,7 +374,7 @@ describe("ChatCommon", () => {
             const query = "Sample test query for chunk handling"
             await sendQuery(TEST_AGENT_MATH_GUY, query)
 
-            expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+            await screen.findByText(testResponseText)
             expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
             expect(onChunkReceivedMock).toHaveBeenCalledWith(chunk)
         }
@@ -384,7 +392,7 @@ describe("ChatCommon", () => {
         const query = "Sample test query for chunk handling"
         await sendQuery(LegacyAgentType.DataGenerator, query)
 
-        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+        await screen.findByText(testResponseText)
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
     })
@@ -401,12 +409,12 @@ describe("ChatCommon", () => {
         const query = "Sample test query for legacy agent final answer handling"
         await sendQuery(LegacyAgentType.DMSChat, query)
 
-        expect(await screen.findByText(testResponseText)).toBeInTheDocument()
+        await screen.findByText(testResponseText)
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
 
         // should be a span with content "Final Answer"
-        expect(screen.getByText("Final Answer")).toBeInTheDocument()
+        screen.getByText("Final Answer")
     })
 
     it("Should correctly handle errors thrown while fetching", async () => {
@@ -547,33 +555,27 @@ describe("ChatCommon", () => {
     it("Should show agent introduction", async () => {
         renderChatCommonComponent()
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
     })
 
-    it("Should clear chat when a new agent is selected", async () => {
-        const {rerender} = render(
-            <ChatCommon
-                {...defaultProps}
-                clearChatOnNewAgent={true}
-            />
-        )
+    it("Should not clear chat when a new agent is selected", async () => {
+        const {rerender} = render(<ChatCommon {...defaultProps} />)
 
         // Make sure first agent greeting appears
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         rerender(
             <ChatCommon
                 {...defaultProps}
-                clearChatOnNewAgent={true}
                 targetAgent={TEST_AGENT_MUSIC_NERD}
             />
         )
 
-        // Previous agent output should have been cleared
-        expect(screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).not.toBeInTheDocument()
+        // Previous agent output should still be present
+        screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
         // New agent greeting should be present
-        expect(await screen.findByText(cleanUpAgentName(TEST_AGENT_MUSIC_NERD))).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
     })
 
     it("Should refuse interaction when no target agent is set", async () => {
@@ -584,7 +586,6 @@ describe("ChatCommon", () => {
         expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
 
         const overlay = document.getElementById("chat-disabled-overlay")
-        expect(overlay).toBeInTheDocument()
         expect(overlay).toHaveStyle({
             position: "absolute",
             zIndex: MODAL_Z_INDEX - 1,
@@ -598,10 +599,9 @@ describe("ChatCommon", () => {
         renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true})
 
         const stopButton = await screen.findByRole("button", {name: "Stop"})
-        expect(stopButton).toBeInTheDocument()
 
         await user.click(stopButton)
-        expect(await screen.findByText("Request cancelled.")).toBeInTheDocument()
+        await screen.findByText("Request cancelled.")
         expect(setAwaitingLlmMock).toHaveBeenCalledTimes(1)
         expect(setAwaitingLlmMock).toHaveBeenCalledWith(false)
     })
@@ -618,7 +618,7 @@ describe("ChatCommon", () => {
             ref.current?.handleStop()
         })
 
-        expect(await screen.findByText("Request cancelled.")).toBeInTheDocument()
+        await screen.findByText("Request cancelled.")
         expect(setAwaitingLlmMock).toHaveBeenCalledTimes(1)
         expect(setAwaitingLlmMock).toHaveBeenCalledWith(false)
     })
@@ -627,20 +627,18 @@ describe("ChatCommon", () => {
         renderChatCommonComponent()
 
         const autoscrollButton = screen.getByRole("button", {name: "Autoscroll enabled"})
-        expect(autoscrollButton).toBeInTheDocument()
 
         await user.click(autoscrollButton)
-        expect(screen.getByRole("button", {name: "Autoscroll disabled"})).toBeInTheDocument()
+        screen.getByRole("button", {name: "Autoscroll disabled"})
     })
 
     it("Should handle text wrapping toggle correctly", async () => {
         renderChatCommonComponent()
 
         const wrapButton = screen.getByRole("button", {name: "Text wrapping enabled"})
-        expect(wrapButton).toBeInTheDocument()
 
         await user.click(wrapButton)
-        expect(screen.getByRole("button", {name: "Text wrapping disabled"})).toBeInTheDocument()
+        screen.getByRole("button", {name: "Text wrapping disabled"})
     })
 
     it("Should handle final answer from Neuro-san agents correctly", async () => {
@@ -657,7 +655,7 @@ describe("ChatCommon", () => {
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
 
-        expect(await screen.findByText("Final Answer")).toBeInTheDocument()
+        await screen.findByText("Final Answer")
     })
 
     it.each([
@@ -686,6 +684,7 @@ describe("ChatCommon", () => {
 
         // Send two responses, a regular AGENT one and an AI one
         // The initial [] is to make sure the message is not treated as JSON
+        //    See: https://github.com/cognizant-ai-lab/neuro-san-ui/issues/277
         const agentResponseText = "[]Sample Agent response"
         const aiResponseText = "[]Sample AI response"
         const responseMessages = [
@@ -705,27 +704,22 @@ describe("ChatCommon", () => {
 
         // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
         const showThinkingButton = document.getElementById("show-thinking-button")
-        expect(showThinkingButton).toBeInTheDocument()
         await user.click(showThinkingButton)
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
 
         // All responses should be visible when "show thinking" is enabled
-        await waitFor(() => {
-            expect(screen.getAllByText(aiResponseText)).toHaveLength(2)
-        })
-        expect(await screen.findByText(agentResponseText)).toBeInTheDocument()
+        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
+        await screen.findByText(agentResponseText)
 
         // Now click the button again to hide agent thinking
         await user.click(showThinkingButton)
 
         // Only the AI response should be visible
-        await waitFor(() => {
-            expect(screen.getAllByText(aiResponseText)).toHaveLength(2)
-        })
+        expect(screen.getAllByText(aiResponseText)).toHaveLength(1)
 
-        // Agent response should be in the DOM but with display: none
-        expect(await screen.findByText(agentResponseText)).not.toBeVisible()
+        // Agent response should not be in the DOM as we disabled "show thinking"
+        expect(screen.queryByText(agentResponseText)).not.toBeInTheDocument()
     })
 
     it("Should handle voice transcription correctly", async () => {
@@ -904,19 +898,16 @@ describe("ChatCommon", () => {
         const testMessage = "test message for clearing"
         await sendQuery(TEST_AGENT_MATH_GUY, testMessage)
 
-        // Wait for the message to appear
-        await waitFor(() => {
-            expect(screen.getByText(testMessage)).toBeInTheDocument()
-        })
+        // Wait for the message to appear. It appears twice -- once in chat history, once "live"
+        expect(await screen.findAllByText(testMessage)).toHaveLength(2)
 
         // Find and click Clear Chat button
         const clearButton = screen.getByRole("button", {name: "Clear Chat"})
-        expect(clearButton).toBeInTheDocument()
 
         await user.click(clearButton)
 
         // Verify chat is cleared and agent introduction appears
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
         expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
     })
 
@@ -1188,7 +1179,7 @@ describe("ChatCommon", () => {
 
         await sendQuery(LegacyAgentType.OpportunityFinder, "test query")
 
-        expect(await screen.findByText("Legacy response with custom endpoint")).toBeInTheDocument()
+        await screen.findByText("Legacy response with custom endpoint")
     })
 
     it.each([
@@ -1205,7 +1196,7 @@ describe("ChatCommon", () => {
             expect(chatContainer).toBeInTheDocument()
         })
 
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
     })
 
     it("Should handle connectivity info error gracefully", async () => {
@@ -1215,7 +1206,7 @@ describe("ChatCommon", () => {
         renderChatCommonComponent()
 
         // Component should still render despite connectivity error
-        expect(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeInTheDocument()
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
     })
 
     it("Should handle network request timeout", async () => {

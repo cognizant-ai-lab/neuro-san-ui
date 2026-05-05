@@ -6,12 +6,13 @@ import {FC} from "react"
 import {hashString} from "../../../utils/text"
 
 // Maximum number of sample queries to show
-const MAX_SAMPLE_QUERIES = 5
+export const MAX_SAMPLE_QUERIES = 5
 
 // Maximum length of query to show in sample query chips
-const QUERY_TRUNCATE_LENGTH = 80
+export const QUERY_TRUNCATE_LENGTH = 80
 
 interface SampleQueriesProps {
+    readonly disabled: boolean
     readonly handleSend: (query: string) => void
     readonly sampleQueries: string[]
 }
@@ -22,7 +23,7 @@ interface SampleQueriesProps {
  * @returns A ReactNode representing the sample queries as clickable chips. If a user clicks a chip, it will
  * send the query to the agent.
  */
-export const SampleQueries: FC<SampleQueriesProps> = ({handleSend, sampleQueries}) =>
+export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sampleQueries}) =>
     sampleQueries?.length > 0 ? (
         <Box
             id="sample-queries-box"
@@ -32,11 +33,11 @@ export const SampleQueries: FC<SampleQueriesProps> = ({handleSend, sampleQueries
                 const hashedQuery = hashString(query)
                 return (
                     <Tooltip
-                        title={`Click to send query: "${hashedQuery}"`}
+                        title={`Click to send query: "${query}"`}
                         key={`tooltip-${hashedQuery}`}
                     >
                         <Chip
-                            key={hashedQuery}
+                            disabled={disabled}
                             label={
                                 query.length > QUERY_TRUNCATE_LENGTH
                                     ? `${query.slice(0, QUERY_TRUNCATE_LENGTH)}...`
@@ -50,9 +51,7 @@ export const SampleQueries: FC<SampleQueriesProps> = ({handleSend, sampleQueries
                                 marginRight: "1rem",
                                 marginBottom: "1rem",
                                 backgroundColor: "var(--bs-accent1-medium)",
-                                "&:hover": {
-                                    backgroundColor: "var(--bs-accent1-dark)",
-                                },
+                                "&:hover": {backgroundColor: "var(--bs-accent1-dark)"},
                             }}
                         />
                     </Tooltip>

@@ -17,7 +17,7 @@ limitations under the License.
 /**
  * See main function description.
  */
-import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
+import {AIMessage, HumanMessage} from "@langchain/core/messages"
 import AccountTreeIcon from "@mui/icons-material/AccountTree"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
@@ -48,8 +48,10 @@ import {
 } from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
+import {v4 as uuid} from "uuid"
 
 import {AgentConnectivity} from "./AgentConnectivity"
+import {ChatHistory} from "./ChatHistory"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
@@ -60,12 +62,12 @@ import {UserQueryDisplay} from "./UserQueryDisplay"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {
-    ChatContext,
     ChatMessage,
     ChatMessageType,
     ConnectivityResponse,
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hashString, hasOnlyWhitespace} from "../../../utils/text"
 import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../../Common/MUIAccordion"
@@ -146,12 +148,6 @@ export interface ChatCommonProps {
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
 
     /**
-     * Whether to clear the chat window and history when the user starts chatting with a new agent or network.
-     * Defaults to not clearing the chat.
-     */
-    readonly clearChatOnNewAgent?: boolean
-
-    /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
      * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
      */
@@ -178,6 +174,9 @@ export interface ChatCommonProps {
     readonly neuroSanURL?: string
 }
 
+// Key for the chat history, which gets special treatment; always visible even if "show thinking" is off.
+const CHAT_HISTORY_KEY = "chat-history-accordion"
+
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
 const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 
@@ -201,34 +200,34 @@ export type ChatCommonHandle = {
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
+// Maximum number of items to keep in the chat output window
+const MAX_CHAT_OUTPUT_ITEMS = 50
+
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
  * experience for users when chatting with agents. It handles user input as well as displaying and nicely formatting
  * agent responses. Customization for inputs and outputs is provided via event handlers-like props.
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
-    const slyData = useRef<Record<string, unknown>>({})
-
     const {
-        id,
+        agentPlaceholders = EMPTY,
+        backgroundColor,
         currentUser,
-        userImage,
-        setIsAwaitingLlm,
+        extraParams,
+        id,
         isAwaitingLlm,
+        legacyAgentEndpoint,
+        neuroSanURL,
         onChunkReceived,
-        onStreamingStarted,
-        onStreamingComplete,
+        onClose,
         onSend,
+        onStreamingComplete,
+        onStreamingStarted,
+        setIsAwaitingLlm,
         setPreviousResponse,
         targetAgent,
-        legacyAgentEndpoint,
-        agentPlaceholders = EMPTY,
-        clearChatOnNewAgent = false,
-        extraParams,
-        backgroundColor,
         title,
-        onClose,
-        neuroSanURL,
+        userImage,
     } = props
     // MUI theme
     const theme = useTheme()
@@ -256,7 +255,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Controller for cancelling fetch request
     const controller = useRef<AbortController>(null)
 
-    // For tracking if we're autoscrolling. A button allows the user to enable or disable autoscrolling.
+    // For tracking if we're auto-scrolling. A button allows the user to enable or disable auto-scrolling.
     const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
 
     // ref for same
@@ -271,19 +270,25 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Ref for the final answer key, so we can highlight the accordion
     const finalAnswerKey = useRef<string>("")
 
-    // Use useRef here since we don't want changes in the chat history to trigger a re-render
-    const chatHistory = useRef<BaseMessage[]>([])
+    // Persistent agent chat history store, which is where we store both kinds of chat histories
+    // (see store implementation for details)
+    const storedChatHistory = useAgentChatHistoryStore((state) => state?.history?.[targetAgent])
+    const agentChatHistory = useMemo(
+        () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
+        [storedChatHistory]
+    )
+    const [agentSampleQueries, setAgentSampleQueries] = useState<string[]>([])
 
-    /* Use useRef here since we don't want changes in the chat context to trigger a re-render
-    Note on ChatContext vs ChatHistory:
-    "Legacy" (not Neuro-san) agents use ChatHistory, which is a collection of messages of various types, Human, AI,
-    System etc. It mimics the langchain field of the same name.
-    Neuro-san agents deal in ChatContext, which is a more complex collection of chat histories, since more agents
-    are involved.
-    Both fields fulfill the same purpose: to maintain conversation state across multiple messages.
-    */
-    const chatContext = useRef<ChatContext>(null)
+    // Access store for context items
+    const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
+    const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
+    const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
+    const resetHistory = useAgentChatHistoryStore((state) => state.resetHistory)
+
+    // Ref to the item we think is the Final Answer from the agent
     const finalAnswerRef = useRef<HTMLDivElement>(null)
+
+    // Track state of "show thinking" toggle
     const [showThinking, setShowThinking] = useState<boolean>(false)
 
     // Microphone state for voice input
@@ -322,6 +327,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
+    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
+
     useEffect(() => {
         // Set up speech recognition
         const handlers = setupSpeechRecognition(setChatInput, setVoiceInputState, speechRecognitionRef)
@@ -344,8 +351,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     useEffect(() => {
         // Scroll the final answer into view
         if (finalAnswerRef.current && !isAwaitingLlm) {
-            const offset = 50
-            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - offset
+            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - 50
             return
         }
 
@@ -441,13 +447,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     )
 
     /**
-     * Handles adding content to the output window.
+     * Handles adding content to the output window. We only store the last MAX_CHAT_OUTPUT_ITEMS items to keep
+     * memory usage down.
      * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
-     * @returns Nothing, but updates the output window with the new content. Updates currentResponse as a side effect.
+     * @returns Nothing, but updates the output window with the new content.
      */
     const updateOutput = useCallback((node: ReactNode) => {
-        currentResponse.current += node
-        setChatOutput((currentOutput) => [...currentOutput, node])
+        setChatOutput((current) => {
+            const next = [...current, node]
+            return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
+        })
     }, [])
 
     const handleChunk = useCallback(
@@ -460,6 +469,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             if (isLegacyAgentType(targetAgent)) {
                 // Display output as-is
                 updateOutput(chunk)
+                currentResponse.current += chunk
 
                 // Check for Final Answer from legacy agent
                 const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
@@ -477,19 +487,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
+            // Shallow merge existing slyData with incoming chatMessage.sly_data
+            if (chatMessage.sly_data) {
+                updateSlyData(targetAgent, chatMessage.sly_data)
+            }
+
             // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
             if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
                 // Save the chat context, potentially overwriting any previous ones we received during this session.
                 // We only care about the last one received.
-                chatContext.current = chatMessage.chat_context
-
-                // Nothing more to do with this message. It's just a message to give us the chat context, so return
-                return
-            }
-
-            // Merge slyData.current with incoming chatMessage.sly_data
-            if (chatMessage.sly_data) {
-                slyData.current = {...slyData.current, ...chatMessage.sly_data}
+                updateChatContext(targetAgent, chatMessage.chat_context)
             }
 
             // Check if there is an error block in the "structure" field of the chat message.
@@ -516,12 +523,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
                         : "Agent message"
                 updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
+                currentResponse.current += chatMessage.text
             }
         },
-        [onChunkReceived, processLogLine, targetAgent, updateOutput]
+        [onChunkReceived, processLogLine, updateSlyData, targetAgent, updateChatContext, updateOutput]
     )
-
-    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
 
     const introduceAgent = useCallback(() => {
         /**
@@ -538,7 +544,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Random greeting
         const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
         updateOutput(greeting)
-    }, [agentDisplayName, targetAgent, updateOutput])
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- updateOutput is stable (empty useCallback deps)
+    }, [agentDisplayName, targetAgent])
 
     /**
      * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
@@ -582,7 +589,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             legacyAgentEndpoint,
                             extraParams,
                             query,
-                            chatHistory.current,
+                            agentChatHistory.chatHistory,
                             null,
                             StreamingUnit.Chunk
                         )
@@ -590,14 +597,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...slyData.current, login: currentUser}
+                        const slyDataWithUserName = {...agentChatHistory?.slyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
                             query,
                             targetAgent,
                             handleChunk,
-                            chatContext.current,
+                            agentChatHistory.chatContext,
                             slyDataWithUserName,
                             currentUser,
                             StreamingUnit.Line
@@ -626,13 +633,23 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
             return wasAborted
         },
-        [currentUser, extraParams, handleChunk, legacyAgentEndpoint, neuroSanURL, targetAgent, updateOutput]
+        [
+            agentChatHistory,
+            currentUser,
+            extraParams,
+            handleChunk,
+            legacyAgentEndpoint,
+            neuroSanURL,
+            targetAgent,
+            updateOutput,
+        ]
     )
 
     const handleSend = useCallback(
         async (query: string) => {
-            // Record user query in chat history
-            chatHistory.current = [...chatHistory.current, new HumanMessage(previousUserQuery.current)]
+            // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
+            const userQueryMessage = new HumanMessage({content: query, id: uuid()})
+            updateChatHistory(targetAgent, [userQueryMessage])
 
             // Allow parent to intercept and modify the query before sending if needed
             const queryToSend = onSend?.(query) ?? query
@@ -716,15 +733,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)}
                         </div>
                     )
+                    // Record bot answer in history.
+                    if (currentResponse?.current?.length > 0) {
+                        updateChatHistory(targetAgent, [new AIMessage({content: lastAIMessage.current, id: uuid()})])
+                    }
+                } else if (isLegacyAgentType(targetAgent) && currentResponse.current.length > 0) {
+                    // It's a legacy agent that didn't provide a "Final Answer", so just record the whole response
+                    // as the bot answer in that case.
+                    updateChatHistory(targetAgent, [new AIMessage({content: currentResponse.current, id: uuid()})])
                 }
 
                 // Add a blank line after response
                 updateOutput("\n")
-
-                // Record bot answer in history.
-                if (currentResponse?.current?.length > 0) {
-                    chatHistory.current = [...chatHistory.current, new AIMessage(currentResponse.current)]
-                }
             } finally {
                 resetState()
 
@@ -744,19 +764,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             setIsAwaitingLlm,
             showThinking,
             targetAgent,
+            updateChatHistory,
             updateOutput,
             userImage,
         ]
     )
-
-    useEffect(() => {
-        if (clearChatOnNewAgent && targetAgent) {
-            chatContext.current = null
-            currentResponse.current = ""
-            slyData.current = null
-            setChatOutput([])
-        }
-    }, [clearChatOnNewAgent, targetAgent])
 
     useEffect(() => {
         if (targetAgent) {
@@ -787,12 +799,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     />
                 )
                 const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
-                updateOutput(
-                    <SampleQueries
-                        handleSend={handleSend}
-                        sampleQueries={sampleQueries}
-                    />
-                )
+                setAgentSampleQueries(sampleQueries)
             } catch (e) {
                 sendNotification(
                     NotificationType.error,
@@ -804,7 +811,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         if (targetAgent && !isLegacyAgentType(targetAgent)) {
             void fetchAgentDetails()
         }
-    }, [agentDisplayName, currentUser, handleSend, id, neuroSanURL, targetAgent, updateOutput])
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only want to run this when targetAgent changes
+    }, [targetAgent])
 
     const handleStop = useCallback(() => {
         try {
@@ -849,13 +857,346 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const handleClearChat = useCallback(() => {
         setChatOutput([])
-        chatHistory.current = []
-        chatContext.current = null
+        resetHistory(targetAgent)
         previousUserQuery.current = ""
         currentResponse.current = ""
         lastAIMessage.current = ""
         introduceAgent()
-    }, [introduceAgent])
+    }, [introduceAgent, resetHistory, targetAgent])
+
+    /**
+     * Extract the list of React nodes to display in the output window, potentially filtering out "thinking"
+     * nodes if the user has chosen to hide them. Nodes that aren't to be shown are not even added to the DOM.
+     * There are a couple of special nodes that are always shown: chat history (collapsible accordion) and whatever
+     * we detected as the "final answer" (also a collapsible accordion).
+     *
+     * We use the MUIAccordion check as a proxy for "lines received from the agents"; everything that isn't
+     * a MUIAccordion (e.g. alerts, connectivity info, greetings) is not something we would want to hide when
+     * "show thinking" is off, so we always show those regardless of the "show thinking" setting.
+     */
+    const nodesList = useMemo(
+        () =>
+            chatOutput
+                .map((item) => {
+                    if (isValidElement(item) && item.type === MUIAccordion) {
+                        const shouldShow =
+                            showThinking || item.key === finalAnswerKey.current || item.key === CHAT_HISTORY_KEY
+                        return shouldShow ? item : null
+                    }
+                    return item
+                })
+                .filter((item) => item !== null),
+        [chatOutput, showThinking]
+    )
+
+    const getNoAgentOverlay = () => (
+        <Box
+            id="chat-disabled-overlay"
+            sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: theme.zIndex.modal - 1,
+                cursor: "not-allowed",
+                // Capture all pointer events to prevent interaction with the chat when no agent is selected
+                pointerEvents: "all",
+            }}
+        />
+    )
+
+    const getTitle = () => (
+        <Box
+            id={`llm-chat-title-container-${id}`}
+            sx={{
+                alignItems: "center",
+                borderTopLeftRadius: "var(--bs-border-radius)",
+                borderTopRightRadius: "var(--bs-border-radius)",
+                display: "flex",
+                justifyContent: "space-between",
+                paddingLeft: "1rem",
+                paddingRight: "0.5rem",
+                paddingTop: "0.25rem",
+                paddingBottom: "0.25rem",
+            }}
+        >
+            <Typography
+                id={`llm-chat-title-${id}-text`}
+                sx={{fontSize: "0.9rem"}}
+            >
+                {title}
+            </Typography>
+            {onClose && (
+                <IconButton
+                    data-testid={`close-button-${id}`}
+                    id={`close-button-${id}`}
+                    onClick={onClose}
+                >
+                    <CloseIcon id={`close-icon-${id}`} />
+                </IconButton>
+            )}
+        </Box>
+    )
+
+    const getOptionsButtons = () => (
+        <>
+            <Tooltip
+                id="show-thinking"
+                title={showThinking ? "Displaying agent thinking" : "Hiding agent thinking"}
+            >
+                <span id="show-thinking-span">
+                    <LlmChatOptionsButton
+                        enabled={showThinking}
+                        id="show-thinking-button"
+                        onClick={() => setShowThinking(!showThinking)}
+                        posRight={150}
+                        disabled={isAwaitingLlm}
+                    >
+                        <AccountTreeIcon
+                            id="show-thinking-icon"
+                            sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
+                        />
+                    </LlmChatOptionsButton>
+                </span>
+            </Tooltip>
+            <Tooltip
+                id="enable-autoscroll"
+                title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
+            >
+                <LlmChatOptionsButton
+                    enabled={autoScrollEnabled}
+                    id="autoscroll-button"
+                    onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+                    posRight={80}
+                >
+                    <VerticalAlignBottomIcon
+                        id="autoscroll-icon"
+                        sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
+                    />
+                </LlmChatOptionsButton>
+            </Tooltip>
+            <Tooltip
+                id="wrap-tooltip"
+                title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
+            >
+                <LlmChatOptionsButton
+                    enabled={shouldWrapOutput}
+                    id="wrap-button"
+                    onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
+                    posRight={10}
+                >
+                    <WrapTextIcon
+                        id="wrap-icon"
+                        sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
+                    />
+                </LlmChatOptionsButton>
+            </Tooltip>
+        </>
+    )
+
+    const getResponseBox = () => (
+        <Box
+            id="llm-response-div"
+            sx={{
+                ...divStyle,
+                border: "var(--bs-border-width) var(--bs-border-style)",
+                borderRadius: "var(--bs-border-radius)",
+                display: "flex",
+                flexGrow: 1,
+                height: "100%",
+                margin: "10px",
+                position: "relative",
+                overflowY: "auto",
+            }}
+        >
+            {getOptionsButtons()}
+            <Box
+                id="llm-responses"
+                ref={chatOutputRef}
+                sx={{
+                    backgroundColor: backgroundColor || undefined,
+                    borderWidth: "1px",
+                    borderRadius: "0.5rem",
+                    fontSize: "smaller",
+                    resize: "none",
+                    overflowY: "auto", // Enable vertical scrollbar
+                    paddingBottom: "60px",
+                    paddingTop: "7.5px",
+                    paddingLeft: "15px",
+                    paddingRight: "15px",
+                    width: "100%",
+                }}
+                tabIndex={-1}
+            >
+                {agentChatHistory?.chatHistory?.length > 0 && (
+                    <ChatHistory
+                        agentImage={AGENT_IMAGE}
+                        agentDisplayName={agentDisplayName}
+                        chatHistoryKey={CHAT_HISTORY_KEY}
+                        currentUser={currentUser}
+                        id={`${id}-chat-history`}
+                        messages={agentChatHistory.chatHistory}
+                        targetAgent={targetAgent}
+                        userImage={userImage}
+                    />
+                )}
+                <FormattedMarkdown
+                    id={`${id}-formatted-markdown`}
+                    nodesList={nodesList}
+                    style={darkMode ? atelierDuneDark : a11yLight}
+                    wrapLongLines={shouldWrapOutput}
+                />
+                <SampleQueries
+                    disabled={isAwaitingLlm}
+                    handleSend={handleSend}
+                    sampleQueries={agentSampleQueries}
+                />
+                {isAwaitingLlm && (
+                    <Box
+                        id="awaitingOutputContainer"
+                        sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                    >
+                        <span
+                            id="working-span"
+                            style={{marginRight: "1rem"}}
+                        >
+                            Working...
+                        </span>
+                        <CircularProgress
+                            id="awaitingOutputSpinner"
+                            sx={{
+                                color: "var(--bs-primary)",
+                            }}
+                            size="1rem"
+                        />
+                    </Box>
+                )}
+            </Box>
+
+            <ControlButtons
+                handleClearChat={handleClearChat}
+                enableClearChatButton={enableClearChatButton}
+                isAwaitingLlm={isAwaitingLlm}
+                handleSend={handleSend}
+                handleStop={handleStop}
+                previousUserQuery={previousUserQuery.current}
+                shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+            />
+        </Box>
+    )
+
+    const getUserInputBox = () => (
+        <Box
+            id="user-input-div"
+            sx={{
+                ...divStyle,
+                display: "flex",
+                margin: "10px",
+                alignItems: "flex-end",
+                position: "relative",
+            }}
+        >
+            <Input
+                autoComplete="off"
+                id="user-input"
+                multiline={true}
+                placeholder={getPlaceholder()}
+                ref={chatInputRef}
+                sx={{
+                    border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
+                    borderRadius: "var(--bs-border-radius)",
+                    display: "flex",
+                    flexGrow: 1,
+                    fontSize: "smaller",
+                    marginRight: "0.75rem",
+                    paddingBottom: "0.5rem",
+                    paddingTop: "0.5rem",
+                    paddingLeft: "1rem",
+                    paddingRight: "1rem",
+                    transition: "margin-right 0.2s",
+                }}
+                onChange={(event) => {
+                    setChatInput(event.target.value)
+                }}
+                onKeyDown={async (event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault()
+                        await handleSend(chatInput)
+                    }
+                }}
+                value={chatInput}
+                endAdornment={
+                    <InputAdornment
+                        id="input-adornments"
+                        position="end"
+                        disableTypography={true}
+                    >
+                        {/* Voice processing spinner - shows only when actively speaking */}
+                        {voiceInputState.isProcessingSpeech && (
+                            <CircularProgress
+                                size={16}
+                                sx={{
+                                    color: "var(--bs-primary)",
+                                    marginRight: "0.5rem",
+                                }}
+                            />
+                        )}
+                        <IconButton
+                            id="clear-input-button"
+                            onClick={() => {
+                                setChatInput("")
+                            }}
+                            sx={{
+                                color: "var(--bs-primary)",
+                                opacity: userInputEmpty ? "25%" : "100%",
+                            }}
+                            disabled={userInputEmpty}
+                            tabIndex={-1}
+                            edge="end"
+                        >
+                            <ClearIcon id="clear-input-icon" />
+                        </IconButton>
+                    </InputAdornment>
+                }
+            />
+
+            {/* Microphone Button */}
+            <MicrophoneButton
+                isMicOn={isMicOn}
+                onMicToggle={setIsMicOn}
+                speechRecognitionRef={speechRecognitionRef}
+                voiceInputState={voiceInputState}
+                setVoiceInputState={setVoiceInputState}
+            />
+
+            {/* Send Button */}
+            <SendButton
+                enableSendButton={shouldEnableSendButton}
+                id="submit-query-button"
+                onClickCallback={() => handleSend(chatInput)}
+            />
+        </Box>
+    )
+
+    const getChatBox = () => (
+        <Box
+            id={`llm-chat-${id}`}
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                flexGrow: 1,
+                height: "100%",
+                opacity: targetAgent ? 1 : 0.4,
+                pointerEvents: targetAgent ? "auto" : "none",
+                position: "relative",
+            }}
+        >
+            {title && getTitle()}
+            {getResponseBox()}
+            {getUserInputBox()}
+        </Box>
+    )
 
     return (
         <Box
@@ -868,284 +1209,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 position: "relative",
             }}
         >
-            {!targetAgent && (
-                <Box
-                    id="chat-disabled-overlay"
-                    sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: theme.zIndex.modal - 1,
-                        cursor: "not-allowed",
-                        // Capture all pointer events to prevent interaction with the chat when no agent is selected
-                        pointerEvents: "all",
-                    }}
-                />
-            )}
-            <Box
-                id="chat-content"
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    flexGrow: 1,
-                    height: "100%",
-                    opacity: targetAgent ? 1 : 0.4,
-                    pointerEvents: targetAgent ? "auto" : "none",
-                }}
-            >
-                {title && (
-                    <Box
-                        id={`llm-chat-title-container-${id}`}
-                        sx={{
-                            alignItems: "center",
-                            borderTopLeftRadius: "var(--bs-border-radius)",
-                            borderTopRightRadius: "var(--bs-border-radius)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            paddingLeft: "1rem",
-                            paddingRight: "0.5rem",
-                            paddingTop: "0.25rem",
-                            paddingBottom: "0.25rem",
-                        }}
-                    >
-                        <Typography
-                            id={`llm-chat-title-${id}-text`}
-                            sx={{fontSize: "0.9rem"}}
-                        >
-                            {title}
-                        </Typography>
-                        {onClose && (
-                            <IconButton
-                                data-testid={`close-button-${id}`}
-                                id={`close-button-${id}`}
-                                onClick={onClose}
-                            >
-                                <CloseIcon id={`close-icon-${id}`} />
-                            </IconButton>
-                        )}
-                    </Box>
-                )}
-                <Box
-                    id="llm-response-div"
-                    sx={{
-                        ...divStyle,
-                        border: "var(--bs-border-width) var(--bs-border-style)",
-                        borderRadius: "var(--bs-border-radius)",
-                        display: "flex",
-                        flexGrow: 1,
-                        height: "100%",
-                        margin: "10px",
-                        position: "relative",
-                        overflowY: "auto",
-                    }}
-                >
-                    <Tooltip
-                        id="show-thinking"
-                        title={showThinking ? "Displaying agent thinking" : "Hiding agent thinking"}
-                    >
-                        <span id="show-thinking-span">
-                            <LlmChatOptionsButton
-                                enabled={showThinking}
-                                id="show-thinking-button"
-                                onClick={() => setShowThinking(!showThinking)}
-                                posRight={150}
-                                disabled={isAwaitingLlm}
-                            >
-                                <AccountTreeIcon
-                                    id="show-thinking-icon"
-                                    sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                                />
-                            </LlmChatOptionsButton>
-                        </span>
-                    </Tooltip>
-                    <Tooltip
-                        id="enable-autoscroll"
-                        title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
-                    >
-                        <LlmChatOptionsButton
-                            enabled={autoScrollEnabled}
-                            id="autoscroll-button"
-                            onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
-                            posRight={80}
-                        >
-                            <VerticalAlignBottomIcon
-                                id="autoscroll-icon"
-                                sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                            />
-                        </LlmChatOptionsButton>
-                    </Tooltip>
-                    <Tooltip
-                        id="wrap-tooltip"
-                        title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
-                    >
-                        <LlmChatOptionsButton
-                            enabled={shouldWrapOutput}
-                            id="wrap-button"
-                            onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
-                            posRight={10}
-                        >
-                            <WrapTextIcon
-                                id="wrap-icon"
-                                sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                            />
-                        </LlmChatOptionsButton>
-                    </Tooltip>
-                    <Box
-                        id="llm-responses"
-                        ref={chatOutputRef}
-                        sx={{
-                            backgroundColor: backgroundColor || undefined,
-                            borderWidth: "1px",
-                            borderRadius: "0.5rem",
-                            fontSize: "smaller",
-                            resize: "none",
-                            overflowY: "auto", // Enable vertical scrollbar
-                            paddingBottom: "60px",
-                            paddingTop: "7.5px",
-                            paddingLeft: "15px",
-                            paddingRight: "15px",
-                            width: "100%",
-                        }}
-                        tabIndex={-1}
-                    >
-                        <FormattedMarkdown
-                            id={`${id}-formatted-markdown`}
-                            nodesList={chatOutput.map((item) => {
-                                if (isValidElement(item) && item.type === MUIAccordion) {
-                                    const shouldShow = showThinking || item.key === finalAnswerKey.current
-                                    return (
-                                        <Box
-                                            key={item.key}
-                                            sx={{display: shouldShow ? "block" : "none"}}
-                                        >
-                                            {item}
-                                        </Box>
-                                    )
-                                }
-                                return item
-                            })}
-                            style={darkMode ? atelierDuneDark : a11yLight}
-                            wrapLongLines={shouldWrapOutput}
-                        />
-                        {isAwaitingLlm && (
-                            <Box
-                                id="awaitingOutputContainer"
-                                sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
-                            >
-                                <span
-                                    id="working-span"
-                                    style={{marginRight: "1rem"}}
-                                >
-                                    Working...
-                                </span>
-                                <CircularProgress
-                                    id="awaitingOutputSpinner"
-                                    sx={{
-                                        color: "var(--bs-primary)",
-                                    }}
-                                    size="1rem"
-                                />
-                            </Box>
-                        )}
-                    </Box>
-
-                    <ControlButtons
-                        handleClearChat={handleClearChat}
-                        enableClearChatButton={enableClearChatButton}
-                        isAwaitingLlm={isAwaitingLlm}
-                        handleSend={handleSend}
-                        handleStop={handleStop}
-                        previousUserQuery={previousUserQuery.current}
-                        shouldEnableRegenerateButton={shouldEnableRegenerateButton}
-                    />
-                </Box>
-                <Box
-                    id="user-input-div"
-                    style={{...divStyle, display: "flex", margin: "10px", alignItems: "flex-end", position: "relative"}}
-                >
-                    <Input
-                        autoComplete="off"
-                        id="user-input"
-                        multiline={true}
-                        placeholder={getPlaceholder()}
-                        ref={chatInputRef}
-                        sx={{
-                            border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
-                            borderRadius: "var(--bs-border-radius)",
-                            display: "flex",
-                            flexGrow: 1,
-                            fontSize: "smaller",
-                            marginRight: "0.75rem",
-                            paddingBottom: "0.5rem",
-                            paddingTop: "0.5rem",
-                            paddingLeft: "1rem",
-                            paddingRight: "1rem",
-                            transition: "margin-right 0.2s",
-                        }}
-                        onChange={(event) => {
-                            setChatInput(event.target.value)
-                        }}
-                        onKeyDown={async (event) => {
-                            if (event.key === "Enter" && !event.shiftKey) {
-                                event.preventDefault()
-                                await handleSend(chatInput)
-                            }
-                        }}
-                        value={chatInput}
-                        endAdornment={
-                            <InputAdornment
-                                id="input-adornments"
-                                position="end"
-                                disableTypography={true}
-                            >
-                                {/* Voice processing spinner - shows only when actively speaking */}
-                                {voiceInputState.isProcessingSpeech && (
-                                    <CircularProgress
-                                        size={16}
-                                        sx={{
-                                            color: "var(--bs-primary)",
-                                            marginRight: "0.5rem",
-                                        }}
-                                    />
-                                )}
-                                <IconButton
-                                    id="clear-input-button"
-                                    onClick={() => {
-                                        setChatInput("")
-                                    }}
-                                    sx={{
-                                        color: "var(--bs-primary)",
-                                        opacity: userInputEmpty ? "25%" : "100%",
-                                    }}
-                                    disabled={userInputEmpty}
-                                    tabIndex={-1}
-                                    edge="end"
-                                >
-                                    <ClearIcon id="clear-input-icon" />
-                                </IconButton>
-                            </InputAdornment>
-                        }
-                    />
-
-                    {/* Microphone Button */}
-                    <MicrophoneButton
-                        isMicOn={isMicOn}
-                        onMicToggle={setIsMicOn}
-                        speechRecognitionRef={speechRecognitionRef}
-                        voiceInputState={voiceInputState}
-                        setVoiceInputState={setVoiceInputState}
-                    />
-
-                    {/* Send Button */}
-                    <SendButton
-                        enableSendButton={shouldEnableSendButton}
-                        id="submit-query-button"
-                        onClickCallback={() => handleSend(chatInput)}
-                    />
-                </Box>
-            </Box>
+            {targetAgent ? getChatBox() : getNoAgentOverlay()}
         </Box>
     )
 }

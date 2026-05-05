@@ -176,7 +176,9 @@ describe("SettingsDialog", () => {
 
         expect(checkBoxElement).toBeChecked()
 
+        // Click to disable Zen mode
         await user.click(checkBoxElement)
+        expect(checkBoxElement).not.toBeChecked()
 
         expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
     })
