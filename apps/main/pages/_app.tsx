@@ -126,7 +126,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     const secondary = useSettingsStore((state) => state.settings.branding.secondary)
     const background = useSettingsStore((state) => state.settings.branding.background)
 
-    const [theme, setTheme] = useState(createTheme)
+    const [theme, setTheme] = useState(() => createTheme())
     // Generate the branded theme only on the client to avoid hydration issues.
     useEffect(() => {
         setTheme(createAppTheme(primary, secondary, background))
