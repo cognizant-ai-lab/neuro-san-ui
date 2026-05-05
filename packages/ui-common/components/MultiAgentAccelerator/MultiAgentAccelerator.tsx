@@ -33,10 +33,9 @@ import {
     AGENT_NETWORK_HOCON,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
-    TEMPORARY_NETWORK_FOLDER,
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
+import {convertReservationsToNetworks, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
@@ -48,7 +47,7 @@ import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../state/Settings"
-import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
@@ -73,35 +72,6 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-
-/**
- * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
- * in the tree.
- * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
- * @param networkHocon Optional network HOCON string that may be included in the same message as the
- * reservations. Note: for now we assume that all reservations are associated with the same network definition.
- * This will fail if ever we get multiple reservations for different networks in a single chat stream, but that is
- * not a valid scenario currently; we are focusing on Agent Network Design which has a simple output.
- * @returns List of TemporaryNetwork objects that can be displayed in the UI
- */
-const convertReservationsToNetworks = (
-    agentReservations: AgentReservation[],
-    networkHocon: string | null,
-    agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
-    agentNetworkName?: string
-): TemporaryNetwork[] => {
-    return agentReservations.map((reservation) => ({
-        reservation,
-        agentInfo: {
-            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
-            origin: reservation.reservation_id,
-            status: "active",
-        },
-        agentNetworkName,
-        networkHocon,
-        agentNetworkDefinition,
-    }))
-}
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -405,14 +375,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     agentNetworkName
                 )
 
-                const currentNetworks = useTempNetworksStore.getState().tempNetworks
-                useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+                const upserted = useTempNetworksStore.getState().upsertTempNetworks(newTemporaryNetworks)
 
                 // Record the new temporary networks so we can highlight them for the user.
                 // For now, we only care about the first one since that's the only active use case
-                setNewlyAddedTemporaryNetworks(
-                    new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name))
-                )
+                setNewlyAddedTemporaryNetworks(new Set(upserted.map((network) => network.agentInfo.agent_name)))
             }
 
             return true
@@ -536,6 +503,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isTemporaryNetwork={isSelectedNetworkTemporary}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
+                            onNetworkReplaced={(oldNetworkId, newNetworkId) => {
+                                if (selectedNetwork === oldNetworkId) {
+                                    agentCountsRef.current = new Map()
+                                    setSelectedNetwork(newNetworkId)
+                                }
+                            }}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />

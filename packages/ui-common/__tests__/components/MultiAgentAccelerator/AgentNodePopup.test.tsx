@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {act, render, screen, waitFor} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -252,6 +252,116 @@ describe("AgentNodePopup", () => {
 
         await waitFor(() => {
             expect(screen.getByRole("textbox", {name: /^instructions$/iu})).toHaveValue(INITIAL_INSTRUCTIONS)
+        })
+    })
+
+    it("updates description text when the description field is changed", () => {
+        const {onSave} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
+
+        const descField = screen.getByRole("textbox", {name: /^description$/iu})
+        fireEvent.change(descField, {target: {value: "New description"}})
+        fireEvent.keyDown(descField, {key: "a"})
+
+        fireEvent.click(screen.getByRole("button", {name: /^save$/iu}))
+
+        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
+    })
+
+    describe("isSaving prop", () => {
+        it("disables both Save and Cancel buttons while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            expect(screen.getByRole("button", {name: /saving/iu})).toBeDisabled()
+            expect(screen.getByRole("button", {name: /cancel/iu})).toBeDisabled()
+        })
+
+        it("shows 'Saving…' label on the Save button while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            expect(screen.getByRole("button", {name: /saving/iu})).toBeInTheDocument()
+            expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
+        })
+
+        it("shows 'Save' label and enables buttons when isSaving is false", () => {
+            renderPopup({isSaving: false})
+
+            expect(screen.getByRole("button", {name: /^save$/iu})).not.toBeDisabled()
+            expect(screen.getByRole("button", {name: /cancel/iu})).not.toBeDisabled()
+        })
+
+        it("shows the 'few minutes' note while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            expect(screen.getByText(/this may take a few minutes/iu)).toBeInTheDocument()
+        })
+
+        it("hides the 'few minutes' note when isSaving is false", () => {
+            renderPopup({isSaving: false})
+
+            expect(screen.queryByText(/this may take a few minutes/iu)).not.toBeInTheDocument()
+        })
+
+        it("does not call onSave when the Save button is disabled (isSaving true)", () => {
+            const {onSave} = renderPopup({isSaving: true})
+
+            // The button is disabled so clicking it should not trigger onSave
+            const saveBtn = screen.getByRole("button", {name: /saving/iu})
+            fireEvent.click(saveBtn)
+
+            expect(onSave).not.toHaveBeenCalled()
+        })
+
+        it("does not call onClose when the Cancel button is disabled (isSaving true)", () => {
+            const {onClose} = renderPopup({isSaving: true})
+
+            const cancelBtn = screen.getByRole("button", {name: /cancel/iu})
+            fireEvent.click(cancelBtn)
+
+            expect(onClose).not.toHaveBeenCalled()
+        })
+
+        it("hides the X close button while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            expect(screen.queryByRole("button", {name: /close/iu})).not.toBeInTheDocument()
+        })
+
+        it("shows a progress bar while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            expect(screen.getByRole("progressbar", {name: /saving agent/iu})).toBeInTheDocument()
+        })
+
+        it("hides the progress bar when isSaving is false", () => {
+            renderPopup({isSaving: false})
+
+            expect(screen.queryByRole("progressbar", {name: /saving agent/iu})).not.toBeInTheDocument()
+        })
+
+        it("disables the text fields while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            const textareas = screen.getAllByRole("textbox")
+            textareas.forEach((ta) => expect(ta).toBeDisabled())
+        })
+
+        it("does not call onClose when backdrop is clicked while isSaving is true", () => {
+            const {onClose} = renderPopup({isSaving: true})
+
+            // MUI Dialog fires its onClose on backdrop click — the agent-node-popup backdrop
+            const backdrop = document.querySelector(".MuiBackdrop-root")
+            if (backdrop) fireEvent.click(backdrop)
+
+            expect(onClose).not.toHaveBeenCalled()
+        })
+
+        it("calls onClose when backdrop is clicked while isSaving is false", () => {
+            const {onClose} = renderPopup({isSaving: false})
+
+            const backdrop = document.querySelector(".MuiBackdrop-root")
+            if (backdrop) fireEvent.click(backdrop)
+
+            expect(onClose).toHaveBeenCalledTimes(1)
         })
     })
 })

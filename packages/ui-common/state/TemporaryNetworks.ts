@@ -41,6 +41,12 @@ export type TemporaryNetwork = {
 interface TempNetworksStore {
     readonly tempNetworks: TemporaryNetwork[]
     readonly setTempNetworks: (tempNetworks: TemporaryNetwork[]) => void
+    /**
+     * Upsert new networks into the store. If an existing network has the same `agentNetworkName` as an incoming
+     * network, the existing network is replaced with the new one. Networks without an `agentNetworkName` are always
+     * appended (no dedup possible). Returns the final list of upserted networks (those that were added or replaced).
+     */
+    readonly upsertTempNetworks: (newNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
     readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
 }
 
@@ -52,6 +58,29 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
         (set) => ({
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
+            upsertTempNetworks: (newNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
+                const upserted: TemporaryNetwork[] = []
+                set((state) => {
+                    const updated = [...state.tempNetworks]
+                    for (const newNetwork of newNetworks) {
+                        if (newNetwork.agentNetworkName) {
+                            const existingIdx = updated.findIndex(
+                                (n) => n.agentNetworkName === newNetwork.agentNetworkName
+                            )
+                            if (existingIdx >= 0) {
+                                updated[existingIdx] = newNetwork
+                            } else {
+                                updated.push(newNetwork)
+                            }
+                        } else {
+                            updated.push(newNetwork)
+                        }
+                        upserted.push(newNetwork)
+                    }
+                    return {tempNetworks: updated}
+                })
+                return upserted
+            },
             updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) =>
                 set((state) => ({
                     tempNetworks: state.tempNetworks.map((n) =>

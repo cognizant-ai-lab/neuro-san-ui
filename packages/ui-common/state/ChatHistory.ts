@@ -37,6 +37,7 @@ interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessages
  */
 interface ChatHistoryStore {
     readonly history: Record<string, AgentChatHistory<BaseMessage[]>>
+    copyHistory: (fromId: string, toId: string) => void
     resetHistory: (agentId: string) => void
     updateChatContext: (agentId: string, chatContext: ChatContext) => void
     updateChatHistory: (agentId: string, messages: BaseMessage[]) => void
@@ -124,6 +125,12 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                     const mergedSlyData = {...existing?.slyData, ...slyData}
                     const newHistory = {...state.history, [agentId]: {...existing, slyData: mergedSlyData}}
                     return {history: newHistory}
+                }),
+            copyHistory: (fromId: string, toId: string) =>
+                set((state) => {
+                    const existing = state.history[fromId]
+                    if (!existing) return state
+                    return {history: {...state.history, [toId]: existing}}
                 }),
             resetHistory: (agentId: string) =>
                 set((state) => {

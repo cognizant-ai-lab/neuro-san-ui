@@ -14,8 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import CircularProgress from "@mui/material/CircularProgress"
+import LinearProgress from "@mui/material/LinearProgress"
 import TextField from "@mui/material/TextField"
+import Typography from "@mui/material/Typography"
 import {FC, useEffect, useState} from "react"
 
 import {MUIDialog} from "../Common/MUIDialog"
@@ -40,6 +44,11 @@ export interface AgentNodePopupProps {
     readonly initialInstructions?: string
     /** Initial description text shown in the editable field. Defaults to an empty string. */
     readonly initialDescription?: string
+    /**
+     * When true the dialog is in a saving state: the Save button is disabled and shows a spinner.
+     * Defaults to false.
+     */
+    readonly isSaving?: boolean
 }
 
 // #endregion: Types
@@ -58,6 +67,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
     onSave,
     initialInstructions = "",
     initialDescription = "",
+    isSaving = false,
 }) => {
     const [instructionsText, setInstructionsText] = useState<string>(initialInstructions)
     const [descriptionText, setDescriptionText] = useState<string>(initialDescription)
@@ -82,36 +92,83 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         onClose()
     }
 
+    // Passed to MUIDialog's onClose to handle both backdrop click and Escape key.
+    // Blocked while saving so the user cannot accidentally dismiss an in-flight request.
+    const handleDialogClose = () => {
+        if (!isSaving) handleClose()
+    }
+
     const footer = (
-        <>
-            <Button
-                id="agent-node-popup-cancel-btn"
-                onClick={handleClose}
-                variant="outlined"
-                size="small"
-            >
-                Cancel
-            </Button>
-            <Button
-                id="agent-node-popup-save-btn"
-                onClick={handleSave}
-                variant="contained"
-                size="small"
-            >
-                Save
-            </Button>
-        </>
+        <Box
+            sx={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                width: "100%",
+                gap: 1,
+            }}
+        >
+            {isSaving ? (
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{fontStyle: "italic", lineHeight: 1.35}}
+                >
+                    Creating a new network with those changes.
+                    <br />
+                    This may take a few minutes…
+                </Typography>
+            ) : (
+                <Box />
+            )}
+            <Box sx={{display: "flex", gap: 1}}>
+                <Button
+                    id="agent-node-popup-cancel-btn"
+                    onClick={handleClose}
+                    variant="outlined"
+                    size="small"
+                    disabled={isSaving}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    id="agent-node-popup-save-btn"
+                    onClick={handleSave}
+                    variant="contained"
+                    size="small"
+                    disabled={isSaving}
+                    startIcon={
+                        isSaving ? (
+                            <CircularProgress
+                                size={14}
+                                color="inherit"
+                            />
+                        ) : undefined
+                    }
+                >
+                    {isSaving ? "Saving…" : "Save"}
+                </Button>
+            </Box>
+        </Box>
     )
 
     return (
         <MUIDialog
             id="agent-node-popup"
             isOpen={isOpen}
-            onClose={handleClose}
+            closeable={!isSaving}
+            onClose={handleDialogClose}
             title={agentName}
             footer={footer}
             paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
         >
+            {/* Progress bar shown while saving — makes it clear the dialog is busy */}
+            {isSaving && (
+                <LinearProgress
+                    aria-label="Saving agent"
+                    sx={{mb: 2, borderRadius: 1}}
+                />
+            )}
             {/* Description — editable */}
             <TextField
                 id="agent-node-popup-description-field"
@@ -123,6 +180,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 rows={6}
                 fullWidth
                 size="small"
+                disabled={isSaving}
                 placeholder="Enter a short description of this agent…"
             />
             {/* Instructions — editable */}
@@ -138,6 +196,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 fullWidth
                 size="small"
                 autoFocus
+                disabled={isSaving}
                 placeholder="Enter instructions for this agent…"
             />
         </MUIDialog>

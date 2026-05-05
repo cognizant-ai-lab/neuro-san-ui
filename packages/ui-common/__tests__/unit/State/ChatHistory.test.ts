@@ -92,6 +92,29 @@ describe("ChatHistory", () => {
         expect(updatedHistory["agent4"]?.slyData).toEqual(slyData)
     })
 
+    it("should copy history from one agent to another", async () => {
+        useAgentChatHistoryStore.getState().updateChatHistory("agentA", TEST_MESSAGES)
+        useAgentChatHistoryStore.getState().updateSlyData("agentA", {key: "value"})
+
+        useAgentChatHistoryStore.getState().copyHistory("agentA", "agentB")
+
+        const copiedHistory = useAgentChatHistoryStore.getState().history
+        expect(copiedHistory["agentB"]?.chatHistory).toEqual(TEST_MESSAGES)
+        expect(copiedHistory["agentB"]?.slyData).toEqual({key: "value"})
+        // Original should still be present
+        expect(copiedHistory["agentA"]?.chatHistory).toEqual(TEST_MESSAGES)
+    })
+
+    it("should be a no-op when copying from a non-existent agent", async () => {
+        const historyBefore = useAgentChatHistoryStore.getState().history
+
+        useAgentChatHistoryStore.getState().copyHistory("nonexistent", "agentC")
+
+        const historyAfter = useAgentChatHistoryStore.getState().history
+        expect(historyAfter).toEqual(historyBefore)
+        expect(historyAfter["agentC"]).toBeUndefined()
+    })
+
     it("calls removeItem on clearStorage", () => {
         const removeItemSpy = jest.spyOn(indexedDBStorage, "removeItem").mockResolvedValueOnce()
         useAgentChatHistoryStore.persist.clearStorage()
