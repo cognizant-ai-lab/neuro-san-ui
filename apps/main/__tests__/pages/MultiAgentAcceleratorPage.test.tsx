@@ -369,14 +369,6 @@ describe("Multi Agent Accelerator Page", () => {
 
         // Force Zen mode by setting isAwaitingLlm to true
         await act(async () => {
-            useSettingsStore.getState().updateSettings({
-                behavior: {
-                    enableZenMode: true,
-                },
-            })
-        })
-
-        await act(async () => {
             setIsAwaitingLlm(true)
         })
 
