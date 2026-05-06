@@ -139,7 +139,14 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                 set((state) => {
                     const existing = state.history[fromId]
                     if (!existing) return state
-                    return {history: {...state.history, [toId]: existing}}
+                    // Strip agent_reservations from the copied slyData. That field encodes the old network's
+                    // reservation ID and would be bounced back to the backend on the next chat request,
+                    // causing the backend to echo the old reservation — which then overwrites the new network
+                    // in the temp-networks store via onChunkReceived.
+
+                    const {agent_reservations: _, ...slyDataWithoutReservations} = existing.slyData ?? {}
+                    const sanitized = {...existing, slyData: slyDataWithoutReservations}
+                    return {history: {...state.history, [toId]: sanitized}}
                 }),
         }),
         {

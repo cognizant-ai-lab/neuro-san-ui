@@ -397,7 +397,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 await sendChatQuery(
                     neuroSanURL,
                     new AbortController().signal,
-                    // Need to pass a user message? Seemed so but the agent_reservation not returning seems random
+                    // Shouldn't have to pass a user message, but API behaves different without it
                     `Update instructions for agent "${agentName}"`,
                     AGENT_NETWORK_DESIGNER_ID,
                     (chunk: string) => {
@@ -424,7 +424,22 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             agentNetworkDefinition,
                             networkName
                         )
-                        newNetworksFromSave.push(...converted)
+                        // Merge into newNetworksFromSave keeping the freshest reservation per network name.
+                        // Always retaining the highest expiration_time makes the result order-independent.
+                        for (const n of converted) {
+                            const key = n.agentNetworkName ?? n.reservation.reservation_id
+                            const existingIdx = newNetworksFromSave.findIndex(
+                                (e) => (e.agentNetworkName ?? e.reservation.reservation_id) === key
+                            )
+                            if (existingIdx < 0) {
+                                newNetworksFromSave.push(n)
+                            } else if (
+                                n.reservation.expiration_time_in_seconds >
+                                newNetworksFromSave[existingIdx].reservation.expiration_time_in_seconds
+                            ) {
+                                newNetworksFromSave[existingIdx] = n
+                            }
+                        }
                     },
                     null,
                     {
@@ -434,23 +449,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
                             : {}),
                         // skip_designer prevents the backend from using a reasoning model for edits
-                        // skip_designer: true,
+                        skip_designer: true,
                     },
                     currentUser,
                     StreamingUnit.Line
                 )
 
                 if (newNetworksFromSave.length > 0) {
-                    useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
-
-                    // Navigate to the replacement network for the one we were editing.
-                    if (networkId && onNetworkReplaced) {
-                        const replacement = newNetworksFromSave.find(
-                            (n) => n.agentNetworkName === currentTempNetwork?.agentNetworkName
-                        )
-                        if (replacement) {
-                            // Copy the previous chat history to the new network key so conversations
-                            // and slyData are not lost when the network is replaced.
+                    const replacement = newNetworksFromSave.find(
+                        (n) => n.agentNetworkName === currentTempNetwork?.agentNetworkName
+                    )
+                    if (replacement) {
+                        useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
+                        if (networkId && onNetworkReplaced) {
                             useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
                             onNetworkReplaced(networkId, replacement.agentInfo.agent_name)
                         }

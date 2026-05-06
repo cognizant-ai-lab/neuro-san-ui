@@ -42,12 +42,34 @@ interface TempNetworksStore {
     readonly tempNetworks: TemporaryNetwork[]
     readonly setTempNetworks: (tempNetworks: TemporaryNetwork[]) => void
     /**
-     * Upsert new networks into the store. If an existing network has the same `agentNetworkName` as an incoming
-     * network, the existing network is replaced with the new one. Networks without an `agentNetworkName` are always
-     * appended (no dedup possible). Returns the final list of upserted networks (those that were added or replaced).
+     * Upsert new networks into the store. Networks are matched by the UUID-stripped portion of
+     * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), falling
+     * back to `agentNetworkName` when the reservation_id has no UUID suffix. If an incoming network
+     * matches an existing one, the existing entry is replaced. Returns the final list of upserted
+     * networks (those that were added or replaced).
      */
     readonly upsertTempNetworks: (newNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
     readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
+}
+
+// UUID v4 suffix pattern used to derive the canonical network name from a reservation_id.
+// Mirrors the regex in components/MultiAgentAccelerator/TemporaryNetworks.ts — kept here so the
+// state layer has no dependency on the component layer.
+const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
+
+/**
+ * Returns the best available canonical name for a network: the explicit `agentNetworkName` when
+ * present, or the name derived by stripping the UUID suffix from the reservation_id.
+ * Returns the best available canonical name for a network, used as the dedup key in upsert.
+ * The UUID-stripped reservation_id is preferred because it is always consistent regardless of
+ * what prefix the backend may place in `agentNetworkName` (e.g. `"generated/travel_agency_ops"`
+ * vs `"travel_agency_ops"`). Falls back to `agentNetworkName` when the reservation_id has no
+ * UUID suffix (legacy reservations with static IDs).
+ */
+const effectiveNetworkName = (n: TemporaryNetwork): string | undefined => {
+    const stripped = n.reservation.reservation_id.replace(UUID_SUFFIX_RE, "")
+    if (stripped !== n.reservation.reservation_id) return stripped
+    return n.agentNetworkName
 }
 
 /**
@@ -63,10 +85,9 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
                 set((state) => {
                     const updated = [...state.tempNetworks]
                     for (const newNetwork of newNetworks) {
-                        if (newNetwork.agentNetworkName) {
-                            const existingIdx = updated.findIndex(
-                                (n) => n.agentNetworkName === newNetwork.agentNetworkName
-                            )
+                        const newName = effectiveNetworkName(newNetwork)
+                        if (newName) {
+                            const existingIdx = updated.findIndex((n) => effectiveNetworkName(n) === newName)
                             if (existingIdx >= 0) {
                                 updated[existingIdx] = newNetwork
                             } else {

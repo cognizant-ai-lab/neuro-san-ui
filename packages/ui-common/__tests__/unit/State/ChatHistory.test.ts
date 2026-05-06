@@ -105,6 +105,25 @@ describe("ChatHistory", () => {
         expect(copiedHistory["agentA"]?.chatHistory).toEqual(TEST_MESSAGES)
     })
 
+    it("strips agent_reservations from slyData when copying history", async () => {
+        // agent_reservations encodes the old network's reservation ID. If copied and bounced back to the
+        // backend on the next chat, the backend echoes the old reservation which then overwrites the new
+        // network in the temp-networks store via onChunkReceived.
+        useAgentChatHistoryStore.getState().updateSlyData("agentA", {
+            agent_reservations: [{reservation_id: "old-res-123", lifetime_in_seconds: 300}],
+            chat_context: "some context",
+        })
+
+        useAgentChatHistoryStore.getState().copyHistory("agentA", "agentB")
+
+        const copied = useAgentChatHistoryStore.getState().history["agentB"]?.slyData
+        expect(copied).not.toHaveProperty("agent_reservations")
+        expect(copied).toEqual({chat_context: "some context"})
+        // Source should be untouched
+        const source = useAgentChatHistoryStore.getState().history["agentA"]?.slyData
+        expect(source).toHaveProperty("agent_reservations")
+    })
+
     it("should be a no-op when copying from a non-existent agent", async () => {
         const historyBefore = useAgentChatHistoryStore.getState().history
 

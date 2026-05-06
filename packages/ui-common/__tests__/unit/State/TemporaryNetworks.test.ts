@@ -85,15 +85,59 @@ describe("useTempNetworksStore / upsertTempNetworks", () => {
         )
     })
 
-    it("appends networks without an agentNetworkName (no dedup possible)", () => {
-        const net1 = makeNetwork("res-1", undefined)
-        const net2 = makeNetwork("res-2", undefined)
+    it("replaces an old network that has no agentNetworkName by deriving the name from its reservation_id", () => {
+        // Simulates a network stored before the agentNetworkName field was introduced —
+        // the reservation_id follows the {name}-{uuid} format so dedup can still work.
+        const oldReservationId = "travel_agency_ops-40161f92-e539-4160-b4c3-7e8f957c2cfe"
+        const oldNetwork = makeNetwork(oldReservationId, undefined) // no agentNetworkName
 
-        useTempNetworksStore.getState().upsertTempNetworks([net1])
-        useTempNetworksStore.getState().upsertTempNetworks([net2])
+        useTempNetworksStore.getState().upsertTempNetworks([oldNetwork])
+
+        const newReservationId = "travel_agency_ops-fdef1360-fe1b-46e4-8b6a-b63117cd1312"
+        const newNetwork = makeNetwork(newReservationId, "travel_agency_ops")
+
+        useTempNetworksStore.getState().upsertTempNetworks([newNetwork])
 
         const stored = useTempNetworksStore.getState().tempNetworks
-        expect(stored).toHaveLength(2)
+        // Old network should be gone, replaced by the new one
+        expect(stored).toHaveLength(1)
+        expect(stored[0].agentInfo.agent_name).toBe(`temporary/${newReservationId}`)
+    })
+
+    it("replaces an old network via reservation_id fallback even when new network also has no agentNetworkName", () => {
+        const oldReservationId = "my_network-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        const oldNetwork = makeNetwork(oldReservationId, undefined)
+
+        useTempNetworksStore.getState().upsertTempNetworks([oldNetwork])
+
+        const newReservationId = "my_network-11111111-2222-3333-4444-555555555555"
+        const newNetwork = makeNetwork(newReservationId, undefined)
+
+        useTempNetworksStore.getState().upsertTempNetworks([newNetwork])
+
+        const stored = useTempNetworksStore.getState().tempNetworks
+        expect(stored).toHaveLength(1)
+        expect(stored[0].agentInfo.agent_name).toBe(`temporary/${newReservationId}`)
+    })
+
+    it("replaces an old network even when agentNetworkName has a backend-added prefix (e.g. 'generated/')", () => {
+        // Real-world case: the old network was stored with agentNetworkName "generated/travel_agency_ops"
+        // but the popup-save designer returns agentNetworkName "travel_agency_ops" (no prefix).
+        // Without UUID-primary matching, effectiveNetworkName would return different strings → no match → append.
+        const oldReservationId = "travel_agency_ops-40161f92-e539-4160-b4c3-7e8f957c2cfe"
+        const oldNetwork = makeNetwork(oldReservationId, "generated/travel_agency_ops")
+
+        useTempNetworksStore.getState().upsertTempNetworks([oldNetwork])
+
+        const newReservationId = "travel_agency_ops-cf8307e6-aee9-4d09-86e1-c6c36e9aeeda"
+        const newNetwork = makeNetwork(newReservationId, "travel_agency_ops")
+
+        useTempNetworksStore.getState().upsertTempNetworks([newNetwork])
+
+        const stored = useTempNetworksStore.getState().tempNetworks
+        // Old network must be replaced; two entries would make both appear in the sidebar after refresh
+        expect(stored).toHaveLength(1)
+        expect(stored[0].agentInfo.agent_name).toBe(`temporary/${newReservationId}`)
     })
 
     it("returns the list of upserted networks", () => {

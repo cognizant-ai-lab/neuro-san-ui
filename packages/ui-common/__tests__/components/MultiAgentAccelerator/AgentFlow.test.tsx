@@ -1500,7 +1500,9 @@ describe("AgentFlow", () => {
     })
 
     describe("popup save — async network replacement", () => {
-        /** Builds a minimal JSON-lines chunk that the streaming callback would receive, containing a reservation. */
+        /** Builds a minimal JSON-lines chunk that the streaming callback would receive, containing a reservation.
+         * Uses a 24-hour expiry (+86400 s) so it is always strictly greater than the stored network's
+         * +300 s expiry — required for the eager-replacement path's `expiry > currentExpiry` check. */
         const makeReservationChunk = (reservationId: string, agentNetworkName: string) =>
             JSON.stringify({
                 response: {
@@ -1509,8 +1511,8 @@ describe("AgentFlow", () => {
                         agent_reservations: [
                             {
                                 reservation_id: reservationId,
-                                lifetime_in_seconds: 300,
-                                expiration_time_in_seconds: Date.now() / 1000 + 300,
+                                lifetime_in_seconds: 86400,
+                                expiration_time_in_seconds: Date.now() / 1000 + 86400,
                             },
                         ],
                         agent_network_name: agentNetworkName,
@@ -1608,6 +1610,123 @@ describe("AgentFlow", () => {
             // Old network should be gone, new one should be present
             expect(stored.some((n) => n.agentInfo.agent_name === OLD_NETWORK_ID)).toBe(false)
             expect(stored.some((n) => n.agentInfo.agent_name === NEW_NETWORK_ID)).toBe(true)
+        })
+
+        it("keeps the newest reservation when the backend streams an old echo then the new one", async () => {
+            // Backend sends the old reservation first (echo), then the new one — a real streaming pattern.
+            // The store must end up with the new one regardless of chunk order.
+            const OLD_EXPIRY = Date.now() / 1000 + 100 // lower expiry → dedup keeps the newer reservation
+            const NEW_EXPIRY = Date.now() / 1000 + 86400 // higher expiry → dedup keeps this one
+
+            const makeChunk = (reservationId: string, expiry: number) =>
+                JSON.stringify({
+                    response: {
+                        type: "AGENT_FRAMEWORK",
+                        sly_data: {
+                            agent_reservations: [
+                                {
+                                    reservation_id: reservationId,
+                                    lifetime_in_seconds: 300,
+                                    expiration_time_in_seconds: expiry,
+                                },
+                            ],
+                            agent_network_name: OLD_NETWORK_NAME,
+                        },
+                    },
+                })
+
+            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+                // old echo first, new reservation second
+                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
+                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
+            })
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
+                    ])
+            })
+
+            const onNetworkReplaced = jest.fn()
+            const {container} = renderAgentFlowComponent({
+                isTemporaryNetwork: true,
+                networkId: OLD_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onNetworkReplaced,
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            fireEvent.click(await screen.findByRole("button", {name: "Save"}))
+
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+            })
+
+            const stored = useTempNetworksStore.getState().tempNetworks
+            expect(stored).toHaveLength(1)
+            expect(stored[0].agentInfo.agent_name).toBe(NEW_NETWORK_ID)
+            expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
+        })
+
+        it("keeps the newest reservation when the backend streams new then old (reversed order)", async () => {
+            // Backend sends new reservation first, then old echo — should still keep the new one.
+            const OLD_EXPIRY = Date.now() / 1000 + 100 // lower expiry → dedup keeps the newer reservation
+            const NEW_EXPIRY = Date.now() / 1000 + 86400 // higher expiry → dedup keeps this one
+
+            const makeChunk = (reservationId: string, expiry: number) =>
+                JSON.stringify({
+                    response: {
+                        type: "AGENT_FRAMEWORK",
+                        sly_data: {
+                            agent_reservations: [
+                                {
+                                    reservation_id: reservationId,
+                                    lifetime_in_seconds: 300,
+                                    expiration_time_in_seconds: expiry,
+                                },
+                            ],
+                            agent_network_name: OLD_NETWORK_NAME,
+                        },
+                    },
+                })
+
+            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+                // new reservation first, old echo second (reversed — the problematic order)
+                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
+                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
+            })
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
+                    ])
+            })
+
+            const onNetworkReplaced = jest.fn()
+            const {container} = renderAgentFlowComponent({
+                isTemporaryNetwork: true,
+                networkId: OLD_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onNetworkReplaced,
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            fireEvent.click(await screen.findByRole("button", {name: "Save"}))
+
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+            })
+
+            const stored = useTempNetworksStore.getState().tempNetworks
+            expect(stored).toHaveLength(1)
+            expect(stored[0].agentInfo.agent_name).toBe(NEW_NETWORK_ID)
+            expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
         })
 
         it("new network carries the edited definition when backend does not echo it back", async () => {
