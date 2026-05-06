@@ -1039,6 +1039,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             >
                 {agentChatHistory?.chatHistory?.length > 0 && (
                     <ChatHistory
+                        agentImage={AGENT_IMAGE}
                         agentDisplayName={agentDisplayName}
                         chatHistoryKey={CHAT_HISTORY_KEY}
                         currentUser={currentUser}

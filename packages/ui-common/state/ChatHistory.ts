@@ -37,11 +37,15 @@ interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessages
  */
 interface ChatHistoryStore {
     readonly history: Record<string, AgentChatHistory<BaseMessage[]>>
-    copyHistory: (fromId: string, toId: string) => void
     resetHistory: (agentId: string) => void
     updateChatContext: (agentId: string, chatContext: ChatContext) => void
     updateChatHistory: (agentId: string, messages: BaseMessage[]) => void
     updateSlyData: (agentId: string, slyData: SlyData) => void
+    /**
+     * Copies the full history entry from `fromId` to `toId`. Used when a temporary network is replaced
+     * by a new reservation so that conversation history is not lost on the transition.
+     */
+    copyHistory: (fromId: string, toId: string) => void
 }
 
 interface StoredChatHistoryStore {
@@ -126,16 +130,16 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                     const newHistory = {...state.history, [agentId]: {...existing, slyData: mergedSlyData}}
                     return {history: newHistory}
                 }),
+            resetHistory: (agentId: string) =>
+                set((state) => {
+                    const {[agentId]: _, ...rest} = state.history
+                    return {history: rest}
+                }),
             copyHistory: (fromId: string, toId: string) =>
                 set((state) => {
                     const existing = state.history[fromId]
                     if (!existing) return state
                     return {history: {...state.history, [toId]: existing}}
-                }),
-            resetHistory: (agentId: string) =>
-                set((state) => {
-                    const {[agentId]: _, ...rest} = state.history
-                    return {history: rest}
                 }),
         }),
         {

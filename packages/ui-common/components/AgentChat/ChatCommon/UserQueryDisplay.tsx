@@ -60,6 +60,7 @@ export const UserQueryDisplay = ({
                     title={title}
                     alt=""
                     role="img"
+                    style={{alignSelf: "center"}}
                 />
                 <span
                     id="user-query"
