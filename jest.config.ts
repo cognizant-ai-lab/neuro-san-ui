@@ -36,6 +36,7 @@ const esmPackagesToTransform = [
     "space-.*",
 ]
 
+/** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 
@@ -50,7 +51,7 @@ const config: Config.InitialOptions = {
                 tsconfig: "<rootDir>/tsconfig.test.json",
             },
         ],
-        "^.+\\.[jt]sx?$": ["babel-jest", {configFile: "./babel.jest.config.cjs"}],
+        "^.+\\.(js|jsx)$": ["babel-jest", {configFile: "./babel.jest.config.cjs"}],
     },
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
@@ -58,13 +59,13 @@ const config: Config.InitialOptions = {
     collectCoverage: true,
     collectCoverageFrom: [
         "**/*.{js,jsx,ts,tsx}",
+        "!**/.next/**",
         "!**/__tests__/**/*",
         "!**/coverage/**",
         "!**/dist/**",
         "!**/generated/**",
-        "!**/.next/**",
-        "!jest*.ts",
-        "!knip.config.ts",
+        "!**/jest*.ts",
+        "!**/knip.config.ts",
         "!**/next-env.d.ts",
         "!**/next.config.ts",
     ],

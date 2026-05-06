@@ -1,34 +1,78 @@
+/*
+Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/**
+ * @fileoverview Knip configuration file to identify unused files and dependencies in the project.
+ *
+ */
+
 import type {KnipConfig} from "knip"
 
-import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
-export const mergeConfigs = (...configs: KnipConfig[]): KnipConfig =>
-    configs.reduce((acc, next) => {
-        const result: KnipConfig = {...acc}
-        for (const key of Object.keys(next) as (keyof KnipConfig)[]) {
-            const a = acc[key]
-            const b = next[key]
-            if (Array.isArray(a) && Array.isArray(b)) {
-                ;(result as Record<string, unknown>)[key] = [...a, ...b]
-            } else if (a && b && typeof a === "object" && typeof b === "object") {
-                ;(result as Record<string, unknown>)[key] = mergeConfigs(a as KnipConfig, b as KnipConfig)
-            } else {
-                ;(result as Record<string, unknown>)[key] = b
-            }
-        }
-        return result
-    }, {} as KnipConfig)
+const config: KnipConfig = {
+    // From the doc:
+    // "By default, Knip does not report unused exports in entry files. When a repository (or workspace) is
+    // self-contained or private, you may want to include entry files when reporting unused exports:"
+    includeEntryExports: true,
 
-export default mergeConfigs(baseConfig, {
+    // Treat hints as errors (will make exit code non-zero)
+    treatConfigHintsAsErrors: true,
+
+    // Opt-in to all issues types
+    include: [
+        "binaries",
+        "catalog",
+        "dependencies",
+        "devDependencies",
+        "duplicates",
+        "enumMembers",
+        "exports",
+        "files",
+        "namespaceMembers",
+        "nsExports",
+        "nsTypes",
+        "optionalPeerDependencies",
+        "types",
+        "unlisted",
+        "unresolved",
+    ],
+
     ignore: [
+        // Used in a sneaky way by jest
+        "babel.jest.config.cjs",
+
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Common/Types.ts",
 
         // Used by CommitCheck script
         "jest_quiet.config.ts",
     ],
+
     ignoreDependencies: [
+        // Used by jest
+        "@babel/core",
+        "@babel/preset-env",
+
         // Used for Speech Recognition API types
         "@types/dom-speech-recognition",
+
+        // Used by Jest
+        "babel-jest",
+
+        // Used internally by eslint
+        "globals",
 
         // Used by do_openapi_generate.sh
         "openapi-typescript",
@@ -38,14 +82,19 @@ export default mergeConfigs(baseConfig, {
 
         // Used by Next.js image optimization,
         "sharp",
+
+        // Used by Jest for TS format config file
+        "ts-node",
     ],
+
     workspaces: {
-        "packages/dev-common": {
-            ignore: ["Configs/eslint.config.d.mts"],
-            ignoreBinaries: [
-                "packages/dev-common/BuildUtils/CommitCheck.sh",
-                "packages/dev-common/BuildUtils/eslint_list_rules.sh",
+        "apps/main": {
+            ignoreDependencies: [
+                // Declared to satisfy eslint-config-next peer dep; lint itself runs from root
+                "eslint",
             ],
         },
     },
-})
+}
+
+export default config
