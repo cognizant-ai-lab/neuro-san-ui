@@ -16,8 +16,17 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
 
+/** @type {import("eslint").Linter.Config[]} */
 export default defineConfig([
-    globalIgnores(["**/.next", "**/coverage", "**/generated", "**/dist", "**/babel.jest.config.cjs"]),
+    globalIgnores([
+        "**/*.d.mts",
+        "**/*.d.ts",
+        "**/.next",
+        "**/babel.jest.config.cjs",
+        "**/coverage",
+        "**/dist",
+        "**/generated",
+    ]),
 
     // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
     // "rules" section below.
@@ -90,6 +99,11 @@ export default defineConfig([
 
             parserOptions: {
                 ecmaFeatures: {jsx: true},
+                projectService: {
+                    allowDefaultProject: ["*.mjs", "*.ts"],
+                    defaultProject: "../../../tsconfig.json",
+                },
+                tsconfigRootDir: import.meta.dirname,
             },
         },
 
@@ -105,7 +119,6 @@ export default defineConfig([
                 node: true,
                 typescript: {
                     noWarnOnMultipleProjects: true,
-                    project: ["./tsconfig.json", "./apps/*/tsconfig.json", "./packages/*/tsconfig.json"],
                 },
             },
         },
@@ -280,7 +293,7 @@ export default defineConfig([
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["**/__tests__/**", "jest*.*", "eslint.config.mjs", "knip.config.ts"],
+                    devDependencies: ["**/__tests__/**", "jest*.*", "**/eslint.config.mjs", "**/knip.config.ts"],
                 },
             ],
 
@@ -293,6 +306,9 @@ export default defineConfig([
                     Bans any import that starts with @mui/ followed by a single segment (i.e., no additional slashes 
                     after the first segment). For example, imports like @mui/core or @mui/icons would be restricted, 
                     while deeper imports such as @mui/icons-material/Button would not be affected.
+                    Why? According to the MUI documentation, importing directly from @mui/ can lead to larger
+                    bundle sizes because it may include the entire library instead of just the specific components
+                    needed. See: https://mui.com/material-ui/guides/minimizing-bundle-size/#avoid-barrel-imports
                      */
                     patterns: [{regex: "^@mui/[^/]+$"}],
                 },
