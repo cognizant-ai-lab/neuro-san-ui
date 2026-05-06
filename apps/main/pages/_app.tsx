@@ -21,14 +21,14 @@ import "../styles/globals.css"
 import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
 import CssBaseline from "@mui/material/CssBaseline"
-import {ThemeProvider} from "@mui/material/styles"
+import {createTheme, Theme, ThemeProvider} from "@mui/material/styles"
 import startCase from "lodash-es/startCase.js"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useMemo, useState} from "react"
+import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
 
 import {
     Auth,
@@ -126,7 +126,11 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
     const secondary = useSettingsStore((state) => state.settings.branding.secondary)
     const background = useSettingsStore((state) => state.settings.branding.background)
 
-    const theme = useMemo(() => createAppTheme(primary, secondary, background), [primary, secondary, background])
+    const [theme, setTheme] = useState<Theme>(() => createTheme())
+    // Generate the branded theme only on the client to avoid hydration issues.
+    useEffect(() => {
+        setTheme(createAppTheme(primary, secondary, background))
+    }, [primary, secondary, background])
 
     useEffect(() => {
         const urlPaths: string[] = pathname?.split("/").filter((path) => path !== "")
