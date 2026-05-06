@@ -16,7 +16,6 @@ limitations under the License.
 
 # Overview
 
-This package contains common configurations and scripts used as part of the development process, such as 
-linting, formatting, and testing. It is intended to be used as a dependency in other packages to ensure consistency 
+This package contains common configurations and scripts used as part of the development process, such as
+linting, formatting, and testing. It is intended to be used as a dependency in other packages to ensure consistency
 across the codebase.
-
