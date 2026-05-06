@@ -58,6 +58,9 @@ const config: KnipConfig = {
 
         // Used by CommitCheck script
         "jest_quiet.config.ts",
+
+        // Generated type declaration for published dev-common eslint config; consumed by external projects
+        "packages/dev-common/Configs/eslint.config.d.mts",
     ],
 
     ignoreDependencies: [
@@ -85,6 +88,19 @@ const config: KnipConfig = {
 
         // Used by Jest for TS format config file
         "ts-node",
+
+        "@eslint/compat",
+        "@eslint/js",
+        "@next/eslint-plugin-next",
+        "eslint-config-prettier",
+        "eslint-plugin-jest",
+        "eslint-plugin-jest-dom",
+        "eslint-plugin-prefer-arrow-functions",
+        "eslint-plugin-react",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-testing-library",
+        "eslint-plugin-unicorn",
+        "typescript-eslint",
     ],
 
     workspaces: {

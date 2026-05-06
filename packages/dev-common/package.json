@@ -3,13 +3,6 @@
     "description": "Common development configurations and utilities for Cognizant AI Labs UI projects",
     "version": "1.0.0",
     "type": "module",
-    "scripts": {
-        "commit-check": "packages/dev-common/BuildUtils/CommitCheck.sh",
-        "lint": "eslint",
-        "lint-rules": "packages/dev-common/BuildUtils/eslint_list_rules.sh",
-        "lint-summary": "eslint --format summary",
-        "test": "jest --config ./jest.config.ts"
-    },
     "peerDependencies": {
         "@eslint/compat": "*",
         "@eslint/js": "*",
@@ -40,7 +33,6 @@
         "./eslint": {
             "types": "./Configs/eslint.config.d.mts",
             "default": "./Configs/eslint.config.mjs"
-        },
-        "./build-utils/": "./BuildUtils/"
+        }
     }
 }
