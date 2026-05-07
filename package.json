@@ -30,6 +30,7 @@
         "@babel/preset-env": "7.29.2",
         "@eslint/compat": "2.0.5",
         "@eslint/js": "10.0.1",
+        "@jest/globals": "30.3.0",
         "@jest/types": "30.3.0",
         "@next/eslint-plugin-next": "16.2.4",
         "@testing-library/jest-dom": "6.6.4",
