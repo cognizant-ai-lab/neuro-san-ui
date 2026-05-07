@@ -92,13 +92,6 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         onClose()
     }
 
-    // Passed to MUIDialog's onClose to handle both backdrop click and Escape key.
-    // Always dismissable — if the save is in-flight the finally block will clean up state.
-    // This is necessary since the API request doesn't always close successfully.
-    const handleDialogClose = () => {
-        handleClose()
-    }
-
     const footer = (
         <Box
             sx={{
@@ -155,7 +148,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         <MUIDialog
             id="agent-node-popup"
             isOpen={isOpen}
-            onClose={handleDialogClose}
+            onClose={handleClose}
             title={agentName}
             footer={footer}
             paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}

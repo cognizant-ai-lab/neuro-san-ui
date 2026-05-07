@@ -52,25 +52,32 @@ interface TempNetworksStore {
     readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
 }
 
-// UUID v4 suffix pattern used to derive the canonical network name from a reservation_id.
-// Mirrors the regex in components/MultiAgentAccelerator/TemporaryNetworks.ts — kept here so the
-// state layer has no dependency on the component layer.
+// UUID v4 suffix pattern: 8-4-4-4-12 hex chars separated by dashes
 const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
 
 /**
- * Returns the best available canonical name for a network: the explicit `agentNetworkName` when
- * present, or the name derived by stripping the UUID suffix from the reservation_id.
+ * Derives the canonical network name from a reservation ID.
+ *
+ * The backend encodes the network name as a prefix in the reservation ID, followed by a UUID suffix:
+ * `{network_name}-{uuid}`, e.g. `travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5`.
+ *
+ * Stripping the UUID suffix gives the stable name that can be used for deduplication across reservations.
+ * Returns `undefined` when the reservation ID doesn't match the expected format.
+ */
+export const extractNetworkNameFromReservationId = (reservationId: string): string | undefined => {
+    const stripped = reservationId.replace(UUID_SUFFIX_RE, "")
+    return stripped !== reservationId ? stripped : undefined
+}
+
+/**
  * Returns the best available canonical name for a network, used as the dedup key in upsert.
  * The UUID-stripped reservation_id is preferred because it is always consistent regardless of
  * what prefix the backend may place in `agentNetworkName` (e.g. `"generated/travel_agency_ops"`
  * vs `"travel_agency_ops"`). Falls back to `agentNetworkName` when the reservation_id has no
  * UUID suffix (legacy reservations with static IDs).
  */
-const effectiveNetworkName = (n: TemporaryNetwork): string | undefined => {
-    const stripped = n.reservation.reservation_id.replace(UUID_SUFFIX_RE, "")
-    if (stripped !== n.reservation.reservation_id) return stripped
-    return n.agentNetworkName
-}
+const effectiveNetworkName = (n: TemporaryNetwork): string | undefined =>
+    extractNetworkNameFromReservationId(n.reservation.reservation_id) ?? n.agentNetworkName
 
 /**
  * The hook that lets apps use the store.
@@ -81,26 +88,20 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
             upsertTempNetworks: (newNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
-                const upserted: TemporaryNetwork[] = []
                 set((state) => {
                     const updated = [...state.tempNetworks]
                     for (const newNetwork of newNetworks) {
                         const newName = effectiveNetworkName(newNetwork)
-                        if (newName) {
-                            const existingIdx = updated.findIndex((n) => effectiveNetworkName(n) === newName)
-                            if (existingIdx >= 0) {
-                                updated[existingIdx] = newNetwork
-                            } else {
-                                updated.push(newNetwork)
-                            }
+                        const existingIdx = newName ? updated.findIndex((n) => effectiveNetworkName(n) === newName) : -1
+                        if (existingIdx >= 0) {
+                            updated[existingIdx] = newNetwork
                         } else {
                             updated.push(newNetwork)
                         }
-                        upserted.push(newNetwork)
                     }
                     return {tempNetworks: updated}
                 })
-                return upserted
+                return newNetworks
             },
             updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) =>
                 set((state) => ({

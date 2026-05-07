@@ -219,6 +219,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         ? theme.palette.common.black
         : theme.palette.common.white
 
+    const isClickableNode = isTemporaryNetwork && isEditableAgent(displayAs)
+
     return (
         <>
             <AnimatedNode
@@ -229,7 +231,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 sx={{
                     backgroundColor,
                     color,
-                    cursor: isTemporaryNetwork && isEditableAgent(displayAs) ? "pointer" : "grab",
+                    cursor: isClickableNode ? "pointer" : "grab",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),

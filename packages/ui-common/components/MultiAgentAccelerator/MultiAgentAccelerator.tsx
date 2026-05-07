@@ -500,7 +500,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                             isStreaming={isStreaming}
-                            isTemporaryNetwork={isSelectedNetworkTemporary}
+                            isSelectedNetworkTemporary={isSelectedNetworkTemporary}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
                             onNetworkReplaced={(oldNetworkId, newNetworkId) => {

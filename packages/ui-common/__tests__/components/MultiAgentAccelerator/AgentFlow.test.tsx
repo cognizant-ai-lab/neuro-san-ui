@@ -1100,7 +1100,7 @@ describe("AgentFlow", () => {
         })
 
         const {container} = renderAgentFlowComponent({
-            isTemporaryNetwork: true,
+            isSelectedNetworkTemporary: true,
             networkId: networkKey,
         })
 
@@ -1139,7 +1139,7 @@ describe("AgentFlow", () => {
                 ])
         })
         const {container} = renderAgentFlowComponent({
-            isTemporaryNetwork: true,
+            isSelectedNetworkTemporary: true,
             networkId: networkKey,
         })
 
@@ -1303,7 +1303,7 @@ describe("AgentFlow", () => {
         })
 
         const {container} = renderAgentFlowComponent({
-            isTemporaryNetwork: true,
+            isSelectedNetworkTemporary: true,
             networkId: networkKey,
             agentsInNetwork: [{origin: "agent1", tools: [], display_as: displayAs}],
         })
@@ -1323,7 +1323,7 @@ describe("AgentFlow", () => {
         })
 
         const {container} = renderAgentFlowComponent({
-            isTemporaryNetwork: true,
+            isSelectedNetworkTemporary: true,
             networkId: networkKey,
             agentsInNetwork: [{origin: "agent1", tools: [], display_as: "llm_agent"}],
         })
@@ -1350,7 +1350,7 @@ describe("AgentFlow", () => {
 
         // Render with networkB selected
         const {container} = renderAgentFlowComponent({
-            isTemporaryNetwork: true,
+            isSelectedNetworkTemporary: true,
             networkId: networkB,
         })
 
@@ -1378,7 +1378,7 @@ describe("AgentFlow", () => {
         })
 
         const {container} = renderAgentFlowComponent({
-            isTemporaryNetwork: true,
+            isSelectedNetworkTemporary: true,
             networkId: networkA,
         })
 
@@ -1591,7 +1591,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1634,7 +1634,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1693,7 +1693,7 @@ describe("AgentFlow", () => {
 
             const onNetworkReplaced = jest.fn()
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1751,7 +1751,7 @@ describe("AgentFlow", () => {
 
             const onNetworkReplaced = jest.fn()
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1791,7 +1791,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1831,7 +1831,7 @@ describe("AgentFlow", () => {
             const onNetworkReplaced = jest.fn()
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1862,7 +1862,7 @@ describe("AgentFlow", () => {
             const onNetworkReplaced = jest.fn()
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1893,7 +1893,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1930,7 +1930,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
@@ -1958,7 +1958,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
+                isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
                 // neuroSanURL intentionally omitted
             })

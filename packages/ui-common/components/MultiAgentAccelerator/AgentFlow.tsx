@@ -83,7 +83,7 @@ export interface AgentFlowProps {
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
-    readonly isTemporaryNetwork?: boolean
+    readonly isSelectedNetworkTemporary?: boolean
     /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
     readonly networkId?: string
     readonly neuroSanURL?: string
@@ -110,6 +110,91 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // #endregion: Constants
 
+// #region: Helpers
+
+/** Returns a new definitions array with the target agent's instructions/description updated. */
+const buildUpdatedDefinitions = (
+    currentDefinitions: AgentNetworkDefinitionEntry[],
+    agentId: string,
+    instructionsText: string,
+    descriptionText: string
+): AgentNetworkDefinitionEntry[] =>
+    currentDefinitions.map((entry) =>
+        entry.origin === agentId ? {...entry, instructions: instructionsText, description: descriptionText} : entry
+    )
+
+type NetworkList = ReturnType<typeof convertReservationsToNetworks>
+
+/** Merges incoming networks into target, keeping the entry with the highest expiration time. */
+const mergeNetworks = (target: NetworkList, incoming: NetworkList): void => {
+    for (const n of incoming) {
+        const key = n.agentNetworkName ?? n.reservation.reservation_id
+        const existingIdx = target.findIndex((e) => (e.agentNetworkName ?? e.reservation.reservation_id) === key)
+        if (existingIdx < 0) {
+            target.push(n)
+        } else if (
+            n.reservation.expiration_time_in_seconds > target[existingIdx].reservation.expiration_time_in_seconds
+        ) {
+            target[existingIdx] = n
+        }
+    }
+}
+
+/**
+ * Streams the Agent Network Designer endpoint with the updated definition and collects
+ * the resulting reservations. Returns the deduplicated list of new networks.
+ */
+const streamNetworkDesignerUpdate = async (
+    neuroSanURL: string,
+    signal: AbortSignal,
+    agentName: string,
+    updated: AgentNetworkDefinitionEntry[],
+    agentNetworkName: string | undefined,
+    currentUser: string
+): Promise<NetworkList> => {
+    const newNetworks: NetworkList = []
+
+    await sendChatQuery(
+        neuroSanURL,
+        signal,
+        // Shouldn't have to pass a user message, but API behaves different without it
+        `Update instructions for agent "${agentName}"`,
+        AGENT_NETWORK_DESIGNER_ID,
+        (chunk: string) => {
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (!chatMessage) return
+
+            const reservations = extractReservations(chatMessage)
+            if (reservations.length === 0) return
+
+            const networkHocon = extractNetworkHocon(chatMessage)
+            // Always use the user's edited definition as the authoritative value.
+            // The backend may not echo agent_network_definition back, may return
+            // an empty array, or may return the pre-edit version.
+            const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
+            // Prefer the locally-known name so upsert can match the existing entry even
+            // when the backend response omits AGENT_NETWORK_NAME_KEY.
+            const networkName = agentNetworkName ?? agentNetworkNameFromMessage
+            const converted = convertReservationsToNetworks(reservations, networkHocon, updated, networkName)
+            mergeNetworks(newNetworks, converted)
+        },
+        null,
+        {
+            [AGENT_NETWORK_DEFINITION_KEY]: updated,
+            // Use the backend's canonical name, not the local UUID-based key.
+            ...(agentNetworkName ? {[AGENT_NETWORK_NAME_KEY]: agentNetworkName} : {}),
+            // skip_designer prevents the backend from using a reasoning model for edits
+            skip_designer: true,
+        },
+        currentUser,
+        StreamingUnit.Line
+    )
+
+    return newNetworks
+}
+
+// #endregion: Helpers
+
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
     agentIconSuggestions,
@@ -120,7 +205,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isStreaming,
-    isTemporaryNetwork,
+    isSelectedNetworkTemporary: isTemporaryNetwork,
     networkId,
     neuroSanURL,
     onNetworkReplaced,
@@ -372,6 +457,37 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setIsSavingAgent(false)
     }, [])
 
+    /** Applies the networks returned by the designer: upserts them and triggers navigation if needed. */
+    const applyNetworkSaveResult = useCallback(
+        (agentName: string, newNetworksFromSave: NetworkList, currentAgentNetworkName: string | undefined) => {
+            if (newNetworksFromSave.length === 0) {
+                sendNotification(
+                    NotificationType.error,
+                    `Failed to update agent "${agentName}".`,
+                    "The network designer did not return a reservation. Please try again."
+                )
+                return
+            }
+
+            const replacement = newNetworksFromSave.find((n) => n.agentNetworkName === currentAgentNetworkName)
+            if (replacement) {
+                useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
+                if (networkId && onNetworkReplaced) {
+                    useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
+                    onNetworkReplaced(networkId, replacement.agentInfo.agent_name)
+                }
+            } else {
+                // Reservations came back but none matched the current network — surface this to the user.
+                sendNotification(
+                    NotificationType.error,
+                    `Failed to update agent "${agentName}".`,
+                    "A reservation was returned but did not match the current network. Please try again."
+                )
+            }
+        },
+        [networkId, onNetworkReplaced]
+    )
+
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
             if (!selectedAgent) return
@@ -381,14 +497,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
                 : undefined
 
-            // Fall back to an empty array if no definition entries exist yet.
-            const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
-
             // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
-            const updated: AgentNetworkDefinitionEntry[] = currentDefinitions.map((entry) =>
-                entry.origin === selectedAgent.agentId
-                    ? {...entry, instructions: instructionsText, description: descriptionText}
-                    : entry
+            const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
+            const updated = buildUpdatedDefinitions(
+                currentDefinitions,
+                selectedAgent.agentId,
+                instructionsText,
+                descriptionText
             )
             if (networkId) {
                 updateTempNetworkDefinition(networkId, updated)
@@ -410,106 +525,26 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 60_000
             )
             try {
-                const newNetworksFromSave: ReturnType<typeof convertReservationsToNetworks> = []
-
-                await sendChatQuery(
+                const newNetworksFromSave = await streamNetworkDesignerUpdate(
                     neuroSanURL,
                     saveController.signal,
-                    // Shouldn't have to pass a user message, but API behaves different without it
-                    `Update instructions for agent "${agentName}"`,
-                    AGENT_NETWORK_DESIGNER_ID,
-                    (chunk: string) => {
-                        const chatMessage = chatMessageFromChunk(chunk)
-                        if (!chatMessage) return
-
-                        const reservations = extractReservations(chatMessage)
-                        if (reservations.length === 0) return
-
-                        const networkHocon = extractNetworkHocon(chatMessage)
-                        // Always use the user's edited definition as the authoritative value.
-                        // The backend may not echo agent_network_definition back, may return
-                        // an empty array, or may return the pre-edit version.
-                        const agentNetworkDefinition = updated
-                        const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as
-                            | string
-                            | undefined
-                        // Prefer the locally-known name so upsert can match the existing entry even
-                        // when the backend response omits AGENT_NETWORK_NAME_KEY.
-                        const networkName = currentTempNetwork?.agentNetworkName ?? agentNetworkNameFromMessage
-                        const converted = convertReservationsToNetworks(
-                            reservations,
-                            networkHocon,
-                            agentNetworkDefinition,
-                            networkName
-                        )
-                        // Merge into newNetworksFromSave keeping the freshest reservation per network name.
-                        // Always retaining the highest expiration_time makes the result order-independent.
-                        for (const n of converted) {
-                            const key = n.agentNetworkName ?? n.reservation.reservation_id
-                            const existingIdx = newNetworksFromSave.findIndex(
-                                (e) => (e.agentNetworkName ?? e.reservation.reservation_id) === key
-                            )
-                            if (existingIdx < 0) {
-                                newNetworksFromSave.push(n)
-                            } else if (
-                                n.reservation.expiration_time_in_seconds >
-                                newNetworksFromSave[existingIdx].reservation.expiration_time_in_seconds
-                            ) {
-                                newNetworksFromSave[existingIdx] = n
-                            }
-                        }
-                    },
-                    null,
-                    {
-                        [AGENT_NETWORK_DEFINITION_KEY]: updated,
-                        // Use the backend's canonical name, not the local UUID-based key.
-                        ...(currentTempNetwork?.agentNetworkName
-                            ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
-                            : {}),
-                        // skip_designer prevents the backend from using a reasoning model for edits
-                        skip_designer: true,
-                    },
-                    currentUser,
-                    StreamingUnit.Line
+                    agentName,
+                    updated,
+                    currentTempNetwork?.agentNetworkName,
+                    currentUser
                 )
-
-                if (newNetworksFromSave.length > 0) {
-                    const replacement = newNetworksFromSave.find(
-                        (n) => n.agentNetworkName === currentTempNetwork?.agentNetworkName
-                    )
-                    if (replacement) {
-                        useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
-                        if (networkId && onNetworkReplaced) {
-                            useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
-                            onNetworkReplaced(networkId, replacement.agentInfo.agent_name)
-                        }
-                    } else {
-                        // Reservations came back but none matched the current network — surface this to the user.
-                        sendNotification(
-                            NotificationType.error,
-                            `Failed to update agent "${agentName}".`,
-                            "A reservation was returned but did not match the current network. Please try again."
-                        )
-                    }
-                } else {
-                    sendNotification(
-                        NotificationType.error,
-                        `Failed to update agent "${agentName}".`,
-                        "The network designer did not return a reservation. Please try again."
-                    )
-                }
+                applyNetworkSaveResult(agentName, newNetworksFromSave, currentTempNetwork?.agentNetworkName)
             } catch (e: unknown) {
                 const isAbort = e instanceof DOMException && e.name === "AbortError"
                 const isTimeout = e instanceof DOMException && e.name === "TimeoutError"
-                if (isAbort) {
-                    // User dismissed the dialog — no toast needed.
-                } else {
+                if (!isAbort) {
                     console.error("Failed to submit agent network update:", e)
                     const detail = isTimeout
                         ? "The request timed out waiting for the server. Please try again."
                         : String(e)
                     sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
                 }
+                // isAbort: user dismissed the dialog — no toast needed.
             } finally {
                 clearTimeout(saveTimeoutId)
                 saveAbortControllerRef.current = null
@@ -524,7 +559,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             neuroSanURL,
             currentUser,
             networkId,
-            onNetworkReplaced,
+            applyNetworkSaveResult,
         ]
     )
 

@@ -5,7 +5,9 @@ import {
     TEMPORARY_NETWORK_FOLDER,
 } from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {TemporaryNetwork} from "../../state/TemporaryNetworks"
+import {extractNetworkNameFromReservationId, TemporaryNetwork} from "../../state/TemporaryNetworks"
+
+
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -58,24 +60,6 @@ export const extractNetworkHocon = (message: ChatMessage): string | null => {
     }
 }
 
-// UUID v4 pattern: 8-4-4-4-12 hex chars separated by dashes
-const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
-
-/**
- * Derives the canonical network name from a reservation ID.
- *
- * The backend encodes the network name as a prefix in the reservation ID, followed by a UUID suffix:
- * `{network_name}-{uuid}`, e.g. `travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5`.
- *
- * Stripping the UUID suffix gives the stable name that can be used for deduplication across reservations.
- * Returns `undefined` when the reservation ID doesn't match the expected format.
- */
-export const extractNetworkNameFromReservationId = (reservationId: string): string | undefined => {
-    const stripped = reservationId.replace(UUID_SUFFIX_RE, "")
-    // If nothing was stripped the format was unexpected — return undefined so callers don't misidentify.
-    return stripped !== reservationId ? stripped : undefined
-}
-
 /**
  * Converts a list of agent reservations received from the backend into TemporaryNetwork objects that can be
  * displayed in the UI.
@@ -104,3 +88,5 @@ export const convertReservationsToNetworks = (
         agentNetworkDefinition,
     }))
 }
+
+export {extractNetworkNameFromReservationId} from "../../state/TemporaryNetworks"
