@@ -7,8 +7,6 @@ import {
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {extractNetworkNameFromReservationId, TemporaryNetwork} from "../../state/TemporaryNetworks"
 
-
-
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
  * @see https://github.com/cognizant-ai-lab/neuro-san/issues/743
