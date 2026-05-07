@@ -36,7 +36,6 @@ const esmPackagesToTransform = [
     "space-.*",
 ]
 
-/** @type {import('jest').Config} */
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 

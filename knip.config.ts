@@ -89,6 +89,7 @@ const config: KnipConfig = {
         // Used by Jest for TS format config file
         "ts-node",
 
+        // Peer dependencies of @cognizant-ai-lab/dev-common; installed here because ESLint runs from the monorepo root
         "@eslint/compat",
         "@eslint/js",
         "@next/eslint-plugin-next",
