@@ -360,7 +360,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             // Handle agent reservations (temporary networks) that come in through the chat stream.
             if (reservationsResult?.length > 0) {
-                // Retrieve network definition and HOCON, if present in sly_data
+                // Retrieve network definition, if present
                 const networkHocon = extractNetworkHocon(chatMessage)
                 const agentNetworkDefinition = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
                     | AgentNetworkDefinitionEntry[]

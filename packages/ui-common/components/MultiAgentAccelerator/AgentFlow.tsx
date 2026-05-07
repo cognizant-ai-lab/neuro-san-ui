@@ -101,6 +101,8 @@ export interface AgentFlowProps {
 
 type Layout = "radial" | "linear"
 
+type NetworkList = ReturnType<typeof convertReservationsToNetworks>
+
 // #endregion: Types
 
 // #region: Constants
@@ -122,8 +124,6 @@ const buildUpdatedDefinitions = (
     currentDefinitions.map((entry) =>
         entry.origin === agentId ? {...entry, instructions: instructionsText, description: descriptionText} : entry
     )
-
-type NetworkList = ReturnType<typeof convertReservationsToNetworks>
 
 /** Merges incoming networks into target, keeping the entry with the highest expiration time. */
 const mergeNetworks = (target: NetworkList, incoming: NetworkList): void => {
