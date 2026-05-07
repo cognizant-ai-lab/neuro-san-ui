@@ -292,13 +292,13 @@ describe("AgentNodePopup", () => {
         it("shows the 'few minutes' note while isSaving is true", () => {
             renderPopup({isSaving: true})
 
-            expect(screen.getByText(/this may take a few minutes/iu)).toBeInTheDocument()
+            expect(screen.getByText(/creating a new network/iu)).toBeInTheDocument()
         })
 
         it("hides the 'few minutes' note when isSaving is false", () => {
             renderPopup({isSaving: false})
 
-            expect(screen.queryByText(/this may take a few minutes/iu)).not.toBeInTheDocument()
+            expect(screen.queryByText(/creating a new network/iu)).not.toBeInTheDocument()
         })
 
         it("does not call onSave when the Save button is disabled (isSaving true)", () => {
@@ -320,10 +320,11 @@ describe("AgentNodePopup", () => {
             expect(onClose).not.toHaveBeenCalled()
         })
 
-        it("hides the X close button while isSaving is true", () => {
+        it("still shows the X close button while isSaving is true", () => {
             renderPopup({isSaving: true})
 
-            expect(screen.queryByRole("button", {name: /close/iu})).not.toBeInTheDocument()
+            // The dialog is always dismissable — user can abort an in-flight save by closing.
+            expect(screen.getByRole("button", {name: /close/iu})).toBeInTheDocument()
         })
 
         it("shows a progress bar while isSaving is true", () => {
@@ -345,14 +346,14 @@ describe("AgentNodePopup", () => {
             textareas.forEach((ta) => expect(ta).toBeDisabled())
         })
 
-        it("does not call onClose when backdrop is clicked while isSaving is true", () => {
+        it("calls onClose when backdrop is clicked while isSaving is true", () => {
             const {onClose} = renderPopup({isSaving: true})
 
-            // MUI Dialog fires its onClose on backdrop click — the agent-node-popup backdrop
+            // Clicking outside always dismisses — lets the user abort a stuck in-flight request.
             const backdrop = document.querySelector(".MuiBackdrop-root")
             if (backdrop) fireEvent.click(backdrop)
 
-            expect(onClose).not.toHaveBeenCalled()
+            expect(onClose).toHaveBeenCalledTimes(1)
         })
 
         it("calls onClose when backdrop is clicked while isSaving is false", () => {

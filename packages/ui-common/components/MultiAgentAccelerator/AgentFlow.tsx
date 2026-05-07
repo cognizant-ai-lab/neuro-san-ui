@@ -52,6 +52,7 @@ import {
     BASE_RADIUS,
     DEFAULT_FRONTMAN_X_POS,
     DEFAULT_FRONTMAN_Y_POS,
+    isEditableAgent,
     LEVEL_SPACING,
 } from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
@@ -335,10 +336,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // True while the agent-edit request is in-flight so we can disable the Save button.
     const [isSavingAgent, setIsSavingAgent] = useState<boolean>(false)
 
+    // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
+    const saveAbortControllerRef = useRef<AbortController | null>(null)
+
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
             // Popup is only available for temporary networks.
             if (!isTemporaryNetwork) return
+
+            // Only llm_agent nodes support instructions/description editing.
+            if (!isEditableAgent(node.data.displayAs)) return
 
             // Find the clicked agent's existing instructions and description from the temp network definition.
             const currentTempNetwork = networkId
@@ -358,7 +365,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     )
 
     const handlePopupClose = useCallback(() => {
+        // If a save is in-flight, abort it immediately so the stream doesn't hang.
+        saveAbortControllerRef.current?.abort()
+        saveAbortControllerRef.current = null
         setIsPopupOpen(false)
+        setIsSavingAgent(false)
     }, [])
 
     const handlePopupSave = useCallback(
@@ -391,12 +402,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 return
             }
             setIsSavingAgent(true)
+            const saveController = new AbortController()
+            saveAbortControllerRef.current = saveController
+            // 60-second hard timeout — belt-and-suspenders in case the server never closes the stream.
+            const saveTimeoutId = setTimeout(
+                () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
+                60_000
+            )
             try {
                 const newNetworksFromSave: ReturnType<typeof convertReservationsToNetworks> = []
 
                 await sendChatQuery(
                     neuroSanURL,
-                    new AbortController().signal,
+                    saveController.signal,
                     // Shouldn't have to pass a user message, but API behaves different without it
                     `Update instructions for agent "${agentName}"`,
                     AGENT_NETWORK_DESIGNER_ID,
@@ -465,18 +483,36 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
                             onNetworkReplaced(networkId, replacement.agentInfo.agent_name)
                         }
+                    } else {
+                        // Reservations came back but none matched the current network — surface this to the user.
+                        sendNotification(
+                            NotificationType.error,
+                            `Failed to update agent "${agentName}".`,
+                            "A reservation was returned but did not match the current network. Please try again."
+                        )
                     }
                 } else {
                     sendNotification(
                         NotificationType.error,
                         `Failed to update agent "${agentName}".`,
-                        "The network designer did not return a new reservation. Please try again."
+                        "The network designer did not return a reservation. Please try again."
                     )
                 }
             } catch (e: unknown) {
-                console.error("Failed to submit agent network update:", e)
-                sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, String(e))
+                const isAbort = e instanceof DOMException && e.name === "AbortError"
+                const isTimeout = e instanceof DOMException && e.name === "TimeoutError"
+                if (isAbort) {
+                    // User dismissed the dialog — no toast needed.
+                } else {
+                    console.error("Failed to submit agent network update:", e)
+                    const detail = isTimeout
+                        ? "The request timed out waiting for the server. Please try again."
+                        : String(e)
+                    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
+                }
             } finally {
+                clearTimeout(saveTimeoutId)
+                saveAbortControllerRef.current = null
                 setIsSavingAgent(false)
                 setIsPopupOpen(false)
             }

@@ -1290,6 +1290,48 @@ describe("AgentFlow", () => {
         expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
     })
 
+    it.each([
+        ["coded_tool", "coded_tool"],
+        ["external_agent", "external_agent"],
+        ["langchain_tool", "langchain_tool"],
+    ])("Should NOT open popup when clicking a %s node in a temporary network", async (label, displayAs) => {
+        const networkKey = `temporary/test-${label}`
+        act(() => {
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks([makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: displayAs}])])
+        })
+
+        const {container} = renderAgentFlowComponent({
+            isTemporaryNetwork: true,
+            networkId: networkKey,
+            agentsInNetwork: [{origin: "agent1", tools: [], display_as: displayAs}],
+        })
+
+        fireEvent.click(container.querySelector('[data-id="agent1"]'))
+        expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+    })
+
+    it("Should open popup when clicking an llm_agent node in a temporary network", async () => {
+        const networkKey = "temporary/test-llm-agent"
+        act(() => {
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks([
+                    makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: "llm_agent"}]),
+                ])
+        })
+
+        const {container} = renderAgentFlowComponent({
+            isTemporaryNetwork: true,
+            networkId: networkKey,
+            agentsInNetwork: [{origin: "agent1", tools: [], display_as: "llm_agent"}],
+        })
+
+        fireEvent.click(container.querySelector('[data-id="agent1"]'))
+        expect(await screen.findByRole("button", {name: "Save"})).toBeInTheDocument()
+    })
+
     it("Should read instructions only from the current network, not from another network with same agent", async () => {
         // Two different temporary networks each containing agent1, with different instructions.
         const networkA = "temporary/network-a"
@@ -1870,7 +1912,7 @@ describe("AgentFlow", () => {
                 expect.anything(),
                 expect.objectContaining({
                     variant: "error",
-                    description: expect.stringContaining("new reservation"),
+                    description: expect.stringContaining("did not return a reservation"),
                 })
             )
             consoleDebugSpy.mockRestore()

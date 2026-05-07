@@ -174,6 +174,7 @@ describe("AgentNode", () => {
     it.each([
         ["llm_agent", "AutoAwesomeIcon"],
         ["external_agent", "TravelExploreIcon"],
+        ["langchain_tool", "HandymanIcon"],
         ["coded_tool", "HandymanIcon"],
         ["unknown_display_as_value", "AutoAwesomeIcon"],
     ])("renders correct icon for displayAs=%s", async (displayAs, expectedTestId) => {

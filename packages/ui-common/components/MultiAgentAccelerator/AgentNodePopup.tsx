@@ -93,9 +93,10 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
     }
 
     // Passed to MUIDialog's onClose to handle both backdrop click and Escape key.
-    // Blocked while saving so the user cannot accidentally dismiss an in-flight request.
+    // Always dismissable — if the save is in-flight the finally block will clean up state.
+    // This is necessary since the API request doesn't always close successfully.
     const handleDialogClose = () => {
-        if (!isSaving) handleClose()
+        handleClose()
     }
 
     const footer = (
@@ -112,11 +113,9 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{fontStyle: "italic", lineHeight: 1.35}}
+                    sx={{fontStyle: "italic", lineHeight: 1.35, marginLeft: "0.75rem"}}
                 >
                     Creating a new network with those changes.
-                    <br />
-                    This may take a few minutes…
                 </Typography>
             ) : (
                 <Box />
@@ -156,7 +155,6 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         <MUIDialog
             id="agent-node-popup"
             isOpen={isOpen}
-            closeable={!isSaving}
             onClose={handleDialogClose}
             title={agentName}
             footer={footer}
