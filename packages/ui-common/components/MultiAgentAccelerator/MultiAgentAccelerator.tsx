@@ -27,9 +27,15 @@ import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow"
 import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
-import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "./const"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_DESIGNER_ID,
+    AGENT_NETWORK_HOCON,
+    AGENT_NETWORK_NAME_KEY,
+    AgentNetworkDefinitionEntry,
+} from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {AgentReservation, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
+import {convertReservationsToNetworks, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
@@ -41,7 +47,7 @@ import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../state/Settings"
-import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
@@ -66,31 +72,6 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-
-/**
- * Helper function to convert agent reservations received from the backend into temporary networks that can be displayed
- * in the tree.
- * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
- * @param networkHocon Optional network HOCON string that may be included in the same message as the
- * reservations. Note: for now we assume that all reservations are associated with the same network definition.
- * This will fail if ever we get multiple reservations for different networks in a single chat stream, but that is
- * not a valid scenario currently; we are focusing on Agent Network Design which has a simple output.
- * @returns List of TemporaryNetwork objects that can be displayed in the UI
- */
-const convertReservationsToNetworks = (
-    agentReservations: AgentReservation[],
-    networkHocon: string | null
-): TemporaryNetwork[] => {
-    return agentReservations.map((reservation) => ({
-        reservation,
-        agentInfo: {
-            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
-            origin: reservation.reservation_id,
-            status: "active",
-        },
-        networkHocon,
-    }))
-}
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -188,6 +169,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Special mode of operation where user is using Agent Network Designer to create a new network
     const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
+
+    // Whether the currently selected network is a temporary network (agent reservation)
+    const isSelectedNetworkTemporary =
+        selectedNetwork !== null && temporaryNetworks.some((n) => n.agentInfo.agent_name === selectedNetwork)
+
+    // For temp networks, agent_network_definition and agent_network_name live in localStorage (not IndexedDB slyData).
+    // Supply them as extraSlyData so ChatCommon bounces them back to the backend on every request.
+    const currentTempNetwork = isSelectedNetworkTemporary
+        ? temporaryNetworks.find((n) => n.agentInfo.agent_name === selectedNetwork)
+        : undefined
+    const extraSlyData: Record<string, unknown> | undefined = currentTempNetwork
+        ? {
+              [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
+              // Use the name the backend originally sent, not the local UUID-based key.
+              ...(currentTempNetwork.agentNetworkName
+                  ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
+                  : {}),
+              ...(currentTempNetwork.networkHocon ? {[AGENT_NETWORK_HOCON]: currentTempNetwork.networkHocon} : {}),
+          }
+        : undefined
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -359,19 +360,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             // Handle agent reservations (temporary networks) that come in through the chat stream.
             if (reservationsResult?.length > 0) {
-                // Retrieve network definition, if present
+                // Retrieve network definition and HOCON, if present in sly_data
                 const networkHocon = extractNetworkHocon(chatMessage)
+                const agentNetworkDefinition = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
+                    | AgentNetworkDefinitionEntry[]
+                    | undefined
+                // Capture the backend's canonical name so we can bounce it back unchanged on future requests.
+                const agentNetworkName = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
 
-                const newTemporaryNetworks = convertReservationsToNetworks(reservationsResult, networkHocon)
+                const newTemporaryNetworks = convertReservationsToNetworks(
+                    reservationsResult,
+                    networkHocon,
+                    agentNetworkDefinition,
+                    agentNetworkName
+                )
 
-                const currentNetworks = useTempNetworksStore.getState().tempNetworks
-                useTempNetworksStore.getState().setTempNetworks([...currentNetworks, ...newTemporaryNetworks])
+                const upserted = useTempNetworksStore.getState().upsertTempNetworks(newTemporaryNetworks)
 
                 // Record the new temporary networks so we can highlight them for the user.
                 // For now, we only care about the first one since that's the only active use case
-                setNewlyAddedTemporaryNetworks(
-                    new Set(newTemporaryNetworks.map((network) => network.agentInfo.agent_name))
-                )
+                setNewlyAddedTemporaryNetworks(new Set(upserted.map((network) => network.agentInfo.agent_name)))
             }
 
             return true
@@ -486,11 +494,21 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
                             agentIconSuggestions={agentIconSuggestions}
+                            currentUser={userInfo.userName}
                             id="multi-agent-accelerator-agent-flow"
                             key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
                             isAwaitingLlm={isAwaitingLlm}
                             isStreaming={isStreaming}
+                            isTemporaryNetwork={isSelectedNetworkTemporary}
+                            networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
+                            neuroSanURL={neuroSanURL}
+                            onNetworkReplaced={(oldNetworkId, newNetworkId) => {
+                                if (selectedNetwork === oldNetworkId) {
+                                    agentCountsRef.current = new Map()
+                                    setSelectedNetwork(newNetworkId)
+                                }
+                            }}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
@@ -531,6 +549,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         onChunkReceived={onChunkReceived}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
+                        extraSlyData={extraSlyData}
                     />
                 </Grid>
             </Slide>

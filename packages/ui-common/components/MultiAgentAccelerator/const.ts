@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
+
 export const DEFAULT_FRONTMAN_X_POS = 150
 export const DEFAULT_FRONTMAN_Y_POS = 450
 
@@ -39,3 +41,32 @@ export const AGENT_PROGRESS_CONNECTIVITY_KEY = "connectivity_info"
 
 // Agent name for the special "Agent Network Designer" network
 export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"
+
+// The key in sly_data where the agent network definition is stored
+export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
+
+// The key in sly_data where the agent network name is stored
+export const AGENT_NETWORK_NAME_KEY = "agent_network_name"
+
+/**
+ * A single agent entry within an agent network definition, as received in sly_data from the backend.
+ * Extends ConnectivityInfo with editable instructions and description fields for the Agent Network Designer.
+ */
+export type AgentNetworkDefinitionEntry = ConnectivityInfo & {
+    readonly instructions?: string
+    readonly description?: string
+}
+
+/** Possible values for the `display_as` field in ConnectivityInfo / AgentNetworkDefinitionEntry. */
+export const DISPLAY_AS_LLM_AGENT = "llm_agent"
+export const DISPLAY_AS_CODED_TOOL = "coded_tool"
+export const DISPLAY_AS_LANGCHAIN_TOOL = "langchain_tool"
+export const DISPLAY_AS_EXTERNAL_AGENT = "external_agent"
+
+/**
+ * Returns true when an agent node supports the edit popup (instructions + description).
+ * Only `llm_agent` nodes (and the Frontman, whose `display_as` is undefined) are editable.
+ * `coded_tool`, `langchain_tool`, `external_agent`, and any other types are read-only.
+ */
+export const isEditableAgent = (displayAs: string | undefined): boolean =>
+    displayAs === DISPLAY_AS_LLM_AGENT || displayAs === undefined

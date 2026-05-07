@@ -1,5 +1,11 @@
-import {AGENT_NETWORK_HOCON, AGENT_RESERVATIONS_KEY} from "./const"
+import {
+    AGENT_NETWORK_HOCON,
+    AGENT_RESERVATIONS_KEY,
+    AgentNetworkDefinitionEntry,
+    TEMPORARY_NETWORK_FOLDER,
+} from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {TemporaryNetwork} from "../../state/TemporaryNetworks"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -50,4 +56,51 @@ export const extractNetworkHocon = (message: ChatMessage): string | null => {
         // Not the type of message that would contain a network HOCON, or no network HOCON found, return null
         return null
     }
+}
+
+// UUID v4 pattern: 8-4-4-4-12 hex chars separated by dashes
+const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
+
+/**
+ * Derives the canonical network name from a reservation ID.
+ *
+ * The backend encodes the network name as a prefix in the reservation ID, followed by a UUID suffix:
+ * `{network_name}-{uuid}`, e.g. `travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5`.
+ *
+ * Stripping the UUID suffix gives the stable name that can be used for deduplication across reservations.
+ * Returns `undefined` when the reservation ID doesn't match the expected format.
+ */
+export const extractNetworkNameFromReservationId = (reservationId: string): string | undefined => {
+    const stripped = reservationId.replace(UUID_SUFFIX_RE, "")
+    // If nothing was stripped the format was unexpected — return undefined so callers don't misidentify.
+    return stripped !== reservationId ? stripped : undefined
+}
+
+/**
+ * Converts a list of agent reservations received from the backend into TemporaryNetwork objects that can be
+ * displayed in the UI.
+ * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
+ * @param networkHocon Optional network HOCON string associated with the reservations.
+ * @param agentNetworkDefinition Optional agent network definition entries.
+ * @param agentNetworkName Optional backend canonical network name used to match / deduplicate networks.
+ *   When omitted, the name is derived from the reservation_id via {@link extractNetworkNameFromReservationId}.
+ * @returns List of TemporaryNetwork objects ready for the store.
+ */
+export const convertReservationsToNetworks = (
+    agentReservations: AgentReservation[],
+    networkHocon: string | null,
+    agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
+    agentNetworkName?: string
+): TemporaryNetwork[] => {
+    return agentReservations.map((reservation) => ({
+        reservation,
+        agentInfo: {
+            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+        },
+        // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
+        // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
+        agentNetworkName: agentNetworkName ?? extractNetworkNameFromReservationId(reservation.reservation_id),
+        networkHocon,
+        agentNetworkDefinition,
+    }))
 }
