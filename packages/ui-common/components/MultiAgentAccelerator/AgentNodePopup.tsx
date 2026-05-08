@@ -108,7 +108,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     color="text.secondary"
                     sx={{fontStyle: "italic", lineHeight: 1.35, marginLeft: "0.75rem"}}
                 >
-                    Creating a new network with those changes.
+                    Applying your changes...
                 </Typography>
             ) : (
                 <Box />
