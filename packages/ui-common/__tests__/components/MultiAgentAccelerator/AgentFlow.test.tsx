@@ -77,6 +77,7 @@ const NETWORK: ConnectivityInfo[] = [
     {
         origin: "agent1",
         tools: ["agent2", "agent3"],
+        display_as: "llm_agent",
     },
     {
         origin: "agent2",
@@ -1115,7 +1116,7 @@ describe("AgentFlow", () => {
         const saveButton = screen.getByRole("button", {name: "Save"})
         expect(saveButton).toBeInTheDocument()
 
-        fireEvent.click(saveButton)
+        await user.click(saveButton)
 
         // Popup should close
         await waitFor(() => {
@@ -1153,7 +1154,7 @@ describe("AgentFlow", () => {
         expect(cancelButton).toBeInTheDocument()
 
         // Cancel closes the popup
-        fireEvent.click(cancelButton)
+        await user.click(cancelButton)
         await waitFor(() => {
             expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument()
         })
@@ -1389,7 +1390,7 @@ describe("AgentFlow", () => {
         // Edit the instructions and save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
         fireEvent.change(instructionsField, {target: {value: "Updated instructions for Network A."}})
-        fireEvent.click(screen.getByRole("button", {name: "Save"}))
+        await user.click(screen.getByRole("button", {name: "Save"}))
 
         await waitFor(() => {
             expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
@@ -1603,7 +1604,7 @@ describe("AgentFlow", () => {
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
             const saveButton = screen.getByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
+            await user.click(saveButton)
 
             // While in-flight the popup should stay open and show "Applying changes…"
             await waitFor(() => {
@@ -1646,7 +1647,7 @@ describe("AgentFlow", () => {
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
@@ -1708,7 +1709,7 @@ describe("AgentFlow", () => {
             fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
                 target: {value: "Updated instructions"},
             })
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
@@ -1769,7 +1770,7 @@ describe("AgentFlow", () => {
             fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
                 target: {value: "Updated instructions"},
             })
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
@@ -1810,7 +1811,7 @@ describe("AgentFlow", () => {
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             fireEvent.change(instructionsField, {target: {value: EDITED_INSTRUCTIONS}})
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
@@ -1851,7 +1852,7 @@ describe("AgentFlow", () => {
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
@@ -1914,7 +1915,7 @@ describe("AgentFlow", () => {
             fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
                 target: {value: "Updated instructions"},
             })
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
@@ -1953,7 +1954,7 @@ describe("AgentFlow", () => {
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             // Popup should close even on error (finally block)
             await waitFor(() => {
@@ -1981,7 +1982,7 @@ describe("AgentFlow", () => {
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
-            fireEvent.click(screen.getByRole("button", {name: "Save"}))
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
