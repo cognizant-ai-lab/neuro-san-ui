@@ -537,9 +537,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }}
                 >
                     <ChatCommon
+                        agentGreetings={{
+                            [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
+                        }}
                         agentPlaceholders={{
                             [AGENT_NETWORK_DESIGNER_ID]:
-                                "Describe in plain language the network you would like to build",
+                                "Describe in plain language the network you would like to build.",
                         }}
                         currentUser={userInfo.userName}
                         extraSlyData={extraSlyData}

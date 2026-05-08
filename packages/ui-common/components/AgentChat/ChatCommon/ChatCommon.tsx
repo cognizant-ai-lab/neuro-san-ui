@@ -148,6 +148,11 @@ export interface ChatCommonProps {
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
 
     /**
+     * Optional greetings for specific agents to display
+     */
+    readonly agentGreetings?: Partial<Record<CombinedAgentType, string>>
+
+    /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
      * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
      */
@@ -216,6 +221,7 @@ const MAX_CHAT_OUTPUT_ITEMS = 50
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const {
+        agentGreetings = EMPTY,
         agentPlaceholders = EMPTY,
         backgroundColor,
         currentUser,
@@ -549,7 +555,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         )
 
         // Random greeting
-        const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
+        const greeting =
+            agentGreetings[targetAgent] ?? AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
         updateOutput(greeting)
         // eslint-disable-next-line react-hooks/exhaustive-deps -- updateOutput is stable (empty useCallback deps)
     }, [agentDisplayName, targetAgent])
