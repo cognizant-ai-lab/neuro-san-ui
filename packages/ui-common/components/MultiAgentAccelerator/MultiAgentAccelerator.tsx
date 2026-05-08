@@ -550,6 +550,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
                         extraSlyData={extraSlyData}
+                        agentPlaceholders={{
+                            [AGENT_NETWORK_DESIGNER_ID]:
+                                "Describe in plain language the network you would like to build",
+                        }}
                     />
                 </Grid>
             </Slide>
