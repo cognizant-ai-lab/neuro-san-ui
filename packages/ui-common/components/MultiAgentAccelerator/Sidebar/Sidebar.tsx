@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import ClearIcon from "@mui/icons-material/Clear"
 import HighlightOff from "@mui/icons-material/HighlightOff"
@@ -44,7 +45,7 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
-import {TEMPORARY_NETWORK_FOLDER} from "../const"
+import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
 
 // Animation for the sparkle effect when a new temporary network is added.
 const sparkle = keyframes`
@@ -113,11 +114,14 @@ const SidebarAside = styled("aside")({
 
 // Styled component for the sidebar heading, which is sticky at the top of the sidebar.
 const SidebarHeading = styled("h2")(({theme}) => ({
+    alignItems: "center",
     backgroundColor: theme.palette.background.default,
     borderBottomStyle: "solid",
     borderBottomWidth: "1px",
+    display: "flex",
     fontSize: "1.125rem",
     fontWeight: "bold",
+    justifyContent: "space-between",
     marginBottom: "0.25rem",
     paddingBottom: "0.75rem",
     position: "sticky",
@@ -330,28 +334,50 @@ export const Sidebar: FC<SidebarProps> = ({
             <SidebarAside id={`${id}-sidebar`}>
                 <SidebarHeading id={`${id}-heading`}>
                     Agent Networks
-                    <Button
-                        aria-label="Agent Network Settings"
-                        disabled={isAwaitingLlm}
-                        id="agent-network-settings-btn"
-                        onClick={handleSettingsClick}
-                        sx={{display: "inline-block", minWidth: "40px"}}
-                    >
-                        <Tooltip
-                            id="agent-network-settings-tooltip"
-                            placement="top"
-                            title={`${customURLLocalStorage || backendNeuroSanApiUrl}\nversion: ${
-                                testConnectionResult?.version || "unknown"
-                            }`}
+                    <Box sx={{display: "flex"}}>
+                        <Button
+                            aria-label="Add New Network"
+                            disabled={isAwaitingLlm}
+                            id="add-network-btn"
+                            onClick={() => {
+                                setSelectedItem(AGENT_NETWORK_DESIGNER_ID)
+                                setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+                            }}
+                            sx={{display: "inline-block", minWidth: "40px"}}
                         >
-                            <SettingsIcon
-                                id="agent-network-settings-icon"
-                                sx={{
-                                    color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)",
-                                }}
-                            />
-                        </Tooltip>
-                    </Button>
+                            <Tooltip
+                                title="Create your own agent network"
+                                placement="top"
+                            >
+                                <AddBoxRounded
+                                    id="add-network-icon"
+                                    sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                                />
+                            </Tooltip>
+                        </Button>
+                        <Button
+                            aria-label="Agent Network Settings"
+                            disabled={isAwaitingLlm}
+                            id="agent-network-settings-btn"
+                            onClick={handleSettingsClick}
+                            sx={{display: "inline-block", minWidth: "40px"}}
+                        >
+                            <Tooltip
+                                id="agent-network-settings-tooltip"
+                                placement="top"
+                                title={`${customURLLocalStorage || backendNeuroSanApiUrl}\nversion: ${
+                                    testConnectionResult?.version || "unknown"
+                                }`}
+                            >
+                                <SettingsIcon
+                                    id="agent-network-settings-icon"
+                                    sx={{
+                                        color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)",
+                                    }}
+                                />
+                            </Tooltip>
+                        </Button>
+                    </Box>
                 </SidebarHeading>
                 <RichTreeView
                     key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
