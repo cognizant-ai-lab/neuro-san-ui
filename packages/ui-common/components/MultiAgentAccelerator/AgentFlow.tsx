@@ -114,17 +114,6 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // #region: Helpers
 
-/** Returns a new definitions array with the target agent's instructions/description updated. */
-const buildUpdatedDefinitions = (
-    currentDefinitions: AgentNetworkDefinitionEntry[],
-    agentId: string,
-    instructionsText: string,
-    descriptionText: string
-): AgentNetworkDefinitionEntry[] =>
-    currentDefinitions.map((entry) =>
-        entry.origin === agentId ? {...entry, instructions: instructionsText, description: descriptionText} : entry
-    )
-
 /** Merges incoming networks into target, keeping the entry with the highest expiration time. */
 const mergeNetworks = (target: NetworkList, incoming: NetworkList): void => {
     for (const n of incoming) {
@@ -499,11 +488,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
             // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
             const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
-            const updated = buildUpdatedDefinitions(
-                currentDefinitions,
-                selectedAgent.agentId,
-                instructionsText,
-                descriptionText
+            const updated = currentDefinitions.map((entry) =>
+                entry.origin === selectedAgent.agentId
+                    ? {...entry, instructions: instructionsText, description: descriptionText}
+                    : entry
             )
             if (networkId) {
                 updateTempNetworkDefinition(networkId, updated)
