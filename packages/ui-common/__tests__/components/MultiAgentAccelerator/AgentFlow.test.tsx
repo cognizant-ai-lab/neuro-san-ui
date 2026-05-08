@@ -1109,11 +1109,12 @@ describe("AgentFlow", () => {
         expect(agent1Node).toBeInTheDocument()
         fireEvent.click(agent1Node)
 
-        // The popup should now be open — find the Save button
-        const saveButton = await screen.findByRole("button", {name: "Save"})
+        // The popup should now be open — make the form dirty then save
+        const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+        fireEvent.change(instructionsField, {target: {value: "Updated instructions."}})
+        const saveButton = screen.getByRole("button", {name: "Save"})
         expect(saveButton).toBeInTheDocument()
 
-        // Click save (uses the initial instructions, no edits needed to exercise the code path)
         fireEvent.click(saveButton)
 
         // Popup should close
@@ -1599,12 +1600,14 @@ describe("AgentFlow", () => {
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
 
-            const saveButton = await screen.findByRole("button", {name: "Save"})
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            const saveButton = screen.getByRole("button", {name: "Save"})
             fireEvent.click(saveButton)
 
-            // While in-flight the popup should stay open and show "Saving…"
+            // While in-flight the popup should stay open and show "Applying changes…"
             await waitFor(() => {
-                expect(screen.getByRole("button", {name: /saving/iu})).toBeInTheDocument()
+                expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
             })
             expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
 
@@ -1613,7 +1616,7 @@ describe("AgentFlow", () => {
 
             // After resolving, the popup should close
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             expect(sendChatQuery).toHaveBeenCalledTimes(1)
@@ -1641,11 +1644,12 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const saveButton = await screen.findByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             const stored = useTempNetworksStore.getState().tempNetworks
@@ -1701,10 +1705,13 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            fireEvent.click(await screen.findByRole("button", {name: "Save"}))
+            fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
+                target: {value: "Updated instructions"},
+            })
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             const stored = useTempNetworksStore.getState().tempNetworks
@@ -1759,10 +1766,13 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            fireEvent.click(await screen.findByRole("button", {name: "Save"}))
+            fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
+                target: {value: "Updated instructions"},
+            })
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             const stored = useTempNetworksStore.getState().tempNetworks
@@ -1839,8 +1849,9 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const saveButton = await screen.findByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
@@ -1900,10 +1911,13 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            fireEvent.click(await screen.findByRole("button", {name: "Save"}))
+            fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
+                target: {value: "Updated instructions"},
+            })
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             // enqueueSnackbar receives a React <span> element as the first arg (from sendNotification);
@@ -1937,12 +1951,13 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const saveButton = await screen.findByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             // Popup should close even on error (finally block)
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to submit"), expect.any(Error))
@@ -1964,8 +1979,9 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const saveButton = await screen.findByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            fireEvent.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
