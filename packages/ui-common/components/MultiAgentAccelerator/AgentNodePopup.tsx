@@ -189,7 +189,9 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     label="Description"
                     value={descriptionText}
                     onChange={(e) => setDescriptionText(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                        if (e.key !== "Escape") e.stopPropagation()
+                    }}
                     multiline
                     rows={6}
                     fullWidth
@@ -204,7 +206,9 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     label="Instructions"
                     value={instructionsText}
                     onChange={(e) => setInstructionsText(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                        if (e.key !== "Escape") e.stopPropagation()
+                    }}
                     multiline
                     rows={6}
                     fullWidth
