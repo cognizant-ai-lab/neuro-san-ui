@@ -537,23 +537,23 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }}
                 >
                     <ChatCommon
-                        key={selectedNetwork ?? "no-network"}
-                        ref={chatRef}
-                        neuroSanURL={neuroSanURL}
-                        id="agent-network-ui"
-                        currentUser={userInfo.userName}
-                        userImage={userInfo.userImage}
-                        setIsAwaitingLlm={setIsAwaitingLlm}
-                        isAwaitingLlm={isAwaitingLlm}
-                        targetAgent={selectedNetwork}
-                        onChunkReceived={onChunkReceived}
-                        onStreamingComplete={onStreamingComplete}
-                        onStreamingStarted={onStreamingStarted}
-                        extraSlyData={extraSlyData}
                         agentPlaceholders={{
                             [AGENT_NETWORK_DESIGNER_ID]:
                                 "Describe in plain language the network you would like to build",
                         }}
+                        currentUser={userInfo.userName}
+                        extraSlyData={extraSlyData}
+                        id="agent-network-ui"
+                        isAwaitingLlm={isAwaitingLlm}
+                        key={selectedNetwork ?? "no-network"}
+                        neuroSanURL={neuroSanURL}
+                        onChunkReceived={onChunkReceived}
+                        onStreamingComplete={onStreamingComplete}
+                        onStreamingStarted={onStreamingStarted}
+                        ref={chatRef}
+                        setIsAwaitingLlm={setIsAwaitingLlm}
+                        targetAgent={selectedNetwork}
+                        userImage={userInfo.userImage}
                     />
                 </Grid>
             </Slide>
