@@ -185,33 +185,37 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 )}
                 {/* Description — editable */}
                 <TextField
+                    disabled={isSaving}
+                    fullWidth
                     id="agent-node-popup-description-field"
                     label="Description"
-                    value={descriptionText}
-                    onChange={(e) => setDescriptionText(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
                     multiline
-                    rows={6}
-                    fullWidth
-                    size="small"
-                    disabled={isSaving}
+                    onChange={(e) => setDescriptionText(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key !== "Escape") e.stopPropagation()
+                    }}
                     placeholder="Enter a short description of this agent…"
+                    rows={6}
+                    size="small"
+                    value={descriptionText}
                 />
                 {/* Instructions — editable */}
                 <TextField
-                    sx={{marginTop: 2}}
-                    id="agent-node-popup-instructions-field"
-                    label="Instructions"
-                    value={instructionsText}
-                    onChange={(e) => setInstructionsText(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    multiline
-                    rows={6}
-                    fullWidth
-                    size="small"
                     autoFocus
                     disabled={isSaving}
+                    fullWidth
+                    id="agent-node-popup-instructions-field"
+                    label="Instructions"
+                    multiline
+                    onChange={(e) => setInstructionsText(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key !== "Escape") e.stopPropagation()
+                    }}
                     placeholder="Enter instructions for this agent…"
+                    rows={6}
+                    size="small"
+                    sx={{marginTop: 2}}
+                    value={instructionsText}
                 />
             </MUIDialog>
         </>
