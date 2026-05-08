@@ -99,7 +99,9 @@ describe("AgentNodePopup", () => {
         await user.clear(instructionsField)
         await user.type(instructionsField, "Temporary edit")
 
+        // Clicking Cancel when dirty shows the ConfirmationModal; "Discard changes" confirms close
         await user.click(screen.getByRole("button", {name: /cancel/iu}))
+        await user.click(screen.getByRole("button", {name: /discard changes/iu}))
 
         expect(onClose).toHaveBeenCalled()
     })
@@ -271,41 +273,34 @@ describe("AgentNodePopup", () => {
         it("disables both Save and Cancel buttons while isSaving is true", () => {
             renderPopup({isSaving: true})
 
-            expect(screen.getByRole("button", {name: /saving/iu})).toBeDisabled()
+            expect(screen.getByRole("button", {name: /applying changes/iu})).toBeDisabled()
             expect(screen.getByRole("button", {name: /cancel/iu})).toBeDisabled()
         })
 
-        it("shows 'Saving…' label on the Save button while isSaving is true", () => {
+        it("shows 'Applying changes\u2026' label on the Save button while isSaving is true", () => {
             renderPopup({isSaving: true})
 
-            expect(screen.getByRole("button", {name: /saving/iu})).toBeInTheDocument()
+            expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
             expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
         })
 
         it("shows 'Save' label and enables buttons when isSaving is false", () => {
             renderPopup({isSaving: false})
 
+            // Save is also gated on isDirty; make the form dirty so it is not disabled by !isDirty
+            fireEvent.change(screen.getByRole("textbox", {name: /^instructions$/iu}), {
+                target: {value: "Changed"},
+            })
+
             expect(screen.getByRole("button", {name: /^save$/iu})).not.toBeDisabled()
             expect(screen.getByRole("button", {name: /cancel/iu})).not.toBeDisabled()
-        })
-
-        it("shows the 'few minutes' note while isSaving is true", () => {
-            renderPopup({isSaving: true})
-
-            expect(screen.getByText(/creating a new network/iu)).toBeInTheDocument()
-        })
-
-        it("hides the 'few minutes' note when isSaving is false", () => {
-            renderPopup({isSaving: false})
-
-            expect(screen.queryByText(/creating a new network/iu)).not.toBeInTheDocument()
         })
 
         it("does not call onSave when the Save button is disabled (isSaving true)", () => {
             const {onSave} = renderPopup({isSaving: true})
 
             // The button is disabled so clicking it should not trigger onSave
-            const saveBtn = screen.getByRole("button", {name: /saving/iu})
+            const saveBtn = screen.getByRole("button", {name: /applying changes/iu})
             fireEvent.click(saveBtn)
 
             expect(onSave).not.toHaveBeenCalled()
@@ -346,14 +341,14 @@ describe("AgentNodePopup", () => {
             textareas.forEach((ta) => expect(ta).toBeDisabled())
         })
 
-        it("calls onClose when backdrop is clicked while isSaving is true", () => {
+        it("does not call onClose when backdrop is clicked while isSaving is true", () => {
             const {onClose} = renderPopup({isSaving: true})
 
-            // Clicking outside always dismisses — lets the user abort a stuck in-flight request.
+            // Clicking outside is blocked while saving to prevent accidental dismissal.
             const backdrop = document.querySelector(".MuiBackdrop-root")
             if (backdrop) fireEvent.click(backdrop)
 
-            expect(onClose).toHaveBeenCalledTimes(1)
+            expect(onClose).not.toHaveBeenCalled()
         })
 
         it("calls onClose when backdrop is clicked while isSaving is false", () => {
