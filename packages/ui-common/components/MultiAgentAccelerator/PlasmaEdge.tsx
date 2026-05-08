@@ -22,8 +22,7 @@ import {useSettingsStore} from "../../state/Settings"
 const createFunnelParticleOnPath = (
     pathEl: SVGPathElement,
     canvasOffset: {x: number; y: number},
-    baseProgress: number,
-    plasmaColor: string
+    baseProgress: number
 ) => {
     const totalLength = pathEl.getTotalLength()
     const speed = 0.02 + Math.random() * 0.003
@@ -38,23 +37,20 @@ const createFunnelParticleOnPath = (
 
     let basePoint = pathEl.getPointAtLength(progress * totalLength)
 
+    let angle = 0
+
     const update = () => {
         remainingLife -= 1
         progress += speed
         oscAngle += oscSpeed
         const _length = Math.min(progress * totalLength, totalLength)
         basePoint = pathEl.getPointAtLength(_length)
+        const p2 = pathEl.getPointAtLength(Math.min(totalLength, _length + 1))
+        angle = Math.atan2(p2.y - basePoint.y, p2.x - basePoint.x) + Math.PI / 2
     }
 
     const draw = (ctx: CanvasRenderingContext2D) => {
-        const t = progress
-        const taper = Math.max(0.75, 1 - t)
-        const amp = maxAmp * taper
-
-        const delta = 1
-        const p1 = pathEl.getPointAtLength(Math.max(0, totalLength * t))
-        const p2 = pathEl.getPointAtLength(Math.min(totalLength, totalLength * t + delta))
-        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) + Math.PI / 2
+        const amp = maxAmp * Math.max(0.75, 1 - progress)
 
         const offsetX = Math.cos(angle) * Math.sin(oscAngle) * amp
         const offsetY = Math.sin(angle) * Math.sin(oscAngle) * amp
@@ -64,17 +60,21 @@ const createFunnelParticleOnPath = (
 
         const alpha = Math.max(0, remainingLife / initialLife)
         const pulse = 0.7 + 0.3 * Math.abs(Math.sin(oscAngle * 1.5))
-        ctx.save()
+        const effectiveAlpha = alpha * pulse
+
+        // Soft outer glow — cheap substitute for shadowBlur
+        ctx.globalAlpha = effectiveAlpha * 0.3
         ctx.beginPath()
-        ctx.globalAlpha = alpha * 0.9 * pulse
-        ctx.shadowBlur = 8 + 8 * pulse // Lowered for performance
-        ctx.shadowColor = plasmaColor
-        ctx.fillStyle = plasmaColor
+        ctx.arc(x, y, 5, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Sharp core
+        ctx.globalAlpha = effectiveAlpha * 0.9
+        ctx.beginPath()
         ctx.arc(x, y, 2, 0, Math.PI * 2)
         ctx.fill()
+
         ctx.globalAlpha = 1
-        ctx.shadowBlur = 0
-        ctx.restore()
     }
 
     const isAlive = () => progress * totalLength < totalLength * 0.98
@@ -135,17 +135,19 @@ export const PlasmaEdge: FC<EdgeProps> = ({
                 if (particles.current.length < MAX_PARTICLES) {
                     const t = Math.random()
                     if (Math.random() < 1 - t) {
-                        particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t, plasmaColor))
+                        particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t))
                     }
                 }
             }
 
-            particles.current.forEach((p) => {
+            ctx.fillStyle = plasmaColor
+
+            for (let i = particles.current.length - 1; i >= 0; i -= 1) {
+                const p = particles.current[i]
                 p.update()
                 p.draw(ctx)
-            })
-
-            particles.current = particles.current.filter((p) => p.isAlive())
+                if (!p.isAlive()) particles.current.splice(i, 1)
+            }
 
             animationRef.current = requestAnimationFrame(animate)
         }
