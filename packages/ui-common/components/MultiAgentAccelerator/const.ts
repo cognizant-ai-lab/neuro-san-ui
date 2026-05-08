@@ -68,5 +68,4 @@ export const DISPLAY_AS_EXTERNAL_AGENT = "external_agent"
  * Only `llm_agent` nodes (and the Frontman, whose `display_as` is undefined) are editable.
  * `coded_tool`, `langchain_tool`, `external_agent`, and any other types are read-only.
  */
-export const isEditableAgent = (displayAs: string | undefined): boolean =>
-    displayAs === DISPLAY_AS_LLM_AGENT || displayAs === undefined
+export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DISPLAY_AS_LLM_AGENT

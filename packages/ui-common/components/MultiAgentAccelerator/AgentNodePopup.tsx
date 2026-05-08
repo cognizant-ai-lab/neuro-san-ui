@@ -197,6 +197,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     placeholder="Enter a short description of this agent…"
                     rows={6}
                     size="small"
+                    sx={{"& .MuiInputBase-input": {fontSize: "0.85rem"}}}
                     value={descriptionText}
                 />
                 {/* Instructions — editable */}
@@ -214,7 +215,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     placeholder="Enter instructions for this agent…"
                     rows={6}
                     size="small"
-                    sx={{marginTop: 2}}
+                    sx={{"& .MuiInputBase-input": {fontSize: "0.85rem"}, marginTop: 2}}
                     value={instructionsText}
                 />
             </MUIDialog>
