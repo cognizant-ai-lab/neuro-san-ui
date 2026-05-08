@@ -19,7 +19,6 @@ import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
 import LinearProgress from "@mui/material/LinearProgress"
 import TextField from "@mui/material/TextField"
-import Typography from "@mui/material/Typography"
 import {FC, useEffect, useState} from "react"
 
 import {MUIDialog} from "../Common/MUIDialog"
@@ -97,22 +96,11 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
             sx={{
                 display: "flex",
                 alignItems: "flex-start",
-                justifyContent: "space-between",
+                justifyContent: "flex-end",
                 width: "100%",
                 gap: 1,
             }}
         >
-            {isSaving ? (
-                <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{fontStyle: "italic", lineHeight: 1.35, marginLeft: "0.75rem"}}
-                >
-                    Applying your changes...
-                </Typography>
-            ) : (
-                <Box />
-            )}
             <Box sx={{display: "flex", gap: 1}}>
                 <Button
                     id="agent-node-popup-cancel-btn"
@@ -138,7 +126,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                         ) : undefined
                     }
                 >
-                    {isSaving ? "Saving…" : "Save"}
+                    {isSaving ? "Applying changes…" : "Save"}
                 </Button>
             </Box>
         </Box>
@@ -146,12 +134,13 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
 
     return (
         <MUIDialog
+            dialogSx={isSaving ? {"& *, & *::before, & *::after": {cursor: "wait !important"}} : undefined}
+            footer={footer}
             id="agent-node-popup"
             isOpen={isOpen}
             onClose={handleClose}
-            title={agentName}
-            footer={footer}
             paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
+            title={agentName}
         >
             {/* Progress bar shown while saving — makes it clear the dialog is busy */}
             {isSaving && (
