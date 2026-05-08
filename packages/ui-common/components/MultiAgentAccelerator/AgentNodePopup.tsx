@@ -71,6 +71,8 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
     const [instructionsText, setInstructionsText] = useState<string>(initialInstructions)
     const [descriptionText, setDescriptionText] = useState<string>(initialDescription)
 
+    const isDirty = instructionsText !== initialInstructions || descriptionText !== initialDescription
+
     // Keep local fields in sync when the dialog opens or if initial values change while open.
     // Guarding on isOpen prevents resetting the text during the close animation, which would cause a visible flash.
     useEffect(() => {
@@ -116,7 +118,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     onClick={handleSave}
                     variant="contained"
                     size="small"
-                    disabled={isSaving}
+                    disabled={isSaving || !isDirty}
                     startIcon={
                         isSaving ? (
                             <CircularProgress
