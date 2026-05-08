@@ -21,6 +21,7 @@ import LinearProgress from "@mui/material/LinearProgress"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
 
+import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 
 // #region: Types
@@ -73,6 +74,8 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
 
     const isDirty = instructionsText !== initialInstructions || descriptionText !== initialDescription
 
+    const [displayConfirmationModal, setDisplayConfirmationModal] = useState<boolean>(false)
+
     // Keep local fields in sync when the dialog opens or if initial values change while open.
     // Guarding on isOpen prevents resetting the text during the close animation, which would cause a visible flash.
     useEffect(() => {
@@ -87,7 +90,15 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
     }
 
     const handleClose = () => {
-        // Discard local edits and reset to the initial values on cancel
+        if (isSaving) {
+            return
+        }
+
+        if (isDirty) {
+            setDisplayConfirmationModal(true)
+            return
+        }
+
         setInstructionsText(initialInstructions)
         setDescriptionText(initialDescription)
         onClose()
@@ -134,53 +145,75 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         </Box>
     )
 
+    const getConfirmationModal = () => (
+        <ConfirmationModal
+            id="agent-node-popup-unsaved-changes-modal"
+            cancelBtnLabel="Discard changes"
+            closeable={false}
+            content={<p>You have unsaved edits. Are you sure you want to discard your changes and close the dialog?</p>}
+            handleCancel={() => {
+                setDisplayConfirmationModal(false)
+                setInstructionsText(initialInstructions)
+                setDescriptionText(initialDescription)
+                onClose()
+            }}
+            handleOk={handleSave}
+            maskCloseable={false}
+            okBtnLabel="Save changes"
+            title="Unsaved Changes"
+        />
+    )
+
     return (
-        <MUIDialog
-            dialogSx={isSaving ? {"& *, & *::before, & *::after": {cursor: "wait !important"}} : undefined}
-            footer={footer}
-            id="agent-node-popup"
-            isOpen={isOpen}
-            onClose={handleClose}
-            paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
-            title={agentName}
-        >
-            {/* Progress bar shown while saving — makes it clear the dialog is busy */}
-            {isSaving && (
-                <LinearProgress
-                    aria-label="Saving agent"
-                    sx={{mb: 2, borderRadius: 1}}
+        <>
+            {displayConfirmationModal && getConfirmationModal()}
+            <MUIDialog
+                dialogSx={isSaving ? {"& *, & *::before, & *::after": {cursor: "wait !important"}} : undefined}
+                footer={footer}
+                id="agent-node-popup"
+                isOpen={isOpen}
+                onClose={handleClose}
+                paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
+                title={agentName}
+            >
+                {/* Progress bar shown while saving — makes it clear the dialog is busy */}
+                {isSaving && (
+                    <LinearProgress
+                        aria-label="Saving agent"
+                        sx={{mb: 2, borderRadius: 1}}
+                    />
+                )}
+                {/* Description — editable */}
+                <TextField
+                    id="agent-node-popup-description-field"
+                    label="Description"
+                    value={descriptionText}
+                    onChange={(e) => setDescriptionText(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    multiline
+                    rows={6}
+                    fullWidth
+                    size="small"
+                    disabled={isSaving}
+                    placeholder="Enter a short description of this agent…"
                 />
-            )}
-            {/* Description — editable */}
-            <TextField
-                id="agent-node-popup-description-field"
-                label="Description"
-                value={descriptionText}
-                onChange={(e) => setDescriptionText(e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-                multiline
-                rows={6}
-                fullWidth
-                size="small"
-                disabled={isSaving}
-                placeholder="Enter a short description of this agent…"
-            />
-            {/* Instructions — editable */}
-            <TextField
-                sx={{marginTop: 2}}
-                id="agent-node-popup-instructions-field"
-                label="Instructions"
-                value={instructionsText}
-                onChange={(e) => setInstructionsText(e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-                multiline
-                rows={6}
-                fullWidth
-                size="small"
-                autoFocus
-                disabled={isSaving}
-                placeholder="Enter instructions for this agent…"
-            />
-        </MUIDialog>
+                {/* Instructions — editable */}
+                <TextField
+                    sx={{marginTop: 2}}
+                    id="agent-node-popup-instructions-field"
+                    label="Instructions"
+                    value={instructionsText}
+                    onChange={(e) => setInstructionsText(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    multiline
+                    rows={6}
+                    fullWidth
+                    size="small"
+                    autoFocus
+                    disabled={isSaving}
+                    placeholder="Enter instructions for this agent…"
+                />
+            </MUIDialog>
+        </>
     )
 }
