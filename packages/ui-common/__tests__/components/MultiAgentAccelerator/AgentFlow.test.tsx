@@ -1112,7 +1112,8 @@ describe("AgentFlow", () => {
 
         // The popup should now be open — make the form dirty then save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-        fireEvent.change(instructionsField, {target: {value: "Updated instructions."}})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "Updated instructions.")
         const saveButton = screen.getByRole("button", {name: "Save"})
         expect(saveButton).toBeInTheDocument()
 
@@ -1389,7 +1390,8 @@ describe("AgentFlow", () => {
 
         // Edit the instructions and save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-        fireEvent.change(instructionsField, {target: {value: "Updated instructions for Network A."}})
+        await user.clear(instructionsField)
+        await user.type(instructionsField, "Updated instructions for Network A.")
         await user.click(screen.getByRole("button", {name: "Save"}))
 
         await waitFor(() => {
@@ -1602,7 +1604,8 @@ describe("AgentFlow", () => {
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
 
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
             const saveButton = screen.getByRole("button", {name: "Save"})
             await user.click(saveButton)
 
@@ -1646,7 +1649,8 @@ describe("AgentFlow", () => {
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
@@ -1706,9 +1710,9 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
-                target: {value: "Updated instructions"},
-            })
+            const instructionsFieldA = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsFieldA)
+            await user.type(instructionsFieldA, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
@@ -1767,9 +1771,9 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
-                target: {value: "Updated instructions"},
-            })
+            const instructionsFieldB = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsFieldB)
+            await user.type(instructionsFieldB, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
@@ -1810,7 +1814,8 @@ describe("AgentFlow", () => {
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            fireEvent.change(instructionsField, {target: {value: EDITED_INSTRUCTIONS}})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, EDITED_INSTRUCTIONS)
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
@@ -1851,7 +1856,8 @@ describe("AgentFlow", () => {
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
@@ -1912,9 +1918,9 @@ describe("AgentFlow", () => {
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            fireEvent.change(await screen.findByRole("textbox", {name: /^instructions$/iu}), {
-                target: {value: "Updated instructions"},
-            })
+            const instructionsFieldC = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsFieldC)
+            await user.type(instructionsFieldC, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
@@ -1953,7 +1959,8 @@ describe("AgentFlow", () => {
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             // Popup should close even on error (finally block)
@@ -1981,7 +1988,8 @@ describe("AgentFlow", () => {
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            fireEvent.change(instructionsField, {target: {value: "Updated instructions"}})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
