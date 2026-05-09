@@ -157,7 +157,8 @@ export const layoutRadial = (
     isAwaitingLlm: boolean,
     isAgentNetworkDesignerMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    agentIconSuggestions: AgentIconSuggestions = null
+    agentIconSuggestions: AgentIconSuggestions = null,
+    isTemporaryNetwork = false
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge[] = []
@@ -267,6 +268,7 @@ export const layoutRadial = (
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
                     agentIconSuggestion: agentIconSuggestions?.[nodeId],
+                    isTemporaryNetwork,
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
                 style: {
@@ -298,7 +300,8 @@ export const layoutLinear = (
     isAwaitingLlm: boolean,
     isAgentNetworkDesignerMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    agentIconSuggestions: AgentIconSuggestions = null
+    agentIconSuggestions: AgentIconSuggestions = null,
+    isTemporaryNetwork = false
 ): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge[] = []
@@ -324,6 +327,7 @@ export const layoutLinear = (
                 isAwaitingLlm,
                 depth: undefined, // Depth will be computed later,
                 agentIconSuggestion: agentIconSuggestions?.[nodeId],
+                isTemporaryNetwork,
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {

@@ -40,6 +40,7 @@ interface MUIDialogProps {
     className?: string
     closeable?: boolean
     contentSx?: SxProps
+    dialogSx?: SxProps
     footer?: ReactJSX.Element
     id: string
     isOpen: boolean
@@ -54,6 +55,7 @@ export const MUIDialog: FC<MUIDialogProps> = ({
     className,
     closeable = true,
     contentSx,
+    dialogSx,
     footer,
     id,
     isOpen,
@@ -70,6 +72,7 @@ export const MUIDialog: FC<MUIDialogProps> = ({
         slotProps={{
             paper: {sx: paperProps},
         }}
+        sx={dialogSx}
     >
         <StyledDialogTitle id={`${id}-title`}>{title}</StyledDialogTitle>
         {closeable && (

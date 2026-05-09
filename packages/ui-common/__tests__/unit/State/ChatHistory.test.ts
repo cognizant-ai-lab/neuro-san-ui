@@ -92,6 +92,48 @@ describe("ChatHistory", () => {
         expect(updatedHistory["agent4"]?.slyData).toEqual(slyData)
     })
 
+    it("should copy history from one agent to another", async () => {
+        useAgentChatHistoryStore.getState().updateChatHistory("agentA", TEST_MESSAGES)
+        useAgentChatHistoryStore.getState().updateSlyData("agentA", {key: "value"})
+
+        useAgentChatHistoryStore.getState().copyHistory("agentA", "agentB")
+
+        const copiedHistory = useAgentChatHistoryStore.getState().history
+        expect(copiedHistory["agentB"]?.chatHistory).toEqual(TEST_MESSAGES)
+        expect(copiedHistory["agentB"]?.slyData).toEqual({key: "value"})
+        // Original should still be present
+        expect(copiedHistory["agentA"]?.chatHistory).toEqual(TEST_MESSAGES)
+    })
+
+    it("strips agent_reservations from slyData when copying history", async () => {
+        // agent_reservations encodes the old network's reservation ID. If copied and bounced back to the
+        // backend on the next chat, the backend echoes the old reservation which then overwrites the new
+        // network in the temp-networks store via onChunkReceived.
+        useAgentChatHistoryStore.getState().updateSlyData("agentA", {
+            agent_reservations: [{reservation_id: "old-res-123", lifetime_in_seconds: 300}],
+            chat_context: "some context",
+        })
+
+        useAgentChatHistoryStore.getState().copyHistory("agentA", "agentB")
+
+        const copied = useAgentChatHistoryStore.getState().history["agentB"]?.slyData
+        expect(copied).not.toHaveProperty("agent_reservations")
+        expect(copied).toEqual({chat_context: "some context"})
+        // Source should be untouched
+        const source = useAgentChatHistoryStore.getState().history["agentA"]?.slyData
+        expect(source).toHaveProperty("agent_reservations")
+    })
+
+    it("should be a no-op when copying from a non-existent agent", async () => {
+        const historyBefore = useAgentChatHistoryStore.getState().history
+
+        useAgentChatHistoryStore.getState().copyHistory("nonexistent", "agentC")
+
+        const historyAfter = useAgentChatHistoryStore.getState().history
+        expect(historyAfter).toEqual(historyBefore)
+        expect(historyAfter["agentC"]).toBeUndefined()
+    })
+
     it("calls removeItem on clearStorage", () => {
         const removeItemSpy = jest.spyOn(indexedDBStorage, "removeItem").mockResolvedValueOnce()
         useAgentChatHistoryStore.persist.clearStorage()

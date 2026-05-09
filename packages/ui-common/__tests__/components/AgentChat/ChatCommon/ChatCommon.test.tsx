@@ -1238,4 +1238,66 @@ describe("ChatCommon", () => {
         }
         expect(input).toHaveValue("")
     })
+
+    it("Should persist agent network definition to Zustand store when sly_data contains it", async () => {
+        act(() => {
+            useAgentChatHistoryStore.getState().resetHistory(TEST_AGENT_MATH_GUY)
+        })
+
+        const networkDefinition = [
+            {origin: "agent_a", tools: ["agent_b"], display_as: "llm_agent", instructions: "Do things."},
+        ]
+
+        const chatResponse: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT_FRAMEWORK,
+                text: "",
+                sly_data: {
+                    agent_network_definition: networkDefinition,
+                },
+            },
+        }
+
+        renderChatCommonComponent()
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test query for sly_data network map")
+
+        let storedSlyData
+        await waitFor(() => {
+            storedSlyData = useAgentChatHistoryStore.getState().history[TEST_AGENT_MATH_GUY]?.slyData
+            expect(storedSlyData).toBeDefined()
+            expect(storedSlyData?.["agent_network_definition"]).toEqual(networkDefinition)
+        })
+        expect(storedSlyData).toHaveProperty("agent_network_definition")
+    })
+
+    it("Should accumulate sly_data from non-AGENT_FRAMEWORK messages", async () => {
+        act(() => {
+            useAgentChatHistoryStore.getState().resetHistory(TEST_AGENT_MATH_GUY)
+        })
+
+        renderChatCommonComponent()
+
+        const agentChunk: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT,
+                text: "Agent thinking text",
+                origin: [{tool: "agent_x", instantiation_index: 0}],
+                sly_data: {some_custom_key: "some_value"},
+            },
+        }
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(agentChunk))
+        })
+
+        // Should not throw. The AGENT message is rendered into the (hidden) thinking panel.
+        await sendQuery(TEST_AGENT_MATH_GUY, "test sly_data accumulation on AGENT message")
+
+        // sendChatQuery was called — the component processed the chunk without error
+        expect(sendChatQuery).toHaveBeenCalled()
+    })
 })

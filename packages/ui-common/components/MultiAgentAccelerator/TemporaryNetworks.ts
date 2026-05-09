@@ -1,5 +1,11 @@
-import {AGENT_NETWORK_HOCON, AGENT_RESERVATIONS_KEY} from "./const"
+import {
+    AGENT_NETWORK_HOCON,
+    AGENT_RESERVATIONS_KEY,
+    AgentNetworkDefinitionEntry,
+    TEMPORARY_NETWORK_FOLDER,
+} from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {extractNetworkNameFromReservationId, TemporaryNetwork} from "../../state/TemporaryNetworks"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -51,3 +57,34 @@ export const extractNetworkHocon = (message: ChatMessage): string | null => {
         return null
     }
 }
+
+/**
+ * Converts a list of agent reservations received from the backend into TemporaryNetwork objects that can be
+ * displayed in the UI.
+ * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
+ * @param networkHocon Optional network HOCON string associated with the reservations.
+ * @param agentNetworkDefinition Optional agent network definition entries.
+ * @param agentNetworkName Optional backend canonical network name used to match / deduplicate networks.
+ *   When omitted, the name is derived from the reservation_id via {@link extractNetworkNameFromReservationId}.
+ * @returns List of TemporaryNetwork objects ready for the store.
+ */
+export const convertReservationsToNetworks = (
+    agentReservations: AgentReservation[],
+    networkHocon: string | null,
+    agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
+    agentNetworkName?: string
+): TemporaryNetwork[] => {
+    return agentReservations.map((reservation) => ({
+        reservation,
+        agentInfo: {
+            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+        },
+        // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
+        // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
+        agentNetworkName: agentNetworkName ?? extractNetworkNameFromReservationId(reservation.reservation_id),
+        networkHocon,
+        agentNetworkDefinition,
+    }))
+}
+
+export {extractNetworkNameFromReservationId} from "../../state/TemporaryNetworks"

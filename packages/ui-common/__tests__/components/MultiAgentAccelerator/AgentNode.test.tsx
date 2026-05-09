@@ -174,6 +174,7 @@ describe("AgentNode", () => {
     it.each([
         ["llm_agent", "AutoAwesomeIcon"],
         ["external_agent", "TravelExploreIcon"],
+        ["langchain_tool", "HandymanIcon"],
         ["coded_tool", "HandymanIcon"],
         ["unknown_display_as_value", "AutoAwesomeIcon"],
     ])("renders correct icon for displayAs=%s", async (displayAs, expectedTestId) => {
@@ -192,5 +193,17 @@ describe("AgentNode", () => {
         renderAgentNode({agentIconSuggestion: "NotARealMuiIconAtAll"})
         expect(warnSpy).toHaveBeenCalledWith("Invalid MUI icon suggestion: NotARealMuiIconAtAll")
         warnSpy.mockRestore()
+    })
+
+    it.each([
+        ["temporary network", true, "pointer"],
+        ["non-temporary network", false, "grab"],
+        ["no isTemporaryNetwork prop (default)", undefined, "grab"],
+    ])("cursor is %s when isTemporaryNetwork=%s", (_label, isTemporaryNetwork, expectedCursor) => {
+        renderAgentNode({depth: 1, isTemporaryNetwork})
+
+        const agentNodeDiv = screen.getByTestId(AGENT_ID)
+        const style = window.getComputedStyle(agentNodeDiv)
+        expect(style.cursor).toBe(expectedCursor)
     })
 })

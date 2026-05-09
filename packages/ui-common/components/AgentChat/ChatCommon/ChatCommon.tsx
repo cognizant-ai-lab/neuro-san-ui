@@ -148,6 +148,11 @@ export interface ChatCommonProps {
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
 
     /**
+     * Optional greetings for specific agents to display
+     */
+    readonly agentGreetings?: Partial<Record<CombinedAgentType, string>>
+
+    /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
      * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
      */
@@ -172,6 +177,12 @@ export interface ChatCommonProps {
      * The neuro-san server URL
      */
     readonly neuroSanURL?: string
+
+    /**
+     * Extra sly_data entries to merge into each outgoing request. Used by parent components (e.g. temp networks)
+     * to re-supply data that lives outside the IndexedDB slyData store (e.g. localStorage).
+     */
+    readonly extraSlyData?: Record<string, unknown>
 }
 
 // Key for the chat history, which gets special treatment; always visible even if "show thinking" is off.
@@ -210,10 +221,12 @@ const MAX_CHAT_OUTPUT_ITEMS = 50
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const {
+        agentGreetings = EMPTY,
         agentPlaceholders = EMPTY,
         backgroundColor,
         currentUser,
         extraParams,
+        extraSlyData,
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
@@ -542,7 +555,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         )
 
         // Random greeting
-        const greeting = AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
+        const greeting =
+            agentGreetings[targetAgent] ?? AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
         updateOutput(greeting)
         // eslint-disable-next-line react-hooks/exhaustive-deps -- updateOutput is stable (empty useCallback deps)
     }, [agentDisplayName, targetAgent])
@@ -597,7 +611,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...agentChatHistory?.slyData, login: currentUser}
+                        const slyDataWithUserName = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
@@ -637,6 +651,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             agentChatHistory,
             currentUser,
             extraParams,
+            extraSlyData,
             handleChunk,
             legacyAgentEndpoint,
             neuroSanURL,
