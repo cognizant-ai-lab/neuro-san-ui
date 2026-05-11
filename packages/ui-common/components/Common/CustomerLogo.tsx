@@ -45,6 +45,7 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoServic
     const customer = useSettingsStore((state) => state.settings.branding.customer)
     const iconSuggestion = useSettingsStore((state) => state.settings.branding.iconSuggestion)
     const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
+    // null: render Cognizant logo (default)
     if (logoSource === null) {
         return customer?.trim().length ? null : getCognizantLogoImage()
     }
