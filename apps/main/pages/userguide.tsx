@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import GlobalStyles from "@mui/material/GlobalStyles"
 import {useEffect, useState} from "react"
 import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
@@ -21,6 +22,14 @@ import rehypeSlug from "rehype-slug"
 import remarkToc from "remark-toc"
 
 import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
+
+const USER_GUIDE_BODY_LAYOUT = {
+    "#body-container": {
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+    },
+} as const
 
 // Path to user guide Markdown doc on the server
 const USER_GUIDE_PATH = "user_guide.md"
@@ -57,14 +66,17 @@ export default function UserGuide() {
     }, [])
 
     return (
-        <StyledMarkdownContainer id="user-guide-container">
-            <ReactMarkdown
-                rehypePlugins={[rehypeRaw, rehypeSlug]}
-                remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
-            >
-                {userGuide}
-            </ReactMarkdown>
-        </StyledMarkdownContainer>
+        <>
+            <GlobalStyles styles={USER_GUIDE_BODY_LAYOUT} />
+            <StyledMarkdownContainer id="user-guide-container">
+                <ReactMarkdown
+                    rehypePlugins={[rehypeRaw, rehypeSlug]}
+                    remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
+                >
+                    {userGuide}
+                </ReactMarkdown>
+            </StyledMarkdownContainer>
+        </>
     )
 }
 

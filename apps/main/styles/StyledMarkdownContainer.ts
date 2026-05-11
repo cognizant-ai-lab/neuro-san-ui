@@ -20,6 +20,10 @@ import {styled} from "@mui/material/styles"
 export const StyledMarkdownContainer = styled(Box)(() => ({
     fontSize: "1rem",
     lineHeight: 1.75,
+    flex: 1,
+    minHeight: 0,
+    overflowY: "auto",
+    paddingRight: "1rem",
 
     "& h1": {
         fontSize: "2.25rem",
