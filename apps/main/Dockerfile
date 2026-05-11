@@ -36,6 +36,7 @@ COPY .yarnrc.yml ./
 COPY package.json ./
 COPY yarn.lock ./
 COPY tsconfig.json ./
+COPY packages/dev-common/package.json ./packages/dev-common/
 COPY packages/ui-common ./packages/ui-common
 COPY apps/main/package.json ./apps/main/package.json
 
@@ -60,6 +61,7 @@ WORKDIR /app
 COPY .yarnrc.yml ./
 COPY package.json ./
 COPY packages/ui-common/package.json ./packages/ui-common/package.json
+COPY packages/dev-common/package.json ./packages/dev-common/package.json
 COPY apps/main/package.json ./apps/main/package.json
 COPY yarn.lock ./
 
