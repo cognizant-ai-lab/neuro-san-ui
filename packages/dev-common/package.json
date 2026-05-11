@@ -19,6 +19,7 @@
         "eslint-plugin-testing-library": "*",
         "eslint-plugin-unicorn": "*",
         "globals": "*",
+        "knip": "*",
         "typescript-eslint": "*"
     },
     "repository": {
