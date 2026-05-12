@@ -119,6 +119,7 @@ jobs:
               uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
               with:
                   ref: main
+                  token: ${{ secrets.NEURO_SAN_DEPLOY_DISPATCH_TOKEN }}
 
             - name: Update package.json to release version
               run: |
