@@ -21,7 +21,14 @@ import type {KnipConfig} from "knip"
  *
  */
 
-export const config: KnipConfig = {
+/**
+ * Knip's configuration type is a bit complex, but we know that the config object we are creating here is just a
+ * plain object with string keys and unknown values. So we narrow it here to make life easier for consumer projects.
+ * Note: knip does have a RawConfiguration type, but it is not exported for external consumption.
+ */
+type RawConfiguration = Extract<KnipConfig, Record<string, unknown>>
+
+export const config: RawConfiguration = {
     // From the doc:
     // "By default, Knip does not report unused exports in entry files. When a repository (or workspace) is
     // self-contained or private, you may want to include entry files when reporting unused exports:"

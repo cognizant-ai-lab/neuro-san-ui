@@ -23,13 +23,10 @@ import type {KnipConfig} from "knip"
 
 import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
 
-const resolvedBase = typeof baseConfig === "function" ? null : baseConfig
-
 const config: KnipConfig = {
-    // eslint-disable-next-line @typescript-eslint/no-misused-spread -- we know the baseConfig is not a function
     ...baseConfig,
     ignore: [
-        ...(resolvedBase.ignore as string[]),
+        ...(baseConfig.ignore as string[]),
 
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Common/Types.ts",
@@ -38,7 +35,8 @@ const config: KnipConfig = {
         "jest_quiet.config.ts",
     ],
     ignoreDependencies: [
-        ...resolvedBase.ignoreDependencies,
+        ...baseConfig.ignoreDependencies,
+
         // Used for Speech Recognition API types
         "@types/dom-speech-recognition",
 
