@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {RawConfiguration} from "knip/dist/types/config"
+import type {KnipConfig} from "knip"
 
 /**
  * @fileoverview Knip configuration file to identify unused files and dependencies in the project.
  *
  */
 
-export const config: RawConfiguration = {
+export const config: KnipConfig = {
     // From the doc:
     // "By default, Knip does not report unused exports in entry files. When a repository (or workspace) is
     // self-contained or private, you may want to include entry files when reporting unused exports:"

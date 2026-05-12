@@ -1,11 +1,35 @@
+/*
+Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/**
+ * @fileoverview Knip configuration file to identify unused files and dependencies in the project.
+ *
+ */
+
 import type {KnipConfig} from "knip"
 
-import {config} from "./packages/dev-common/Configs/knip.config"
+import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
 
-const knipConfig: KnipConfig = {
-    ...config,
+const resolvedBase = typeof baseConfig === "function" ? null : baseConfig
+
+const config: KnipConfig = {
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread -- we know the baseConfig is not a function
+    ...baseConfig,
     ignore: [
-        ...config.ignore,
+        ...(resolvedBase.ignore as string[]),
 
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Common/Types.ts",
@@ -14,7 +38,7 @@ const knipConfig: KnipConfig = {
         "jest_quiet.config.ts",
     ],
     ignoreDependencies: [
-        ...config.ignoreDependencies,
+        ...resolvedBase.ignoreDependencies,
         // Used for Speech Recognition API types
         "@types/dom-speech-recognition",
 
@@ -52,4 +76,4 @@ const knipConfig: KnipConfig = {
     },
 }
 
-export default knipConfig
+export default config
