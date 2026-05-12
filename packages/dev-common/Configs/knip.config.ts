@@ -56,21 +56,7 @@ export const config: RawConfiguration = {
         "unresolved",
     ],
 
-    ignore: [
-        // Used in a sneaky way by jest
-        "babel.jest.config.cjs",
-    ],
+    ignore: [],
 
-    ignoreDependencies: [
-        // Used by jest
-        "@babel/core",
-        "@babel/preset-env",
-        "babel-jest",
-
-        // Used internally by eslint
-        "globals",
-
-        // Used by Jest for TS format config file
-        "ts-node",
-    ],
+    ignoreDependencies: [],
 }
