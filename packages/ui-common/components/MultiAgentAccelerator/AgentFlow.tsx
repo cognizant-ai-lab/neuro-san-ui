@@ -182,6 +182,42 @@ const streamNetworkDesignerUpdate = async (
     return newNetworks
 }
 
+/**
+ * Returns a new definition array with the target agent's instructions and description updated.
+ * All other entries pass through unchanged.
+ */
+const buildUpdatedDefinition = (
+    currentDefinitions: AgentNetworkDefinitionEntry[],
+    agentId: string,
+    instructions: string,
+    description: string
+): AgentNetworkDefinitionEntry[] =>
+    currentDefinitions.map((entry) => (entry.origin === agentId ? {...entry, instructions, description} : entry))
+
+/** Finds the temp network entry for the given network ID. */
+const findTempNetwork = <T extends {agentInfo: {agent_name?: string}}>(
+    tempNetworks: T[],
+    networkId: string | undefined
+): T | undefined => (networkId ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId) : undefined)
+
+/** Creates an AbortController with a built-in timeout that fires a TimeoutError. */
+const createTimedAbortController = (timeoutMs: number): {controller: AbortController; cancelTimeout: () => void} => {
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(new DOMException("Save timed out", "TimeoutError")), timeoutMs)
+    return {controller, cancelTimeout: () => clearTimeout(id)}
+}
+
+/** Logs and notifies about a save error. Suppresses AbortError (user-cancelled). */
+const notifySaveError = (agentName: string, e: unknown): void => {
+    if (e instanceof DOMException && e.name === "AbortError") return
+    console.error("Failed to submit agent network update:", e)
+    const detail =
+        e instanceof DOMException && e.name === "TimeoutError"
+            ? "The request timed out waiting for the server. Please try again."
+            : String(e)
+    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
+}
+
 // #endregion: Helpers
 
 export const AgentFlow: FC<AgentFlowProps> = ({
@@ -415,16 +451,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
-            // Popup is only available for temporary networks.
             if (!isTemporaryNetwork) return
-
-            // Only llm_agent nodes support instructions/description editing.
             if (!isEditableAgent(node.data.displayAs)) return
 
-            // Find the clicked agent's existing instructions and description from the temp network definition.
-            const currentTempNetwork = networkId
-                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
-                : undefined
+            const currentTempNetwork = findTempNetwork(tempNetworks, networkId)
             const found = (currentTempNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === node.id)
 
             setSelectedAgent({
@@ -477,78 +507,59 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         [networkId, onNetworkReplaced]
     )
 
+    /**
+     * Manages the AbortController, timeout, streaming call, error handling, and cleanup
+     * for a single agent-save attempt. Closes the popup when done.
+     */
+    const executeAgentSave = useCallback(
+        async (
+            agentName: string,
+            updated: AgentNetworkDefinitionEntry[],
+            currentAgentNetworkName: string | undefined
+        ): Promise<void> => {
+            if (!neuroSanURL || !currentUser || updated.length === 0) return
+
+            setIsSavingAgent(true)
+            const {controller, cancelTimeout} = createTimedAbortController(60_000)
+            saveAbortControllerRef.current = controller
+            try {
+                const newNetworks = await streamNetworkDesignerUpdate(
+                    neuroSanURL,
+                    controller.signal,
+                    agentName,
+                    updated,
+                    currentAgentNetworkName,
+                    currentUser
+                )
+                applyNetworkSaveResult(agentName, newNetworks, currentAgentNetworkName)
+            } catch (e: unknown) {
+                notifySaveError(agentName, e)
+            } finally {
+                cancelTimeout()
+                saveAbortControllerRef.current = null
+                setIsSavingAgent(false)
+            }
+        },
+        [neuroSanURL, currentUser, applyNetworkSaveResult]
+    )
+
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
             if (!selectedAgent) return
 
-            // Find the temp network entry for the currently selected network.
-            const currentTempNetwork = networkId
-                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
-                : undefined
-
-            // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
-            const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
-            const updated = currentDefinitions.map((entry) =>
-                entry.origin === selectedAgent.agentId
-                    ? {...entry, instructions: instructionsText, description: descriptionText}
-                    : entry
+            const currentTempNetwork = findTempNetwork(tempNetworks, networkId)
+            const updated = buildUpdatedDefinition(
+                currentTempNetwork?.agentNetworkDefinition ?? [],
+                selectedAgent.agentId,
+                instructionsText,
+                descriptionText
             )
-            if (networkId) {
-                updateTempNetworkDefinition(networkId, updated)
-            }
+            if (networkId) updateTempNetworkDefinition(networkId, updated)
 
-            // POST the updated definition to the Agent Network Designer and wait for the response.
-            // The backend is immutable for temporary networks, so a new reservation will always be created.
-            // We need to capture it and replace the old network in the store.
-            if (!neuroSanURL || !currentUser || updated.length === 0) {
-                setIsPopupOpen(false)
-                return
-            }
-            setIsSavingAgent(true)
-            const saveController = new AbortController()
-            saveAbortControllerRef.current = saveController
-            // 60-second hard timeout — belt-and-suspenders in case the server never closes the stream.
-            const saveTimeoutId = setTimeout(
-                () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
-                60_000
-            )
-            try {
-                const newNetworksFromSave = await streamNetworkDesignerUpdate(
-                    neuroSanURL,
-                    saveController.signal,
-                    agentName,
-                    updated,
-                    currentTempNetwork?.agentNetworkName,
-                    currentUser
-                )
-                applyNetworkSaveResult(agentName, newNetworksFromSave, currentTempNetwork?.agentNetworkName)
-            } catch (e: unknown) {
-                const isAbort = e instanceof DOMException && e.name === "AbortError"
-                const isTimeout = e instanceof DOMException && e.name === "TimeoutError"
-                if (!isAbort) {
-                    console.error("Failed to submit agent network update:", e)
-                    const detail = isTimeout
-                        ? "The request timed out waiting for the server. Please try again."
-                        : String(e)
-                    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
-                }
-                // isAbort: user dismissed the dialog — no toast needed.
-            } finally {
-                clearTimeout(saveTimeoutId)
-                saveAbortControllerRef.current = null
-                setIsSavingAgent(false)
-                setIsPopupOpen(false)
-            }
+            await executeAgentSave(agentName, updated, currentTempNetwork?.agentNetworkName)
+            setIsPopupOpen(false)
         },
-        [
-            selectedAgent,
-            tempNetworks,
-            updateTempNetworkDefinition,
-            neuroSanURL,
-            currentUser,
-            networkId,
-            applyNetworkSaveResult,
-        ]
+        [selectedAgent, tempNetworks, updateTempNetworkDefinition, networkId, executeAgentSave]
     )
 
     const edges = layoutResult.edges
