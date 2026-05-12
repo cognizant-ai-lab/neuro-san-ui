@@ -65,7 +65,7 @@ import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
@@ -101,8 +101,6 @@ export interface AgentFlowProps {
 
 type Layout = "radial" | "linear"
 
-type NetworkList = ReturnType<typeof convertReservationsToNetworks>
-
 // #endregion: Types
 
 // #region: Constants
@@ -115,7 +113,7 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 // #region: Helpers
 
 /** Merges incoming networks into target, keeping the entry with the highest expiration time. */
-const mergeNetworks = (target: NetworkList, incoming: NetworkList): void => {
+const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNetwork[]): void => {
     for (const n of incoming) {
         const key = n.agentNetworkName ?? n.reservation.reservation_id
         const existingIdx = target.findIndex((e) => (e.agentNetworkName ?? e.reservation.reservation_id) === key)
@@ -140,8 +138,8 @@ const streamNetworkDesignerUpdate = async (
     updated: AgentNetworkDefinitionEntry[],
     agentNetworkName: string | undefined,
     currentUser: string
-): Promise<NetworkList> => {
-    const newNetworks: NetworkList = []
+): Promise<TemporaryNetwork[]> => {
+    const newNetworks: TemporaryNetwork[] = []
 
     await sendChatQuery(
         neuroSanURL,
@@ -482,7 +480,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     /** Applies the networks returned by the designer: upserts them and triggers navigation if needed. */
     const applyNetworkSaveResult = useCallback(
-        (agentName: string, newNetworksFromSave: NetworkList, currentAgentNetworkName: string | undefined) => {
+        (agentName: string, newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined) => {
             if (newNetworksFromSave.length === 0) {
                 sendNotification(
                     NotificationType.error,
