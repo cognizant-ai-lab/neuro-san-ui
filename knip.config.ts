@@ -28,6 +28,9 @@ const config: KnipConfig = {
     ignore: [
         ...(baseConfig.ignore as string[]),
 
+        // Used in a sneaky way by jest
+        "babel.jest.config.cjs",
+
         // Temporarily exclude for transition to monorepo (legit issue)
         "packages/ui-common/components/AgentChat/Common/Types.ts",
 
@@ -37,8 +40,19 @@ const config: KnipConfig = {
     ignoreDependencies: [
         ...baseConfig.ignoreDependencies,
 
+        // Used internally by eslint
+        "globals",
+
+        // Used by jest
+        "@babel/core",
+        "@babel/preset-env",
+        "babel-jest",
+
         // Used for Speech Recognition API types
         "@types/dom-speech-recognition",
+
+        // Used internally by eslint
+        "globals",
 
         // Used by do_openapi_generate.sh
         "openapi-typescript",

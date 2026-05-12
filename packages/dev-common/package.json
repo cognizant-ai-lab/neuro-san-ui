@@ -34,6 +34,10 @@
         "./eslint": {
             "types": "./Configs/eslint.config.d.mts",
             "default": "./Configs/eslint.config.mjs"
+        },
+        "./knip": {
+            "types": "./Configs/knip.config.ts",
+            "default": "./Configs/knip.config.ts"
         }
     }
 }
