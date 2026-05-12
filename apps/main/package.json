@@ -37,7 +37,6 @@
         "@testing-library/user-event": "catalog:default",
         "@types/lodash-es": "catalog:default",
         "@types/react": "catalog:default",
-        "eslint": "catalog:default",
         "node-mocks-http": "1.17.2",
         "typescript": "catalog:default"
     }
