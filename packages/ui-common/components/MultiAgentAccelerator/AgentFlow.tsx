@@ -150,22 +150,26 @@ const streamNetworkDesignerUpdate = async (
         `Update instructions for agent "${agentName}"`,
         AGENT_NETWORK_DESIGNER_ID,
         (chunk: string) => {
-            const chatMessage = chatMessageFromChunk(chunk)
-            if (!chatMessage) return
+            try {
+                const chatMessage = chatMessageFromChunk(chunk)
+                if (!chatMessage) return
 
-            const reservations = extractReservations(chatMessage)
-            if (reservations.length === 0) return
+                const reservations = extractReservations(chatMessage)
+                if (reservations.length === 0) return
 
-            const networkHocon = extractNetworkHocon(chatMessage)
-            // Always use the user's edited definition as the authoritative value.
-            // The backend may not echo agent_network_definition back, may return
-            // an empty array, or may return the pre-edit version.
-            const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
-            // Prefer the locally-known name so upsert can match the existing entry even
-            // when the backend response omits AGENT_NETWORK_NAME_KEY.
-            const networkName = agentNetworkName ?? agentNetworkNameFromMessage
-            const converted = convertReservationsToNetworks(reservations, networkHocon, updated, networkName)
-            mergeNetworks(newNetworks, converted)
+                const networkHocon = extractNetworkHocon(chatMessage)
+                // Always use the user's edited definition as the authoritative value.
+                // The backend may not echo agent_network_definition back, may return
+                // an empty array, or may return the pre-edit version.
+                const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
+                // Prefer the locally-known name so upsert can match the existing entry even
+                // when the backend response omits AGENT_NETWORK_NAME_KEY.
+                const networkName = agentNetworkName ?? agentNetworkNameFromMessage
+                const converted = convertReservationsToNetworks(reservations, networkHocon, updated, networkName)
+                mergeNetworks(newNetworks, converted)
+            } catch (e: unknown) {
+                console.warn("Failed to process chunk from network designer:", e)
+            }
         },
         null,
         {
