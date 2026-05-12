@@ -68,7 +68,7 @@ export default function UserGuide() {
     return (
         <>
             <GlobalStyles styles={USER_GUIDE_BODY_LAYOUT} />
-            <StyledMarkdownContainer id="user-guide-container">
+            <StyledMarkdownContainer id="user-guide-container" sx={{flex: 1, minHeight: 0, overflowY: "auto", paddingRight: "1rem"}}>
                 <ReactMarkdown
                     rehypePlugins={[rehypeRaw, rehypeSlug]}
                     remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
