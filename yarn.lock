@@ -1431,7 +1431,7 @@ __metadata:
     "@next/eslint-plugin-next": "npm:16.2.4"
     "@testing-library/jest-dom": "npm:6.6.4"
     "@types/dom-speech-recognition": "npm:0.0.6"
-    "@types/jest": "npm:30.0.0"
+    "@types/jest": "catalog:default"
     "@types/node": "catalog:default"
     "@types/react": "catalog:default"
     babel-jest: "catalog:default"
@@ -1481,7 +1481,6 @@ __metadata:
     "@testing-library/user-event": "catalog:default"
     "@types/lodash-es": "catalog:default"
     "@types/react": "catalog:default"
-    eslint: "catalog:default"
     http-status: "catalog:default"
     lodash-es: "catalog:default"
     next: "catalog:default"
@@ -2618,6 +2617,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jest/schemas@npm:30.4.1":
+  version: 30.4.1
+  resolution: "@jest/schemas@npm:30.4.1"
+  dependencies:
+    "@sinclair/typebox": "npm:^0.34.0"
+  checksum: 10c0/96f388ebfc1974457fcbde2ad36c40a0b549cba3f624fe8d9d6e5903a152dc75e4043f4ac9ac7668622f2ecb0f9a4dcb9a38edf3bc0d52b82045b2bb2b69b72a
+  languageName: node
+  linkType: hard
+
 "@jest/snapshot-utils@npm:30.4.0":
   version: 30.4.0
   resolution: "@jest/snapshot-utils@npm:30.4.0"
@@ -2714,6 +2722,21 @@ __metadata:
     "@types/yargs": "npm:^17.0.33"
     chalk: "npm:^4.1.2"
   checksum: 10c0/d4c6dace63f1f2bcdf03f711c56e7813daeb4545221658eacd4f674203855a4985b0f34e351ce5491ffde196751660723fbd9f4d6292d1b03fad436bd15a8f92
+  languageName: node
+  linkType: hard
+
+"@jest/types@npm:30.4.1":
+  version: 30.4.1
+  resolution: "@jest/types@npm:30.4.1"
+  dependencies:
+    "@jest/pattern": "npm:30.4.0"
+    "@jest/schemas": "npm:30.4.1"
+    "@types/istanbul-lib-coverage": "npm:^2.0.6"
+    "@types/istanbul-reports": "npm:^3.0.4"
+    "@types/node": "npm:*"
+    "@types/yargs": "npm:^17.0.33"
+    chalk: "npm:^4.1.2"
+  checksum: 10c0/4c79f6dbdb1c7eaab5da255fc696c7cae744759d4020e42da8aa63b37fe55ce594be73075fe1ee5407dd59d7e47975be9f674bfc81e91bae2c89c62d27ba55a1
   languageName: node
   linkType: hard
 
