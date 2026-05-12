@@ -21,35 +21,13 @@ limitations under the License.
 
 import type {KnipConfig} from "knip"
 
+import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
+
 const config: KnipConfig = {
-    // From the doc:
-    // "By default, Knip does not report unused exports in entry files. When a repository (or workspace) is
-    // self-contained or private, you may want to include entry files when reporting unused exports:"
-    includeEntryExports: true,
-
-    // Treat hints as errors (will make exit code non-zero)
-    treatConfigHintsAsErrors: true,
-
-    // Opt-in to all issues types
-    include: [
-        "binaries",
-        "catalog",
-        "dependencies",
-        "devDependencies",
-        "duplicates",
-        "enumMembers",
-        "exports",
-        "files",
-        "namespaceMembers",
-        "nsExports",
-        "nsTypes",
-        "optionalPeerDependencies",
-        "types",
-        "unlisted",
-        "unresolved",
-    ],
-
+    ...baseConfig,
     ignore: [
+        ...(baseConfig.ignore as string[]),
+
         // Used in a sneaky way by jest
         "babel.jest.config.cjs",
 
@@ -58,21 +36,20 @@ const config: KnipConfig = {
 
         // Used by CommitCheck script
         "jest_quiet.config.ts",
-
-        // Generated type declaration for published dev-common eslint config; consumed by external projects
-        "packages/dev-common/Configs/eslint.config.d.mts",
     ],
-
     ignoreDependencies: [
+        ...baseConfig.ignoreDependencies,
+
+        // Used internally by eslint
+        "globals",
+
         // Used by jest
         "@babel/core",
         "@babel/preset-env",
+        "babel-jest",
 
         // Used for Speech Recognition API types
         "@types/dom-speech-recognition",
-
-        // Used by Jest
-        "babel-jest",
 
         // Used internally by eslint
         "globals",
@@ -105,11 +82,8 @@ const config: KnipConfig = {
     ],
 
     workspaces: {
-        "apps/main": {
-            ignoreDependencies: [
-                // Declared to satisfy eslint-config-next peer dep; lint itself runs from root
-                "eslint",
-            ],
+        "packages/dev-common": {
+            ignore: ["Configs/eslint.config.d.mts"],
         },
     },
 }

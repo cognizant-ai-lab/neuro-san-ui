@@ -100,10 +100,9 @@ export default defineConfig([
             parserOptions: {
                 ecmaFeatures: {jsx: true},
                 projectService: {
-                    allowDefaultProject: ["*.mjs", "*.ts"],
+                    allowDefaultProject: ["knip.config.ts"],
                     defaultProject: "../../../tsconfig.json",
                 },
-                tsconfigRootDir: import.meta.dirname,
             },
         },
 
@@ -596,6 +595,14 @@ export default defineConfig([
             "no-class-assign": "error",
             "import/no-anonymous-default-export": "error",
             "@typescript-eslint/no-empty-interface": "error",
+        },
+    },
+    {
+        files: ["**/eslint.config.mjs"],
+        languageOptions: {
+            parserOptions: {
+                projectService: false,
+            },
         },
     },
 ])
