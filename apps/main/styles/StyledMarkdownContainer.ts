@@ -21,7 +21,6 @@ export const StyledMarkdownContainer = styled(Box)(() => ({
     fontSize: "1rem",
     lineHeight: 1.75,
 
-
     "& h1": {
         fontSize: "2.25rem",
         fontWeight: 800,
