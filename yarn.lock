@@ -1413,6 +1413,7 @@ __metadata:
     eslint-plugin-testing-library: "*"
     eslint-plugin-unicorn: "*"
     globals: "*"
+    knip: "*"
     typescript-eslint: "*"
   languageName: unknown
   linkType: soft
