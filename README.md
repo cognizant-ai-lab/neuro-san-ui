@@ -24,6 +24,8 @@ Depending on your role and your objective, you will want to refer to one of the 
 
 # Role-Based Guides
 
+Select the guide that best matches your role and what you want to accomplish:
+
 ## DevOps/Deployment
 
 You are a DevOps engineer who wants to deploy a cloud instance of the UI.
