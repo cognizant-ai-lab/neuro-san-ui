@@ -324,7 +324,9 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                             maxWidth={false}
                             sx={{
                                 border: `solid 1px ${theme.palette.grey[300]}`,
+                                display: "flex",
                                 flex: 1,
+                                flexDirection: "column",
                                 minHeight: "90%",
                             }}
                         >
