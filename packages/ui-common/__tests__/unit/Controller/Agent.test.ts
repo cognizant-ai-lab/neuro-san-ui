@@ -17,6 +17,7 @@ limitations under the License.
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
+import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,
     getAgentNetworks,
@@ -283,7 +284,7 @@ describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
     it("calls sendChatQuery with the designer agent ID and correct sly_data", async () => {
         const signal = new AbortController().signal
         const onChunk = jest.fn()
-        const updated = [{origin: "myAgent", tools: [], instructions: "Do stuff."}]
+        const updated: AgentNetworkDefinitionEntry[] = [{origin: "myAgent", tools: [], instructions: "Do stuff."}]
 
         ;(sendLlmRequest as jest.Mock).mockImplementation((callback) => {
             callback("chunk1")
@@ -300,7 +301,9 @@ describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
         )
 
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
-        const [, , fetchUrl, requestBody] = (sendLlmRequest as jest.Mock).mock.calls[0]
+        const callArgs = (sendLlmRequest as jest.Mock).mock.calls[0]
+        const fetchUrl = callArgs[2]
+        const requestBody = callArgs[3]
         expect(fetchUrl).toContain("agent_network_designer")
         expect(requestBody).toMatchObject({
             sly_data: expect.objectContaining({
@@ -314,7 +317,7 @@ describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
 
     it("omits agent_network_name from sly_data when not provided", async () => {
         const signal = new AbortController().signal
-        const updated = [{origin: "myAgent", tools: []}]
+        const updated: AgentNetworkDefinitionEntry[] = [{origin: "myAgent", tools: []}]
 
         ;(sendLlmRequest as jest.Mock).mockResolvedValue(undefined)
 
@@ -328,7 +331,7 @@ describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
             jest.fn()
         )
 
-        const [, , , requestBody] = (sendLlmRequest as jest.Mock).mock.calls[0]
+        const requestBody = (sendLlmRequest as jest.Mock).mock.calls[0][3]
         expect(requestBody.sly_data).not.toHaveProperty("agent_network_name")
     })
 })
