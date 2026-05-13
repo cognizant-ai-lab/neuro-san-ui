@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import "@xyflow/react/dist/style.css"
-
 import "../styles/globals.css"
 
 import type {EnvironmentResponse} from "./api/environment/Types"
