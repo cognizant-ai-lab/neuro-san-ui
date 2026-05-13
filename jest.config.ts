@@ -31,7 +31,6 @@ const esmPackagesToTransform = [
     "mdast.*",
     "parse-.*",
     "property-.*",
-    "react-syntax-highlighter",
     "refractor",
     "space-.*",
 ]
