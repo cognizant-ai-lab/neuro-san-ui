@@ -26,7 +26,7 @@ import {AgentConversation} from "../../../components/MultiAgentAccelerator/Agent
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
-import {sendChatQuery} from "../../../controller/agent/Agent"
+import {sendNetworkDesignerUpdate} from "../../../controller/agent/Agent"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../Theme/Palettes"
@@ -1572,15 +1572,15 @@ describe("AgentFlow", () => {
         const NEW_NETWORK_ID = `temporary/${NEW_RESERVATION_ID}`
 
         beforeEach(() => {
-            // Default: sendChatQuery resolves immediately without emitting chunks
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
+            // Default: sendNetworkDesignerUpdate resolves immediately without emitting chunks
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockResolvedValue(undefined)
         })
 
         it("awaits sendChatQuery when neuroSanURL and currentUser are provided", async () => {
             // sendNotification calls console.debug internally; silence it for this test
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             let resolveQuery: () => void
-            ;(sendChatQuery as jest.Mock).mockReturnValue(
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockReturnValue(
                 new Promise<void>((resolve) => {
                     resolveQuery = resolve
                 })
@@ -1623,14 +1623,16 @@ describe("AgentFlow", () => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
-            expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            expect(sendNetworkDesignerUpdate).toHaveBeenCalledTimes(1)
             consoleDebugSpy.mockRestore()
         })
 
         it("replaces the old network with the new one when a reservation is received", async () => {
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockImplementation(
+                async (_url, _signal, _agentName, _updated, _networkName, _currentUser, onChunk) => {
+                    onChunk(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
+                }
+            )
 
             act(() => {
                 useTempNetworksStore
@@ -1686,11 +1688,13 @@ describe("AgentFlow", () => {
                     },
                 })
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // old echo first, new reservation second
-                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
-                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
-            })
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockImplementation(
+                async (_url, _signal, _agentName, _updated, _networkName, _currentUser, onChunk) => {
+                    // old echo first, new reservation second
+                    onChunk(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
+                    onChunk(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
+                }
+            )
 
             act(() => {
                 useTempNetworksStore
@@ -1747,11 +1751,13 @@ describe("AgentFlow", () => {
                     },
                 })
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // new reservation first, old echo second (reversed — the problematic order)
-                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
-                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
-            })
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockImplementation(
+                async (_url, _signal, _agentName, _updated, _networkName, _currentUser, onChunk) => {
+                    // new reservation first, old echo second (reversed — the problematic order)
+                    onChunk(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
+                    onChunk(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
+                }
+            )
 
             act(() => {
                 useTempNetworksStore
@@ -1788,9 +1794,11 @@ describe("AgentFlow", () => {
 
         it("new network carries the edited definition when backend does not echo it back", async () => {
             // Backend returns a reservation but no agent_network_definition in sly_data
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockImplementation(
+                async (_url, _signal, _agentName, _updated, _networkName, _currentUser, onChunk) => {
+                    onChunk(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
+                }
+            )
 
             const EDITED_INSTRUCTIONS = "Eat fish and talk about fish"
             act(() => {
@@ -1832,9 +1840,11 @@ describe("AgentFlow", () => {
         })
 
         it("calls onNetworkReplaced with old and new network IDs after a successful save", async () => {
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockImplementation(
+                async (_url, _signal, _agentName, _updated, _networkName, _currentUser, onChunk) => {
+                    onChunk(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
+                }
+            )
 
             act(() => {
                 useTempNetworksStore
@@ -1865,11 +1875,11 @@ describe("AgentFlow", () => {
             })
         })
 
-        it("does not call onNetworkReplaced when sendChatQuery returns no reservations", async () => {
-            // sendChatQuery resolves without emitting any chunk (default mock)
+        it("does not call onNetworkReplaced when sendNetworkDesignerUpdate returns no reservations", async () => {
+            // sendNetworkDesignerUpdate resolves without emitting any chunk (default mock)
             // sendNotification calls console.debug internally; silence it for this test
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockResolvedValue(undefined)
 
             act(() => {
                 useTempNetworksStore
@@ -1899,10 +1909,10 @@ describe("AgentFlow", () => {
             consoleDebugSpy.mockRestore()
         })
 
-        it("shows an error toast when sendChatQuery returns no reservations", async () => {
+        it("shows an error toast when sendNetworkDesignerUpdate returns no reservations", async () => {
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             const {enqueueSnackbar} = jest.requireMock("notistack")
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockResolvedValue(undefined)
 
             act(() => {
                 useTempNetworksStore
@@ -1939,10 +1949,10 @@ describe("AgentFlow", () => {
             consoleDebugSpy.mockRestore()
         })
 
-        it("shows error notification and closes popup when sendChatQuery throws", async () => {
+        it("shows error notification and closes popup when sendNetworkDesignerUpdate throws", async () => {
             const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            ;(sendChatQuery as jest.Mock).mockRejectedValue(new Error("Network failure"))
+            ;(sendNetworkDesignerUpdate as jest.Mock).mockRejectedValue(new Error("Network failure"))
 
             act(() => {
                 useTempNetworksStore
@@ -1996,7 +2006,7 @@ describe("AgentFlow", () => {
                 expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
             })
 
-            expect(sendChatQuery).not.toHaveBeenCalled()
+            expect(sendNetworkDesignerUpdate).not.toHaveBeenCalled()
         })
     })
 })

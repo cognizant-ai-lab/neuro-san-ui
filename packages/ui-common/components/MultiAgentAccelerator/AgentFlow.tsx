@@ -45,8 +45,6 @@ import {AgentConversation} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AgentNodePopup} from "./AgentNodePopup"
 import {
-    AGENT_NETWORK_DEFINITION_KEY,
-    AGENT_NETWORK_DESIGNER_ID,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
     BASE_RADIUS,
@@ -65,8 +63,7 @@ import {
 } from "./TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
-import {sendChatQuery} from "../../controller/agent/Agent"
-import {StreamingUnit} from "../../controller/llm/LlmChat"
+import {sendNetworkDesignerUpdate} from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
@@ -118,60 +115,36 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 // #region: Helpers
 
 /**
- * Streams the Agent Network Designer endpoint with the updated definition and collects
- * the resulting reservations. Returns the deduplicated list of new networks.
+ * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
+ * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
  */
-const streamNetworkDesignerUpdate = async (
-    neuroSanURL: string,
-    signal: AbortSignal,
-    agentName: string,
+const collectNetworksFromChunk = (
+    chunk: string,
     updated: AgentNetworkDefinitionEntry[],
     agentNetworkName: string | undefined,
-    currentUser: string
-): Promise<TemporaryNetwork[]> => {
-    let newNetworks: TemporaryNetwork[] = []
+    accumulated: TemporaryNetwork[]
+): TemporaryNetwork[] => {
+    try {
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) return accumulated
 
-    await sendChatQuery(
-        neuroSanURL,
-        signal,
-        // Shouldn't have to pass a user message, but API behaves different without it
-        `Update instructions for agent "${agentName}"`,
-        AGENT_NETWORK_DESIGNER_ID,
-        (chunk: string) => {
-            try {
-                const chatMessage = chatMessageFromChunk(chunk)
-                if (!chatMessage) return
+        const reservations = extractReservations(chatMessage)
+        if (reservations.length === 0) return accumulated
 
-                const reservations = extractReservations(chatMessage)
-                if (reservations.length === 0) return
-
-                const networkHocon = extractNetworkHocon(chatMessage)
-                // Always use the user's edited definition as the authoritative value.
-                // The backend may not echo agent_network_definition back, may return
-                // an empty array, or may return the pre-edit version.
-                const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
-                // Prefer the locally-known name so upsert can match the existing entry even
-                // when the backend response omits AGENT_NETWORK_NAME_KEY.
-                const networkName = agentNetworkName ?? agentNetworkNameFromMessage
-                const converted = convertReservationsToNetworks(reservations, networkHocon, updated, networkName)
-                newNetworks = mergeNetworks(newNetworks, converted)
-            } catch (e: unknown) {
-                console.warn("Failed to process chunk from network designer:", e)
-            }
-        },
-        null,
-        {
-            [AGENT_NETWORK_DEFINITION_KEY]: updated,
-            // Use the backend's canonical name, not the local UUID-based key.
-            ...(agentNetworkName ? {[AGENT_NETWORK_NAME_KEY]: agentNetworkName} : {}),
-            // skip_designer prevents the backend from using a reasoning model for edits
-            skip_designer: true,
-        },
-        currentUser,
-        StreamingUnit.Line
-    )
-
-    return newNetworks
+        const networkHocon = extractNetworkHocon(chatMessage)
+        // Always use the user's edited definition as the authoritative value.
+        // The backend may not echo agent_network_definition back, may return
+        // an empty array, or may return the pre-edit version.
+        const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
+        // Prefer the locally-known name so upsert can match the existing entry even
+        // when the backend response omits AGENT_NETWORK_NAME_KEY.
+        const networkName = agentNetworkName ?? agentNetworkNameFromMessage
+        const converted = convertReservationsToNetworks(reservations, networkHocon, updated, networkName)
+        return mergeNetworks(accumulated, converted)
+    } catch (e: unknown) {
+        console.warn("Failed to process chunk from network designer:", e)
+        return accumulated
+    }
 }
 
 /**
@@ -515,13 +488,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             const {controller, cancelTimeout} = createTimedAbortController(60_000)
             saveAbortControllerRef.current = controller
             try {
-                const newNetworks = await streamNetworkDesignerUpdate(
+                let newNetworks: TemporaryNetwork[] = []
+                await sendNetworkDesignerUpdate(
                     neuroSanURL,
                     controller.signal,
                     agentName,
                     updated,
                     currentAgentNetworkName,
-                    currentUser
+                    currentUser,
+                    (chunk) => {
+                        newNetworks = collectNetworksFromChunk(chunk, updated, currentAgentNetworkName, newNetworks)
+                    }
                 )
                 applyNetworkSaveResult(agentName, newNetworks, currentAgentNetworkName)
             } catch (e: unknown) {
