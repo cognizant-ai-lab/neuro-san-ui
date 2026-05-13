@@ -1456,7 +1456,7 @@ __metadata:
     "@langchain/openai": "npm:1.2.5"
     "@mui/icons-material": "npm:7.3.1"
     "@mui/material": "npm:7.3.1"
-    "@mui/system": "npm:7.3.9"
+    "@mui/system": "catalog:default"
     "@mui/x-tree-view": "npm:8.22.0"
     "@testing-library/dom": "catalog:default"
     "@testing-library/react": "catalog:default"
@@ -1520,6 +1520,7 @@ __metadata:
     "@emotion/styled": ^11.14.1
     "@mui/icons-material": ^7.3.1
     "@mui/material": ^7.3.1
+    "@mui/system": ^7.3.11
     "@mui/x-tree-view": ^8.22.0
     next: ^16.2.1
     next-auth: 5.0.0-beta.30
@@ -2841,7 +2842,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/private-theming@npm:^7.3.11, @mui/private-theming@npm:^7.3.9":
+"@mui/private-theming@npm:^7.3.11":
   version: 7.3.11
   resolution: "@mui/private-theming@npm:7.3.11"
   dependencies:
@@ -2858,7 +2859,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/styled-engine@npm:^7.3.10, @mui/styled-engine@npm:^7.3.9":
+"@mui/styled-engine@npm:^7.3.10":
   version: 7.3.10
   resolution: "@mui/styled-engine@npm:7.3.10"
   dependencies:
@@ -2881,35 +2882,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/system@npm:7.3.9":
-  version: 7.3.9
-  resolution: "@mui/system@npm:7.3.9"
-  dependencies:
-    "@babel/runtime": "npm:^7.28.6"
-    "@mui/private-theming": "npm:^7.3.9"
-    "@mui/styled-engine": "npm:^7.3.9"
-    "@mui/types": "npm:^7.4.12"
-    "@mui/utils": "npm:^7.3.9"
-    clsx: "npm:^2.1.1"
-    csstype: "npm:^3.2.3"
-    prop-types: "npm:^15.8.1"
-  peerDependencies:
-    "@emotion/react": ^11.5.0
-    "@emotion/styled": ^11.3.0
-    "@types/react": ^17.0.0 || ^18.0.0 || ^19.0.0
-    react: ^17.0.0 || ^18.0.0 || ^19.0.0
-  peerDependenciesMeta:
-    "@emotion/react":
-      optional: true
-    "@emotion/styled":
-      optional: true
-    "@types/react":
-      optional: true
-  checksum: 10c0/293e4e76e24d3517f8883fe7e8d1a640775a1e7e11b5e9917cd566238d0b0f71f799829d823a022b30a65c6c6f9257c1274a0aec9015b1b7b8d58b27de9d35d8
-  languageName: node
-  linkType: hard
-
-"@mui/system@npm:^7.3.1":
+"@mui/system@npm:7.3.11, @mui/system@npm:^7.3.1":
   version: 7.3.11
   resolution: "@mui/system@npm:7.3.11"
   dependencies:
@@ -2951,7 +2924,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/utils@npm:^7.3.1, @mui/utils@npm:^7.3.11, @mui/utils@npm:^7.3.5, @mui/utils@npm:^7.3.9":
+"@mui/utils@npm:^7.3.1, @mui/utils@npm:^7.3.11, @mui/utils@npm:^7.3.5":
   version: 7.3.11
   resolution: "@mui/utils@npm:7.3.11"
   dependencies:
