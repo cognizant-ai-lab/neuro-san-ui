@@ -21,7 +21,7 @@
         "react-syntax-highlighter": "16.1.0",
         "rehype-raw": "catalog:default",
         "rehype-slug": "catalog:default",
-        "uuid": "11.1.0",
+        "uuid": "14.0.0",
         "zustand": "4.5.7"
     },
     "devDependencies": {
