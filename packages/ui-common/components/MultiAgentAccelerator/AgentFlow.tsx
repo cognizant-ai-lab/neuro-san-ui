@@ -57,7 +57,12 @@ import {
 } from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
-import {convertReservationsToNetworks, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
+import {
+    convertReservationsToNetworks,
+    extractNetworkHocon,
+    extractReservations,
+    mergeNetworks,
+} from "./TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {sendChatQuery} from "../../controller/agent/Agent"
@@ -112,21 +117,6 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // #region: Helpers
 
-/** Merges incoming networks into target, keeping the entry with the highest expiration time. */
-const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNetwork[]): void => {
-    for (const n of incoming) {
-        const key = n.agentNetworkName ?? n.reservation.reservation_id
-        const existingIdx = target.findIndex((e) => (e.agentNetworkName ?? e.reservation.reservation_id) === key)
-        if (existingIdx < 0) {
-            target.push(n)
-        } else if (
-            n.reservation.expiration_time_in_seconds > target[existingIdx].reservation.expiration_time_in_seconds
-        ) {
-            target[existingIdx] = n
-        }
-    }
-}
-
 /**
  * Streams the Agent Network Designer endpoint with the updated definition and collects
  * the resulting reservations. Returns the deduplicated list of new networks.
@@ -139,7 +129,7 @@ const streamNetworkDesignerUpdate = async (
     agentNetworkName: string | undefined,
     currentUser: string
 ): Promise<TemporaryNetwork[]> => {
-    const newNetworks: TemporaryNetwork[] = []
+    let newNetworks: TemporaryNetwork[] = []
 
     await sendChatQuery(
         neuroSanURL,
@@ -164,7 +154,7 @@ const streamNetworkDesignerUpdate = async (
                 // when the backend response omits AGENT_NETWORK_NAME_KEY.
                 const networkName = agentNetworkName ?? agentNetworkNameFromMessage
                 const converted = convertReservationsToNetworks(reservations, networkHocon, updated, networkName)
-                mergeNetworks(newNetworks, converted)
+                newNetworks = mergeNetworks(newNetworks, converted)
             } catch (e: unknown) {
                 console.warn("Failed to process chunk from network designer:", e)
             }

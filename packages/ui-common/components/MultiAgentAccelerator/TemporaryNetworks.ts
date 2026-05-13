@@ -88,3 +88,23 @@ export const convertReservationsToNetworks = (
 }
 
 export {extractNetworkNameFromReservationId} from "../../state/TemporaryNetworks"
+
+/**
+ * Merges incoming networks into target, keeping the entry with the highest expiration time.
+ * Returns a new array; does not mutate either argument.
+ */
+export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNetwork[]): TemporaryNetwork[] => {
+    const result = [...target]
+    for (const n of incoming) {
+        const key = n.agentNetworkName ?? n.reservation.reservation_id
+        const existingIdx = result.findIndex((e) => (e.agentNetworkName ?? e.reservation.reservation_id) === key)
+        if (existingIdx < 0) {
+            result.push(n)
+        } else if (
+            n.reservation.expiration_time_in_seconds > result[existingIdx].reservation.expiration_time_in_seconds
+        ) {
+            result[existingIdx] = n
+        }
+    }
+    return result
+}
