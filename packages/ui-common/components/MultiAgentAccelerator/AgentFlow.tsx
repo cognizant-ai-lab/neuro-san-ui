@@ -353,6 +353,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
     const [isSaving, setIsSaving] = useState<boolean>(false)
 
+    const popupNetwork = useMemo(() => findTempNetwork(tempNetworks, networkId), [tempNetworks, networkId])
+    const popupEntry = useMemo(
+        () => (popupNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === selectedAgent?.agentId),
+        [popupNetwork, selectedAgent?.agentId]
+    )
+
     // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
     const saveAbortControllerRef = useRef<AbortController | null>(null)
 
@@ -768,25 +774,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 isStreaming={isStreaming}
                 onBubbleHoverChange={handleBubbleHoverChange}
             />
-            {selectedAgent &&
-                !isAwaitingLlm &&
-                (() => {
-                    const popupNetwork = findTempNetwork(tempNetworks, networkId)
-                    const popupEntry = (popupNetwork?.agentNetworkDefinition ?? []).find(
-                        (e) => e.origin === selectedAgent.agentId
-                    )
-                    return (
-                        <AgentNodePopup
-                            agentName={selectedAgent.agentName}
-                            initialInstructions={popupEntry?.instructions ?? ""}
-                            initialDescription={popupEntry?.description ?? ""}
-                            isOpen={isPopupOpen}
-                            isSaving={isSaving}
-                            onClose={handlePopupClose}
-                            onSave={handlePopupSave}
-                        />
-                    )
-                })()}
+            {selectedAgent && !isAwaitingLlm && (
+                <AgentNodePopup
+                    agentName={selectedAgent.agentName}
+                    initialInstructions={popupEntry?.instructions ?? ""}
+                    initialDescription={popupEntry?.description ?? ""}
+                    isOpen={isPopupOpen}
+                    isSaving={isSaving}
+                    onClose={handlePopupClose}
+                    onSave={handlePopupSave}
+                />
+            )}
         </Box>
     )
 }
