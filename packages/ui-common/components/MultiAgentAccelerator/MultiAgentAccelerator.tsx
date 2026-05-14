@@ -219,16 +219,30 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const currentTempNetwork = isSelectedNetworkTemporary
         ? temporaryNetworks.find((n) => n.agentInfo.agent_name === selectedNetwork)
         : undefined
+
+    // For Agent Network Designer: the backend echoes agent_network_name into IndexedDB sly_data as the conversation
+    // progresses. We read it back here to find the matching temp network and override agent_network_definition in the
+    // outgoing request — leaving what's in IndexedDB untouched.
+    const designerSlyData = useAgentChatHistoryStore((state) => state.history[AGENT_NETWORK_DESIGNER_ID]?.slyData)
+    const designerNetworkName = isNetworkDesignerMode
+        ? (designerSlyData?.[AGENT_NETWORK_NAME_KEY] as string | undefined)
+        : undefined
+    const designerTempNetwork = designerNetworkName
+        ? temporaryNetworks.find((n) => n.agentNetworkName === designerNetworkName)
+        : undefined
+
     const extraSlyData: Record<string, unknown> | undefined = currentTempNetwork
         ? {
               [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
-              // Use the name the backend originally sent, not the local UUID-based key.
+              // Use the agentNetworkName, not reservation_id
               ...(currentTempNetwork.agentNetworkName
                   ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
                   : {}),
               ...(currentTempNetwork.networkHocon ? {[AGENT_NETWORK_HOCON]: currentTempNetwork.networkHocon} : {}),
           }
-        : undefined
+        : designerTempNetwork
+          ? {[AGENT_NETWORK_DEFINITION_KEY]: designerTempNetwork.agentNetworkDefinition}
+          : undefined
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {

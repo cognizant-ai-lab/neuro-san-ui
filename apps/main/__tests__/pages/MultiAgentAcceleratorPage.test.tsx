@@ -44,6 +44,7 @@ import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
     AGENT_NETWORK_HOCON,
+    AGENT_NETWORK_NAME_KEY,
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
@@ -1033,6 +1034,92 @@ describe("Multi Agent Accelerator Page", () => {
         await waitFor(() => {
             const lastCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1]
             expect(lastCall[0]).toBeNull()
+        })
+    })
+
+    describe("extraSlyData", () => {
+        const agentNetworkDefinition = [
+            {origin: "agent1", tools: [] as string[], display_as: "llm_agent", instructions: "Do stuff."},
+        ]
+
+        const tempNetworkWithDefinition: TemporaryNetwork = {
+            ...TEMPORARY_NETWORK,
+            agentNetworkDefinition,
+        }
+
+        it("is undefined for a normal (non-temporary) network", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await user.click(header)
+            const mathGuy = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+            await user.click(mathGuy)
+
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        targetAgent: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                        extraSlyData: undefined,
+                    })
+                )
+            })
+        })
+
+        it("includes definition, name, and hocon for a temporary network", async () => {
+            useTempNetworksStore.setState({tempNetworks: [tempNetworkWithDefinition]})
+
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                setSelectedNetwork(TEMPORARY_NETWORK.agentInfo.agent_name)
+            })
+
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        targetAgent: TEMPORARY_NETWORK.agentInfo.agent_name,
+                        extraSlyData: {
+                            [AGENT_NETWORK_DEFINITION_KEY]: agentNetworkDefinition,
+                            [AGENT_NETWORK_NAME_KEY]: TEMPORARY_NETWORK.agentNetworkName,
+                            [AGENT_NETWORK_HOCON]: TEMPORARY_NETWORK.networkHocon,
+                        },
+                    })
+                )
+            })
+        })
+
+        it("includes only agent_network_definition for Agent Network Designer from matching temp network", async () => {
+            useTempNetworksStore.setState({tempNetworks: [tempNetworkWithDefinition]})
+
+            // Seed the designer's sly_data in IndexedDB so the component can resolve the matching temp network
+            useAgentChatHistoryStore.setState({
+                history: {
+                    [AGENT_NETWORK_DESIGNER_ID]: {
+                        chatHistory: [],
+                        chatContext: {},
+                        slyData: {[AGENT_NETWORK_NAME_KEY]: TEMPORARY_NETWORK.agentNetworkName},
+                    },
+                },
+            })
+
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+            })
+
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        targetAgent: AGENT_NETWORK_DESIGNER_ID,
+                        extraSlyData: {
+                            [AGENT_NETWORK_DEFINITION_KEY]: agentNetworkDefinition,
+                        },
+                    })
+                )
+            })
         })
     })
 })
