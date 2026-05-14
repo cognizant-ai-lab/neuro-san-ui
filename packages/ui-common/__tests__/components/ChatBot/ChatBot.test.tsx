@@ -22,6 +22,7 @@ jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
             <button
                 onClick={props.onClose}
                 data-testid="close-button"
+                type="button"
             >
                 Close
             </button>
