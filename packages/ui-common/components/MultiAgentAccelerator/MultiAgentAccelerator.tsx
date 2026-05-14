@@ -127,7 +127,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
     )
 
-    const agentCountsRef = useRef<Map<string, number>>(new Map())
+    // Tracks how many times each agent has been involved in the conversation
+    const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())
 
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
@@ -322,7 +323,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             // If the selected network is one of the expired ones, deselect it
             if (expiredNetwork.some((n) => n.agentInfo.agent_name === selectedNetwork)) {
                 setSelectedNetwork(null)
-                agentCountsRef.current = new Map()
+                setAgentCounts(new Map())
             }
         }, EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
 
@@ -344,8 +345,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setCurrentConversations(result)
             }
 
-            // Agent hit counts
-            agentCountsRef.current = getUpdatedAgentCounts(agentCountsRef.current, chatMessage?.origin)
+            // Update agent hit counts
+            setAgentCounts((prevCounts) => {
+                return getUpdatedAgentCounts(prevCounts, chatMessage.origin)
+            })
 
             // Agent network designer progress messages
             if (isNetworkDesignerMode) {
@@ -389,7 +392,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const onStreamingStarted = useCallback((): void => {
         // Reset agent counts
-        agentCountsRef.current = new Map()
+        setAgentCounts(new Map())
 
         // Reset newly added temporary networks
         setNewlyAddedTemporaryNetworks(new Set())
@@ -458,7 +461,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
                         setSelectedNetwork={(newNetwork) => {
-                            agentCountsRef.current = new Map()
+                            setAgentCounts(new Map())
                             setSelectedNetwork(newNetwork)
                         }}
                         temporaryNetworks={temporaryNetworks}
@@ -491,7 +494,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         }}
                     >
                         <AgentFlow
-                            agentCounts={agentCountsRef.current}
+                            agentCounts={agentCounts}
                             agentsInNetwork={agentsInNetwork}
                             agentIconSuggestions={agentIconSuggestions}
                             currentUser={userInfo.userName}
@@ -505,7 +508,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             neuroSanURL={neuroSanURL}
                             onNetworkReplaced={(oldNetworkId, newNetworkId) => {
                                 if (selectedNetwork === oldNetworkId) {
-                                    agentCountsRef.current = new Map()
+                                    setAgentCounts(new Map())
                                     setSelectedNetwork(newNetworkId)
                                 }
                             }}
