@@ -322,14 +322,21 @@ describe("AgentNodePopup", () => {
             expect(screen.getByRole("button", {name: /close/iu})).toBeInTheDocument()
         })
 
-        it("calls onClose when backdrop is clicked while isSaving is true", () => {
+        it("disables the text fields while isSaving is true", () => {
+            renderPopup({isSaving: true})
+
+            const textareas = screen.getAllByRole("textbox")
+            textareas.forEach((ta) => expect(ta).toBeDisabled())
+        })
+
+        it("does not call onClose when backdrop is clicked while isSaving is true", () => {
             const {onClose} = renderPopup({isSaving: true})
 
-            // Backdrop dismissal is not blocked while saving — user can always close the dialog.
+            // Clicking outside is blocked while saving to prevent accidental dismissal.
             const backdrop = document.querySelector(".MuiBackdrop-root")
             if (backdrop) fireEvent.click(backdrop)
 
-            expect(onClose).toHaveBeenCalledTimes(1)
+            expect(onClose).not.toHaveBeenCalled()
         })
 
         it("calls onClose when backdrop is clicked while isSaving is false", () => {

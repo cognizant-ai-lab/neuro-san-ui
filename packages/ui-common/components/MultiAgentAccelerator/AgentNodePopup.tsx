@@ -86,6 +86,10 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
     }
 
     const handleClose = () => {
+        if (isSaving) {
+            return
+        }
+
         if (isDirty) {
             setDisplayConfirmationModal(true)
             return
@@ -121,7 +125,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     onClick={handleSave}
                     variant="contained"
                     size="small"
-                    disabled={!isDirty || isSaving}
+                    disabled={isSaving || !isDirty}
                     startIcon={
                         isSaving ? (
                             <CircularProgress
@@ -169,6 +173,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
             >
                 {/* Description — editable */}
                 <TextField
+                    disabled={isSaving}
                     fullWidth
                     id="agent-node-popup-description-field"
                     label="Description"
@@ -186,6 +191,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 {/* Instructions — editable */}
                 <TextField
                     autoFocus
+                    disabled={isSaving}
                     fullWidth
                     id="agent-node-popup-instructions-field"
                     label="Instructions"
