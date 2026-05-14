@@ -17,7 +17,6 @@ limitations under the License.
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
-import {removeTrailingUuid} from "../components/AgentChat/Common/Utils"
 import {AgentNetworkDefinitionEntry} from "../components/MultiAgentAccelerator/const"
 import {AgentInfo} from "../generated/neuro-san/NeuroSanClient"
 
@@ -44,22 +43,17 @@ interface TempNetworksStore {
     readonly setTempNetworks: (tempNetworks: TemporaryNetwork[]) => void
     /**
      * Upsert new networks into the store. Networks are matched by the UUID-stripped portion of
-     * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), falling
-     * back to `agentNetworkName` when the reservation_id has no UUID suffix. If an incoming network
+     * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), or, just
+     * `agentNetworkName` which is the same as having the UUID-stripped. If an incoming network
      * matches an existing one, the existing entry is replaced. Returns the final list of upserted
      * networks (those that were added or replaced).
      */
-    readonly upsertTempNetworks: (newNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
-    readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
+    readonly upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
+    readonly updateTempNetworkDefinition: (
+        networkName: string,
+        agentNetworkDefinition: AgentNetworkDefinitionEntry[]
+    ) => void
 }
-
-/**
- * Returns the canonical name for a network, used as the dedup key in upsert.
- * The UUID-stripped reservation_id is preferred because it is always consistent regardless of
- * what prefix the backend may place in `agentNetworkName` (e.g. `"generated/travel_agency_ops"`
- * vs `"travel_agency_ops"`).
- */
-const effectiveNetworkName = (n: TemporaryNetwork): string => removeTrailingUuid(n.reservation.reservation_id)
 
 /**
  * The hook that lets apps use the store.
@@ -69,28 +63,32 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
         (set) => ({
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
-            upsertTempNetworks: (newNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
+            upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
                 set((state) => {
                     const updated = [...state.tempNetworks]
-                    for (const newNetwork of newNetworks) {
-                        const newName = effectiveNetworkName(newNetwork)
-                        const existingIdx = newName ? updated.findIndex((n) => effectiveNetworkName(n) === newName) : -1
-                        if (existingIdx >= 0) {
-                            updated[existingIdx] = newNetwork
+                    for (const incomingNetwork of incomingNetworks) {
+                        const existingIndex = updated.findIndex(
+                            (network) => network.agentNetworkName === incomingNetwork.agentNetworkName
+                        )
+                        if (existingIndex >= 0) {
+                            updated[existingIndex] = incomingNetwork // replace the existing entry in-place
                         } else {
-                            updated.push(newNetwork)
+                            updated.push(incomingNetwork) // no existing entry — add as new
                         }
                     }
                     return {tempNetworks: updated}
                 })
-                return newNetworks
+                return incomingNetworks
             },
-            updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) =>
-                set((state) => ({
-                    tempNetworks: state.tempNetworks.map((n) =>
-                        n.agentInfo.agent_name === networkName ? {...n, agentNetworkDefinition: definition} : n
-                    ),
-                })),
+            updateTempNetworkDefinition: (networkName: string, agentNetworkDefinition: AgentNetworkDefinitionEntry[]) =>
+                set((state) => {
+                    const updated = [...state.tempNetworks]
+                    const existingIndex = updated.findIndex((network) => network.agentInfo.agent_name === networkName)
+                    if (existingIndex >= 0) {
+                        updated[existingIndex] = {...updated[existingIndex], agentNetworkDefinition}
+                    }
+                    return {tempNetworks: updated}
+                }),
         }),
         {
             name: "temp-networks",

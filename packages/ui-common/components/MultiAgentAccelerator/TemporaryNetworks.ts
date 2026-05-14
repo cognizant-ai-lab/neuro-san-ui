@@ -46,6 +46,7 @@ export const convertReservationsToNetworks = (
         agentInfo: {
             agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
         },
+        // agentNetworkName is the network name "prefix", with the UUID-stripped
         agentNetworkName: removeTrailingUuid(reservation.reservation_id),
         networkHocon,
         agentNetworkDefinition,
