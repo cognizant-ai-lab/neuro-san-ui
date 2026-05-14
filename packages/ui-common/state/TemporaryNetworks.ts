@@ -31,7 +31,7 @@ export type TemporaryNetwork = {
     readonly reservation: AgentReservation
     readonly agentInfo: AgentInfo
     /** The agent_network_name as sent by the backend — used when bouncing sly_data back to the backend. */
-    readonly agentNetworkName?: string
+    readonly agentNetworkName: string
     readonly networkHocon?: string | null
     readonly agentNetworkDefinition?: AgentNetworkDefinitionEntry[]
 }
@@ -54,28 +54,12 @@ interface TempNetworksStore {
 }
 
 /**
- * Derives the canonical network name from a reservation ID.
- *
- * The backend encodes the network name as a prefix in the reservation ID, followed by a UUID suffix:
- * `{network_name}-{uuid}`, e.g. `travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5`.
- *
- * Stripping the UUID suffix gives the stable name that can be used for deduplication across reservations.
- * Returns `undefined` when the reservation ID doesn't match the expected format.
- */
-export const extractNetworkNameFromReservationId = (reservationId: string): string | undefined => {
-    const stripped = removeTrailingUuid(reservationId)
-    return stripped !== reservationId ? stripped : undefined
-}
-
-/**
- * Returns the best available canonical name for a network, used as the dedup key in upsert.
+ * Returns the canonical name for a network, used as the dedup key in upsert.
  * The UUID-stripped reservation_id is preferred because it is always consistent regardless of
  * what prefix the backend may place in `agentNetworkName` (e.g. `"generated/travel_agency_ops"`
- * vs `"travel_agency_ops"`). Falls back to `agentNetworkName` when the reservation_id has no
- * UUID suffix (legacy reservations with static IDs).
+ * vs `"travel_agency_ops"`).
  */
-const effectiveNetworkName = (n: TemporaryNetwork): string | undefined =>
-    extractNetworkNameFromReservationId(n.reservation.reservation_id) ?? n.agentNetworkName
+const effectiveNetworkName = (n: TemporaryNetwork): string => removeTrailingUuid(n.reservation.reservation_id)
 
 /**
  * The hook that lets apps use the store.

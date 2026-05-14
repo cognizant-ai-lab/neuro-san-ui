@@ -84,7 +84,6 @@ const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape
 const collectNetworksFromChunk = (
     chunk: string,
     updated: AgentNetworkDefinitionEntry[],
-    agentNetworkName: string | undefined,
     accumulated: TemporaryNetwork[]
 ): TemporaryNetwork[] => {
     try {
@@ -92,9 +91,7 @@ const collectNetworksFromChunk = (
         if (!chatMessage) return accumulated
 
         // Always use the user's edited definition as the authoritative value.
-        // Prefer the locally-known name so upsert can match the existing entry even
-        // when the backend response omits AGENT_NETWORK_NAME_KEY.
-        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated, agentNetworkName)
+        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated)
         if (converted.length === 0) return accumulated
         return mergeNetworks(accumulated, converted)
     } catch (e: unknown) {
@@ -433,7 +430,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     agentNetworkName,
                     userInfo.userName,
                     (chunk) => {
-                        newNetworks = collectNetworksFromChunk(chunk, updated, agentNetworkName, newNetworks)
+                        newNetworks = collectNetworksFromChunk(chunk, updated, newNetworks)
                     }
                 )
 

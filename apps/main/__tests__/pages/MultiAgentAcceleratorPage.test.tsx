@@ -554,6 +554,7 @@ describe("Multi Agent Accelerator Page", () => {
                 agentInfo: expect.objectContaining({
                     agent_name: agentName,
                 }),
+                agentNetworkName: RESERVATION.reservation_id,
                 networkHocon: null,
             }
 

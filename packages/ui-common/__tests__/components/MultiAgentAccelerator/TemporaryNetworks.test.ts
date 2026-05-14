@@ -17,17 +17,16 @@ limitations under the License.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
-    AGENT_NETWORK_NAME_KEY,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
 } from "../../../components/MultiAgentAccelerator/const"
 import {
     AgentReservation,
     convertReservationsToNetworks,
-    extractNetworkNameFromReservationId,
     extractTemporaryNetworksFromMessage,
     isEditableAgent,
     isTemporaryNetwork,
+    mergeNetworks,
 } from "../../../components/MultiAgentAccelerator/TemporaryNetworks"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
@@ -47,15 +46,16 @@ describe("convertReservationsToNetworks", () => {
         expect(network.reservation).toBe(res)
         expect(network.agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/abc-123`)
         expect(network.networkHocon).toBeNull()
-        expect(network.agentNetworkName).toBeUndefined()
+        // No UUID suffix in "abc-123" → falls back to the raw reservation_id as the name.
+        expect(network.agentNetworkName).toBe("abc-123")
         expect(network.agentNetworkDefinition).toBeUndefined()
     })
 
-    it("preserves the agentNetworkName on the resulting network", () => {
+    it("derives agentNetworkName from reservation_id", () => {
         const res = makeReservation("res-xyz")
-        const [network] = convertReservationsToNetworks([res], null, undefined, "my_network")
+        const [network] = convertReservationsToNetworks([res], null)
 
-        expect(network.agentNetworkName).toBe("my_network")
+        expect(network.agentNetworkName).toBe("res-xyz")
     })
 
     it("propagates the networkHocon to all resulting networks", () => {
@@ -96,40 +96,6 @@ describe("convertReservationsToNetworks", () => {
 
         expect(network.agentNetworkName).toBe("travel_agency_ops")
     })
-
-    it("prefers the explicit agentNetworkName over the derived one", () => {
-        const res = makeReservation("travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5")
-        const [network] = convertReservationsToNetworks([res], null, undefined, "override_name")
-
-        expect(network.agentNetworkName).toBe("override_name")
-    })
-})
-
-describe("extractNetworkNameFromReservationId", () => {
-    withStrictMocks()
-
-    it("strips the UUID suffix and returns the network name", () => {
-        expect(extractNetworkNameFromReservationId("travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5")).toBe(
-            "travel_agency_ops"
-        )
-    })
-
-    it("handles reservation_ids with multiple underscores in the name", () => {
-        expect(
-            extractNetworkNameFromReservationId(
-                "santas_workshop_fulfillment_network-196a4e92-f802-406a-b87b-2bc05dfefc1e"
-            )
-        ).toBe("santas_workshop_fulfillment_network")
-    })
-
-    it("returns undefined when the reservation_id has no UUID suffix", () => {
-        expect(extractNetworkNameFromReservationId("abc-123")).toBeUndefined()
-        expect(extractNetworkNameFromReservationId("no-uuid-here")).toBeUndefined()
-    })
-
-    it("returns undefined for an empty string", () => {
-        expect(extractNetworkNameFromReservationId("")).toBeUndefined()
-    })
 })
 
 describe("isTemporaryNetwork", () => {
@@ -138,6 +104,7 @@ describe("isTemporaryNetwork", () => {
     const makeNetwork = (agentName: string) => ({
         reservation: makeReservation("res-1"),
         agentInfo: {agent_name: agentName},
+        agentNetworkName: agentName,
     })
 
     it("returns false when agentName is null", () => {
@@ -219,26 +186,14 @@ describe("extractTemporaryNetworksFromMessage", () => {
         expect(result[0].reservation).toBe(reservation)
     })
 
-    it("reads agentNetworkName from sly_data when no override is given", () => {
+    it("ignores agent_network_name in sly_data — agentNetworkName is always derived from reservation_id", () => {
         const reservation = makeReservationObj("res-abc")
         const message = makeFrameworkMessage({
             [AGENT_RESERVATIONS_KEY]: [reservation],
-            [AGENT_NETWORK_NAME_KEY]: "sly_name",
         })
 
         const [network] = extractTemporaryNetworksFromMessage(message)
-        expect(network.agentNetworkName).toBe("sly_name")
-    })
-
-    it("prefers agentNetworkNameOverride over the sly_data value", () => {
-        const reservation = makeReservationObj("res-abc")
-        const message = makeFrameworkMessage({
-            [AGENT_RESERVATIONS_KEY]: [reservation],
-            [AGENT_NETWORK_NAME_KEY]: "sly_name",
-        })
-
-        const [network] = extractTemporaryNetworksFromMessage(message, undefined, "override_name")
-        expect(network.agentNetworkName).toBe("override_name")
+        expect(network.agentNetworkName).toBe("res-abc")
     })
 
     it("reads agentNetworkDefinition from sly_data when no override is given", () => {
@@ -264,5 +219,74 @@ describe("extractTemporaryNetworksFromMessage", () => {
 
         const [network] = extractTemporaryNetworksFromMessage(message, overrideDefinition)
         expect(network.agentNetworkDefinition).toBe(overrideDefinition)
+    })
+})
+
+describe("mergeNetworks", () => {
+    withStrictMocks()
+
+    const makeNetwork = (reservationId: string, expiryOffset: number, agentNetworkName: string) => ({
+        reservation: {
+            reservation_id: reservationId,
+            lifetime_in_seconds: 300,
+            expiration_time_in_seconds: Date.now() / 1000 + expiryOffset,
+        },
+        agentInfo: {agent_name: `temporary/${reservationId}`},
+        agentNetworkName,
+    })
+
+    it("returns a new array with the incoming network when target is empty", () => {
+        const incoming = makeNetwork("new-res", 86400, "my_network")
+        const result = mergeNetworks([], [incoming])
+
+        expect(result).toHaveLength(1)
+        expect(result[0]).toBe(incoming)
+    })
+
+    it("appends a network when no matching key exists in target", () => {
+        const existing = makeNetwork("old-res", 300, "network_a")
+        const incoming = makeNetwork("new-res", 86400, "network_b")
+
+        const result = mergeNetworks([existing], [incoming])
+
+        expect(result).toHaveLength(2)
+    })
+
+    it("keeps the incoming network when it has a higher expiry than the existing one (old echo then new)", () => {
+        // Simulates the streaming pattern: backend echoes old reservation first, then sends new one.
+        const oldRes = makeNetwork("old-res", 100, "my_network") // lower expiry
+        const newRes = makeNetwork("new-res", 86400, "my_network") // higher expiry → should win
+
+        // First merge: old echo arrives
+        const afterOld = mergeNetworks([], [oldRes])
+        // Second merge: new reservation arrives
+        const result = mergeNetworks(afterOld, [newRes])
+
+        expect(result).toHaveLength(1)
+        expect(result[0]).toBe(newRes)
+    })
+
+    it("keeps the existing network when it has a higher expiry than the incoming one (new then old)", () => {
+        // Simulates reversed streaming order: new reservation arrives first, then old echo.
+        const newRes = makeNetwork("new-res", 86400, "my_network") // higher expiry → should win
+        const oldRes = makeNetwork("old-res", 100, "my_network") // lower expiry → should lose
+
+        // First merge: new reservation arrives
+        const afterNew = mergeNetworks([], [newRes])
+        // Second merge: old echo arrives — must NOT overwrite the newer entry
+        const result = mergeNetworks(afterNew, [oldRes])
+
+        expect(result).toHaveLength(1)
+        expect(result[0]).toBe(newRes)
+    })
+
+    it("does not mutate the original target array", () => {
+        const existing = makeNetwork("res-1", 300, "net_a")
+        const target = [existing]
+        const incoming = makeNetwork("res-2", 300, "net_b")
+
+        mergeNetworks(target, [incoming])
+
+        expect(target).toHaveLength(1)
     })
 })
