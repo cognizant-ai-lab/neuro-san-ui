@@ -125,6 +125,9 @@ export default defineConfig([
         rules: {
             ...next.configs.recommended.rules,
 
+            // Disable by default - consumers must configure with their project-specific pages path
+            "@next/next/no-html-link-for-pages": "off",
+
             // Turn on some optional, stricter settings for this rule
             "react/jsx-key": [
                 "error",
