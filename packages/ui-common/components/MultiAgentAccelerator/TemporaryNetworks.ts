@@ -35,7 +35,7 @@ export type AgentReservation = {
  * @return An array of AgentReservation objects if reservations are found, or an empty array if not found or
  * if the message is not of the expected type.
  */
-export const extractReservations = (message: ChatMessage): AgentReservation[] => {
+const extractReservations = (message: ChatMessage): AgentReservation[] => {
     // Check for temp networks ("reservations") in sly_data
     if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_RESERVATIONS_KEY]) {
         return message.sly_data[AGENT_RESERVATIONS_KEY] as AgentReservation[]
@@ -51,7 +51,7 @@ export const extractReservations = (message: ChatMessage): AgentReservation[] =>
  * We expect the network definition to be present in messages of type AGENT_FRAMEWORK only.
  * @return The network HOCON as a string, or null if not found or not the right type of message.
  */
-export const extractNetworkHocon = (message: ChatMessage): string | null => {
+const extractNetworkHocon = (message: ChatMessage): string | null => {
     // Check for agent network HOCON in sly_data
     if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_HOCON]) {
         return message.sly_data[AGENT_NETWORK_HOCON] as string
