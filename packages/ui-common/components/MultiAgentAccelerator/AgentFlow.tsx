@@ -372,7 +372,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handlePopupClose = useCallback(() => {
-        // This was added for API instability, however handlePopupClose is not called if the save is in progress 
+        // This was added for API instability, however handlePopupClose is not called if the save is in progress
         saveAbortControllerRef.current?.abort() // Could remove
         saveAbortControllerRef.current = null
         setIsSaving(false)
