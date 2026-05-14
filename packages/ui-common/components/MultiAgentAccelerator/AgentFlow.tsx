@@ -54,7 +54,6 @@ import {
 } from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
-import {isEditableAgent} from "./TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
@@ -362,19 +361,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
     const saveAbortControllerRef = useRef<AbortController | null>(null)
 
-    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
-        (_event, node) => {
-            if (!isTemporaryNetwork) return
-            if (!isEditableAgent(node.data.displayAs)) return
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
+        if (!node.data.isEditable) return
 
-            setSelectedAgent({
-                agentId: node.id,
-                agentName: node.data.agentName,
-            })
-            setIsPopupOpen(true)
-        },
-        [isTemporaryNetwork]
-    )
+        setSelectedAgent({
+            agentId: node.id,
+            agentName: node.data.agentName,
+        })
+        setIsPopupOpen(true)
+    }, [])
 
     const handlePopupClose = useCallback(() => {
         // If a save is in-flight, abort it immediately so the stream doesn't hang.

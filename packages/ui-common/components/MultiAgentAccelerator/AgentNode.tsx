@@ -30,7 +30,6 @@ import {FC} from "react"
 
 import {AgentConversation} from "./AgentConversations"
 import {DisplayAs} from "./const"
-import {isEditableAgent} from "./TemporaryNetworks"
 import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
@@ -44,7 +43,7 @@ export interface AgentNodeProps extends Record<string, unknown> {
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
     readonly agentIconSuggestion?: string
-    readonly isTemporaryNetwork?: boolean
+    readonly isEditable?: boolean
 }
 
 // Node dimensions
@@ -107,16 +106,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {
-        agentCounts,
-        agentName,
-        depth,
-        displayAs,
-        getConversations,
-        agentIconSuggestion,
-        isAwaitingLlm,
-        isTemporaryNetwork,
-    } = data
+    const {agentCounts, agentName, depth, displayAs, getConversations, agentIconSuggestion, isAwaitingLlm, isEditable} =
+        data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -214,8 +205,6 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         ? theme.palette.common.black
         : theme.palette.common.white
 
-    const isClickableNode = isTemporaryNetwork && isEditableAgent(displayAs)
-
     return (
         <>
             <AnimatedNode
@@ -226,7 +215,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 sx={{
                     backgroundColor,
                     color,
-                    cursor: isClickableNode ? "pointer" : "grab",
+                    cursor: isEditable ? "pointer" : "grab",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),

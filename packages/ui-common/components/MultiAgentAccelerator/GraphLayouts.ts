@@ -24,6 +24,7 @@ import cloneDeep from "lodash-es/cloneDeep.js"
 import {AgentConversation} from "./AgentConversations"
 import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {isEditableAgent} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
@@ -268,7 +269,9 @@ export const layoutRadial = (
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
                     agentIconSuggestion: agentIconSuggestions?.[nodeId],
-                    isTemporaryNetwork,
+                    isEditable:
+                        isTemporaryNetwork &&
+                        isEditableAgent(agentsInNetwork.find((a) => a.origin === nodeId)?.display_as),
                 },
                 position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
                 style: {
@@ -327,7 +330,8 @@ export const layoutLinear = (
                 isAwaitingLlm,
                 depth: undefined, // Depth will be computed later,
                 agentIconSuggestion: agentIconSuggestions?.[nodeId],
-                isTemporaryNetwork,
+                isEditable:
+                    isTemporaryNetwork && isEditableAgent(agentsInNetwork.find((a) => a.origin === nodeId)?.display_as),
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {
