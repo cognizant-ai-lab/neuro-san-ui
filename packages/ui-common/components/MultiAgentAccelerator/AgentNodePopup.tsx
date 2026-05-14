@@ -16,8 +16,6 @@ limitations under the License.
 
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import CircularProgress from "@mui/material/CircularProgress"
-import LinearProgress from "@mui/material/LinearProgress"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
 
@@ -31,7 +29,7 @@ export interface AgentNodePopupProps {
     readonly agentName: string
     /** Whether the dialog is open. */
     readonly isOpen: boolean
-    /** Called when the user closes or cancels the dialog without saving. */
+    /** Called when the user closes or cancels the dialog with or without saving. */
     readonly onClose: () => void
     /**
      * Called when the user saves the edited fields.
@@ -44,10 +42,7 @@ export interface AgentNodePopupProps {
     readonly initialInstructions?: string
     /** Initial description text shown in the editable field. Defaults to an empty string. */
     readonly initialDescription?: string
-    /**
-     * When true the dialog is in a saving state: the Save button is disabled and shows a spinner.
-     * Defaults to false.
-     */
+    /** When true the save API call is in-flight; shows an "Applying changes..." button and disables both actions. */
     readonly isSaving?: boolean
 }
 
@@ -90,10 +85,6 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
     }
 
     const handleClose = () => {
-        if (isSaving) {
-            return
-        }
-
         if (isDirty) {
             setDisplayConfirmationModal(true)
             return
@@ -129,17 +120,9 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     onClick={handleSave}
                     variant="contained"
                     size="small"
-                    disabled={isSaving || !isDirty}
-                    startIcon={
-                        isSaving ? (
-                            <CircularProgress
-                                size={14}
-                                color="inherit"
-                            />
-                        ) : undefined
-                    }
+                    disabled={!isDirty || isSaving}
                 >
-                    {isSaving ? "Applying changes…" : "Save"}
+                    {isSaving ? "Applying changes..." : "Save"}
                 </Button>
             </Box>
         </Box>
@@ -168,7 +151,6 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         <>
             {displayConfirmationModal && getConfirmationModal()}
             <MUIDialog
-                dialogSx={isSaving ? {"& *, & *::before, & *::after": {cursor: "wait !important"}} : undefined}
                 footer={footer}
                 id="agent-node-popup"
                 isOpen={isOpen}
@@ -176,16 +158,8 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
                 title={agentName}
             >
-                {/* Progress bar shown while saving — makes it clear the dialog is busy */}
-                {isSaving && (
-                    <LinearProgress
-                        aria-label="Saving agent"
-                        sx={{mb: 2, borderRadius: 1}}
-                    />
-                )}
                 {/* Description — editable */}
                 <TextField
-                    disabled={isSaving}
                     fullWidth
                     id="agent-node-popup-description-field"
                     label="Description"
@@ -196,14 +170,13 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     }}
                     placeholder="Enter a short description of this agent…"
                     rows={6}
+                    slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
                     size="small"
-                    sx={{"& .MuiInputBase-input": {fontSize: "0.85rem"}}}
                     value={descriptionText}
                 />
                 {/* Instructions — editable */}
                 <TextField
                     autoFocus
-                    disabled={isSaving}
                     fullWidth
                     id="agent-node-popup-instructions-field"
                     label="Instructions"
@@ -214,8 +187,9 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     }}
                     placeholder="Enter instructions for this agent…"
                     rows={6}
+                    slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
                     size="small"
-                    sx={{"& .MuiInputBase-input": {fontSize: "0.85rem"}, marginTop: 2}}
+                    sx={{marginTop: 2}}
                     value={instructionsText}
                 />
             </MUIDialog>

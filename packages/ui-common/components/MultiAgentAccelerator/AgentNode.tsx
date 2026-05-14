@@ -29,13 +29,8 @@ import type {Node as RFNode} from "@xyflow/react"
 import {FC} from "react"
 
 import {AgentConversation} from "./AgentConversations"
-import {
-    DISPLAY_AS_CODED_TOOL,
-    DISPLAY_AS_EXTERNAL_AGENT,
-    DISPLAY_AS_LANGCHAIN_TOOL,
-    DISPLAY_AS_LLM_AGENT,
-    isEditableAgent,
-} from "./const"
+import {DisplayAs} from "./const"
+import {isEditableAgent} from "./TemporaryNetworks"
 import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
@@ -182,7 +177,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 )
             } else {
                 switch (displayAs) {
-                    case DISPLAY_AS_EXTERNAL_AGENT:
+                    case DisplayAs.EXTERNAL_AGENT:
                         return (
                             <TravelExploreIcon
                                 id={id}
@@ -190,15 +185,15 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                             />
                         )
                     // This should be a supported type but we're not seeing it?
-                    case DISPLAY_AS_LANGCHAIN_TOOL:
-                    case DISPLAY_AS_CODED_TOOL:
+                    case DisplayAs.LANGCHAIN_TOOL:
+                    case DisplayAs.CODED_TOOL:
                         return (
                             <HandymanIcon
                                 id={id}
                                 sx={{fontSize: AGENT_ICON_SIZE}}
                             />
                         )
-                    case DISPLAY_AS_LLM_AGENT:
+                    case DisplayAs.LLM_AGENT:
                     default:
                         return (
                             <AutoAwesomeIcon

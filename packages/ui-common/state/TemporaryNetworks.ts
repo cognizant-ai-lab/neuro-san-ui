@@ -17,6 +17,7 @@ limitations under the License.
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
+import {removeTrailingUuid} from "../components/AgentChat/Common/Utils"
 import {AgentNetworkDefinitionEntry} from "../components/MultiAgentAccelerator/const"
 import {AgentInfo} from "../generated/neuro-san/NeuroSanClient"
 
@@ -52,9 +53,6 @@ interface TempNetworksStore {
     readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
 }
 
-// UUID v4 suffix pattern: 8-4-4-4-12 hex chars separated by dashes
-const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
-
 /**
  * Derives the canonical network name from a reservation ID.
  *
@@ -65,7 +63,7 @@ const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
  * Returns `undefined` when the reservation ID doesn't match the expected format.
  */
 export const extractNetworkNameFromReservationId = (reservationId: string): string | undefined => {
-    const stripped = reservationId.replace(UUID_SUFFIX_RE, "")
+    const stripped = removeTrailingUuid(reservationId)
     return stripped !== reservationId ? stripped : undefined
 }
 

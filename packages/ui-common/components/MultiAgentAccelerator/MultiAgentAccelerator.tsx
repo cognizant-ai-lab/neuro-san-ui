@@ -35,19 +35,21 @@ import {
     AgentNetworkDefinitionEntry,
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {convertReservationsToNetworks, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
+import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
+    sendNetworkDesignerUpdate,
 } from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
-import {useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
@@ -72,6 +74,47 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+
+// #region: Agent-save helpers
+
+/**
+ * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
+ * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
+ */
+const collectNetworksFromChunk = (
+    chunk: string,
+    updated: AgentNetworkDefinitionEntry[],
+    agentNetworkName: string | undefined,
+    accumulated: TemporaryNetwork[]
+): TemporaryNetwork[] => {
+    try {
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) return accumulated
+
+        // Always use the user's edited definition as the authoritative value.
+        // Prefer the locally-known name so upsert can match the existing entry even
+        // when the backend response omits AGENT_NETWORK_NAME_KEY.
+        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated, agentNetworkName)
+        if (converted.length === 0) return accumulated
+        return mergeNetworks(accumulated, converted)
+    } catch (e: unknown) {
+        console.warn("Failed to process chunk from network designer:", e)
+        return accumulated
+    }
+}
+
+/** Logs and notifies about a save error. Suppresses AbortError (user-cancelled). */
+const notifySaveError = (agentName: string, e: unknown): void => {
+    if (e instanceof DOMException && e.name === "AbortError") return
+    console.error("Failed to submit agent network update:", e)
+    const detail =
+        e instanceof DOMException && e.name === "TimeoutError"
+            ? "The request timed out waiting for the server. Please try again."
+            : String(e)
+    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
+}
+
+// #endregion: Agent-save helpers
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -171,8 +214,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
 
     // Whether the currently selected network is a temporary network (agent reservation)
-    const isSelectedNetworkTemporary =
-        selectedNetwork !== null && temporaryNetworks.some((n) => n.agentInfo.agent_name === selectedNetwork)
+    const isSelectedNetworkTemporary = isTemporaryNetwork(selectedNetwork, temporaryNetworks)
 
     // For temp networks, agent_network_definition and agent_network_name live in localStorage (not IndexedDB slyData).
     // Supply them as extraSlyData so ChatCommon bounces them back to the backend on every request.
@@ -355,26 +397,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 }
             }
 
-            // Temporary networks/reservations
-            const reservationsResult = extractReservations(chatMessage)
-
             // Handle agent reservations (temporary networks) that come in through the chat stream.
-            if (reservationsResult?.length > 0) {
-                // Retrieve network definition, if present
-                const networkHocon = extractNetworkHocon(chatMessage)
-                const agentNetworkDefinition = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
-                    | AgentNetworkDefinitionEntry[]
-                    | undefined
-                // Capture the backend's canonical name so we can bounce it back unchanged on future requests.
-                const agentNetworkName = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
-
-                const newTemporaryNetworks = convertReservationsToNetworks(
-                    reservationsResult,
-                    networkHocon,
-                    agentNetworkDefinition,
-                    agentNetworkName
-                )
-
+            const newTemporaryNetworks = extractTemporaryNetworksFromMessage(chatMessage)
+            if (newTemporaryNetworks.length > 0) {
                 const upserted = useTempNetworksStore.getState().upsertTempNetworks(newTemporaryNetworks)
 
                 // Record the new temporary networks so we can highlight them for the user.
@@ -385,6 +410,64 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             return true
         },
         [isNetworkDesignerMode]
+    )
+
+    /**
+     * Handles a save from the AgentFlow popup: streams the updated definition to the network designer,
+     * collects reservations from each chunk, then upserts the result and navigates if the network changed.
+     */
+    const onSaveAgent = useCallback(
+        async (
+            agentName: string,
+            updated: AgentNetworkDefinitionEntry[],
+            agentNetworkName: string | undefined,
+            signal: AbortSignal
+        ): Promise<void> => {
+            try {
+                let newNetworks: TemporaryNetwork[] = []
+                await sendNetworkDesignerUpdate(
+                    neuroSanURL,
+                    signal,
+                    agentName,
+                    updated,
+                    agentNetworkName,
+                    userInfo.userName,
+                    (chunk) => {
+                        newNetworks = collectNetworksFromChunk(chunk, updated, agentNetworkName, newNetworks)
+                    }
+                )
+
+                if (newNetworks.length === 0) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to update agent "${agentName}".`,
+                        "The network designer did not return a reservation. Please try again."
+                    )
+                    return
+                }
+
+                const replacement = newNetworks.find((n) => n.agentNetworkName === agentNetworkName)
+                if (replacement) {
+                    useTempNetworksStore.getState().upsertTempNetworks(newNetworks)
+                    if (selectedNetwork) {
+                        useAgentChatHistoryStore
+                            .getState()
+                            .copyHistory(selectedNetwork, replacement.agentInfo.agent_name)
+                        agentCountsRef.current = new Map()
+                        setSelectedNetwork(replacement.agentInfo.agent_name)
+                    }
+                } else {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to update agent "${agentName}".`,
+                        "A reservation was returned but did not match the current network. Please try again."
+                    )
+                }
+            } catch (e: unknown) {
+                notifySaveError(agentName, e)
+            }
+        },
+        [neuroSanURL, userInfo.userName, selectedNetwork]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -494,7 +577,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             agentCounts={agentCountsRef.current}
                             agentsInNetwork={agentsInNetwork}
                             agentIconSuggestions={agentIconSuggestions}
-                            currentUser={userInfo.userName}
                             id="multi-agent-accelerator-agent-flow"
                             key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
@@ -502,13 +584,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
-                            neuroSanURL={neuroSanURL}
-                            onNetworkReplaced={(oldNetworkId, newNetworkId) => {
-                                if (selectedNetwork === oldNetworkId) {
-                                    agentCountsRef.current = new Map()
-                                    setSelectedNetwork(newNetworkId)
-                                }
-                            }}
+                            onSaveAgent={onSaveAgent}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />

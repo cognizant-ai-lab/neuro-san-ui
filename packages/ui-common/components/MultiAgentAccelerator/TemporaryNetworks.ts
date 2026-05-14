@@ -1,7 +1,10 @@
 import {
+    AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_HOCON,
+    AGENT_NETWORK_NAME_KEY,
     AGENT_RESERVATIONS_KEY,
     AgentNetworkDefinitionEntry,
+    DisplayAs,
     TEMPORARY_NETWORK_FOLDER,
 } from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
@@ -108,3 +111,44 @@ export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNet
     }
     return result
 }
+
+/**
+ * Returns true when agentName refers to a known temporary network.
+ */
+export const isTemporaryNetwork = (agentName: string | null, networks: TemporaryNetwork[]): boolean =>
+    agentName !== null && networks.some((n) => n.agentInfo.agent_name === agentName)
+
+/**
+ * Extracts TemporaryNetwork objects from a chat message by reading reservations, HOCON,
+ * agent network definition, and agent network name from the message / sly_data.
+ * @param message The chat message to extract from.
+ * @param agentNetworkDefinitionOverride Optional definition override (e.g. a locally-edited version) that
+ *   takes precedence over whatever the backend echoes in sly_data.
+ * @param agentNetworkNameOverride Optional name override that takes precedence over sly_data, ensuring the
+ *   locally-known name is used for upsert deduplication even when the backend omits AGENT_NETWORK_NAME_KEY.
+ * @returns A (possibly empty) array of TemporaryNetwork objects ready for the store.
+ */
+export const extractTemporaryNetworksFromMessage = (
+    message: ChatMessage,
+    agentNetworkDefinitionOverride?: AgentNetworkDefinitionEntry[],
+    agentNetworkNameOverride?: string
+): TemporaryNetwork[] => {
+    const reservations = extractReservations(message)
+    if (reservations.length === 0) return []
+
+    const networkHocon = extractNetworkHocon(message)
+    const agentNetworkDefinition =
+        agentNetworkDefinitionOverride ??
+        (message.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[] | undefined)
+    const agentNetworkName =
+        agentNetworkNameOverride ?? (message.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined)
+
+    return convertReservationsToNetworks(reservations, networkHocon, agentNetworkDefinition, agentNetworkName)
+}
+
+/**
+ * Returns true when an agent node supports the edit popup (instructions + description).
+ * Only `llm_agent` nodes are editable; `coded_tool`, `langchain_tool`, `external_agent`,
+ * and nodes without an explicit `display_as` are read-only.
+ */
+export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DisplayAs.LLM_AGENT
