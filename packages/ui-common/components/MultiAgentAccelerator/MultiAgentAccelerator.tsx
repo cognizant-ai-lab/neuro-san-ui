@@ -471,6 +471,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
+    const onNetworkReplaced = useCallback(
+        (oldNetworkId: string, newNetworkId: string) => {
+            if (selectedNetwork === oldNetworkId) {
+                setAgentCounts(new Map())
+                setSelectedNetwork(newNetworkId)
+            }
+        },
+        [selectedNetwork]
+    )
+
     const getCenterPanel = () => {
         return (
             <Grid
@@ -506,12 +516,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
-                            onNetworkReplaced={(oldNetworkId, newNetworkId) => {
-                                if (selectedNetwork === oldNetworkId) {
-                                    setAgentCounts(new Map())
-                                    setSelectedNetwork(newNetworkId)
-                                }
-                            }}
+                            onNetworkReplaced={onNetworkReplaced}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
