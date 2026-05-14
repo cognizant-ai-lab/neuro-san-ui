@@ -52,6 +52,7 @@ jest.mock("../../../../components/AgentChat/Common/LlmChatButton", () => ({
             onClick={onClick}
             disabled={disabled}
             data-testid="microphone-button"
+            type="button"
         >
             {children}
         </button>

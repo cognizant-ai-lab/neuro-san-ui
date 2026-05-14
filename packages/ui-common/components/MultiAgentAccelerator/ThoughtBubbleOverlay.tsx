@@ -127,6 +127,14 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     isStreaming = false,
     onBubbleHoverChange,
 }) => {
+    /**
+     * A pure, managed timestamp that can be safely referenced during renders.
+     * Instead of calling the impure Date.now() directly in the render phase (which violates React's purity rules
+     * and triggers linting warnings), the component captures timestamps at controlled moments and stores them
+     * in state.
+     */
+    const [time, setTime] = useState(() => Date.now())
+
     // hoveredBubbleId: id of currently hovered bubble (or null)
     const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
     // truncatedBubbles: set of edge ids whose text overflows the collapsed box
@@ -149,6 +157,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     // rAF ref for scheduling post-paint updates
     const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null)
     const mountedRef = useRef(true)
+
+    // Effect to update `time` every second to trigger re-renders for animation timing and line updates.
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTime(Date.now())
+        }, 250)
+
+        return () => clearInterval(interval)
+    }, [])
 
     // Filter edges with meaningful text (memoized to prevent infinite re-renders)
     const thoughtBubbleEdges = useMemo(
@@ -183,9 +200,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             // Add new bubbles in entering state. Record when they entered so we can delay showing
             // connecting lines until the bubble's entrance animation delay.
-            const now = Date.now()
             newBubbles.forEach((edge) => {
-                newState.set(edge.id, {isVisible: true, isExiting: false, enteredAt: now})
+                newState.set(edge.id, {isVisible: true, isExiting: false, enteredAt: time})
             })
 
             // Mark removing bubbles as exiting
@@ -216,7 +232,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             return newState
         })
-    }, [thoughtBubbleEdges])
+    }, [thoughtBubbleEdges, time])
 
     // Cleanup timeouts on unmount
     useEffect(() => {
@@ -248,9 +264,9 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         for (const node of nodes) {
             const getConversations = node.data?.["getConversations"]
             if (typeof getConversations === "function") {
-                const convs = getConversations()
-                if (Array.isArray(convs)) {
-                    const hasSelf = convs.some((conv) => conv?.agents?.has?.(node.id))
+                const conversations = getConversations()
+                if (Array.isArray(conversations)) {
+                    const hasSelf = conversations.some((conversation) => conversation?.agents?.has?.(node.id))
                     if (hasSelf) {
                         set.add(node.id)
                     }
@@ -414,7 +430,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 if (!bubbleState.isVisible || bubbleState.isExiting) return
 
                 // Respect the entrance animation delay gating (lines appear only after bubble start)
-                const elapsed = Date.now() - (bubbleState?.enteredAt ?? 0)
+                const elapsed = time - (bubbleState?.enteredAt ?? 0)
                 const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
                 if (elapsed < animationDelay) return
 
@@ -440,7 +456,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             console.error("ThoughtBubbleOverlay: updateAllLines error", err)
         }
-    }, [renderableBubbles, bubbleStates, calculateLineCoordinates])
+    }, [bubbleStates, calculateLineCoordinates, renderableBubbles, time])
 
     // Schedule post-paint updates with rAF and ResizeObserver. Also, optionally run a
     // continuous loop while `isStreaming` is true to keep lines in sync during streaming.
@@ -525,7 +541,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                     if (!bubbleState.isVisible) return null
 
                     // Only render lines after the bubble's entrance animation delay has elapsed.
-                    const elapsed = Date.now() - (bubbleState.enteredAt || 0)
+                    const elapsed = time - (bubbleState.enteredAt || 0)
                     const shouldShowLines = elapsed >= animationDelay
                     if (!shouldShowLines) return null
 
