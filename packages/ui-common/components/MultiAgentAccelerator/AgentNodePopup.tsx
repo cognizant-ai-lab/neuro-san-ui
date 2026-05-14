@@ -16,6 +16,7 @@ limitations under the License.
 
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import CircularProgress from "@mui/material/CircularProgress"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
 
@@ -121,6 +122,14 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     variant="contained"
                     size="small"
                     disabled={!isDirty || isSaving}
+                    startIcon={
+                        isSaving ? (
+                            <CircularProgress
+                                size={14}
+                                color="inherit"
+                            />
+                        ) : undefined
+                    }
                 >
                     {isSaving ? "Applying changes..." : "Save"}
                 </Button>
