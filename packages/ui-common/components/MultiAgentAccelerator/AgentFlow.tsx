@@ -372,8 +372,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handlePopupClose = useCallback(() => {
-        // If a save is in-flight, abort it immediately so the stream doesn't hang.
-        saveAbortControllerRef.current?.abort()
+        // This was added for API instability, however handlePopupClose is not called if the save is in progress 
+        saveAbortControllerRef.current?.abort() // Could remove
         saveAbortControllerRef.current = null
         setIsSaving(false)
         setIsPopupOpen(false)
