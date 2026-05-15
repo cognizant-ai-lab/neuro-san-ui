@@ -20,6 +20,7 @@ import {signOut, useSession} from "next-auth/react"
 
 import {navigateToUrl} from "./BrowserNavigation"
 import {OidcProvider} from "./types"
+import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../const"
 import {useUserInfoStore} from "../state/UserInfo"
 
 /**
@@ -33,11 +34,16 @@ export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
  * of NextAuth's useSession hook.
  */
 export const useAuthentication = () => {
+    if (!authenticationEnabled()) {
+        // Auth disabled: return a stub
+        return {data: {user: {name: DEFAULT_USERNAME, image: DEFAULT_USER_IMAGE}}}
+    }
+    // Auth enabled: safe to call hooks. Despite the conditional test above, we are guaranteed that
+    // authenticationEnabled is constant for a given build, so we won't be violating the rules of hooks.
+    /* eslint-disable react-hooks/rules-of-hooks */
     const {data: session} = useSession()
     const {currentUser: albUser, picture: albPicture} = useUserInfoStore()
-
-    // Return the user data in the same format as NextAuth's useSession hook. We prioritize the ALB info if we have
-    // it, but if not degrade gracefully to the NextAuth info.
+    /* eslint-enable react-hooks/rules-of-hooks */
     return {
         data: {
             user: {
@@ -87,7 +93,7 @@ export const smartSignOut = async (
     auth0ClientId: string,
     oidcProvider: OidcProvider
 ) => {
-    if (currentUser === undefined) {
+    if (currentUser === undefined || !authenticationEnabled()) {
         // Don't know what authentication provider we're using, so just return
         return
     }

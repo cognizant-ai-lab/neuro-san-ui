@@ -1,5 +1,5 @@
 # Node/NextJS/dotenv things
-.env*
+.env
 .env.local
 **/.next
 **/next-env.d.ts
