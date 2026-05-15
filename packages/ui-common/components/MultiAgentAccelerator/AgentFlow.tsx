@@ -395,9 +395,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             saveAbortControllerRef.current = controller
             try {
                 await onSaveAgent(agentName, updated, currentAgentNetworkName, controller.signal)
-            } catch {
+            } catch (e) {
                 // onSaveAgent is responsible for user-facing error handling and notification.
                 // We catch here only to ensure the finally block (and popup close) always runs.
+                console.error(`Error saving agent ${agentName}. See onSaveAgent implementation for details.`, e)
             } finally {
                 cancelTimeout()
                 saveAbortControllerRef.current = null
