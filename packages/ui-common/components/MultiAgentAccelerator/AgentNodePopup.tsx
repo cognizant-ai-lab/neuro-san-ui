@@ -30,7 +30,7 @@ export interface AgentNodePopupProps {
     readonly agentName: string
     /** Whether the dialog is open. */
     readonly isOpen: boolean
-    /** Called when the user closes or cancels the dialog with or without saving. */
+    /** Called when the user closes or cancels the dialog without saving. */
     readonly onClose: () => void
     /**
      * Called when the user saves the edited fields.
