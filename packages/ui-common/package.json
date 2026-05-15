@@ -1,7 +1,7 @@
 {
     "name": "@cognizant-ai-lab/ui-common",
     "description": "A shared UI component library for Cognizant AI Labs projects",
-    "version": "1.2.4",
+    "version": "1.5.0",
     "type": "module",
     "scripts": {
         "build": "yarn clean && yarn generate && yarn run --top-level tsc --project tsconfig.build.json && fix-esm-import-path dist > /dev/null",

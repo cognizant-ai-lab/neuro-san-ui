@@ -125,6 +125,9 @@ export default defineConfig([
         rules: {
             ...next.configs.recommended.rules,
 
+            // Disable by default - consumers must configure with their project-specific pages path
+            "@next/next/no-html-link-for-pages": "off",
+
             // Turn on some optional, stricter settings for this rule
             "react/jsx-key": [
                 "error",
@@ -325,8 +328,6 @@ export default defineConfig([
                 },
             ],
 
-            "react-hooks/exhaustive-deps": "error",
-
             // Rules we're not ready to enable yet
 
             // Requires strict type checks enabled in tsc which we're not ready for yet
@@ -448,11 +449,7 @@ export default defineConfig([
             "one-var": "off",
             "prefer-destructuring": "off",
             radix: "off",
-            "react-hooks/preserve-manual-memoization": "off",
-            "react-hooks/purity": "off",
-            "react-hooks/refs": "off",
             "react-hooks/set-state-in-effect": "off",
-            "react/button-has-type": "off",
             "react/destructuring-assignment": "off",
             "react/forbid-component-props": "off",
             // Causes an error: "context.getSourceCode is not a function" -- ESLint 10 issue?
