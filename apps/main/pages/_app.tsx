@@ -41,13 +41,7 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
-import {
-    authenticationEnabled,
-    DEFAULT_NEURO_SAN_SERVER_URL,
-    DEFAULT_USER_IMAGE,
-    DEFAULT_USERNAME,
-    LOGO,
-} from "../../../packages/ui-common/const"
+import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
@@ -154,17 +148,6 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
 
     useEffect(() => {
         const getEnvironment = async () => {
-            if (!authenticationEnabled()) {
-                // Authentication is disabled, so we don't need to get environment variables
-                setBackendNeuroSanApiUrl(
-                    process.env["NEXT_PUBLIC_NEURO_SAN_SERVER_URL"] ?? DEFAULT_NEURO_SAN_SERVER_URL
-                )
-                setAuth0ClientId("")
-                setAuth0Domain("")
-                setSupportEmailAddress(process.env["NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS"] ?? "")
-                return
-            }
-
             // Fetch environment settings.
             // Save these in the zustand store so that subsequent pages will not need to fetch them again
             const res = await fetch("/api/environment", {
@@ -181,14 +164,22 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                 return
             }
 
+            // Retrieve environment variables from response
             const data: EnvironmentResponse = await res.json()
 
-            // Save env vars in zustand store
+            // We should always have these whether authentication is enabled or not
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
-            setAuth0ClientId(data.auth0ClientId)
-            setAuth0Domain(data.auth0Domain)
             setSupportEmailAddress(data.supportEmailAddress)
             setLogoServiceToken(data.logoServiceToken)
+
+            if (authenticationEnabled()) {
+                // save Auth0 settings if authentication is enabled.
+                setAuth0ClientId(data.auth0ClientId)
+                setAuth0Domain(data.auth0Domain)
+            } else {
+                setAuth0ClientId("")
+                setAuth0Domain("")
+            }
         }
 
         void getEnvironment()
