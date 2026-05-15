@@ -26,7 +26,7 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
+import {FC, ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
 
 import {
     Auth,
@@ -86,6 +86,14 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
         />
     )
 }
+
+/**
+ * Shim to conditionally wrap the app in a SessionProvider if authentication is enabled.
+ * Allows us to avoid next-auth errors when authentication is disabled
+ */
+// eslint-disable-next-line react/no-multi-comp -- used only within this module
+const NullableSessionProvider: FC<{children: ReactNode}> = ({children}) =>
+    authenticationEnabled() ? <SessionProvider>{children}</SessionProvider> : <>{children}</>
 
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
@@ -302,10 +310,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         body = (
             <>
                 <CssBaseline />
-                {/*Note: Still need the NextAuth SessionProvider even in ALB case since we have to use useSession
-                unconditionally due to React hooks rules. But it doesn't interfere with ALB log on and will be
-                removed when we fully switch to ALB auth.*/}
-                <SessionProvider>
+                <NullableSessionProvider>
                     <ErrorBoundary id="error_boundary">
                         <NavbarWrapper
                             id="nav-bar"
@@ -338,7 +343,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                             sx={{borderTop: "none", marginTop: 0}}
                         />
                     </ErrorBoundary>
-                </SessionProvider>
+                </NullableSessionProvider>
             </>
         )
     }
