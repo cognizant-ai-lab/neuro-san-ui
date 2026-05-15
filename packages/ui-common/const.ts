@@ -26,6 +26,12 @@ export const getContactUsConfirmationText = (email: string): string =>
     `${email} using a web based email client.`
 
 /**
+ * The default username to use when the user is not authenticated or does not have a name available, or when
+ * auentication is disabled
+ */
+export const DEFAULT_USERNAME = "Guest"
+
+/**
  * The default user image to use when the user does not have a profile picture.
  */
 export const DEFAULT_USER_IMAGE = "https://www.gravatar.com/avatar/?d=mp"

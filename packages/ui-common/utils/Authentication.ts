@@ -20,7 +20,7 @@ import {signOut, useSession} from "next-auth/react"
 
 import {navigateToUrl} from "./BrowserNavigation"
 import {OidcProvider} from "./types"
-import {authenticationEnabled} from "../const"
+import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../const"
 import {useUserInfoStore} from "../state/UserInfo"
 
 /**
@@ -36,7 +36,7 @@ export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
 export const useAuthentication = () => {
     if (!authenticationEnabled()) {
         // Auth disabled: return a stub
-        return {data: {user: {name: undefined, image: undefined}}}
+        return {data: {user: {name: DEFAULT_USERNAME, image: DEFAULT_USER_IMAGE}}}
     }
     // Auth enabled: safe to call hooks. Despite the conditional test above, we are guaranteed that
     // authenticationEnabled is constant for a given build, so we won't be violating the rules of hooks.
