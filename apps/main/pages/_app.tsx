@@ -45,6 +45,7 @@ import {
     authenticationEnabled,
     DEFAULT_NEURO_SAN_SERVER_URL,
     DEFAULT_USER_IMAGE,
+    DEFAULT_USERNAME,
     LOGO,
 } from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
@@ -197,7 +198,7 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         const getUserInfo = async () => {
             if (!authenticationEnabled()) {
                 // Authentication is disabled, so we don't need to get user info
-                setCurrentUser("Guest")
+                setCurrentUser(DEFAULT_USERNAME)
                 setPicture(DEFAULT_USER_IMAGE)
                 setOidcProvider("None")
                 return
