@@ -35,6 +35,7 @@ import {
     AgentNetworkDefinitionEntry,
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
+import {TempNetworkEditPanel} from "./TempNetworkEditPanel"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
@@ -564,6 +565,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
+    const onTopologicalEditComplete = useCallback(
+        (replacement: TemporaryNetwork, allNewNetworks: TemporaryNetwork[]): void => {
+            useTempNetworksStore.getState().upsertTempNetworks(allNewNetworks)
+            if (selectedNetwork) {
+                useAgentChatHistoryStore.getState().copyHistory(selectedNetwork, replacement.agentInfo.agent_name)
+            }
+            setSelectedNetwork(replacement.agentInfo.agent_name)
+        },
+        [selectedNetwork]
+    )
+
     const getCenterPanel = () => {
         return (
             <Grid
@@ -580,6 +592,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
+                            position: "relative",
                             width: "100%",
                             height: "100%",
                             maxWidth: 1000,
@@ -601,6 +614,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
+                        {isSelectedNetworkTemporary && currentTempNetwork && (
+                            <TempNetworkEditPanel
+                                neuroSanURL={neuroSanURL}
+                                currentUser={userInfo.userName}
+                                currentTempNetwork={currentTempNetwork}
+                                onNetworkUpdated={onTopologicalEditComplete}
+                            />
+                        )}
                     </Box>
                 </ReactFlowProvider>
             </Grid>
