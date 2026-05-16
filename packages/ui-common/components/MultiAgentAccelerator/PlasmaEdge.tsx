@@ -15,14 +15,31 @@ limitations under the License.
 */
 
 import {EdgeProps, getBezierPath} from "@xyflow/react"
-import {FC, useEffect, useRef} from "react"
+import {FC, useEffect, useMemo, useRef} from "react"
 
 import {useSettingsStore} from "../../state/Settings"
+
+const createGlowSprite = (color: string) => {
+    const size = 32
+    const canvas = document.createElement("canvas")
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext("2d")
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, 2, size / 2, size / 2, size / 2)
+    gradient.addColorStop(0, color)
+    gradient.addColorStop(1, "rgba(0,0,0,0)")
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+    ctx.fill()
+    return canvas
+}
 
 const createFunnelParticleOnPath = (
     pathEl: SVGPathElement,
     canvasOffset: {x: number; y: number},
-    baseProgress: number
+    baseProgress: number,
+    glowSprite: HTMLCanvasElement
 ) => {
     const totalLength = pathEl.getTotalLength()
     const speed = 0.02 + Math.random() * 0.003
@@ -64,9 +81,7 @@ const createFunnelParticleOnPath = (
 
         // Soft outer glow — cheap substitute for shadowBlur
         ctx.globalAlpha = effectiveAlpha * 0.3
-        ctx.beginPath()
-        ctx.arc(x, y, 5, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.drawImage(glowSprite, x - 16, y - 16)
 
         // Sharp core
         ctx.globalAlpha = effectiveAlpha * 0.9
@@ -104,6 +119,8 @@ export const PlasmaEdge: FC<EdgeProps> = ({
         targetPosition,
     })
 
+    const glowSprite = useMemo(() => createGlowSprite(plasmaColor), [plasmaColor])
+
     const padding = 40
     const x = Math.min(sourceX, targetX) - padding
     const y = Math.min(sourceY, targetY) - padding
@@ -135,7 +152,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
                 if (particles.current.length < MAX_PARTICLES) {
                     const t = Math.random()
                     if (Math.random() < 1 - t) {
-                        particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t))
+                        particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t, glowSprite))
                     }
                 }
             }
@@ -156,7 +173,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
         return () => {
             if (animationRef.current !== undefined) cancelAnimationFrame(animationRef.current)
         }
-    }, [edgePath, width, height, plasmaColor, x, y])
+    }, [edgePath, width, height, plasmaColor, x, y, glowSprite])
 
     return (
         <>
