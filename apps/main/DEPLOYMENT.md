@@ -1,19 +1,3 @@
-## Copyright
-
-Copyright 2026 Cognizant Technology Solutions Corp, www.cognizant.com.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
 ## Overview
 
 This document provides an overview of how to deploy the Multi-Agent Accelerator UI ("MAUI") to a production
@@ -45,14 +29,26 @@ the CI/CD pipeline but you can also build your own Docker image.
 
 Skip this step if you have access to a pre-built Docker image for MAUI.
 
-To build the Docker image yourself, follow these steps:
+To build the Docker image yourself, run the following command from the root of the repository. Inspect the script for
+the various options available.
 
-...
+```bash
+./apps/main/deploy/build.sh
+```
 
-### Deploying to Kubernetes
+To run the resulting Docker image locally for testing, you can use the following command. Note that some
+environment variables must be supplied as described in the script. See `.env.sample` for reference.
 
-...
+```bash
+./apps/main/deploy/run.sh
+```
+
+Deploying image to a cloud service provider is outside the scope of this document.
 
 ## Authentication
 
-...
+The process described above results in a deployment of the UI that is not protected by any authentication mechanism.
+For production deployments, it is strongly advised that you set up authentication to prevent unauthorized access to the
+application. This can be done using a variety of methods such as an AWS ALB with authentication via OIDC.
+Further details on how to set this up are outside the scope of this document. Please contact the Cognizant AI Lab team
+for more information.

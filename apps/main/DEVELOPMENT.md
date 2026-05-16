@@ -44,53 +44,35 @@ Note: Previous names for this project were UniLEAF and NeuroAI, and those names 
     - `yarn generate`
         - `yarn generate` will generate the necessary files in the `generated` directory.
     - To verify, check to make sure that `generated/neuro-san/NeuroSanClient.ts` was generated.
-- In your project root directory, create a file named `.env` which contains the following keys.  
-  Ask a current UI developer for the your_value values or get them self-serve from the leaf-team-vault server (see below).
 
-```dotenv
-# Determines which backend neuro-san server to access. This one is for the Dev environment -- change as necessary.
-NEURO_SAN_SERVER_URL=https://neuro-san-dev.decisionai.ml
+## Set up environment variables
 
-# Disable authentication for local development.
-NEXT_PUBLIC_ENABLE_AUTHENTICATION=false
-
-# Can be an arbitrary value, since authentication is disabled.
-AUTH0_CLIENT_SECRET=<your_value_here>
-
-# Generate this key using your OpenAI account.
-OPENAI_API_KEY=<your_value_here>
-
-# Can be anything; only use for "Contact Us" feature.
-SUPPORT_EMAIL_ADDRESS=test@example.com
-
-# Obtain a token from Logo.dev. Optional. If you omit this, automatic logo generation will not be available in the UI.
-LOGO_SERVICE_TOKEN=<your_value_here>
-```
-
-- Instructions for generating NEXTAUTH_SECRET are [here](https://next-auth.js.org/configuration/options#secret).
-- Instructions on generating OPENAI_API_KEY are [here](https://platform.openai.com/account/api-keys).  
-  You will need an active account with OpenAI to generate this key. This is only needed if you are working on the  
-  LLM features of the UI.
+- In your project root directory, copy the file `.env.sample` to `.env` and fill in the appropriate values
+  for the keys in the file. Instructions on generating OPENAI_API_KEY are
+  [here](https://platform.openai.com/account/api-keys).  
+  You will need an active account with OpenAI to generate this key.
 - Be sure to chmod 600 this .env file to keep secret values secret
 
 ## Run the development server:
 
 ```bash
-# By setting the NEURO_SAN_UI_VERSION value, the ui will display your current branch in the header after Build:
-export NEURO_SAN_UI_VERSION=$(git branch --show-current) && yarn run dev
+# By setting the NEXT_PUBLIC_NEURO_SAN_UI_VERSION value, the ui will display your current branch in the header
+# after Build:
+export NEXT_PUBLIC_NEURO_SAN_UI_VERSION=$(git branch --show-current) && yarn run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-You should see the Neuro SAN UI splash page.
+You should see the Neuro SAN UI splash page. Click on "Explore agent networks". This should bring you to the
+agent networks screen.
 
 ## Try making a simple change to the UI
 
 Now you've made it this far, try a simple change within the UI. Here's an example:
 
 1. Navigate to the home page `http://localhost:3000/multiAgentAccelerator`
-1. Open `./pages/multiAgentAccelerator/index.tsx` in your editor.
-1. Add a message, such as `Hello world!`, at the appropriate place in the tsx file (somewhere within the `<Grid>`
-   in the last `return` statement).
+1. Open the file `./packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator.tsx` in your code editor.
+1. Add a message, such as `Hello world!`, at the appropriate place in the tsx file (somewhere within the last `return`
+   statement).
 1. Your change appears immediately in the UI for MAUI, without relaunching any services or recompiling,
-   thanks to auto-reloading by NextJS. If you don't see your change, try holding down `Shift` and clicking
+   thanks to auto-reloading by Next.js. If you don't see your change, try holding down `Shift` and clicking
    the browser refresh button -- this bypasses the browser cache.
