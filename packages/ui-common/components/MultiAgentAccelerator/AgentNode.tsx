@@ -18,6 +18,7 @@ limitations under the License.
 // eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
+// import EditOutlinedIcon from "@mui/icons-material/EditOutlined"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
@@ -53,6 +54,7 @@ export const NODE_WIDTH = 100
 // Icon sizes
 // These are used to set the size of the icons displayed in the agent nodes.
 const AGENT_ICON_SIZE = "2.25rem"
+const EDIT_BADGE_SIZE = "1.5rem"
 const FRONTMAN_ICON_SIZE = "4.5rem"
 
 // Pulsing glow animation for when an agent is active.
@@ -214,14 +216,46 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 isActive={isActiveAgent}
                 sx={{
                     backgroundColor,
+                    border: isEditable ? `2px solid ${theme.palette.primary.main}` : "2px solid transparent",
+                    boxShadow: isEditable ? `0 0 0 0.1875rem ${theme.palette.primary.main}33` : "none",
                     color,
                     cursor: isEditable ? "pointer" : "grab",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
+                    transition: theme.transitions.create(["border-color", "box-shadow", "transform"], {
+                        duration: theme.transitions.duration.short,
+                    }),
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),
+                    "&:hover": {
+                        boxShadow: isEditable ? `0 0 0 0.25rem ${theme.palette.primary.main}55` : "none",
+                        transform: isEditable ? "scale(1.04)" : "none",
+                    },
                 }}
             >
                 {getDisplayAsIcon()}
+                {/* isEditable && (
+                    <EditOutlinedIcon
+                        aria-hidden
+                        sx={{
+                            alignItems: "center",
+                            backgroundColor,
+                            border: `1px solid ${theme.palette.primary.main}`,
+                            borderRadius: "50%",
+                            boxShadow: theme.shadows[2],
+                            color: theme.palette.primary.main,
+                            display: "flex",
+                            fontSize: "1rem",
+                            height: EDIT_BADGE_SIZE,
+                            justifyContent: "center",
+                            padding: "0.1875rem",
+                            pointerEvents: "none",
+                            position: "absolute",
+                            right: "-0.25rem",
+                            top: "-0.25rem",
+                            width: EDIT_BADGE_SIZE,
+                        }}
+                    />
+                ) */}
                 <Handle
                     id={`${agentId}-left-handle`}
                     position={Position.Left}
