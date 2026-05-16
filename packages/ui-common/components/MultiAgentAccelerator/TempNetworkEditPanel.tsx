@@ -102,7 +102,7 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
     const theme = useTheme()
     const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
 
-    const [prompt, setPrompt] = useState<string>("")
+    const [editPrompt, setEditPrompt] = useState<string>("")
     const [isStreaming, setIsStreaming] = useState<boolean>(false)
     const [statusMessage, setStatusMessage] = useState<string | null>(null)
     const [statusIsError, setStatusIsError] = useState<boolean>(false)
@@ -128,7 +128,7 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
     )
 
     const handleSend = async (): Promise<void> => {
-        if (!prompt.trim() || isStreaming) return
+        if (!editPrompt.trim() || isStreaming) return
 
         const controller = new AbortController()
         controllerRef.current = controller
@@ -143,7 +143,7 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
             await sendChatQuery(
                 neuroSanURL,
                 controller.signal,
-                prompt,
+                editPrompt,
                 AGENT_NETWORK_DESIGNER_ID,
                 (chunk) => {
                     newNetworks = collectNetworksFromChunk(chunk, newNetworks)
@@ -170,7 +170,7 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
                     newNetworks.find((n) => n.agentNetworkName === currentTempNetwork.agentNetworkName) ??
                     newNetworks[0]
 
-                setPrompt("")
+                setEditPrompt("")
                 setStatusMessage("Network topology updated.")
                 setStatusIsError(false)
                 scheduleStatusClear()
@@ -258,9 +258,9 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
                     id="temp-network-edit-panel-input"
                     fullWidth
                     size="small"
-                    placeholder="Describe a topological change to the network."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Describe the change you'd like to make, for example, add node X or delete node X."
+                    value={editPrompt}
+                    onChange={(e) => setEditPrompt(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={isStreaming}
                     multiline
@@ -276,6 +276,7 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
                     <Tooltip title="Stop">
                         <span>
                             <IconButton
+                                aria-label="Stop"
                                 id="temp-network-edit-panel-stop"
                                 onClick={handleStop}
                                 size="small"
@@ -290,10 +291,11 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
                     <Tooltip title="Send (Enter)">
                         <span>
                             <IconButton
+                                aria-label="Send"
                                 id="temp-network-edit-panel-send"
                                 onClick={() => void handleSend()}
                                 size="small"
-                                disabled={!prompt.trim()}
+                                disabled={!editPrompt.trim()}
                                 color="primary"
                                 sx={{mb: "2px"}}
                             >
