@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {HumanMessage} from "@langchain/core/messages"
 import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
@@ -784,6 +785,16 @@ describe("Multi Agent Accelerator Page", () => {
 
             temporaryNetworksMock.mockClear()
 
+            // Seed chat history for the network so we can verify it is cleared on delete.
+            useAgentChatHistoryStore
+                .getState()
+                .updateChatHistory(expectedAgentName, [new HumanMessage("hello from temp network")])
+            expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeDefined()
+
+            // Select the network so the active-network cleanup branch (clear selection, reset agent counts) runs.
+            const tempNetworkItem = await screen.findByText(cleanUpAgentName(RESERVATION.reservation_id))
+            await user.click(tempNetworkItem)
+
             // Simulate user deleting the temporary network
             await act(async () => onDeleteNetwork(expectedAgentName, false))
 
@@ -797,6 +808,16 @@ describe("Multi Agent Accelerator Page", () => {
 
             // Make sure network deleted
             expect(temporaryNetworksMock).toHaveBeenCalledWith([])
+
+            // Chat history for the deleted network should have been purged from the store (IndexedDB).
+            expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeUndefined()
+
+            // ChatCommon's targetAgent should be cleared, proving the active-network deselection branch ran.
+            expect(chatCommonMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    targetAgent: null,
+                })
+            )
         })
 
         it("Should handle deleting expired temporary networks without confirmation", async () => {
@@ -822,6 +843,16 @@ describe("Multi Agent Accelerator Page", () => {
 
             temporaryNetworksMock.mockClear()
 
+            // Seed chat history for the network so we can verify it is cleared on delete.
+            useAgentChatHistoryStore
+                .getState()
+                .updateChatHistory(expectedAgentName, [new HumanMessage("hello from expired network")])
+            expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeDefined()
+
+            // Select the network so the active-network cleanup branch runs.
+            const tempNetworkItem = await screen.findByText(cleanUpAgentName(RESERVATION.reservation_id))
+            await user.click(tempNetworkItem)
+
             // Simulate user deleting the expired temporary network
             await act(async () => onDeleteNetwork(expectedAgentName, true))
 
@@ -830,6 +861,116 @@ describe("Multi Agent Accelerator Page", () => {
 
             // Make sure network deleted
             expect(temporaryNetworksMock).toHaveBeenCalledWith([])
+
+            // Chat history for the deleted network should have been purged.
+            expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeUndefined()
+
+            // Active-network deselection should have run (targetAgent becomes null).
+            expect(chatCommonMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    targetAgent: null,
+                })
+            )
+        })
+
+        it("Should delete an unselected temporary network without touching the active selection", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            // Set up the temp network we will delete.
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            await waitFor(() => {
+                expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            agentInfo: expect.objectContaining({
+                                agent_name: expectedAgentName,
+                            }),
+                        }),
+                    ])
+                )
+            })
+
+            // Don't select the temp network — leave it unselected so the active-selection branch in the
+            // delete handler does NOT fire. This covers the else-branch of `selectedNetwork === networkId`.
+            temporaryNetworksMock.mockClear()
+            chatCommonMock.mockClear()
+
+            await act(async () => onDeleteNetwork(expectedAgentName, true))
+
+            // Network removed, but selection (which was already null) should not have been re-cleared via this path.
+            expect(temporaryNetworksMock).toHaveBeenCalledWith([])
+            expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeUndefined()
+        })
+
+        it("Should delete an unselected temporary network via the confirmation modal", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            // Set up the temp network we will delete.
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            await waitFor(() => {
+                expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            agentInfo: expect.objectContaining({
+                                agent_name: expectedAgentName,
+                            }),
+                        }),
+                    ])
+                )
+            })
+
+            // Leave the network unselected so the else-branch of `selectedNetwork === networkToBeDeleted`
+            // inside the confirmation-modal handler runs.
+            temporaryNetworksMock.mockClear()
+
+            await act(async () => onDeleteNetwork(expectedAgentName, false))
+            const modal = screen.getByTestId("delete-network-confirmation-modal-confirm-main")
+            await user.click(within(modal).getByRole("button", {name: "Confirm"}))
+
+            expect(temporaryNetworksMock).toHaveBeenCalledWith([])
+            expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeUndefined()
+        })
+
+        it("Should leave the network alone when the user cancels the delete confirmation modal", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            // Set up a temporary network
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            await waitFor(() => {
+                expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            agentInfo: expect.objectContaining({
+                                agent_name: expectedAgentName,
+                            }),
+                        }),
+                    ])
+                )
+            })
+
+            temporaryNetworksMock.mockClear()
+
+            // Open the modal, then cancel.
+            await act(async () => onDeleteNetwork(expectedAgentName, false))
+            const modal = screen.getByTestId("delete-network-confirmation-modal-confirm-main")
+            const cancelButton = within(modal).getByRole("button", {name: "Cancel"})
+            await user.click(cancelButton)
+
+            // Modal closes and the network is NOT deleted.
+            expect(screen.queryByTestId("delete-network-confirmation-modal-confirm-main")).not.toBeInTheDocument()
+            expect(temporaryNetworksMock).not.toHaveBeenCalledWith([])
         })
 
         it("Should handle temporary networks expiring", async () => {
@@ -869,8 +1010,15 @@ describe("Multi Agent Accelerator Page", () => {
             // Make sure network saved to store
             expect(useTempNetworksStore.getState().tempNetworks.length).toBe(1)
 
-            // Not expired yet so we should see the network
             const expectedNetworkName = `${TEMPORARY_NETWORK_FOLDER}/${TEMPORARY_NETWORK.reservation.reservation_id}`
+
+            // Seed chat history so we can verify the reaper purges it after the grace period.
+            useAgentChatHistoryStore
+                .getState()
+                .updateChatHistory(expectedNetworkName, [new HumanMessage("hello before expiry")])
+            expect(useAgentChatHistoryStore.getState().history[expectedNetworkName]).toBeDefined()
+
+            // Not expired yet so we should see the network
             const temporaryNetworkNode = document.querySelector(`[data-itemid="${expectedNetworkName}"]`)
             expect(temporaryNetworkNode).not.toBeNull()
 
@@ -946,6 +1094,9 @@ describe("Multi Agent Accelerator Page", () => {
 
             // ...and removed from the list
             expect(screen.queryByText(displayAgentName)).not.toBeInTheDocument()
+
+            // Chat history for the reaped network should also be gone.
+            expect(useAgentChatHistoryStore.getState().history[expectedNetworkName]).toBeUndefined()
         })
     })
 
