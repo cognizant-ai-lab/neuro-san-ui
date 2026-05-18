@@ -43,5 +43,4 @@ run the UI locally.
 
 You are a developer who wants to use the shared component library in your own project.
 
-Refer to [README.md](packages/ui-common/README.md) for instructions on how to use the shared component library in your
-own project.
+Refer to [README.md](packages/ui-common/README.md) for instructions on how to do this.
