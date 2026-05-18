@@ -29,7 +29,7 @@ import StopCircleIcon from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
-import {alpha, useTheme} from "@mui/material/styles"
+import {useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -40,7 +40,6 @@ import {extractTemporaryNetworksFromMessage, mergeNetworks} from "./TemporaryNet
 import {sendChatQuery} from "../../controller/agent/Agent"
 import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
-import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 
 // #region: Types
@@ -100,7 +99,6 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
     onNetworkUpdated,
 }): ReactJSX.Element => {
     const theme = useTheme()
-    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
 
     const [editPrompt, setEditPrompt] = useState<string>("")
     const [isStreaming, setIsStreaming] = useState<boolean>(false)
@@ -206,17 +204,7 @@ export const TempNetworkEditPanel: FC<TempNetworkEditPanelProps> = ({
         <Box
             id="temp-network-edit-panel"
             sx={{
-                position: "absolute",
-                bottom: "1rem",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "min(620px, 90%)",
-                zIndex: getZIndex(2, theme),
-                borderRadius: "10px",
-                background: alpha(theme.palette.background.paper, 0.92),
-                backdropFilter: "blur(6px)",
-                boxShadow: `0 4px 16px ${alpha(shadowColor, 0.18)}`,
-                border: `1px solid ${theme.palette.divider}`,
+                minWidth: "min(560px, 90vw)",
                 padding: "0.6rem 0.75rem",
             }}
         >
