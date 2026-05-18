@@ -238,7 +238,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 currentUser &&
                                 temporaryNetworkObjects?.[itemId] && (
                                     <Tooltip title="Edit network topology">
-                                        <span style={{marginBottom: "3px"}}>
+                                        <span style={{marginRight: "2px", marginBottom: "3px"}}>
                                             <IconButton
                                                 onClick={(e) => {
                                                     e.stopPropagation()
