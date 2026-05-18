@@ -67,5 +67,8 @@
     },
     "resolutions": {
         "js-yaml": "4.1.1"
+    },
+    "dependencies": {
+        "react-joyride": "^3.1.0"
     }
 }
