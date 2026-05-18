@@ -33,7 +33,7 @@ function build_main() {
     fi
 
     # Determine platform, defaulting to linux/amd64
-    if [ -z "${TARGET_PLATFORM}" ]
+    if [ -z "${TARGET_PLATFORM:-}" ]
     then
         TARGET_PLATFORM="linux/amd64"
     fi
@@ -41,7 +41,7 @@ function build_main() {
 
     # Locate repo root and Dockerfile
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
     DOCKERFILE="${REPO_ROOT}/apps/main/Dockerfile"
 
     echo "DOCKERFILE is ${DOCKERFILE}"
