@@ -438,7 +438,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             useAgentChatHistoryStore.getState().resetHistory(networkId)
             if (selectedNetwork === networkId) {
                 setSelectedNetwork(null)
-                agentCountsRef.current = new Map()
+                setAgentCounts(new Map())
             }
         } else {
             setNetworkToBeDeleted(networkId)
@@ -635,12 +635,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         .setTempNetworks(
                             temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkToBeDeleted)
                         )
+                    /* istanbul ignore else -- @preserve: the modal cannot open without networkToBeDeleted set */
                     if (networkToBeDeleted) {
                         useAgentChatHistoryStore.getState().resetHistory(networkToBeDeleted)
                     }
                     if (selectedNetwork === networkToBeDeleted) {
                         setSelectedNetwork(null)
-                        agentCountsRef.current = new Map()
+                        setAgentCounts(new Map())
                     }
                     setNetworkToBeDeleted(null)
                     setConfirmationModalOpen(false)
