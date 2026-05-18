@@ -14,11 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {renderHook} from "@testing-library/react"
 import {signOut} from "next-auth/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
-import {AD_TENANT_ID, smartSignOut} from "../../../utils/Authentication"
+import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../../../const"
+import {AD_TENANT_ID, smartSignOut, useAuthentication} from "../../../utils/Authentication"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 import {navigateToUrl} from "../../../utils/BrowserNavigation"
 
@@ -39,42 +41,56 @@ describe("useAuthentication", () => {
 
         oldFetch = window.fetch
         window.fetch = mockFetch({})
+
+        process.env["NEXT_PUBLIC_ENABLE_AUTHENTICATION"] = "true"
     })
 
     afterEach(() => {
         window.fetch = oldFetch
     })
 
-    it("Does nothing if currentUser not available", async () => {
-        ;(signOut as jest.Mock).mockResolvedValueOnce(undefined)
-
-        await smartSignOut(undefined, null, null, null)
-
-        expect(signOut).not.toHaveBeenCalled()
-        expect(navigateToUrl).not.toHaveBeenCalled()
+    describe("useAuthentication", () => {
+        it("Returns default user when authentication is disabled", () => {
+            // Disable auth for this test
+            process.env["NEXT_PUBLIC_ENABLE_AUTHENTICATION"] = "false"
+            const {result} = renderHook(() => useAuthentication())
+            expect(result.current.data.user.name).toBe(DEFAULT_USERNAME)
+            expect(result.current.data.user.image).toBe(DEFAULT_USER_IMAGE)
+        })
     })
 
-    it("Delegates to NextAuth signOut() if provider is NextAuth", async () => {
-        await smartSignOut("user", null, null, "NextAuth")
+    describe("signOut", () => {
+        it("Does nothing if currentUser not available", async () => {
+            ;(signOut as jest.Mock).mockResolvedValueOnce(undefined)
 
-        expect(signOut).toHaveBeenCalled()
-    })
+            await smartSignOut(undefined, null, null, null)
 
-    it("Handles sign-out for ALB with AD provider", async () => {
-        await smartSignOut("user", "example.com", "clientId", "AD")
-        expect(navigateToUrl).toHaveBeenCalledWith(
-            `https://login.microsoftonline.com/${AD_TENANT_ID}/oauth2/v2.0/logout`
-        )
-    })
+            expect(signOut).not.toHaveBeenCalled()
+            expect(navigateToUrl).not.toHaveBeenCalled()
+        })
 
-    it("Handles sign-out for ALB with Github provider", async () => {
-        const auth0Domain = "example.com"
-        const auth0ClientId = "clientId"
-        await smartSignOut("user", auth0Domain, auth0ClientId, "Github")
+        it("Delegates to NextAuth signOut() if provider is NextAuth", async () => {
+            await smartSignOut("user", null, null, "NextAuth")
 
-        const expectedReturnTo = encodeURIComponent(`http://${window.location.host}`)
-        expect(navigateToUrl).toHaveBeenCalledWith(
-            `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${expectedReturnTo}`
-        )
+            expect(signOut).toHaveBeenCalled()
+        })
+
+        it("Handles sign-out for ALB with AD provider", async () => {
+            await smartSignOut("user", "example.com", "clientId", "AD")
+            expect(navigateToUrl).toHaveBeenCalledWith(
+                `https://login.microsoftonline.com/${AD_TENANT_ID}/oauth2/v2.0/logout`
+            )
+        })
+
+        it("Handles sign-out for ALB with Github provider", async () => {
+            const auth0Domain = "example.com"
+            const auth0ClientId = "clientId"
+            await smartSignOut("user", auth0Domain, auth0ClientId, "Github")
+
+            const expectedReturnTo = encodeURIComponent(`http://${window.location.host}`)
+            expect(navigateToUrl).toHaveBeenCalledWith(
+                `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${expectedReturnTo}`
+            )
+        })
     })
 })

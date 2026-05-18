@@ -31,7 +31,6 @@ const esmPackagesToTransform = [
     "mdast.*",
     "parse-.*",
     "property-.*",
-    "react-syntax-highlighter",
     "refractor",
     "space-.*",
 ]
@@ -73,10 +72,10 @@ const config: Config.InitialOptions = {
 
     coverageThreshold: {
         global: {
-            statements: -102,
-            branches: -160,
+            statements: -101,
+            branches: -155,
             functions: -26,
-            lines: -79,
+            lines: -78,
         },
     },
 
