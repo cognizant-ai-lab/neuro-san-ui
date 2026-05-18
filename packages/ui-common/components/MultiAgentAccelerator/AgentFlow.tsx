@@ -569,14 +569,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const onNodesChange = useCallback(
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
-            setNodes((currentNodes) =>
-                applyNodeChanges<RFNode<AgentNodeProps>>(
-                    // For now, we only allow dragging, no updates. In agent network designer mode, doesn't make sense
-                    // to allow position changes since the user isn't actually manipulating a real network
-                    changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
-                    currentNodes
-                )
-            )
+            // Block node moves in the agent designer preview; pass all changes through otherwise.
+            const allowedChanges = isAgentNetworkDesignerMode ? changes.filter((c) => c.type !== "position") : changes
+            setNodes((currentNodes) => applyNodeChanges<RFNode<AgentNodeProps>>(allowedChanges, currentNodes))
         },
         [isAgentNetworkDesignerMode]
     )
