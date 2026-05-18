@@ -22,6 +22,7 @@ import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {Step, useJoyride} from "react-joyride"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
@@ -85,6 +86,94 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 }): ReactJSX.Element => {
     // MUI theme
     const theme = useTheme()
+
+    const sideBarRef = useRef<HTMLDivElement>(null)
+    const flowRef = useRef<HTMLDivElement>(null)
+    const chatCommonRef = useRef<HTMLDivElement>(null)
+    const steps: Step[] = [
+        {
+            content:
+                "Welcome to Cognizant AI Lab Multi-Agent Accelerator! This tour will give you a quick overview of the interface.",
+            target: () => document.querySelector("#start-tour-container"),
+        },
+        {
+            content:
+                "This is the list of agent networks available on the server. Select a network to see its agents and start chatting with it!",
+            target: () => document.querySelector("#multi-agent-accelerator-sidebar-heading"),
+            placement: "bottom",
+        },
+        {
+            content: "Click here to create and edit your own network, with the help of a powerful AI assistant.",
+            target: () => document.querySelector("#add-network-icon"),
+            placement: "bottom",
+        },
+        {
+            content: "Click this icon to connect to any Neuro SAN backend service.",
+            target: () => document.querySelector("#agent-network-settings-icon"),
+            placement: "bottom",
+        },
+        {
+            content: "These are the agents within the current network.",
+            target: () => flowRef.current,
+        },
+        {
+            content: "This is the chat window where you can interact with the currently selected network.",
+            target: () => chatCommonRef.current,
+        },
+        {
+            content:
+                "These are the sample queries for your currently selected network. Click one to send it to the agents!",
+            target: () => document.querySelector("#sample-queries-box"),
+            placement: "top",
+        },
+        {
+            content: "Try typing your query here and sending it to the agents by hitting <Enter>!",
+            target: () => document.querySelector("#user-input-div"),
+            placement: "top",
+        },
+        {
+            content:
+                "Access Settings from this icon. Here you can change the look and feel of the UI, including auto branding for a particular customer!",
+            target: () => document.querySelector("#settings-icon"),
+            placement: "top",
+        },
+        {
+            content:
+                "If you have any questions or need help, click here to access the help menu to contact the Cognizant AI Labs team. We'd love to hear from you!",
+            target: () => document.querySelector("#help-dropdown"),
+            placement: "top",
+        },
+    ]
+
+    const isDarkMode = true
+
+    const {controls, on, Tour} = useJoyride({
+        continuous: true,
+        steps,
+        options: {
+            backgroundColor: isDarkMode ? "#38405f" : "#ffffff", // deep muted indigo
+            textColor: isDarkMode ? "#fff4ec" : "#222222", // soft warm off-white (less yellow)
+            primaryColor: isDarkMode ? "#ffb07c" : "#222222", // muted pastel orange (more orange-y)
+            arrowColor: isDarkMode ? "#9ec9ff" : "#ffffff", // soft pastel blue accent
+            overlayColor: isDarkMode ? "rgba(20, 24, 36, 0.82)" : "rgba(0, 0, 0, 0.5)", // keep strong contrast
+            showProgress: true,
+            zIndex: getZIndex(2, theme) + 100,
+            skipBeacon: true, // optional: prevents the beacon click step
+            skipScroll: true,
+        },
+        locale: {
+            back: "Back",
+            close: "Close",
+            last: "End Tour",
+            next: "Next",
+        },
+    })
+
+    useEffect(() => {
+        return on("tour:end", () => {
+            console.log("Tour finished!")
+        })
+    }, [on])
 
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
@@ -419,6 +508,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [resetState])
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+    const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
+    const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
@@ -432,6 +523,23 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             setConfirmationModalOpen(true)
         }
     }
+
+    useEffect(() => {
+        if (haveShownTourModal) return
+
+        if (agentsInNetwork?.length > 0) {
+            const timer = setTimeout(() => {
+                setTourModalOpen(true)
+            }, 5000) // 1 second
+
+            return () => {
+                clearTimeout(timer)
+            }
+        } else {
+            // if agents disappear, ensure modal is closed
+            setTourModalOpen(false)
+        }
+    }, [agentsInNetwork, haveShownTourModal])
 
     const getLeftPanel = () => {
         return (
@@ -450,6 +558,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     sx={{
                         height: "100%",
                     }}
+                    ref={sideBarRef}
                 >
                     <Sidebar
                         customURLLocalStorage={customURLLocalStorage}
@@ -489,6 +598,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 sx={{
                     height: "100%",
                 }}
+                ref={flowRef}
             >
                 <ReactFlowProvider>
                     <Box
@@ -543,6 +653,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     sx={{
                         height: "100%",
                     }}
+                    ref={chatCommonRef}
                 >
                     <ChatCommon
                         agentGreetings={{
@@ -629,6 +740,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
+    const getTourModal = () =>
+        tourModalOpen ? (
+            <ConfirmationModal
+                id="tour-modal"
+                content="It looks like this is the first time you've used the Multi-Agent Accelerator. Would you like to take a quick tour of the interface?"
+                handleCancel={() => {
+                    setTourModalOpen(false)
+                    setHaveShownTourModal(true)
+                }}
+                handleOk={() => {
+                    controls.start()
+                    setTourModalOpen(false)
+                    setHaveShownTourModal(true)
+                }}
+                title="Tour"
+                okBtnLabel="Take the Tour"
+                cancelBtnLabel="No, Thanks"
+            />
+        ) : null
+
     /**
      * Popper to show real-time progress of the Agent Network Designer output as we receive it from the backend.
      * Only displayed when Agent Network Designer is active.
@@ -692,6 +823,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     return (
         <>
+            <div id="start-tour-container">
+                {/*    <button*/}
+                {/*        type="button"*/}
+                {/*        onClick={() => controls.start()}*/}
+                {/*    >*/}
+                {/*        Start Tour*/}
+                {/*    </button>*/}
+                {Tour}
+            </div>
+            {getTourModal()}
             {getProgressPopper()}
             {getConfirmationModal()}
             <Grid
