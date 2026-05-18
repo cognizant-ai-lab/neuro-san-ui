@@ -17,7 +17,7 @@ limitations under the License.
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {ReactFlowProvider} from "@xyflow/react"
+import {NodeChange, Node as RFNode, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -48,6 +48,24 @@ jest.mock("@mui/material/styles", () => ({
     ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
+
+// Capture the `onNodesChange` prop AgentFlow passes to ReactFlow so tests can invoke it directly.
+// The real ReactFlow component is still rendered, so existing DOM-based assertions keep working.
+const capturedReactFlowProps: {onNodesChange: ((changes: NodeChange<RFNode>[]) => void) | null} = {
+    onNodesChange: null,
+}
+jest.mock("@xyflow/react", () => {
+    const actual = jest.requireActual("@xyflow/react")
+    const RealReactFlow = actual.ReactFlow
+    const WrappedReactFlow = (props: {onNodesChange?: (changes: NodeChange<RFNode>[]) => void}) => {
+        capturedReactFlowProps.onNodesChange = props.onNodesChange ?? null
+        return <RealReactFlow {...props} />
+    }
+    return {
+        ...actual,
+        ReactFlow: WrappedReactFlow,
+    }
+})
 
 jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
@@ -1997,6 +2015,38 @@ describe("AgentFlow", () => {
             })
 
             expect(sendChatQuery).not.toHaveBeenCalled()
+        })
+    })
+
+    describe("onNodesChange", () => {
+        const buildChanges = (): NodeChange<RFNode>[] => [
+            {id: "agent1", type: "position", position: {x: 10, y: 20}, dragging: true},
+            {id: "agent1", type: "dimensions", dimensions: {width: 100, height: 100}},
+            {id: "agent1", type: "select", selected: true},
+        ]
+
+        beforeEach(() => {
+            capturedReactFlowProps.onNodesChange = null
+        })
+
+        it("passes every change type through in normal mode (so React Flow's store stays in sync)", () => {
+            renderAgentFlowComponent({isAgentNetworkDesignerMode: false})
+
+            expect(capturedReactFlowProps.onNodesChange).not.toBeNull()
+            // Should not throw; all change types are forwarded to applyNodeChanges.
+            act(() => {
+                capturedReactFlowProps.onNodesChange(buildChanges())
+            })
+        })
+
+        it("suppresses position changes in agent network designer preview mode", () => {
+            renderAgentFlowComponent({isAgentNetworkDesignerMode: true})
+
+            expect(capturedReactFlowProps.onNodesChange).not.toBeNull()
+            // Should not throw; position changes are filtered, all other change types pass through.
+            act(() => {
+                capturedReactFlowProps.onNodesChange(buildChanges())
+            })
         })
     })
 })
