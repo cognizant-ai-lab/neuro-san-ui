@@ -26,7 +26,6 @@ import {AgentConversation} from "../../../components/MultiAgentAccelerator/Agent
 import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
-import {sendChatQuery} from "../../../controller/agent/Agent"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../Theme/Palettes"
@@ -1100,15 +1099,13 @@ describe("AgentFlow", () => {
             useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(networkKey, initialDefinition)])
         })
 
-        const {container} = renderAgentFlowComponent({
+        renderAgentFlowComponent({
             isSelectedNetworkTemporary: true,
             networkId: networkKey,
         })
 
-        // Click an agent node to open the popup. ReactFlow renders nodes with data-id attributes.
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        expect(agent1Node).toBeInTheDocument()
-        fireEvent.click(agent1Node)
+        // Click an agent node to open the popup, querying by the visible agent name.
+        fireEvent.click(screen.getByText(cleanUpAgentName("agent1")))
 
         // The popup should now be open — make the form dirty then save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
@@ -1152,7 +1149,6 @@ describe("AgentFlow", () => {
 
         // Popup opens
         const cancelButton = await screen.findByRole("button", {name: "Cancel"})
-        expect(cancelButton).toBeInTheDocument()
 
         // Cancel closes the popup
         await user.click(cancelButton)
@@ -1363,7 +1359,6 @@ describe("AgentFlow", () => {
         // Popup should show networkB's instructions, not networkA's
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
         expect(instructionsField).toHaveValue(instructionsB)
-        expect(instructionsField).not.toHaveValue(instructionsA)
     })
 
     it("Should save edited instructions only to the current network's history entry", async () => {
@@ -1545,45 +1540,17 @@ describe("AgentFlow", () => {
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
     })
 
-    describe("popup save — async network replacement", () => {
-        /** Builds a minimal JSON-lines chunk that the streaming callback would receive, containing a reservation.
-         * Uses a 24-hour expiry (+86400 s) so it is always strictly greater than the stored network's
-         * +300 s expiry — required for the eager-replacement path's `expiry > currentExpiry` check. */
-        const makeReservationChunk = (reservationId: string, agentNetworkName: string) =>
-            JSON.stringify({
-                response: {
-                    type: "AGENT_FRAMEWORK",
-                    sly_data: {
-                        agent_reservations: [
-                            {
-                                reservation_id: reservationId,
-                                lifetime_in_seconds: 86400,
-                                expiration_time_in_seconds: Date.now() / 1000 + 86400,
-                            },
-                        ],
-                        agent_network_name: agentNetworkName,
-                    },
-                },
-            })
-
+    describe("popup save — onSaveAgent callback", () => {
         const OLD_NETWORK_ID = "temporary/old-res"
         const OLD_NETWORK_NAME = "my_network"
-        const NEW_RESERVATION_ID = "new-res"
-        const NEW_NETWORK_ID = `temporary/${NEW_RESERVATION_ID}`
 
-        beforeEach(() => {
-            // Default: sendChatQuery resolves immediately without emitting chunks
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
-        })
-
-        it("awaits sendChatQuery when neuroSanURL and currentUser are provided", async () => {
-            // sendNotification calls console.debug internally; silence it for this test
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+        it("shows 'Applying changes...' while onSaveAgent is in-flight and closes popup on completion", async () => {
             let resolveQuery: () => void
-            ;(sendChatQuery as jest.Mock).mockReturnValue(
-                new Promise<void>((resolve) => {
-                    resolveQuery = resolve
-                })
+            const onSaveAgent = jest.fn(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveQuery = resolve
+                    })
             )
 
             act(() => {
@@ -1597,8 +1564,7 @@ describe("AgentFlow", () => {
             const {container} = renderAgentFlowComponent({
                 isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
+                onSaveAgent,
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
@@ -1606,193 +1572,28 @@ describe("AgentFlow", () => {
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
             await user.type(instructionsField, "Updated instructions")
-            const saveButton = screen.getByRole("button", {name: "Save"})
-            await user.click(saveButton)
+            await user.click(screen.getByRole("button", {name: "Save"}))
 
-            // While in-flight the popup should stay open and show "Applying changes…"
+            // While the API call is in-flight the button should show "Applying changes..." and Save should be gone
             await waitFor(() => {
                 expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
             })
-            expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
 
-            // Resolve the pending promise to complete the save
+            expect(onSaveAgent).toHaveBeenCalledTimes(1)
+
+            // Resolve the pending promise — popup should close
             act(() => resolveQuery())
 
-            // After resolving, the popup should close
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
-
-            expect(sendChatQuery).toHaveBeenCalledTimes(1)
-            consoleDebugSpy.mockRestore()
         })
 
-        it("replaces the old network with the new one when a reservation is received", async () => {
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
+        it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
+            const onSaveAgent = jest.fn().mockResolvedValue(undefined)
+            const EDITED_INSTRUCTIONS = "Updated instructions for agent1"
 
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            const stored = useTempNetworksStore.getState().tempNetworks
-            // Old network should be gone, new one should be present
-            expect(stored.some((n) => n.agentInfo.agent_name === OLD_NETWORK_ID)).toBe(false)
-            expect(stored.some((n) => n.agentInfo.agent_name === NEW_NETWORK_ID)).toBe(true)
-        })
-
-        it("keeps the newest reservation when the backend streams an old echo then the new one", async () => {
-            // Backend sends the old reservation first (echo), then the new one — a real streaming pattern.
-            // The store must end up with the new one regardless of chunk order.
-            const OLD_EXPIRY = Date.now() / 1000 + 100 // lower expiry → dedup keeps the newer reservation
-            const NEW_EXPIRY = Date.now() / 1000 + 86400 // higher expiry → dedup keeps this one
-
-            const makeChunk = (reservationId: string, expiry: number) =>
-                JSON.stringify({
-                    response: {
-                        type: "AGENT_FRAMEWORK",
-                        sly_data: {
-                            agent_reservations: [
-                                {
-                                    reservation_id: reservationId,
-                                    lifetime_in_seconds: 300,
-                                    expiration_time_in_seconds: expiry,
-                                },
-                            ],
-                            agent_network_name: OLD_NETWORK_NAME,
-                        },
-                    },
-                })
-
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // old echo first, new reservation second
-                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
-                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const onNetworkReplaced = jest.fn()
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsFieldA = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsFieldA)
-            await user.type(instructionsFieldA, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            const stored = useTempNetworksStore.getState().tempNetworks
-            expect(stored).toHaveLength(1)
-            expect(stored[0].agentInfo.agent_name).toBe(NEW_NETWORK_ID)
-            expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
-        })
-
-        it("keeps the newest reservation when the backend streams new then old (reversed order)", async () => {
-            // Backend sends new reservation first, then old echo — should still keep the new one.
-            const OLD_EXPIRY = Date.now() / 1000 + 100 // lower expiry → dedup keeps the newer reservation
-            const NEW_EXPIRY = Date.now() / 1000 + 86400 // higher expiry → dedup keeps this one
-
-            const makeChunk = (reservationId: string, expiry: number) =>
-                JSON.stringify({
-                    response: {
-                        type: "AGENT_FRAMEWORK",
-                        sly_data: {
-                            agent_reservations: [
-                                {
-                                    reservation_id: reservationId,
-                                    lifetime_in_seconds: 300,
-                                    expiration_time_in_seconds: expiry,
-                                },
-                            ],
-                            agent_network_name: OLD_NETWORK_NAME,
-                        },
-                    },
-                })
-
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // new reservation first, old echo second (reversed — the problematic order)
-                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
-                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const onNetworkReplaced = jest.fn()
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsFieldB = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsFieldB)
-            await user.type(instructionsFieldB, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            const stored = useTempNetworksStore.getState().tempNetworks
-            expect(stored).toHaveLength(1)
-            expect(stored[0].agentInfo.agent_name).toBe(NEW_NETWORK_ID)
-            expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
-        })
-
-        it("new network carries the edited definition when backend does not echo it back", async () => {
-            // Backend returns a reservation but no agent_network_definition in sly_data
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
-
-            const EDITED_INSTRUCTIONS = "Eat fish and talk about fish"
             act(() => {
                 useTempNetworksStore
                     .getState()
@@ -1808,8 +1609,7 @@ describe("AgentFlow", () => {
             const {container} = renderAgentFlowComponent({
                 isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
+                onSaveAgent,
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
@@ -1819,130 +1619,24 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
-            const newNetwork = useTempNetworksStore
-                .getState()
-                .tempNetworks.find((n) => n.agentInfo.agent_name === NEW_NETWORK_ID)
-            expect(newNetwork).toBeDefined()
-            expect(newNetwork?.agentNetworkDefinition?.find((e) => e.origin === "agent1")?.instructions).toBe(
+            expect(onSaveAgent).toHaveBeenCalledTimes(1)
+            const [calledAgentName, calledUpdated, calledNetworkName, calledSignal] = onSaveAgent.mock.calls[0]
+            // agentName is the display name (cleaned up from the raw ID)
+            expect(typeof calledAgentName).toBe("string")
+            expect(calledAgentName.length).toBeGreaterThan(0)
+            expect(calledUpdated.find((e: AgentNetworkDefinitionEntry) => e.origin === "agent1")?.instructions).toBe(
                 EDITED_INSTRUCTIONS
             )
+            expect(calledNetworkName).toBe(OLD_NETWORK_NAME)
+            expect(calledSignal).toBeInstanceOf(AbortSignal)
         })
 
-        it("calls onNetworkReplaced with old and new network IDs after a successful save", async () => {
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const onNetworkReplaced = jest.fn()
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
-            })
-        })
-
-        it("does not call onNetworkReplaced when sendChatQuery returns no reservations", async () => {
-            // sendChatQuery resolves without emitting any chunk (default mock)
-            // sendNotification calls console.debug internally; silence it for this test
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
-            })
-
-            const onNetworkReplaced = jest.fn()
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const saveButton = await screen.findByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
-            })
-
-            expect(onNetworkReplaced).not.toHaveBeenCalled()
-            consoleDebugSpy.mockRestore()
-        })
-
-        it("shows an error toast when sendChatQuery returns no reservations", async () => {
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            const {enqueueSnackbar} = jest.requireMock("notistack")
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsFieldC = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsFieldC)
-            await user.type(instructionsFieldC, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            // enqueueSnackbar receives a React <span> element as the first arg (from sendNotification);
-            // assert on the options object which carries the human-readable description and variant.
-            expect(enqueueSnackbar).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({
-                    variant: "error",
-                    description: expect.stringContaining("did not return a reservation"),
-                })
-            )
-            consoleDebugSpy.mockRestore()
-        })
-
-        it("shows error notification and closes popup when sendChatQuery throws", async () => {
+        it("closes popup even when onSaveAgent throws", async () => {
             const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            ;(sendChatQuery as jest.Mock).mockRejectedValue(new Error("Network failure"))
+            const onSaveAgent = jest.fn().mockRejectedValue(new Error("Network failure"))
 
             act(() => {
                 useTempNetworksStore
@@ -1953,8 +1647,7 @@ describe("AgentFlow", () => {
             const {container} = renderAgentFlowComponent({
                 isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
+                onSaveAgent,
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
@@ -1963,17 +1656,15 @@ describe("AgentFlow", () => {
             await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
-            // Popup should close even on error (finally block)
+            // Popup closes immediately on save; onSaveAgent error is handled silently in the background
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to submit"), expect.any(Error))
             consoleErrorSpy.mockRestore()
-            consoleDebugSpy.mockRestore()
         })
 
-        it("closes popup immediately (no API call) when neuroSanURL is not provided", async () => {
+        it("closes popup immediately without calling onSaveAgent when it is not provided", async () => {
             act(() => {
                 useTempNetworksStore
                     .getState()
@@ -1983,7 +1674,7 @@ describe("AgentFlow", () => {
             const {container} = renderAgentFlowComponent({
                 isSelectedNetworkTemporary: true,
                 networkId: OLD_NETWORK_ID,
-                // neuroSanURL intentionally omitted
+                // onSaveAgent intentionally omitted
             })
 
             fireEvent.click(container.querySelector('[data-id="agent1"]'))
@@ -1995,8 +1686,6 @@ describe("AgentFlow", () => {
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
             })
-
-            expect(sendChatQuery).not.toHaveBeenCalled()
         })
     })
 })

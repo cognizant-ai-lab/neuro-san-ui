@@ -150,6 +150,13 @@ export interface SidebarProps {
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
     readonly newlyAddedTemporaryNetworks?: Set<string>
+    readonly neuroSanURL?: string
+    readonly currentUser?: string
+    readonly onNetworkUpdated?: (
+        sourceNetworkId: string,
+        replacement: TemporaryNetwork,
+        allNewNetworks: TemporaryNetwork[]
+    ) => void
 }
 
 // #endregion: Types
@@ -167,6 +174,9 @@ export const Sidebar: FC<SidebarProps> = ({
     onDeleteNetwork,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
+    neuroSanURL,
+    currentUser,
+    onNetworkUpdated,
 }) => {
     // Get default URL from the environment store.
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
@@ -270,6 +280,11 @@ export const Sidebar: FC<SidebarProps> = ({
 
     const temporaryNetworkHoconStrings = temporaryNetworks.reduce((acc: Record<string, string | null>, tempNetwork) => {
         acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkHocon
+        return acc
+    }, {})
+
+    const temporaryNetworkObjects = temporaryNetworks.reduce((acc: Record<string, TemporaryNetwork>, tempNetwork) => {
+        acc[tempNetwork.agentInfo.agent_name] = tempNetwork
         return acc
     }, {})
 
@@ -400,6 +415,10 @@ export const Sidebar: FC<SidebarProps> = ({
                             onDeleteNetwork,
                             temporaryNetworkExpirationTimes,
                             temporaryNetworkHoconStrings,
+                            temporaryNetworkObjects,
+                            neuroSanURL,
+                            currentUser,
+                            onNetworkUpdated,
                         } as AgentNetworkNodeProps,
                     }}
                 />

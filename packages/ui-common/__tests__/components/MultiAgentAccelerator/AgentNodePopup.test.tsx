@@ -322,18 +322,6 @@ describe("AgentNodePopup", () => {
             expect(screen.getByRole("button", {name: /close/iu})).toBeInTheDocument()
         })
 
-        it("shows a progress bar while isSaving is true", () => {
-            renderPopup({isSaving: true})
-
-            expect(screen.getByRole("progressbar", {name: /saving agent/iu})).toBeInTheDocument()
-        })
-
-        it("hides the progress bar when isSaving is false", () => {
-            renderPopup({isSaving: false})
-
-            expect(screen.queryByRole("progressbar", {name: /saving agent/iu})).not.toBeInTheDocument()
-        })
-
         it("disables the text fields while isSaving is true", () => {
             renderPopup({isSaving: true})
 

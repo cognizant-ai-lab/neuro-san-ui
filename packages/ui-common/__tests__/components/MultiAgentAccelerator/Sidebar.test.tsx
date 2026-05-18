@@ -67,6 +67,11 @@ const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
 
 const onDeleteNetworkMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
+const onNetworkUpdatedMock = jest.fn()
+
+// URL / user constants for topological-edit tests
+const TOPOLOGY_EDIT_URL = "https://neuro-san.example.com"
+const TOPOLOGY_EDIT_USER = "topology-test-user"
 
 const DEFAULT_PROPS: SidebarProps = {
     customURLCallback: jest.fn(),
@@ -333,6 +338,82 @@ describe("SideBar", () => {
 
         // onDeleteNetwork should be called with the correct network name
         expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name, false)
+    })
+
+    it("Should show the edit button for non-expired temporary networks", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            neuroSanURL: TOPOLOGY_EDIT_URL,
+            currentUser: TOPOLOGY_EDIT_USER,
+            onNetworkUpdated: onNetworkUpdatedMock,
+        })
+
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        // Edit button should be present and enabled
+        const editButton = screen.getByRole("button", {name: /Edit network topology/u})
+        expect(editButton).toBeInTheDocument()
+        expect(editButton).not.toBeDisabled()
+    })
+
+    it("Should open the topology edit popover when the edit button is clicked", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            neuroSanURL: TOPOLOGY_EDIT_URL,
+            currentUser: TOPOLOGY_EDIT_USER,
+            onNetworkUpdated: onNetworkUpdatedMock,
+        })
+
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        const editButton = screen.getByRole("button", {name: /Edit network topology/u})
+        await user.click(editButton)
+
+        // Popover should be open, showing the TempNetworkEditPanel's input and Send button
+        await screen.findByRole("button", {name: "Send"})
+        expect(screen.getByRole("textbox")).toBeInTheDocument()
+    })
+
+    it("Should not show the edit button for expired temporary networks", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [
+                {
+                    ...TEMPORARY_NETWORK,
+                    reservation: {
+                        ...TEMPORARY_NETWORK.reservation,
+                        expiration_time_in_seconds: Math.floor(Date.now() / 1000) - 3600,
+                    },
+                },
+            ],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            neuroSanURL: TOPOLOGY_EDIT_URL,
+            currentUser: TOPOLOGY_EDIT_USER,
+            onNetworkUpdated: onNetworkUpdatedMock,
+        })
+
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        // Edit button should NOT be present for expired networks
+        expect(screen.queryByRole("button", {name: /Edit network topology/u})).not.toBeInTheDocument()
+    })
+
+    it("Should not show the edit button when neuroSanURL or currentUser are not provided", async () => {
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            // neuroSanURL and currentUser intentionally omitted
+        })
+
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        // Edit button should NOT be present without the required props
+        expect(screen.queryByRole("button", {name: /Edit network topology/u})).not.toBeInTheDocument()
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {

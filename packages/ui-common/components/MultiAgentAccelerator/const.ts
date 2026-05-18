@@ -58,14 +58,9 @@ export type AgentNetworkDefinitionEntry = ConnectivityInfo & {
 }
 
 /** Possible values for the `display_as` field in ConnectivityInfo / AgentNetworkDefinitionEntry. */
-export const DISPLAY_AS_LLM_AGENT = "llm_agent"
-export const DISPLAY_AS_CODED_TOOL = "coded_tool"
-export const DISPLAY_AS_LANGCHAIN_TOOL = "langchain_tool"
-export const DISPLAY_AS_EXTERNAL_AGENT = "external_agent"
-
-/**
- * Returns true when an agent node supports the edit popup (instructions + description).
- * Only `llm_agent` nodes (and the Frontman, whose `display_as` is undefined) are editable.
- * `coded_tool`, `langchain_tool`, `external_agent`, and any other types are read-only.
- */
-export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DISPLAY_AS_LLM_AGENT
+export enum DisplayAs {
+    LLM_AGENT = "llm_agent",
+    CODED_TOOL = "coded_tool",
+    LANGCHAIN_TOOL = "langchain_tool",
+    EXTERNAL_AGENT = "external_agent",
+}

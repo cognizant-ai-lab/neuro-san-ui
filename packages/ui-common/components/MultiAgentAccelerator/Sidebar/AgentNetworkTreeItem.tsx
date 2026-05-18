@@ -4,9 +4,11 @@ import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Delete from "@mui/icons-material/Delete"
 import DownloadIcon from "@mui/icons-material/Download"
+import EditIcon from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
+import Popover from "@mui/material/Popover"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {
@@ -18,9 +20,11 @@ import {
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
-import {FC, useRef} from "react"
+import {FC, useRef, useState} from "react"
 
+import {TempNetworkEditPanel} from "../TempNetworkEditPanel"
 import {NodeIndex} from "./TreeBuilder"
+import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {cleanUpAgentName} from "../../AgentChat/Common/Utils"
 
@@ -49,6 +53,14 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
     readonly temporaryNetworkHoconStrings?: Record<string, string | null>
+    readonly temporaryNetworkObjects?: Record<string, TemporaryNetwork>
+    readonly neuroSanURL?: string
+    readonly currentUser?: string
+    readonly onNetworkUpdated?: (
+        sourceNetworkId: string,
+        replacement: TemporaryNetwork,
+        allNewNetworks: TemporaryNetwork[]
+    ) => void
 }
 
 /**
@@ -75,6 +87,10 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     onDeleteNetwork,
     temporaryNetworkExpirationTimes,
     temporaryNetworkHoconStrings,
+    temporaryNetworkObjects,
+    neuroSanURL,
+    currentUser,
+    onNetworkUpdated,
 }) => {
     const theme = useTheme()
 
@@ -86,6 +102,8 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
         useTreeItem({itemId, children, label, disabled})
 
     const rootRef = useRef<HTMLLIElement>(null)
+    const [editAnchorEl, setEditAnchorEl] = useState<HTMLButtonElement | null>(null)
+    const editPopoverOpen = Boolean(editAnchorEl)
 
     const isParent = Array.isArray(children) && children.length > 0
     const isChild = !isParent
@@ -214,6 +232,31 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     </span>
                                 </Tooltip>
                             )}
+                            {isTemporaryNetwork &&
+                                !isExpired &&
+                                neuroSanURL &&
+                                currentUser &&
+                                temporaryNetworkObjects?.[itemId] && (
+                                    <Tooltip title="Edit network topology">
+                                        <span style={{marginRight: "2px", marginBottom: "3px"}}>
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setEditAnchorEl(e.currentTarget)
+                                                }}
+                                                aria-label="Edit network topology"
+                                                size="small"
+                                                sx={{
+                                                    padding: 0,
+                                                    color: "var(--bs-secondary)",
+                                                    "&:hover": {color: "var(--bs-secondary-dark)"},
+                                                }}
+                                            >
+                                                <EditIcon sx={{fontSize: "0.75rem"}} />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                )}
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Tooltip title="Delete network">
@@ -234,6 +277,32 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                 </TreeItemContent>
                 {children && <TreeItemGroupTransition {...getGroupTransitionProps()} />}
             </TreeItemRoot>
+            {editPopoverOpen && temporaryNetworkObjects?.[itemId] && neuroSanURL && currentUser && (
+                <Popover
+                    id={`edit-network-popover-${itemId}`}
+                    open={editPopoverOpen}
+                    anchorEl={editAnchorEl}
+                    onClose={() => setEditAnchorEl(null)}
+                    anchorOrigin={{
+                        vertical: "bottom",
+                        horizontal: "left",
+                    }}
+                    transformOrigin={{
+                        vertical: "top",
+                        horizontal: "left",
+                    }}
+                >
+                    <TempNetworkEditPanel
+                        neuroSanURL={neuroSanURL}
+                        currentUser={currentUser}
+                        currentTempNetwork={temporaryNetworkObjects[itemId]}
+                        onNetworkUpdated={(replacement, allNewNetworks) => {
+                            setEditAnchorEl(null)
+                            onNetworkUpdated?.(itemId, replacement, allNewNetworks)
+                        }}
+                    />
+                </Popover>
+            )}
         </TreeItemProvider>
     )
 }

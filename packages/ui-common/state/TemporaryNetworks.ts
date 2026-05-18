@@ -30,7 +30,7 @@ export type TemporaryNetwork = {
     readonly reservation: AgentReservation
     readonly agentInfo: AgentInfo
     /** The agent_network_name as sent by the backend — used when bouncing sly_data back to the backend. */
-    readonly agentNetworkName?: string
+    readonly agentNetworkName: string
     readonly networkHocon?: string | null
     readonly agentNetworkDefinition?: AgentNetworkDefinitionEntry[]
 }
@@ -43,41 +43,17 @@ interface TempNetworksStore {
     readonly setTempNetworks: (tempNetworks: TemporaryNetwork[]) => void
     /**
      * Upsert new networks into the store. Networks are matched by the UUID-stripped portion of
-     * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), falling
-     * back to `agentNetworkName` when the reservation_id has no UUID suffix. If an incoming network
+     * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), or, just
+     * `agentNetworkName` which is the same as having the UUID-stripped. If an incoming network
      * matches an existing one, the existing entry is replaced. Returns the final list of upserted
      * networks (those that were added or replaced).
      */
-    readonly upsertTempNetworks: (newNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
-    readonly updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) => void
+    readonly upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
+    readonly updateTempNetworkDefinition: (
+        networkName: string,
+        agentNetworkDefinition: AgentNetworkDefinitionEntry[]
+    ) => void
 }
-
-// UUID v4 suffix pattern: 8-4-4-4-12 hex chars separated by dashes
-const UUID_SUFFIX_RE = /-[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu
-
-/**
- * Derives the canonical network name from a reservation ID.
- *
- * The backend encodes the network name as a prefix in the reservation ID, followed by a UUID suffix:
- * `{network_name}-{uuid}`, e.g. `travel_agency_ops-7876642e-fe75-4d44-a61e-300688a1a6c5`.
- *
- * Stripping the UUID suffix gives the stable name that can be used for deduplication across reservations.
- * Returns `undefined` when the reservation ID doesn't match the expected format.
- */
-export const extractNetworkNameFromReservationId = (reservationId: string): string | undefined => {
-    const stripped = reservationId.replace(UUID_SUFFIX_RE, "")
-    return stripped !== reservationId ? stripped : undefined
-}
-
-/**
- * Returns the best available canonical name for a network, used as the dedup key in upsert.
- * The UUID-stripped reservation_id is preferred because it is always consistent regardless of
- * what prefix the backend may place in `agentNetworkName` (e.g. `"generated/travel_agency_ops"`
- * vs `"travel_agency_ops"`). Falls back to `agentNetworkName` when the reservation_id has no
- * UUID suffix (legacy reservations with static IDs).
- */
-const effectiveNetworkName = (n: TemporaryNetwork): string | undefined =>
-    extractNetworkNameFromReservationId(n.reservation.reservation_id) ?? n.agentNetworkName
 
 /**
  * The hook that lets apps use the store.
@@ -87,28 +63,32 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
         (set) => ({
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
-            upsertTempNetworks: (newNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
+            upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
                 set((state) => {
                     const updated = [...state.tempNetworks]
-                    for (const newNetwork of newNetworks) {
-                        const newName = effectiveNetworkName(newNetwork)
-                        const existingIdx = newName ? updated.findIndex((n) => effectiveNetworkName(n) === newName) : -1
-                        if (existingIdx >= 0) {
-                            updated[existingIdx] = newNetwork
+                    for (const incomingNetwork of incomingNetworks) {
+                        const existingIndex = updated.findIndex(
+                            (network) => network.agentNetworkName === incomingNetwork.agentNetworkName
+                        )
+                        if (existingIndex >= 0) {
+                            updated[existingIndex] = incomingNetwork // replace the existing entry in-place
                         } else {
-                            updated.push(newNetwork)
+                            updated.push(incomingNetwork) // no existing entry — add as new
                         }
                     }
                     return {tempNetworks: updated}
                 })
-                return newNetworks
+                return incomingNetworks
             },
-            updateTempNetworkDefinition: (networkName: string, definition: AgentNetworkDefinitionEntry[]) =>
-                set((state) => ({
-                    tempNetworks: state.tempNetworks.map((n) =>
-                        n.agentInfo.agent_name === networkName ? {...n, agentNetworkDefinition: definition} : n
-                    ),
-                })),
+            updateTempNetworkDefinition: (networkName: string, agentNetworkDefinition: AgentNetworkDefinitionEntry[]) =>
+                set((state) => {
+                    const updated = [...state.tempNetworks]
+                    const existingIndex = updated.findIndex((network) => network.agentInfo.agent_name === networkName)
+                    if (existingIndex >= 0) {
+                        updated[existingIndex] = {...updated[existingIndex], agentNetworkDefinition}
+                    }
+                    return {tempNetworks: updated}
+                }),
         }),
         {
             name: "temp-networks",
