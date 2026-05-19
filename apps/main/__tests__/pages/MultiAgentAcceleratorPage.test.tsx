@@ -538,6 +538,28 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     describe("Agent Network Designer integration", () => {
+        // Render the page, feed the default reservation chunk, and wait until the resulting temp network shows
+        // up in `temporaryNetworksMock`. Returns the expected agent name for follow-up assertions.
+        const seedTemporaryNetworkFromDefaultReservation = async (): Promise<string> => {
+            renderMultiAgentAcceleratorPage()
+            await act(async () => {
+                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            })
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            await waitFor(() => {
+                expect(temporaryNetworksMock).toHaveBeenCalledWith(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            agentInfo: expect.objectContaining({
+                                agent_name: expectedAgentName,
+                            }),
+                        }),
+                    ])
+                )
+            })
+            return expectedAgentName
+        }
+
         it("Should detect agent registrations in the chat stream", async () => {
             renderMultiAgentAcceleratorPage()
 
@@ -763,26 +785,7 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         it("Should handle deletion of temporary networks", async () => {
-            renderMultiAgentAcceleratorPage()
-
-            // Set up a temporary network
-            await act(async () => {
-                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            })
-
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
-            await waitFor(() => {
-                expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            agentInfo: expect.objectContaining({
-                                agent_name: expectedAgentName,
-                            }),
-                        }),
-                    ])
-                )
-            })
-
+            const expectedAgentName = await seedTemporaryNetworkFromDefaultReservation()
             temporaryNetworksMock.mockClear()
 
             // Seed chat history for the network so we can verify it is cleared on delete.
@@ -821,26 +824,7 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         it("Should handle deleting expired temporary networks without confirmation", async () => {
-            renderMultiAgentAcceleratorPage()
-
-            // Set up a temporary network
-            await act(async () => {
-                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            })
-
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
-            await waitFor(() => {
-                expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            agentInfo: expect.objectContaining({
-                                agent_name: expectedAgentName,
-                            }),
-                        }),
-                    ])
-                )
-            })
-
+            const expectedAgentName = await seedTemporaryNetworkFromDefaultReservation()
             temporaryNetworksMock.mockClear()
 
             // Seed chat history for the network so we can verify it is cleared on delete.
@@ -874,25 +858,7 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         it("Should delete an unselected temporary network without touching the active selection", async () => {
-            renderMultiAgentAcceleratorPage()
-
-            // Set up the temp network we will delete.
-            await act(async () => {
-                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            })
-
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
-            await waitFor(() => {
-                expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            agentInfo: expect.objectContaining({
-                                agent_name: expectedAgentName,
-                            }),
-                        }),
-                    ])
-                )
-            })
+            const expectedAgentName = await seedTemporaryNetworkFromDefaultReservation()
 
             // Don't select the temp network — leave it unselected so the active-selection branch in the
             // delete handler does NOT fire. This covers the else-branch of `selectedNetwork === networkId`.
@@ -907,25 +873,7 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         it("Should delete an unselected temporary network via the confirmation modal", async () => {
-            renderMultiAgentAcceleratorPage()
-
-            // Set up the temp network we will delete.
-            await act(async () => {
-                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            })
-
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
-            await waitFor(() => {
-                expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            agentInfo: expect.objectContaining({
-                                agent_name: expectedAgentName,
-                            }),
-                        }),
-                    ])
-                )
-            })
+            const expectedAgentName = await seedTemporaryNetworkFromDefaultReservation()
 
             // Leave the network unselected so the else-branch of `selectedNetwork === networkToBeDeleted`
             // inside the confirmation-modal handler runs.
@@ -940,26 +888,7 @@ describe("Multi Agent Accelerator Page", () => {
         })
 
         it("Should leave the network alone when the user cancels the delete confirmation modal", async () => {
-            renderMultiAgentAcceleratorPage()
-
-            // Set up a temporary network
-            await act(async () => {
-                onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            })
-
-            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
-            await waitFor(() => {
-                expect(temporaryNetworksMock).toHaveBeenCalledWith(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            agentInfo: expect.objectContaining({
-                                agent_name: expectedAgentName,
-                            }),
-                        }),
-                    ])
-                )
-            })
-
+            const expectedAgentName = await seedTemporaryNetworkFromDefaultReservation()
             temporaryNetworksMock.mockClear()
 
             // Open the modal, then cancel.
