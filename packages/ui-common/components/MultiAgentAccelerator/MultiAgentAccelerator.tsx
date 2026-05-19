@@ -130,6 +130,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Tracks how many times each agent has been involved in the conversation
     const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())
+    //common function to change the selected network and reset related state
+    const changeSelectedNetwork = useCallback((next: string | null) => {
+        setSelectedNetwork(next)
+        setAgentCounts(new Map())
+    }, [])
 
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
@@ -304,39 +309,39 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
         const interval = setInterval(() => {
             const now = Date.now() / 1000 // convert to seconds since epoch
+            const reapCutoff = now - GRACE_PERIOD_MS / 1000
 
             const currentTemporaryNetworks = useTempNetworksStore.getState().tempNetworks
 
             // Networks past the grace period get fully purged: removed from the store AND have their
             // chat history / sly_data cleared from IndexedDB
-            const reapedNetworks = currentTemporaryNetworks.filter(
-                (n) => n.reservation.expiration_time_in_seconds <= now - GRACE_PERIOD_MS / 1000
-            )
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks(
-                    currentTemporaryNetworks.filter(
-                        (n) => n.reservation.expiration_time_in_seconds > now - GRACE_PERIOD_MS / 1000
-                    )
-                )
-            for (const n of reapedNetworks) {
-                useAgentChatHistoryStore.getState().resetHistory(n.agentInfo.agent_name)
+            const reapedNetworks: typeof currentTemporaryNetworks = []
+            const survivingNetworks: typeof currentTemporaryNetworks = []
+            for (const network of currentTemporaryNetworks) {
+                if (network.reservation.expiration_time_in_seconds <= reapCutoff) {
+                    reapedNetworks.push(network)
+                } else {
+                    survivingNetworks.push(network)
+                }
+            }
+            useTempNetworksStore.getState().setTempNetworks(survivingNetworks)
+            for (const network of reapedNetworks) {
+                useAgentChatHistoryStore.getState().resetHistory(network.agentInfo.agent_name)
             }
 
-            // Figure out which networks have expired on the server (not including our grace period) so we can
-            // deselect them if they're currently selected
-            const expiredNetwork = currentTemporaryNetworks.filter(
-                (network) => network.reservation.expiration_time_in_seconds <= now
+            // If the selected network has expired on the server (not including our grace period), deselect it
+            const selectedHasExpired = currentTemporaryNetworks.some(
+                (network) =>
+                    network.agentInfo.agent_name === selectedNetwork &&
+                    network.reservation.expiration_time_in_seconds <= now
             )
-            // If the selected network is one of the expired ones, deselect it
-            if (expiredNetwork.some((n) => n.agentInfo.agent_name === selectedNetwork)) {
-                setSelectedNetwork(null)
-                setAgentCounts(new Map())
+            if (selectedHasExpired) {
+                changeSelectedNetwork(null)
             }
         }, EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
 
         return () => clearInterval(interval)
-    }, [temporaryNetworks, selectedNetwork])
+    }, [changeSelectedNetwork, temporaryNetworks, selectedNetwork])
 
     const onChunkReceived = useCallback(
         (chunk: string): boolean => {
@@ -437,8 +442,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             useTempNetworksStore.getState().setTempNetworks(tempNetworksWithoutThisOne)
             useAgentChatHistoryStore.getState().resetHistory(networkId)
             if (selectedNetwork === networkId) {
-                setSelectedNetwork(null)
-                setAgentCounts(new Map())
+                changeSelectedNetwork(null)
             }
         } else {
             setNetworkToBeDeleted(networkId)
@@ -473,10 +477,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
-                        setSelectedNetwork={(newNetwork) => {
-                            setAgentCounts(new Map())
-                            setSelectedNetwork(newNetwork)
-                        }}
+                        setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
                 </Grid>
@@ -487,11 +488,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const onNetworkReplaced = useCallback(
         (oldNetworkId: string, newNetworkId: string) => {
             if (selectedNetwork === oldNetworkId) {
-                setAgentCounts(new Map())
-                setSelectedNetwork(newNetworkId)
+                changeSelectedNetwork(newNetworkId)
             }
         },
-        [selectedNetwork]
+        [changeSelectedNetwork, selectedNetwork]
     )
 
     const getCenterPanel = () => {
@@ -635,13 +635,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         .setTempNetworks(
                             temporaryNetworks.filter((network) => network.agentInfo.agent_name !== networkToBeDeleted)
                         )
-                    /* istanbul ignore else -- @preserve: the modal cannot open without networkToBeDeleted set */
-                    if (networkToBeDeleted) {
-                        useAgentChatHistoryStore.getState().resetHistory(networkToBeDeleted)
-                    }
+                    useAgentChatHistoryStore.getState().resetHistory(networkToBeDeleted)
                     if (selectedNetwork === networkToBeDeleted) {
-                        setSelectedNetwork(null)
-                        setAgentCounts(new Map())
+                        changeSelectedNetwork(null)
                     }
                     setNetworkToBeDeleted(null)
                     setConfirmationModalOpen(false)
