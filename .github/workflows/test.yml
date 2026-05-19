@@ -66,8 +66,8 @@ jobs:
               # build-common 1.0.4
               uses: cognizant-ai-lab/build-common/actions/setup-node-env@f5836555ee8e04413a8f9b313a431ab36337045b
               with:
-                  # 22.18+ breaks tests (https://github.com/nodejs/node/issues/59364)
-                  node-version: ${{ vars.NODEJS_VERSION }}
+                  # Pinned: 22.18+ breaks tests (https://github.com/nodejs/node/issues/59364)
+                  node-version: "22.17.1"
                   clean-install: "true"
 
             - name: Install prerequisites for code generation
