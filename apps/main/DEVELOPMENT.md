@@ -1,0 +1,78 @@
+# Copyright
+
+Copyright 2026 Cognizant Technology Solutions Corp, www.cognizant.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+# UI Developer Start Guide
+
+This README is intended to help a new UI developer get up to speed toward making changes to the Neuro SAN UI code.
+By following these instructions, you will be able to run the UI locally on your development machine and make changes
+to the code locally, without deploying anything to the hosted services.
+
+You will configure your local environment to connect to the Neuro️ SAN backend services.
+
+Note: Previous names for this project were UniLEAF and NeuroAI, and those names are still used in some places.
+
+## Set Up Prerequisites
+
+- Install [NodeJS](https://nodejs.org/) on your development machine. At time of writing Node 22 is the current LTS version.
+    - Example on mac: `brew install node@22`
+    - For Ubuntu, see this link: https://joshtronic.com/2024/05/26/ubuntu-nodejs-22-install/
+    - Make sure that the node executable is in your path. You can do this by typing `node --version`.
+    - Make sure you have the exact Node.js version specified in `.nvmrc` or you will encounter errors.
+- Install `yarn` on your development host. Instructions for all platforms are [here](https://classic.yarnpkg.com/lang/en/docs)
+    - Example using current version on mac: `brew install yarn`
+    - For Ubuntu, see this link: https://classic.yarnpkg.com/lang/en/docs/cli/self-update/
+    - Make sure that the yarn executable is in your path. You can do this by typing `yarn --version`.
+- Clone the repository:
+    - `git clone git@github.com:leaf-ai/neuro-san-ui.git`
+- Install all dependencies including dev dependencies
+    - `yarn install`
+- Generate the Neuro-san OpenAPI types for the UI. This is done by running the following commands in the project root
+  directory:
+    - `yarn generate`
+        - `yarn generate` will generate the necessary files in the `generated` directory.
+    - To verify, check to make sure that `generated/neuro-san/NeuroSanClient.ts` was generated.
+
+## Set up environment variables
+
+- In your project root directory, copy the file `.env.sample` to `.env` and fill in the appropriate values
+  for the keys in the file. Instructions on generating OPENAI_API_KEY are
+  [here](https://platform.openai.com/account/api-keys).  
+  You will need an active account with OpenAI to generate this key.
+- Be sure to chmod 600 this .env file to keep secret values secret
+
+## Run the development server:
+
+```bash
+# By setting the NEXT_PUBLIC_NEURO_SAN_UI_VERSION value, the ui will display your current branch in the header
+# after Build:
+export NEXT_PUBLIC_NEURO_SAN_UI_VERSION=$(git branch --show-current) && yarn run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You should see the Neuro SAN UI splash page. Click on "Explore agent networks". This should bring you to the
+agent networks screen.
+
+## Try making a simple change to the UI
+
+Now you've made it this far, try a simple change within the UI. Here's an example:
+
+1. Navigate to the home page `http://localhost:3000/multiAgentAccelerator`
+1. Open the file `./packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator.tsx` in your code editor.
+1. Add a message, such as `Hello world!`, at the appropriate place in the tsx file (somewhere within the last `return`
+   statement).
+1. Your change appears immediately in the UI for MAUI, without relaunching any services or recompiling,
+   thanks to auto-reloading by Next.js. If you don't see your change, try holding down `Shift` and clicking
+   the browser refresh button -- this bypasses the browser cache.
