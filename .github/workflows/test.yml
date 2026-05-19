@@ -68,7 +68,7 @@ jobs:
               with:
                   # 22.18+ breaks tests (https://github.com/nodejs/node/issues/59364)
                   node-version: ${{ vars.NODEJS_VERSION }}
-                  clean-install: 'true'
+                  clean-install: "true"
 
             - name: Install prerequisites for code generation
               run: |
