@@ -33,6 +33,7 @@ const esmPackagesToTransform = [
     "property-.*",
     "refractor",
     "space-.*",
+    "uuid",
 ]
 
 const config: Config.InitialOptions = {

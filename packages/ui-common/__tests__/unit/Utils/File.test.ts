@@ -28,6 +28,11 @@ describe("toSafeFilename", () => {
         expect(toSafeFilename("")).toBe("")
         expect(toSafeFilename(null)).toBe("")
     })
+
+    it("should throw an error if the input exceeds the maximum allowed length", () => {
+        const longInput = "a".repeat(1001) // Create a string that exceeds the maximum length
+        expect(() => toSafeFilename(longInput)).toThrow(/Input too long/u)
+    })
 })
 
 describe("getFileName", () => {
