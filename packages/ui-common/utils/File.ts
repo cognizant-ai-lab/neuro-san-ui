@@ -1,10 +1,25 @@
 // Miscellaneous local file related utilities
 
-// Sanitize filename before saving
+const MAX_FILENAME_LENGTH = 1000
+
+/**
+ * // Sanitize filename for saving
+ * @param input Filename as string
+ * @return Sanitized filename with non-alphanumeric characters replaced by underscores and
+ * leading/trailing underscores removed.
+ * @throws Error if the input filename exceeds the maximum allowed length to prevent regex performance issues.
+ */
 export const toSafeFilename = (input: string): string => {
     // handle null-ish cases
     if (!input) {
         return ""
+    }
+
+    // Limit filename length to 1000 characters to prevent regex performance issues with excessively long filenames
+    if (input.length > MAX_FILENAME_LENGTH) {
+        throw new Error(
+            `Input too long: must be no more than ${MAX_FILENAME_LENGTH} characters but got ${input.length} characters.`
+        )
     }
 
     // Replace any non-alphanumeric characters with underscores
