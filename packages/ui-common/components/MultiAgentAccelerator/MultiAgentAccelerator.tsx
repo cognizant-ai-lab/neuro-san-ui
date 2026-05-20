@@ -48,7 +48,7 @@ import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggesti
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
-import {useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
@@ -217,10 +217,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         `Multi-Agent Accelerator Server. Error: ${e}.`
                 )
                 setNetworks([])
-                setSelectedNetwork(null)
+                changeSelectedNetwork(null)
             }
         })()
-    }, [neuroSanURL])
+    }, [neuroSanURL, changeSelectedNetwork])
 
     useEffect(() => {
         ;(async () => {
@@ -315,19 +315,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
             // Networks past the grace period get fully purged: removed from the store AND have their
             // chat history / sly_data cleared from IndexedDB
-            const reapedNetworks: typeof currentTemporaryNetworks = []
-            const survivingNetworks: typeof currentTemporaryNetworks = []
+            const survivingNetworks: TemporaryNetwork[] = []
             for (const network of currentTemporaryNetworks) {
                 if (network.reservation.expiration_time_in_seconds <= reapCutoff) {
-                    reapedNetworks.push(network)
+                    // This network has been expired for more than the grace period, so purge it
+                    useAgentChatHistoryStore.getState().resetHistory(network.agentInfo.agent_name)
                 } else {
                     survivingNetworks.push(network)
                 }
             }
             useTempNetworksStore.getState().setTempNetworks(survivingNetworks)
-            for (const network of reapedNetworks) {
-                useAgentChatHistoryStore.getState().resetHistory(network.agentInfo.agent_name)
-            }
 
             // If the selected network has expired on the server (not including our grace period), deselect it
             const selectedHasExpired = currentTemporaryNetworks.some(
