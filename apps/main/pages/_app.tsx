@@ -26,7 +26,7 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {FC, ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
+import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, useState} from "react"
 
 import {
     Auth,
@@ -355,20 +355,22 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <ThemeProvider
-                theme={theme}
-                noSsr={true}
-            >
-                {body}
-                <SnackbarProvider
-                    Components={{
-                        info: Snackbar,
-                        success: Snackbar,
-                        warning: Snackbar,
-                        error: Snackbar,
-                    }}
-                />
-            </ThemeProvider>
+            <StrictMode>
+                <ThemeProvider
+                    theme={theme}
+                    noSsr={true}
+                >
+                    {body}
+                    <SnackbarProvider
+                        Components={{
+                            info: Snackbar,
+                            success: Snackbar,
+                            warning: Snackbar,
+                            error: Snackbar,
+                        }}
+                    />
+                </ThemeProvider>
+            </StrictMode>
         </div>
     )
 }
