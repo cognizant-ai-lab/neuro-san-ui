@@ -462,6 +462,7 @@ export const Navbar = ({
             {showSettingsButton && (
                 <Tooltip title="Settings">
                     <SettingsIcon
+                        id="settings-icon"
                         sx={{
                             ...MENU_ITEM_TEXT_PROPS,
                             marginRight: "1rem",
