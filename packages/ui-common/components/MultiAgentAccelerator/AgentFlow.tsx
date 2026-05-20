@@ -569,8 +569,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const onNodesChange = useCallback(
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
-            // Block node moves in the agent designer preview; pass all changes through otherwise.
-            const allowedChanges = isAgentNetworkDesignerMode ? changes.filter((c) => c.type !== "position") : changes
+            // Designer preview: only sync measured dimensions (no dragging, no other edits).
+            // Normal mode: allow drags and dimension syncs.
+            const allowedChanges = isAgentNetworkDesignerMode
+                ? changes.filter((c) => c.type === "dimensions")
+                : changes.filter((c) => c.type === "position" || c.type === "dimensions")
             setNodes((currentNodes) => applyNodeChanges<RFNode<AgentNodeProps>>(allowedChanges, currentNodes))
         },
         [isAgentNetworkDesignerMode]

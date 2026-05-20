@@ -2045,7 +2045,7 @@ describe("AgentFlow", () => {
             applyNodeChangesSpy.mockClear()
         })
 
-        it("forwards every change type — including position — to applyNodeChanges in normal mode", () => {
+        it("forwards only position and dimensions changes to applyNodeChanges in normal mode", () => {
             renderAgentFlowComponent({isAgentNetworkDesignerMode: false})
             // Discard any applyNodeChanges calls React Flow made during mount; we only care
             // about the one triggered by our explicit invocation below.
@@ -2058,10 +2058,11 @@ describe("AgentFlow", () => {
 
             expect(applyNodeChangesSpy).toHaveBeenCalledTimes(1)
             const [forwardedChanges] = applyNodeChangesSpy.mock.calls[0]
-            expect(forwardedChanges).toEqual([positionChange, dimensionsChange, selectChange])
+            expect(forwardedChanges).toEqual([positionChange, dimensionsChange])
+            expect(forwardedChanges).not.toContainEqual(selectChange)
         })
 
-        it("strips position changes (but keeps everything else) in agent network designer preview mode", () => {
+        it("forwards only dimensions changes in agent network designer preview mode", () => {
             renderAgentFlowComponent({isAgentNetworkDesignerMode: true})
             applyNodeChangesSpy.mockClear()
 
@@ -2072,8 +2073,9 @@ describe("AgentFlow", () => {
 
             expect(applyNodeChangesSpy).toHaveBeenCalledTimes(1)
             const [forwardedChanges] = applyNodeChangesSpy.mock.calls[0]
-            expect(forwardedChanges).toEqual([dimensionsChange, selectChange])
+            expect(forwardedChanges).toEqual([dimensionsChange])
             expect(forwardedChanges).not.toContainEqual(positionChange)
+            expect(forwardedChanges).not.toContainEqual(selectChange)
         })
     })
 })
