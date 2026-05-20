@@ -1438,7 +1438,6 @@ __metadata:
     knip: "npm:6.3.1"
     prettier: "npm:3.8.2"
     react: "catalog:default"
-    react-joyride: "npm:^3.1.0"
     ts-jest: "npm:29.4.9"
     ts-node: "npm:10.9.2"
     typescript: "catalog:default"
@@ -1509,6 +1508,7 @@ __metadata:
     openapi-typescript: "npm:7.8.0"
     react: "catalog:default"
     react-dom: "catalog:default"
+    react-joyride: "catalog:default"
     react-markdown: "catalog:default"
     react-syntax-highlighter: "npm:16.1.0"
     rehype-raw: "catalog:default"
@@ -10071,7 +10071,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-joyride@npm:^3.1.0":
+"react-joyride@npm:3.1.0":
   version: 3.1.0
   resolution: "react-joyride@npm:3.1.0"
   dependencies:
