@@ -22,7 +22,7 @@ import {FC, JSX as ReactJSX, ReactNode, useState} from "react"
 import {MUIDialog} from "./MUIDialog"
 
 // #region: Styled Components
-const StyledButton = styled(Button)({
+export const StyledButton = styled(Button)({
     fontSize: "0.8em",
     padding: "0px 7px",
 })
