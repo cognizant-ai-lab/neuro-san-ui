@@ -51,6 +51,7 @@ import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {TourPromptState, useTourStore} from "../../state/Tour"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
@@ -213,8 +214,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Introductory tour
 
-    // Track that the user requested the tour and we should start it once network data is available
+    // Track that the user requested the tour, and we should start it once network data is available
     const [tourRequested, setTourRequested] = useState<boolean>(false)
+
+    // Tour persisted status
+    const tourStatus = useTourStore((s) => s.status)
+    const setTourStatus = useTourStore((s) => s.setStatus)
 
     const {controls, Tour} = useJoyride({
         continuous: true,
@@ -574,10 +579,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }
 
     useEffect(() => {
-        if (haveShownTourModal) {
+        // Don't show the tour modal if any of these are true
+        if (
+            haveShownTourModal ||
+            tourStatus === TourPromptState.Taken ||
+            tourStatus === TourPromptState.DontShowAgain ||
+            tourRequested
+        ) {
             return undefined
         }
 
+        // Show tour modal after a delay
         const timer = setTimeout(() => {
             setTourModalOpen(true)
         }, SHOW_TOUR_DELAY_MS)
@@ -585,7 +597,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return () => {
             clearTimeout(timer)
         }
-    }, [haveShownTourModal])
+    }, [haveShownTourModal, tourRequested, tourStatus])
 
     useEffect(() => {
         if (!tourRequested) return
@@ -594,10 +606,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         const networkReady = selectedNetwork != null && agentsInNetwork?.length > 0
 
         if (networkReady) {
+            setTourStatus(TourPromptState.Taken)
             controls.start()
             setTourRequested(false)
         }
-    }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls])
+    }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
     const getLeftPanel = () => {
         return (
@@ -795,8 +808,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             footer={
                 <>
                     <StyledButton
-                        id="tour-no-remind"
-                        onClick={() => {}}
+                        id="tour-dont-show-again"
+                        onClick={() => {
+                            setTourStatus(TourPromptState.DontShowAgain)
+                            dismissTourModal()
+                        }}
                         variant="outlined"
                     >
                         Don&#39;t show this again
@@ -835,7 +851,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }}
             title="Tour"
         >
-            Would you like to take a tour of the application?
+            Would you like to take a tour of the application? (2 mins)
         </MUIDialog>
     )
 
