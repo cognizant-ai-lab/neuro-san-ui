@@ -29,13 +29,7 @@ import type {Node as RFNode} from "@xyflow/react"
 import {FC} from "react"
 
 import {AgentConversation} from "./AgentConversations"
-import {
-    DISPLAY_AS_CODED_TOOL,
-    DISPLAY_AS_EXTERNAL_AGENT,
-    DISPLAY_AS_LANGCHAIN_TOOL,
-    DISPLAY_AS_LLM_AGENT,
-    isEditableAgent,
-} from "./const"
+import {DisplayAs} from "./const"
 import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
@@ -49,7 +43,7 @@ export interface AgentNodeProps extends Record<string, unknown> {
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
     readonly agentIconSuggestion?: string
-    readonly isTemporaryNetwork?: boolean
+    readonly isEditable?: boolean
 }
 
 // Node dimensions
@@ -112,16 +106,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     // Unpack the node-specific data
     const data: AgentNodeProps = props.data
-    const {
-        agentCounts,
-        agentName,
-        depth,
-        displayAs,
-        getConversations,
-        agentIconSuggestion,
-        isAwaitingLlm,
-        isTemporaryNetwork,
-    } = data
+    const {agentCounts, agentName, depth, displayAs, getConversations, agentIconSuggestion, isAwaitingLlm, isEditable} =
+        data
 
     // Determine if this is the Frontman node (depth 0)
     const isFrontman = depth === 0
@@ -182,7 +168,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 )
             } else {
                 switch (displayAs) {
-                    case DISPLAY_AS_EXTERNAL_AGENT:
+                    case DisplayAs.EXTERNAL_AGENT:
                         return (
                             <TravelExploreIcon
                                 id={id}
@@ -190,15 +176,15 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                             />
                         )
                     // This should be a supported type but we're not seeing it?
-                    case DISPLAY_AS_LANGCHAIN_TOOL:
-                    case DISPLAY_AS_CODED_TOOL:
+                    case DisplayAs.LANGCHAIN_TOOL:
+                    case DisplayAs.CODED_TOOL:
                         return (
                             <HandymanIcon
                                 id={id}
                                 sx={{fontSize: AGENT_ICON_SIZE}}
                             />
                         )
-                    case DISPLAY_AS_LLM_AGENT:
+                    case DisplayAs.LLM_AGENT:
                     default:
                         return (
                             <AutoAwesomeIcon
@@ -219,8 +205,6 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         ? theme.palette.common.black
         : theme.palette.common.white
 
-    const isClickableNode = isTemporaryNetwork && isEditableAgent(displayAs)
-
     return (
         <>
             <AnimatedNode
@@ -231,7 +215,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 sx={{
                     backgroundColor,
                     color,
-                    cursor: isClickableNode ? "pointer" : "grab",
+                    cursor: isEditable ? "pointer" : "grab",
                     height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
                     width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
                     zIndex: getZIndex(1, theme),

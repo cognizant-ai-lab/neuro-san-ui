@@ -17,11 +17,13 @@ limitations under the License.
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
+import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,
     getAgentNetworks,
     getConnectivity,
     sendChatQuery,
+    sendNetworkDesignerUpdate,
     testConnection,
     TestConnectionResult,
 } from "../../../controller/agent/Agent"
@@ -273,5 +275,63 @@ describe("Controller/Agent/getAgentFunction", () => {
         await expect(getAgentFunction(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)).rejects.toThrow(
             "Failed to send agent function request: Bad Request"
         )
+    })
+})
+
+describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
+    withStrictMocks()
+
+    it("calls sendChatQuery with the designer agent ID and correct sly_data", async () => {
+        const signal = new AbortController().signal
+        const onChunk = jest.fn()
+        const updated: AgentNetworkDefinitionEntry[] = [{origin: "myAgent", tools: [], instructions: "Do stuff."}]
+
+        ;(sendLlmRequest as jest.Mock).mockImplementation((callback) => {
+            callback("chunk1")
+        })
+
+        await sendNetworkDesignerUpdate(
+            NEURO_SAN_EXAMPLE_URL,
+            signal,
+            "myAgent",
+            updated,
+            "my_network",
+            TEST_USERNAME,
+            onChunk
+        )
+
+        expect(sendLlmRequest).toHaveBeenCalledTimes(1)
+        const callArgs = (sendLlmRequest as jest.Mock).mock.calls[0]
+        const fetchUrl = callArgs[2]
+        const requestBody = callArgs[3]
+        expect(fetchUrl).toContain("agent_network_designer")
+        expect(requestBody).toMatchObject({
+            sly_data: expect.objectContaining({
+                agent_network_definition: updated,
+                agent_network_name: "my_network",
+                skip_designer: true,
+            }),
+        })
+        expect(onChunk).toHaveBeenCalledWith("chunk1")
+    })
+
+    it("omits agent_network_name from sly_data when not provided", async () => {
+        const signal = new AbortController().signal
+        const updated: AgentNetworkDefinitionEntry[] = [{origin: "myAgent", tools: []}]
+
+        ;(sendLlmRequest as jest.Mock).mockResolvedValue(undefined)
+
+        await sendNetworkDesignerUpdate(
+            NEURO_SAN_EXAMPLE_URL,
+            signal,
+            "myAgent",
+            updated,
+            undefined,
+            TEST_USERNAME,
+            jest.fn()
+        )
+
+        const requestBody = (sendLlmRequest as jest.Mock).mock.calls[0][3]
+        expect(requestBody.sly_data).not.toHaveProperty("agent_network_name")
     })
 })

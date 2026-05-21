@@ -18,7 +18,13 @@ limitations under the License.
  * Controller module for interacting with the Agent LLM API.
  */
 
-import {TEMPORARY_NETWORK_FOLDER} from "../../components/MultiAgentAccelerator/const"
+import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_DESIGNER_ID,
+    AGENT_NETWORK_NAME_KEY,
+    AgentNetworkDefinitionEntry,
+    TEMPORARY_NETWORK_FOLDER,
+} from "../../components/MultiAgentAccelerator/const"
 import {
     AgentInfo,
     ApiPaths,
@@ -283,4 +289,38 @@ export const getAgentFunction = async (url: string, agent: string, userId: strin
     }
 
     return response.json()
+}
+
+/**
+ * Streams the Agent Network Designer endpoint with an updated agent definition.
+ * Calls `onChunk` for each line received; callers are responsible for parsing
+ * reservations / networks out of each chunk.
+ */
+export const sendNetworkDesignerUpdate = async (
+    url: string,
+    signal: AbortSignal,
+    agentName: string,
+    updated: AgentNetworkDefinitionEntry[],
+    agentNetworkName: string | undefined,
+    currentUser: string,
+    onChunk: (chunk: string) => void
+): Promise<void> => {
+    await sendChatQuery(
+        url,
+        signal,
+        // Shouldn't have to pass a user message, but API behaves different without it
+        `Update instructions for agent "${agentName}"`,
+        AGENT_NETWORK_DESIGNER_ID,
+        onChunk,
+        null,
+        {
+            [AGENT_NETWORK_DEFINITION_KEY]: updated,
+            // Use the backend's canonical name, not the local UUID-based key.
+            ...(agentNetworkName ? {[AGENT_NETWORK_NAME_KEY]: agentNetworkName} : {}),
+            // skip_designer prevents the backend from using a reasoning model for edits
+            skip_designer: true,
+        },
+        currentUser,
+        StreamingUnit.Line
+    )
 }

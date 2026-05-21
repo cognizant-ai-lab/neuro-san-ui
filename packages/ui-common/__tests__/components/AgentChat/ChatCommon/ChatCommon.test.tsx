@@ -1298,6 +1298,6 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, "test sly_data accumulation on AGENT message")
 
         // sendChatQuery was called — the component processed the chunk without error
-        expect(sendChatQuery).toHaveBeenCalled()
+        expect(sendChatQuery).toHaveBeenCalledTimes(1)
     })
 })
