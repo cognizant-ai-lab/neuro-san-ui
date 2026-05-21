@@ -56,9 +56,10 @@ import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
-import {ConfirmationModal} from "../Common/ConfirmationModal"
+import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
-import {MAIN_TOUR_STEPS} from "./Tour/TourSteps"
+import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
+import {MUIDialog} from "../Common/MUIDialog"
 
 interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
@@ -76,6 +77,9 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+
+// We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
+const SHOW_TOUR_DELAY_MS = 5000
 
 // #region: Agent-save helpers
 
@@ -127,27 +131,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 }): ReactJSX.Element => {
     // MUI theme
     const theme = useTheme()
-
-    const {controls, Tour} = useJoyride({
-        continuous: true,
-        steps: MAIN_TOUR_STEPS,
-        options: {
-            buttons: ["back", "close", "primary", "skip"],
-            backgroundColor: "var(--bs-secondary)",
-            textColor: "var(--bs-white)",
-            primaryColor: "var(--bs-accent3-medium)",
-            arrowColor: "var(--bs-secondary)",
-            overlayColor: "rgba(var(--bs-primary-rgb), 0.82)",
-            showProgress: true,
-            zIndex: getZIndex(3, theme),
-            skipBeacon: true,
-            skipScroll: true,
-        },
-        locale: {
-            last: "End Tour",
-            skip: "Exit Tour",
-        },
-    })
 
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
@@ -227,6 +210,32 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 .join(","),
         [agentsInNetwork]
     )
+
+    // Introductory tour
+
+    // Track that the user requested the tour and we should start it once network data is available
+    const [tourRequested, setTourRequested] = useState<boolean>(false)
+
+    const {controls, Tour} = useJoyride({
+        continuous: true,
+        steps: MAIN_TOUR_STEPS,
+        options: {
+            buttons: ["back", "close", "primary", "skip"],
+            backgroundColor: "var(--bs-secondary)",
+            textColor: "var(--bs-white)",
+            primaryColor: "var(--bs-accent3-medium)",
+            arrowColor: "var(--bs-secondary)",
+            overlayColor: "rgba(var(--bs-primary-rgb), 0.82)",
+            showProgress: true,
+            zIndex: getZIndex(3, theme),
+            skipBeacon: true,
+            skipScroll: true,
+        },
+        locale: {
+            last: "End Tour",
+            skip: "Exit Tour",
+        },
+    })
 
     const resetState = useCallback(() => {
         setThoughtBubbleEdges(new Map())
@@ -569,21 +578,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             return undefined
         }
 
-        if (agentsInNetwork?.length > 0) {
-            const timer = setTimeout(() => {
-                setTourModalOpen(true)
-            }, 5000) // 1 second
+        const timer = setTimeout(() => {
+            setTourModalOpen(true)
+        }, SHOW_TOUR_DELAY_MS)
 
-            return () => {
-                clearTimeout(timer)
-            }
-        } else {
-            // if agents disappear, ensure modal is closed
-            setTourModalOpen(false)
-
-            return undefined
+        return () => {
+            clearTimeout(timer)
         }
-    }, [agentsInNetwork, haveShownTourModal])
+    }, [haveShownTourModal])
+
+    useEffect(() => {
+        if (!tourRequested) return
+
+        // Determine whether the sample network for the tour is ready
+        const networkReady = selectedNetwork != null && agentsInNetwork?.length > 0
+
+        if (networkReady) {
+            controls.start()
+            setTourRequested(false)
+        }
+    }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls])
 
     const getLeftPanel = () => {
         return (
@@ -741,7 +755,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
-    const getConfirmationModal = () =>
+    const getDeleteNetworkConfirmationModal = () =>
         confirmationModalOpen ? (
             <ConfirmationModal
                 id="delete-network-confirmation-modal"
@@ -770,25 +784,60 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
-    const getTourModal = () =>
-        tourModalOpen ? (
-            <ConfirmationModal
-                id="tour-modal"
-                content="Would you like to take a quick tour of the application?"
-                handleCancel={() => {
-                    setTourModalOpen(false)
-                    setHaveShownTourModal(true)
-                }}
-                handleOk={() => {
-                    controls.start()
-                    setTourModalOpen(false)
-                    setHaveShownTourModal(true)
-                }}
-                title="Take a Tour?"
-                okBtnLabel="Take the Tour"
-                cancelBtnLabel="No, Thanks"
-            />
-        ) : null
+    const dismissTourModal = () => {
+        setTourModalOpen(false)
+        setHaveShownTourModal(true)
+    }
+
+    const getTourModal = () => (
+        <MUIDialog
+            contentSx={{fontSize: "0.8rem", minWidth: "550px", paddingTop: "0"}}
+            footer={
+                <>
+                    <StyledButton
+                        id="tour-no-remind"
+                        onClick={() => {}}
+                        variant="outlined"
+                    >
+                        Don&#39;t show this again
+                    </StyledButton>
+                    <StyledButton
+                        id="tour-not-now"
+                        onClick={() => {
+                            dismissTourModal()
+                        }}
+                        variant="outlined"
+                    >
+                        Not now
+                    </StyledButton>
+                    <StyledButton
+                        id="tour-take"
+                        onClick={() => {
+                            // If no network selected, select one so we have something to show
+                            if (selectedNetwork == null) {
+                                setSelectedNetwork(networks?.[0]?.agent_name ?? null)
+                            }
+                            dismissTourModal()
+
+                            // Defer starting the tour until the selected network's data is available.
+                            setTourRequested(true)
+                        }}
+                        variant="contained"
+                    >
+                        Take the tour
+                    </StyledButton>
+                </>
+            }
+            id="multi-agent-accelerator-tour-modal"
+            isOpen={tourModalOpen}
+            onClose={() => {
+                dismissTourModal()
+            }}
+            title="Tour"
+        >
+            Would you like to take a tour of the application?
+        </MUIDialog>
+    )
 
     /**
      * Popper to show real-time progress of the Agent Network Designer output as we receive it from the backend.
@@ -856,7 +905,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
-            {getConfirmationModal()}
+            {getDeleteNetworkConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"
                 container
