@@ -132,33 +132,57 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const chatCommonRef = useRef<HTMLDivElement>(null)
     const steps: Step[] = [
         {
+            // First step doesn't refer to any particular UI element, just a welcome message
+            arrowComponent: () => null,
             content:
-                "Welcome to Cognizant AI Lab Multi-Agent Accelerator! This tour will give you a quick overview of the interface.",
-            target: () => document.querySelector("#start-tour-container"),
+                "Welcome to Cognizant AI Lab Multi-Agent Accelerator! This tour will give you a quick overview of" +
+                " the application.",
+            target: () => document.querySelector("#multi-agent-accelerator-grid"),
+            placement: "center",
         },
         {
             content:
-                "This is the list of agent networks available on the server. Select a network to see its agents and start chatting with it!",
+                "This is the list of agent networks available on the server. Select a network to see its agents and " +
+                " start interacting with it!",
             target: () => document.querySelector("#multi-agent-accelerator-sidebar-heading"),
             placement: "bottom",
         },
         {
-            content: "Click here to create and edit your own network, with the help of a powerful AI assistant.",
+            content:
+                "Agent Network Designer: Click here to create and edit your own network, with the help of a " +
+                "powerful AI assistant.",
             target: () => document.querySelector("#add-network-icon"),
             placement: "bottom",
         },
         {
-            content: "Click this icon to connect to any Neuro SAN backend service.",
+            content:
+                "Click this icon to connect to any Neuro SAN backend service. Mouse over it to see the current " +
+                "server you are connected to including the version.",
             target: () => document.querySelector("#agent-network-settings-icon"),
             placement: "bottom",
         },
         {
             content: "These are the agents within the current network.",
-            target: () => flowRef.current,
+            target: () => document.querySelector("#multi-agent-accelerator-grid-agent-flow"),
+            placement: "auto",
+        },
+        {
+            content:
+                "These buttons allow you to adjust the look of the agent flow to your liking. " +
+                "Mouse over them to see what they do!",
+            // get by aria-label "Control Panel"
+            target: () => document.querySelector('div[aria-label="Control Panel"]'),
+        },
+        {
+            content:
+                "This is the legend for the agent flow. You can select either 'depth' or 'heatmap' view " +
+                " to see the corresponding information about the agents in the flow.",
+            target: () => document.querySelector("#multi-agent-accelerator-agent-flow-legend"),
         },
         {
             content: "This is the chat window where you can interact with the currently selected network.",
             target: () => chatCommonRef.current,
+            placement: "auto",
         },
         {
             content:
@@ -173,47 +197,48 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         },
         {
             content:
-                "Access Settings from this icon. Here you can change the look and feel of the UI, including auto branding for a particular customer!",
+                "These buttons allow you to control what is shown in the Chat window. " +
+                "Try mousing over them to see what they do!",
+            target: () => document.querySelector("#show-thinking-button"),
+            placement: "bottom",
+        },
+        {
+            content:
+                "Access Settings from this icon. Here you can change the look and feel of the application, including " +
+                " auto branding for a particular customer!",
             target: () => document.querySelector("#settings-icon"),
             placement: "top",
         },
         {
             content:
-                "If you have any questions or need help, click here to access the help menu to contact the Cognizant AI Labs team. We'd love to hear from you!",
+                "If you want to take the tour again, or if you have any questions or need help, click here to access " +
+                "the help information or to contact the Cognizant AI Labs team. We'd love to hear from you!",
             target: () => document.querySelector("#help-dropdown"),
             placement: "top",
         },
     ]
 
-    const isDarkMode = true
-
-    const {controls, on, Tour} = useJoyride({
+    // packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator.tsx
+    const {controls, Tour} = useJoyride({
         continuous: true,
         steps,
         options: {
-            backgroundColor: isDarkMode ? "#38405f" : "#ffffff", // deep muted indigo
-            textColor: isDarkMode ? "#fff4ec" : "#222222", // soft warm off-white (less yellow)
-            primaryColor: isDarkMode ? "#ffb07c" : "#222222", // muted pastel orange (more orange-y)
-            arrowColor: isDarkMode ? "#9ec9ff" : "#ffffff", // soft pastel blue accent
-            overlayColor: isDarkMode ? "rgba(20, 24, 36, 0.82)" : "rgba(0, 0, 0, 0.5)", // keep strong contrast
+            buttons: ["back", "close", "primary", "skip"],
+            backgroundColor: "var(--bs-secondary)",
+            textColor: "var(--bs-white)",
+            primaryColor: "var(--bs-accent3-medium)",
+            arrowColor: "var(--bs-secondary)",
+            overlayColor: "rgba(var(--bs-primary-rgb), 0.82)",
             showProgress: true,
-            zIndex: getZIndex(2, theme) + 100,
-            skipBeacon: true, // optional: prevents the beacon click step
+            zIndex: getZIndex(3, theme),
+            skipBeacon: true,
             skipScroll: true,
         },
         locale: {
-            back: "Back",
-            close: "Close",
             last: "End Tour",
-            next: "Next",
+            skip: "Exit Tour",
         },
     })
-
-    useEffect(() => {
-        return on("tour:end", () => {
-            console.log("Tour finished!")
-        })
-    }, [on])
 
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
@@ -631,7 +656,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }
 
     useEffect(() => {
-        if (haveShownTourModal) return
+        if (haveShownTourModal) {
+            return undefined
+        }
 
         if (agentsInNetwork?.length > 0) {
             const timer = setTimeout(() => {
@@ -644,6 +671,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         } else {
             // if agents disappear, ensure modal is closed
             setTourModalOpen(false)
+
+            return undefined
         }
     }, [agentsInNetwork, haveShownTourModal])
 
@@ -839,7 +868,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         tourModalOpen ? (
             <ConfirmationModal
                 id="tour-modal"
-                content="It looks like this is the first time you've used the Multi-Agent Accelerator. Would you like to take a quick tour of the interface?"
+                content="Would you like to take a quick tour of the application?"
                 handleCancel={() => {
                     setTourModalOpen(false)
                     setHaveShownTourModal(true)
@@ -849,7 +878,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     setTourModalOpen(false)
                     setHaveShownTourModal(true)
                 }}
-                title="Tour"
+                title="Take a Tour?"
                 okBtnLabel="Take the Tour"
                 cancelBtnLabel="No, Thanks"
             />
@@ -918,15 +947,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     return (
         <>
-            <div id="start-tour-container">
-                {/*    <button*/}
-                {/*        type="button"*/}
-                {/*        onClick={() => controls.start()}*/}
-                {/*    >*/}
-                {/*        Start Tour*/}
-                {/*    </button>*/}
-                {Tour}
-            </div>
+            {Tour}
             {getTourModal()}
             {getProgressPopper()}
             {getConfirmationModal()}
