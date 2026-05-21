@@ -4,6 +4,7 @@ import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Delete from "@mui/icons-material/Delete"
 import DownloadIcon from "@mui/icons-material/Download"
+import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
@@ -46,6 +47,7 @@ const tagsToColors = new Map<string, TagColor>()
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly nodeIndex: NodeIndex
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
+    readonly onEditNetwork?: (network: string) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
     readonly temporaryNetworkHoconStrings?: Record<string, string | null>
@@ -73,6 +75,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     networkIconSuggestions,
     nodeIndex,
     onDeleteNetwork,
+    onEditNetwork,
     temporaryNetworkExpirationTimes,
     temporaryNetworkHoconStrings,
 }) => {
@@ -210,6 +213,32 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             }}
                                         >
                                             <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            )}
+                            {isTemporaryNetwork && (
+                                <Tooltip title="Edit this network">
+                                    <span>
+                                        <IconButton
+                                            onClick={(e) => {
+                                                console.debug("edit")
+                                                e.stopPropagation()
+                                                onEditNetwork?.(itemId)
+                                            }}
+                                            disabled={isExpired}
+                                            size="small"
+                                            sx={{
+                                                padding: 0,
+                                                color: "var(--bs-secondary)",
+                                                "&:hover": {color: "var(--bs-secondary-dark)"},
+                                                "&.Mui-disabled": {
+                                                    color: "var(--bs-secondary)",
+                                                    opacity: 0.3,
+                                                },
+                                            }}
+                                        >
+                                            <Edit sx={{fontSize: "0.75rem"}} />
                                         </IconButton>
                                     </span>
                                 </Tooltip>

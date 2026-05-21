@@ -146,6 +146,7 @@ export interface SidebarProps {
     readonly isAwaitingLlm: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
+    readonly onEditNetwork?: (network: string) => void
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
@@ -165,6 +166,7 @@ export const Sidebar: FC<SidebarProps> = ({
     networks,
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
+    onEditNetwork,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -398,6 +400,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             networkIconSuggestions,
                             nodeIndex,
                             onDeleteNetwork,
+                            onEditNetwork,
                             temporaryNetworkExpirationTimes,
                             temporaryNetworkHoconStrings,
                         } as AgentNetworkNodeProps,

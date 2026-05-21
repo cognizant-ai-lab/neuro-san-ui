@@ -17,10 +17,13 @@ import "@xyflow/react/dist/style.css"
 
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
+import CloseIcon from "@mui/icons-material/Close"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
+import IconButton from "@mui/material/IconButton"
 import {useTheme} from "@mui/material/styles"
+import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
@@ -71,9 +74,7 @@ import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
-
 // #region: Types
-
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentIconSuggestions?: AgentIconSuggestions
@@ -83,6 +84,7 @@ export interface AgentFlowProps {
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
+    readonly isEditMode?: boolean
     readonly isStreaming?: boolean
     readonly isSelectedNetworkTemporary?: boolean
     /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
@@ -194,6 +196,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
+    isEditMode,
     isStreaming,
     isSelectedNetworkTemporary: isTemporaryNetwork,
     networkId,
@@ -364,6 +367,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       currentConversations,
                       isAwaitingLlm,
                       isAgentNetworkDesignerMode,
+                      isEditMode,
                       thoughtBubbleEdges,
                       agentIconSuggestions,
                       isTemporaryNetwork
@@ -373,6 +377,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
+                      isEditMode,
                       isAgentNetworkDesignerMode,
                       thoughtBubbleEdges,
                       agentIconSuggestions,
@@ -384,6 +389,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             currentConversations,
             isAgentNetworkDesignerMode,
             isAwaitingLlm,
+            isEditMode,
             isHeatmap,
             isTemporaryNetwork,
             layout,
@@ -846,6 +852,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     return (
         <Box
+            display="flex"
+            flexDirection="column"
+            height="100%"
             id={`${id}-outer-box`}
             sx={{
                 height: "100%",
@@ -867,6 +876,21 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 },
             }}
         >
+            <Box
+                display="flex"
+                justifyContent="flex-end"
+                alignItems="center"
+                p={1}
+            >
+                {isEditMode && (
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => console.debug("Close button clicked")}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                )}
+            </Box>
             <ReactFlow
                 id={`${id}-react-flow`}
                 nodes={nodes}
@@ -880,13 +904,32 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             >
                 {!isAwaitingLlm && (
                     <>
-                        {agentsInNetwork?.length && !isAgentNetworkDesignerMode ? getLegend() : null}
+                        {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditMode ? getLegend() : null}
                         <Background id={`${id}-background`} />
-                        {!isAgentNetworkDesignerMode && getControls()}
+                        {!isAgentNetworkDesignerMode && !isEditMode && getControls()}
                         {shouldShowRadialGuides ? getRadialGuides() : null}
                     </>
                 )}
             </ReactFlow>
+            {isEditMode && (
+                <div
+                    style={{
+                        width: "100%",
+                        // position: "fixed",
+                        bottom: 0,
+                        left: 0,
+                        padding: "16px",
+                        boxShadow: "0 -2px 8px rgba(0,0,0,0.05)",
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        placeholder="Editing instructions, such as 'remove the Admin node'"
+                        variant="outlined"
+                        inputProps={{style: {fontSize: "1rem"}}}
+                    />
+                </div>
+            )}
             <ThoughtBubbleOverlay
                 nodes={nodes}
                 edges={thoughtBubbleEdgesForOverlay}

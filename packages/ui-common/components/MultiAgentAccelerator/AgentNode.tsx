@@ -18,9 +18,11 @@ limitations under the License.
 // eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
+import EditIcon from "@mui/icons-material/Edit"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
+import IconButton from "@mui/material/IconButton"
 import {keyframes, styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -40,7 +42,6 @@ import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
-
 export interface AgentNodeProps extends Record<string, unknown> {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
@@ -48,6 +49,7 @@ export interface AgentNodeProps extends Record<string, unknown> {
     readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
+    readonly isEditMode?: boolean
     readonly agentIconSuggestion?: string
     readonly isTemporaryNetwork?: boolean
 }
@@ -120,6 +122,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         getConversations,
         agentIconSuggestion,
         isAwaitingLlm,
+        isEditMode,
         isTemporaryNetwork,
     } = data
 
@@ -238,6 +241,48 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 }}
             >
                 {getDisplayAsIcon()}
+
+                {getDisplayAsIcon()}
+
+                {isEditMode && isClickableNode && (
+                    <Tooltip
+                        title="Edit"
+                        placement="top"
+                        disableInteractive
+                    >
+                        <IconButton
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                right: 0,
+                                fontSize: "1rem",
+                                // light translucent circle background so icon is visible on any node color
+                                backgroundColor: "darkgray",
+                                borderRadius: "50%",
+                                padding: "2px",
+                                zIndex: 2,
+                                cursor: "pointer",
+                            }}
+                        >
+                            <EditIcon
+                                id={`${agentId}-edit-icon`}
+                                sx={{
+                                    position: "absolute",
+                                    top: 6,
+                                    right: 6,
+                                    fontSize: "1rem",
+                                    // light translucent circle background so icon is visible on any node color
+                                    backgroundColor: "darkgray",
+                                    borderRadius: "50%",
+                                    padding: "2px",
+                                    zIndex: 2,
+                                    cursor: "pointer",
+                                }}
+                            />
+                        </IconButton>
+                    </Tooltip>
+                )}
+
                 <Handle
                     id={`${agentId}-left-handle`}
                     position={Position.Left}
