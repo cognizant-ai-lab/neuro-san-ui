@@ -34,6 +34,7 @@ import {
     AGENT_NETWORK_HOCON,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
+    TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
@@ -192,6 +193,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
         Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     >(new Map())
+
+    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+    const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
+    const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -429,6 +434,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return () => clearInterval(interval)
     }, [changeSelectedNetwork, temporaryNetworks, selectedNetwork])
 
+    const dismissTourModal = () => {
+        setTourModalOpen(false)
+        setHaveShownTourModal(true)
+    }
+
+    useEffect(() => {
+        const handleExternalTourRequest = () => {
+            console.debug("Received external request to start tour")
+            if (selectedNetwork == null) {
+                setSelectedNetwork(networks?.[0]?.agent_name ?? null)
+            }
+
+            dismissTourModal()
+            setTourRequested(true)
+        }
+
+        window.addEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
+        return () => window.removeEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
+    }, [networks, selectedNetwork])
+
     const onChunkReceived = useCallback(
         (chunk: string): boolean => {
             // Extract ChatMessage structure
@@ -556,10 +581,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setAgentsInNetworkDesigner([])
         resetState()
     }, [resetState])
-
-    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
-    const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
-    const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
@@ -796,11 +817,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 title="Delete Network"
             />
         ) : null
-
-    const dismissTourModal = () => {
-        setTourModalOpen(false)
-        setHaveShownTourModal(true)
-    }
 
     const getTourModal = () => (
         <MUIDialog

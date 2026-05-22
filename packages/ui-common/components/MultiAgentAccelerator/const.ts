@@ -48,6 +48,9 @@ export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
 // The key in sly_data where the agent network name is stored
 export const AGENT_NETWORK_NAME_KEY = "agent_network_name"
 
+// The event name that needs to be fired for the app tour to start
+export const TRIGGER_APP_TOUR_EVENT_NAME = "trigger-app-tour"
+
 /**
  * A single agent entry within an agent network definition, as received in sly_data from the backend.
  * Extends ConnectivityInfo with editable instructions and description fields for the Agent Network Designer.
