@@ -81,7 +81,7 @@ const GROW_ANIMATION_TIME_MS = 800
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
 
 // We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
-const SHOW_TOUR_DELAY_MS = 5000
+export const SHOW_TOUR_DELAY_MS = 5000
 
 // #region: Agent-save helpers
 
@@ -819,58 +819,59 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
-    const getTourModal = () => (
-        <MUIDialog
-            contentSx={{fontSize: "0.8rem", minWidth: "550px", paddingTop: "0"}}
-            footer={
-                <>
-                    <StyledButton
-                        id="tour-dont-show-again"
-                        onClick={() => {
-                            setTourStatus(TourPromptState.DontShowAgain)
-                            dismissTourModal()
-                        }}
-                        variant="outlined"
-                    >
-                        Don&#39;t show this again
-                    </StyledButton>
-                    <StyledButton
-                        id="tour-not-now"
-                        onClick={() => {
-                            dismissTourModal()
-                        }}
-                        variant="outlined"
-                    >
-                        Not now
-                    </StyledButton>
-                    <StyledButton
-                        id="tour-take"
-                        onClick={() => {
-                            // If no network selected, select one so we have something to show
-                            if (selectedNetwork == null) {
-                                setSelectedNetwork(networks?.[0]?.agent_name ?? null)
-                            }
-                            dismissTourModal()
+    const getTourModal = () =>
+        tourModalOpen && (
+            <MUIDialog
+                contentSx={{fontSize: "0.8rem", minWidth: "550px", paddingTop: "0"}}
+                footer={
+                    <>
+                        <StyledButton
+                            id="tour-dont-show-again"
+                            onClick={() => {
+                                setTourStatus(TourPromptState.DontShowAgain)
+                                dismissTourModal()
+                            }}
+                            variant="outlined"
+                        >
+                            Don&#39;t show this again
+                        </StyledButton>
+                        <StyledButton
+                            id="tour-not-now"
+                            onClick={() => {
+                                dismissTourModal()
+                            }}
+                            variant="outlined"
+                        >
+                            Not now
+                        </StyledButton>
+                        <StyledButton
+                            id="tour-take"
+                            onClick={() => {
+                                // If no network selected, select one so we have something to show
+                                if (selectedNetwork == null) {
+                                    setSelectedNetwork(networks?.[0]?.agent_name ?? null)
+                                }
+                                dismissTourModal()
 
-                            // Defer starting the tour until the selected network's data is available.
-                            setTourRequested(true)
-                        }}
-                        variant="contained"
-                    >
-                        Take the tour
-                    </StyledButton>
-                </>
-            }
-            id="multi-agent-accelerator-tour-modal"
-            isOpen={tourModalOpen}
-            onClose={() => {
-                dismissTourModal()
-            }}
-            title="Tour"
-        >
-            Would you like to take a tour of the application? (2 mins)
-        </MUIDialog>
-    )
+                                // Defer starting the tour until the selected network's data is available.
+                                setTourRequested(true)
+                            }}
+                            variant="contained"
+                        >
+                            Take the tour
+                        </StyledButton>
+                    </>
+                }
+                id="multi-agent-accelerator-tour-modal"
+                isOpen={tourModalOpen}
+                onClose={() => {
+                    dismissTourModal()
+                }}
+                title="Tour"
+            >
+                Would you like to take a tour of the application? (2 mins)
+            </MUIDialog>
+        )
 
     /**
      * Popper to show real-time progress of the Agent Network Designer output as we receive it from the backend.

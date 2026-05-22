@@ -47,7 +47,11 @@ import {
     TEMPORARY_NETWORK_FOLDER,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "../../../components/MultiAgentAccelerator/const"
-import {GRACE_PERIOD_MS, MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {
+    GRACE_PERIOD_MS,
+    MultiAgentAccelerator,
+    SHOW_TOUR_DELAY_MS,
+} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {
@@ -60,6 +64,7 @@ import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generate
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {TourPromptState, useTourStore} from "../../../state/Tour"
 
 const MOCK_USER = "mock-user"
 
@@ -252,6 +257,7 @@ describe("Multi Agent Accelerator Page", () => {
         useTempNetworksStore.setState({tempNetworks: []})
         useAgentChatHistoryStore.setState({history: {}})
         useSettingsStore.getState().resetSettings()
+        useTourStore.getState().reset()
     })
 
     it.each([false, true])(
@@ -1192,7 +1198,7 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     describe("Tour", () => {
-        it("should open the tour when requested", async () => {
+        it("should run the tour when requested", async () => {
             renderMultiAgentAcceleratorPage()
 
             await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -1219,5 +1225,66 @@ describe("Multi Agent Accelerator Page", () => {
                 await screen.findByText(step.content.toString())
             }
         })
+
+        /* eslint-disable jest/no-conditional-expect
+        -- We use conditional expects carefully in this test to verify each branch of the logic. */
+        it.each([
+            {
+                buttonName: "Take the tour",
+                shouldStartTour: true,
+                expectedStatus: TourPromptState.Taken,
+            },
+            {
+                buttonName: "Not now",
+                shouldStartTour: false,
+                expectedStatus: TourPromptState.NotPrompted,
+            },
+            {
+                buttonName: "Don't show this again",
+                shouldStartTour: false,
+                expectedStatus: TourPromptState.DontShowAgain,
+            },
+        ])(
+            "Should handle responding '$buttonName' to the tour prompt correctly",
+            async ({buttonName, shouldStartTour, expectedStatus}) => {
+                jest.useFakeTimers()
+                const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+
+                renderMultiAgentAcceleratorPage()
+
+                await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+                // Advance timers to trigger the tour prompt modal
+                act(() => {
+                    jest.advanceTimersByTime(SHOW_TOUR_DELAY_MS + 1)
+                })
+
+                // Locate and click the target response button
+                const actionButton = await screen.findByRole("button", {name: buttonName})
+                await localUser.click(actionButton)
+
+                if (shouldStartTour) {
+                    // Positive Case: Wait until the introductory tour step text mounts in the DOM
+                    await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
+                } else {
+                    // Negative Case: Safely wait until the prompt dialog counts hit 0
+                    await waitFor(() => {
+                        expect(screen.queryAllByRole("dialog").length).toBe(0)
+                    })
+
+                    // Give joyride time to launch the tour, if it's planning to
+                    act(() => {
+                        jest.advanceTimersByTime(100)
+                    })
+
+                    // Assert that the first step text remains completely absent from the DOM layout
+                    expect(screen.queryByText(MAIN_TOUR_STEPS[0].content.toString())).not.toBeInTheDocument()
+                }
+
+                // Verify that the global state store matches the expected final state
+                expect(useTourStore.getState().status).toEqual(expectedStatus)
+            }
+        )
+        /* eslint-enable jest/no-conditional-expect */
     })
 })
