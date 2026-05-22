@@ -67,6 +67,7 @@ const config: Config.InitialOptions = {
         "!**/knip.config.ts",
         "!**/next-env.d.ts",
         "!**/next.config.ts",
+        "!apps/main/app/api/auth/[[]...nextauth[]]/route.ts",
     ],
 
     coverageReporters: ["text-summary"],
