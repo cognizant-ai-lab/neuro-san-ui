@@ -76,6 +76,9 @@ export interface NavbarProps {
 
     // Optional flag to show/hide the settings button, defaults to true
     readonly showSettingsButton?: boolean
+
+    // Optional callback fired when the user clicks the "Take a tour" button in the Help menu
+    readonly onStartTour?: () => void
 }
 
 const MENU_ITEM_TEXT_PROPS = {
@@ -100,6 +103,7 @@ export const Navbar = ({
     id,
     logo,
     logoServiceToken,
+    onStartTour,
     pathname,
     query,
     showSettingsButton = true,
@@ -331,6 +335,17 @@ export const Navbar = ({
                         sx={{...DISABLE_OUTLINE_PROPS}}
                     >
                         User guide
+                    </MenuItem>
+                    <MenuItem
+                        id="take-a-tour"
+                        key="take-a-tour"
+                        onClick={() => {
+                            handleCloseHelpMenu()
+                            onStartTour?.()
+                        }}
+                        sx={{...DISABLE_OUTLINE_PROPS}}
+                    >
+                        Take a tour
                     </MenuItem>
                     <MenuItem
                         href={null}

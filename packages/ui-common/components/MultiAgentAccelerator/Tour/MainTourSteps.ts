@@ -86,6 +86,14 @@ export const MAIN_TOUR_STEPS: Step[] = [
     },
     {
         content:
+            "Select the items in this menu to learn more about Neuro-san, our open-source framework for building " +
+            "and running multi-agent systems, including access our GitHub repository with code samples " +
+            "and documentation.",
+        target: () => document.querySelector("#explore-dropdown"),
+        placement: "top",
+    },
+    {
+        content:
             "If you want to take the tour again, or if you have any questions or need help, click here to access " +
             "the help information or to contact the Cognizant AI Labs team. We'd love to hear from you!",
         target: () => document.querySelector("#help-dropdown"),
