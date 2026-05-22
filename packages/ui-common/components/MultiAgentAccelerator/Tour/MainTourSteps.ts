@@ -8,17 +8,16 @@ import {Step} from "react-joyride"
 export const MAIN_TOUR_STEPS: Step[] = [
     {
         // First step doesn't refer to any particular UI element, just a welcome message
-        arrowComponent: () => null,
         content:
-            "Welcome to Cognizant AI Lab Multi-Agent Accelerator! This tour will give you a quick overview of" +
-            " the application.",
+            "Welcome to Cognizant AI Lab Multi-Agent Accelerator! This tour will give you a quick overview of " +
+            "the application.",
         target: () => document.querySelector("#multi-agent-accelerator-grid"),
         placement: "center",
     },
     {
         content:
             "This is the list of agent networks available on the server. Select a network to see its agents and " +
-            " start interacting with it!",
+            "start interacting with it!",
         target: () => document.querySelector("#multi-agent-accelerator-sidebar-heading"),
         placement: "bottom",
     },
@@ -51,7 +50,7 @@ export const MAIN_TOUR_STEPS: Step[] = [
     {
         content:
             "This is the legend for the agent flow. You can select either 'depth' or 'heatmap' view " +
-            " to see the corresponding information about the agents in the flow.",
+            "to see the corresponding information about the agents in the flow.",
         target: () => document.querySelector("#multi-agent-accelerator-agent-flow-legend"),
     },
     {
@@ -80,7 +79,7 @@ export const MAIN_TOUR_STEPS: Step[] = [
     {
         content:
             "Access Settings from this icon. Here you can change the look and feel of the application, including " +
-            " auto branding for a particular customer!",
+            "auto branding for a particular customer!",
         target: () => document.querySelector("#settings-icon"),
         placement: "top",
     },

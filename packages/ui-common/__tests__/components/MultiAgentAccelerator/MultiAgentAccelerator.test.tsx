@@ -45,9 +45,11 @@ import {
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
+    TRIGGER_APP_TOUR_EVENT_NAME,
 } from "../../../components/MultiAgentAccelerator/const"
 import {GRACE_PERIOD_MS, MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
+import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {
     getAgentNetworks,
     getConnectivity,
@@ -80,11 +82,27 @@ jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
         return (
-            <div data-testid="mock-agent-flow">
-                {props.agentsInNetwork.map((element) => {
-                    const json = JSON.stringify(element)
-                    return <div key={json}>{json}</div>
-                })}
+            <div id="app-container">
+                <div id="settings-icon" />
+                <div id="explore-dropdown" />
+                <div id="help-dropdown" />
+                <div data-testid="mock-agent-flow">
+                    <div aria-label="Control Panel">Dummy Control Panel</div>
+                    <div id="multi-agent-accelerator-agent-flow-legend">Dummy Legend</div>
+                    <div id="llm-chat-agent-network-ui">Dummy Chat Window</div>
+                    <div id="sample-queries-box">Sample queries</div>
+                    <div id="user-input-div">User input</div>
+                    <button
+                        id="show-thinking-button"
+                        type="button"
+                    >
+                        Show Thinking
+                    </button>
+                    {props.agentsInNetwork.map((element) => {
+                        const json = JSON.stringify(element)
+                        return <div key={json}>{json}</div>
+                    })}
+                </div>
             </div>
         )
     },
@@ -1170,6 +1188,36 @@ describe("Multi Agent Accelerator Page", () => {
                     })
                 )
             })
+        })
+    })
+
+    describe("Tour", () => {
+        it("should open the tour when requested", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+            // Dispatch the tour request
+            await act(async () => {
+                window.dispatchEvent(new Event(TRIGGER_APP_TOUR_EVENT_NAME))
+            })
+
+            // Click to expand the folder in UI hierarchy
+            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await user.click(header)
+
+            // Verify that 'test-agents/math-guy' was successfully primed and rendered
+            await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+
+            // Make sure we see the tour first step
+            await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
+
+            // Click through remaining steps and verify their content shows up
+            for (const step of MAIN_TOUR_STEPS.slice(1)) {
+                const nextButton = await screen.findByRole("button", {name: /Next \(\d+ of \d+\)|End Tour/u})
+                await user.click(nextButton)
+                await screen.findByText(step.content.toString())
+            }
         })
     })
 })

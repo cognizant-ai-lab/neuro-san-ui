@@ -439,20 +439,21 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setHaveShownTourModal(true)
     }
 
-    useEffect(() => {
-        const handleExternalTourRequest = () => {
-            console.debug("Received external request to start tour")
-            if (selectedNetwork == null) {
-                setSelectedNetwork(networks?.[0]?.agent_name ?? null)
-            }
-
-            dismissTourModal()
-            setTourRequested(true)
+    const handleExternalTourRequest = useCallback(() => {
+        // If nothing is selected, prime the network selection first
+        if (selectedNetwork == null && networks?.length > 0) {
+            setSelectedNetwork(networks[0].agent_name)
         }
 
+        // Close the modal if open
+        setTourModalOpen(false)
+        setTourRequested(true)
+    }, [networks, selectedNetwork])
+
+    useEffect(() => {
         window.addEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
         return () => window.removeEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
-    }, [networks, selectedNetwork])
+    }, [handleExternalTourRequest, networks, selectedNetwork])
 
     const onChunkReceived = useCallback(
         (chunk: string): boolean => {
