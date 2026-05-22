@@ -74,10 +74,9 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
     const {data} = useAuthentication()
     const userInfo = data?.user
-
     const onStartTour = () => {
         // Dispatches the "start tour" event
-        window.dispatchEvent(new Event(TRIGGER_APP_TOUR_EVENT_NAME))
+        window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
     }
 
     return (
