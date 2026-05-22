@@ -41,13 +41,13 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
+import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
-import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 
