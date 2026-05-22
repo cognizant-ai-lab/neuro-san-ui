@@ -63,7 +63,7 @@ import {closeNotification, NotificationType, sendNotification} from "../Common/n
 import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {MUIDialog} from "../Common/MUIDialog"
 
-interface MultiAgentAcceleratorProps {
+export interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
 }
