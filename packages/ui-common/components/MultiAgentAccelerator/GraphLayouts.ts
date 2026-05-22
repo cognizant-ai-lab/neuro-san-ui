@@ -155,7 +155,6 @@ export const layoutRadial = (
     agentsInNetwork: ConnectivityInfo[],
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
-    isEditMode: boolean,
     isAgentNetworkDesignerMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: AgentIconSuggestions = null,
@@ -268,7 +267,6 @@ export const layoutRadial = (
                     // Use current conversations for node highlighting (cleared at end)
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
-                    isEditMode,
                     agentIconSuggestion: agentIconSuggestions?.[nodeId],
                     isTemporaryNetwork,
                 },
@@ -301,7 +299,6 @@ export const layoutLinear = (
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
     isAgentNetworkDesignerMode: boolean,
-    _isEditMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: AgentIconSuggestions = null,
     isTemporaryNetwork = false

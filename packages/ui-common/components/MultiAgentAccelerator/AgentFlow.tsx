@@ -119,6 +119,8 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // #endregion: Constants
 
+const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
+
 // #region: Helpers
 
 /** Merges incoming networks into target, keeping the entry with the highest expiration time. */
@@ -416,7 +418,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       currentConversations,
                       isAwaitingLlm,
                       isAgentNetworkDesignerMode,
-                      isEditMode,
                       thoughtBubbleEdges,
                       agentIconSuggestions,
                       isTemporaryNetwork
@@ -426,7 +427,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       mergedAgentsInNetwork,
                       currentConversations,
                       isAwaitingLlm,
-                      isEditMode,
                       isAgentNetworkDesignerMode,
                       thoughtBubbleEdges,
                       agentIconSuggestions,
@@ -438,7 +438,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             currentConversations,
             isAgentNetworkDesignerMode,
             isAwaitingLlm,
-            isEditMode,
             isHeatmap,
             isTemporaryNetwork,
             layout,
@@ -1014,7 +1013,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             variant="overline"
                             sx={{fontWeight: "bold", letterSpacing: 1, lineHeight: 1.8}}
                         >
-                            Topology Editor
+                            Network Editor
                         </Typography>
                         <IconButton
                             size="small"
@@ -1049,9 +1048,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <TextField
                             fullWidth
                             id={`${id}-dock-prompt-input`}
-                            placeholder={
-                                'Describe a change, e.g. "Add a legal review node between Gift Personalization and Elf Quality Inspector"'
-                            }
+                            placeholder={DOCK_PROMPT_PLACEHOLDER}
                             variant="outlined"
                             size="small"
                             value={dockPrompt}
@@ -1063,14 +1060,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 }
                             }}
                             disabled={isDockStreaming}
-                            inputProps={{style: {fontSize: "0.95rem"}}}
+                            slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
                         />
                         <Button
                             id={`${id}-dock-apply-button`}
                             variant="contained"
                             onClick={() => void handleDockApply()}
                             disabled={isDockStreaming || !dockPrompt.trim()}
-                            sx={{whiteSpace: "nowrap", minWidth: 130}}
+                            sx={{whiteSpace: "nowrap", minWidth: 120}}
                             startIcon={
                                 isDockStreaming ? (
                                     <CircularProgress
@@ -1080,7 +1077,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 ) : undefined
                             }
                         >
-                            {isDockStreaming ? "Applying…" : "Apply change"}
+                            {isDockStreaming ? "Applying…" : "Apply"}
                         </Button>
                     </Box>
                 </Box>

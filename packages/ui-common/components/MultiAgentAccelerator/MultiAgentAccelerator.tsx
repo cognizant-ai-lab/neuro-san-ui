@@ -92,7 +92,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
-    const [isEditingNetwork, setisEditingNetwork] = useState(false)
+    const [isEditingNetwork, setIsEditingNetwork] = useState(false)
 
     // Track streaming state - controls thought bubble cleanup timer, and enables "zen mode" (hides outer panels after
     // animation)
@@ -451,7 +451,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const handleEditNetwork = (networkId: string) => {
         console.debug("Edit network", networkId)
-        setisEditingNetwork(true)
+        setIsEditingNetwork(true)
     }
 
     const getLeftPanel = () => {
@@ -535,7 +535,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
-                            onExitEditMode={() => setisEditingNetwork(false)}
+                            onExitEditMode={() => setIsEditingNetwork(false)}
                             onNetworkReplaced={onNetworkReplaced}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}

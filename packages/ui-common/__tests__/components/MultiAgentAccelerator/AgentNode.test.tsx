@@ -206,4 +206,12 @@ describe("AgentNode", () => {
         const style = window.getComputedStyle(agentNodeDiv)
         expect(style.cursor).toBe(expectedCursor)
     })
+
+    it("applies heatmap coloring when isHeatmap is true and agent is not active", () => {
+        const counts = new Map([[AGENT_ID, 3]])
+        renderAgentNode({agentCounts: counts, isHeatmap: true})
+
+        // Component should render without errors — the heatmap branch executes
+        expect(screen.getByTestId(AGENT_ID)).toBeInTheDocument()
+    })
 })

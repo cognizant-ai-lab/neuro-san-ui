@@ -1999,4 +1999,278 @@ describe("AgentFlow", () => {
             expect(sendChatQuery).not.toHaveBeenCalled()
         })
     })
+
+    describe("topology editor dock", () => {
+        const DOCK_NETWORK_ID = "temporary/dock-test-net"
+        const DOCK_NETWORK_NAME = "dock_network"
+
+        const makeDockReservationChunk = (reservationId: string, agentNetworkName: string) =>
+            JSON.stringify({
+                response: {
+                    type: "AGENT_FRAMEWORK",
+                    sly_data: {
+                        agent_reservations: [
+                            {
+                                reservation_id: reservationId,
+                                lifetime_in_seconds: 86400,
+                                expiration_time_in_seconds: Date.now() / 1000 + 86400,
+                            },
+                        ],
+                        agent_network_name: agentNetworkName,
+                    },
+                },
+            })
+
+        beforeEach(() => {
+            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(DOCK_NETWORK_ID, [{origin: "agent1", tools: []}], DOCK_NETWORK_NAME),
+                    ])
+            })
+        })
+
+        it("shows the topology editor dock when isEditMode and isSelectedNetworkTemporary are true", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).toBeInTheDocument()
+            expect(screen.getByText("Network Editor")).toBeInTheDocument()
+            expect(screen.getByText("Changes apply only to this Temporary network")).toBeInTheDocument()
+        })
+
+        it("does not show the dock when isEditMode is false", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: false,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+        })
+
+        it("does not show the dock when isSelectedNetworkTemporary is false", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: false,
+                networkId: DOCK_NETWORK_ID,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+        })
+
+        it("calls onExitEditMode when the close button is clicked", async () => {
+            const onExitEditMode = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                onExitEditMode,
+            })
+
+            const closeButton = screen.getByRole("button", {name: /close edit mode/iu})
+            await user.click(closeButton)
+
+            expect(onExitEditMode).toHaveBeenCalledTimes(1)
+        })
+
+        it("Apply button is disabled when prompt is empty", () => {
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            expect(screen.getByRole("button", {name: /apply/iu})).toBeDisabled()
+        })
+
+        it("Apply button becomes enabled after typing a prompt", async () => {
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a new agent")
+
+            expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
+        })
+
+        it("calls sendChatQuery with the dock prompt when Apply is clicked", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a legal review agent")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            })
+            consoleDebugSpy.mockRestore()
+        })
+
+        it("replaces the network after dock apply returns a reservation", async () => {
+            const NEW_DOCK_RES_ID = "dock-new-res"
+            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+                chunkCallback(makeDockReservationChunk(NEW_DOCK_RES_ID, DOCK_NETWORK_NAME))
+            })
+
+            const onNetworkReplaced = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onNetworkReplaced,
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a legal review agent")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
+            })
+        })
+
+        it("shows an error toast when dock apply returns no reservations", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const {enqueueSnackbar} = jest.requireMock("notistack")
+            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(enqueueSnackbar).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({variant: "error"})
+                )
+            })
+            consoleDebugSpy.mockRestore()
+        })
+
+        it("shows error toast and resets state when dock apply throws", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const {enqueueSnackbar} = jest.requireMock("notistack")
+            ;(sendChatQuery as jest.Mock).mockRejectedValue(new Error("Network failure"))
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(enqueueSnackbar).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({variant: "error"})
+                )
+            })
+            // Button should re-enable after error
+            expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
+            consoleDebugSpy.mockRestore()
+        })
+
+        it("deduplicates reservations when two chunks with the same name but different expiry arrive", async () => {
+            const LOW_EXPIRY = Date.now() / 1000 + 100
+            const HIGH_EXPIRY = Date.now() / 1000 + 86400
+            const FIRST_RES = "res-low"
+            const SECOND_RES = "res-high"
+
+            const makeChunk = (reservationId: string, expiry: number) =>
+                JSON.stringify({
+                    response: {
+                        type: "AGENT_FRAMEWORK",
+                        sly_data: {
+                            agent_reservations: [
+                                {
+                                    reservation_id: reservationId,
+                                    lifetime_in_seconds: 300,
+                                    expiration_time_in_seconds: expiry,
+                                },
+                            ],
+                            agent_network_name: DOCK_NETWORK_NAME,
+                        },
+                    },
+                })
+
+            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+                // Send low-expiry first, then high-expiry (high should win)
+                chunkCallback(makeChunk(FIRST_RES, LOW_EXPIRY))
+                chunkCallback(makeChunk(SECOND_RES, HIGH_EXPIRY))
+            })
+
+            const onNetworkReplaced = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onNetworkReplaced,
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // The higher-expiry reservation should win
+            await waitFor(() => {
+                expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${SECOND_RES}`)
+            })
+        })
+
+        it("pressing Enter in the prompt field submits the dock apply", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node{Enter}")
+
+            await waitFor(() => {
+                expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            })
+            consoleDebugSpy.mockRestore()
+        })
+    })
 })
