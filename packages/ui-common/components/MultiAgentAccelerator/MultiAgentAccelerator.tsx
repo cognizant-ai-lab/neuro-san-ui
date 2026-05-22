@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import StopCircle from "@mui/icons-material/StopCircle"
-import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Slide from "@mui/material/Slide"
@@ -507,10 +506,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 size={enableZenMode && isStreaming ? 18 : 8.25}
                 sx={{
                     height: "100%",
-                    // 3. Dynamic Elevation: Lift above the backdrop when editing
-                    position: "relative",
-                    zIndex: isEditingNetwork ? (theme) => theme.zIndex.drawer + 2 : "auto",
-                    transition: "z-index 0.3s ease",
                 }}
             >
                 <ReactFlowProvider>
@@ -524,11 +519,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             height: "100%",
                             maxWidth: 1000,
                             margin: "0 auto",
-                            // Optional: Add a clean visual pop to the centered box when isolated
-                            background: isEditingNetwork ? theme.palette.background.paper : "transparent",
-                            borderRadius: isEditingNetwork ? "8px" : 0,
-                            padding: isEditingNetwork ? "1rem" : 0,
-                            transition: "background-color 0.3s ease",
                         }}
                     >
                         <AgentFlow
@@ -545,6 +535,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
+                            onExitEditMode={() => setisEditingNetwork(false)}
                             onNetworkReplaced={onNetworkReplaced}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
@@ -727,22 +718,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         <>
             {getProgressPopper()}
             {getConfirmationModal()}
-
-            {/* 1. Global Backdrop: Render independently to handle the dimming effect */}
-            <Backdrop
-                sx={(theme1) => ({
-                    zIndex: theme1.zIndex.drawer + 1,
-                    // darker overlay
-                    backgroundColor: "rgba(5,5,5,0.75)",
-                    // thin, subtle border around the viewport while backdrop is active
-                    // border: "1px solid rgba(255,255,255,0.12) !important",
-                    // optional slight blur to make the foreground pop
-                    backdropFilter: "blur(2px)",
-                })}
-                open={isEditingNetwork}
-                onClick={() => setisEditingNetwork(false)}
-                transitionDuration={2000}
-            />
 
             <Grid
                 id="multi-agent-accelerator-grid"

@@ -21,6 +21,8 @@ import CloseIcon from "@mui/icons-material/Close"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
+import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import {useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
@@ -96,6 +98,8 @@ export interface AgentFlowProps {
      * @param newNetworkId The agent_name of the replacement network to navigate to.
      */
     readonly onNetworkReplaced?: (oldNetworkId: string, newNetworkId: string) => void
+    /** Called when the user closes the edit-mode dock. */
+    readonly onExitEditMode?: () => void
     readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     readonly setThoughtBubbleEdges?: Dispatch<
         SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
@@ -130,6 +134,50 @@ const mergeNetworks = (target: NetworkList, incoming: NetworkList): void => {
             target[existingIdx] = n
         }
     }
+}
+
+/**
+ * Streams the Agent Network Designer endpoint with a natural-language prompt and the current
+ * network definition, collecting any returned reservations.
+ */
+const streamNetworkDesignerPrompt = async (
+    neuroSanURL: string,
+    signal: AbortSignal,
+    userPrompt: string,
+    currentDefinition: AgentNetworkDefinitionEntry[],
+    agentNetworkName: string | undefined,
+    currentUser: string
+): Promise<NetworkList> => {
+    const newNetworks: NetworkList = []
+
+    await sendChatQuery(
+        neuroSanURL,
+        signal,
+        userPrompt,
+        AGENT_NETWORK_DESIGNER_ID,
+        (chunk: string) => {
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (!chatMessage) return
+
+            const reservations = extractReservations(chatMessage)
+            if (reservations.length === 0) return
+
+            const networkHocon = extractNetworkHocon(chatMessage)
+            const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
+            const networkName = agentNetworkName ?? agentNetworkNameFromMessage
+            const converted = convertReservationsToNetworks(reservations, networkHocon, currentDefinition, networkName)
+            mergeNetworks(newNetworks, converted)
+        },
+        null,
+        {
+            [AGENT_NETWORK_DEFINITION_KEY]: currentDefinition,
+            ...(agentNetworkName ? {[AGENT_NETWORK_NAME_KEY]: agentNetworkName} : {}),
+        },
+        currentUser,
+        StreamingUnit.Line
+    )
+
+    return newNetworks
 }
 
 /**
@@ -202,6 +250,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     networkId,
     neuroSanURL,
     onNetworkReplaced,
+    onExitEditMode,
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
 }) => {
@@ -420,6 +469,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
     const saveAbortControllerRef = useRef<AbortController | null>(null)
 
+    // Dock (edit-mode prompt bar) state
+    const [dockPrompt, setDockPrompt] = useState<string>("")
+    const [isDockStreaming, setIsDockStreaming] = useState<boolean>(false)
+    const dockAbortControllerRef = useRef<AbortController | null>(null)
+
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
             // Popup is only available for temporary networks.
@@ -483,6 +537,46 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         },
         [networkId, onNetworkReplaced]
     )
+
+    const handleDockApply = useCallback(async () => {
+        if (!dockPrompt.trim() || !neuroSanURL || !currentUser) return
+
+        const currentTempNetwork = networkId
+            ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
+            : undefined
+        const currentDefinition = currentTempNetwork?.agentNetworkDefinition ?? []
+
+        setIsDockStreaming(true)
+        const controller = new AbortController()
+        dockAbortControllerRef.current = controller
+        const timeoutId = setTimeout(
+            () => controller.abort(new DOMException("Dock apply timed out", "TimeoutError")),
+            120_000
+        )
+        try {
+            const newNetworks = await streamNetworkDesignerPrompt(
+                neuroSanURL,
+                controller.signal,
+                dockPrompt,
+                currentDefinition,
+                currentTempNetwork?.agentNetworkName,
+                currentUser
+            )
+            applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
+            setDockPrompt("")
+        } catch (e: unknown) {
+            const isAbort = e instanceof DOMException && e.name === "AbortError"
+            const isTimeout = e instanceof DOMException && e.name === "TimeoutError"
+            if (!isAbort) {
+                const detail = isTimeout ? "The request timed out. Please try again." : String(e)
+                sendNotification(NotificationType.error, "Failed to apply network change.", detail)
+            }
+        } finally {
+            clearTimeout(timeoutId)
+            dockAbortControllerRef.current = null
+            setIsDockStreaming(false)
+        }
+    }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
 
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
@@ -876,21 +970,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 },
             }}
         >
-            <Box
-                display="flex"
-                justifyContent="flex-end"
-                alignItems="center"
-                p={1}
-            >
-                {isEditMode && (
-                    <IconButton
-                        aria-label="close"
-                        onClick={() => console.debug("Close button clicked")}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                )}
-            </Box>
             <ReactFlow
                 id={`${id}-react-flow`}
                 nodes={nodes}
@@ -911,24 +990,100 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     </>
                 )}
             </ReactFlow>
-            {isEditMode && (
-                <div
-                    style={{
-                        width: "100%",
-                        // position: "fixed",
-                        bottom: 0,
-                        left: 0,
-                        padding: "16px",
-                        boxShadow: "0 -2px 8px rgba(0,0,0,0.05)",
+            {isEditMode && isTemporaryNetwork && (
+                <Box
+                    id={`${id}-topology-editor-dock`}
+                    sx={{
+                        borderTop: `2px solid ${theme.palette.primary.main}`,
+                        backgroundColor: theme.palette.background.paper,
+                        flexShrink: 0,
                     }}
                 >
-                    <TextField
-                        fullWidth
-                        placeholder="Editing instructions, such as 'remove the Admin node'"
-                        variant="outlined"
-                        inputProps={{style: {fontSize: "1rem"}}}
-                    />
-                </div>
+                    {/* Dock header */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2,
+                            py: 0.5,
+                            borderBottom: `1px solid ${theme.palette.divider}`,
+                        }}
+                    >
+                        <Typography
+                            variant="overline"
+                            sx={{fontWeight: "bold", letterSpacing: 1, lineHeight: 1.8}}
+                        >
+                            Topology Editor
+                        </Typography>
+                        <IconButton
+                            size="small"
+                            aria-label="close edit mode"
+                            onClick={onExitEditMode}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            px: 2,
+                            pt: 0.5,
+                            pb: 0,
+                            color: theme.palette.text.secondary,
+                            display: "block",
+                        }}
+                    >
+                        Changes apply only to this Temporary network
+                    </Typography>
+                    {/* Prompt input row */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 1,
+                            px: 2,
+                            py: 1.5,
+                            alignItems: "center",
+                        }}
+                    >
+                        <TextField
+                            fullWidth
+                            id={`${id}-dock-prompt-input`}
+                            placeholder={
+                                'Describe a change, e.g. "Add a legal review node between Gift Personalization and Elf Quality Inspector"'
+                            }
+                            variant="outlined"
+                            size="small"
+                            value={dockPrompt}
+                            onChange={(e) => setDockPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault()
+                                    void handleDockApply()
+                                }
+                            }}
+                            disabled={isDockStreaming}
+                            inputProps={{style: {fontSize: "0.95rem"}}}
+                        />
+                        <Button
+                            id={`${id}-dock-apply-button`}
+                            variant="contained"
+                            onClick={() => void handleDockApply()}
+                            disabled={isDockStreaming || !dockPrompt.trim()}
+                            sx={{whiteSpace: "nowrap", minWidth: 130}}
+                            startIcon={
+                                isDockStreaming ? (
+                                    <CircularProgress
+                                        size={16}
+                                        color="inherit"
+                                    />
+                                ) : undefined
+                            }
+                        >
+                            {isDockStreaming ? "Applying…" : "Apply change"}
+                        </Button>
+                    </Box>
+                </Box>
             )}
             <ThoughtBubbleOverlay
                 nodes={nodes}

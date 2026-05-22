@@ -28,7 +28,7 @@ import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {Handle, NodeProps, Position} from "@xyflow/react"
 import type {Node as RFNode} from "@xyflow/react"
-import {FC} from "react"
+import {FC, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
 import {
@@ -122,7 +122,6 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         getConversations,
         agentIconSuggestion,
         isAwaitingLlm,
-        isEditMode,
         isTemporaryNetwork,
     } = data
 
@@ -224,6 +223,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const isClickableNode = isTemporaryNetwork && isEditableAgent(displayAs)
 
+    const [isHovered, setIsHovered] = useState(false)
+
     return (
         <>
             <AnimatedNode
@@ -231,6 +232,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 data-testid={agentId}
                 glowColor={glowColor}
                 isActive={isActiveAgent}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
                 sx={{
                     backgroundColor,
                     color,
@@ -242,9 +245,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
             >
                 {getDisplayAsIcon()}
 
-                {getDisplayAsIcon()}
-
-                {isEditMode && isClickableNode && (
+                {isHovered && isClickableNode && (
                     <Tooltip
                         title="Edit"
                         placement="top"
@@ -255,29 +256,17 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                                 position: "absolute",
                                 top: 0,
                                 right: 0,
-                                fontSize: "1rem",
-                                // light translucent circle background so icon is visible on any node color
-                                backgroundColor: "darkgray",
+                                backgroundColor: "rgba(0,0,0,0.45)",
                                 borderRadius: "50%",
-                                padding: "2px",
+                                padding: "3px",
                                 zIndex: 2,
                                 cursor: "pointer",
+                                "&:hover": {backgroundColor: "rgba(0,0,0,0.65)"},
                             }}
                         >
                             <EditIcon
                                 id={`${agentId}-edit-icon`}
-                                sx={{
-                                    position: "absolute",
-                                    top: 6,
-                                    right: 6,
-                                    fontSize: "1rem",
-                                    // light translucent circle background so icon is visible on any node color
-                                    backgroundColor: "darkgray",
-                                    borderRadius: "50%",
-                                    padding: "2px",
-                                    zIndex: 2,
-                                    cursor: "pointer",
-                                }}
+                                sx={{fontSize: "1rem", color: "white"}}
                             />
                         </IconButton>
                     </Tooltip>

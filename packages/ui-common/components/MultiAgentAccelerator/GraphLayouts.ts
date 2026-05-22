@@ -301,7 +301,7 @@ export const layoutLinear = (
     currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
     isAwaitingLlm: boolean,
     isAgentNetworkDesignerMode: boolean,
-    isEditMode: boolean,
+    _isEditMode: boolean,
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
     agentIconSuggestions: AgentIconSuggestions = null,
     isTemporaryNetwork = false
