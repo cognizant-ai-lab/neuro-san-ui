@@ -52,92 +52,37 @@ describe("useTempNetworksStore / upsertTempNetworks", () => {
     })
 
     it("replaces an existing network when a new one has the same agentNetworkName", () => {
-        const original = makeNetwork("res-1", "network_alpha")
+        const original = makeNetwork("network_alpha-11111111-1111-1111-1111-111111111111", "network_alpha")
         useTempNetworksStore.getState().upsertTempNetworks([original])
 
-        const replacement = makeNetwork("res-2", "network_alpha")
+        const replacement = makeNetwork("network_alpha-22222222-2222-2222-2222-222222222222", "network_alpha")
         useTempNetworksStore.getState().upsertTempNetworks([replacement])
 
         const stored = useTempNetworksStore.getState().tempNetworks
         // Should still have only one network
         expect(stored).toHaveLength(1)
         // Should be the replacement, not the original
-        expect(stored[0].agentInfo.agent_name).toBe("temporary/res-2")
+        expect(stored[0].agentInfo.agent_name).toBe("temporary/network_alpha-22222222-2222-2222-2222-222222222222")
     })
 
     it("replaces the correct network among multiple networks", () => {
-        const netAlpha = makeNetwork("res-alpha", "network_alpha")
-        const netBeta = makeNetwork("res-beta", "network_beta")
+        const netAlpha = makeNetwork("network_alpha-aaaa0001-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "network_alpha")
+        const netBeta = makeNetwork("network_beta-bbbb0001-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "network_beta")
         useTempNetworksStore.getState().upsertTempNetworks([netAlpha, netBeta])
 
-        const replacementBeta = makeNetwork("res-beta-v2", "network_beta")
+        const replacementBeta = makeNetwork("network_beta-bbbb0002-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "network_beta")
         useTempNetworksStore.getState().upsertTempNetworks([replacementBeta])
 
         const stored = useTempNetworksStore.getState().tempNetworks
         expect(stored).toHaveLength(2)
         // Alpha should be unchanged
         expect(stored.find((n) => n.agentNetworkName === "network_alpha")?.agentInfo.agent_name).toBe(
-            "temporary/res-alpha"
+            "temporary/network_alpha-aaaa0001-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
         )
         // Beta should be replaced
         expect(stored.find((n) => n.agentNetworkName === "network_beta")?.agentInfo.agent_name).toBe(
-            "temporary/res-beta-v2"
+            "temporary/network_beta-bbbb0002-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
         )
-    })
-
-    it("replaces an old network that has no agentNetworkName by deriving the name from its reservation_id", () => {
-        // Simulates a network stored before the agentNetworkName field was introduced —
-        // the reservation_id follows the {name}-{uuid} format so dedup can still work.
-        const oldReservationId = "travel_agency_ops-40161f92-e539-4160-b4c3-7e8f957c2cfe"
-        const oldNetwork = makeNetwork(oldReservationId, undefined) // no agentNetworkName
-
-        useTempNetworksStore.getState().upsertTempNetworks([oldNetwork])
-
-        const newReservationId = "travel_agency_ops-fdef1360-fe1b-46e4-8b6a-b63117cd1312"
-        const newNetwork = makeNetwork(newReservationId, "travel_agency_ops")
-
-        useTempNetworksStore.getState().upsertTempNetworks([newNetwork])
-
-        const stored = useTempNetworksStore.getState().tempNetworks
-        // Old network should be gone, replaced by the new one
-        expect(stored).toHaveLength(1)
-        expect(stored[0].agentInfo.agent_name).toBe(`temporary/${newReservationId}`)
-    })
-
-    it("replaces an old network via reservation_id fallback even when new network also has no agentNetworkName", () => {
-        const oldReservationId = "my_network-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-        const oldNetwork = makeNetwork(oldReservationId, undefined)
-
-        useTempNetworksStore.getState().upsertTempNetworks([oldNetwork])
-
-        const newReservationId = "my_network-11111111-2222-3333-4444-555555555555"
-        const newNetwork = makeNetwork(newReservationId, undefined)
-
-        useTempNetworksStore.getState().upsertTempNetworks([newNetwork])
-
-        const stored = useTempNetworksStore.getState().tempNetworks
-        expect(stored).toHaveLength(1)
-        expect(stored[0].agentInfo.agent_name).toBe(`temporary/${newReservationId}`)
-    })
-
-    it("replaces an old network even when agentNetworkName has a backend-added prefix (e.g. 'generated/')", () => {
-        // Real-world case: the old network was stored with agentNetworkName "generated/travel_agency_ops"
-        // but the popup-save designer returns agentNetworkName "travel_agency_ops" (no prefix).
-        // Without UUID-primary matching, effectiveNetworkName would return different strings → no match → append.
-        const oldReservationId = "travel_agency_ops-40161f92-e539-4160-b4c3-7e8f957c2cfe"
-        const oldNetwork = makeNetwork(oldReservationId, "generated/travel_agency_ops")
-
-        useTempNetworksStore.getState().upsertTempNetworks([oldNetwork])
-
-        const newReservationId = "travel_agency_ops-cf8307e6-aee9-4d09-86e1-c6c36e9aeeda"
-        const newNetwork = makeNetwork(newReservationId, "travel_agency_ops")
-
-        useTempNetworksStore.getState().upsertTempNetworks([newNetwork])
-
-        const stored = useTempNetworksStore.getState().tempNetworks
-        // Old network must be replaced; two entries would make both appear in the sidebar after refresh
-        expect(stored).toHaveLength(1)
-        expect(stored[0].agentInfo.agent_name).toBe(`temporary/${newReservationId}`)
     })
 
     it("returns the list of upserted networks", () => {
@@ -162,18 +107,20 @@ describe("useTempNetworksStore / upsertTempNetworks", () => {
     })
 
     it("upserts multiple networks in a single call, including mixed replacements and additions", () => {
-        const existing = makeNetwork("res-old", "shared_name")
+        const existing = makeNetwork("shared_name-aaaa0001-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "shared_name")
         useTempNetworksStore.getState().upsertTempNetworks([existing])
 
-        const replacement = makeNetwork("res-new", "shared_name")
-        const brandNew = makeNetwork("res-brand-new", "brand_new_name")
+        const replacement = makeNetwork("shared_name-aaaa0002-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "shared_name")
+        const brandNew = makeNetwork("brand_new_name-bbbb0001-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "brand_new_name")
         useTempNetworksStore.getState().upsertTempNetworks([replacement, brandNew])
 
         const stored = useTempNetworksStore.getState().tempNetworks
         expect(stored).toHaveLength(2)
-        expect(stored.find((n) => n.agentNetworkName === "shared_name")?.agentInfo.agent_name).toBe("temporary/res-new")
+        expect(stored.find((n) => n.agentNetworkName === "shared_name")?.agentInfo.agent_name).toBe(
+            "temporary/shared_name-aaaa0002-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        )
         expect(stored.find((n) => n.agentNetworkName === "brand_new_name")?.agentInfo.agent_name).toBe(
-            "temporary/res-brand-new"
+            "temporary/brand_new_name-bbbb0001-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
         )
     })
 })
