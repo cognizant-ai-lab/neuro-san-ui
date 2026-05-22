@@ -18,7 +18,6 @@ import {HumanMessage} from "@langchain/core/messages"
 import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {useSession} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
 
@@ -31,16 +30,13 @@ import {
     TEST_AGENT_MUSIC_NERD_DISPLAY,
     TEST_AGENTS_FOLDER,
     TEST_AGENTS_FOLDER_DISPLAY,
-} from "../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../__tests__/common/TestUtils"
-import {
-    ChatCommonHandle,
-    ChatCommonProps,
-} from "../../../../packages/ui-common/components/AgentChat/ChatCommon/ChatCommon"
-import {cleanUpAgentName} from "../../../../packages/ui-common/components/AgentChat/Common/Utils"
-import {extractConversations} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations"
-import {AgentFlowProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow"
+} from "../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/TestUtils"
+import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
+import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
+import {extractConversations} from "../../../components/MultiAgentAccelerator/AgentConversations"
+import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -49,37 +45,24 @@ import {
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
-} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
-import {GRACE_PERIOD_MS} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
-import {SidebarProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
+} from "../../../components/MultiAgentAccelerator/const"
+import {GRACE_PERIOD_MS, MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {
     getAgentNetworks,
+    getConnectivity,
     getNetworkIconSuggestions,
     testConnection,
-} from "../../../../packages/ui-common/controller/agent/Agent"
-import {
-    ChatMessageType,
-    ChatResponse,
-    ConnectivityInfo,
-} from "../../../../packages/ui-common/generated/neuro-san/NeuroSanClient"
-import {useAgentChatHistoryStore} from "../../../../packages/ui-common/state/ChatHistory"
-import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import {useSettingsStore} from "../../../../packages/ui-common/state/Settings"
-import {TemporaryNetwork, useTempNetworksStore} from "../../../../packages/ui-common/state/TemporaryNetworks"
-import {UserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
-import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
+} from "../../../controller/agent/Agent"
+import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {useSettingsStore} from "../../../state/Settings"
+import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 
 const MOCK_USER = "mock-user"
 
 // Backend neuro-san API server to use
 const NEURO_SAN_SERVER_URL = "https://default.example.com"
-
-const mockUseSession = useSession as jest.Mock
-
-// Mock dependencies
-jest.mock("next-auth/react")
-
-jest.mock("../../../../packages/ui-common/controller/agent/Agent")
 
 const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
@@ -87,7 +70,12 @@ const networkIconSuggestionsMock = jest.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
 let setSelectedNetwork: (network: string) => void
 
-jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentFlow", () => ({
+// Mock dependencies
+jest.mock("next-auth/react")
+
+jest.mock("../../../controller/agent/Agent")
+
+jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
@@ -102,10 +90,8 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Agent
     },
 }))
 
-jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
-    const originalModule = jest.requireActual(
-        "../../../../packages/ui-common/components/MultiAgentAccelerator/Sidebar/Sidebar"
-    )
+jest.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
+    const originalModule = jest.requireActual("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")
     return {
         __esModule: true,
         Sidebar: (props: SidebarProps) => {
@@ -119,20 +105,12 @@ jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/Sideb
     }
 })
 
-jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations")
+jest.mock("../../../components/MultiAgentAccelerator/AgentConversations")
 
 // Mock MUI theming
 jest.mock("@mui/material/styles", () => ({
     ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
-}))
-
-jest.mock("../../../../packages/ui-common/state/UserInfo", () => ({
-    __esModule: true,
-    useUserInfoStore: (): Partial<UserInfoStore> => ({
-        currentUser: MOCK_USER,
-        picture: null,
-    }),
 }))
 
 // Mock ChatCommon to call the mock function with props and support refs
@@ -190,7 +168,7 @@ let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
 let onStreamingComplete: () => void
 
-jest.mock("../../../../packages/ui-common/components/AgentChat/ChatCommon/ChatCommon", () => ({
+jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     __esModule: true,
     ChatCommon: (props: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
         chatCommonMock(props)
@@ -215,7 +193,13 @@ window.fetch = mockFetch({})
 const renderMultiAgentAcceleratorPage = () =>
     render(
         <SnackbarProvider>
-            <MultiAgentAcceleratorPage />
+            <MultiAgentAccelerator
+                userInfo={{
+                    userName: MOCK_USER,
+                    userImage: null,
+                }}
+                backendNeuroSanApiUrl={NEURO_SAN_SERVER_URL}
+            />
         </SnackbarProvider>
     )
 
@@ -224,18 +208,9 @@ describe("Multi Agent Accelerator Page", () => {
 
     let user: UserEvent
 
-    beforeAll(() => {
-        useEnvironmentStore.getState().setBackendNeuroSanApiUrl(NEURO_SAN_SERVER_URL)
-    })
-
     beforeEach(() => {
-        mockUseSession.mockReturnValue({data: {user: {name: MOCK_USER}}})
         ;(getAgentNetworks as jest.Mock).mockResolvedValue(LIST_NETWORKS_RESPONSE)
-
-        const mockGetConnectivity = jest.requireMock(
-            "../../../../packages/ui-common/controller/agent/Agent"
-        ).getConnectivity
-        mockGetConnectivity.mockResolvedValue({
+        ;(getConnectivity as jest.Mock).mockResolvedValue({
             connectivity_info: [
                 {
                     origin: "date_time_provider",
@@ -250,8 +225,7 @@ describe("Multi Agent Accelerator Page", () => {
 
         // make extractConversations the real implementation
         ;(extractConversations as jest.Mock).mockImplementation(
-            jest.requireActual("../../../../packages/ui-common/components/MultiAgentAccelerator/AgentConversations")
-                .extractConversations
+            jest.requireActual("../../../components/MultiAgentAccelerator/AgentConversations").extractConversations
         )
 
         user = userEvent.setup()
@@ -263,7 +237,7 @@ describe("Multi Agent Accelerator Page", () => {
     })
 
     it.each([false, true])(
-        "should render elements on the page with darkMode=%s and change the page on click of sidebar item",
+        "should render the component with darkMode=%s and change the network when item is clicked in the sidebar",
         async (darkMode) => {
             ;(useColorScheme as jest.Mock).mockReturnValue({
                 mode: darkMode ? "dark" : "light",
@@ -304,9 +278,7 @@ describe("Multi Agent Accelerator Page", () => {
     it("should display error toast when an error occurs for getAgentNetworks", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
         // Mock getAgentNetworks to reject with an error
-        const mockGetAgentNetworks = jest.requireMock(
-            "../../../../packages/ui-common/controller/agent/Agent"
-        ).getAgentNetworks
+        const mockGetAgentNetworks = jest.requireMock("../../../controller/agent/Agent").getAgentNetworks
         mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch agent networks"))
 
         renderMultiAgentAcceleratorPage()
@@ -322,9 +294,7 @@ describe("Multi Agent Accelerator Page", () => {
     it("should display error toast when an error occurs for getConnectivity", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
         // Mock getAgentNetworks to reject with an error
-        const mockGetAgentNetworks = jest.requireMock(
-            "../../../../packages/ui-common/controller/agent/Agent"
-        ).getConnectivity
+        const mockGetAgentNetworks = jest.requireMock("../../../controller/agent/Agent").getConnectivity
         mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch connectivity"))
 
         renderMultiAgentAcceleratorPage()
