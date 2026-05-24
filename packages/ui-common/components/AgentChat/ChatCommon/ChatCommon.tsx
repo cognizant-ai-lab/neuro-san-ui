@@ -50,29 +50,22 @@ import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import {v4 as uuid} from "uuid"
 
-import {AgentConnectivity} from "./AgentConnectivity"
+import {AgentMetadataDisplay} from "./AgentMetadataDisplay"
 import {ChatHistory} from "./ChatHistory"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {AGENT_GREETINGS} from "./Greetings"
-import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {UserQueryDisplay} from "./UserQueryDisplay"
-import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../controller/agent/Agent"
+import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
-import {
-    ChatMessage,
-    ChatMessageType,
-    ConnectivityResponse,
-    FunctionResponse,
-} from "../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hashString, hasOnlyWhitespace} from "../../../utils/text"
 import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../../Common/MUIAccordion"
 import {MUIAlert} from "../../Common/MUIAlert"
-import {NotificationType, sendNotification} from "../../Common/notification"
 import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
@@ -280,8 +273,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Keeps a copy of the last AI message so we can highlight it as "final answer"
     const lastAIMessage = useRef<string>("")
 
-    // Ref for the final answer key, so we can highlight the accordion
-    const finalAnswerKey = useRef<string>("")
+    // State for the final answer key, so we can highlight the accordion
+    const [finalAnswerKey, setFinalAnswerKey] = useState<string>("")
 
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
@@ -290,7 +283,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
         [storedChatHistory]
     )
-    const [agentSampleQueries, setAgentSampleQueries] = useState<string[]>([])
 
     // Access store for context items
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
@@ -414,7 +406,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             if (isFinalAnswer) {
                 // Save key of final answer for highlighting
-                finalAnswerKey.current = hashedSummary
+                setFinalAnswerKey(hashedSummary)
             }
 
             return (
@@ -791,44 +783,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [targetAgent, introduceAgent])
 
-    useEffect(() => {
-        const fetchAgentDetails = async () => {
-            let agentFunction: FunctionResponse
-
-            // It is a Neuro-san agent, so get the function and connectivity info
-            try {
-                agentFunction = await getAgentFunction(neuroSanURL, targetAgent, currentUser)
-            } catch {
-                // For now, just return. May be a legacy agent without a functional description in Neuro-san.
-                return
-            }
-
-            try {
-                const connectivity: ConnectivityResponse = await getConnectivity(neuroSanURL, targetAgent, currentUser)
-                updateOutput(
-                    <AgentConnectivity
-                        id={id}
-                        description={agentFunction?.function?.description}
-                        connectivityInfo={connectivity?.connectivity_info}
-                        targetAgent={targetAgent}
-                    />
-                )
-                const sampleQueries = (connectivity?.metadata?.["sample_queries"] || []) as string[]
-                setAgentSampleQueries(sampleQueries)
-            } catch (e) {
-                sendNotification(
-                    NotificationType.error,
-                    `Failed to get connectivity info for ${agentDisplayName}. Error: ${e}`
-                )
-            }
-        }
-
-        if (targetAgent && !isLegacyAgentType(targetAgent)) {
-            void fetchAgentDetails()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- only want to run this when targetAgent changes
-    }, [targetAgent])
-
     const handleStop = useCallback(() => {
         try {
             controller?.current?.abort()
@@ -894,14 +848,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             chatOutput
                 .map((item) => {
                     if (isValidElement(item) && item.type === MUIAccordion) {
-                        const shouldShow =
-                            showThinking || item.key === finalAnswerKey.current || item.key === CHAT_HISTORY_KEY
+                        const shouldShow = showThinking || item.key === finalAnswerKey || item.key === CHAT_HISTORY_KEY
                         return shouldShow ? item : null
                     }
                     return item
                 })
                 .filter((item) => item !== null),
-        [chatOutput, showThinking]
+        [chatOutput, finalAnswerKey, showThinking]
     )
 
     const getNoAgentOverlay = () => (
@@ -1067,10 +1020,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     style={darkMode ? atelierDuneDark : a11yLight}
                     wrapLongLines={shouldWrapOutput}
                 />
-                <SampleQueries
-                    disabled={isAwaitingLlm}
+                <AgentMetadataDisplay
+                    disableQueries={isAwaitingLlm}
                     handleSend={handleSend}
-                    sampleQueries={agentSampleQueries}
+                    currentUser={currentUser}
+                    id={`${id}-agent-metadata-display`}
+                    neuroSanURL={neuroSanURL}
+                    targetAgent={targetAgent}
                 />
                 {isAwaitingLlm && (
                     <Box
