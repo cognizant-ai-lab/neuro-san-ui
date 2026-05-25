@@ -28,14 +28,12 @@ import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
-import {alpha, useTheme} from "@mui/material/styles"
+import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {jsonrepair} from "jsonrepair"
 import {
     CSSProperties,
     Dispatch,
-    ReactNode,
     Ref,
     SetStateAction,
     useCallback,
@@ -45,8 +43,6 @@ import {
     useRef,
     useState,
 } from "react"
-import ReactMarkdown from "react-markdown"
-import SyntaxHighlighter from "react-syntax-highlighter"
 import {v4 as uuid} from "uuid"
 
 import {AgentIntro} from "./AgentIntro"
@@ -54,33 +50,19 @@ import {AgentMetadata} from "./AgentMetadata"
 import {ChatHistory} from "./ChatHistory"
 import {AGENT_IMAGE} from "./Const"
 import {ControlButtons} from "./ControlButtons"
-import {FormattedMarkdown} from "./FormattedMarkdown"
+import {Conversation} from "./Conversation"
+import {ConversationTurn} from "./ConversationTurn"
 import {SendButton} from "./SendButton"
-import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
-import {UserQueryDisplay} from "./UserQueryDisplay"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
-import {MUIAccordion} from "../../Common/MUIAccordion"
-import {MUIAlert} from "../../Common/MUIAlert"
 import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "../VoiceChat/VoiceChat"
-
-type MessageRole = "user" | "agent" | "finalAnswer" | "error" | "warning" | "info"
-
-interface ConversationTurn {
-    readonly agentName?: string
-    readonly alwaysShow?: boolean
-    readonly id: string
-    readonly messageType?: ChatMessageType
-    readonly role: MessageRole
-    readonly text: string
-}
 
 export interface ChatCommonProps {
     /**
@@ -245,7 +227,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     } = props
     // MUI theme
     const theme = useTheme()
-    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
 
     // User LLM chat input
     const [chatInput, setChatInput] = useState<string>("")
@@ -332,10 +313,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const darkMode = theme.palette.mode === "dark"
-
-    const {atelierDuneDark, a11yLight} = HLJS_THEMES
-
     const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
 
     useEffect(() => {
@@ -369,82 +346,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [isAwaitingLlm])
 
-    /**
-     * Renders a "turn" from the conversation
-     * @param turn The turn to render. @see ConversationTurn type for more info
-     *
-     * @returns A React component representing the "turn"
-     */
-    const renderTurn = useCallback(
-        (turn: ConversationTurn): ReactNode => {
-            // extract the parts of the line
-            let repairedJson: string
-
-            try {
-                // Attempt to parse as JSON
-
-                // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
-                repairedJson = jsonrepair(turn.text)
-
-                // Now try to parse it. We don't care about the result, only if it throws on parsing.
-                JSON.parse(repairedJson)
-
-                repairedJson = repairedJson.replace(/\\n/gu, "\n").replace(/\\"/gu, "'")
-            } catch {
-                // Not valid JSON
-                repairedJson = null
-            }
-
-            const isFinalAnswer = turn.role === "finalAnswer"
-            const summary = isFinalAnswer ? "Final Answer" : (turn.agentName ?? "Agent")
-            return (
-                <MUIAccordion
-                    key={turn.id}
-                    id={`${turn.id}-panel`}
-                    defaultExpandedPanelKey={isFinalAnswer ? 1 : null}
-                    items={[
-                        {
-                            title: summary,
-                            content: (
-                                <div id={turn.id}>
-                                    {/* If we managed to parse it as JSON, pretty print it */}
-                                    {repairedJson ? (
-                                        <SyntaxHighlighter
-                                            id="syntax-highlighter"
-                                            language="json"
-                                            style={darkMode ? atelierDuneDark : a11yLight}
-                                            showLineNumbers={false}
-                                            wrapLongLines={shouldWrapOutput}
-                                        >
-                                            {repairedJson}
-                                        </SyntaxHighlighter>
-                                    ) : (
-                                        <ReactMarkdown>{turn.text}</ReactMarkdown>
-                                    )}
-                                </div>
-                            ),
-                        },
-                    ]}
-                    sx={{
-                        fontSize: "large",
-                        marginBottom: "1rem",
-                        boxShadow: isFinalAnswer
-                            ? `0 6px 16px 0 ${alpha(shadowColor, 0.08)}, 0 3px 6px -4px ${alpha(shadowColor, 0.12)}, 
-                                    0 9px 28px 8px ${alpha(shadowColor, 0.05)}`
-                            : "none",
-                    }}
-                />
-            )
-        },
-        [a11yLight, atelierDuneDark, darkMode, shadowColor, shouldWrapOutput]
-    )
-
     const addTurn = useCallback((turn: ConversationTurn) => {
         setTurns((current) => {
             const next = [...current, turn]
             return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
         })
     }, [])
+
     const handleChunk = useCallback(
         (chunk: string): void => {
             // Give container a chance to process the chunk first
@@ -767,43 +675,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         lastAIMessage.current = ""
     }, [resetHistory, targetAgent])
 
-    /**
-     * Render the list of conversation turns.
-     */
-    const nodesList: ReactNode[] = useMemo(
-        () =>
-            turns.flatMap((turn) => {
-                switch (turn.role) {
-                    case "user":
-                        return [
-                            <UserQueryDisplay
-                                key={turn.id}
-                                userQuery={turn.text}
-                                title={currentUser}
-                                userImage={userImage}
-                            />,
-                        ]
-                    case "agent":
-                        return showThinking || turn.alwaysShow ? [renderTurn(turn)] : []
-                    case "finalAnswer":
-                        return [renderTurn(turn)]
-                    case "error":
-                        return [
-                            <MUIAlert
-                                id={`error-${turn.id}-alert`}
-                                key={turn.id}
-                                severity="error"
-                            >
-                                {turn.text}
-                            </MUIAlert>,
-                        ]
-                    default:
-                        return []
-                }
-            }),
-        [turns, showThinking, currentUser, userImage, renderTurn]
-    )
-
     const getNoAgentOverlay = () => (
         <Tooltip
             title="Please select a Network from the list to start the chat."
@@ -974,11 +845,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     neuroSanURL={neuroSanURL}
                     targetAgent={targetAgent}
                 />
-                <FormattedMarkdown
-                    id={`${id}-formatted-markdown`}
-                    nodesList={nodesList}
-                    style={darkMode ? atelierDuneDark : a11yLight}
-                    wrapLongLines={shouldWrapOutput}
+                <Conversation
+                    id={`${id}-conversation-display`}
+                    currentUser={currentUser}
+                    showThinking={false}
+                    shouldWrapOutput={false}
+                    turns={turns}
                 />
                 {isAwaitingLlm && (
                     <Box
