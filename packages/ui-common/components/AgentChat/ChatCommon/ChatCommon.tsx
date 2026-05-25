@@ -35,7 +35,6 @@ import {jsonrepair} from "jsonrepair"
 import {
     CSSProperties,
     Dispatch,
-    isValidElement,
     ReactNode,
     Ref,
     SetStateAction,
@@ -63,7 +62,7 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {hashString, hasOnlyWhitespace} from "../../../utils/text"
+import {hasOnlyWhitespace} from "../../../utils/text"
 import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
 import {MUIAccordion} from "../../Common/MUIAccordion"
 import {MUIAlert} from "../../Common/MUIAlert"
@@ -71,6 +70,17 @@ import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "../VoiceChat/VoiceChat"
+
+type MessageRole = "user" | "agent" | "finalAnswer" | "error" | "warning" | "info"
+
+interface ConversationTurn {
+    readonly agentName?: string
+    readonly alwaysShow?: boolean
+    readonly id: string
+    readonly messageType?: ChatMessageType
+    readonly role: MessageRole
+    readonly text: string
+}
 
 export interface ChatCommonProps {
     /**
@@ -243,8 +253,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Previous user query (for "regenerate" feature)
     const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
 
-    // Chat output window contents
-    const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
+    const [turns, setTurns] = useState<ConversationTurn[]>([])
 
     // To accumulate current response, which will be different from the contents of the output window if there is a
     // chat session
@@ -270,9 +279,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // Keeps a copy of the last AI message so we can highlight it as "final answer"
     const lastAIMessage = useRef<string>("")
-
-    // State for the final answer key, so we can highlight the accordion
-    const [finalAnswerKey, setFinalAnswerKey] = useState<string>("")
 
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
@@ -361,22 +367,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         if (autoScrollEnabledRef.current && chatOutputRef?.current) {
             chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
         }
-    }, [chatOutput, isAwaitingLlm])
+    }, [isAwaitingLlm])
 
     /**
-     * Process a log line from the agent and format it nicely using the syntax highlighter and Accordion components.
-     * By the time we get to here, it's assumed things like errors and termination conditions have already been handled.
+     * Renders a "turn" from the conversation
+     * @param turn The turn to render. @see ConversationTurn type for more info
      *
-     * @param logLine The log line to process
-     * @param messageType The type of the message (AI, LEGACY_LOGS etc.). Used for displaying certain message types
-     * differently
-     * @param isFinalAnswer If true, the log line is the final answer from the agent. This will be highlighted in some
-     * way to draw the user's attention to it.
-     * @param summary Used as the "title" for the accordion block. Something like an agent name or "Final Answer"
-     * @returns A React component representing the log line (agent message)
+     * @returns A React component representing the "turn"
      */
-    const processLogLine = useCallback(
-        (logLine: string, summary: string, messageType: ChatMessageType, isFinalAnswer?: boolean): ReactNode => {
+    const renderTurn = useCallback(
+        (turn): ReactNode => {
             // extract the parts of the line
             let repairedJson: string
 
@@ -384,7 +384,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // Attempt to parse as JSON
 
                 // First, repair it. Also replace "escaped newlines" with actual newlines for better display.
-                repairedJson = jsonrepair(logLine)
+                repairedJson = jsonrepair(turn.text)
 
                 // Now try to parse it. We don't care about the result, only if it throws on parsing.
                 JSON.parse(repairedJson)
@@ -395,28 +395,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 repairedJson = null
             }
 
-            const hashedSummary = hashString(summary)
-            const isAIMessage = messageType === ChatMessageType.AI
-
-            if (isAIMessage && !isFinalAnswer) {
-                lastAIMessage.current = logLine
-            }
-
-            if (isFinalAnswer) {
-                // Save key of final answer for highlighting
-                setFinalAnswerKey(hashedSummary)
-            }
-
+            const isFinalAnswer = turn.role === "finalAnswer"
+            const summary = isFinalAnswer ? "Final Answer" : (turn.agentName ?? "Agent")
             return (
                 <MUIAccordion
-                    key={hashedSummary}
-                    id={`${hashedSummary}-panel`}
+                    key={turn.id}
+                    id={`${turn.id}-panel`}
                     defaultExpandedPanelKey={isFinalAnswer ? 1 : null}
                     items={[
                         {
                             title: summary,
                             content: (
-                                <div id={`${summary}-details`}>
+                                <div id={turn.id}>
                                     {/* If we managed to parse it as JSON, pretty print it */}
                                     {repairedJson ? (
                                         <SyntaxHighlighter
@@ -429,7 +419,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                                             {repairedJson}
                                         </SyntaxHighlighter>
                                     ) : (
-                                        <ReactMarkdown key={hashString(logLine)}>{logLine}</ReactMarkdown>
+                                        <ReactMarkdown>{turn.text}</ReactMarkdown>
                                     )}
                                 </div>
                             ),
@@ -449,19 +439,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [a11yLight, atelierDuneDark, darkMode, shadowColor, shouldWrapOutput]
     )
 
-    /**
-     * Handles adding content to the output window. We only store the last MAX_CHAT_OUTPUT_ITEMS items to keep
-     * memory usage down.
-     * @param node A ReactNode to add to the output window -- text, spinner, etc. but could also be  simple string
-     * @returns Nothing, but updates the output window with the new content.
-     */
-    const updateOutput = useCallback((node: ReactNode) => {
-        setChatOutput((current) => {
-            const next = [...current, node]
+    const addTurn = useCallback((turn: ConversationTurn) => {
+        setTurns((current) => {
+            const next = [...current, turn]
             return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
         })
     }, [])
-
     const handleChunk = useCallback(
         (chunk: string): void => {
             // Give container a chance to process the chunk first
@@ -471,7 +454,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // For legacy agents, we either get plain text or Markdown. Just output it as-is.
             if (isLegacyAgentType(targetAgent)) {
                 // Display output as-is
-                updateOutput(chunk)
+                addTurn({
+                    id: uuid(),
+                    role: "agent",
+                    text: chunk,
+                })
                 currentResponse.current += chunk
 
                 // Check for Final Answer from legacy agent
@@ -488,6 +475,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // This is an error since Neuro-san agents should send us ChatMessage structures.
                 // But don't want to spam output by logging errors for every bad message.
                 return
+            }
+
+            // Check for final answer
+            if (chatMessage.type === ChatMessageType.AI && chatMessage.text) {
+                lastAIMessage.current = chatMessage.text
             }
 
             // Shallow merge existing slyData with incoming chatMessage.sly_data
@@ -507,14 +499,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // If there is an error block, we should display it as an alert.
                 const errorMessage = checkError(chatMessage.structure)
                 if (errorMessage) {
-                    updateOutput(
-                        <MUIAlert
-                            id="retry-message-alert"
-                            severity="warning"
-                        >
-                            {errorMessage}
-                        </MUIAlert>
-                    )
+                    addTurn({
+                        id: uuid(),
+                        role: "error",
+                        text: errorMessage,
+                        alwaysShow: true,
+                    })
                     succeeded.current = false
                 }
             } else if (chatMessage?.text?.trim() !== "") {
@@ -525,11 +515,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     chatMessage.origin?.length > 0
                         ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
                         : "Agent message"
-                updateOutput(processLogLine(chatMessage.text, agentName, chatMessage.type))
+                addTurn({
+                    id: uuid(),
+                    role: "agent",
+                    agentName,
+                    text: chatMessage.text,
+                })
                 currentResponse.current += chatMessage.text
             }
         },
-        [onChunkReceived, processLogLine, updateSlyData, targetAgent, updateChatContext, updateOutput]
+        [onChunkReceived, targetAgent, addTurn, updateSlyData, updateChatContext]
     )
 
     /**
@@ -540,7 +535,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setIsAwaitingLlm(false)
         setChatInput("")
         lastAIMessage.current = ""
-        finalAnswerRef.current = null
 
         // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
         setPreviousResponse?.(targetAgent, currentResponse.current)
@@ -605,14 +599,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         if (error instanceof Error) {
                             console.error(error, error.stack)
                         }
-                        updateOutput(
-                            <MUIAlert
-                                id="opp-finder-error-occurred-alert"
-                                severity="error"
-                            >
-                                {`Error occurred: ${error}`}
-                            </MUIAlert>
-                        )
+                        addTurn({
+                            id: uuid(),
+                            role: "error",
+                            text: `Error occurred: ${error}`,
+                            alwaysShow: true,
+                        })
                     }
                 }
             } while (attemptNumber < MAX_AGENT_RETRIES && !succeeded.current)
@@ -627,7 +619,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             legacyAgentEndpoint,
             neuroSanURL,
             targetAgent,
-            updateOutput,
         ]
     )
 
@@ -650,22 +641,20 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // Note: we display the original user query, not the modified one. The modified one could be a monstrosity
             // that we generated behind their back. Ultimately, we shouldn't need to generate a fake query on behalf
             // of the user, but currently we do for orchestration.
-            updateOutput(
-                <UserQueryDisplay
-                    userQuery={query}
-                    title={currentUser}
-                    userImage={userImage}
-                />
-            )
+            addTurn({
+                id: uuid(),
+                role: "user",
+                text: query,
+                alwaysShow: true,
+            })
 
             // Add ID block for agent
-            updateOutput(
-                <UserQueryDisplay
-                    userQuery={agentDisplayName}
-                    title={targetAgent}
-                    userImage={AGENT_IMAGE}
-                />
-            )
+            addTurn({
+                id: uuid(),
+                role: "info",
+                text: `Sending to ${agentDisplayName}...`,
+                alwaysShow: true,
+            })
 
             // Allow clients to do something when streaming starts
             onStreamingStarted?.()
@@ -674,51 +663,33 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             controller.current = new AbortController()
             setIsAwaitingLlm(true)
 
-            if (showThinking) {
-                updateOutput(
-                    <MUIAccordion
-                        id="initiating-orchestration-accordion"
-                        items={[
-                            {
-                                title: `Contacting ${agentDisplayName}...`,
-                                content: `Query: ${queryToSend}`,
-                            },
-                        ]}
-                        sx={{marginBottom: "1rem"}}
-                    />
-                )
-            }
+            addTurn({
+                id: uuid(),
+                role: "info",
+                text: `Contacting ${agentDisplayName}...`,
+            })
             try {
                 // Invoke the logic to send the request and retry as necessary
                 const wasAborted = await doRetryLoop(queryToSend)
 
                 if (!wasAborted && !succeeded.current) {
-                    updateOutput(
-                        <MUIAlert
-                            id="opp-finder-max-retries-exceeded-alert"
-                            severity="error"
-                        >
-                            {`Gave up after ${MAX_AGENT_RETRIES} attempts.`}
-                        </MUIAlert>
-                    )
+                    addTurn({
+                        alwaysShow: true,
+                        id: uuid(),
+                        role: "error",
+                        text: `Gave up after ${MAX_AGENT_RETRIES} attempts.`,
+                    })
                 }
 
                 // Display prominent "Final Answer" message if we have one
                 if (lastAIMessage.current) {
-                    // Legacy agents text is a bit messy and doesn't add a blank line, so we add it here
-                    if (isLegacyAgentType(targetAgent)) {
-                        updateOutput("    \n\n")
-                    }
+                    addTurn({
+                        alwaysShow: true,
+                        id: uuid(),
+                        role: "finalAnswer",
+                        text: lastAIMessage.current,
+                    })
 
-                    updateOutput(
-                        <div
-                            id="final-answer-div"
-                            ref={finalAnswerRef}
-                            style={{marginBottom: "1rem"}}
-                        >
-                            {processLogLine(lastAIMessage.current, "Final Answer", ChatMessageType.AI, true)}
-                        </div>
-                    )
                     // Record bot answer in history.
                     if (currentResponse?.current?.length > 0) {
                         updateChatHistory(targetAgent, [new AIMessage({content: lastAIMessage.current, id: uuid()})])
@@ -728,9 +699,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     // as the bot answer in that case.
                     updateChatHistory(targetAgent, [new AIMessage({content: currentResponse.current, id: uuid()})])
                 }
-
-                // Add a blank line after response
-                updateOutput("\n")
             } finally {
                 resetState()
 
@@ -745,13 +713,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             onSend,
             onStreamingComplete,
             onStreamingStarted,
-            processLogLine,
+            renderTurn,
             resetState,
             setIsAwaitingLlm,
             showThinking,
             targetAgent,
             updateChatHistory,
-            updateOutput,
             userImage,
         ]
     )
@@ -760,18 +727,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         try {
             controller?.current?.abort()
             controller.current = null
-            updateOutput(
-                <MUIAlert
-                    id="opp-finder-error-occurred-alert"
-                    severity="warning"
-                >
-                    Request cancelled.
-                </MUIAlert>
-            )
+            addTurn({
+                id: uuid(),
+                role: "info",
+                text: "Request cancelled.",
+            })
         } finally {
             resetState()
         }
-    }, [resetState, updateOutput])
+    }, [resetState])
 
     // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
     useImperativeHandle(
@@ -792,13 +756,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const shouldEnableRegenerateButton = previousUserQuery && !isAwaitingLlm
 
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
-    const enableClearChatButton = !isAwaitingLlm && chatOutput.length > 0
+    const enableClearChatButton = !isAwaitingLlm && turns.length > 0
 
     const getPlaceholder = () =>
         !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
 
     const handleClearChat = useCallback(() => {
-        setChatOutput([])
+        setTurns([])
         resetHistory(targetAgent)
         setPreviousUserQuery("")
         currentResponse.current = ""
@@ -806,27 +770,40 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     }, [resetHistory, targetAgent])
 
     /**
-     * Extract the list of React nodes to display in the output window, potentially filtering out "thinking"
-     * nodes if the user has chosen to hide them. Nodes that aren't to be shown are not even added to the DOM.
-     * There are a couple of special nodes that are always shown: chat history (collapsible accordion) and whatever
-     * we detected as the "final answer" (also a collapsible accordion).
-     *
-     * We use the MUIAccordion check as a proxy for "lines received from the agents"; everything that isn't
-     * a MUIAccordion (e.g. alerts, connectivity info, greetings) is not something we would want to hide when
-     * "show thinking" is off, so we always show those regardless of the "show thinking" setting.
+     * Render the list of conversation turns.
      */
-    const nodesList = useMemo(
+    const nodesList: ReactNode[] = useMemo(
         () =>
-            chatOutput
-                .map((item) => {
-                    if (isValidElement(item) && item.type === MUIAccordion) {
-                        const shouldShow = showThinking || item.key === finalAnswerKey || item.key === CHAT_HISTORY_KEY
-                        return shouldShow ? item : null
-                    }
-                    return item
-                })
-                .filter((item) => item !== null),
-        [chatOutput, finalAnswerKey, showThinking]
+            turns.flatMap((turn) => {
+                switch (turn.role) {
+                    case "user":
+                        return [
+                            <UserQueryDisplay
+                                key={turn.id}
+                                userQuery={turn.text}
+                                title={currentUser}
+                                userImage={userImage}
+                            />,
+                        ]
+                    case "agent":
+                        return showThinking || turn.alwaysShow ? [renderTurn(turn)] : []
+                    case "finalAnswer":
+                        return [renderTurn(turn)]
+                    case "error":
+                        return [
+                            <MUIAlert
+                                id={`error-${turn.id}-alert`}
+                                key={turn.id}
+                                severity="error"
+                            >
+                                {turn.text}
+                            </MUIAlert>,
+                        ]
+                    default:
+                        return []
+                }
+            }),
+        [turns, showThinking, currentUser, userImage, renderTurn]
     )
 
     const getNoAgentOverlay = () => (
@@ -986,12 +963,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         userImage={userImage}
                     />
                 )}
-                <FormattedMarkdown
-                    id={`${id}-formatted-markdown`}
-                    nodesList={nodesList}
-                    style={darkMode ? atelierDuneDark : a11yLight}
-                    wrapLongLines={shouldWrapOutput}
-                />
                 <AgentIntro
                     agentDisplayName={agentDisplayName}
                     customAgentGreetings={customAgentGreetings}
@@ -1004,6 +975,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     id={`${id}-agent-metadata-display`}
                     neuroSanURL={neuroSanURL}
                     targetAgent={targetAgent}
+                />
+                <FormattedMarkdown
+                    id={`${id}-formatted-markdown`}
+                    nodesList={nodesList}
+                    style={darkMode ? atelierDuneDark : a11yLight}
+                    wrapLongLines={shouldWrapOutput}
                 />
                 {isAwaitingLlm && (
                     <Box
