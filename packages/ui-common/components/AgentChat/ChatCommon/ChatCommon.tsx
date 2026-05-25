@@ -376,7 +376,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
      * @returns A React component representing the "turn"
      */
     const renderTurn = useCallback(
-        (turn): ReactNode => {
+        (turn: ConversationTurn): ReactNode => {
             // extract the parts of the line
             let repairedJson: string
 
@@ -611,6 +611,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             return wasAborted
         },
         [
+            addTurn,
             agentChatHistory,
             currentUser,
             extraParams,
@@ -707,19 +708,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
         },
         [
+            addTurn,
             agentDisplayName,
-            currentUser,
             doRetryLoop,
             onSend,
             onStreamingComplete,
             onStreamingStarted,
-            renderTurn,
             resetState,
             setIsAwaitingLlm,
-            showThinking,
             targetAgent,
             updateChatHistory,
-            userImage,
         ]
     )
 
@@ -735,7 +733,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         } finally {
             resetState()
         }
-    }, [resetState])
+    }, [addTurn, resetState])
 
     // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
     useImperativeHandle(
