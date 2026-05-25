@@ -731,7 +731,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }}
                 >
                     <ChatCommon
-                        agentGreetings={{
+                        customAgentGreetings={{
                             [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
                         }}
                         agentPlaceholders={{

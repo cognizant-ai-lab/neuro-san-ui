@@ -50,11 +50,12 @@ import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import {v4 as uuid} from "uuid"
 
-import {AgentMetadataDisplay} from "./AgentMetadataDisplay"
+import {AgentIntro} from "./AgentIntro"
+import {AgentMetadata} from "./AgentMetadata"
 import {ChatHistory} from "./ChatHistory"
+import {AGENT_IMAGE} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {FormattedMarkdown} from "./FormattedMarkdown"
-import {AGENT_GREETINGS} from "./Greetings"
 import {SendButton} from "./SendButton"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {UserQueryDisplay} from "./UserQueryDisplay"
@@ -143,7 +144,7 @@ export interface ChatCommonProps {
     /**
      * Optional greetings for specific agents to display
      */
-    readonly agentGreetings?: Partial<Record<CombinedAgentType, string>>
+    readonly customAgentGreetings?: Partial<Record<CombinedAgentType, string>>
 
     /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
@@ -184,9 +185,6 @@ const CHAT_HISTORY_KEY = "chat-history-accordion"
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
 const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 
-// Avatar to use for agents in chat
-const AGENT_IMAGE = "/agent.svg"
-
 // How many times to retry the entire agent interaction process. Some networks have a well-defined success condition.
 // For others, it's just "whenever the stream is done".
 const MAX_AGENT_RETRIES = 3
@@ -214,7 +212,7 @@ const MAX_CHAT_OUTPUT_ITEMS = 50
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const {
-        agentGreetings = EMPTY,
+        customAgentGreetings = EMPTY,
         agentPlaceholders = EMPTY,
         backgroundColor,
         currentUser,
@@ -243,7 +241,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const [chatInput, setChatInput] = useState<string>("")
 
     // Previous user query (for "regenerate" feature)
-    const previousUserQuery = useRef<string>("")
+    const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
 
     // Chat output window contents
     const [chatOutput, setChatOutput] = useState<ReactNode[]>([])
@@ -534,25 +532,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [onChunkReceived, processLogLine, updateSlyData, targetAgent, updateChatContext, updateOutput]
     )
 
-    const introduceAgent = useCallback(() => {
-        /**
-         * Introduce the agent to the user with a friendly greeting
-         */
-        updateOutput(
-            <UserQueryDisplay
-                userQuery={agentDisplayName}
-                title={targetAgent}
-                userImage={AGENT_IMAGE}
-            />
-        )
-
-        // Random greeting
-        const greeting =
-            agentGreetings[targetAgent] ?? AGENT_GREETINGS[Math.floor(Math.random() * AGENT_GREETINGS.length)]
-        updateOutput(greeting)
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- updateOutput is stable (empty useCallback deps)
-    }, [agentDisplayName, targetAgent])
-
     /**
      * Reset the state of the component. This is called after a request is completed, regardless of success or failure.
      */
@@ -663,7 +642,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // Save query for "regenerate" use. Again we save the real user input, not the modified query. It will again
             // get intercepted and re-modified (if applicable) on "regenerate".
-            previousUserQuery.current = query
+            setPreviousUserQuery(query)
 
             setIsAwaitingLlm(true)
 
@@ -777,12 +756,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         ]
     )
 
-    useEffect(() => {
-        if (targetAgent) {
-            introduceAgent()
-        }
-    }, [targetAgent, introduceAgent])
-
     const handleStop = useCallback(() => {
         try {
             controller?.current?.abort()
@@ -827,11 +800,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const handleClearChat = useCallback(() => {
         setChatOutput([])
         resetHistory(targetAgent)
-        previousUserQuery.current = ""
+        setPreviousUserQuery("")
         currentResponse.current = ""
         lastAIMessage.current = ""
-        introduceAgent()
-    }, [introduceAgent, resetHistory, targetAgent])
+    }, [resetHistory, targetAgent])
 
     /**
      * Extract the list of React nodes to display in the output window, potentially filtering out "thinking"
@@ -1020,7 +992,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     style={darkMode ? atelierDuneDark : a11yLight}
                     wrapLongLines={shouldWrapOutput}
                 />
-                <AgentMetadataDisplay
+                <AgentIntro
+                    agentDisplayName={agentDisplayName}
+                    customAgentGreetings={customAgentGreetings}
+                    targetAgent={targetAgent}
+                />
+                <AgentMetadata
                     disableQueries={isAwaitingLlm}
                     handleSend={handleSend}
                     currentUser={currentUser}
@@ -1051,12 +1028,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             </Box>
 
             <ControlButtons
-                handleClearChat={handleClearChat}
                 enableClearChatButton={enableClearChatButton}
-                isAwaitingLlm={isAwaitingLlm}
+                handleClearChat={handleClearChat}
                 handleSend={handleSend}
                 handleStop={handleStop}
-                previousUserQuery={previousUserQuery.current}
+                isAwaitingLlm={isAwaitingLlm}
+                previousUserQuery={previousUserQuery}
                 shouldEnableRegenerateButton={shouldEnableRegenerateButton}
             />
         </Box>
