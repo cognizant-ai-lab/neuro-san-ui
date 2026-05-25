@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Random greetings agents can use
-export const AGENT_GREETINGS: string[] = [
+export const GENERIC_AGENT_GREETINGS: string[] = [
     "Hey there! How can I assist you today?",
     "Hi! What can I do for you?",
     "Hello! Need help with something?",

@@ -19,7 +19,7 @@ interface AgentMetadataDisplayProps {
 /**
  * Component to display agent metadata, including connectivity info and sample queries.
  */
-export const AgentMetadataDisplay: FC<AgentMetadataDisplayProps> = ({
+export const AgentMetadata: FC<AgentMetadataDisplayProps> = ({
     currentUser,
     disableQueries,
     handleSend,
