@@ -840,14 +840,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     key={targetAgent}
                     targetAgent={targetAgent}
                 />
-                <AgentMetadata
-                    disableQueries={isAwaitingLlm}
-                    handleSend={handleSend}
-                    currentUser={currentUser}
-                    id={`${id}-agent-metadata-display`}
-                    neuroSanURL={neuroSanURL}
-                    targetAgent={targetAgent}
-                />
+                {!isLegacyAgentType(targetAgent) && (
+                    <AgentMetadata
+                        disableQueries={isAwaitingLlm}
+                        handleSend={handleSend}
+                        currentUser={currentUser}
+                        id={`${id}-agent-metadata-display`}
+                        neuroSanURL={neuroSanURL}
+                        targetAgent={targetAgent}
+                    />
+                )}
                 <Conversation
                     id={`${id}-conversation-display`}
                     currentUser={currentUser}

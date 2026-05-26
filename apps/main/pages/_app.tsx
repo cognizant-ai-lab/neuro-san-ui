@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import "../styles/globals.css"
+import "@xyflow/react/dist/style.css"
 
 import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
