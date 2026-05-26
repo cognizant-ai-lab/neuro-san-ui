@@ -449,8 +449,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }
 
-    const handleEditNetwork = (networkId: string) => {
-        console.debug("Edit network", networkId)
+    const handleEditNetwork = (_networkId: string) => {
         setIsEditingNetwork(true)
     }
 
