@@ -4,6 +4,7 @@ import {FC, ReactNode, useMemo} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
+import {AGENT_IMAGE} from "./Const"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
@@ -118,7 +119,7 @@ export const Conversation: FC<ConversationProps> = ({
      */
     const nodesList: ReactNode[] = useMemo(
         () =>
-            turns.flatMap((turn) => {
+            turns.flatMap((turn): ReactNode[] => {
                 switch (turn.role) {
                     case MessageRole.User:
                         return [
@@ -133,8 +134,17 @@ export const Conversation: FC<ConversationProps> = ({
                         return showThinking || turn.alwaysShow
                             ? [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
                             : []
+                    case MessageRole.AgentHeader:
+                        return [
+                            <UserQueryDisplay
+                                key={turn.id}
+                                title={turn.agentName ?? "Agent"}
+                                userImage={AGENT_IMAGE}
+                                userQuery={turn.agentDisplayName}
+                            />,
+                        ]
                     case MessageRole.LegacyAgent:
-                        return turn.text
+                        return [turn.text]
                     case MessageRole.FinalAnswer:
                         return [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
                     case MessageRole.Info:
