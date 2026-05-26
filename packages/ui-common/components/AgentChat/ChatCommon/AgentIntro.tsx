@@ -12,20 +12,17 @@ interface AgentIntroProps {
 }
 
 /**
- * Component to display agent metadata, including connectivity info and sample queries.
+ * Component to display agent intro, including agent name, image, and greeting.
  */
 export const AgentIntro: FC<AgentIntroProps> = ({agentDisplayName, customAgentGreetings, targetAgent}) => {
-    const [greeting, setGreeting] = useState<string>("")
-    const [currentAgent, setCurrentAgent] = useState<string>("")
-
-    if (currentAgent !== targetAgent) {
-        setCurrentAgent(targetAgent)
-        setGreeting(
-            customAgentGreetings?.[targetAgent] ??
-                // eslint-disable-next-line react-hooks/purity -- can't satisfy both purity and other react rules here
-                GENERIC_AGENT_GREETINGS[Math.floor(Math.random() * GENERIC_AGENT_GREETINGS.length)]
-        )
-    }
+    // eslint-disable-next-line react/hook-use-state -- we want to set this an "on mount" value only and never update
+    const [greeting] = useState<string>(() => {
+        if (customAgentGreetings?.[targetAgent]) {
+            return customAgentGreetings[targetAgent]
+        }
+        const randomIndex = Math.floor(Math.random() * GENERIC_AGENT_GREETINGS.length)
+        return GENERIC_AGENT_GREETINGS[randomIndex]
+    })
 
     return (
         <>

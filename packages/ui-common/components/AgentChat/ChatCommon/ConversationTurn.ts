@@ -5,6 +5,7 @@ export enum MessageRole {
     "Error" = "Error",
     "FinalAnswer" = "FinalAnswer",
     "Info" = "Info",
+    "LegacyAgent" = "LegacyAgent",
     "User" = "User",
     "Warning" = "Warning",
 }
