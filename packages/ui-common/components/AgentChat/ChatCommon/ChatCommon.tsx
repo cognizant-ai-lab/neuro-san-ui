@@ -51,7 +51,7 @@ import {ChatHistory} from "./ChatHistory"
 import {AGENT_IMAGE} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {Conversation} from "./Conversation"
-import {ConversationTurn} from "./ConversationTurn"
+import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {SendButton} from "./SendButton"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
@@ -364,7 +364,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // Display output as-is
                 addTurn({
                     id: uuid(),
-                    role: "agent",
+                    role: MessageRole.Agent,
                     text: chunk,
                 })
                 currentResponse.current += chunk
@@ -409,7 +409,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 if (errorMessage) {
                     addTurn({
                         id: uuid(),
-                        role: "error",
+                        role: MessageRole.Error,
                         text: errorMessage,
                         alwaysShow: true,
                     })
@@ -425,7 +425,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         : "Agent message"
                 addTurn({
                     id: uuid(),
-                    role: "agent",
+                    role: MessageRole.Agent,
                     agentName,
                     text: chatMessage.text,
                 })
@@ -507,7 +507,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         }
                         addTurn({
                             id: uuid(),
-                            role: "error",
+                            role: MessageRole.Error,
                             text: `Error occurred: ${error}`,
                             alwaysShow: true,
                         })
@@ -550,7 +550,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // of the user, but currently we do for orchestration.
             addTurn({
                 id: uuid(),
-                role: "user",
+                role: MessageRole.User,
                 text: query,
                 alwaysShow: true,
             })
@@ -558,7 +558,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             // Add ID block for agent
             addTurn({
                 id: uuid(),
-                role: "info",
+                role: MessageRole.Agent,
                 text: `Sending to ${agentDisplayName}...`,
                 alwaysShow: true,
             })
@@ -572,7 +572,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             addTurn({
                 id: uuid(),
-                role: "info",
+                role: MessageRole.Agent,
                 text: `Contacting ${agentDisplayName}...`,
             })
             try {
@@ -583,7 +583,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     addTurn({
                         alwaysShow: true,
                         id: uuid(),
-                        role: "error",
+                        role: MessageRole.Error,
                         text: `Gave up after ${MAX_AGENT_RETRIES} attempts.`,
                     })
                 }
@@ -593,7 +593,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     addTurn({
                         alwaysShow: true,
                         id: uuid(),
-                        role: "finalAnswer",
+                        role: MessageRole.FinalAnswer,
                         text: lastAIMessage.current,
                     })
 
@@ -634,7 +634,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             addTurn({
                 alwaysShow: true,
                 id: uuid(),
-                role: "warning",
+                role: MessageRole.Warning,
                 text: "Request cancelled.",
             })
         } finally {

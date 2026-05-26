@@ -4,7 +4,7 @@ import {FC, ReactNode, useMemo} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {ConversationTurn} from "./ConversationTurn"
+import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
 import {UserQueryDisplay} from "./UserQueryDisplay"
@@ -54,8 +54,9 @@ const renderTurn = (
         repairedJson = null
     }
 
-    const isFinalAnswer = turn.role === "finalAnswer"
+    const isFinalAnswer = turn.role === MessageRole.FinalAnswer
     const summary = isFinalAnswer ? "Final Answer" : (turn.agentName ?? "Agent")
+
     return (
         <MUIAccordion
             key={turn.id}
@@ -119,7 +120,7 @@ export const Conversation: FC<ConversationProps> = ({
         () =>
             turns.flatMap((turn) => {
                 switch (turn.role) {
-                    case "user":
+                    case MessageRole.User:
                         return [
                             <UserQueryDisplay
                                 key={turn.id}
@@ -128,13 +129,23 @@ export const Conversation: FC<ConversationProps> = ({
                                 userImage={userImage}
                             />,
                         ]
-                    case "agent":
+                    case MessageRole.Agent:
                         return showThinking || turn.alwaysShow
                             ? [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
                             : []
-                    case "finalAnswer":
+                    case MessageRole.FinalAnswer:
                         return [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
-                    case "warning":
+                    case MessageRole.Info:
+                        return [
+                            <MUIAlert
+                                id={`info-${turn.id}-alert`}
+                                key={turn.id}
+                                severity="info"
+                            >
+                                {turn.text}
+                            </MUIAlert>,
+                        ]
+                    case MessageRole.Warning:
                         return [
                             <MUIAlert
                                 id={`warning-${turn.id}-alert`}
@@ -144,7 +155,7 @@ export const Conversation: FC<ConversationProps> = ({
                                 {turn.text}
                             </MUIAlert>,
                         ]
-                    case "error":
+                    case MessageRole.Error:
                         return [
                             <MUIAlert
                                 id={`error-${turn.id}-alert`}

@@ -1,6 +1,13 @@
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
-export type MessageRole = "user" | "agent" | "finalAnswer" | "error" | "warning" | "info"
+export enum MessageRole {
+    "Agent" = "Agent",
+    "Error" = "Error",
+    "FinalAnswer" = "FinalAnswer",
+    "Info" = "Info",
+    "User" = "User",
+    "Warning" = "Warning",
+}
 
 export interface ConversationTurn {
     readonly agentName?: string
