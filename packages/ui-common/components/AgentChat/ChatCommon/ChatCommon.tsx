@@ -558,10 +558,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // Add ID block for agent
             addTurn({
-                id: uuid(),
-                role: MessageRole.Agent,
-                text: `Sending to ${agentDisplayName}...`,
+                agentDisplayName,
+                agentName: targetAgent,
                 alwaysShow: true,
+                id: uuid(),
+                role: MessageRole.AgentHeader,
+                text: agentDisplayName,
             })
 
             // Allow clients to do something when streaming starts
