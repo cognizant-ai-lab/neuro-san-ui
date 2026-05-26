@@ -440,13 +440,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
      */
     const resetState = useCallback(() => {
         // Reset state, whatever happened during request
-        setIsAwaitingLlm(false)
-        setChatInput("")
-        lastAIMessage.current = ""
-
-        // Get agent name, either from the enum (Neuro-san) or from the targetAgent string directly (legacy)
-        setPreviousResponse?.(targetAgent, currentResponse.current)
         currentResponse.current = ""
+        lastAIMessage.current = ""
+        setChatInput("")
+        setIsAwaitingLlm(false)
+        setPreviousResponse?.(targetAgent, currentResponse.current)
     }, [setIsAwaitingLlm, setPreviousResponse, targetAgent])
 
     /*
@@ -634,8 +632,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             controller?.current?.abort()
             controller.current = null
             addTurn({
+                alwaysShow: true,
                 id: uuid(),
-                role: "info",
+                role: "warning",
                 text: "Request cancelled.",
             })
         } finally {
@@ -848,8 +847,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 <Conversation
                     id={`${id}-conversation-display`}
                     currentUser={currentUser}
-                    showThinking={false}
-                    shouldWrapOutput={false}
+                    showThinking={showThinking}
+                    shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
                 {isAwaitingLlm && (
