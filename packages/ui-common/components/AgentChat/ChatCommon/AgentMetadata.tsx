@@ -61,8 +61,7 @@ export const AgentMetadata: FC<AgentMetadataDisplayProps> = ({
         if (targetAgent && !isLegacyAgentType(targetAgent)) {
             void fetchAgentDetails()
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- only want to run this when targetAgent changes
-    }, [targetAgent])
+    }, [currentUser, neuroSanURL, targetAgent])
 
     return (
         <>

@@ -363,8 +363,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             if (isLegacyAgentType(targetAgent)) {
                 // Display output as-is
                 addTurn({
+                    alwaysShow: true,
                     id: uuid(),
-                    role: MessageRole.Agent,
+                    role: MessageRole.LegacyAgent,
                     text: chunk,
                 })
                 currentResponse.current += chunk
@@ -409,7 +410,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 if (errorMessage) {
                     addTurn({
                         id: uuid(),
-                        role: MessageRole.Error,
+                        role: MessageRole.Warning,
                         text: errorMessage,
                         alwaysShow: true,
                     })
@@ -834,6 +835,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 <AgentIntro
                     agentDisplayName={agentDisplayName}
                     customAgentGreetings={customAgentGreetings}
+                    key={targetAgent}
                     targetAgent={targetAgent}
                 />
                 <AgentMetadata

@@ -133,6 +133,8 @@ export const Conversation: FC<ConversationProps> = ({
                         return showThinking || turn.alwaysShow
                             ? [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
                             : []
+                    case MessageRole.LegacyAgent:
+                        return turn.text
                     case MessageRole.FinalAnswer:
                         return [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
                     case MessageRole.Info:
@@ -169,7 +171,7 @@ export const Conversation: FC<ConversationProps> = ({
                         return []
                 }
             }),
-        [turns, currentUser, userImage, showThinking, darkMode, shadowColor, shouldWrapOutput]
+        [currentUser, darkMode, shadowColor, shouldWrapOutput, showThinking, turns, userImage]
     )
 
     return (
