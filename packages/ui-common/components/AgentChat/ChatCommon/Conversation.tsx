@@ -134,6 +134,16 @@ export const Conversation: FC<ConversationProps> = ({
                             : []
                     case "finalAnswer":
                         return [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
+                    case "warning":
+                        return [
+                            <MUIAlert
+                                id={`warning-${turn.id}-alert`}
+                                key={turn.id}
+                                severity="warning"
+                            >
+                                {turn.text}
+                            </MUIAlert>,
+                        ]
                     case "error":
                         return [
                             <MUIAlert
