@@ -196,11 +196,11 @@ describe("AgentNode", () => {
     })
 
     it.each([
-        ["temporary network", true, "pointer"],
-        ["non-temporary network", false, "grab"],
-        ["no isTemporaryNetwork prop (default)", undefined, "grab"],
-    ])("cursor is %s when isTemporaryNetwork=%s", (_label, isTemporaryNetwork, expectedCursor) => {
-        renderAgentNode({depth: 1, isTemporaryNetwork})
+        ["editable agent", true, "pointer"],
+        ["non-editable agent", false, "grab"],
+        ["no isEditable prop (default)", undefined, "grab"],
+    ])("cursor is pointer when isEditable=%s", (_label, isEditable, expectedCursor) => {
+        renderAgentNode({depth: 1, isEditable})
 
         const agentNodeDiv = screen.getByTestId(AGENT_ID)
         const style = window.getComputedStyle(agentNodeDiv)

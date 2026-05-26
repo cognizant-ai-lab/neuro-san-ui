@@ -41,6 +41,7 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
+import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
@@ -73,11 +74,17 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
     const {data} = useAuthentication()
     const userInfo = data?.user
+    const onStartTour = () => {
+        // Dispatches the "start tour" event
+        window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
+    }
+
     return (
         <Navbar
             {...props}
             id="nav-bar"
             userInfo={userInfo}
+            onStartTour={onStartTour}
         />
     )
 }

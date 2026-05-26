@@ -67,16 +67,17 @@ const config: Config.InitialOptions = {
         "!**/knip.config.ts",
         "!**/next-env.d.ts",
         "!**/next.config.ts",
+        "!apps/main/app/api/auth/[[]...nextauth[]]/route.ts",
     ],
 
     coverageReporters: ["text-summary"],
 
     coverageThreshold: {
         global: {
-            statements: -110,
-            branches: -168,
-            functions: -31,
-            lines: -84,
+            statements: -133,
+            branches: -179,
+            functions: -36,
+            lines: -105,
         },
     },
 

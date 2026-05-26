@@ -905,20 +905,25 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     )
 
     const getNoAgentOverlay = () => (
-        <Box
-            id="chat-disabled-overlay"
-            sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: theme.zIndex.modal - 1,
-                cursor: "not-allowed",
-                // Capture all pointer events to prevent interaction with the chat when no agent is selected
-                pointerEvents: "all",
-            }}
-        />
+        <Tooltip
+            title="Please select a Network from the list to start the chat."
+            placement="auto"
+        >
+            <Box
+                id="chat-disabled-overlay"
+                sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: theme.zIndex.modal - 1,
+                    cursor: "not-allowed",
+                    // Capture all pointer events to prevent interaction with the chat when no agent is selected
+                    pointerEvents: "all",
+                }}
+            />
+        </Tooltip>
     )
 
     const getTitle = () => (

@@ -22,6 +22,7 @@ import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {useJoyride} from "react-joyride"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
@@ -33,15 +34,17 @@ import {
     AGENT_NETWORK_HOCON,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
+    TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {convertReservationsToNetworks, extractNetworkHocon, extractReservations} from "./TemporaryNetworks"
+import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
+    sendNetworkDesignerUpdate,
 } from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
@@ -49,15 +52,18 @@ import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {TourPromptState, useTourStore} from "../../state/Tour"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
-import {ConfirmationModal} from "../Common/ConfirmationModal"
+import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
+import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
+import {MUIDialog} from "../Common/MUIDialog"
 
-interface MultiAgentAcceleratorProps {
+export interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
     readonly backendNeuroSanApiUrl: string
 }
@@ -73,6 +79,47 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
+
+// We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
+export const SHOW_TOUR_DELAY_MS = 5000
+
+// #region: Agent-save helpers
+
+/**
+ * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
+ * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
+ */
+const collectNetworksFromChunk = (
+    chunk: string,
+    updated: AgentNetworkDefinitionEntry[],
+    accumulated: TemporaryNetwork[]
+): TemporaryNetwork[] => {
+    try {
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) return accumulated
+
+        // Always use the user's edited definition as the authoritative value.
+        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated)
+        if (converted.length === 0) return accumulated
+        return mergeNetworks(accumulated, converted)
+    } catch (e: unknown) {
+        console.warn("Failed to process chunk from network designer:", e)
+        return accumulated
+    }
+}
+
+/** Logs and notifies about a save error. Suppresses AbortError (user-cancelled). */
+const notifySaveError = (agentName: string, e: unknown): void => {
+    if (e instanceof DOMException && e.name === "AbortError") return
+    console.error("Failed to submit agent network update:", e)
+    const detail =
+        e instanceof DOMException && e.name === "TimeoutError"
+            ? "The request timed out waiting for the server. Please try again."
+            : String(e)
+    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
+}
+
+// #endregion: Agent-save helpers
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -149,6 +196,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     >(new Map())
 
+    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+    const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
+    const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
+
     const customURLCallback = useCallback(
         (url: string) => {
             setNeuroSanURL(url || backendNeuroSanApiUrl)
@@ -168,6 +219,36 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         [agentsInNetwork]
     )
 
+    // Introductory tour
+
+    // Track that the user requested the tour, and we should start it once network data is available
+    const [tourRequested, setTourRequested] = useState<boolean>(false)
+
+    // Tour persisted status
+    const tourStatus = useTourStore((s) => s.status)
+    const setTourStatus = useTourStore((s) => s.setStatus)
+
+    const {controls, Tour} = useJoyride({
+        continuous: true,
+        steps: MAIN_TOUR_STEPS,
+        options: {
+            buttons: ["back", "close", "primary", "skip"],
+            backgroundColor: "var(--bs-secondary)",
+            textColor: "var(--bs-white)",
+            primaryColor: "var(--bs-accent3-medium)",
+            arrowColor: "var(--bs-secondary)",
+            overlayColor: "rgba(var(--bs-primary-rgb), 0.82)",
+            showProgress: true,
+            zIndex: getZIndex(3, theme),
+            skipBeacon: true,
+            skipScroll: true,
+        },
+        locale: {
+            last: "End Tour",
+            skip: "Exit Tour",
+        },
+    })
+
     const resetState = useCallback(() => {
         setThoughtBubbleEdges(new Map())
         setIsStreaming(false)
@@ -180,24 +261,37 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
 
     // Whether the currently selected network is a temporary network (agent reservation)
-    const isSelectedNetworkTemporary =
-        selectedNetwork !== null && temporaryNetworks.some((n) => n.agentInfo.agent_name === selectedNetwork)
+    const isSelectedNetworkTemporary = isTemporaryNetwork(selectedNetwork, temporaryNetworks)
 
     // For temp networks, agent_network_definition and agent_network_name live in localStorage (not IndexedDB slyData).
     // Supply them as extraSlyData so ChatCommon bounces them back to the backend on every request.
     const currentTempNetwork = isSelectedNetworkTemporary
         ? temporaryNetworks.find((n) => n.agentInfo.agent_name === selectedNetwork)
         : undefined
+
+    // For Agent Network Designer: the backend echoes agent_network_name into IndexedDB sly_data as the conversation
+    // progresses. We read it back here to find the matching temp network and override agent_network_definition in the
+    // outgoing request — leaving what's in IndexedDB untouched.
+    const designerSlyData = useAgentChatHistoryStore((state) => state.history[AGENT_NETWORK_DESIGNER_ID]?.slyData)
+    const designerNetworkName = isNetworkDesignerMode
+        ? (designerSlyData?.[AGENT_NETWORK_NAME_KEY] as string | undefined)
+        : undefined
+    const designerTempNetwork = designerNetworkName
+        ? temporaryNetworks.find((n) => n.agentNetworkName === designerNetworkName)
+        : undefined
+
     const extraSlyData: Record<string, unknown> | undefined = currentTempNetwork
         ? {
               [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
-              // Use the name the backend originally sent, not the local UUID-based key.
+              // Use the agentNetworkName, not reservation_id
               ...(currentTempNetwork.agentNetworkName
                   ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
                   : {}),
               ...(currentTempNetwork.networkHocon ? {[AGENT_NETWORK_HOCON]: currentTempNetwork.networkHocon} : {}),
           }
-        : undefined
+        : designerTempNetwork
+          ? {[AGENT_NETWORK_DEFINITION_KEY]: designerTempNetwork.agentNetworkDefinition}
+          : undefined
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -342,6 +436,27 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return () => clearInterval(interval)
     }, [changeSelectedNetwork, temporaryNetworks, selectedNetwork])
 
+    const dismissTourModal = () => {
+        setTourModalOpen(false)
+        setHaveShownTourModal(true)
+    }
+
+    const handleExternalTourRequest = useCallback(() => {
+        // If nothing is selected, prime the network selection first
+        if (selectedNetwork == null && networks?.length > 0) {
+            setSelectedNetwork(networks[0].agent_name)
+        }
+
+        // Close the modal if open
+        setTourModalOpen(false)
+        setTourRequested(true)
+    }, [networks, selectedNetwork])
+
+    useEffect(() => {
+        window.addEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
+        return () => window.removeEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
+    }, [handleExternalTourRequest, networks, selectedNetwork])
+
     const onChunkReceived = useCallback(
         (chunk: string): boolean => {
             // Extract ChatMessage structure
@@ -370,26 +485,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 }
             }
 
-            // Temporary networks/reservations
-            const reservationsResult = extractReservations(chatMessage)
-
             // Handle agent reservations (temporary networks) that come in through the chat stream.
-            if (reservationsResult?.length > 0) {
-                // Retrieve network definition, if present
-                const networkHocon = extractNetworkHocon(chatMessage)
-                const agentNetworkDefinition = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
-                    | AgentNetworkDefinitionEntry[]
-                    | undefined
-                // Capture the backend's canonical name so we can bounce it back unchanged on future requests.
-                const agentNetworkName = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
-
-                const newTemporaryNetworks = convertReservationsToNetworks(
-                    reservationsResult,
-                    networkHocon,
-                    agentNetworkDefinition,
-                    agentNetworkName
-                )
-
+            const newTemporaryNetworks = extractTemporaryNetworksFromMessage(chatMessage)
+            if (newTemporaryNetworks.length > 0) {
                 const upserted = useTempNetworksStore.getState().upsertTempNetworks(newTemporaryNetworks)
 
                 // Record the new temporary networks so we can highlight them for the user.
@@ -400,6 +498,63 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             return true
         },
         [isNetworkDesignerMode]
+    )
+
+    /**
+     * Handles a save from the AgentFlow popup: streams the updated definition to the network designer,
+     * collects reservations from each chunk, then upserts the result and navigates if the network changed.
+     */
+    const onSaveAgent = useCallback(
+        async (
+            agentName: string,
+            updated: AgentNetworkDefinitionEntry[],
+            agentNetworkName: string | undefined,
+            signal: AbortSignal
+        ): Promise<void> => {
+            try {
+                let newNetworks: TemporaryNetwork[] = []
+                await sendNetworkDesignerUpdate(
+                    neuroSanURL,
+                    signal,
+                    agentName,
+                    updated,
+                    agentNetworkName,
+                    userInfo.userName,
+                    (chunk) => {
+                        newNetworks = collectNetworksFromChunk(chunk, updated, newNetworks)
+                    }
+                )
+
+                if (newNetworks.length === 0) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to update agent "${agentName}".`,
+                        "The network designer did not return a reservation. Please try again."
+                    )
+                    return
+                }
+
+                const replacement = newNetworks.find((n) => n.agentNetworkName === agentNetworkName)
+                if (replacement) {
+                    useTempNetworksStore.getState().upsertTempNetworks(newNetworks)
+                    if (selectedNetwork) {
+                        useAgentChatHistoryStore
+                            .getState()
+                            .copyHistory(selectedNetwork, replacement.agentInfo.agent_name)
+                        setSelectedNetwork(replacement.agentInfo.agent_name)
+                    }
+                } else {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to update agent "${agentName}".`,
+                        "A reservation was returned but did not match the current network. Please try again."
+                    )
+                }
+            } catch (e: unknown) {
+                notifySaveError(agentName, e)
+            }
+        },
+        [neuroSanURL, userInfo.userName, selectedNetwork]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -430,8 +585,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         resetState()
     }, [resetState])
 
-    const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
-
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
             // It's expired so just delete it without confirmation
@@ -452,6 +605,40 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const handleEditNetwork = (_networkId: string) => {
         setIsEditingNetwork(true)
     }
+
+    useEffect(() => {
+        // Don't show the tour modal if any of these are true
+        if (
+            haveShownTourModal ||
+            tourStatus === TourPromptState.Taken ||
+            tourStatus === TourPromptState.DontShowAgain ||
+            tourRequested
+        ) {
+            return undefined
+        }
+
+        // Show tour modal after a delay
+        const timer = setTimeout(() => {
+            setTourModalOpen(true)
+        }, SHOW_TOUR_DELAY_MS)
+
+        return () => {
+            clearTimeout(timer)
+        }
+    }, [haveShownTourModal, tourRequested, tourStatus])
+
+    useEffect(() => {
+        if (!tourRequested) return
+
+        // Determine whether the sample network for the tour is ready
+        const networkReady = selectedNetwork != null && agentsInNetwork?.length > 0
+
+        if (networkReady) {
+            setTourStatus(TourPromptState.Taken)
+            controls.start()
+            setTourRequested(false)
+        }
+    }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
     const getLeftPanel = () => {
         return (
@@ -489,15 +676,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
-    const onNetworkReplaced = useCallback(
-        (oldNetworkId: string, newNetworkId: string) => {
-            if (selectedNetwork === oldNetworkId) {
-                changeSelectedNetwork(newNetworkId)
-            }
-        },
-        [changeSelectedNetwork, selectedNetwork]
-    )
-
     const getCenterPanel = () => {
         return (
             <Grid
@@ -524,10 +702,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             agentCounts={agentCounts}
                             agentsInNetwork={agentsInNetwork}
                             agentIconSuggestions={agentIconSuggestions}
-                            currentUser={userInfo.userName}
                             id="multi-agent-accelerator-agent-flow"
                             key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
+                            currentUser={userInfo.userName}
                             isAwaitingLlm={isAwaitingLlm}
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
@@ -535,7 +713,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
                             onExitEditMode={() => setIsEditingNetwork(false)}
-                            onNetworkReplaced={onNetworkReplaced}
+                            onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
+                            onSaveAgent={onSaveAgent}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
@@ -623,7 +802,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
-    const getConfirmationModal = () =>
+    const getDeleteNetworkConfirmationModal = () =>
         confirmationModalOpen ? (
             <ConfirmationModal
                 id="delete-network-confirmation-modal"
@@ -651,6 +830,60 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 title="Delete Network"
             />
         ) : null
+
+    const getTourModal = () =>
+        tourModalOpen && (
+            <MUIDialog
+                contentSx={{fontSize: "0.8rem", minWidth: "550px", paddingTop: "0"}}
+                footer={
+                    <>
+                        <StyledButton
+                            id="tour-dont-show-again"
+                            onClick={() => {
+                                setTourStatus(TourPromptState.DontShowAgain)
+                                dismissTourModal()
+                            }}
+                            variant="outlined"
+                        >
+                            Don&#39;t show this again
+                        </StyledButton>
+                        <StyledButton
+                            id="tour-not-now"
+                            onClick={() => {
+                                dismissTourModal()
+                            }}
+                            variant="outlined"
+                        >
+                            Not now
+                        </StyledButton>
+                        <StyledButton
+                            id="tour-take"
+                            onClick={() => {
+                                // If no network selected, select one so we have something to show
+                                if (selectedNetwork == null) {
+                                    setSelectedNetwork(networks?.[0]?.agent_name ?? null)
+                                }
+                                dismissTourModal()
+
+                                // Defer starting the tour until the selected network's data is available.
+                                setTourRequested(true)
+                            }}
+                            variant="contained"
+                        >
+                            Take the tour
+                        </StyledButton>
+                    </>
+                }
+                id="multi-agent-accelerator-tour-modal"
+                isOpen={tourModalOpen}
+                onClose={() => {
+                    dismissTourModal()
+                }}
+                title="Tour"
+            >
+                Would you like to take a tour of the application? (2 mins)
+            </MUIDialog>
+        )
 
     /**
      * Popper to show real-time progress of the Agent Network Designer output as we receive it from the backend.
@@ -715,9 +948,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     return (
         <>
+            {Tour}
+            {getTourModal()}
             {getProgressPopper()}
-            {getConfirmationModal()}
 
+            {getDeleteNetworkConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"
                 container

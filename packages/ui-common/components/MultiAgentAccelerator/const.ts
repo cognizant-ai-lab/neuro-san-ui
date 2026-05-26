@@ -48,6 +48,9 @@ export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
 // The key in sly_data where the agent network name is stored
 export const AGENT_NETWORK_NAME_KEY = "agent_network_name"
 
+// The event name that needs to be fired for the app tour to start
+export const TRIGGER_APP_TOUR_EVENT_NAME = "trigger-app-tour"
+
 /**
  * A single agent entry within an agent network definition, as received in sly_data from the backend.
  * Extends ConnectivityInfo with editable instructions and description fields for the Agent Network Designer.
@@ -58,14 +61,9 @@ export type AgentNetworkDefinitionEntry = ConnectivityInfo & {
 }
 
 /** Possible values for the `display_as` field in ConnectivityInfo / AgentNetworkDefinitionEntry. */
-export const DISPLAY_AS_LLM_AGENT = "llm_agent"
-export const DISPLAY_AS_CODED_TOOL = "coded_tool"
-export const DISPLAY_AS_LANGCHAIN_TOOL = "langchain_tool"
-export const DISPLAY_AS_EXTERNAL_AGENT = "external_agent"
-
-/**
- * Returns true when an agent node supports the edit popup (instructions + description).
- * Only `llm_agent` nodes (and the Frontman, whose `display_as` is undefined) are editable.
- * `coded_tool`, `langchain_tool`, `external_agent`, and any other types are read-only.
- */
-export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DISPLAY_AS_LLM_AGENT
+export enum DisplayAs {
+    LLM_AGENT = "llm_agent",
+    CODED_TOOL = "coded_tool",
+    LANGCHAIN_TOOL = "langchain_tool",
+    EXTERNAL_AGENT = "external_agent",
+}

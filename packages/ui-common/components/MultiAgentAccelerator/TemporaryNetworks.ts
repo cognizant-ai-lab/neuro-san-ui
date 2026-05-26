@@ -1,11 +1,14 @@
 import {
+    AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_HOCON,
     AGENT_RESERVATIONS_KEY,
     AgentNetworkDefinitionEntry,
+    DisplayAs,
     TEMPORARY_NETWORK_FOLDER,
 } from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
-import {extractNetworkNameFromReservationId, TemporaryNetwork} from "../../state/TemporaryNetworks"
+import {TemporaryNetwork} from "../../state/TemporaryNetworks"
+import {removeTrailingUuid} from "../AgentChat/Common/Utils"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -81,10 +84,58 @@ export const convertReservationsToNetworks = (
         },
         // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
         // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
-        agentNetworkName: agentNetworkName ?? extractNetworkNameFromReservationId(reservation.reservation_id),
+        agentNetworkName: agentNetworkName ?? removeTrailingUuid(reservation.reservation_id),
         networkHocon,
         agentNetworkDefinition,
     }))
 }
 
-export {extractNetworkNameFromReservationId} from "../../state/TemporaryNetworks"
+export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DisplayAs.LLM_AGENT
+
+/**
+ * Extracts TemporaryNetwork objects from a chat message by reading reservations, HOCON,
+ * agent network definition, and agent network name from the message / sly_data.
+ * @param message The chat message to extract from.
+ * @param agentNetworkDefinitionOverride Optional definition override (e.g. a locally-edited version) that
+ *   takes precedence over whatever the backend echoes in sly_data.
+ * @returns A (possibly empty) array of TemporaryNetwork objects ready for the store.
+ */
+export const extractTemporaryNetworksFromMessage = (
+    message: ChatMessage,
+    agentNetworkDefinitionOverride?: AgentNetworkDefinitionEntry[]
+): TemporaryNetwork[] => {
+    const reservations = extractReservations(message)
+    if (reservations.length === 0) return []
+
+    const networkHocon = extractNetworkHocon(message)
+    const agentNetworkDefinition =
+        agentNetworkDefinitionOverride ??
+        (message.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[] | undefined)
+
+    return convertReservationsToNetworks(reservations, networkHocon, agentNetworkDefinition)
+}
+
+/**
+ * Returns true when agentName refers to a known temporary network.
+ */
+export const isTemporaryNetwork = (agentName: string | null, networks: TemporaryNetwork[]): boolean =>
+    agentName !== null && networks.some((n) => n.agentInfo.agent_name === agentName)
+
+/**
+ * Merges incoming networks into target, keeping the entry with the highest expiration time.
+ * Returns a new array; does not mutate either argument.
+ */
+export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNetwork[]): TemporaryNetwork[] =>
+    incoming.reduce<TemporaryNetwork[]>(
+        (result, n) => {
+            const existingIdx = result.findIndex((e) => e.agentNetworkName === n.agentNetworkName)
+            // No existing entry with this name - append.
+            if (existingIdx < 0) return [...result, n]
+            // Existing entry found - keep whichever reservation expires later.
+            if (n.reservation.expiration_time_in_seconds > result[existingIdx].reservation.expiration_time_in_seconds) {
+                return result.map((e, i) => (i === existingIdx ? n : e))
+            }
+            return result
+        },
+        [...target]
+    )
