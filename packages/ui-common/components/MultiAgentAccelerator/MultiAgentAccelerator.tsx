@@ -257,6 +257,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
+    // Clear chat whenever the user navigates to the Agent Network Designer, so they start fresh each time
+    useEffect(() => {
+        if (selectedNetwork === AGENT_NETWORK_DESIGNER_ID) {
+            chatRef.current?.handleClearChat()
+        }
+    }, [selectedNetwork])
+
     // Special mode of operation where user is using Agent Network Designer to create a new network
     const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
 

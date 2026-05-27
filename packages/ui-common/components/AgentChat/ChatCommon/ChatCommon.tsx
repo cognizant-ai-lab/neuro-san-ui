@@ -198,9 +198,10 @@ const AGENT_IMAGE = "/agent.svg"
 // For others, it's just "whenever the stream is done".
 const MAX_AGENT_RETRIES = 3
 
-// Type for forward ref to expose the handleStop function
+// Type for forward ref to expose the handleStop and handleClearChat functions
 export type ChatCommonHandle = {
     handleStop: () => void
+    handleClearChat: () => void
 }
 
 /**
@@ -846,15 +847,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [resetState, updateOutput])
 
-    // Expose the handleStop method to parent components via ref for external control (e.g., to cancel chat requests)
-    useImperativeHandle(
-        ref,
-        () => ({
-            handleStop,
-        }),
-        [handleStop]
-    )
-
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
 
@@ -878,6 +870,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         lastAIMessage.current = ""
         introduceAgent()
     }, [introduceAgent, resetHistory, targetAgent])
+
+    // Expose the handleStop and handleClearChat methods to parent components via ref for external control
+    useImperativeHandle(
+        ref,
+        () => ({
+            handleStop,
+            handleClearChat,
+        }),
+        [handleStop, handleClearChat]
+    )
 
     /**
      * Extract the list of React nodes to display in the output window, potentially filtering out "thinking"

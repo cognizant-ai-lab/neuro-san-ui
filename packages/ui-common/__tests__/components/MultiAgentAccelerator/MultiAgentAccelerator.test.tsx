@@ -139,6 +139,7 @@ jest.mock("@mui/material/styles", () => ({
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = jest.fn()
 const handleStopMock = jest.fn()
+const handleClearChatMock = jest.fn()
 
 const MATH_GUY_MESSAGE: ChatResponse = {
     response: {
@@ -200,8 +201,11 @@ jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
         onStreamingStarted = props.onStreamingStarted
         onStreamingComplete = props.onStreamingComplete
 
-        // handleStop ref
-        ;(props.ref as {current?: ChatCommonHandle}).current = {handleStop: handleStopMock}
+        // handleStop and handleClearChat refs
+        ;(props.ref as {current?: ChatCommonHandle}).current = {
+            handleStop: handleStopMock,
+            handleClearChat: handleClearChatMock,
+        }
         return (
             <div
                 id="test-chat-common"
@@ -436,6 +440,46 @@ describe("Multi Agent Accelerator Page", () => {
 
         expect(handleStopMock).not.toHaveBeenCalled()
     })
+
+    // #region: Agent Network Designer chat clearing tests
+    it("Should clear the chat when navigating to Agent Network Designer via tree selection", async () => {
+        renderMultiAgentAcceleratorPage()
+        await screen.findByTestId("test-chat-common")
+
+        handleClearChatMock.mockClear()
+
+        await act(async () => {
+            setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+        })
+
+        expect(handleClearChatMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("Should clear the chat when the Add New Network button is clicked", async () => {
+        renderMultiAgentAcceleratorPage()
+        await screen.findByTestId("test-chat-common")
+
+        handleClearChatMock.mockClear()
+
+        const addButton = screen.getByRole("button", {name: "Add New Network"})
+        await userEvent.click(addButton)
+
+        expect(handleClearChatMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("Should NOT clear the chat when a regular network is selected", async () => {
+        renderMultiAgentAcceleratorPage()
+        await screen.findByTestId("test-chat-common")
+
+        handleClearChatMock.mockClear()
+
+        await act(async () => {
+            setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+        })
+
+        expect(handleClearChatMock).not.toHaveBeenCalled()
+    })
+    // #endregion: Agent Network Designer chat clearing tests
 
     it("should handle receiving an agent conversation chat message", async () => {
         renderMultiAgentAcceleratorPage()
