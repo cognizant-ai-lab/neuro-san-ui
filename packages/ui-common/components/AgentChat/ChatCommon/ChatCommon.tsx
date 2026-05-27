@@ -234,6 +234,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Previous user query (for "regenerate" feature)
     const [previousUserQuery, setPreviousUserQuery] = useState<string>("")
 
+    // Turns within the current conversation
     const [turns, setTurns] = useState<ConversationTurn[]>([])
 
     // To accumulate current response, which will be different from the contents of the output window if there is a
@@ -335,16 +336,20 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // Auto scroll chat output window when new content is added
     useEffect(() => {
+        const container = chatOutputRef.current
+        if (!container) return
+
         // Scroll the final answer into view
         if (finalAnswerRef.current && !isAwaitingLlm) {
-            chatOutputRef.current.scrollTop = finalAnswerRef.current.offsetTop - 50
+            container.scrollTop = finalAnswerRef.current.offsetTop - 50
             return
         }
 
-        if (autoScrollEnabledRef.current && chatOutputRef?.current) {
-            chatOutputRef.current.scrollTop = chatOutputRef.current.scrollHeight
+        // Live-streaming auto-scroll
+        if (autoScrollEnabledRef.current) {
+            container.scrollTop = container.scrollHeight
         }
-    }, [isAwaitingLlm])
+    }, [turns, isAwaitingLlm])
 
     const addTurn = useCallback((turn: ConversationTurn) => {
         setTurns((current) => {
@@ -352,6 +357,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
         })
     }, [])
+
+    // We use this to update the same "turn" as chunks come in from legacy agents
+    const legacyTurnIdRef = useRef<string | null>(null)
 
     const handleChunk = useCallback(
         (chunk: string): void => {
@@ -361,14 +369,24 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // For legacy agents, we either get plain text or Markdown. Just output it as-is.
             if (isLegacyAgentType(targetAgent)) {
-                // Display output as-is
-                addTurn({
-                    alwaysShow: true,
-                    id: uuid(),
-                    role: MessageRole.LegacyAgent,
-                    text: chunk,
-                })
                 currentResponse.current += chunk
+
+                if (!legacyTurnIdRef.current) {
+                    // We don't yet have a turn for this response, so create one. On subsequent chunks, we'll just
+                    // update the text of this turn.
+                    legacyTurnIdRef.current = uuid()
+                    addTurn({
+                        id: legacyTurnIdRef.current,
+                        role: MessageRole.LegacyAgent,
+                        text: currentResponse.current,
+                        alwaysShow: true,
+                    })
+                } else {
+                    // We already have a turn for this response, so just update the text of that turn.
+                    setTurns((prev) =>
+                        prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
+                    )
+                }
 
                 // Check for Final Answer from legacy agent
                 const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
@@ -386,7 +404,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
-            // Check for final answer
+            // Keep track of AI messages. The last one is (by definition) the "final answer" from the agents.
             if (chatMessage.type === ChatMessageType.AI && chatMessage.text) {
                 lastAIMessage.current = chatMessage.text
             }
@@ -441,11 +459,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
      */
     const resetState = useCallback(() => {
         // Reset state, whatever happened during request
-        currentResponse.current = ""
-        lastAIMessage.current = ""
-        setChatInput("")
         setIsAwaitingLlm(false)
+        setChatInput("")
+        lastAIMessage.current = ""
+        finalAnswerRef.current = null
+
         setPreviousResponse?.(targetAgent, currentResponse.current)
+        currentResponse.current = ""
+        legacyTurnIdRef.current = null
     }, [setIsAwaitingLlm, setPreviousResponse, targetAgent])
 
     /*
@@ -788,6 +809,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </>
     )
 
+    const agentIntro = (
+        <AgentIntro
+            agentDisplayName={agentDisplayName}
+            customAgentGreetings={customAgentGreetings}
+            key={targetAgent}
+            targetAgent={targetAgent}
+        />
+    )
+
     const getResponseBox = () => (
         <Box
             id="llm-response-div"
@@ -834,12 +864,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         userImage={userImage}
                     />
                 )}
-                <AgentIntro
-                    agentDisplayName={agentDisplayName}
-                    customAgentGreetings={customAgentGreetings}
-                    key={targetAgent}
-                    targetAgent={targetAgent}
-                />
+                {/*For Neuro-san agents, intro goes above the metadata and conversation*/}
+                {!isLegacyAgentType(targetAgent) && agentIntro}
                 {!isLegacyAgentType(targetAgent) && (
                     <AgentMetadata
                         disableQueries={isAwaitingLlm}
@@ -853,10 +879,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 <Conversation
                     id={`${id}-conversation-display`}
                     currentUser={currentUser}
+                    finalAnswerRef={finalAnswerRef}
                     showThinking={showThinking}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
+                {/*For legacy agents, intro goes comes after the conversation as it's a continuous chat stream*/}
+                {isLegacyAgentType(targetAgent) && agentIntro}
                 {isAwaitingLlm && (
                     <Box
                         id="awaitingOutputContainer"
