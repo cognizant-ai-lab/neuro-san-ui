@@ -1,6 +1,6 @@
 import {alpha, useTheme} from "@mui/material/styles"
 import {jsonrepair} from "jsonrepair"
-import {FC, ReactNode, useMemo} from "react"
+import {FC, ReactNode, Ref, useMemo} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
@@ -15,6 +15,7 @@ import {MUIAlert} from "../../Common/MUIAlert"
 interface ConversationProps {
     readonly id: string
     readonly currentUser: string
+    readonly finalAnswerRef?: Ref<HTMLDivElement>
     readonly userImage?: string
     readonly showThinking: boolean
     readonly shouldWrapOutput: boolean
@@ -101,18 +102,18 @@ const renderTurn = (
 /**
  */
 export const Conversation: FC<ConversationProps> = ({
-    id,
-    turns,
     currentUser,
-    userImage,
-    showThinking,
+    finalAnswerRef,
+    id,
     shouldWrapOutput,
+    showThinking,
+    turns,
+    userImage,
 }) => {
     // MUI theme
     const theme = useTheme()
-    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
-
     const darkMode = theme.palette.mode === "dark"
+    const shadowColor = darkMode ? theme.palette.common.white : theme.palette.common.black
 
     /**
      * Render the list of conversation turns.
@@ -146,7 +147,16 @@ export const Conversation: FC<ConversationProps> = ({
                     case MessageRole.LegacyAgent:
                         return [turn.text]
                     case MessageRole.FinalAnswer:
-                        return [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
+                        return [
+                            <div
+                                id="final-answer-div"
+                                key={turn.id}
+                                ref={finalAnswerRef}
+                                style={{marginBottom: "1rem"}}
+                            >
+                                {renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)}
+                            </div>,
+                        ]
                     case MessageRole.Info:
                         return [
                             <MUIAlert
@@ -181,7 +191,7 @@ export const Conversation: FC<ConversationProps> = ({
                         return []
                 }
             }),
-        [currentUser, darkMode, shadowColor, shouldWrapOutput, showThinking, turns, userImage]
+        [currentUser, darkMode, finalAnswerRef, shadowColor, shouldWrapOutput, showThinking, turns, userImage]
     )
 
     return (
