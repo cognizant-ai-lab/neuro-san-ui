@@ -22,7 +22,8 @@
         "lint-rules": "./build_scripts/eslint_list_rules.sh",
         "lint-summary": "eslint --format summary",
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
-        "test": "jest --config ./jest.config.ts"
+        "test": "jest --config ./jest.config.ts",
+        "update-coverage": "./build_scripts/UpdateCoverage.sh"
     },
     "packageManager": "yarn@4.12.0",
     "devDependencies": {
