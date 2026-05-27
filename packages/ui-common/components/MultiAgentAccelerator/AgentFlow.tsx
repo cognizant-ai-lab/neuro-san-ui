@@ -18,6 +18,7 @@ import "@xyflow/react/dist/style.css"
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import CloseIcon from "@mui/icons-material/Close"
+import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
@@ -103,6 +104,8 @@ export interface AgentFlowProps {
      * @param oldNetworkId The agent_name of the network that was replaced.
      * @param newNetworkId The agent_name of the replacement network to navigate to.
      */
+    readonly networkDisplayName?: string
+    readonly onEnterEditMode?: () => void
     readonly onNetworkReplaced?: (oldNetworkId: string, newNetworkId: string) => void
     /** Called when the user closes the edit-mode dock. */
     readonly onExitEditMode?: () => void
@@ -191,8 +194,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     isEditMode,
     isStreaming,
     isSelectedNetworkTemporary: isTemporaryNetwork,
+    networkDisplayName,
     networkId,
     neuroSanURL,
+    onEnterEditMode,
     onNetworkReplaced,
     onExitEditMode,
     onSaveAgent,
@@ -889,6 +894,59 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-react-flow-wrapper`}
                 sx={{position: "relative", flex: 1, minHeight: 0}}
             >
+                {networkDisplayName && (
+                    <Box
+                        id={`${id}-network-title-bar`}
+                        sx={{
+                            position: "absolute",
+                            top: 44,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: getZIndex(1, theme),
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            pointerEvents: "none",
+                        }}
+                    >
+                        <Typography
+                            id={`${id}-network-title`}
+                            variant="subtitle1"
+                            sx={{
+                                fontWeight: "bold",
+                                backgroundColor: alpha(theme.palette.background.paper, 0.85),
+                                borderRadius: 1.5,
+                                color:
+                                    theme.palette.mode === "dark"
+                                        ? theme.palette.common.white
+                                        : theme.palette.text.primary,
+                                px: 1.5,
+                                py: 0.25,
+                                whiteSpace: "nowrap",
+                                maxWidth: 400,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
+                        >
+                            {networkDisplayName}
+                        </Typography>
+                        {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
+                            <Button
+                                id={`${id}-enter-edit-mode-btn`}
+                                variant="contained"
+                                size="small"
+                                onClick={onEnterEditMode}
+                                startIcon={<EditIcon />}
+                                sx={{
+                                    pointerEvents: "auto",
+                                    "&:hover": {backgroundColor: theme.palette.primary.main},
+                                }}
+                            >
+                                Edit
+                            </Button>
+                        )}
+                    </Box>
+                )}
                 <ReactFlow
                     id={`${id}-react-flow`}
                     nodes={nodes}

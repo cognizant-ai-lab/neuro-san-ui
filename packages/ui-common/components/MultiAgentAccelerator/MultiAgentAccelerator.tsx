@@ -710,8 +710,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
+                            networkDisplayName={networkDisplayName || undefined}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
+                            onEnterEditMode={() => setIsEditingNetwork(true)}
                             onExitEditMode={() => setIsEditingNetwork(false)}
                             onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
                             onSaveAgent={onSaveAgent}

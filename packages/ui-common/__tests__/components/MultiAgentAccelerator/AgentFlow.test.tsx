@@ -174,6 +174,69 @@ describe("AgentFlow", () => {
         return {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap: () => map}
     }
 
+    // #region: Title bar tests
+
+    it("Should show the network title when networkDisplayName is provided", async () => {
+        renderAgentFlowComponent({networkDisplayName: "My Network"})
+        expect(await screen.findByText("My Network")).toBeInTheDocument()
+    })
+
+    it("Should show the network title in dark mode", async () => {
+        renderAgentFlowComponent({networkDisplayName: "Dark Network"}, "dark")
+        expect(await screen.findByText("Dark Network")).toBeInTheDocument()
+    })
+
+    it("Should not show the title bar when networkDisplayName is not provided", async () => {
+        const {container} = renderAgentFlowComponent()
+        expect(container.querySelector("#test-flow-id-network-title-bar")).not.toBeInTheDocument()
+    })
+
+    it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
+        const onEnterEditMode = jest.fn()
+        renderAgentFlowComponent({
+            networkDisplayName: "Temp Net",
+            isSelectedNetworkTemporary: true,
+            isEditMode: false,
+            isAwaitingLlm: false,
+            onEnterEditMode,
+        })
+        const editBtn = await screen.findByRole("button", {name: "Edit"})
+        await user.click(editBtn)
+        expect(onEnterEditMode).toHaveBeenCalledTimes(1)
+    })
+
+    it("Should not show the Edit button for a non-temporary network", async () => {
+        renderAgentFlowComponent({
+            networkDisplayName: "Regular Net",
+            isSelectedNetworkTemporary: false,
+        })
+        await screen.findByText("Regular Net")
+        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+    })
+
+    it("Should not show the Edit button when already in edit mode", async () => {
+        renderAgentFlowComponent({
+            networkDisplayName: "Temp Net",
+            isSelectedNetworkTemporary: true,
+            isEditMode: true,
+        })
+        await screen.findByText("Temp Net")
+        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+    })
+
+    it("Should not show the Edit button when awaiting LLM", async () => {
+        renderAgentFlowComponent({
+            networkDisplayName: "Temp Net",
+            isSelectedNetworkTemporary: true,
+            isEditMode: false,
+            isAwaitingLlm: true,
+        })
+        await screen.findByText("Temp Net")
+        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+    })
+
+    // #endregion: Title bar tests
+
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
         const mode = darkMode ? "dark" : "light"
         const {container} = renderAgentFlowComponent({}, mode)
