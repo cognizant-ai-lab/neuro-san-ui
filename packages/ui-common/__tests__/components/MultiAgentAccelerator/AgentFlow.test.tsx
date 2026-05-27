@@ -1962,5 +1962,115 @@ describe("AgentFlow", () => {
             })
             consoleDebugSpy.mockRestore()
         })
+
+        it("does not show the applying overlay when the dock is idle", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
+        })
+
+        it("shows the applying overlay while apply is in-flight", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+            })
+
+            // Resolve the in-flight promise and flush all resulting state updates
+            await act(async () => {
+                unblock()
+            })
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("shows the prompt text in the overlay title while apply is in-flight", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(screen.getByText("Applying changes to network")).toBeInTheDocument()
+            })
+            expect(screen.getByText("add some elves to check work")).toBeInTheDocument()
+
+            await act(async () => {
+                unblock()
+            })
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("removes the applying overlay once the apply call completes", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+            })
+
+            act(() => unblock())
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
+            })
+            consoleDebugSpy.mockRestore()
+        })
     })
 })

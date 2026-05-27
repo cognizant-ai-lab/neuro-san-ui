@@ -24,7 +24,8 @@ import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
-import {useTheme} from "@mui/material/styles"
+import Paper from "@mui/material/Paper"
+import {alpha, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
@@ -864,6 +865,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             height="100%"
             id={`${id}-outer-box`}
             sx={{
+                position: "relative",
                 height: "100%",
                 width: "100%",
                 backgroundColor: theme.palette.background.default,
@@ -883,26 +885,89 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 },
             }}
         >
-            <ReactFlow
-                id={`${id}-react-flow`}
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onNodeClick={handleNodeClick}
-                fitView={true}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                connectionMode={ConnectionMode.Loose}
+            <Box
+                id={`${id}-react-flow-wrapper`}
+                sx={{position: "relative", flex: 1, minHeight: 0}}
             >
-                {!isAwaitingLlm && (
-                    <>
-                        {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditMode ? getLegend() : null}
-                        <Background id={`${id}-background`} />
-                        {!isAgentNetworkDesignerMode && !isEditMode && getControls()}
-                        {shouldShowRadialGuides ? getRadialGuides() : null}
-                    </>
+                <ReactFlow
+                    id={`${id}-react-flow`}
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onNodeClick={handleNodeClick}
+                    fitView={true}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    connectionMode={ConnectionMode.Loose}
+                >
+                    {!isAwaitingLlm && (
+                        <>
+                            {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditMode ? getLegend() : null}
+                            <Background id={`${id}-background`} />
+                            {!isAgentNetworkDesignerMode && !isEditMode && getControls()}
+                            {shouldShowRadialGuides ? getRadialGuides() : null}
+                        </>
+                    )}
+                </ReactFlow>
+                {isDockStreaming && (
+                    <Box
+                        id={`${id}-dock-applying-overlay`}
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            zIndex: getZIndex(2, theme),
+                            backgroundColor: alpha(theme.palette.background.default, 0.65),
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <Paper
+                            elevation={6}
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                px: 4,
+                                py: 2.5,
+                                borderRadius: 2,
+                                maxWidth: 480,
+                            }}
+                        >
+                            <CircularProgress
+                                id={`${id}-dock-applying-spinner`}
+                                size={24}
+                            />
+                            <Box>
+                                <Typography
+                                    id={`${id}-dock-applying-title`}
+                                    variant="body1"
+                                    fontWeight="bold"
+                                >
+                                    Applying changes to network
+                                </Typography>
+                                {dockPrompt && (
+                                    <Typography
+                                        id={`${id}-dock-applying-prompt`}
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{mt: 0.25}}
+                                    >
+                                        {dockPrompt}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Paper>
+                    </Box>
                 )}
-            </ReactFlow>
+                <ThoughtBubbleOverlay
+                    nodes={nodes}
+                    edges={thoughtBubbleEdgesForOverlay}
+                    showThoughtBubbles={showThoughtBubbles}
+                    isStreaming={isStreaming}
+                    onBubbleHoverChange={handleBubbleHoverChange}
+                />
+            </Box>
             {isEditMode && isTemporaryNetwork && (
                 <Box
                     id={`${id}-topology-editor-dock`}
@@ -996,13 +1061,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     </Box>
                 </Box>
             )}
-            <ThoughtBubbleOverlay
-                nodes={nodes}
-                edges={thoughtBubbleEdgesForOverlay}
-                showThoughtBubbles={showThoughtBubbles}
-                isStreaming={isStreaming}
-                onBubbleHoverChange={handleBubbleHoverChange}
-            />
             {selectedAgent && !isAwaitingLlm && (
                 <AgentNodePopup
                     agentName={selectedAgent.agentName}
