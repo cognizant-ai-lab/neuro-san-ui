@@ -253,9 +253,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // For tracking if we're auto-scrolling. A button allows the user to enable or disable auto-scrolling.
     const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
 
-    // ref for same
-    const autoScrollEnabledRef = useRef<boolean>(autoScrollEnabled)
-
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
@@ -324,11 +321,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         return () => cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
     }, [])
 
-    // Sync ref with state variable for use within timer etc.
-    useEffect(() => {
-        autoScrollEnabledRef.current = autoScrollEnabled
-    }, [autoScrollEnabled])
-
     useEffect(() => {
         // Delay for a second before focusing on the input area; gets around ChatBot stealing focus.
         setTimeout(() => chatInputRef?.current?.focus(), 1000)
@@ -346,10 +338,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
 
         // Live-streaming auto-scroll
-        if (autoScrollEnabledRef.current) {
+        if (autoScrollEnabled) {
             container.scrollTop = container.scrollHeight
         }
-    }, [turns, isAwaitingLlm])
+    }, [autoScrollEnabled, isAwaitingLlm, turns])
 
     const addTurn = useCallback((turn: ConversationTurn) => {
         setTurns((current) => {
