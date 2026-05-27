@@ -222,7 +222,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <span>
                                         <IconButton
                                             onClick={(e) => {
-                                                console.debug("edit")
                                                 e.stopPropagation()
                                                 onEditNetwork?.(itemId)
                                             }}

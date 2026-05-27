@@ -261,6 +261,16 @@ export const Sidebar: FC<SidebarProps> = ({
         void fetchVersion()
     }, [customURLLocalStorage, backendNeuroSanApiUrl])
 
+    // When the edit pencil is clicked, select the network first (if not already selected) so the network loads
+    // before entering edit mode — the user shouldn't have to click the network and then click the pencil separately.
+    const handleEditNetworkWithSelect = (network: string) => {
+        if (selectedItem !== network) {
+            setSelectedItem(network)
+            setSelectedNetwork(network)
+        }
+        onEditNetwork?.(network)
+    }
+
     const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
     const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(
         (acc, tempNetwork) => {
@@ -400,7 +410,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             networkIconSuggestions,
                             nodeIndex,
                             onDeleteNetwork,
-                            onEditNetwork,
+                            onEditNetwork: handleEditNetworkWithSelect,
                             temporaryNetworkExpirationTimes,
                             temporaryNetworkHoconStrings,
                         } as AgentNetworkNodeProps,
