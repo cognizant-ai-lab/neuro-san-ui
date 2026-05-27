@@ -157,16 +157,6 @@ export const Conversation: FC<ConversationProps> = ({
                                 {renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)}
                             </div>,
                         ]
-                    case MessageRole.Info:
-                        return [
-                            <MUIAlert
-                                id={`info-${turn.id}-alert`}
-                                key={turn.id}
-                                severity="info"
-                            >
-                                {turn.text}
-                            </MUIAlert>,
-                        ]
                     case MessageRole.Warning:
                         return [
                             <MUIAlert
@@ -187,8 +177,13 @@ export const Conversation: FC<ConversationProps> = ({
                                 {turn.text}
                             </MUIAlert>,
                         ]
-                    default:
-                        return []
+                    /* istanbul ignore next -- impossible to trigger this without subverting tsc */
+                    default: {
+                        // Exhaustiveness check. This way tsc will complain if a new MessageRole is added but
+                        // not handled here.
+                        const _exhaustive: never = turn.role
+                        return _exhaustive
+                    }
                 }
             }),
         [currentUser, darkMode, finalAnswerRef, shadowColor, shouldWrapOutput, showThinking, turns, userImage]

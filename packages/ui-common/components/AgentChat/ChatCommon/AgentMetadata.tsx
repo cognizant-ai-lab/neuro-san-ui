@@ -3,7 +3,7 @@ import {FC, useEffect, useState} from "react"
 import {AgentConnectivity} from "./AgentConnectivity"
 import {SampleQueries} from "./SampleQueries"
 import {getAgentFunction, getConnectivity} from "../../../controller/agent/Agent"
-import {ConnectivityInfo, ConnectivityResponse, FunctionResponse} from "../../../generated/neuro-san/NeuroSanClient"
+import {ConnectivityInfo, ConnectivityResponse} from "../../../generated/neuro-san/NeuroSanClient"
 import {NotificationType, sendNotification} from "../../Common/notification"
 import {isLegacyAgentType} from "../Common/Types"
 
@@ -33,11 +33,9 @@ export const AgentMetadata: FC<AgentMetadataDisplayProps> = ({
 
     useEffect(() => {
         const fetchAgentDetails = async () => {
-            let agentFunction: FunctionResponse
-
             // It is a Neuro-san agent, so get the function and connectivity info
             try {
-                agentFunction = await getAgentFunction(neuroSanURL, targetAgent, currentUser)
+                const agentFunction = await getAgentFunction(neuroSanURL, targetAgent, currentUser)
                 setDescription(agentFunction?.function?.description || "")
             } catch {
                 // For now, just return. May be a legacy agent without a functional description in Neuro-san.

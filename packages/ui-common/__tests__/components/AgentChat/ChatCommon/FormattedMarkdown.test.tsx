@@ -49,11 +49,12 @@ describe("FormattedMarkdown component tests", () => {
         await screen.findByText(/First part. Second part. Third part\./u)
     })
 
-    it("Handles non-string nodes correctly", () => {
+    // Test with and without key supplied
+    it.each(["1", undefined])("Handles non-string nodes correctly", (key) => {
         const {container} = render(
             <FormattedMarkdown
                 id="test-non-string"
-                nodesList={["Text before.", <span key="1">Non-string node</span>, "Text after."]}
+                nodesList={["Text before.", <span key={key}>Non-string node</span>, "Text after."]}
                 style={{}}
                 wrapLongLines={false}
             />
@@ -173,5 +174,18 @@ describe("FormattedMarkdown component tests", () => {
         // Markdown string is present. Single unconditional assertion avoids
         // jest/no-conditional-expect.
         expect(anchorOrHtml).toMatch(/_blank|\[site\]\(http:\/\/example.com\)/u)
+    })
+
+    it("Handles null nodes in list", async () => {
+        render(
+            <FormattedMarkdown
+                id="test-link"
+                nodesList={[null, "Valid text", null]}
+                style={{}}
+                wrapLongLines={false}
+            />
+        )
+
+        await screen.findByText(/Valid text/u)
     })
 })

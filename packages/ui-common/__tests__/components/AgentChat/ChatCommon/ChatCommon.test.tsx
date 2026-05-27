@@ -20,6 +20,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
 import {
+    MOCK_CONNECTIVITY_INFO,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
@@ -47,10 +48,6 @@ jest.mock("../../../../components/Common/notification")
 
 const TEST_USER = "testUser"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY_DISPLAY}`
-const TEST_TOOL_SPOTIFY = "spotify_tool"
-const TEST_TOOL_LAST_FM = "last_fm_tool"
-const TEST_TOOL_SOLVER = "math_solver_tool"
-const TEST_TOOL_CALCULATOR = "calculator_tool"
 
 const CONNECTIVITY_LIST_HEADER = /I can connect you to the following agents/u
 
@@ -72,22 +69,6 @@ const getResponseMessage = (type: ChatMessageType, text: string): ChatMessage =>
         ],
     },
 })
-
-const MOCK_CONNECTIVITY_INFO = {
-    connectivity_info: [
-        {
-            origin: TEST_AGENT_MUSIC_NERD,
-            tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
-        },
-        {
-            origin: TEST_AGENT_MATH_GUY,
-            tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
-        },
-    ],
-    metadata: {
-        sample_queries: ["Sample query 1", "Long query ".repeat(10), "Query 3", "Query 4", "Query 5", "Query 6"],
-    },
-}
 
 describe("ChatCommon", () => {
     withStrictMocks()
@@ -382,19 +363,22 @@ describe("ChatCommon", () => {
 
     it("Should handle receiving chunks from legacy agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        const testResponseText = '"Response text from LLM"'
+        const testResponseText1 = "Response text 1 from LLM"
+        const testResponseText2 = "Response text 2 from LLM"
 
         renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-            callback(testResponseText)
+            callback(testResponseText1)
+            callback(testResponseText2)
         })
 
         const query = "Sample test query for chunk handling"
         await sendQuery(LegacyAgentType.DataGenerator, query)
 
-        await screen.findByText(testResponseText)
-        expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
-        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
+        await screen.findByText(testResponseText1 + testResponseText2)
+        expect(onChunkReceivedMock).toHaveBeenCalledTimes(2)
+        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText1)
+        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText2)
     })
 
     it("Should handle final answer from legacy agents correctly", async () => {
@@ -576,6 +560,20 @@ describe("ChatCommon", () => {
 
         // New agent greeting should be present
         await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
+    })
+
+    it("Should use custom agent greetings when supplied", async () => {
+        const customGreeting = "Custom Greeting"
+        render(
+            <ChatCommon
+                {...defaultProps}
+                customAgentGreetings={{
+                    [TEST_AGENT_MATH_GUY]: customGreeting,
+                }}
+            />
+        )
+
+        await screen.findByText(customGreeting)
     })
 
     it("Should refuse interaction when no target agent is set", async () => {
