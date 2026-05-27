@@ -401,7 +401,7 @@ describe("ChatCommon", () => {
         screen.getByText("Final Answer")
     })
 
-    it("Should correctly handle errors thrown while fetching", async () => {
+    it("Should handle error thrown while fetching", async () => {
         renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new Error("Sample error from fetch")
@@ -415,6 +415,12 @@ describe("ChatCommon", () => {
 
         expect(console.error).toHaveBeenCalledTimes(3)
         ;(console.error as jest.Mock).mockClear()
+    })
+
+    it("Should handle non-error type thrown while fetching", async () => {
+        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+
+        jest.spyOn(console, "error").mockImplementation()
 
         // Now throw something that isn't an Error (which is possible in JavaScript)
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
