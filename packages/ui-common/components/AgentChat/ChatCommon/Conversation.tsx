@@ -26,18 +26,18 @@ const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
 /**
  * Renders a "turn" from the conversation
- * @param turn The turn to render. @see ConversationTurn type for more info
  * @param darkMode Whether the current theme is in dark mode. Used to determine syntax highlighter theme.
  * @param shadowColor The color to use for shadows on the final answer accordion.
  * @param shouldWrapOutput Whether to wrap long lines in the output. Passed down to the syntax highlighter component.
+ * @param turn The turn to render. @see ConversationTurn type for more info
  * @returns A React component representing the "turn"
  */
 const renderTurn = (
-    turn: ConversationTurn,
     darkMode: boolean,
     shadowColor: string,
-    shouldWrapOutput: boolean
-): ReactNode => {
+    shouldWrapOutput: boolean,
+    turn: ConversationTurn
+): React.ReactNode => {
     // extract the parts of the line
     let repairedJson: string
 
@@ -133,7 +133,7 @@ export const Conversation: FC<ConversationProps> = ({
                         ]
                     case MessageRole.Agent:
                         return showThinking || turn.alwaysShow
-                            ? [renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)]
+                            ? [renderTurn(darkMode, shadowColor, shouldWrapOutput, turn)]
                             : []
                     case MessageRole.AgentHeader:
                         return [
@@ -154,7 +154,7 @@ export const Conversation: FC<ConversationProps> = ({
                                 ref={finalAnswerRef}
                                 style={{marginBottom: "1rem"}}
                             >
-                                {renderTurn(turn, darkMode, shadowColor, shouldWrapOutput)}
+                                {renderTurn(darkMode, shadowColor, shouldWrapOutput, turn)}
                             </div>,
                         ]
                     case MessageRole.Warning:
@@ -182,7 +182,7 @@ export const Conversation: FC<ConversationProps> = ({
                         // Exhaustiveness check. This way tsc will complain if a new MessageRole is added but
                         // not handled here.
                         const _exhaustive: never = turn.role
-                        return _exhaustive
+                        throw new Error(`Unhandled message role: ${_exhaustive}`)
                     }
                 }
             }),

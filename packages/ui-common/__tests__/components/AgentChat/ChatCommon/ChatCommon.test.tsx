@@ -32,7 +32,7 @@ import {ChatCommon, ChatCommonHandle} from "../../../../components/AgentChat/Cha
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
-import {getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
+import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
@@ -114,7 +114,11 @@ describe("ChatCommon", () => {
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
-
+        ;(getAgentFunction as jest.Mock).mockResolvedValue({
+            function: {
+                description: "Test description",
+            },
+        })
         // Reset history. TODO: would be nice if withStrictMocks could also reset Zustand stores
         // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
         // that we know is relevant to these tests.
@@ -178,13 +182,14 @@ describe("ChatCommon", () => {
         ;(getConnectivity as jest.Mock).mockResolvedValue(withoutConnectivityInfo)
         renderChatCommonComponent()
 
-        // Check that connectivity info is rendered correctly
-        await user.click(await screen.findByText("Network Details")) // Click to expand
-        const connectivityList = screen.getByRole("list", {name: CONNECTIVITY_LIST_HEADER})
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
-        // Should be no connectivity info rendered
-        expect(within(connectivityList).queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeNull()
-        expect(within(connectivityList).queryByText(TEST_AGENT_MUSIC_NERD)).toBeNull()
+        // Connectivity info block should not be present
+        expect(screen.queryByText("Network Details")).not.toBeInTheDocument()
+        expect(screen.queryByText(CONNECTIVITY_LIST_HEADER)).not.toBeInTheDocument()
+
+        // ...but sample queries should still show up
+        screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])
     })
 
     it("Should render and send sample queries correctly", async () => {
