@@ -1026,7 +1026,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     onBubbleHoverChange={handleBubbleHoverChange}
                 />
             </Box>
-            {isEditMode && isTemporaryNetwork && (
+            {isEditMode && isTemporaryNetwork && !isAwaitingLlm && (
                 <Box
                     id={`${id}-topology-editor-dock`}
                     sx={{

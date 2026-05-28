@@ -1817,6 +1817,17 @@ describe("AgentFlow", () => {
             expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
         })
 
+        it("does not show the dock when isAwaitingLlm is true", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                isAwaitingLlm: true,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+        })
+
         it("calls onExitEditMode when the close button is clicked", async () => {
             const onExitEditMode = jest.fn()
             renderAgentFlowComponent({
