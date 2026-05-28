@@ -587,9 +587,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             setIsAwaitingLlm(true)
 
             addTurn({
+                agentName: `Contacting ${agentDisplayName}...`,
                 id: uuid(),
                 role: MessageRole.Agent,
-                text: `Contacting ${agentDisplayName}...`,
+                text: `Query: ${queryToSend}`,
             })
             try {
                 // Invoke the logic to send the request and retry as necessary
@@ -875,6 +876,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     showThinking={showThinking}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
+                    userImage={userImage}
                 />
                 {/*For legacy agents, intro goes comes after the conversation as it's a continuous chat stream*/}
                 {isLegacyAgentType(targetAgent) && agentIntro}

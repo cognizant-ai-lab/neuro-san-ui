@@ -49,6 +49,8 @@ export const AgentMetadata: FC<AgentMetadataDisplayProps> = ({
                 const sampleQueriesTmp = (connectivity?.metadata?.["sample_queries"] || []) as string[]
                 setSampleQueries(sampleQueriesTmp)
             } catch (e) {
+                // If we got here, it means we got the agent function successfully, but failed to get connectivity info.
+                // This is unexpected.
                 sendNotification(
                     NotificationType.error,
                     `Failed to get connectivity info for ${targetAgent}. Error: ${e}`
@@ -63,17 +65,21 @@ export const AgentMetadata: FC<AgentMetadataDisplayProps> = ({
 
     return (
         <>
-            <AgentConnectivity
-                connectivityInfo={connectivityInfo}
-                description={description}
-                id={id}
-                targetAgent={targetAgent}
-            />
-            <SampleQueries
-                disabled={disableQueries}
-                handleSend={handleSend}
-                sampleQueries={sampleQueries}
-            />
+            {description && connectivityInfo?.length > 0 && (
+                <AgentConnectivity
+                    connectivityInfo={connectivityInfo}
+                    description={description}
+                    id={`${id}-connectivity`}
+                    targetAgent={targetAgent}
+                />
+            )}
+            {sampleQueries?.length > 0 && (
+                <SampleQueries
+                    disabled={disableQueries}
+                    handleSend={handleSend}
+                    sampleQueries={sampleQueries}
+                />
+            )}
         </>
     )
 }

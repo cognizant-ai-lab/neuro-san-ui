@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {render, screen, waitFor} from "@testing-library/react"
+import {render, screen} from "@testing-library/react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {Conversation} from "../../../../components/AgentChat/ChatCommon/Conversation"
@@ -23,46 +23,61 @@ import {ConversationTurn, MessageRole} from "../../../../components/AgentChat/Ch
 jest.mock("../../../../controller/agent/Agent")
 jest.mock("../../../../components/Common/notification")
 
+const TURNS: ConversationTurn[] = [
+    {
+        id: "0",
+        role: MessageRole.User,
+        text: "User message",
+    },
+    {
+        id: "1",
+        role: MessageRole.AgentHeader,
+        text: "Agent header message",
+    },
+    {
+        agentDisplayName: "Agent Display Name",
+        agentName: "Agent Name",
+        alwaysShow: true,
+        id: "2",
+        role: MessageRole.Agent,
+        text: '"Agent message"',
+    },
+    {
+        alwaysShow: true,
+        id: "3",
+        role: MessageRole.Agent,
+        text: '"Agent message with no agent name or display name"',
+    },
+    {
+        alwaysShow: false,
+        id: "4",
+        role: MessageRole.Agent,
+        text: "Agent message that should not show because showThinking is false",
+    },
+]
+
 describe("Conversation", () => {
     withStrictMocks()
 
     it("Renders correctly", async () => {
-        const turns: ConversationTurn[] = [
-            {
-                id: "1",
-                role: MessageRole.User,
-                text: "Hello from user",
-            },
-            {
-                id: "2",
-                role: MessageRole.AgentHeader,
-                text: "Hello from agent",
-            },
-            {
-                agentDisplayName: "Agent Display Name",
-                agentName: "Agent Name",
-                alwaysShow: true,
-                id: "3",
-                role: MessageRole.Agent,
-                text: '"Hello from other agent"',
-            },
-        ]
         render(
             <Conversation
                 id=""
                 currentUser=""
                 showThinking={false}
                 shouldWrapOutput={false}
-                turns={turns}
+                turns={TURNS}
             />
         )
 
-        await screen.findByText(turns[0].text)
+        await screen.findByText(TURNS[0].text)
         // item 1 should not have the text rendered because it's an AgentHeader
-        await waitFor(() => {
-            expect(screen.queryByText(turns[1].text)).not.toBeInTheDocument()
-        })
+        expect(screen.queryByText(TURNS[1].text)).not.toBeInTheDocument()
 
-        await screen.findByText(turns[2].text)
+        await screen.findByText(TURNS[2].text)
+        await screen.findByText(TURNS[3].text)
+
+        // item 4 should not have the text rendered because showThinking is false and it's not alwaysShow
+        expect(screen.queryByText(TURNS[4].text)).not.toBeInTheDocument()
     })
 })

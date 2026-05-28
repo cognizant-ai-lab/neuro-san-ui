@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 
 import {
     MOCK_CONNECTIVITY_INFO,
@@ -75,7 +75,9 @@ describe("AgentMetadata", () => {
             />
         )
 
-        await screen.findByText("Network Details")
+        // If getAgentFunction fails, we fail fast and nothing displays
+        await waitFor(() => expect(screen.queryByText("Network Details")).not.toBeInTheDocument())
+        expect(screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])).not.toBeInTheDocument()
     })
 
     it("Handles errors from getConnectivity gracefully", async () => {
@@ -91,7 +93,9 @@ describe("AgentMetadata", () => {
             />
         )
 
-        await screen.findByText("Network Details")
+        // Don't have sample queries or connectivity, so no elements should show
+        await waitFor(() => expect(screen.queryByText("Network Details")).not.toBeInTheDocument())
+        expect(screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])).not.toBeInTheDocument()
     })
 
     it("Handles legacy agents", async () => {
@@ -106,7 +110,9 @@ describe("AgentMetadata", () => {
             />
         )
 
-        await screen.findByText("Network Details")
+        // Legacy agents don't have descriptions or connectivity info, so nothing should show
+        await waitFor(() => expect(screen.queryByText("Network Details")).not.toBeInTheDocument())
+        expect(screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])).not.toBeInTheDocument()
     })
 
     it("Handles missing items", async () => {
@@ -130,6 +136,8 @@ describe("AgentMetadata", () => {
             />
         )
 
-        await screen.findByText("Network Details")
+        // Don't have sample queries or connectivity, so no elements should show
+        await waitFor(() => expect(screen.queryByText("Network Details")).not.toBeInTheDocument())
+        expect(screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])).not.toBeInTheDocument()
     })
 })
