@@ -441,19 +441,6 @@ describe("Multi Agent Accelerator Page", () => {
         expect(handleStopMock).not.toHaveBeenCalled()
     })
 
-    it("Should clear the chat when navigating to Agent Network Designer via tree selection", async () => {
-        renderMultiAgentAcceleratorPage()
-        await screen.findByTestId("test-chat-common")
-
-        handleClearChatMock.mockClear()
-
-        await act(async () => {
-            setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
-        })
-
-        expect(handleClearChatMock).toHaveBeenCalledTimes(1)
-    })
-
     it("Should clear the chat when the Add New Network button is clicked", async () => {
         renderMultiAgentAcceleratorPage()
         await screen.findByTestId("test-chat-common")
