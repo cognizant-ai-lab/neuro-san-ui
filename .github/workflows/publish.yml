@@ -71,30 +71,19 @@ jobs:
             short_sha: ${{ steps.compute.outputs.short_sha }}
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
               with:
                   fetch-depth: 0
 
-            - name: Set up yarn version
-              run: |
-                  corepack enable
-                  corepack install
-                  yarn --version
-
-            # Pin to Node.js 22.17.1 to avoid 22.18+ regression where experimental-strip-types
-            # was enabled by default, breaking npm package builds (see nodejs/node#59364)
-            - name: Use Node.js
-              uses: actions/setup-node@v4
+            - name: Setup Node.js environment
+              # Node 22.18+ has a known bug that breaks builds
+              # (https://github.com/nodejs/node/issues/59364).
+              # Set vars.NODEJS_VERSION to a safe version (e.g. 22.17.1).
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@e5f749a7ba5de8bb8106cb172e89f21ca581a697 # 1.0.6
               with:
-                  node-version: 22.17.1
+                  node-version: ${{ vars.NODEJS_VERSION }}
+                  clean-install: "true"
                   registry-url: https://registry.npmjs.org/
-                  cache: yarn
-
-            - name: Install dependencies
-              run: |
-                  rm --recursive --force node_modules
-                  yarn cache clean --all
-                  yarn install --immutable
 
             - name: Generate OpenAPI types
               run: yarn generate
