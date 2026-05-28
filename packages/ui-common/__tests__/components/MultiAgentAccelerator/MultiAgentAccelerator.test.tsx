@@ -441,7 +441,6 @@ describe("Multi Agent Accelerator Page", () => {
         expect(handleStopMock).not.toHaveBeenCalled()
     })
 
-    // #region: Agent Network Designer chat clearing tests
     it("Should clear the chat when navigating to Agent Network Designer via tree selection", async () => {
         renderMultiAgentAcceleratorPage()
         await screen.findByTestId("test-chat-common")
@@ -479,7 +478,6 @@ describe("Multi Agent Accelerator Page", () => {
 
         expect(handleClearChatMock).not.toHaveBeenCalled()
     })
-    // #endregion: Agent Network Designer chat clearing tests
 
     it("should handle receiving an agent conversation chat message", async () => {
         renderMultiAgentAcceleratorPage()

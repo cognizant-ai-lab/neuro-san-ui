@@ -174,8 +174,6 @@ describe("AgentFlow", () => {
         return {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap: () => map}
     }
 
-    // #region: Title bar tests
-
     it("Should show the network title when networkDisplayName is provided", async () => {
         renderAgentFlowComponent({networkDisplayName: "My Network"})
         expect(await screen.findByText("My Network")).toBeInTheDocument()
@@ -234,8 +232,6 @@ describe("AgentFlow", () => {
         await screen.findByText("Temp Net")
         expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
     })
-
-    // #endregion: Title bar tests
 
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
         const mode = darkMode ? "dark" : "light"
