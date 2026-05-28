@@ -525,6 +525,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
     }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
 
+    const handleExitEditMode = useCallback(() => {
+        if (isDockStreaming) {
+            dockAbortControllerRef.current?.abort()
+            dockAbortControllerRef.current = null
+            setIsDockStreaming(false)
+        }
+        onExitEditMode?.()
+    }, [isDockStreaming, onExitEditMode])
+
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
             if (!selectedAgent) return
@@ -1055,7 +1064,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <IconButton
                             size="small"
                             aria-label="close edit mode"
-                            onClick={onExitEditMode}
+                            onClick={handleExitEditMode}
                         >
                             <CloseIcon fontSize="small" />
                         </IconButton>

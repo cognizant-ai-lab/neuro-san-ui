@@ -1839,6 +1839,46 @@ describe("AgentFlow", () => {
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
         })
 
+        it("aborts an in-flight dock request if the close button is clicked during streaming", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            const onExitEditMode = jest.fn()
+            let capturedSignal: AbortSignal | undefined
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        capturedSignal = signal
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onExitEditMode,
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Wait until the overlay appears (streaming started)
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+            })
+
+            // Click the close button while request is in-flight
+            await user.click(screen.getByRole("button", {name: /close edit mode/iu}))
+
+            expect(capturedSignal?.aborted).toBe(true)
+            expect(onExitEditMode).toHaveBeenCalledTimes(1)
+
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
         it("Apply button is disabled when prompt is empty", () => {
             renderAgentFlowComponent({
                 isEditMode: true,

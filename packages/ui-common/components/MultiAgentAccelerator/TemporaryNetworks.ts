@@ -68,7 +68,6 @@ export const extractNetworkHocon = (message: ChatMessage): string | null => {
  * @param networkHocon Optional network HOCON string associated with the reservations.
  * @param agentNetworkDefinition Optional agent network definition entries.
  * @param agentNetworkName Optional backend canonical network name used to match / deduplicate networks.
- *   When omitted, the name is derived from the reservation_id via {@link extractNetworkNameFromReservationId}.
  * @returns List of TemporaryNetwork objects ready for the store.
  */
 export const convertReservationsToNetworks = (
