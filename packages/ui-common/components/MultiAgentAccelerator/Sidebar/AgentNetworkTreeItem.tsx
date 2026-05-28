@@ -186,38 +186,40 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
                                 </Tooltip>
                             ) : null}
-                            {isTemporaryNetwork && networkHocon && (
-                                <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
-                                    <span>
-                                        <IconButton
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                if (isExpired) {
-                                                    return
-                                                }
+                        </Box>
+                        {isChild && isTemporaryNetwork && (
+                            <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
+                                {networkHocon && (
+                                    <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
+                                        <span>
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    if (isExpired) {
+                                                        return
+                                                    }
 
-                                                const fileName = `${toSafeFilename(labelString)}.hocon`
-                                                downloadFile(networkHocon, fileName)
-                                            }}
-                                            disabled={isExpired}
-                                            aria-label="Download network definition"
-                                            size="small"
-                                            sx={{
-                                                padding: 0,
-                                                color: "var(--bs-secondary)",
-                                                "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                "&.Mui-disabled": {
+                                                    const fileName = `${toSafeFilename(labelString)}.hocon`
+                                                    downloadFile(networkHocon, fileName)
+                                                }}
+                                                disabled={isExpired}
+                                                aria-label="Download network definition"
+                                                size="small"
+                                                sx={{
+                                                    padding: 0,
                                                     color: "var(--bs-secondary)",
-                                                    opacity: 0.3,
-                                                },
-                                            }}
-                                        >
-                                            <DownloadIcon sx={{fontSize: "0.75rem"}} />
-                                        </IconButton>
-                                    </span>
-                                </Tooltip>
-                            )}
-                            {isTemporaryNetwork && (
+                                                    "&:hover": {color: "var(--bs-secondary-dark)"},
+                                                    "&.Mui-disabled": {
+                                                        color: "var(--bs-secondary)",
+                                                        opacity: 0.3,
+                                                    },
+                                                }}
+                                            >
+                                                <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                )}
                                 <Tooltip title="Edit this network">
                                     <span>
                                         <IconButton
@@ -241,22 +243,20 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         </IconButton>
                                     </span>
                                 </Tooltip>
-                            )}
-                        </Box>
-                        {isChild && isTemporaryNetwork && (
-                            <Tooltip title="Delete network">
-                                <Delete
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onDeleteNetwork?.(itemId, isExpired)
-                                    }}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontSize: "1rem",
-                                        "&:hover": {color: theme.palette.warning.main},
-                                    }}
-                                />
-                            </Tooltip>
+                                <Tooltip title="Delete network">
+                                    <Delete
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onDeleteNetwork?.(itemId, isExpired)
+                                        }}
+                                        sx={{
+                                            cursor: "pointer",
+                                            fontSize: "1rem",
+                                            "&:hover": {color: theme.palette.warning.main},
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
                         )}
                     </Box>
                 </TreeItemContent>
