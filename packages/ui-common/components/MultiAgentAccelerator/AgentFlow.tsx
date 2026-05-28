@@ -496,10 +496,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setIsDockStreaming(true)
         const controller = new AbortController()
         dockAbortControllerRef.current = controller
-        const timeoutId = setTimeout(
-            () => controller.abort(new DOMException("Dock apply timed out", "TimeoutError")),
-            120_000
-        )
+        let hasTimedOut = false
+        const timeoutId = setTimeout(() => {
+            hasTimedOut = true
+            controller.abort()
+        }, 120_000) // 2 min timeout
         try {
             const newNetworks = await streamNetworkDesignerPrompt(
                 neuroSanURL,
@@ -513,10 +514,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             setDockPrompt("")
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
-            const isTimeout = e instanceof DOMException && e.name === "TimeoutError"
             if (!isAbort) {
-                const detail = isTimeout ? "The request timed out. Please try again." : String(e)
-                sendNotification(NotificationType.error, "Failed to apply network change.", detail)
+                sendNotification(NotificationType.error, "Failed to apply network change.", String(e))
+            } else if (hasTimedOut) {
+                sendNotification(
+                    NotificationType.error,
+                    "Failed to apply network change.",
+                    "The request timed out. Please try again."
+                )
             }
         } finally {
             clearTimeout(timeoutId)

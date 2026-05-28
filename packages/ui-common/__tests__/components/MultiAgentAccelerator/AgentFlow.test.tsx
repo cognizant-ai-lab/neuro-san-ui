@@ -2005,6 +2005,47 @@ describe("AgentFlow", () => {
             consoleDebugSpy.mockRestore()
         })
 
+        it("shows a timeout error toast when the dock apply request times out", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const {enqueueSnackbar} = jest.requireMock("notistack")
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            // Use fireEvent (synchronous) so fake timers work from the start
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            fireEvent.change(promptField, {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Advance past the 120-second dock apply timeout
+            await act(async () => {
+                jest.advanceTimersByTime(121_000)
+            })
+
+            jest.useRealTimers()
+
+            await waitFor(() => {
+                const timedOutCall = (enqueueSnackbar as jest.Mock).mock.calls.find((c: unknown[]) =>
+                    JSON.stringify(c).includes("timed out")
+                )
+                expect(timedOutCall).toBeDefined()
+            })
+
+            consoleDebugSpy.mockRestore()
+        })
+
         it("deduplicates reservations when two chunks with the same name but different expiry arrive", async () => {
             const LOW_EXPIRY = Date.now() / 1000 + 100
             const HIGH_EXPIRY = Date.now() / 1000 + 86400
