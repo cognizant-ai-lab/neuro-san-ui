@@ -8,6 +8,7 @@ import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
+import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {
     TreeItemContent,
@@ -78,6 +79,8 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     temporaryNetworkExpirationTimes,
     temporaryNetworkHoconStrings,
 }) => {
+    const theme = useTheme()
+
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
     const displayLabel = nodeIndex.get(itemId)?.displayName || cleanUpAgentName(labelString)
@@ -241,28 +244,22 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     </span>
                                 </Tooltip>
                                 <Tooltip title="Delete network">
-                                    <span>
-                                        <IconButton
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                onDeleteNetwork?.(itemId, isExpired)
-                                            }}
-                                            disabled={isExpired}
-                                            aria-label="Delete network"
-                                            size="small"
-                                            sx={{
-                                                padding: 0,
+                                    <Delete
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onDeleteNetwork?.(itemId, isExpired)
+                                        }}
+                                        sx={{
+                                            color: "var(--bs-secondary)",
+                                            "&:hover": {color: theme.palette.warning.main},
+                                            "&.Mui-disabled": {
                                                 color: "var(--bs-secondary)",
-                                                "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                "&.Mui-disabled": {
-                                                    color: "var(--bs-secondary)",
-                                                    opacity: 0.3,
-                                                },
-                                            }}
-                                        >
-                                            <Delete sx={{fontSize: "1rem"}} />
-                                        </IconButton>
-                                    </span>
+                                                opacity: 0.3,
+                                            },
+                                            cursor: "pointer",
+                                            fontSize: "1rem",
+                                        }}
+                                    />
                                 </Tooltip>
                             </Box>
                         )}
