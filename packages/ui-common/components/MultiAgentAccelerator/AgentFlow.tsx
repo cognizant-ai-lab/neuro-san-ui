@@ -165,7 +165,17 @@ const streamNetworkDesignerPrompt = async (
             const networkHocon = extractNetworkHocon(chatMessage)
             const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
             const networkName = agentNetworkName ?? agentNetworkNameFromMessage
-            const converted = convertReservationsToNetworks(reservations, networkHocon, currentDefinition, networkName)
+
+            const definitionFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
+                | AgentNetworkDefinitionEntry[]
+                | undefined
+
+            const converted = convertReservationsToNetworks(
+                reservations,
+                networkHocon,
+                definitionFromMessage ?? currentDefinition,
+                networkName
+            )
             newNetworks = mergeNetworks(newNetworks, converted)
         },
         null,
