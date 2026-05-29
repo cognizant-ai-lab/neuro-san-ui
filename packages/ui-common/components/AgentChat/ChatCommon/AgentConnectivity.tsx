@@ -3,6 +3,20 @@ import {FC} from "react"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {MUIAccordion} from "../../Common/MUIAccordion"
 
+interface AgentConnectivityProps {
+    // HTML element ID for accordion element
+    readonly id: string
+
+    // Agent's description
+    readonly description: string
+
+    // Info on what other agents and tools this agent connects to
+    readonly connectivityInfo?: readonly ConnectivityInfo[]
+
+    // The name of the current agent, used to filter out self from connectivity info
+    readonly targetAgent: string
+}
+
 const renderConnectivityInfo = (targetAgent: string, connectivityInfo?: readonly ConnectivityInfo[]) => (
     <>
         {connectivityInfo
@@ -29,20 +43,6 @@ const renderConnectivityInfo = (targetAgent: string, connectivityInfo?: readonly
             ))}
     </>
 )
-
-interface AgentConnectivityProps {
-    // HTML element ID for accordion element
-    readonly id: string
-
-    // Agent's description
-    readonly description: string
-
-    // Info on what other agents and tools this agent connects to
-    readonly connectivityInfo?: readonly ConnectivityInfo[]
-
-    // The name of the current agent, used to filter out self from connectivity info
-    readonly targetAgent: string
-}
 
 /**
  * Render the connectivity info as a list of origins and their tools

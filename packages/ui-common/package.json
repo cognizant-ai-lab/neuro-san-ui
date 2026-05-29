@@ -12,7 +12,7 @@
     "dependencies": {
         "@dagrejs/dagre": "1.0.4",
         "@langchain/core": "catalog:default",
-        "@xyflow/react": "12.10.1",
+        "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
         "jsonrepair": "3.8.0",
         "lodash-es": "catalog:default",
