@@ -469,7 +469,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             if (newNetworksFromSave.length === 0) {
                 sendNotification(
                     NotificationType.error,
-                    `Failed to update agent "${agentName}".`,
+                    `Failed to update network "${agentName}".`,
                     "The network designer did not return a reservation. Please try again."
                 )
                 return
@@ -486,7 +486,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 // Reservations came back but none matched the current network — surface this to the user.
                 sendNotification(
                     NotificationType.error,
-                    `Failed to update agent "${agentName}".`,
+                    `Failed to update network "${agentName}".`,
                     "A reservation was returned but did not match the current network. Please try again."
                 )
             }
@@ -524,12 +524,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
-                sendNotification(NotificationType.error, "Failed to apply network change.", String(e))
+                sendNotification(NotificationType.error, "Failed to apply network change.", String(e), undefined, null)
             } else if (hasTimedOut) {
                 sendNotification(
                     NotificationType.error,
                     "Failed to apply network change.",
-                    "The request timed out. Please try again."
+                    "The request timed out. Please try again.",
+                    undefined,
+                    null // show indefinitely until the user dismisses
                 )
             }
         } finally {
@@ -578,12 +580,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             saveAbortControllerRef.current = saveController
             const saveTimeoutId = setTimeout(
                 () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
-                60_000
+                60_000 // 1 min timeout
             )
             try {
                 await onSaveAgent(agentName, updated, currentTempNetwork?.agentNetworkName, saveController.signal)
             } catch (e) {
-                console.error(`Error saving agent ${agentName}. See onSaveAgent implementation for details.`, e)
+                console.error(`Error saving network ${agentName}. See onSaveAgent implementation for details.`, e)
+                sendNotification(
+                    NotificationType.error,
+                    `Failed to save agent "${agentName}".`,
+                    String(e),
+                    undefined,
+                    null // show indefinitely until the user dismisses
+                )
             } finally {
                 clearTimeout(saveTimeoutId)
                 saveAbortControllerRef.current = null

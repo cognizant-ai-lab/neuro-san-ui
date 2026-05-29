@@ -116,7 +116,7 @@ const notifySaveError = (agentName: string, e: unknown): void => {
         e instanceof DOMException && e.name === "TimeoutError"
             ? "The request timed out waiting for the server. Please try again."
             : String(e)
-    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
+    sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
 }
 
 // #endregion: Agent-save helpers
@@ -535,7 +535,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 if (newNetworks.length === 0) {
                     sendNotification(
                         NotificationType.error,
-                        `Failed to update agent "${agentName}".`,
+                        `Failed to update network "${agentName}".`,
                         "The network designer did not return a reservation. Please try again."
                     )
                     return
@@ -553,7 +553,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 } else {
                     sendNotification(
                         NotificationType.error,
-                        `Failed to update agent "${agentName}".`,
+                        `Failed to update network "${agentName}".`,
                         "A reservation was returned but did not match the current network. Please try again."
                     )
                 }

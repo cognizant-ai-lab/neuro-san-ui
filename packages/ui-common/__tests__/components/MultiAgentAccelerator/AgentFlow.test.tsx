@@ -1696,6 +1696,7 @@ describe("AgentFlow", () => {
 
         it("closes popup even when onSaveAgent throws", async () => {
             const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             const onSaveAgent = jest.fn().mockRejectedValue(new Error("Network failure"))
 
             act(() => {
@@ -1716,12 +1717,13 @@ describe("AgentFlow", () => {
             await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
-            // Popup closes immediately on save; onSaveAgent error is handled silently in the background
+            // Popup closes immediately on save; onSaveAgent error is surfaced via notification
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
             })
 
             consoleErrorSpy.mockRestore()
+            consoleDebugSpy.mockRestore()
         })
 
         it("closes popup immediately without calling onSaveAgent when it is not provided", async () => {
