@@ -847,30 +847,31 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }}
                 tabIndex={-1}
             >
-                {agentChatHistory?.chatHistory?.length > 0 && (
-                    <ChatHistory
-                        agentImage={AGENT_IMAGE}
-                        agentDisplayName={agentDisplayName}
-                        chatHistoryKey={CHAT_HISTORY_KEY}
-                        currentUser={currentUser}
-                        id={`${id}-chat-history`}
-                        messages={agentChatHistory.chatHistory}
-                        targetAgent={targetAgent}
-                        userImage={userImage}
-                    />
-                )}
+                {/*{agentChatHistory?.chatHistory?.length > 0 && (*/}
+                {/*    <ChatHistory*/}
+                {/*        agentImage={AGENT_IMAGE}*/}
+                {/*        agentDisplayName={agentDisplayName}*/}
+                {/*        chatHistoryKey={CHAT_HISTORY_KEY}*/}
+                {/*        currentUser={currentUser}*/}
+                {/*        id={`${id}-chat-history`}*/}
+                {/*        messages={agentChatHistory.chatHistory}*/}
+                {/*        targetAgent={targetAgent}*/}
+                {/*        userImage={userImage}*/}
+                {/*    />*/}
+                {/*)}*/}
+                <Box sx={{marginBottom: "0.5rem", marginTop: "2rem", color: "var(--bs-gray)"}}>How can I help?</Box>
                 {/*For Neuro-san agents, intro goes above the metadata and conversation*/}
-                {!isLegacyAgentType(targetAgent) && agentIntro}
-                {!isLegacyAgentType(targetAgent) && (
-                    <AgentMetadata
-                        disableQueries={isAwaitingLlm}
-                        handleSend={handleSend}
-                        currentUser={currentUser}
-                        id={`${id}-agent-metadata-display`}
-                        neuroSanURL={neuroSanURL}
-                        targetAgent={targetAgent}
-                    />
-                )}
+                {/*{!isLegacyAgentType(targetAgent) && agentIntro}*/}
+                {/*{!isLegacyAgentType(targetAgent) && (*/}
+                <AgentMetadata
+                    disableQueries={isAwaitingLlm}
+                    handleSend={handleSend}
+                    currentUser={currentUser}
+                    id={`${id}-agent-metadata-display`}
+                    neuroSanURL={neuroSanURL}
+                    targetAgent={targetAgent}
+                />
+                {/*)}*/}
                 <Conversation
                     id={`${id}-conversation-display`}
                     currentUser={currentUser}

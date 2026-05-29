@@ -232,7 +232,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
 
-    const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
+    const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(false)
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
