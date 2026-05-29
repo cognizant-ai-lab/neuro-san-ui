@@ -1,14 +1,13 @@
+import Box from "@mui/material/Box"
 import {alpha, useTheme} from "@mui/material/styles"
 import {jsonrepair} from "jsonrepair"
 import {FC, ReactNode, Ref, useMemo} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
-import {AGENT_IMAGE} from "./Const"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {FormattedMarkdown} from "./FormattedMarkdown"
 import {HLJS_THEMES} from "./SyntaxHighlighterThemes"
-import {UserQueryDisplay} from "./UserQueryDisplay"
 import {MUIAccordion} from "../../Common/MUIAccordion"
 import {MUIAlert} from "../../Common/MUIAlert"
 
@@ -124,37 +123,49 @@ export const Conversation: FC<ConversationProps> = ({
                 switch (turn.role) {
                     case MessageRole.User:
                         return [
-                            <UserQueryDisplay
+                            <Box
+                                id={turn.id}
                                 key={turn.id}
-                                userQuery={turn.text}
-                                title={currentUser}
-                                userImage={userImage}
-                            />,
+                                style={{
+                                    backgroundColor: theme.palette.background.paper,
+                                    borderRadius: "1rem",
+                                    marginBottom: "1rem",
+                                    marginLeft: "auto",
+                                    overflowWrap: "anywhere",
+                                    padding: "1rem",
+                                    whiteSpace: "pre-wrap",
+                                    width: "60%",
+                                }}
+                            >
+                                {turn.text}
+                            </Box>,
                         ]
                     case MessageRole.Agent:
                         return showThinking || turn.alwaysShow
-                            ? [renderTurn(darkMode, shadowColor, shouldWrapOutput, turn)]
+                            ? [
+                                  <div
+                                      id={turn.id}
+                                      key={turn.id}
+                                      ref={finalAnswerRef}
+                                      style={{marginBottom: "1rem", opacity: "30%"}}
+                                  >
+                                      {turn.text}
+                                  </div>,
+                              ]
                             : []
                     case MessageRole.AgentHeader:
-                        return [
-                            <UserQueryDisplay
-                                key={turn.id}
-                                title={turn.agentName ?? "Agent"}
-                                userImage={AGENT_IMAGE}
-                                userQuery={turn.agentDisplayName}
-                            />,
-                        ]
+                        return []
                     case MessageRole.LegacyAgent:
                         return [turn.text]
                     case MessageRole.FinalAnswer:
                         return [
                             <div
-                                id="final-answer-div"
+                                id={turn.id}
                                 key={turn.id}
                                 ref={finalAnswerRef}
                                 style={{marginBottom: "1rem"}}
                             >
-                                {renderTurn(darkMode, shadowColor, shouldWrapOutput, turn)}
+                                <ReactMarkdown>{turn.text}</ReactMarkdown>
                             </div>,
                         ]
                     case MessageRole.Warning:
@@ -186,7 +197,7 @@ export const Conversation: FC<ConversationProps> = ({
                     }
                 }
             }),
-        [currentUser, darkMode, finalAnswerRef, shadowColor, shouldWrapOutput, showThinking, turns, userImage]
+        [darkMode, finalAnswerRef, shadowColor, shouldWrapOutput, showThinking, turns]
     )
 
     return (

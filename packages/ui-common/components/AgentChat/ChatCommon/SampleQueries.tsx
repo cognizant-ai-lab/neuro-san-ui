@@ -27,7 +27,7 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
     sampleQueries?.length > 0 ? (
         <Box
             id="sample-queries-box"
-            sx={{marginTop: "2rem", marginBottom: "1rem"}}
+            sx={{marginTop: "1rem", marginBottom: "1rem"}}
         >
             {sampleQueries.slice(0, MAX_SAMPLE_QUERIES).map((query) => {
                 const hashedQuery = hashString(query)
@@ -47,11 +47,11 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                                 handleSend(query)
                             }}
                             sx={{
-                                color: "var(--bs-white)",
+                                color: "rgb(190, 190, 190)",
                                 marginRight: "1rem",
                                 marginBottom: "1rem",
-                                backgroundColor: "var(--bs-accent1-medium)",
-                                "&:hover": {backgroundColor: "var(--bs-accent1-dark)"},
+                                backgroundColor: "rgb(52, 52, 52)",
+                                "&:hover": {backgroundColor: "rgb(64, 64, 64)"},
                             }}
                         />
                     </Tooltip>

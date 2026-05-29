@@ -65,14 +65,6 @@ export const AgentMetadata: FC<AgentMetadataDisplayProps> = ({
 
     return (
         <>
-            {description && connectivityInfo?.length > 0 && (
-                <AgentConnectivity
-                    connectivityInfo={connectivityInfo}
-                    description={description}
-                    id={`${id}-connectivity`}
-                    targetAgent={targetAgent}
-                />
-            )}
             {sampleQueries?.length > 0 && (
                 <SampleQueries
                     disabled={disableQueries}
