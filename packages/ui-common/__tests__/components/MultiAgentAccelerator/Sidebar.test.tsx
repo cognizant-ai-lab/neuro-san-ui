@@ -471,14 +471,14 @@ describe("SideBar", () => {
         await user.click(screen.getByRole("button", {name: /Test/u}))
 
         // Check if Success icon is displayed
-        await screen.findByTestId("CheckCircleOutlineIcon")
+        await screen.findByTestId("CheckCircleOutlinedIcon")
 
         // Type in URL input again
         const urlInput = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
         await user.type(urlInput, TEST_EXAMPLE_URL)
 
         // Check that Success icon is not displayed
-        expect(screen.queryByTestId("CheckCircleOutlineIcon")).not.toBeInTheDocument()
+        expect(screen.queryByTestId("CheckCircleOutlinedIcon")).not.toBeInTheDocument()
     })
 
     it("should show error message when Test button is clicked and connection fails", async () => {
@@ -601,7 +601,7 @@ describe("SideBar", () => {
         expect(saveButton).toBeDisabled()
 
         // Check that Success icon is not displayed
-        expect(screen.queryByTestId("CheckCircleOutlineIcon")).not.toBeInTheDocument()
+        expect(screen.queryByTestId("CheckCircleOutlinedIcon")).not.toBeInTheDocument()
 
         // Check that Error icon is not displayed
         expect(screen.queryByTestId("HighlightOffIcon")).not.toBeInTheDocument()
