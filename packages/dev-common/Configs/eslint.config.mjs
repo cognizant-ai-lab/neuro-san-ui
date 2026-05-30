@@ -301,8 +301,8 @@ export default defineConfig([
                 "error",
                 {
                     /*
-                    Bans any import that starts with @mui/ followed by a single segment (i.e., no additional slashes 
-                    after the first segment). For example, imports like @mui/core or @mui/icons would be restricted, 
+                    Bans any import that starts with @mui/ followed by a single segment (i.e., no additional slashes
+                    after the first segment). For example, imports like @mui/core or @mui/icons would be restricted,
                     while deeper imports such as @mui/icons-material/Button would not be affected.
                     Why? According to the MUI documentation, importing directly from @mui/ can lead to larger
                     bundle sizes because it may include the entire library instead of just the specific components
@@ -392,11 +392,9 @@ export default defineConfig([
             "@typescript-eslint/non-nullable-type-assertion-style": "off",
             "@typescript-eslint/prefer-includes": "off",
             "@typescript-eslint/no-unsafe-type-assertion": "off",
-            "@typescript-eslint/no-use-before-define": "off",
             "@typescript-eslint/prefer-readonly": "off",
             "@typescript-eslint/prefer-reduce-type-parameter": "off",
             "@typescript-eslint/prefer-return-this-type": "off",
-            "@typescript-eslint/prefer-string-starts-ends-with": "off",
             "@typescript-eslint/require-array-sort-compare": "off",
             "@typescript-eslint/switch-exhaustiveness-check": "error",
             "@typescript-eslint/unbound-method": "off",
@@ -484,16 +482,12 @@ export default defineConfig([
             "unicorn/no-await-expression-member": "off",
             "unicorn/no-static-only-class": "off",
             "unicorn/prefer-set-has": "off",
-            "unicorn/prefer-string-raw": "off",
             "unicorn/no-useless-undefined": "off",
-            "unicorn/prefer-node-protocol": "off",
-            "unicorn/prefer-string-slice": "off",
             "unicorn/no-named-default": "off",
             "unicorn/no-array-reduce": "off",
             "unicorn/no-array-sort": "off",
             "unicorn/no-useless-switch-case": "off",
             "unicorn/prefer-at": "off",
-            "unicorn/prefer-string-replace-all": "off",
             "unicorn/consistent-destructuring": "off",
             "unicorn/numeric-separators-style": "off",
             "unicorn/prefer-query-selector": "off",
@@ -501,7 +495,6 @@ export default defineConfig([
             "unicorn/prefer-ternary": "off",
             "unicorn/consistent-function-scoping": "off",
             "unicorn/no-negated-condition": "off",
-            "unicorn/prefer-spread": "off",
             "unicorn/no-zero-fractions": "off",
             "unicorn/prefer-number-properties": "off",
             "unicorn/prefer-global-this": "off",

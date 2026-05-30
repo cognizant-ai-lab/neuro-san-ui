@@ -277,7 +277,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
             for (const conv of currentConversations) {
                 const convText = conv.text?.trim()
-                const agentList = Array.from(conv.agents)
+                const agentList = [...conv.agents]
 
                 if (
                     convText &&
@@ -355,7 +355,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const mergedAgentsInNetwork: ConnectivityInfo[] = useMemo(() => {
         // Add any missing agents from bubbles as minimal ConnectivityInfo
         const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
-        const missing = Array.from(bubbleAgentIds).filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
+        const missing = [...bubbleAgentIds].filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
         const minimalAgents = missing.map((missingId) => ({
             origin: missingId,
             tools: [] as string[],

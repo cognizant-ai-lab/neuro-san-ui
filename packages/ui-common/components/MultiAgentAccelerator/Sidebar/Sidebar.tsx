@@ -184,6 +184,8 @@ export const Sidebar: FC<SidebarProps> = ({
 
     const [expandedItems, setExpandedItems] = useState<string[]>([])
 
+    const [selectedItem, setSelectedItem] = useState<string | null>(null)
+
     // Theming/Dark mode
     const darkMode = useTheme().palette.mode === "dark"
 
@@ -284,8 +286,6 @@ export const Sidebar: FC<SidebarProps> = ({
         acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkHocon
         return acc
     }, {})
-
-    const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
     const handleSelectedItemsChange = (_event: unknown, itemId: string | null) => {
         if (!itemId) {

@@ -57,9 +57,9 @@ export const isLightColor = (color: string): boolean => {
     const colorWithoutHash = hexColor.replace("#", "")
 
     // Convert to RGB
-    const r = parseInt(colorWithoutHash.substring(0, 2), 16)
-    const g = parseInt(colorWithoutHash.substring(2, 4), 16)
-    const b = parseInt(colorWithoutHash.substring(4, 6), 16)
+    const r = parseInt(colorWithoutHash.slice(0, 2), 16)
+    const g = parseInt(colorWithoutHash.slice(2, 4), 16)
+    const b = parseInt(colorWithoutHash.slice(4, 6), 16)
 
     // Calculate relative luminance (perceived brightness)
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255

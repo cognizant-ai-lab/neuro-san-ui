@@ -115,7 +115,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
     const isFrontman = depth === 0
 
     // Determine max agent count for heatmap scaling
-    const maxAgentCount = agentCounts ? Math.max(...Array.from(agentCounts.values())) : 0
+    const maxAgentCount = agentCounts ? Math.max(...agentCounts.values()) : 0
 
     // Unpack the node-specific id
     const agentId = props.id

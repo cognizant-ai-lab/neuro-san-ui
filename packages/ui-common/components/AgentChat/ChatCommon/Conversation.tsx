@@ -37,7 +37,7 @@ const renderTurn = (
     shadowColor: string,
     shouldWrapOutput: boolean,
     turn: ConversationTurn
-): React.ReactNode => {
+): ReactNode => {
     // extract the parts of the line
     let repairedJson: string
 
@@ -50,7 +50,7 @@ const renderTurn = (
         // Now try to parse it. We don't care about the result, only if it throws on parsing.
         JSON.parse(repairedJson)
 
-        repairedJson = repairedJson.replace(/\\n/gu, "\n").replace(/\\"/gu, "'")
+        repairedJson = repairedJson.replaceAll(String.raw`\n`, "\n").replaceAll(String.raw`\"`, "'")
     } catch {
         // Not valid JSON
         repairedJson = null

@@ -348,9 +348,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         selectedNetwork,
                         userInfo.userName
                     )
-                    const agentsInNetworkSorted: ConnectivityInfo[] = connectivity.connectivity_info
-                        .concat()
-                        .sort((a, b) => a?.origin.localeCompare(b?.origin))
+                    const agentsInNetworkSorted: ConnectivityInfo[] = [...connectivity.connectivity_info].sort((a, b) =>
+                        a?.origin.localeCompare(b?.origin)
+                    )
                     setAgentsInNetwork(agentsInNetworkSorted)
                     setAgentIconSuggestions(null)
                     closeNotification()

@@ -23,10 +23,10 @@ export const toSafeFilename = (input: string): string => {
     }
 
     // Replace any non-alphanumeric characters with underscores
-    let safeFilename = input.replace(/[^a-zA-Z0-9]/gu, "_")
+    let safeFilename = input.replaceAll(/[^a-zA-Z0-9]/gu, "_")
 
     // Trim any leading or trailing underscores
-    safeFilename = safeFilename.replace(/^_+|_+$/gu, "")
+    safeFilename = safeFilename.replaceAll(/^_+|_+$/gu, "")
 
     return safeFilename
 }

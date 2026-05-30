@@ -18,7 +18,7 @@ limitations under the License.
  * For text processing utility functions
  */
 
-import {createHash} from "crypto"
+import {createHash} from "node:crypto"
 
 /**
  * Tests if input contains only whitespace (meaning, not a valid query)
@@ -48,7 +48,7 @@ export const extractId = (modelId: string, modelType: "prescriptor" | "rio"): st
 
     // conflicts with ESLint newline-per-chained-call rule
     // prettier-ignore
-    return modelId.substring(`${modelType}-`.length) // remove the model type
+    return modelId.slice(`${modelType}-`.length) // remove the model type
         .split("-")     // split by hyphens
         .slice(0, -1)   // remove the last element
         .join("-") // join with hyphens
