@@ -1650,6 +1650,50 @@ describe("AgentFlow", () => {
             })
         })
 
+        it("shows the global saving backdrop while onSaveAgent is in-flight", async () => {
+            let resolveQuery: () => void
+            const onSaveAgent = jest.fn(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveQuery = resolve
+                    })
+            )
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: OLD_NETWORK_ID,
+                onSaveAgent,
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
+            await user.click(screen.getByRole("button", {name: "Save"}))
+
+            // Global backdrop must be visible while the save is in-flight
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            })
+            expect(screen.getByText("Saving agent\u2026")).toBeInTheDocument()
+
+            // Resolve and verify backdrop disappears
+            act(() => resolveQuery())
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
+            })
+        })
+
         it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
             const onSaveAgent = jest.fn().mockResolvedValue(undefined)
             const EDITED_INSTRUCTIONS = "Updated instructions for agent1"
@@ -1868,7 +1912,7 @@ describe("AgentFlow", () => {
 
             // Wait until the overlay appears (streaming started)
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
             })
 
             // Click the close button while request is in-flight
@@ -2125,7 +2169,7 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
+            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
         })
 
         it("shows the applying overlay while apply is in-flight", async () => {
@@ -2150,7 +2194,7 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
             })
 
             // Resolve the in-flight promise and flush all resulting state updates
@@ -2215,13 +2259,13 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
             })
 
             act(() => unblock())
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
             })
             consoleDebugSpy.mockRestore()
         })

@@ -20,6 +20,7 @@ import CloseIcon from "@mui/icons-material/Close"
 import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
+import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
@@ -999,57 +1000,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </>
                     )}
                 </ReactFlow>
-                {isDockStreaming && (
-                    <Box
-                        id={`${id}-dock-applying-overlay`}
-                        sx={{
-                            position: "absolute",
-                            inset: 0,
-                            zIndex: getZIndex(2, theme),
-                            backgroundColor: alpha(theme.palette.background.default, 0.65),
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <Paper
-                            elevation={6}
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                px: 4,
-                                py: 2.5,
-                                borderRadius: 2,
-                                maxWidth: 480,
-                            }}
-                        >
-                            <CircularProgress
-                                id={`${id}-dock-applying-spinner`}
-                                size={24}
-                            />
-                            <Box>
-                                <Typography
-                                    id={`${id}-dock-applying-title`}
-                                    variant="body1"
-                                    fontWeight="bold"
-                                >
-                                    Applying changes to network
-                                </Typography>
-                                {dockPrompt && (
-                                    <Typography
-                                        id={`${id}-dock-applying-prompt`}
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{mt: 0.25}}
-                                    >
-                                        {dockPrompt}
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Paper>
-                    </Box>
-                )}
                 <ThoughtBubbleOverlay
                     nodes={nodes}
                     edges={thoughtBubbleEdgesForOverlay}
@@ -1162,6 +1112,48 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     onSave={handlePopupSave}
                 />
             )}
+            <Backdrop
+                id={`${id}-global-saving-backdrop`}
+                open={isDockStreaming || isSavingAgent}
+                sx={{zIndex: (t) => t.zIndex.modal + 1}}
+            >
+                <Paper
+                    elevation={6}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        px: 4,
+                        py: 2.5,
+                        borderRadius: 2,
+                        maxWidth: 480,
+                    }}
+                >
+                    <CircularProgress
+                        id={`${id}-global-saving-spinner`}
+                        size={24}
+                    />
+                    <Box>
+                        <Typography
+                            id={`${id}-global-saving-title`}
+                            variant="body1"
+                            fontWeight="bold"
+                        >
+                            {isSavingAgent ? "Saving agent…" : "Applying changes to network"}
+                        </Typography>
+                        {isDockStreaming && dockPrompt && (
+                            <Typography
+                                id={`${id}-global-saving-prompt`}
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{mt: 0.25}}
+                            >
+                                {dockPrompt}
+                            </Typography>
+                        )}
+                    </Box>
+                </Paper>
+            </Backdrop>
         </Box>
     )
 }
