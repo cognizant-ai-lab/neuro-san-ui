@@ -61,7 +61,7 @@ describe("getFileName", () => {
     })
 
     it("should return nothing when the path ends with a backslash", () => {
-        expect(getFileName(String.raw`C:\Users\JaneDoe\Documents\\`)).toBe("")
+        expect(getFileName("C:\\Users\\JaneDoe\\Documents\\")).toBe("")
     })
 
     it("should return the file name when the path ends with a period", () => {
