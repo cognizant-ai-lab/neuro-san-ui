@@ -39,10 +39,6 @@ export default defineConfig([
     eslintPluginUnicorn.configs.all,
 
     typescriptEslint.configs.all,
-    {
-        files: ["**/*.{js,mjs,cjs}"],
-        ...typescriptEslint.configs.disableTypeChecked,
-    },
 
     // Have to configure import plugin in the "legacy" way due to:
     // https://github.com/import-js/eslint-plugin-import/issues/3227
@@ -402,7 +398,7 @@ export default defineConfig([
             "@typescript-eslint/prefer-return-this-type": "off",
             "@typescript-eslint/prefer-string-starts-ends-with": "off",
             "@typescript-eslint/require-array-sort-compare": "off",
-            "@typescript-eslint/switch-exhaustiveness-check": "off",
+            "@typescript-eslint/switch-exhaustiveness-check": "error",
             "@typescript-eslint/unbound-method": "off",
             "@typescript-eslint/no-for-in-array": "off",
             "@typescript-eslint/object-curly-spacing": "off",
@@ -593,6 +589,11 @@ export default defineConfig([
             "import/no-anonymous-default-export": "error",
             "@typescript-eslint/no-empty-interface": "error",
         },
+    },
+    // Disable typed linting rules for non-TypeScript files since they're not applicable
+    {
+        files: ["**/*.{js,mjs,cjs}"],
+        ...typescriptEslint.configs.disableTypeChecked,
     },
     {
         files: ["**/eslint.config.mjs"],
