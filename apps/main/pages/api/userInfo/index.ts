@@ -21,19 +21,6 @@ import {OidcProvider, UserInfoResponse} from "../../../../../packages/ui-common/
 
 const EXPECTED_NUMBER_OF_JWT_HEADERS = 3
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<UserInfoResponse>) {
-    // Fetch user info from ALB or your backend service
-    const userInfo = fetchUserInfoFromALB(req)
-    if (userInfo.oidcHeaderFound && !userInfo.oidcHeaderValid) {
-        // We found the header, but couldn't parse it
-        res.status(httpStatus.UNAUTHORIZED).json({oidcHeaderFound: true, oidcHeaderValid: false})
-        return
-    }
-
-    // We either didn't find the header at all, or we found it and parsed it
-    res.status(httpStatus.OK).json(userInfo)
-}
-
 // Expected header from ALB
 const AWS_OIDC_HEADER = "x-amzn-oidc-data"
 
@@ -88,4 +75,17 @@ const fetchUserInfoFromALB = (req: NextApiRequest): UserInfoResponse => {
         oidcHeaderValid: true,
         oidcProvider,
     }
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse<UserInfoResponse>) {
+    // Fetch user info from ALB or your backend service
+    const userInfo = fetchUserInfoFromALB(req)
+    if (userInfo.oidcHeaderFound && !userInfo.oidcHeaderValid) {
+        // We found the header, but couldn't parse it
+        res.status(httpStatus.UNAUTHORIZED).json({oidcHeaderFound: true, oidcHeaderValid: false})
+        return
+    }
+
+    // We either didn't find the header at all, or we found it and parsed it
+    res.status(httpStatus.OK).json(userInfo)
 }
