@@ -18,15 +18,17 @@ limitations under the License.
 // eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
+import EditIcon from "@mui/icons-material/Edit"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
+import IconButton from "@mui/material/IconButton"
 import {keyframes, styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {Handle, NodeProps, Position} from "@xyflow/react"
 import type {Node as RFNode} from "@xyflow/react"
-import {FC} from "react"
+import {FC, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
 import {DisplayAs} from "./const"
@@ -34,7 +36,6 @@ import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
-
 export interface AgentNodeProps extends Record<string, unknown> {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
@@ -42,6 +43,7 @@ export interface AgentNodeProps extends Record<string, unknown> {
     readonly displayAs?: string
     readonly getConversations: () => AgentConversation[] | null
     readonly isAwaitingLlm?: boolean
+    readonly isEditMode?: boolean
     readonly agentIconSuggestion?: string
     readonly isEditable?: boolean
 }
@@ -205,6 +207,10 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         ? theme.palette.common.black
         : theme.palette.common.white
 
+    const isClickableNode = isEditable
+
+    const [isHovered, setIsHovered] = useState(false)
+
     return (
         <>
             <AnimatedNode
@@ -212,6 +218,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 data-testid={agentId}
                 glowColor={glowColor}
                 isActive={isActiveAgent}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
                 sx={{
                     backgroundColor,
                     color,
@@ -222,6 +230,34 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 }}
             >
                 {getDisplayAsIcon()}
+
+                {isHovered && isClickableNode && (
+                    <Tooltip
+                        title="Edit"
+                        placement="top"
+                        disableInteractive
+                    >
+                        <IconButton
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                right: 0,
+                                backgroundColor: "rgba(0,0,0,0.45)",
+                                borderRadius: "50%",
+                                padding: "3px",
+                                zIndex: 2,
+                                cursor: "pointer",
+                                "&:hover": {backgroundColor: "rgba(0,0,0,0.65)"},
+                            }}
+                        >
+                            <EditIcon
+                                id={`${agentId}-edit-icon`}
+                                sx={{fontSize: "1rem", color: "white"}}
+                            />
+                        </IconButton>
+                    </Tooltip>
+                )}
+
                 <Handle
                     id={`${agentId}-left-handle`}
                     position={Position.Left}

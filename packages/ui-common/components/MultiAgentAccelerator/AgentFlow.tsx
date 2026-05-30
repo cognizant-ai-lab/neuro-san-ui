@@ -16,10 +16,17 @@ limitations under the License.
 
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
+import CloseIcon from "@mui/icons-material/Close"
+import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
-import {useTheme} from "@mui/material/styles"
+import Button from "@mui/material/Button"
+import CircularProgress from "@mui/material/CircularProgress"
+import IconButton from "@mui/material/IconButton"
+import Paper from "@mui/material/Paper"
+import {alpha, useTheme} from "@mui/material/styles"
+import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
@@ -45,6 +52,9 @@ import {AgentConversation} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AgentNodePopup} from "./AgentNodePopup"
 import {
+    AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_DESIGNER_ID,
+    AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
     BASE_RADIUS,
     DEFAULT_FRONTMAN_X_POS,
@@ -53,32 +63,51 @@ import {
 } from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
+import {
+    convertReservationsToNetworks,
+    extractNetworkHocon,
+    extractReservations,
+    isEditableAgent,
+    mergeNetworks,
+} from "./TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
+import {sendChatQuery} from "../../controller/agent/Agent"
+import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
-
+import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
+import {NotificationType, sendNotification} from "../Common/notification"
 // #region: Types
-
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentIconSuggestions?: AgentIconSuggestions
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
+    readonly currentUser?: string
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
+    readonly isEditMode?: boolean
     readonly isStreaming?: boolean
     readonly isSelectedNetworkTemporary?: boolean
     /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
     readonly networkId?: string
+    readonly neuroSanURL?: string
     /**
-     * Called when the user saves edits to an agent node in a temporary network.
-     * MultiAgentAccelerator provides this to handle the streaming update and apply the result.
+     * Called after a popup save triggers a new network reservation that replaces the currently viewed network.
+     * @param oldNetworkId The agent_name of the network that was replaced.
+     * @param newNetworkId The agent_name of the replacement network to navigate to.
      */
+    readonly networkDisplayName?: string
+    readonly onEnterEditMode?: () => void
+    readonly onNetworkReplaced?: (oldNetworkId: string, newNetworkId: string) => void
+    /** Called when the user closes the edit-mode dock. */
+    readonly onExitEditMode?: () => void
     readonly onSaveAgent?: (
         agentName: string,
         updated: AgentNetworkDefinitionEntry[],
@@ -102,31 +131,62 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // #endregion: Constants
 
+const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
+
 // #region: Helpers
 
 /**
- * Returns a new definition array with the target agent's instructions and description updated.
- * All other entries pass through unchanged.
+ * Streams the Agent Network Designer endpoint with a natural-language prompt and the current
+ * network definition, collecting any returned reservations.
  */
-const buildUpdatedDefinition = (
-    currentDefinitions: AgentNetworkDefinitionEntry[],
-    agentId: string,
-    instructions: string,
-    description: string
-): AgentNetworkDefinitionEntry[] =>
-    currentDefinitions.map((entry) => (entry.origin === agentId ? {...entry, instructions, description} : entry))
+const streamNetworkDesignerPrompt = async (
+    neuroSanURL: string,
+    signal: AbortSignal,
+    userPrompt: string,
+    currentDefinition: AgentNetworkDefinitionEntry[],
+    agentNetworkName: string | undefined,
+    currentUser: string
+): Promise<TemporaryNetwork[]> => {
+    let newNetworks: TemporaryNetwork[] = []
 
-/** Finds the temp network entry for the given network ID. */
-const findTempNetwork = <T extends {agentInfo: {agent_name?: string}}>(
-    tempNetworks: T[],
-    networkId: string | undefined
-): T | undefined => (networkId ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId) : undefined)
+    await sendChatQuery(
+        neuroSanURL,
+        signal,
+        userPrompt,
+        AGENT_NETWORK_DESIGNER_ID,
+        (chunk: string) => {
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (!chatMessage) return
 
-/** Creates an AbortController with a built-in timeout that fires a TimeoutError. */
-const createTimedAbortController = (timeoutMs: number): {controller: AbortController; cancelTimeout: () => void} => {
-    const controller = new AbortController()
-    const id = setTimeout(() => controller.abort(new DOMException("Save timed out", "TimeoutError")), timeoutMs)
-    return {controller, cancelTimeout: () => clearTimeout(id)}
+            const reservations = extractReservations(chatMessage)
+            if (reservations.length === 0) return
+
+            const networkHocon = extractNetworkHocon(chatMessage)
+            const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
+            const networkName = agentNetworkName ?? agentNetworkNameFromMessage
+
+            const definitionFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
+                | AgentNetworkDefinitionEntry[]
+                | undefined
+
+            const converted = convertReservationsToNetworks(
+                reservations,
+                networkHocon,
+                definitionFromMessage ?? currentDefinition,
+                networkName
+            )
+            newNetworks = mergeNetworks(newNetworks, converted)
+        },
+        null,
+        {
+            [AGENT_NETWORK_DEFINITION_KEY]: currentDefinition,
+            ...(agentNetworkName ? {[AGENT_NETWORK_NAME_KEY]: agentNetworkName} : {}),
+        },
+        currentUser,
+        StreamingUnit.Line
+    )
+
+    return newNetworks
 }
 
 // #endregion: Helpers
@@ -136,12 +196,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     agentIconSuggestions,
     agentsInNetwork,
     currentConversations,
+    currentUser,
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
+    isEditMode,
     isStreaming,
     isSelectedNetworkTemporary: isTemporaryNetwork,
+    networkDisplayName,
     networkId,
+    neuroSanURL,
+    onEnterEditMode,
+    onNetworkReplaced,
+    onExitEditMode,
     onSaveAgent,
     thoughtBubbleEdges,
     setThoughtBubbleEdges,
@@ -347,84 +414,193 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [selectedAgent, setSelectedAgent] = useState<{
         agentId: string
         agentName: string
+        initialInstructions: string
+        initialDescription: string
     } | null>(null)
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
-    const [isSaving, setIsSaving] = useState<boolean>(false)
 
-    const popupNetwork = useMemo(() => findTempNetwork(tempNetworks, networkId), [tempNetworks, networkId])
-    const popupEntry = useMemo(
-        () => (popupNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === selectedAgent?.agentId),
-        [popupNetwork, selectedAgent?.agentId]
-    )
+    // True while the agent-edit request is in-flight so we can disable the Save button.
+    const [isSavingAgent, setIsSavingAgent] = useState<boolean>(false)
 
     // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
     const saveAbortControllerRef = useRef<AbortController | null>(null)
 
-    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback((_event, node) => {
-        if (!node.data.isEditable) return
+    // Dock (edit-mode prompt bar) state
+    const [dockPrompt, setDockPrompt] = useState<string>("")
+    const [isDockStreaming, setIsDockStreaming] = useState<boolean>(false)
+    const dockAbortControllerRef = useRef<AbortController | null>(null)
 
-        setSelectedAgent({
-            agentId: node.id,
-            agentName: node.data.agentName,
-        })
-        setIsPopupOpen(true)
-    }, [])
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
+        (_event, node) => {
+            // Popup is only available for temporary networks.
+            if (!isTemporaryNetwork) return
+
+            // Only llm_agent nodes support instructions/description editing.
+            if (!isEditableAgent(node.data.displayAs)) return
+
+            // Find the clicked agent's existing instructions and description from the temp network definition.
+            const currentTempNetwork = networkId
+                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
+                : undefined
+            const found = (currentTempNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === node.id)
+
+            setSelectedAgent({
+                agentId: node.id,
+                agentName: node.data.agentName,
+                initialInstructions: found?.instructions ?? "",
+                initialDescription: found?.description ?? "",
+            })
+            setIsPopupOpen(true)
+        },
+        [tempNetworks, isTemporaryNetwork, networkId]
+    )
 
     const handlePopupClose = useCallback(() => {
-        // This was added for API instability, however handlePopupClose is not called if the save is in progress
-        saveAbortControllerRef.current?.abort() // Could remove
+        // If a save is in-flight, abort it immediately so the stream doesn't hang.
+        saveAbortControllerRef.current?.abort()
         saveAbortControllerRef.current = null
-        setIsSaving(false)
         setIsPopupOpen(false)
+        setIsSavingAgent(false)
     }, [])
 
-    /**
-     * Manages the AbortController, timeout, and cleanup for a single agent-save attempt.
-     * Delegates the actual streaming and result application to the `onSaveAgent` prop.
-     */
-    const executeAgentSave = useCallback(
-        async (
-            agentName: string,
-            updated: AgentNetworkDefinitionEntry[],
-            currentAgentNetworkName: string | undefined
-        ): Promise<void> => {
-            if (!onSaveAgent || updated.length === 0) return
+    /** Applies the networks returned by the designer: upserts them and triggers navigation if needed. */
+    const applyNetworkSaveResult = useCallback(
+        (agentName: string, newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined) => {
+            if (newNetworksFromSave.length === 0) {
+                sendNotification(
+                    NotificationType.error,
+                    `Failed to update network "${agentName}".`,
+                    "The network designer did not return a reservation. Please try again."
+                )
+                return
+            }
 
-            const {controller, cancelTimeout} = createTimedAbortController(60_000)
-            saveAbortControllerRef.current = controller
-            try {
-                await onSaveAgent(agentName, updated, currentAgentNetworkName, controller.signal)
-            } catch (e) {
-                // onSaveAgent is responsible for user-facing error handling and notification.
-                // We catch here only to ensure the finally block (and popup close) always runs.
-                console.error(`Error saving agent ${agentName}. See onSaveAgent implementation for details.`, e)
-            } finally {
-                cancelTimeout()
-                saveAbortControllerRef.current = null
+            const replacement = newNetworksFromSave.find((n) => n.agentNetworkName === currentAgentNetworkName)
+            if (replacement) {
+                useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
+                if (networkId && onNetworkReplaced) {
+                    useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
+                    onNetworkReplaced(networkId, replacement.agentInfo.agent_name)
+                }
+            } else {
+                // Reservations came back but none matched the current network — surface this to the user.
+                sendNotification(
+                    NotificationType.error,
+                    `Failed to update network "${agentName}".`,
+                    "A reservation was returned but did not match the current network. Please try again."
+                )
             }
         },
-        [onSaveAgent]
+        [networkId, onNetworkReplaced]
     )
+
+    const handleDockApply = useCallback(async () => {
+        if (!dockPrompt.trim() || !neuroSanURL || !currentUser) return
+
+        const currentTempNetwork = networkId
+            ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
+            : undefined
+        const currentDefinition = currentTempNetwork?.agentNetworkDefinition ?? []
+
+        setIsDockStreaming(true)
+        const controller = new AbortController()
+        dockAbortControllerRef.current = controller
+        let hasTimedOut = false
+        const timeoutId = setTimeout(() => {
+            hasTimedOut = true
+            controller.abort()
+        }, 120_000) // 2 min timeout
+        try {
+            const newNetworks = await streamNetworkDesignerPrompt(
+                neuroSanURL,
+                controller.signal,
+                dockPrompt,
+                currentDefinition,
+                currentTempNetwork?.agentNetworkName,
+                currentUser
+            )
+            applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
+            setDockPrompt("")
+        } catch (e: unknown) {
+            const isAbort = e instanceof DOMException && e.name === "AbortError"
+            if (!isAbort) {
+                sendNotification(NotificationType.error, "Failed to apply network change.", String(e), undefined, null)
+            } else if (hasTimedOut) {
+                sendNotification(
+                    NotificationType.error,
+                    "Failed to apply network change.",
+                    "The request timed out. Please try again.",
+                    undefined,
+                    null // show indefinitely until the user dismisses
+                )
+            }
+        } finally {
+            clearTimeout(timeoutId)
+            dockAbortControllerRef.current = null
+            setIsDockStreaming(false)
+        }
+    }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
+
+    const handleExitEditMode = useCallback(() => {
+        if (isDockStreaming) {
+            dockAbortControllerRef.current?.abort()
+            dockAbortControllerRef.current = null
+            setIsDockStreaming(false)
+        }
+        onExitEditMode?.()
+    }, [isDockStreaming, onExitEditMode])
 
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
             if (!selectedAgent) return
 
-            const currentTempNetwork = findTempNetwork(tempNetworks, networkId)
-            const updated = buildUpdatedDefinition(
-                currentTempNetwork?.agentNetworkDefinition ?? [],
-                selectedAgent.agentId,
-                instructionsText,
-                descriptionText
-            )
-            if (networkId) updateTempNetworkDefinition(networkId, updated)
+            // Find the temp network entry for the currently selected network.
+            const currentTempNetwork = networkId
+                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
+                : undefined
 
-            setIsSaving(true)
-            await executeAgentSave(agentName, updated, currentTempNetwork?.agentNetworkName)
-            setIsSaving(false)
-            setIsPopupOpen(false)
+            // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
+            const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
+            const updated = currentDefinitions.map((entry) =>
+                entry.origin === selectedAgent.agentId
+                    ? {...entry, instructions: instructionsText, description: descriptionText}
+                    : entry
+            )
+            if (networkId) {
+                updateTempNetworkDefinition(networkId, updated)
+            }
+
+            if (!onSaveAgent) {
+                setIsPopupOpen(false)
+                return
+            }
+
+            setIsSavingAgent(true)
+            const saveController = new AbortController()
+            saveAbortControllerRef.current = saveController
+            const saveTimeoutId = setTimeout(
+                () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
+                60_000 // 1 min timeout
+            )
+            try {
+                await onSaveAgent(agentName, updated, currentTempNetwork?.agentNetworkName, saveController.signal)
+            } catch (e) {
+                console.error(`Error saving network ${agentName}. See onSaveAgent implementation for details.`, e)
+                sendNotification(
+                    NotificationType.error,
+                    `Failed to save agent "${agentName}".`,
+                    String(e),
+                    undefined,
+                    null // show indefinitely until the user dismisses
+                )
+            } finally {
+                clearTimeout(saveTimeoutId)
+                saveAbortControllerRef.current = null
+                setIsSavingAgent(false)
+                setIsPopupOpen(false)
+            }
         },
-        [selectedAgent, tempNetworks, updateTempNetworkDefinition, networkId, executeAgentSave]
+        [selectedAgent, tempNetworks, updateTempNetworkDefinition, networkId, onSaveAgent]
     )
 
     const edges = layoutResult.edges
@@ -721,8 +897,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     return (
         <Box
+            display="flex"
+            flexDirection="column"
+            height="100%"
             id={`${id}-outer-box`}
             sx={{
+                position: "relative",
                 height: "100%",
                 width: "100%",
                 backgroundColor: theme.palette.background.default,
@@ -742,40 +922,242 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 },
             }}
         >
-            <ReactFlow
-                id={`${id}-react-flow`}
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onNodeClick={handleNodeClick}
-                fitView={true}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                connectionMode={ConnectionMode.Loose}
+            <Box
+                id={`${id}-react-flow-wrapper`}
+                sx={{position: "relative", flex: 1, minHeight: 0}}
             >
-                {!isAwaitingLlm && (
-                    <>
-                        {agentsInNetwork?.length && !isAgentNetworkDesignerMode ? getLegend() : null}
-                        <Background id={`${id}-background`} />
-                        {!isAgentNetworkDesignerMode && getControls()}
-                        {shouldShowRadialGuides ? getRadialGuides() : null}
-                    </>
+                {networkDisplayName && (
+                    <Box
+                        id={`${id}-network-title-bar`}
+                        sx={{
+                            position: "absolute",
+                            top: 44,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: getZIndex(1, theme),
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            pointerEvents: "none",
+                        }}
+                    >
+                        <Typography
+                            id={`${id}-network-title`}
+                            variant="subtitle1"
+                            sx={{
+                                fontWeight: "bold",
+                                backgroundColor: alpha(theme.palette.background.paper, 0.85),
+                                borderRadius: 1.5,
+                                color:
+                                    theme.palette.mode === "dark"
+                                        ? theme.palette.common.white
+                                        : theme.palette.text.primary,
+                                px: 1.5,
+                                py: 0.25,
+                                whiteSpace: "nowrap",
+                                maxWidth: 400,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
+                        >
+                            {networkDisplayName}
+                        </Typography>
+                        {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
+                            <Button
+                                id={`${id}-enter-edit-mode-btn`}
+                                variant="contained"
+                                size="small"
+                                onClick={onEnterEditMode}
+                                startIcon={<EditIcon />}
+                                sx={{
+                                    pointerEvents: "auto",
+                                    "&:hover": {backgroundColor: theme.palette.primary.main},
+                                }}
+                            >
+                                Edit
+                            </Button>
+                        )}
+                    </Box>
                 )}
-            </ReactFlow>
-            <ThoughtBubbleOverlay
-                nodes={nodes}
-                edges={thoughtBubbleEdgesForOverlay}
-                showThoughtBubbles={showThoughtBubbles}
-                isStreaming={isStreaming}
-                onBubbleHoverChange={handleBubbleHoverChange}
-            />
+                <ReactFlow
+                    id={`${id}-react-flow`}
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onNodeClick={handleNodeClick}
+                    fitView={true}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    connectionMode={ConnectionMode.Loose}
+                >
+                    {!isAwaitingLlm && (
+                        <>
+                            {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditMode ? getLegend() : null}
+                            <Background id={`${id}-background`} />
+                            {!isAgentNetworkDesignerMode && !isEditMode && getControls()}
+                            {shouldShowRadialGuides ? getRadialGuides() : null}
+                        </>
+                    )}
+                </ReactFlow>
+                {isDockStreaming && (
+                    <Box
+                        id={`${id}-dock-applying-overlay`}
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            zIndex: getZIndex(2, theme),
+                            backgroundColor: alpha(theme.palette.background.default, 0.65),
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <Paper
+                            elevation={6}
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                px: 4,
+                                py: 2.5,
+                                borderRadius: 2,
+                                maxWidth: 480,
+                            }}
+                        >
+                            <CircularProgress
+                                id={`${id}-dock-applying-spinner`}
+                                size={24}
+                            />
+                            <Box>
+                                <Typography
+                                    id={`${id}-dock-applying-title`}
+                                    variant="body1"
+                                    fontWeight="bold"
+                                >
+                                    Applying changes to network
+                                </Typography>
+                                {dockPrompt && (
+                                    <Typography
+                                        id={`${id}-dock-applying-prompt`}
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{mt: 0.25}}
+                                    >
+                                        {dockPrompt}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Paper>
+                    </Box>
+                )}
+                <ThoughtBubbleOverlay
+                    nodes={nodes}
+                    edges={thoughtBubbleEdgesForOverlay}
+                    showThoughtBubbles={showThoughtBubbles}
+                    isStreaming={isStreaming}
+                    onBubbleHoverChange={handleBubbleHoverChange}
+                />
+            </Box>
+            {isEditMode && isTemporaryNetwork && !isAwaitingLlm && (
+                <Box
+                    id={`${id}-topology-editor-dock`}
+                    sx={{
+                        borderTop: `2px solid ${theme.palette.primary.main}`,
+                        backgroundColor: theme.palette.background.paper,
+                        flexShrink: 0,
+                    }}
+                >
+                    {/* Dock header */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2,
+                            py: 0.5,
+                            borderBottom: `1px solid ${theme.palette.divider}`,
+                        }}
+                    >
+                        <Typography
+                            variant="overline"
+                            sx={{fontWeight: "bold", letterSpacing: 1, lineHeight: 1.8}}
+                        >
+                            Network Editor
+                        </Typography>
+                        <IconButton
+                            size="small"
+                            aria-label="close edit mode"
+                            onClick={handleExitEditMode}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            px: 2,
+                            pt: 0.5,
+                            pb: 0,
+                            color: theme.palette.text.secondary,
+                            display: "block",
+                        }}
+                    >
+                        Changes apply only to this Temporary network
+                    </Typography>
+                    {/* Prompt input row */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 1,
+                            px: 2,
+                            py: 1.5,
+                            alignItems: "center",
+                        }}
+                    >
+                        <TextField
+                            fullWidth
+                            id={`${id}-dock-prompt-input`}
+                            placeholder={DOCK_PROMPT_PLACEHOLDER}
+                            variant="outlined"
+                            size="small"
+                            value={dockPrompt}
+                            onChange={(e) => setDockPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault()
+                                    void handleDockApply()
+                                }
+                            }}
+                            disabled={isDockStreaming}
+                            slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
+                        />
+                        <Button
+                            id={`${id}-dock-apply-button`}
+                            variant="contained"
+                            onClick={() => void handleDockApply()}
+                            disabled={isDockStreaming || !dockPrompt.trim()}
+                            sx={{whiteSpace: "nowrap", minWidth: 120}}
+                            startIcon={
+                                isDockStreaming ? (
+                                    <CircularProgress
+                                        size={16}
+                                        color="inherit"
+                                    />
+                                ) : undefined
+                            }
+                        >
+                            {isDockStreaming ? "Applying…" : "Apply"}
+                        </Button>
+                    </Box>
+                </Box>
+            )}
             {selectedAgent && !isAwaitingLlm && (
                 <AgentNodePopup
                     agentName={selectedAgent.agentName}
-                    initialInstructions={popupEntry?.instructions ?? ""}
-                    initialDescription={popupEntry?.description ?? ""}
+                    initialInstructions={selectedAgent.initialInstructions}
+                    initialDescription={selectedAgent.initialDescription}
                     isOpen={isPopupOpen}
-                    isSaving={isSaving}
+                    isSaving={isSavingAgent}
                     onClose={handlePopupClose}
                     onSave={handlePopupSave}
                 />

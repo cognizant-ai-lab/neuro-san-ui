@@ -116,7 +116,7 @@ const notifySaveError = (agentName: string, e: unknown): void => {
         e instanceof DOMException && e.name === "TimeoutError"
             ? "The request timed out waiting for the server. Please try again."
             : String(e)
-    sendNotification(NotificationType.error, `Failed to update agent "${agentName}".`, detail)
+    sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
 }
 
 // #endregion: Agent-save helpers
@@ -138,6 +138,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
+
+    const [isEditingNetwork, setIsEditingNetwork] = useState(false)
 
     // Track streaming state - controls thought bubble cleanup timer, and enables "zen mode" (hides outer panels after
     // animation)
@@ -254,6 +256,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
+
+    // Clear chat whenever the user navigates to the Agent Network Designer, so they start fresh each time
+    useEffect(() => {
+        if (selectedNetwork === AGENT_NETWORK_DESIGNER_ID) {
+            chatRef.current?.handleClearChat()
+        }
+    }, [selectedNetwork])
 
     // Special mode of operation where user is using Agent Network Designer to create a new network
     const isNetworkDesignerMode = selectedNetwork === AGENT_NETWORK_DESIGNER_ID
@@ -526,7 +535,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 if (newNetworks.length === 0) {
                     sendNotification(
                         NotificationType.error,
-                        `Failed to update agent "${agentName}".`,
+                        `Failed to update network "${agentName}".`,
                         "The network designer did not return a reservation. Please try again."
                     )
                     return
@@ -544,7 +553,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 } else {
                     sendNotification(
                         NotificationType.error,
-                        `Failed to update agent "${agentName}".`,
+                        `Failed to update network "${agentName}".`,
                         "A reservation was returned but did not match the current network. Please try again."
                     )
                 }
@@ -598,6 +607,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             setNetworkToBeDeleted(networkId)
             setConfirmationModalOpen(true)
         }
+    }
+
+    const handleEditNetwork = (_networkId: string) => {
+        setIsEditingNetwork(true)
     }
 
     useEffect(() => {
@@ -660,6 +673,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                        onEditNetwork={handleEditNetwork}
                         onDeleteNetwork={handleDeleteNetwork}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
@@ -698,10 +712,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             id="multi-agent-accelerator-agent-flow"
                             key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
+                            currentUser={userInfo.userName}
                             isAwaitingLlm={isAwaitingLlm}
+                            isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
+                            networkDisplayName={networkDisplayName || undefined}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
+                            neuroSanURL={neuroSanURL}
+                            onEnterEditMode={() => setIsEditingNetwork(true)}
+                            onExitEditMode={() => setIsEditingNetwork(false)}
+                            onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
                             onSaveAgent={onSaveAgent}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
@@ -939,6 +960,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
+
             {getDeleteNetworkConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"

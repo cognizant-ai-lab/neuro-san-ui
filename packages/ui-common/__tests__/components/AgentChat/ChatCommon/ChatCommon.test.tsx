@@ -632,6 +632,27 @@ describe("ChatCommon", () => {
         expect(setAwaitingLlmMock).toHaveBeenCalledWith(false)
     })
 
+    it("Should clear the chat when handleClearChat is called via ref", async () => {
+        const ref = createRef<ChatCommonHandle>()
+        renderChatCommonComponent({ref})
+
+        // Wait for the component to initialize so the ref is set up
+        await screen.findByRole("button", {name: "Send"})
+
+        // Verify handleClearChat is exposed via the imperative ref
+        expect(typeof ref.current?.handleClearChat).toBe("function")
+
+        // Call it and wait for all async state updates to settle
+        await act(async () => {
+            ref.current?.handleClearChat()
+        })
+
+        // After clearing, connectivity info (rendered into chatOutput via updateOutput) is gone
+        // We wait for sample queries to re-appear (they're in agentSampleQueries state, not chatOutput,
+        // so they stay after clear and confirm the component is still functional)
+        await screen.findByText("Sample query 1")
+    })
+
     it("Should handle autoscroll toggle correctly", async () => {
         renderChatCommonComponent()
 

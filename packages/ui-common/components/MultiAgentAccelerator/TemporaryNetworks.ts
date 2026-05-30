@@ -29,28 +29,20 @@ export type AgentReservation = {
 }
 
 /**
- * Converts a list of agent reservations received from the backend into TemporaryNetwork objects that can be
- * displayed in the UI.
- * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
- * @param networkHocon Optional network HOCON string associated with the reservations.
- * @param agentNetworkDefinition Optional agent network definition entries.
- * @returns List of TemporaryNetwork objects ready for the store.
+ * Extracts agent reservations from a chat message, if they exist.
+ * @param message The chat message to extract reservations from. We expect reservations to be present in messages of
+ * type AGENT_FRAMEWORK only.
+ * @return An array of AgentReservation objects if reservations are found, or an empty array if not found or
+ * if the message is not of the expected type.
  */
-export const convertReservationsToNetworks = (
-    agentReservations: AgentReservation[],
-    networkHocon: string | null,
-    agentNetworkDefinition?: AgentNetworkDefinitionEntry[]
-): TemporaryNetwork[] => {
-    return agentReservations.map((reservation) => ({
-        reservation,
-        agentInfo: {
-            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
-        },
-        // agentNetworkName is the network name "prefix", with the UUID-stripped
-        agentNetworkName: removeTrailingUuid(reservation.reservation_id),
-        networkHocon,
-        agentNetworkDefinition,
-    }))
+export const extractReservations = (message: ChatMessage): AgentReservation[] => {
+    // Check for temp networks ("reservations") in sly_data
+    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_RESERVATIONS_KEY]) {
+        return message.sly_data[AGENT_RESERVATIONS_KEY] as AgentReservation[]
+    } else {
+        // Not the type of message that would contain reservations, or no reservations found, return empty array
+        return []
+    }
 }
 
 /**
@@ -59,7 +51,7 @@ export const convertReservationsToNetworks = (
  * We expect the network definition to be present in messages of type AGENT_FRAMEWORK only.
  * @return The network HOCON as a string, or null if not found or not the right type of message.
  */
-const extractNetworkHocon = (message: ChatMessage): string | null => {
+export const extractNetworkHocon = (message: ChatMessage): string | null => {
     // Check for agent network HOCON in sly_data
     if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_HOCON]) {
         return message.sly_data[AGENT_NETWORK_HOCON] as string
@@ -70,21 +62,34 @@ const extractNetworkHocon = (message: ChatMessage): string | null => {
 }
 
 /**
- * Extracts agent reservations from a chat message, if they exist.
- * @param message The chat message to extract reservations from. We expect reservations to be present in messages of
- * type AGENT_FRAMEWORK only.
- * @return An array of AgentReservation objects if reservations are found, or an empty array if not found or
- * if the message is not of the expected type.
+ * Converts a list of agent reservations received from the backend into TemporaryNetwork objects that can be
+ * displayed in the UI.
+ * @param agentReservations List of "agent reservations" (temporary networks) received from the backend
+ * @param networkHocon Optional network HOCON string associated with the reservations.
+ * @param agentNetworkDefinition Optional agent network definition entries.
+ * @param agentNetworkName Optional backend canonical network name used to match / deduplicate networks.
+ * @returns List of TemporaryNetwork objects ready for the store.
  */
-const extractReservations = (message: ChatMessage): AgentReservation[] => {
-    // Check for temp networks ("reservations") in sly_data
-    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_RESERVATIONS_KEY]) {
-        return message.sly_data[AGENT_RESERVATIONS_KEY] as AgentReservation[]
-    } else {
-        // Not the type of message that would contain reservations, or no reservations found, return empty array
-        return []
-    }
+export const convertReservationsToNetworks = (
+    agentReservations: AgentReservation[],
+    networkHocon: string | null,
+    agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
+    agentNetworkName?: string
+): TemporaryNetwork[] => {
+    return agentReservations.map((reservation) => ({
+        reservation,
+        agentInfo: {
+            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+        },
+        // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
+        // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
+        agentNetworkName: agentNetworkName ?? removeTrailingUuid(reservation.reservation_id),
+        networkHocon,
+        agentNetworkDefinition,
+    }))
 }
+
+export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DisplayAs.LLM_AGENT
 
 /**
  * Extracts TemporaryNetwork objects from a chat message by reading reservations, HOCON,
@@ -108,13 +113,6 @@ export const extractTemporaryNetworksFromMessage = (
 
     return convertReservationsToNetworks(reservations, networkHocon, agentNetworkDefinition)
 }
-
-/**
- * Returns true when an agent node supports the edit popup (instructions + description).
- * Only `llm_agent` nodes are editable; `coded_tool`, `langchain_tool`, `external_agent`,
- * and nodes without an explicit `display_as` are read-only.
- */
-export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DisplayAs.LLM_AGENT
 
 /**
  * Returns true when agentName refers to a known temporary network.
