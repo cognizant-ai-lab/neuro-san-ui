@@ -515,11 +515,11 @@ describe("ChatCommon", () => {
 
         // First two are warnings
         alertItems.slice(0, 2).forEach((item) => {
-            expect(item).toHaveClass("MuiAlert-standardWarning")
+            expect(item).toHaveClass("MuiAlert-colorWarning")
         })
 
         // Final one is an error
-        expect(alertItems[3]).toHaveClass("MuiAlert-standardError")
+        expect(alertItems[3]).toHaveClass("MuiAlert-colorError")
     })
 
     it("Should correctly handle chat context", async () => {
