@@ -1,4 +1,4 @@
-import {TreeViewBaseItem} from "@mui/x-tree-view/models"
+import {TreeViewDefaultItemModelProperties} from "@mui/x-tree-view/models"
 
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
@@ -9,8 +9,9 @@ export type NodeIndex = Map<string, {agentInfo: AgentInfo; displayName: string}>
 /**
  * Iteratively sort all children of tree nodes using a queue-based approach
  * @param nodes - Array of tree nodes to sort
+ * @param nodeIndex - Index mapping node IDs to their AgentInfo and display names, used for sorting by display name
  */
-const sortTreeNodes = (nodes: TreeViewBaseItem[], nodeIndex: NodeIndex): void => {
+const sortTreeNodes = (nodes: TreeViewDefaultItemModelProperties[], nodeIndex: NodeIndex): void => {
     // Sort the top level nodes first. We sort by displayName because that's what the user sees
     nodes.sort((a, b) => {
         const aDisplayName = nodeIndex.get(a.id)?.displayName ?? a.label
@@ -19,7 +20,7 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[], nodeIndex: NodeIndex): void =>
     })
 
     // Use a queue for breadth-first traversal to avoid recursion
-    const queue: TreeViewBaseItem[] = [...nodes]
+    const queue: TreeViewDefaultItemModelProperties[] = [...nodes]
     let index = 0
 
     // For each node in the queue, sort its children and add them to the end of the queue
@@ -43,9 +44,9 @@ const sortTreeNodes = (nodes: TreeViewBaseItem[], nodeIndex: NodeIndex): void =>
  */
 const addNetworkToTree = (
     network: AgentInfo,
-    result: TreeViewBaseItem[],
-    uncategorized: TreeViewBaseItem,
-    map: Map<string, TreeViewBaseItem>,
+    result: TreeViewDefaultItemModelProperties[],
+    uncategorized: TreeViewDefaultItemModelProperties,
+    map: Map<string, TreeViewDefaultItemModelProperties>,
     nodeIndex: NodeIndex,
     displayNameCounts: Map<string, number>
 ): void => {
@@ -109,23 +110,28 @@ const addNetworkToTree = (
  * The tree structure is used by the RichTreeView component to display the networks
  * @param networks - Array of networks from the Neuro-san /list API
  * @param temporaryNetworks - Array of temporary networks (e.g. ones recently created by the user)
- * @returns Array of TreeViewBaseItem objects representing the tree structure and an index for rapid access
+ * @returns Array of {@linkcode TreeViewDefaultItemModelProperties} objects representing the tree structure and an
+ * index for rapid access
  */
 export const buildTreeViewItems = (
     networks: readonly AgentInfo[],
     temporaryNetworks: readonly TemporaryNetwork[]
-): {treeViewItems: TreeViewBaseItem[]; nodeIndex: NodeIndex} => {
+): {treeViewItems: TreeViewDefaultItemModelProperties[]; nodeIndex: NodeIndex} => {
     // Map to keep track of created nodes in a tree structure
-    const treeBuilderMap = new Map<string, TreeViewBaseItem>()
+    const treeBuilderMap = new Map<string, TreeViewDefaultItemModelProperties>()
 
     // Index to quickly look up AgentInfo by node ID without having to traverse the tree
     const nodeIndex: NodeIndex = new Map()
 
     // Resulting tree view items, ready for consumption by RichTreeView
-    const treeViewItems: TreeViewBaseItem[] = []
+    const treeViewItems: TreeViewDefaultItemModelProperties[] = []
 
     // Special parent node for networks that aren't in any folder
-    const uncategorized: TreeViewBaseItem = {id: "uncategorized", label: "Uncategorized", children: []}
+    const uncategorized: TreeViewDefaultItemModelProperties = {
+        id: "uncategorized",
+        label: "Uncategorized",
+        children: [],
+    }
 
     const displayNameCounts = new Map<string, number>()
 

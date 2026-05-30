@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
+import ChatBubbleOutlinedIcon from "@mui/icons-material/ChatBubbleOutlined"
 import CloseIcon from "@mui/icons-material/Close"
 import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
@@ -887,7 +887,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
                             }}
                         >
-                            <ChatBubbleOutlineIcon id="thought-bubble-icon" />
+                            <ChatBubbleOutlinedIcon id="thought-bubble-icon" />
                         </ControlButton>
                     </span>
                 </Tooltip>
@@ -897,23 +897,25 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     return (
         <Box
-            display="flex"
-            flexDirection="column"
-            height="100%"
             id={`${id}-outer-box`}
             sx={{
+                display: "flex",
+                flexDirection: "column",
                 position: "relative",
                 height: "100%",
                 width: "100%",
                 backgroundColor: theme.palette.background.default,
+
                 "& .react-flow__node": {
                     border: `1px solid ${theme.palette.divider}`,
                 },
+
                 "& .react-flow__panel": {
                     backgroundColor: theme.palette.background.paper,
                     border: `1px solid ${theme.palette.divider}`,
                     color: theme.palette.text.primary,
                 },
+
                 "& .react-flow__controls-button": {
                     backgroundColor: theme.palette.background.paper,
                     borderBottom: `1px solid ${theme.palette.divider}`,
@@ -1032,7 +1034,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 <Typography
                                     id={`${id}-dock-applying-title`}
                                     variant="body1"
-                                    fontWeight="bold"
+                                    sx={{
+                                        fontWeight: "bold",
+                                    }}
                                 >
                                     Applying changes to network
                                 </Typography>
@@ -1040,8 +1044,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                     <Typography
                                         id={`${id}-dock-applying-prompt`}
                                         variant="body2"
-                                        color="text.secondary"
-                                        sx={{mt: 0.25}}
+                                        sx={{
+                                            color: "text.secondary",
+                                            mt: 0.25,
+                                        }}
                                     >
                                         {dockPrompt}
                                     </Typography>

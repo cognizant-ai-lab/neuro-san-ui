@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined"
 import ClearIcon from "@mui/icons-material/Clear"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
@@ -512,23 +512,25 @@ export const Sidebar: FC<SidebarProps> = ({
                 {(connectionStatusSuccess || connectionStatusError) && (
                     <Box
                         id="connection-status-box"
-                        display="flex"
-                        alignItems="center"
                         sx={{
+                            display: "flex",
+                            alignItems: "center",
                             marginLeft: "0.25rem",
                             marginBottom: "0.5rem",
                         }}
                     >
                         {connectionStatusSuccess && (
                             <>
-                                <CheckCircleOutlineIcon
+                                <CheckCircleOutlinedIcon
                                     id="connection-status-success-icon"
                                     sx={{color: "var(--bs-green)", fontSize: "1.2rem", marginRight: "0.25rem"}}
                                 />
                                 <Typography
                                     id="connection-status-success-msg"
                                     variant="body2"
-                                    color="var(--bs-green)"
+                                    sx={{
+                                        color: "var(--bs-green)",
+                                    }}
                                 >
                                     Connected successfully
                                 </Typography>
@@ -543,7 +545,9 @@ export const Sidebar: FC<SidebarProps> = ({
                                 <Typography
                                     id="connection-status-failed-msg"
                                     variant="body2"
-                                    color="var(--bs-red)"
+                                    sx={{
+                                        color: "var(--bs-red)",
+                                    }}
                                 >
                                     {`Connection failed: "${testConnectionResult?.status || "unknown error"}"`}
                                 </Typography>
