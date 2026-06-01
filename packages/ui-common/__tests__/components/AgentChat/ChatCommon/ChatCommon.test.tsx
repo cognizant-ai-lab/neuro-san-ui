@@ -510,16 +510,16 @@ describe("ChatCommon", () => {
         let alertItems: HTMLElement[]
         await waitFor(() => {
             alertItems = screen.getAllByRole("alert")
-            expect(alertItems).toHaveLength(4)
+            expect(alertItems).toHaveLength(3 + 1)
         })
 
-        // First two are warnings
-        alertItems.slice(0, 2).forEach((item) => {
-            expect(item).toHaveClass("MuiAlert-colorWarning")
-        })
+        // First three are warnings
+        const warnings = screen.getAllByTestId("ReportProblemOutlinedIcon")
+        expect(warnings).toHaveLength(3)
 
         // Final one is an error
-        expect(alertItems[3]).toHaveClass("MuiAlert-colorError")
+        const errors = screen.getAllByTestId("ErrorOutlineIcon")
+        expect(errors).toHaveLength(1)
     })
 
     it("Should correctly handle chat context", async () => {
