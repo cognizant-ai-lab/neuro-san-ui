@@ -620,14 +620,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const onNodesChange = useCallback(
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
-            setNodes((currentNodes) =>
-                applyNodeChanges<RFNode<AgentNodeProps>>(
-                    // For now, we only allow dragging, no updates. In agent network designer mode, doesn't make sense
-                    // to allow position changes since the user isn't actually manipulating a real network
-                    changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
-                    currentNodes
-                )
-            )
+            // Designer preview: only sync measured dimensions (no dragging, no other edits).
+            // Normal mode: allow drags and dimension syncs.
+            const allowedChanges = isAgentNetworkDesignerMode
+                ? changes.filter((c) => c.type === "dimensions")
+                : changes.filter((c) => c.type === "position" || c.type === "dimensions")
+            setNodes((currentNodes) => applyNodeChanges<RFNode<AgentNodeProps>>(allowedChanges, currentNodes))
         },
         [isAgentNetworkDesignerMode]
     )

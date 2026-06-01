@@ -17,7 +17,7 @@ limitations under the License.
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {ReactFlowProvider} from "@xyflow/react"
+import {NodeChange, ReactFlowProvider, Node as RFNode} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -48,6 +48,32 @@ jest.mock("@mui/material/styles", () => ({
     ...jest.requireActual("@mui/material/styles"),
     useColorScheme: jest.fn(),
 }))
+
+// Capture the `onNodesChange` prop AgentFlow passes to ReactFlow so tests can invoke it directly,
+// and replace `applyNodeChanges` with a spy so tests can assert on the *filtered* change set that
+// AgentFlow forwards to React Flow. The real ReactFlow component is still rendered, so existing
+// DOM-based assertions keep working.
+const capturedReactFlowProps: {onNodesChange: ((changes: NodeChange<RFNode>[]) => void) | null} = {
+    onNodesChange: null,
+}
+const applyNodeChangesSpy = jest.fn()
+jest.mock("@xyflow/react", () => {
+    const actual = jest.requireActual("@xyflow/react")
+    const RealReactFlow = actual.ReactFlow
+    const WrappedReactFlow = (props: {onNodesChange?: (changes: NodeChange<RFNode>[]) => void}) => {
+        capturedReactFlowProps.onNodesChange = props.onNodesChange ?? null
+        return <RealReactFlow {...props} />
+    }
+    return {
+        ...actual,
+        ReactFlow: WrappedReactFlow,
+        // Delegate to the real implementation, but record the args so tests can inspect them.
+        applyNodeChanges: (...args: unknown[]) => {
+            applyNodeChangesSpy(...args)
+            return actual.applyNodeChanges(...args)
+        },
+    }
+})
 
 jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
@@ -2224,6 +2250,59 @@ describe("AgentFlow", () => {
                 expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
             })
             consoleDebugSpy.mockRestore()
+        })
+    })
+
+    describe("onNodesChange", () => {
+        const positionChange: NodeChange<RFNode> = {
+            id: "agent1",
+            type: "position",
+            position: {x: 10, y: 20},
+            dragging: true,
+        }
+        const dimensionsChange: NodeChange<RFNode> = {
+            id: "agent1",
+            type: "dimensions",
+            dimensions: {width: 100, height: 100},
+        }
+        const selectChange: NodeChange<RFNode> = {id: "agent1", type: "select", selected: true}
+
+        beforeEach(() => {
+            capturedReactFlowProps.onNodesChange = null
+            applyNodeChangesSpy.mockClear()
+        })
+
+        it("forwards only position and dimensions changes to applyNodeChanges in normal mode", () => {
+            renderAgentFlowComponent({isAgentNetworkDesignerMode: false})
+            // Discard any applyNodeChanges calls React Flow made during mount; we only care
+            // about the one triggered by our explicit invocation below.
+            applyNodeChangesSpy.mockClear()
+
+            expect(capturedReactFlowProps.onNodesChange).not.toBeNull()
+            act(() => {
+                capturedReactFlowProps.onNodesChange([positionChange, dimensionsChange, selectChange])
+            })
+
+            expect(applyNodeChangesSpy).toHaveBeenCalledTimes(1)
+            const [forwardedChanges] = applyNodeChangesSpy.mock.calls[0]
+            expect(forwardedChanges).toEqual([positionChange, dimensionsChange])
+            expect(forwardedChanges).not.toContainEqual(selectChange)
+        })
+
+        it("forwards only dimensions changes in agent network designer preview mode", () => {
+            renderAgentFlowComponent({isAgentNetworkDesignerMode: true})
+            applyNodeChangesSpy.mockClear()
+
+            expect(capturedReactFlowProps.onNodesChange).not.toBeNull()
+            act(() => {
+                capturedReactFlowProps.onNodesChange([positionChange, dimensionsChange, selectChange])
+            })
+
+            expect(applyNodeChangesSpy).toHaveBeenCalledTimes(1)
+            const [forwardedChanges] = applyNodeChangesSpy.mock.calls[0]
+            expect(forwardedChanges).toEqual([dimensionsChange])
+            expect(forwardedChanges).not.toContainEqual(positionChange)
+            expect(forwardedChanges).not.toContainEqual(selectChange)
         })
     })
 })
