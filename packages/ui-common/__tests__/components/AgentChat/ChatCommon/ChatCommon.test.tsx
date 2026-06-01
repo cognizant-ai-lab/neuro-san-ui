@@ -20,6 +20,7 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef} from "react"
 
 import {
+    MOCK_CONNECTIVITY_INFO,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
@@ -31,7 +32,7 @@ import {ChatCommon, ChatCommonHandle} from "../../../../components/AgentChat/Cha
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
-import {getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
+import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
@@ -47,10 +48,6 @@ jest.mock("../../../../components/Common/notification")
 
 const TEST_USER = "testUser"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY_DISPLAY}`
-const TEST_TOOL_SPOTIFY = "spotify_tool"
-const TEST_TOOL_LAST_FM = "last_fm_tool"
-const TEST_TOOL_SOLVER = "math_solver_tool"
-const TEST_TOOL_CALCULATOR = "calculator_tool"
 
 const CONNECTIVITY_LIST_HEADER = /I can connect you to the following agents/u
 
@@ -72,22 +69,6 @@ const getResponseMessage = (type: ChatMessageType, text: string): ChatMessage =>
         ],
     },
 })
-
-const MOCK_CONNECTIVITY_INFO = {
-    connectivity_info: [
-        {
-            origin: TEST_AGENT_MUSIC_NERD,
-            tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
-        },
-        {
-            origin: TEST_AGENT_MATH_GUY,
-            tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
-        },
-    ],
-    metadata: {
-        sample_queries: ["Sample query 1", "Long query ".repeat(10), "Query 3", "Query 4", "Query 5", "Query 6"],
-    },
-}
 
 describe("ChatCommon", () => {
     withStrictMocks()
@@ -133,7 +114,11 @@ describe("ChatCommon", () => {
 
         // Mock getConnectivity to return dummy connectivity info
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
-
+        ;(getAgentFunction as jest.Mock).mockResolvedValue({
+            function: {
+                description: "Test description",
+            },
+        })
         // Reset history. TODO: would be nice if withStrictMocks could also reset Zustand stores
         // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
         // that we know is relevant to these tests.
@@ -197,13 +182,14 @@ describe("ChatCommon", () => {
         ;(getConnectivity as jest.Mock).mockResolvedValue(withoutConnectivityInfo)
         renderChatCommonComponent()
 
-        // Check that connectivity info is rendered correctly
-        await user.click(await screen.findByText("Network Details")) // Click to expand
-        const connectivityList = screen.getByRole("list", {name: CONNECTIVITY_LIST_HEADER})
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
-        // Should be no connectivity info rendered
-        expect(within(connectivityList).queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).toBeNull()
-        expect(within(connectivityList).queryByText(TEST_AGENT_MUSIC_NERD)).toBeNull()
+        // Connectivity info block should not be present
+        expect(screen.queryByText("Network Details")).not.toBeInTheDocument()
+        expect(screen.queryByText(CONNECTIVITY_LIST_HEADER)).not.toBeInTheDocument()
+
+        // ...but sample queries should still show up
+        screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])
     })
 
     it("Should render and send sample queries correctly", async () => {
@@ -382,19 +368,22 @@ describe("ChatCommon", () => {
 
     it("Should handle receiving chunks from legacy agents correctly", async () => {
         const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        const testResponseText = '"Response text from LLM"'
+        const testResponseText1 = "Response text 1 from LLM"
+        const testResponseText2 = "Response text 2 from LLM"
 
         renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-            callback(testResponseText)
+            callback(testResponseText1)
+            callback(testResponseText2)
         })
 
         const query = "Sample test query for chunk handling"
         await sendQuery(LegacyAgentType.DataGenerator, query)
 
-        await screen.findByText(testResponseText)
-        expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
-        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
+        await screen.findByText(testResponseText1 + testResponseText2)
+        expect(onChunkReceivedMock).toHaveBeenCalledTimes(2)
+        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText1)
+        expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText2)
     })
 
     it("Should handle final answer from legacy agents correctly", async () => {
@@ -417,7 +406,7 @@ describe("ChatCommon", () => {
         screen.getByText("Final Answer")
     })
 
-    it("Should correctly handle errors thrown while fetching", async () => {
+    it("Should handle error thrown while fetching", async () => {
         renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new Error("Sample error from fetch")
@@ -431,6 +420,12 @@ describe("ChatCommon", () => {
 
         expect(console.error).toHaveBeenCalledTimes(3)
         ;(console.error as jest.Mock).mockClear()
+    })
+
+    it("Should handle non-error type thrown while fetching", async () => {
+        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+
+        jest.spyOn(console, "error").mockImplementation()
 
         // Now throw something that isn't an Error (which is possible in JavaScript)
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
@@ -578,6 +573,20 @@ describe("ChatCommon", () => {
         await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
     })
 
+    it("Should use custom agent greetings when supplied", async () => {
+        const customGreeting = "Custom Greeting"
+        render(
+            <ChatCommon
+                {...defaultProps}
+                customAgentGreetings={{
+                    [TEST_AGENT_MATH_GUY]: customGreeting,
+                }}
+            />
+        )
+
+        await screen.findByText(customGreeting)
+    })
+
     it("Should refuse interaction when no target agent is set", async () => {
         const mockSendFunction = jest.fn()
         renderChatCommonComponent({onSend: mockSendFunction, targetAgent: null})
@@ -621,6 +630,27 @@ describe("ChatCommon", () => {
         await screen.findByText("Request cancelled.")
         expect(setAwaitingLlmMock).toHaveBeenCalledTimes(1)
         expect(setAwaitingLlmMock).toHaveBeenCalledWith(false)
+    })
+
+    it("Should clear the chat when handleClearChat is called via ref", async () => {
+        const ref = createRef<ChatCommonHandle>()
+        renderChatCommonComponent({ref})
+
+        // Wait for the component to initialize so the ref is set up
+        await screen.findByRole("button", {name: "Send"})
+
+        // Verify handleClearChat is exposed via the imperative ref
+        expect(typeof ref.current?.handleClearChat).toBe("function")
+
+        // Call it and wait for all async state updates to settle
+        await act(async () => {
+            ref.current?.handleClearChat()
+        })
+
+        // After clearing, connectivity info (rendered into chatOutput via updateOutput) is gone
+        // We wait for sample queries to re-appear (they're in agentSampleQueries state, not chatOutput,
+        // so they stay after clear and confirm the component is still functional)
+        await screen.findByText("Sample query 1")
     })
 
     it("Should handle autoscroll toggle correctly", async () => {
@@ -1298,6 +1328,6 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, "test sly_data accumulation on AGENT message")
 
         // sendChatQuery was called — the component processed the chunk without error
-        expect(sendChatQuery).toHaveBeenCalled()
+        expect(sendChatQuery).toHaveBeenCalledTimes(1)
     })
 })

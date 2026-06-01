@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import "../styles/globals.css"
+import "@xyflow/react/dist/style.css"
 
 import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
@@ -26,7 +27,7 @@ import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {FC, ReactElement, JSX as ReactJSX, ReactNode, useEffect, useState} from "react"
+import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, useState} from "react"
 
 import {
     Auth,
@@ -41,6 +42,7 @@ import {
     Snackbar,
     useAuthentication,
 } from "../../../packages/ui-common"
+import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
@@ -73,11 +75,17 @@ const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
     const {data} = useAuthentication()
     const userInfo = data?.user
+    const onStartTour = () => {
+        // Dispatches the "start tour" event
+        window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
+    }
+
     return (
         <Navbar
             {...props}
             id="nav-bar"
             userInfo={userInfo}
+            onStartTour={onStartTour}
         />
     )
 }
@@ -355,20 +363,22 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <ThemeProvider
-                theme={theme}
-                noSsr={true}
-            >
-                {body}
-                <SnackbarProvider
-                    Components={{
-                        info: Snackbar,
-                        success: Snackbar,
-                        warning: Snackbar,
-                        error: Snackbar,
-                    }}
-                />
-            </ThemeProvider>
+            <StrictMode>
+                <ThemeProvider
+                    theme={theme}
+                    noSsr={true}
+                >
+                    {body}
+                    <SnackbarProvider
+                        Components={{
+                            info: Snackbar,
+                            success: Snackbar,
+                            warning: Snackbar,
+                            error: Snackbar,
+                        }}
+                    />
+                </ThemeProvider>
+            </StrictMode>
         </div>
     )
 }

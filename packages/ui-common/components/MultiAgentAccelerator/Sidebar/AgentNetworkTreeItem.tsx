@@ -4,6 +4,7 @@ import * as MuiIcons from "@mui/icons-material"
 import BookmarkIcon from "@mui/icons-material/Bookmark"
 import Delete from "@mui/icons-material/Delete"
 import DownloadIcon from "@mui/icons-material/Download"
+import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
@@ -46,6 +47,7 @@ const tagsToColors = new Map<string, TagColor>()
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly nodeIndex: NodeIndex
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
+    readonly onEditNetwork?: (network: string) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
     readonly temporaryNetworkHoconStrings?: Record<string, string | null>
@@ -73,6 +75,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     networkIconSuggestions,
     nodeIndex,
     onDeleteNetwork,
+    onEditNetwork,
     temporaryNetworkExpirationTimes,
     temporaryNetworkHoconStrings,
 }) => {
@@ -164,8 +167,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                             </Tooltip>
                             {isChild && tags?.length > 0 ? (
                                 <Tooltip
-                                    title={tags
-                                        .slice()
+                                    title={[...tags]
                                         .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
                                         .map((tag) => (
                                             <Chip
@@ -183,21 +185,48 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
                                 </Tooltip>
                             ) : null}
-                            {isTemporaryNetwork && networkHocon && (
-                                <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
+                        </Box>
+                        {isChild && isTemporaryNetwork && (
+                            <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
+                                {networkHocon && (
+                                    <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
+                                        <span>
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    if (isExpired) {
+                                                        return
+                                                    }
+
+                                                    const fileName = `${toSafeFilename(labelString)}.hocon`
+                                                    downloadFile(networkHocon, fileName)
+                                                }}
+                                                disabled={isExpired}
+                                                aria-label="Download network definition"
+                                                size="small"
+                                                sx={{
+                                                    padding: 0,
+                                                    color: "var(--bs-secondary)",
+                                                    "&:hover": {color: "var(--bs-secondary-dark)"},
+                                                    "&.Mui-disabled": {
+                                                        color: "var(--bs-secondary)",
+                                                        opacity: 0.3,
+                                                    },
+                                                }}
+                                            >
+                                                <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                <Tooltip title="Edit this network">
                                     <span>
                                         <IconButton
                                             onClick={(e) => {
                                                 e.stopPropagation()
-                                                if (isExpired) {
-                                                    return
-                                                }
-
-                                                const fileName = `${toSafeFilename(labelString)}.hocon`
-                                                downloadFile(networkHocon, fileName)
+                                                onEditNetwork?.(itemId)
                                             }}
                                             disabled={isExpired}
-                                            aria-label="Download network definition"
                                             size="small"
                                             sx={{
                                                 padding: 0,
@@ -209,26 +238,29 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 },
                                             }}
                                         >
-                                            <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                            <Edit sx={{fontSize: "0.75rem"}} />
                                         </IconButton>
                                     </span>
                                 </Tooltip>
-                            )}
-                        </Box>
-                        {isChild && isTemporaryNetwork && (
-                            <Tooltip title="Delete network">
-                                <Delete
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onDeleteNetwork?.(itemId, isExpired)
-                                    }}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontSize: "1rem",
-                                        "&:hover": {color: theme.palette.warning.main},
-                                    }}
-                                />
-                            </Tooltip>
+                                <Tooltip title="Delete network">
+                                    <Delete
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onDeleteNetwork?.(itemId, isExpired)
+                                        }}
+                                        sx={{
+                                            color: "var(--bs-secondary)",
+                                            "&:hover": {color: theme.palette.warning.main},
+                                            "&.Mui-disabled": {
+                                                color: "var(--bs-secondary)",
+                                                opacity: 0.3,
+                                            },
+                                            cursor: "pointer",
+                                            fontSize: "1rem",
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
                         )}
                     </Box>
                 </TreeItemContent>

@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 
 # Copyright © 2025 Cognizant Technology Solutions Corp
 #
@@ -8,7 +8,12 @@
 # Usage:
 #   build.sh [--no-cache]
 #
-# The script must be run from the neuro-san-ui/apps/main directory.
+# The script must be run from the root of the repo
+
+# See https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html for what these do
+set -o errtrace
+set -o nounset
+set -o pipefail
 
 export SERVICE_TAG=${SERVICE_TAG:-neuro-san-ui}
 export SERVICE_VERSION=${SERVICE_VERSION:-0.0.1}
@@ -22,13 +27,13 @@ function build_main() {
 
     # Parse for a specific arg when debugging
     CACHE_OR_NO_CACHE="--rm"
-    if [ "$1" == "--no-cache" ]
+    if [ "${1:-}" == "--no-cache" ]
     then
         CACHE_OR_NO_CACHE="--no-cache --progress=plain"
     fi
 
     # Determine platform, defaulting to linux/amd64
-    if [ -z "${TARGET_PLATFORM}" ]
+    if [ -z "${TARGET_PLATFORM:-}" ]
     then
         TARGET_PLATFORM="linux/amd64"
     fi
@@ -36,7 +41,7 @@ function build_main() {
 
     # Locate repo root and Dockerfile
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
     DOCKERFILE="${REPO_ROOT}/apps/main/Dockerfile"
 
     echo "DOCKERFILE is ${DOCKERFILE}"
@@ -44,7 +49,7 @@ function build_main() {
     # Build the docker image
     # DOCKER_BUILDKIT needed for secrets / caching
     # shellcheck disable=SC2086
-    DOCKER_BUILDKIT=1 docker build \
+    docker buildx build \
         -t ${SERVICE_TAG}/${SERVICE_TAG}:${SERVICE_VERSION} \
         --platform ${TARGET_PLATFORM} \
         --build-arg NODEJS_VERSION="${NODEJS_VERSION}" \

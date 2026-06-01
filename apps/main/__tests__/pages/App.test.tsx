@@ -22,6 +22,7 @@ import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
+import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
@@ -173,5 +174,24 @@ describe("Main App Component", () => {
 
         await screen.findByText(COMPONENT_BODY)
         expect(document.getElementById("body-div")).toBeInTheDocument()
+    })
+
+    it("Should launch the tour when the items is selected from the Help menu", async () => {
+        render(APP_COMPONENT)
+
+        const dispatchSpy = jest.spyOn(window, "dispatchEvent")
+
+        const helpToggle = await screen.findByText("Help")
+        await user.click(helpToggle)
+
+        const takeTourItem = await screen.findByText("Take a tour")
+        await user.click(takeTourItem)
+
+        // Make sure we dispatched the correct event to trigger the tour. The actual tour is tested elsewhere.
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: TRIGGER_APP_TOUR_EVENT_NAME,
+            })
+        )
     })
 })

@@ -51,30 +51,35 @@ export const sendNotification = (
     placement: SnackbarOrigin = {
         vertical: "top",
         horizontal: "right",
-    }
+    },
+    durationOverride?: number | null
 ): void => {
     // Log a copy to the console for troubleshooting
     const descriptionAsString = typeof description === "string" ? description : renderToString(description)
     console.debug(`Notification: Message: "${message}" Description: "${descriptionAsString}"`)
 
     // Show error and warnings for longer
-    let duration: number
-    switch (variantType) {
-        case NotificationType.info:
-        case NotificationType.success:
-            duration = SUCCESS_NOTIFICATION_DURATION_MS
-            break
-        case NotificationType.warning:
-        case NotificationType.error:
-        default:
-            duration = ERROR_WARNING_NOTIFICATION_DURATION_MS
-            break
+    let duration: number | null
+    if (durationOverride !== undefined) {
+        duration = durationOverride
+    } else {
+        switch (variantType) {
+            case NotificationType.info:
+            case NotificationType.success:
+                duration = SUCCESS_NOTIFICATION_DURATION_MS
+                break
+            case NotificationType.warning:
+            case NotificationType.error:
+            default:
+                duration = ERROR_WARNING_NOTIFICATION_DURATION_MS
+                break
+        }
     }
 
     // Use some minor customization to be able to inject ids for testing
     const messageForId = message
         .replaceAll(" ", "-")
-        .replace(/[^a-zA-Z0-9-]/gu, "")
+        .replaceAll(/[^a-zA-Z0-9-]/gu, "")
         .toLowerCase()
     const baseId = `notification-message-${messageForId}-${NotificationType[variantType]}`
     const messageSpan = <span id={`${baseId}-span`}>{message}</span>

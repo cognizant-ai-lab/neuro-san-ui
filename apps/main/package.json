@@ -18,6 +18,7 @@
         "@mui/material": "7.3.1",
         "@mui/system": "catalog:default",
         "@mui/x-tree-view": "8.22.0",
+        "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
         "lodash-es": "catalog:default",
         "next": "catalog:default",

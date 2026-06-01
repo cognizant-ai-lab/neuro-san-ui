@@ -178,7 +178,7 @@ describe("AgentFlow", () => {
         expect(nodes).toHaveLength(3)
 
         const agentNames = NETWORK.map((agent) => agent.origin)
-        const nodesArray = Array.from(nodes)
+        const nodesArray = [...nodes]
 
         // Make sure each agent node is rendered at least. Structure in react-flow is:
         // <div class="react-flow__node"><div><p>agentName</p></div></div>
@@ -199,6 +199,65 @@ describe("AgentFlow", () => {
         })
         return {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap: () => map}
     }
+
+    it("Should show the network title when networkDisplayName is provided", async () => {
+        renderAgentFlowComponent({networkDisplayName: "My Network"})
+        expect(await screen.findByText("My Network")).toBeInTheDocument()
+    })
+
+    it("Should show the network title in dark mode", async () => {
+        renderAgentFlowComponent({networkDisplayName: "Dark Network"}, "dark")
+        expect(await screen.findByText("Dark Network")).toBeInTheDocument()
+    })
+
+    it("Should not show the title bar when networkDisplayName is not provided", async () => {
+        const {container} = renderAgentFlowComponent()
+        expect(container.querySelector("#test-flow-id-network-title-bar")).not.toBeInTheDocument()
+    })
+
+    it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
+        const onEnterEditMode = jest.fn()
+        renderAgentFlowComponent({
+            networkDisplayName: "Temp Net",
+            isSelectedNetworkTemporary: true,
+            isEditMode: false,
+            isAwaitingLlm: false,
+            onEnterEditMode,
+        })
+        const editBtn = await screen.findByRole("button", {name: "Edit"})
+        await user.click(editBtn)
+        expect(onEnterEditMode).toHaveBeenCalledTimes(1)
+    })
+
+    it("Should not show the Edit button for a non-temporary network", async () => {
+        renderAgentFlowComponent({
+            networkDisplayName: "Regular Net",
+            isSelectedNetworkTemporary: false,
+        })
+        await screen.findByText("Regular Net")
+        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+    })
+
+    it("Should not show the Edit button when already in edit mode", async () => {
+        renderAgentFlowComponent({
+            networkDisplayName: "Temp Net",
+            isSelectedNetworkTemporary: true,
+            isEditMode: true,
+        })
+        await screen.findByText("Temp Net")
+        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+    })
+
+    it("Should not show the Edit button when awaiting LLM", async () => {
+        renderAgentFlowComponent({
+            networkDisplayName: "Temp Net",
+            isSelectedNetworkTemporary: true,
+            isEditMode: false,
+            isAwaitingLlm: true,
+        })
+        await screen.findByText("Temp Net")
+        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+    })
 
     it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
         const mode = darkMode ? "dark" : "light"
@@ -1126,15 +1185,13 @@ describe("AgentFlow", () => {
             useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(networkKey, initialDefinition)])
         })
 
-        const {container} = renderAgentFlowComponent({
+        renderAgentFlowComponent({
             isSelectedNetworkTemporary: true,
             networkId: networkKey,
         })
 
-        // Click an agent node to open the popup. ReactFlow renders nodes with data-id attributes.
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        expect(agent1Node).toBeInTheDocument()
-        fireEvent.click(agent1Node)
+        // Click an agent node to open the popup, querying by the visible agent name.
+        fireEvent.click(screen.getByText(cleanUpAgentName("agent1")))
 
         // The popup should now be open — make the form dirty then save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
@@ -1178,7 +1235,6 @@ describe("AgentFlow", () => {
 
         // Popup opens
         const cancelButton = await screen.findByRole("button", {name: "Cancel"})
-        expect(cancelButton).toBeInTheDocument()
 
         // Cancel closes the popup
         await user.click(cancelButton)
@@ -1389,7 +1445,6 @@ describe("AgentFlow", () => {
         // Popup should show networkB's instructions, not networkA's
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
         expect(instructionsField).toHaveValue(instructionsB)
-        expect(instructionsField).not.toHaveValue(instructionsA)
     })
 
     it("Should save edited instructions only to the current network's history entry", async () => {
@@ -1571,11 +1626,162 @@ describe("AgentFlow", () => {
         expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
     })
 
-    describe("popup save — async network replacement", () => {
-        /** Builds a minimal JSON-lines chunk that the streaming callback would receive, containing a reservation.
-         * Uses a 24-hour expiry (+86400 s) so it is always strictly greater than the stored network's
-         * +300 s expiry — required for the eager-replacement path's `expiry > currentExpiry` check. */
-        const makeReservationChunk = (reservationId: string, agentNetworkName: string) =>
+    describe("popup save — onSaveAgent callback", () => {
+        const OLD_NETWORK_ID = "temporary/old-res"
+        const OLD_NETWORK_NAME = "my_network"
+
+        it("shows 'Applying changes...' while onSaveAgent is in-flight and closes popup on completion", async () => {
+            let resolveQuery: () => void
+            const onSaveAgent = jest.fn(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveQuery = resolve
+                    })
+            )
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: OLD_NETWORK_ID,
+                onSaveAgent,
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
+            await user.click(screen.getByRole("button", {name: "Save"}))
+
+            // While the API call is in-flight the button should show "Applying changes..." and Save should be gone
+            await waitFor(() => {
+                expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
+            })
+
+            expect(onSaveAgent).toHaveBeenCalledTimes(1)
+
+            // Resolve the pending promise — popup should close
+            act(() => resolveQuery())
+
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+            })
+        })
+
+        it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
+            const onSaveAgent = jest.fn().mockResolvedValue(undefined)
+            const EDITED_INSTRUCTIONS = "Updated instructions for agent1"
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(
+                            OLD_NETWORK_ID,
+                            [{origin: "agent1", tools: [], instructions: "Original instructions."}],
+                            OLD_NETWORK_NAME
+                        ),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: OLD_NETWORK_ID,
+                onSaveAgent,
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, EDITED_INSTRUCTIONS)
+            await user.click(screen.getByRole("button", {name: "Save"}))
+
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+            })
+
+            expect(onSaveAgent).toHaveBeenCalledTimes(1)
+            const [calledAgentName, calledUpdated, calledNetworkName, calledSignal] = onSaveAgent.mock.calls[0]
+            // agentName is the display name (cleaned up from the raw ID)
+            expect(typeof calledAgentName).toBe("string")
+            expect(calledAgentName.length).toBeGreaterThan(0)
+            expect(calledUpdated.find((e: AgentNetworkDefinitionEntry) => e.origin === "agent1")?.instructions).toBe(
+                EDITED_INSTRUCTIONS
+            )
+            expect(calledNetworkName).toBe(OLD_NETWORK_NAME)
+            expect(calledSignal).toBeInstanceOf(AbortSignal)
+        })
+
+        it("closes popup even when onSaveAgent throws", async () => {
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const onSaveAgent = jest.fn().mockRejectedValue(new Error("Network failure"))
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: OLD_NETWORK_ID,
+                onSaveAgent,
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
+            await user.click(screen.getByRole("button", {name: "Save"}))
+
+            // Popup closes immediately on save; onSaveAgent error is surfaced via notification
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+            })
+
+            consoleErrorSpy.mockRestore()
+            consoleDebugSpy.mockRestore()
+        })
+
+        it("closes popup immediately without calling onSaveAgent when it is not provided", async () => {
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: OLD_NETWORK_ID,
+                // onSaveAgent intentionally omitted
+            })
+
+            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions")
+            await user.click(screen.getByRole("button", {name: "Save"}))
+
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+            })
+        })
+    })
+
+    describe("topology editor dock", () => {
+        const DOCK_NETWORK_ID = "temporary/dock-test-net"
+        const DOCK_NETWORK_NAME = "dock_network"
+
+        const makeDockReservationChunk = (reservationId: string, agentNetworkName: string) =>
             JSON.stringify({
                 response: {
                     type: "AGENT_FRAMEWORK",
@@ -1592,437 +1798,458 @@ describe("AgentFlow", () => {
                 },
             })
 
-        const OLD_NETWORK_ID = "temporary/old-res"
-        const OLD_NETWORK_NAME = "my_network"
-        const NEW_RESERVATION_ID = "new-res"
-        const NEW_NETWORK_ID = `temporary/${NEW_RESERVATION_ID}`
-
         beforeEach(() => {
-            // Default: sendChatQuery resolves immediately without emitting chunks
             ;(sendChatQuery as jest.Mock).mockResolvedValue({})
-        })
-
-        it("awaits sendChatQuery when neuroSanURL and currentUser are provided", async () => {
-            // sendNotification calls console.debug internally; silence it for this test
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            let resolveQuery: () => void
-            ;(sendChatQuery as jest.Mock).mockReturnValue(
-                new Promise<void>((resolve) => {
-                    resolveQuery = resolve
-                })
-            )
-
             act(() => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
+                        makeTempNetwork(DOCK_NETWORK_ID, [{origin: "agent1", tools: []}], DOCK_NETWORK_NAME),
                     ])
             })
+        })
+
+        it("shows the topology editor dock when isEditMode and isSelectedNetworkTemporary are true", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).toBeInTheDocument()
+            expect(screen.getByText("Network Editor")).toBeInTheDocument()
+            expect(screen.getByText("Changes apply only to this Temporary network")).toBeInTheDocument()
+        })
+
+        it("does not show the dock when isEditMode is false", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: false,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+        })
+
+        it("does not show the dock when isSelectedNetworkTemporary is false", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: false,
+                networkId: DOCK_NETWORK_ID,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+        })
+
+        it("does not show the dock when isAwaitingLlm is true", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                isAwaitingLlm: true,
+            })
+
+            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+        })
+
+        it("calls onExitEditMode when the close button is clicked", async () => {
+            const onExitEditMode = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                onExitEditMode,
+            })
+
+            const closeButton = screen.getByRole("button", {name: /close edit mode/iu})
+            await user.click(closeButton)
+
+            expect(onExitEditMode).toHaveBeenCalledTimes(1)
+        })
+
+        it("aborts an in-flight dock request if the close button is clicked during streaming", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            const onExitEditMode = jest.fn()
+            let capturedSignal: AbortSignal | undefined
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        capturedSignal = signal
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
 
             const {container} = renderAgentFlowComponent({
+                isEditMode: true,
                 isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onExitEditMode,
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Wait until the overlay appears (streaming started)
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+            })
+
+            // Click the close button while request is in-flight
+            await user.click(screen.getByRole("button", {name: /close edit mode/iu}))
+
+            expect(capturedSignal?.aborted).toBe(true)
+            expect(onExitEditMode).toHaveBeenCalledTimes(1)
+
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("Apply button is disabled when prompt is empty", () => {
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            expect(screen.getByRole("button", {name: /apply/iu})).toBeDisabled()
+        })
 
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            const saveButton = screen.getByRole("button", {name: "Save"})
-            await user.click(saveButton)
-
-            // While in-flight the popup should stay open and show "Applying changes…"
-            await waitFor(() => {
-                expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
-            })
-            expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
-
-            // Resolve the pending promise to complete the save
-            act(() => resolveQuery())
-
-            // After resolving, the popup should close
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+        it("Apply button becomes enabled after typing a prompt", async () => {
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
             })
 
-            expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a new agent")
+
+            expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
+        })
+
+        it("calls sendChatQuery with the dock prompt when Apply is clicked", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a legal review agent")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            })
             consoleDebugSpy.mockRestore()
         })
 
-        it("replaces the old network with the new one when a reservation is received", async () => {
+        it("replaces the network after dock apply returns a reservation", async () => {
+            const NEW_DOCK_RES_ID = "dock-new-res"
             ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            const stored = useTempNetworksStore.getState().tempNetworks
-            // Old network should be gone, new one should be present
-            expect(stored.some((n) => n.agentInfo.agent_name === OLD_NETWORK_ID)).toBe(false)
-            expect(stored.some((n) => n.agentInfo.agent_name === NEW_NETWORK_ID)).toBe(true)
-        })
-
-        it("keeps the newest reservation when the backend streams an old echo then the new one", async () => {
-            // Backend sends the old reservation first (echo), then the new one — a real streaming pattern.
-            // The store must end up with the new one regardless of chunk order.
-            const OLD_EXPIRY = Date.now() / 1000 + 100 // lower expiry → dedup keeps the newer reservation
-            const NEW_EXPIRY = Date.now() / 1000 + 86400 // higher expiry → dedup keeps this one
-
-            const makeChunk = (reservationId: string, expiry: number) =>
-                JSON.stringify({
-                    response: {
-                        type: "AGENT_FRAMEWORK",
-                        sly_data: {
-                            agent_reservations: [
-                                {
-                                    reservation_id: reservationId,
-                                    lifetime_in_seconds: 300,
-                                    expiration_time_in_seconds: expiry,
-                                },
-                            ],
-                            agent_network_name: OLD_NETWORK_NAME,
-                        },
-                    },
-                })
-
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // old echo first, new reservation second
-                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
-                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
+                chunkCallback(makeDockReservationChunk(NEW_DOCK_RES_ID, DOCK_NETWORK_NAME))
             })
 
             const onNetworkReplaced = jest.fn()
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
+                isEditMode: true,
                 isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
+                networkId: DOCK_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
                 onNetworkReplaced,
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsFieldA = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsFieldA)
-            await user.type(instructionsFieldA, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a legal review agent")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            const stored = useTempNetworksStore.getState().tempNetworks
-            expect(stored).toHaveLength(1)
-            expect(stored[0].agentInfo.agent_name).toBe(NEW_NETWORK_ID)
-            expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
-        })
-
-        it("keeps the newest reservation when the backend streams new then old (reversed order)", async () => {
-            // Backend sends new reservation first, then old echo — should still keep the new one.
-            const OLD_EXPIRY = Date.now() / 1000 + 100 // lower expiry → dedup keeps the newer reservation
-            const NEW_EXPIRY = Date.now() / 1000 + 86400 // higher expiry → dedup keeps this one
-
-            const makeChunk = (reservationId: string, expiry: number) =>
-                JSON.stringify({
-                    response: {
-                        type: "AGENT_FRAMEWORK",
-                        sly_data: {
-                            agent_reservations: [
-                                {
-                                    reservation_id: reservationId,
-                                    lifetime_in_seconds: 300,
-                                    expiration_time_in_seconds: expiry,
-                                },
-                            ],
-                            agent_network_name: OLD_NETWORK_NAME,
-                        },
-                    },
-                })
-
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // new reservation first, old echo second (reversed — the problematic order)
-                chunkCallback(makeChunk(NEW_RESERVATION_ID, NEW_EXPIRY))
-                chunkCallback(makeChunk(OLD_NETWORK_ID.replace("temporary/", ""), OLD_EXPIRY))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const onNetworkReplaced = jest.fn()
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsFieldB = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsFieldB)
-            await user.type(instructionsFieldB, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
-
-            const stored = useTempNetworksStore.getState().tempNetworks
-            expect(stored).toHaveLength(1)
-            expect(stored[0].agentInfo.agent_name).toBe(NEW_NETWORK_ID)
-            expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
-        })
-
-        it("new network carries the edited definition when backend does not echo it back", async () => {
-            // Backend returns a reservation but no agent_network_definition in sly_data
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
-
-            const EDITED_INSTRUCTIONS = "Eat fish and talk about fish"
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(
-                            OLD_NETWORK_ID,
-                            [{origin: "agent1", tools: [], instructions: "Original instructions."}],
-                            OLD_NETWORK_NAME
-                        ),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, EDITED_INSTRUCTIONS)
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
-            })
-
-            const newNetwork = useTempNetworksStore
-                .getState()
-                .tempNetworks.find((n) => n.agentInfo.agent_name === NEW_NETWORK_ID)
-            expect(newNetwork).toBeDefined()
-            expect(newNetwork?.agentNetworkDefinition?.find((e) => e.origin === "agent1")?.instructions).toBe(
-                EDITED_INSTRUCTIONS
-            )
-        })
-
-        it("calls onNetworkReplaced with old and new network IDs after a successful save", async () => {
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeReservationChunk(NEW_RESERVATION_ID, OLD_NETWORK_NAME))
-            })
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const onNetworkReplaced = jest.fn()
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(onNetworkReplaced).toHaveBeenCalledWith(OLD_NETWORK_ID, NEW_NETWORK_ID)
+                expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
             })
         })
 
-        it("does not call onNetworkReplaced when sendChatQuery returns no reservations", async () => {
-            // sendChatQuery resolves without emitting any chunk (default mock)
-            // sendNotification calls console.debug internally; silence it for this test
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
-            })
-
-            const onNetworkReplaced = jest.fn()
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const saveButton = await screen.findByRole("button", {name: "Save"})
-            fireEvent.click(saveButton)
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /saving/iu})).not.toBeInTheDocument()
-            })
-
-            expect(onNetworkReplaced).not.toHaveBeenCalled()
-            consoleDebugSpy.mockRestore()
-        })
-
-        it("shows an error toast when sendChatQuery returns no reservations", async () => {
+        it("shows an error toast when dock apply returns no reservations", async () => {
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             const {enqueueSnackbar} = jest.requireMock("notistack")
             ;(sendChatQuery as jest.Mock).mockResolvedValue({})
 
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
-            })
-
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
+                isEditMode: true,
                 isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
+                networkId: DOCK_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsFieldC = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsFieldC)
-            await user.type(instructionsFieldC, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+                expect(enqueueSnackbar).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({variant: "error"})
+                )
             })
-
-            // enqueueSnackbar receives a React <span> element as the first arg (from sendNotification);
-            // assert on the options object which carries the human-readable description and variant.
-            expect(enqueueSnackbar).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({
-                    variant: "error",
-                    description: expect.stringContaining("did not return a reservation"),
-                })
-            )
             consoleDebugSpy.mockRestore()
         })
 
-        it("shows error notification and closes popup when sendChatQuery throws", async () => {
-            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+        it("shows error toast and resets state when dock apply throws", async () => {
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const {enqueueSnackbar} = jest.requireMock("notistack")
             ;(sendChatQuery as jest.Mock).mockRejectedValue(new Error("Network failure"))
 
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
-            })
-
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
+                isEditMode: true,
                 isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
+                networkId: DOCK_NETWORK_ID,
                 neuroSanURL: "http://localhost:8080",
                 currentUser: "test-user",
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
 
-            // Popup should close even on error (finally block)
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+                expect(enqueueSnackbar).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({variant: "error"})
+                )
             })
-
-            expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to submit"), expect.any(Error))
-            consoleErrorSpy.mockRestore()
+            // Button should re-enable after error
+            expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
             consoleDebugSpy.mockRestore()
         })
 
-        it("closes popup immediately (no API call) when neuroSanURL is not provided", async () => {
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
-            })
+        it("shows a timeout error toast when the dock apply request times out", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const {enqueueSnackbar} = jest.requireMock("notistack")
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
+                isEditMode: true,
                 isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                // neuroSanURL intentionally omitted
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            // Use fireEvent (synchronous) so fake timers work from the start
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            fireEvent.change(promptField, {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Advance past the 120-second dock apply timeout
+            await act(async () => {
+                jest.advanceTimersByTime(121_000)
+            })
+
+            jest.useRealTimers()
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+                const timedOutCall = (enqueueSnackbar as jest.Mock).mock.calls.find((c: unknown[]) =>
+                    JSON.stringify(c).includes("timed out")
+                )
+                expect(timedOutCall).toBeDefined()
             })
 
-            expect(sendChatQuery).not.toHaveBeenCalled()
+            consoleDebugSpy.mockRestore()
+        })
+
+        it("deduplicates reservations when two chunks with the same name but different expiry arrive", async () => {
+            const LOW_EXPIRY = Date.now() / 1000 + 100
+            const HIGH_EXPIRY = Date.now() / 1000 + 86400
+            const FIRST_RES = "res-low"
+            const SECOND_RES = "res-high"
+
+            const makeChunk = (reservationId: string, expiry: number) =>
+                JSON.stringify({
+                    response: {
+                        type: "AGENT_FRAMEWORK",
+                        sly_data: {
+                            agent_reservations: [
+                                {
+                                    reservation_id: reservationId,
+                                    lifetime_in_seconds: 300,
+                                    expiration_time_in_seconds: expiry,
+                                },
+                            ],
+                            agent_network_name: DOCK_NETWORK_NAME,
+                        },
+                    },
+                })
+
+            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+                // Send low-expiry first, then high-expiry (high should win)
+                chunkCallback(makeChunk(FIRST_RES, LOW_EXPIRY))
+                chunkCallback(makeChunk(SECOND_RES, HIGH_EXPIRY))
+            })
+
+            const onNetworkReplaced = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onNetworkReplaced,
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // The higher-expiry reservation should win
+            await waitFor(() => {
+                expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${SECOND_RES}`)
+            })
+        })
+
+        it("pressing Enter in the prompt field submits the dock apply", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            await user.type(promptField, "Add a node{Enter}")
+
+            await waitFor(() => {
+                expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            })
+            consoleDebugSpy.mockRestore()
+        })
+
+        it("does not show the applying overlay when the dock is idle", () => {
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
+        })
+
+        it("shows the applying overlay while apply is in-flight", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+            })
+
+            // Resolve the in-flight promise and flush all resulting state updates
+            await act(async () => {
+                unblock()
+            })
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("shows the prompt text in the overlay title while apply is in-flight", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(screen.getByText("Applying changes to network")).toBeInTheDocument()
+            })
+            expect(screen.getByText("add some elves to check work")).toBeInTheDocument()
+
+            await act(async () => {
+                unblock()
+            })
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("removes the applying overlay once the apply call completes", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).toBeInTheDocument()
+            })
+
+            act(() => unblock())
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-dock-applying-overlay")).not.toBeInTheDocument()
+            })
+            consoleDebugSpy.mockRestore()
         })
     })
 

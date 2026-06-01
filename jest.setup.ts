@@ -19,22 +19,21 @@ import "@testing-library/jest-dom"
 import failOnConsole from "jest-fail-on-console"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
+import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from "node:util"
 import type {ReactNode} from "react"
 import {createElement} from "react"
 /*
 This next part is a hack to get around "ReferenceError: TextEncoder is not defined" errors when running Jest.
 See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-is-not-defined-in-jest
  */
-// eslint-disable-next-line no-shadow
-import {TextDecoder, TextEncoder} from "util"
 
 Object.defineProperties(globalThis, {
     ReadableStream: {value: ReadableStream},
 })
 
 // Use the Node.js TextEncoder for Jest, with a type cast to satisfy TypeScript
-global.TextEncoder = TextEncoder as unknown as typeof global.TextEncoder
-global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder
+global.TextEncoder = NodeTextEncoder as unknown as typeof global.TextEncoder
+global.TextDecoder = NodeTextDecoder as unknown as typeof global.TextDecoder
 
 // End of hack
 

@@ -69,5 +69,27 @@ export const TEMPORARY_NETWORK: TemporaryNetwork = {
         expiration_time_in_seconds: Math.floor(Date.now() / 1000) + 3600,
     },
     agentInfo: TEMP_NETWORK_AGENT_INFO,
+    agentNetworkName: TEMPORARY_NETWORK_NAME,
     networkHocon: JSON.stringify(TEMP_NETWORK_AGENT_INFO, null, 2),
+}
+
+export const TEST_TOOL_SPOTIFY = "spotify_tool"
+export const TEST_TOOL_LAST_FM = "last_fm_tool"
+const TEST_TOOL_SOLVER = "math_solver_tool"
+const TEST_TOOL_CALCULATOR = "calculator_tool"
+
+export const MOCK_CONNECTIVITY_INFO = {
+    connectivity_info: [
+        {
+            origin: TEST_AGENT_MUSIC_NERD,
+            tools: [TEST_TOOL_SPOTIFY, TEST_TOOL_LAST_FM],
+        },
+        {
+            origin: TEST_AGENT_MATH_GUY,
+            tools: [TEST_TOOL_CALCULATOR, TEST_TOOL_SOLVER],
+        },
+    ],
+    metadata: {
+        sample_queries: ["Sample query 1", "Long query ".repeat(10), "Query 3", "Query 4", "Query 5", "Query 6"],
+    },
 }

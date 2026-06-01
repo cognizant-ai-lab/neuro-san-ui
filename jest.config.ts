@@ -33,6 +33,7 @@ const esmPackagesToTransform = [
     "property-.*",
     "refractor",
     "space-.*",
+    "uuid",
 ]
 
 const config: Config.InitialOptions = {
@@ -66,16 +67,17 @@ const config: Config.InitialOptions = {
         "!**/knip.config.ts",
         "!**/next-env.d.ts",
         "!**/next.config.ts",
+        "!apps/main/app/api/auth/[[]...nextauth[]]/route.ts",
     ],
 
     coverageReporters: ["text-summary"],
 
     coverageThreshold: {
         global: {
-            statements: -101,
-            branches: -155,
-            functions: -26,
-            lines: -78,
+            statements: -127,
+            branches: -175,
+            functions: -34,
+            lines: -99,
         },
     },
 

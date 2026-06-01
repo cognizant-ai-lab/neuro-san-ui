@@ -67,6 +67,8 @@ const createAuth0LogoutUrl = (oidcProvider: OidcProvider, auth0Domain: string, a
             return `https://login.microsoftonline.com/${AD_TENANT_ID}/oauth2/v2.0/logout`
 
         case "Github":
+        case "NextAuth":
+        case "None":
         default: {
             const baseUrl = `${window.location.protocol}//${window.location.host}`
             const returnTo = encodeURIComponent(baseUrl)

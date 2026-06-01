@@ -146,6 +146,7 @@ export interface SidebarProps {
     readonly isAwaitingLlm: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
+    readonly onEditNetwork?: (network: string) => void
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
@@ -165,6 +166,7 @@ export const Sidebar: FC<SidebarProps> = ({
     networks,
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
+    onEditNetwork,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -181,6 +183,8 @@ export const Sidebar: FC<SidebarProps> = ({
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
 
     const [expandedItems, setExpandedItems] = useState<string[]>([])
+
+    const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
     // Theming/Dark mode
     const darkMode = useTheme().palette.mode === "dark"
@@ -259,6 +263,16 @@ export const Sidebar: FC<SidebarProps> = ({
         void fetchVersion()
     }, [customURLLocalStorage, backendNeuroSanApiUrl])
 
+    // When the edit pencil is clicked, select the network first (if not already selected) so the network loads
+    // before entering edit mode — the user shouldn't have to click the network and then click the pencil separately.
+    const handleEditNetworkWithSelect = (network: string) => {
+        if (selectedItem !== network) {
+            setSelectedItem(network)
+            setSelectedNetwork(network)
+        }
+        onEditNetwork?.(network)
+    }
+
     const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
     const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(
         (acc, tempNetwork) => {
@@ -272,8 +286,6 @@ export const Sidebar: FC<SidebarProps> = ({
         acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkHocon
         return acc
     }, {})
-
-    const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
     const handleSelectedItemsChange = (_event: unknown, itemId: string | null) => {
         if (!itemId) {
@@ -398,6 +410,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             networkIconSuggestions,
                             nodeIndex,
                             onDeleteNetwork,
+                            onEditNetwork: handleEditNetworkWithSelect,
                             temporaryNetworkExpirationTimes,
                             temporaryNetworkHoconStrings,
                         } as AgentNetworkNodeProps,

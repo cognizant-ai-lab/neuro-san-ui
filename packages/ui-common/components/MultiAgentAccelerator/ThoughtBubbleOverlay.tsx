@@ -194,7 +194,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             const newBubbles = thoughtBubbleEdges.filter((e) => !previousBubbleIds.has(e.id))
 
             // Find bubbles that should disappear
-            const removingBubbles = Array.from(previousBubbleIds).filter((id) => !currentEdgeIds.has(id))
+            const removingBubbles = [...previousBubbleIds].filter((id) => !currentEdgeIds.has(id))
 
             const newState = new Map(prev)
 
@@ -409,16 +409,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         [activeAgentIds]
     )
 
-    // Get all bubbles to render (including exiting ones)
-    const allBubbleIds = Array.from(bubbleStates.keys())
     // Memoize the resolved edges so updateAllLines (and effects depending on it)
     // doesn't get recreated on every render unnecessarily.
     const renderableBubbles = useMemo(
         () =>
-            allBubbleIds
+            // Get all bubbles to render (including exiting ones)
+            [...bubbleStates.keys()]
                 .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
                 .filter((edge) => edge !== undefined),
-        [allBubbleIds, sortedEdges, edges]
+        [bubbleStates, sortedEdges, edges]
     )
 
     // Update all SVG lines imperatively after paint. This reads DOM (getBoundingClientRect)

@@ -18,5 +18,5 @@ limitations under the License.
 
 export const getTitleBase = (): string => {
     const subdomain = window.location.host.split(".")[0]
-    return `${subdomain[0].toUpperCase()}${subdomain.substring(1)}`
+    return `${subdomain[0].toUpperCase()}${subdomain.slice(1)}`
 }

@@ -72,52 +72,38 @@ jobs:
             image_tag: ${{ inputs.DISPLAY_VERSION }}
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              # v6.0.2
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
               with:
                   fetch-depth: 0
                   ref: ${{ inputs.revision || github.ref }}
 
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-                  aws-region: ${{ env.AWS_REGION }}
-
-            - name: Set up yarn version
-              run: |
-                  corepack enable
-                  corepack install  
-                  yarn --version
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
+            - name: Setup Node.js and install dependencies
+              # build-common 1.0.5
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@550f3d7338e598c813b9580a238141328f7baaaa
               with:
                   node-version: ${{ env.NODEJS_VERSION }}
-                  cache: yarn
+                  clean-install: "true"
 
-            - name: Install dependencies
-              run: |
-                  rm -rf node_modules
-                  yarn cache clean --all
-                  yarn install
-
-            - name: Generate Typescript API stubs
+            - name: Generate TypeScript API stubs
               run: yarn generate
 
-            - name: Login to Amazon ECR
-              id: login-ecr
-              uses: aws-actions/amazon-ecr-login@v2
+            - name: Authenticate to AWS and login to ECR
+              # build-common 1.0.5
+              uses: cognizant-ai-lab/build-common/actions/aws-ecr-auth@550f3d7338e598c813b9580a238141328f7baaaa
+              with:
+                  aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
+                  aws-role-name: ${{ vars.AWS_ROLE_NAME }}
+                  aws-region: ${{ env.AWS_REGION }}
 
             - name: Build and push Docker image to ECR
-              uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
-              env:
-                  BUILDKIT_PROGRESS: quiet
+              # build-common 1.0.5
+              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@550f3d7338e598c813b9580a238141328f7baaaa
               with:
                   context: .
-                  file: apps/main/Dockerfile
-                  push: true
-                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION}}
+                  dockerfile: apps/main/Dockerfile
+                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}
                   build-args: |
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
-                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION}}
-                  provenance: false
+                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
+                  quiet: "true"

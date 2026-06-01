@@ -335,6 +335,58 @@ describe("SideBar", () => {
         expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name, false)
     })
 
+    it("Should select the network and call onEditNetwork when edit is clicked on a non-selected network", async () => {
+        const onEditNetworkMock = jest.fn()
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            onEditNetwork: onEditNetworkMock,
+        })
+
+        await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+
+        setSelectedNetworkMock.mockClear()
+
+        // Click the edit icon – the network is NOT currently selected
+        const networkTreeItem = screen.getByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+        const treeItem = networkTreeItem.closest('[role="treeitem"]')
+        const editButton = within(treeItem as HTMLElement).getByTestId("EditIcon")
+        await user.click(editButton)
+
+        // Should have selected the network because it was not already selected
+        expect(setSelectedNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
+        // Should also have called onEditNetwork
+        expect(onEditNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
+    })
+
+    it("Should not re-select the network when edit is clicked on the already-selected network", async () => {
+        const onEditNetworkMock = jest.fn()
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            onEditNetwork: onEditNetworkMock,
+        })
+
+        // First select the network by clicking its label
+        const networkLabel = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+        await user.click(networkLabel)
+
+        setSelectedNetworkMock.mockClear()
+
+        // Now click the edit icon – the network IS already selected
+        const networkTreeItem = screen.getByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+        const treeItem = networkTreeItem.closest('[role="treeitem"]')
+        const editButton = within(treeItem as HTMLElement).getByTestId("EditIcon")
+        await user.click(editButton)
+
+        // Should NOT have called setSelectedNetwork again (network was already selected)
+        expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        // Should still have called onEditNetwork
+        expect(onEditNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
+    })
+
     it("should disable the Settings button when isAwaitingLlm is true", async () => {
         renderSidebarComponent({isAwaitingLlm: true})
         const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)

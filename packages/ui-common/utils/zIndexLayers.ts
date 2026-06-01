@@ -29,6 +29,9 @@ export const getZIndex = (layer: number, appTheme: Theme): number => {
             // an MUI Drawer, however, we also want to ensure that LAYER_2 is below the modal, which currently has a
             // default z-index of 1300.
             return (appTheme.zIndex.modal + appTheme.zIndex.drawer) / 2
+        case 3:
+            // Initially for the "guided tour" which should be on top of everything
+            return appTheme.zIndex.modal + 1
         default:
             return DEFAULT_Z_INDEX
     }

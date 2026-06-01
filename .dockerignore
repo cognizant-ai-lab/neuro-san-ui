@@ -1,3 +1,4 @@
+**/.env*
 **/.next
 **/__tests__
 **/coverage/
@@ -6,8 +7,6 @@
 **/node_modules
 **/tsconfig.tsbuildinfo
 *.code-workspace
-.env*
-.env.local
 .idea
 .swc
 .vscode

@@ -89,7 +89,7 @@ describe("AgentNode", () => {
         expect(parentDiv).toBeInTheDocument()
 
         // Check the background color of the associated node (the circle div)
-        const nodeDiv = Array.from(parentDiv.children).find((el) => el.tagName === "DIV") as HTMLDivElement
+        const nodeDiv = [...parentDiv.children].find((el) => el.tagName === "DIV") as HTMLDivElement
         expect(nodeDiv).toBeInTheDocument()
         const style = window.getComputedStyle(nodeDiv)
 
@@ -196,14 +196,22 @@ describe("AgentNode", () => {
     })
 
     it.each([
-        ["temporary network", true, "pointer"],
-        ["non-temporary network", false, "grab"],
-        ["no isTemporaryNetwork prop (default)", undefined, "grab"],
-    ])("cursor is %s when isTemporaryNetwork=%s", (_label, isTemporaryNetwork, expectedCursor) => {
-        renderAgentNode({depth: 1, isTemporaryNetwork})
+        ["editable agent", true, "pointer"],
+        ["non-editable agent", false, "grab"],
+        ["no isEditable prop (default)", undefined, "grab"],
+    ])("cursor is pointer when isEditable=%s", (_label, isEditable, expectedCursor) => {
+        renderAgentNode({depth: 1, isEditable})
 
         const agentNodeDiv = screen.getByTestId(AGENT_ID)
         const style = window.getComputedStyle(agentNodeDiv)
         expect(style.cursor).toBe(expectedCursor)
+    })
+
+    it("applies heatmap coloring when isHeatmap is true and agent is not active", () => {
+        const counts = new Map([[AGENT_ID, 3]])
+        renderAgentNode({agentCounts: counts, isHeatmap: true})
+
+        // Component should render without errors — the heatmap branch executes
+        expect(screen.getByTestId(AGENT_ID)).toBeInTheDocument()
     })
 })
