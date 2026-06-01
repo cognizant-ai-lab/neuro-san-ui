@@ -56,31 +56,19 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              # v6.0.2
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
               with:
                   fetch-depth: 0
                   ref: ${{ inputs.revision || github.ref }}
 
-            # Install yarn version from package.json packageManager field using corepack
-            # "corepack install" reads package.json and installs the right yarn version from the packageManager field
-            - name: Set up yarn version
-              run: |
-                  corepack enable
-                  corepack install 
-                  yarn --version
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
+            - name: Setup Node.js and install dependencies
+              # build-common 1.0.6
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@e5f749a7ba5de8bb8106cb172e89f21ca581a697
               with:
-                  # Specific version. 22.18+ is bad due to https://github.com/nodejs/node/issues/59364 and breaks tests.
-                  node-version: 22.17.1
-                  cache: yarn
-
-            - name: Install dependencies
-              run: |
-                  rm -rf node_modules
-                  yarn cache clean --all
-                  yarn install
+                  # Pinned to 22.17.1 to avoid 22.18+ regression (nodejs/node#59364)
+                  node-version: '22.17.1'
+                  clean-install: 'true'
 
             - name: Install prerequisites for code generation
               run: |
