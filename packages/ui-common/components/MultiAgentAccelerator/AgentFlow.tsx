@@ -431,6 +431,39 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [isDockStreaming, setIsDockStreaming] = useState<boolean>(false)
     const dockAbortControllerRef = useRef<AbortController | null>(null)
 
+    // Stop-confirm overlay state: null = not shown, "confirming" = dialog open, "cancelled" = brief info message
+    const [stopState, setStopState] = useState<"confirming" | "cancelled" | "applied" | null>(null)
+    const cancelledTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Clear the cancelled-message timer on unmount
+    useEffect(() => {
+        return () => {
+            if (cancelledTimeoutRef.current) clearTimeout(cancelledTimeoutRef.current)
+        }
+    }, [])
+
+    const handleStopClick = useCallback(() => {
+        setStopState("confirming")
+    }, [])
+
+    const handleKeepApplying = useCallback(() => {
+        setStopState(null)
+    }, [])
+
+    const handleStopAndDiscard = useCallback(() => {
+        dockAbortControllerRef.current?.abort()
+        dockAbortControllerRef.current = null
+        setStopState("cancelled")
+        cancelledTimeoutRef.current = setTimeout(() => {
+            setStopState(null)
+        }, 5_000)
+    }, [])
+
+    const handleDismissCancelled = useCallback(() => {
+        if (cancelledTimeoutRef.current) clearTimeout(cancelledTimeoutRef.current)
+        setStopState(null)
+    }, [])
+
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
             // Popup is only available for temporary networks.
@@ -522,10 +555,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             )
             applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
             setDockPrompt("")
+            if (cancelledTimeoutRef.current) clearTimeout(cancelledTimeoutRef.current)
+            setStopState("applied")
+            cancelledTimeoutRef.current = setTimeout(() => {
+                setStopState(null)
+            }, 5_000)
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
                 sendNotification(NotificationType.error, "Failed to apply network change.", String(e), undefined, null)
+            } else if (isAbort && !hasTimedOut) {
+                // User-initiated abort — silent (UI already shows the cancelled message)
             } else if (hasTimedOut) {
                 sendNotification(
                     NotificationType.error,
@@ -541,6 +581,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             setIsDockStreaming(false)
         }
     }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
+
+    const dockSubtitle = "Changes apply only to this Temporary network"
 
     const handleExitEditMode = useCallback(() => {
         if (isDockStreaming) {
@@ -955,8 +997,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                     theme.palette.mode === "dark"
                                         ? theme.palette.common.white
                                         : theme.palette.text.primary,
-                                px: 1.5,
-                                py: 0.25,
+                                paddingLeft: 1.5,
+                                paddingRight: 1.5,
+                                paddingTop: 0.25,
+                                paddingBottom: 0.25,
                                 whiteSpace: "nowrap",
                                 maxWidth: 400,
                                 overflow: "hidden",
@@ -1019,14 +1063,86 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         flexShrink: 0,
                     }}
                 >
+                    {/* Applied success banner */}
+                    {stopState === "applied" && (
+                        <Box
+                            id={`${id}-applied-info`}
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                paddingLeft: 2,
+                                paddingRight: 2,
+                                paddingTop: 0.75,
+                                paddingBottom: 0.75,
+                                backgroundColor: (t) =>
+                                    t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                                borderBottom: `1px solid ${theme.palette.divider}`,
+                            }}
+                        >
+                            <Typography
+                                id={`${id}-applied-info-text`}
+                                variant="caption"
+                                sx={{flex: 1}}
+                            >
+                                <strong>Changes applied.</strong>
+                                {" Your network has been updated."}
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                aria-label="dismiss applied message"
+                                onClick={handleDismissCancelled}
+                                sx={{flexShrink: 0}}
+                            >
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    )}
+                    {/* Cancelled banner */}
+                    {stopState === "cancelled" && (
+                        <Box
+                            id={`${id}-cancelled-info`}
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                paddingLeft: 2,
+                                paddingRight: 2,
+                                paddingTop: 0.75,
+                                paddingBottom: 0.75,
+                                backgroundColor: (t) =>
+                                    t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                                borderBottom: `1px solid ${theme.palette.divider}`,
+                            }}
+                        >
+                            <Typography
+                                id={`${id}-cancelled-info-text`}
+                                variant="caption"
+                                sx={{flex: 1}}
+                            >
+                                <strong>Applying cancelled.</strong>
+                                {" Nothing was changed. Your prompt is restored below."}
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                aria-label="dismiss cancelled message"
+                                onClick={handleDismissCancelled}
+                                sx={{flexShrink: 0}}
+                            >
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    )}
                     {/* Dock header */}
                     <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            px: 2,
-                            py: 0.5,
+                            paddingLeft: 2,
+                            paddingRight: 2,
+                            paddingTop: 0.5,
+                            paddingBottom: 0.5,
                             borderBottom: `1px solid ${theme.palette.divider}`,
                         }}
                     >
@@ -1047,22 +1163,25 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     <Typography
                         variant="caption"
                         sx={{
-                            px: 2,
-                            pt: 0.5,
-                            pb: 0,
+                            paddingLeft: 2,
+                            paddingRight: 2,
+                            paddingTop: 0.5,
+                            paddingBottom: 0,
                             color: theme.palette.text.secondary,
                             display: "block",
                         }}
                     >
-                        Changes apply only to this Temporary network
+                        {dockSubtitle}
                     </Typography>
                     {/* Prompt input row */}
                     <Box
                         sx={{
                             display: "flex",
                             gap: 1,
-                            px: 2,
-                            py: 1.5,
+                            paddingLeft: 2,
+                            paddingRight: 2,
+                            paddingTop: 1.5,
+                            paddingBottom: 1.5,
                             alignItems: "center",
                         }}
                     >
@@ -1116,45 +1235,131 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             )}
             <Backdrop
                 id={`${id}-global-saving-backdrop`}
-                open={isDockStreaming || isSavingAgent}
+                open={isDockStreaming}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
-                <Paper
-                    elevation={6}
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        px: 4,
-                        py: 2.5,
-                        borderRadius: 2,
-                        maxWidth: 480,
-                    }}
-                >
-                    <CircularProgress
-                        id={`${id}-global-saving-spinner`}
-                        size={24}
-                    />
-                    <Box>
+                {stopState === "confirming" ? (
+                    <Paper
+                        id={`${id}-stop-confirm-card`}
+                        elevation={6}
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            paddingLeft: 4,
+                            paddingRight: 4,
+                            paddingTop: 3,
+                            paddingBottom: 3,
+                            borderRadius: 2,
+                            maxWidth: 420,
+                        }}
+                    >
                         <Typography
-                            id={`${id}-global-saving-title`}
+                            id={`${id}-stop-confirm-title`}
                             variant="body1"
                             fontWeight="bold"
                         >
-                            {isSavingAgent ? "Saving agent…" : "Applying changes to network"}
+                            Stop applying changes?
                         </Typography>
-                        {isDockStreaming && dockPrompt && (
-                            <Typography
-                                id={`${id}-global-saving-prompt`}
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{mt: 0.25}}
+                        <Typography
+                            id={`${id}-stop-confirm-body`}
+                            variant="body2"
+                            color="text.secondary"
+                        >
+                            The in-progress update will be cancelled and discarded. Your network won’t change.
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 1.5,
+                                justifyContent: "flex-end",
+                            }}
+                        >
+                            <Button
+                                id={`${id}-keep-applying-button`}
+                                variant="outlined"
+                                onClick={handleKeepApplying}
+                                sx={
+                                    theme.palette.mode === "dark"
+                                        ? {
+                                              color: "common.white",
+                                              borderColor: "common.white",
+                                              "&:hover": {borderColor: "common.white"},
+                                          }
+                                        : {}
+                                }
                             >
-                                {dockPrompt}
+                                Keep applying
+                            </Button>
+                            <Button
+                                id={`${id}-stop-discard-button`}
+                                variant="contained"
+                                color="error"
+                                startIcon={<span style={{fontSize: "0.7rem"}}>&#9632;</span>}
+                                onClick={handleStopAndDiscard}
+                            >
+                                Stop &amp; discard
+                            </Button>
+                        </Box>
+                    </Paper>
+                ) : (
+                    <Paper
+                        elevation={6}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            paddingLeft: 4,
+                            paddingRight: 4,
+                            paddingTop: 2.5,
+                            paddingBottom: 2.5,
+                            borderRadius: 2,
+                            maxWidth: 480,
+                        }}
+                    >
+                        <CircularProgress
+                            id={`${id}-global-saving-spinner`}
+                            size={24}
+                        />
+                        <Box sx={{flex: 1}}>
+                            <Typography
+                                id={`${id}-global-saving-title`}
+                                variant="body1"
+                                fontWeight="bold"
+                            >
+                                Applying changes to network
                             </Typography>
-                        )}
-                    </Box>
-                </Paper>
+                            {dockPrompt && (
+                                <Typography
+                                    id={`${id}-global-saving-prompt`}
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{mt: 0.25}}
+                                >
+                                    {dockPrompt}
+                                </Typography>
+                            )}
+                        </Box>
+                        <Button
+                            id={`${id}-stop-button`}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<span style={{fontSize: "0.65rem"}}>&#9632;</span>}
+                            onClick={handleStopClick}
+                            sx={{
+                                whiteSpace: "nowrap",
+                                flexShrink: 0,
+                                ...(theme.palette.mode === "dark" && {
+                                    color: "common.white",
+                                    borderColor: "common.white",
+                                    "&:hover": {borderColor: "common.white"},
+                                }),
+                            }}
+                        >
+                            Stop
+                        </Button>
+                    </Paper>
+                )}
             </Backdrop>
         </Box>
     )

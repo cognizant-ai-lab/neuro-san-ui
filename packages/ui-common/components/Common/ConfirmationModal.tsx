@@ -16,7 +16,7 @@ limitations under the License.
 
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import {styled} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import {FC, JSX as ReactJSX, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"
@@ -56,6 +56,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
 }) => {
     const [modalOpen, setModalOpen] = useState<boolean>(true)
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const theme = useTheme()
 
     const handleCloseWrapper = (_event?: object, reason?: string) => {
         // Prevent closing on click of gray background mask
@@ -88,6 +89,15 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
                     onClick={() => handleCloseWrapper()}
                     disabled={isLoading}
                     variant="outlined"
+                    sx={
+                        theme.palette.mode === "dark"
+                            ? {
+                                  color: "common.white",
+                                  borderColor: "common.white",
+                                  "&:hover": {borderColor: "common.white"},
+                              }
+                            : {}
+                    }
                 >
                     {cancelBtnLabel ?? "Cancel"}
                 </StyledButton>

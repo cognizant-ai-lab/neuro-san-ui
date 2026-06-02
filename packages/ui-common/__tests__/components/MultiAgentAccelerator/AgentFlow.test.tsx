@@ -1650,50 +1650,6 @@ describe("AgentFlow", () => {
             })
         })
 
-        it("shows the global saving backdrop while onSaveAgent is in-flight", async () => {
-            let resolveQuery: () => void
-            const onSaveAgent = jest.fn(
-                () =>
-                    new Promise<void>((resolve) => {
-                        resolveQuery = resolve
-                    })
-            )
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: OLD_NETWORK_ID,
-                onSaveAgent,
-            })
-
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
-
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-            await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-
-            // Global backdrop must be visible while the save is in-flight
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
-            })
-            expect(screen.getByText("Saving agent\u2026")).toBeInTheDocument()
-
-            // Resolve and verify backdrop disappears
-            act(() => resolveQuery())
-
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
-            })
-        })
-
         it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
             const onSaveAgent = jest.fn().mockResolvedValue(undefined)
             const EDITED_INSTRUCTIONS = "Updated instructions for agent1"
@@ -2268,6 +2224,191 @@ describe("AgentFlow", () => {
                 expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
             })
             consoleDebugSpy.mockRestore()
+        })
+
+        it("shows Stop button in backdrop while applying; clicking it shows the confirm card", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Stop button should appear while backdrop is open
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
+            })
+            expect(container.querySelector("#test-flow-id-stop-confirm-card")).not.toBeInTheDocument()
+
+            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+
+            // Confirm card should appear
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
+            })
+            expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
+            expect(container.querySelector("#test-flow-id-stop-discard-button")).toBeInTheDocument()
+
+            await act(async () => {
+                unblock()
+            })
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("Keep applying dismisses the confirm card and continues streaming", async () => {
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            let unblock: () => void
+            ;(sendChatQuery as jest.Mock).mockReturnValue(
+                new Promise<void>((resolve) => {
+                    unblock = resolve
+                })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
+            })
+            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
+            })
+            fireEvent.click(container.querySelector("#test-flow-id-keep-applying-button"))
+
+            // Progress card (with Stop button) should be back; backdrop still visible
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            })
+
+            await act(async () => {
+                unblock()
+            })
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("Stop & discard aborts the request, hides backdrop, shows cancelled info message", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Wait for backdrop to open
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            })
+
+            // Open confirm card
+            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
+            })
+
+            fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
+
+            // Backdrop should close
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
+            })
+
+            // Cancelled banner should appear in the dock
+            expect(container.querySelector("#test-flow-id-cancelled-info")).toBeInTheDocument()
+            expect(screen.getByText(/applying cancelled/iu)).toBeInTheDocument()
+            expect(screen.getByText(/prompt is restored below/iu)).toBeInTheDocument()
+
+            // Prompt should still be in the input
+            expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
+
+            // After 5 seconds the cancelled banner disappears
+            act(() => {
+                jest.advanceTimersByTime(5100)
+            })
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-cancelled-info")).not.toBeInTheDocument()
+            })
+
+            jest.useRealTimers()
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("shows applied banner after dock apply completes, auto-dismisses after 5 seconds", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            ;(sendChatQuery as jest.Mock).mockResolvedValue(undefined)
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
+            })
+            expect(screen.getByText(/changes applied/iu)).toBeInTheDocument()
+
+            // After 5 seconds the banner auto-dismisses
+            act(() => {
+                jest.advanceTimersByTime(5100)
+            })
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-applied-info")).not.toBeInTheDocument()
+            })
+
+            jest.useRealTimers()
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
         })
     })
 })

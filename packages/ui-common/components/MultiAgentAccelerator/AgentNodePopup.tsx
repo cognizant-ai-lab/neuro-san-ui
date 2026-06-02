@@ -17,6 +17,7 @@ limitations under the License.
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
+import {useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
 
@@ -67,6 +68,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
 }) => {
     const [instructionsText, setInstructionsText] = useState<string>(initialInstructions)
     const [descriptionText, setDescriptionText] = useState<string>(initialDescription)
+    const theme = useTheme()
 
     const isDirty = instructionsText !== initialInstructions || descriptionText !== initialDescription
 
@@ -117,6 +119,15 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     variant="outlined"
                     size="small"
                     disabled={isSaving}
+                    sx={
+                        theme.palette.mode === "dark"
+                            ? {
+                                  color: "common.white",
+                                  borderColor: "common.white",
+                                  "&:hover": {borderColor: "common.white"},
+                              }
+                            : {}
+                    }
                 >
                     Cancel
                 </Button>
