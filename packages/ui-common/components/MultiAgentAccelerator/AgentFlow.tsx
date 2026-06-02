@@ -1256,7 +1256,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <Typography
                             id={`${id}-stop-confirm-title`}
                             variant="body1"
-                            fontWeight="bold"
+                            sx={{fontWeight: "bold"}}
                         >
                             Stop applying changes?
                         </Typography>
@@ -1316,7 +1316,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             <Typography
                                 id={`${id}-global-saving-title`}
                                 variant="body1"
-                                fontWeight="bold"
+                                sx={{fontWeight: "bold"}}
                             >
                                 Applying changes to network
                             </Typography>
