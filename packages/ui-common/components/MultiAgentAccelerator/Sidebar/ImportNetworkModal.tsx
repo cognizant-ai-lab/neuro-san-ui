@@ -30,7 +30,6 @@ import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
 import DialogTitle from "@mui/material/DialogTitle"
 import IconButton from "@mui/material/IconButton"
-import Link from "@mui/material/Link"
 import Step from "@mui/material/Step"
 import StepLabel from "@mui/material/StepLabel"
 import Stepper from "@mui/material/Stepper"
@@ -434,20 +433,26 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         </Typography>
                         <Typography variant="body2">
                             {"or "}
-                            <Link
-                                color="inherit"
+                            <Box
                                 component="button"
                                 id="import-network-modal-browse-link"
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     handleBrowseClick()
                                 }}
-                                sx={{color: "var(--bs-secondary)"}}
-                                underline="hover"
-                                variant="body2"
+                                sx={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "var(--bs-secondary)",
+                                    cursor: "pointer",
+                                    font: "inherit",
+                                    padding: 0,
+                                    textDecoration: "underline",
+                                    "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
+                                }}
                             >
                                 browse your files
-                            </Link>
+                            </Box>
                         </Typography>
                         <Typography
                             id="import-network-modal-file-types"
@@ -671,6 +676,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                         id="import-network-modal-rename-btn"
                                         onClick={handleRename}
                                         size="small"
+                                        sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
                                         variant="contained"
                                     >
                                         Rename
@@ -737,6 +743,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                             <Button
                                 id="import-network-modal-continue-btn"
                                 onClick={handleContinue}
+                                sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
                                 variant="contained"
                             >
                                 Continue →
@@ -757,6 +764,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                             disabled={!networkName.trim()}
                             id="import-network-modal-import-btn"
                             onClick={handleImport}
+                            sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
                             variant="contained"
                         >
                             Import network
