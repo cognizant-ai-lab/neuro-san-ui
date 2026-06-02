@@ -23,7 +23,7 @@ import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
 import IconButton from "@mui/material/IconButton"
-import {keyframes, styled, useTheme} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {Handle, NodeProps, Position} from "@xyflow/react"
@@ -57,22 +57,6 @@ export const NODE_WIDTH = 100
 const AGENT_ICON_SIZE = "2.25rem"
 const FRONTMAN_ICON_SIZE = "4.5rem"
 
-// Pulsing glow animation for when an agent is active.
-const glowKeyFrames = (color: string) => keyframes`
-    0% {
-        box-shadow: 0 0 10px 4px ${color};
-        opacity: 0.6;
-    }
-    50% {
-        box-shadow: 0 0 30px 12px ${color};
-        opacity: 0.9;
-    }
-    100% {
-        box-shadow: 0 0 10px 4px ${color};
-        opacity: 1.0;
-    }
-`
-
 // Styled component for the agent nodes, applies glow animation if active
 const AnimatedNode = styled("div", {
     shouldForwardProp: (prop) => prop !== "glowColor" && prop !== "isActive",
@@ -84,9 +68,7 @@ const AnimatedNode = styled("div", {
     position: "relative",
     shapeOutside: "circle(50%)",
     textAlign: "center",
-    ...(isActive && {
-        animation: `${glowKeyFrames(glowColor)} 2s infinite`,
-    }),
+    backgroundColor: isActive ? glowColor : "transparent",
 }))
 
 /**
@@ -211,7 +193,13 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const [isHovered, setIsHovered] = useState(false)
 
-    const wrappedAgentName = agentName.replaceAll("_", "_\u200B")
+    const wrappedAgentName = agentName
+        // Allow wrap after underscore
+        .replaceAll("_", "_\u200B")
+        // Allow wrap before capitals in camel/PascalCase (e.g., CustomerSupport -> Customer|Support)
+        .replaceAll(/[\da-z][A-Z]/gu, "$1\u200B$2")
+        // Also split acronym->word boundary (e.g., HTTPServer -> HTTP|Server), but not H|T|T|P
+        .replaceAll(/[A-Z][A-Z][a-z]/gu, "$1\u200B$2")
     return (
         <>
             <AnimatedNode
@@ -300,7 +288,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                         borderRadius: 1,
                         color: theme.palette.text.primary,
                         display: "-webkit-box",
-                        fontSize: "16px",
+                        fontSize: "17px",
                         fontWeight: 700,
                         lineHeight: 1.3,
                         maxHeight: "4.4em",

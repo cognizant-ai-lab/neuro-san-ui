@@ -206,6 +206,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
     const [debugMode, setDebugMode] = useState<boolean>(false)
+    const [currentDebugStep, setCurrentDebugStep] = useState<number>(0)
 
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
 
@@ -499,8 +500,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const onChatMessageReceived = useCallback(
         (chatMessage: ChatMessage) => {
-            setChatMessages((prev) => [...prev, chatMessage])
-
             // Conversations between agents
             const result = extractConversations(chatMessage, conversationsRef.current)
             if (result != null) {
@@ -541,6 +540,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             if (!chatMessage) {
                 return true
             }
+
+            setChatMessages((prev) => [...prev, chatMessage])
 
             onChatMessageReceived(chatMessage)
 
@@ -630,7 +631,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback(() => {
-        console.debug("Chat messages during streaming:", chatMessages)
+        console.debug("chat messages:", chatMessages)
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
@@ -693,6 +694,49 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
+    const handleDebugPlay = () => {
+        if (chatMessages?.length > 0) {
+            onChatMessageReceived(chatMessages[0])
+            setCurrentDebugStep(1)
+        }
+    }
+
+    const handleDebugSingleStepForward = () => {
+        if (chatMessages && currentDebugStep < chatMessages.length - 1) {
+            onChatMessageReceived(chatMessages[currentDebugStep])
+            setCurrentDebugStep((prev) => prev + 1)
+        }
+    }
+
+    const handleDebugBeginning = () => {
+        setCurrentDebugStep(0)
+        onStreamingComplete()
+    }
+
+    const handleDebugSingleStepBackwards = () => {
+        setCurrentDebugStep((prev) => {
+            if (prev > 0) {
+                // Reset state and replay all messages up to the new step
+                onStreamingComplete()
+                for (let i = 0; i < prev - 1; i += 1) {
+                    onChatMessageReceived(chatMessages[i])
+                }
+                return prev - 1
+            } else {
+                return prev
+            }
+        })
+    }
+
+    const handleDebugEnd = () => {
+        setCurrentDebugStep(chatMessages.length - 1)
+        for (const message of chatMessages.slice(currentDebugStep)) {
+            onChatMessageReceived(message)
+        }
+    }
+
+    const isDebugDisabled = !chatMessages || chatMessages.length === 0
+
     const getDebugOverlay = () => {
         const iconButtonSx = {
             border: `1px solid ${theme.palette.divider}`,
@@ -714,7 +758,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 in={debugMode}
                 mountOnEnter
                 unmountOnExit
-                timeout={600}
+                timeout={750}
             >
                 <Box
                     sx={{
@@ -739,38 +783,34 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             gap: 2,
                         }}
                     >
-                        <Box
-                            id="multi-agent-accelerator-debug-controls-header"
+                        <Typography
+                            variant="overline"
                             sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
+                                fontWeight: 700,
+                                letterSpacing: 0.8,
+                                lineHeight: 1,
+                                color: theme.palette.text.secondary,
                             }}
                         >
-                            <Typography
-                                variant="overline"
-                                sx={{
-                                    fontWeight: 700,
-                                    letterSpacing: 0.8,
-                                    lineHeight: 1,
-                                    color: theme.palette.text.secondary,
-                                }}
-                            >
-                                Debug Controls
-                            </Typography>
-                        </Box>
+                            Debug Controls
+                        </Typography>
 
                         <Box
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 0.75,
+                                opacity: isDebugDisabled ? 0.45 : 1,
+                                pointerEvents: isDebugDisabled ? "none" : "auto",
+                                filter: isDebugDisabled ? "grayscale(0.25)" : "none",
+                                transition: "opacity 160ms ease",
                             }}
                         >
                             <IconButton
                                 size="small"
                                 aria-label="Skip to start"
                                 sx={iconButtonSx}
+                                onClick={handleDebugBeginning}
                             >
                                 <SkipPreviousIcon fontSize="small" />
                             </IconButton>
@@ -779,6 +819,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 size="small"
                                 aria-label="Step back"
                                 sx={iconButtonSx}
+                                onClick={handleDebugSingleStepBackwards}
+                                disabled={isDebugDisabled}
                             >
                                 <ChevronLeftIcon fontSize="small" />
                             </IconButton>
@@ -786,6 +828,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             <IconButton
                                 size="small"
                                 aria-label="Play"
+                                disabled={isDebugDisabled}
                                 sx={{
                                     ...iconButtonSx,
                                     color: theme.palette.primary.contrastText,
@@ -797,6 +840,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                         color: theme.palette.primary.contrastText,
                                     },
                                 }}
+                                onClick={handleDebugPlay}
                             >
                                 <PlayArrowIcon fontSize="small" />
                             </IconButton>
@@ -805,6 +849,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 size="small"
                                 aria-label="Step forward"
                                 sx={iconButtonSx}
+                                disabled={isDebugDisabled}
+                                onClick={handleDebugSingleStepForward}
                             >
                                 <ChevronRightIcon fontSize="small" />
                             </IconButton>
@@ -813,10 +859,39 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 size="small"
                                 aria-label="Skip to end"
                                 sx={iconButtonSx}
+                                onClick={handleDebugEnd}
+                                disabled={isDebugDisabled}
                             >
                                 <SkipNextIcon fontSize="small" />
                             </IconButton>
                         </Box>
+                        <Typography
+                            variant="overline"
+                            sx={{
+                                fontWeight: 700,
+                                letterSpacing: 0.8,
+                                lineHeight: 1,
+                                color: theme.palette.text.secondary,
+                            }}
+                        >
+                            Step: {isDebugDisabled ? "n/a" : `${currentDebugStep + 1} / ${chatMessages.length}`}
+                        </Typography>
+
+                        {isDebugDisabled && (
+                            <Typography
+                                id="multi-agent-accelerator-debug-disabled-hint"
+                                variant="caption"
+                                sx={{
+                                    display: "block",
+                                    mt: -0.5,
+                                    color: theme.palette.text.disabled,
+                                    fontStyle: "italic",
+                                    letterSpacing: 0.1,
+                                }}
+                            >
+                                No messages captured yet. Start a chat stream to enable debug controls.
+                            </Typography>
+                        )}
                     </Box>
                 </Box>
             </Slide>

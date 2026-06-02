@@ -147,7 +147,7 @@ const getEdgeProperties = (
         sourceHandle,
         target: targetId,
         targetHandle,
-        type: isAnimated ? "plasmaEdge" : undefined,
+        type: isAnimated ? "animatedEdge" : undefined,
     }
 }
 

@@ -52,6 +52,7 @@ import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, u
 import {AgentConversation} from "./AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {AgentNodePopup} from "./AgentNodePopup"
+import {AnimatedEdge} from "./AnimatedEdge"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -63,7 +64,6 @@ import {
     LEVEL_SPACING,
 } from "./const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
-import {PlasmaEdge} from "./PlasmaEdge"
 import {
     convertReservationsToNetworks,
     extractNetworkHocon,
@@ -649,7 +649,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const edgeTypes: EdgeTypes = useMemo(
         () => ({
-            plasmaEdge: PlasmaEdge,
+            animatedEdge: AnimatedEdge,
             thoughtBubbleEdge: ThoughtBubbleEdge,
         }),
         []
@@ -896,7 +896,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 </Tooltip>
                 <Tooltip
                     id="debug-mode-tooltip"
-                    title="Enter debug mode"
+                    title="Toggle debug mode"
                     placement="right"
                 >
                     <span id="thought-bubble-span">
