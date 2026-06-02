@@ -2470,7 +2470,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {
+                target: {value: "add a node"},
+            })
             fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
 
             await waitFor(() => {
