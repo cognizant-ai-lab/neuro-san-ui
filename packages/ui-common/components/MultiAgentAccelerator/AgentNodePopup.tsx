@@ -21,6 +21,7 @@ import {useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
 
+import {getDarkModeOutlinedButtonSx} from "../../Theme/Theme"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 
@@ -119,15 +120,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     variant="outlined"
                     size="small"
                     disabled={isSaving}
-                    sx={
-                        theme.palette.mode === "dark"
-                            ? {
-                                  color: "common.white",
-                                  borderColor: "common.white",
-                                  "&:hover": {borderColor: "common.white"},
-                              }
-                            : {}
-                    }
+                    sx={getDarkModeOutlinedButtonSx(theme)}
                 >
                     Cancel
                 </Button>

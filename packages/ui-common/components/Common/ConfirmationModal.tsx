@@ -20,6 +20,7 @@ import {styled, useTheme} from "@mui/material/styles"
 import {FC, JSX as ReactJSX, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"
+import {getDarkModeOutlinedButtonSx} from "../../Theme/Theme"
 
 // #region: Styled Components
 export const StyledButton = styled(Button)({
@@ -89,15 +90,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
                     onClick={() => handleCloseWrapper()}
                     disabled={isLoading}
                     variant="outlined"
-                    sx={
-                        theme.palette.mode === "dark"
-                            ? {
-                                  color: "common.white",
-                                  borderColor: "common.white",
-                                  "&:hover": {borderColor: "common.white"},
-                              }
-                            : {}
-                    }
+                    sx={getDarkModeOutlinedButtonSx(theme)}
                 >
                     {cancelBtnLabel ?? "Cancel"}
                 </StyledButton>
