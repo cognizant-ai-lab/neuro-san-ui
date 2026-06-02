@@ -677,18 +677,30 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
     const getDebugOverlay = () => {
+        const iconButtonSx = {
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1.5,
+            p: 0.5,
+            color: theme.palette.text.secondary,
+            backgroundColor: theme.palette.background.paper,
+            transition: "all 160ms ease",
+            "&:hover": {
+                backgroundColor: theme.palette.action.hover,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.text.secondary,
+            },
+        }
+
         return (
             <Slide
                 direction="up"
                 in={debugMode}
                 mountOnEnter
                 unmountOnExit
-                timeout={500}
+                timeout={600}
             >
                 <Box
                     sx={{
-                        border: "1px solid var(--bs-red)",
-                        borderRadius: "1rem",
                         gap: 0.0,
                         marginBottom: "1rem",
                         marginTop: "4rem",
@@ -696,43 +708,98 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         width: "85%",
                     }}
                 >
-                    <Typography>Debug</Typography>
-                    <Box>
-                        <IconButton sx={{padding: "0.25rem"}}>
-                            <SkipPreviousIcon
+                    <Box
+                        id="multi-agent-accelerator-debug-controls"
+                        sx={{
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderLeft: `3px solid ${theme.palette.warning.main}`,
+                            borderRadius: 2,
+                            backgroundColor: theme.palette.background.paper,
+                            boxShadow: theme.shadows[2],
+                            padding: "1rem",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                        }}
+                    >
+                        <Box
+                            id="multi-agent-accelerator-debug-controls-header"
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <Typography
+                                variant="overline"
                                 sx={{
-                                    color: "var(--bs-white) !important",
+                                    fontWeight: 700,
+                                    letterSpacing: 0.8,
+                                    lineHeight: 1,
+                                    color: theme.palette.text.secondary,
                                 }}
-                            />
-                        </IconButton>
-                        <IconButton sx={{padding: "0.25rem"}}>
-                            <ChevronLeftIcon
+                            >
+                                Debug Controls
+                            </Typography>
+                        </Box>
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.75,
+                            }}
+                        >
+                            <IconButton
+                                size="small"
+                                aria-label="Skip to start"
+                                sx={iconButtonSx}
+                            >
+                                <SkipPreviousIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Step back"
+                                sx={iconButtonSx}
+                            >
+                                <ChevronLeftIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Play"
                                 sx={{
-                                    color: "var(--bs-white) !important",
+                                    ...iconButtonSx,
+                                    color: theme.palette.primary.contrastText,
+                                    backgroundColor: theme.palette.primary.main,
+                                    borderColor: theme.palette.primary.main,
+                                    "&:hover": {
+                                        backgroundColor: theme.palette.primary.dark,
+                                        borderColor: theme.palette.primary.dark,
+                                        color: theme.palette.primary.contrastText,
+                                    },
                                 }}
-                            />
-                        </IconButton>
-                        <IconButton sx={{padding: "0.25rem"}}>
-                            <PlayArrowIcon
-                                sx={{
-                                    color: "var(--bs-white) !important",
-                                }}
-                            />
-                        </IconButton>
-                        <IconButton sx={{padding: "0.25rem"}}>
-                            <ChevronRightIcon
-                                sx={{
-                                    color: "var(--bs-white) !important",
-                                }}
-                            />
-                        </IconButton>
-                        <IconButton>
-                            <SkipNextIcon
-                                sx={{
-                                    color: "var(--bs-white) !important",
-                                }}
-                            />
-                        </IconButton>
+                            >
+                                <PlayArrowIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Step forward"
+                                sx={iconButtonSx}
+                            >
+                                <ChevronRightIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Skip to end"
+                                sx={iconButtonSx}
+                            >
+                                <SkipNextIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
                     </Box>
                 </Box>
             </Slide>
@@ -784,11 +851,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
                     {debugMode && (
                         <Box
+                            id="multi-agent-accelerator-debug-overlay-container"
                             sx={{
-                                flexShrink: 0,
                                 borderRightStyle: "solid",
                                 borderRightWidth: "0.75px",
-                                // marginTop: "1rem",
+                                padding: 0,
+                                margin: 0,
                             }}
                         >
                             {getDebugOverlay()}
