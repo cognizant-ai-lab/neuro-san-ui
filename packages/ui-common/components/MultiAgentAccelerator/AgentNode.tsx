@@ -197,9 +197,10 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         // Allow wrap after underscore
         .replaceAll("_", "_\u200B")
         // Allow wrap before capitals in camel/PascalCase (e.g., CustomerSupport -> Customer|Support)
-        .replaceAll(/[\da-z][A-Z]/gu, "$1\u200B$2")
+        .replaceAll(/([\da-z])([A-Z])/gu, "$1\u200B$2")
         // Also split acronym->word boundary (e.g., HTTPServer -> HTTP|Server), but not H|T|T|P
-        .replaceAll(/[A-Z][A-Z][a-z]/gu, "$1\u200B$2")
+        .replaceAll(/([A-Z])([A-Z][a-z])/gu, "$1\u200B$2")
+
     return (
         <>
             <AnimatedNode

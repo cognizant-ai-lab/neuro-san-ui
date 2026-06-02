@@ -702,7 +702,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }
 
     const handleDebugSingleStepForward = () => {
-        if (chatMessages && currentDebugStep < chatMessages.length - 1) {
+        if (currentDebugStep < chatMessages?.length - 1) {
             onChatMessageReceived(chatMessages[currentDebugStep])
             setCurrentDebugStep((prev) => prev + 1)
         }
@@ -1037,6 +1037,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 "Describe in plain language the network you would like to build.",
                         }}
                         currentUser={userInfo.userName}
+                        debugMessages={debugMode && chatMessages ? chatMessages : undefined}
+                        debugStep={debugMode ? currentDebugStep : undefined}
                         extraSlyData={extraSlyData}
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}

@@ -59,6 +59,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hasOnlyWhitespace} from "../../../utils/text"
+import {AgentConversation, extractConversations} from "../../MultiAgentAccelerator/AgentConversations"
 import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
@@ -179,6 +180,9 @@ export interface ChatCommonProps {
      * Sample queries for the current network that the user can "click to send"
      */
     readonly sampleQueries?: string[]
+
+    readonly debugStep?: number
+    readonly debugMessages?: ChatMessage[]
 }
 
 // Key for the chat history, which gets special treatment; always visible even if "show thinking" is off.
@@ -219,6 +223,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         agentPlaceholders = EMPTY,
         backgroundColor,
         currentUser,
+        debugMessages,
+        debugStep,
         extraParams,
         extraSlyData,
         id,
@@ -869,6 +875,85 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Menu>
     )
 
+    const getDebugDisplay = () => (
+        <Box sx={{padding: "1rem"}}>
+            <Typography
+                sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.75,
+                    px: 1.25,
+                    py: 0.4,
+                    mb: 0.75,
+                    borderRadius: "999px",
+                    fontSize: "0.78rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: "secondary.contrastText",
+                    background: "linear-gradient(90deg, #7b1fa2 0%, #512da8 100%)",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.22)",
+                }}
+            >
+                Message History
+            </Typography>
+
+            {debugMessages.map((message, index) => {
+                const isActiveStep = index === debugStep
+
+                return (
+                    <Box
+                        key={index}
+                        sx={{
+                            marginBottom: "0.35rem",
+                            marginTop: "0.35rem",
+                            color: isActiveStep ? "text.primary" : "var(--bs-gray)",
+                            backgroundColor: isActiveStep ? "rgba(56, 142, 60, 0.14)" : "transparent",
+                            border: isActiveStep ? "1px solid rgba(56, 142, 60, 0.55)" : "1px solid transparent",
+                            borderRadius: "8px",
+                            px: 1,
+                            py: 0.5,
+                            transition: "all 0.15s ease-in-out",
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 0.6,
+                        }}
+                    >
+                        <Typography
+                            component="span"
+                            sx={{
+                                width: "1.1rem",
+                                fontWeight: 900,
+                                lineHeight: 1.2,
+                                color: isActiveStep ? "success.main" : "transparent",
+                                userSelect: "none",
+                                mt: "1px",
+                            }}
+                        >
+                            {isActiveStep ? "➜" : "•"}
+                        </Typography>
+
+                        <Typography
+                            sx={{
+                                fontWeight: isActiveStep ? 800 : 400,
+                                lineHeight: 1.2,
+                                whiteSpace: "pre-line",
+                                margin: 0,
+                            }}
+                        >
+                            {extractConversations(message, [] as AgentConversation[])
+                                .map(
+                                    (conversation) =>
+                                        `${[...conversation.agents.values()]}: ${conversation.text.slice(0, 100)}`
+                                )
+                                .join("\n")}
+                        </Typography>
+                    </Box>
+                )
+            })}
+        </Box>
+    )
+
     const getResponseBox = () => (
         <Box
             id="llm-response-div"
@@ -884,71 +969,77 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 overflowY: "auto",
             }}
         >
-            <Box
-                id="llm-responses"
-                ref={chatOutputRef}
-                sx={{
-                    backgroundColor: backgroundColor || undefined,
-                    borderWidth: "1px",
-                    borderRadius: "0.5rem",
-                    fontSize: "smaller",
-                    resize: "none",
-                    overflowY: "auto", // Enable vertical scrollbar
-                    paddingBottom: "60px",
-                    paddingTop: "7.5px",
-                    paddingLeft: "15px",
-                    paddingRight: "15px",
-                    width: "100%",
-                }}
-                tabIndex={-1}
-            >
-                {getOptionsMenu()}
-                {getOptionsMenuButton()}
-                {agentChatHistory?.chatHistory?.length > 0 && (
-                    <ChatHistory
-                        chatHistoryKey={CHAT_HISTORY_KEY}
-                        id={`${id}-chat-history`}
-                        messages={toTurns(agentChatHistory.chatHistory)}
-                    />
-                )}
-                <Typography sx={{fontWeight: "bold"}}>{targetAgent}</Typography>
-                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
-                    {networkDescription}
-                </Box>
-                <Box sx={{marginBottom: "0.5rem", marginTop: "0.75rem", color: "var(--bs-gray)"}}>{agentGreeting}</Box>
-                <SampleQueries
-                    disabled={isAwaitingLlm}
-                    handleSend={handleSend}
-                    sampleQueries={sampleQueries}
-                />
-                <Conversation
-                    id={`${id}-conversation-display`}
-                    finalAnswerRef={finalAnswerRef}
-                    showThinking={showThinking}
-                    shouldWrapOutput={shouldWrapOutput}
-                    turns={turns}
-                />
-                {isAwaitingLlm && (
-                    <Box
-                        id="awaitingOutputContainer"
-                        sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
-                    >
-                        <span
-                            id="working-span"
-                            style={{marginRight: "1rem"}}
-                        >
-                            Working...
-                        </span>
-                        <CircularProgress
-                            id="awaitingOutputSpinner"
-                            sx={{
-                                color: "var(--bs-primary)",
-                            }}
-                            size="1rem"
+            {debugMessages?.length > 0 ? (
+                getDebugDisplay()
+            ) : (
+                <Box
+                    id="llm-responses"
+                    ref={chatOutputRef}
+                    sx={{
+                        backgroundColor: backgroundColor || undefined,
+                        borderWidth: "1px",
+                        borderRadius: "0.5rem",
+                        fontSize: "smaller",
+                        resize: "none",
+                        overflowY: "auto", // Enable vertical scrollbar
+                        paddingBottom: "60px",
+                        paddingTop: "7.5px",
+                        paddingLeft: "15px",
+                        paddingRight: "15px",
+                        width: "100%",
+                    }}
+                    tabIndex={-1}
+                >
+                    {getOptionsMenu()}
+                    {getOptionsMenuButton()}
+                    {agentChatHistory?.chatHistory?.length > 0 && (
+                        <ChatHistory
+                            chatHistoryKey={CHAT_HISTORY_KEY}
+                            id={`${id}-chat-history`}
+                            messages={toTurns(agentChatHistory.chatHistory)}
                         />
+                    )}
+                    <Typography sx={{fontWeight: "bold"}}>{targetAgent}</Typography>
+                    <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
+                        {networkDescription}
                     </Box>
-                )}
-            </Box>
+                    <Box sx={{marginBottom: "0.5rem", marginTop: "0.75rem", color: "var(--bs-gray)"}}>
+                        {agentGreeting}
+                    </Box>
+                    <SampleQueries
+                        disabled={isAwaitingLlm}
+                        handleSend={handleSend}
+                        sampleQueries={sampleQueries}
+                    />
+                    <Conversation
+                        id={`${id}-conversation-display`}
+                        finalAnswerRef={finalAnswerRef}
+                        showThinking={showThinking}
+                        shouldWrapOutput={shouldWrapOutput}
+                        turns={turns}
+                    />
+                    {isAwaitingLlm && (
+                        <Box
+                            id="awaitingOutputContainer"
+                            sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                        >
+                            <span
+                                id="working-span"
+                                style={{marginRight: "1rem"}}
+                            >
+                                Working...
+                            </span>
+                            <CircularProgress
+                                id="awaitingOutputSpinner"
+                                sx={{
+                                    color: "var(--bs-primary)",
+                                }}
+                                size="1rem"
+                            />
+                        </Box>
+                    )}
+                </Box>
+            )}
 
             <ControlButtons
                 enableClearChatButton={enableClearChatButton}
