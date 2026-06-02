@@ -18,16 +18,19 @@ limitations under the License.
  * See main function description.
  */
 import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
-import AccountTreeIcon from "@mui/icons-material/AccountTree"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
-import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom"
-import WrapTextIcon from "@mui/icons-material/WrapText"
+import TuneIcon from "@mui/icons-material/Tune"
 import Box from "@mui/material/Box"
+import Checkbox from "@mui/material/Checkbox"
 import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Input from "@mui/material/Input"
 import InputAdornment from "@mui/material/InputAdornment"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import ListItemText from "@mui/material/ListItemText"
+import Menu from "@mui/material/Menu"
+import MenuItem from "@mui/material/MenuItem"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -56,7 +59,6 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {LlmChatOptionsButton} from "../../Common/LlmChatOptionsButton"
 import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
@@ -266,6 +268,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
+    // Track state of "show thinking" toggle
+    const [showThinking, setShowThinking] = useState<boolean>(false)
+
     // Keeps a copy of the last AI message so we can highlight it as "final answer"
     const lastAIMessage = useRef<string>("")
 
@@ -285,9 +290,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // Ref to the item we think is the Final Answer from the agent
     const finalAnswerRef = useRef<HTMLDivElement>(null)
-
-    // Track state of "show thinking" toggle
-    const [showThinking, setShowThinking] = useState<boolean>(false)
 
     // Microphone state for voice input
     const [isMicOn, setIsMicOn] = useState<boolean>(false)
@@ -692,6 +694,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         lastAIMessage.current = ""
     }, [resetHistory, targetAgent])
 
+    const [optionsMenuAnchorEl, setOptionsMenuAnchorEl] = useState<null | HTMLElement>(null)
+    const [optionsMenuOpen, setOptionsMenuOpen] = useState<boolean | undefined>(false)
+
     // Expose the handleStop and handleClearChat methods to parent components via ref for external control
     useImperativeHandle(
         ref,
@@ -757,60 +762,23 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Box>
     )
 
-    const getOptionsButtons = () => (
-        <>
-            <Tooltip
-                id="show-thinking"
-                title={showThinking ? "Displaying agent thinking" : "Hiding agent thinking"}
+    const getOptionsMenuButton = () => (
+        <Box
+            sx={{
+                position: "absolute",
+                top: "0.25rem",
+                right: "0.0rem",
+            }}
+        >
+            <IconButton
+                onClick={(e) => {
+                    setOptionsMenuAnchorEl(e.currentTarget)
+                    setOptionsMenuOpen(true)
+                }}
             >
-                <span id="show-thinking-span">
-                    <LlmChatOptionsButton
-                        enabled={showThinking}
-                        id="show-thinking-button"
-                        onClick={() => setShowThinking(!showThinking)}
-                        posRight={150}
-                        disabled={isAwaitingLlm}
-                    >
-                        <AccountTreeIcon
-                            id="show-thinking-icon"
-                            sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                        />
-                    </LlmChatOptionsButton>
-                </span>
-            </Tooltip>
-            <Tooltip
-                id="enable-autoscroll"
-                title={autoScrollEnabled ? "Autoscroll enabled" : "Autoscroll disabled"}
-            >
-                <LlmChatOptionsButton
-                    enabled={autoScrollEnabled}
-                    id="autoscroll-button"
-                    onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
-                    posRight={80}
-                >
-                    <VerticalAlignBottomIcon
-                        id="autoscroll-icon"
-                        sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                    />
-                </LlmChatOptionsButton>
-            </Tooltip>
-            <Tooltip
-                id="wrap-tooltip"
-                title={shouldWrapOutput ? "Text wrapping enabled" : "Text wrapping disabled"}
-            >
-                <LlmChatOptionsButton
-                    enabled={shouldWrapOutput}
-                    id="wrap-button"
-                    onClick={() => setShouldWrapOutput(!shouldWrapOutput)}
-                    posRight={10}
-                >
-                    <WrapTextIcon
-                        id="wrap-icon"
-                        sx={{color: "var(--bs-white)", fontSize: "0.85rem"}}
-                    />
-                </LlmChatOptionsButton>
-            </Tooltip>
-        </>
+                <TuneIcon sx={{fontSize: "1.2rem"}} />
+            </IconButton>
+        </Box>
     )
 
     const agentGreeting = customAgentGreetings[targetAgent] ?? "Hi, how can I help?"
@@ -833,6 +801,74 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }
             })
 
+    const handleOptionsMenuClose = () => {
+        setOptionsMenuAnchorEl(null)
+        setOptionsMenuOpen(false)
+    }
+
+    const handleToggleShowThinking = () => {
+        setShowThinking((prev) => !prev)
+    }
+
+    const handleToggleAutoScroll = () => {
+        setAutoScrollEnabled((prev) => !prev)
+    }
+
+    const handleToggleWrapOutput = () => {
+        setShouldWrapOutput((prev) => !prev)
+    }
+
+    const getOptionsMenu = () => (
+        <Menu
+            id="options-menu"
+            anchorEl={optionsMenuAnchorEl}
+            open={optionsMenuOpen}
+            onClose={handleOptionsMenuClose}
+            slotProps={{
+                list: {
+                    dense: true,
+                    sx: {
+                        py: 0,
+                        "& .MuiMenuItem-root": {minHeight: 30, py: 0.5, px: 1},
+                        "& .MuiCheckbox-root": {p: 0.5},
+                        "& .MuiListItemText-primary": {fontSize: "smaller"},
+                    },
+                },
+            }}
+        >
+            <MenuItem onClick={handleToggleAutoScroll}>
+                <ListItemIcon>
+                    <Checkbox
+                        checked={autoScrollEnabled}
+                        tabIndex={-1}
+                        sx={{pointerEvents: "none"}}
+                    />
+                </ListItemIcon>
+                <ListItemText primary="Auto-scroll output" />
+            </MenuItem>
+            <MenuItem onClick={handleToggleShowThinking}>
+                <ListItemIcon>
+                    <Checkbox
+                        checked={showThinking}
+                        tabIndex={-1}
+                        sx={{pointerEvents: "none"}}
+                    />
+                </ListItemIcon>
+                <ListItemText primary="Show thinking" />
+            </MenuItem>
+            <MenuItem onClick={handleToggleWrapOutput}>
+                <ListItemIcon>
+                    <Checkbox
+                        checked={shouldWrapOutput}
+                        tabIndex={-1}
+                        sx={{pointerEvents: "none"}}
+                    />
+                </ListItemIcon>
+                <ListItemText primary="Wrap output" />
+            </MenuItem>
+        </Menu>
+    )
+
     const getResponseBox = () => (
         <Box
             id="llm-response-div"
@@ -848,7 +884,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 overflowY: "auto",
             }}
         >
-            {getOptionsButtons()}
             <Box
                 id="llm-responses"
                 ref={chatOutputRef}
@@ -867,6 +902,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }}
                 tabIndex={-1}
             >
+                {getOptionsMenu()}
+                {getOptionsMenuButton()}
                 {agentChatHistory?.chatHistory?.length > 0 && (
                     <ChatHistory
                         chatHistoryKey={CHAT_HISTORY_KEY}
