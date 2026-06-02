@@ -40,6 +40,7 @@ import {Sidebar} from "./Sidebar/Sidebar"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
+    getAgentFunction,
     getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
@@ -57,6 +58,7 @@ import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
 import {SmallLlmChatButton} from "../AgentChat/Common/LlmChatButton"
+import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
@@ -157,6 +159,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
 
+    const [sampleQueries, setSampleQueries] = useState<string[]>([])
+
     // Agents in network under construction by Agent Network Designer -
     // updated in real time as we receive progress messages from the backend.
     const [agentsInNetworkDesigner, setAgentsInNetworkDesigner] = useState<ConnectivityInfo[]>([])
@@ -164,6 +168,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [agentIconSuggestions, setAgentIconSuggestions] = useState<AgentIconSuggestions | null>(null)
 
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
+    const [networkDescription, setNetworkDescription] = useState<string>("")
 
     const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
 
@@ -326,6 +331,22 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [neuroSanURL, changeSelectedNetwork])
 
     useEffect(() => {
+        const fetchAgentDetails = async () => {
+            // It is a Neuro-san agent, so get the function and connectivity info
+            try {
+                const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, userInfo.userName)
+                setNetworkDescription(agentFunction?.function?.description || "")
+            } catch {
+                // Ignore. May be a legacy agent without a functional description in Neuro-san.
+            }
+        }
+
+        if (selectedNetwork && !isLegacyAgentType(selectedNetwork)) {
+            void fetchAgentDetails()
+        }
+    }, [neuroSanURL, selectedNetwork, userInfo.userName])
+
+    useEffect(() => {
         ;(async () => {
             if (networks?.length > 0) {
                 try {
@@ -352,6 +373,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         a?.origin.localeCompare(b?.origin)
                     )
                     setAgentsInNetwork(agentsInNetworkSorted)
+                    setSampleQueries(connectivity?.metadata?.["sample_queries"] as string[])
                     setAgentIconSuggestions(null)
                     closeNotification()
                 } catch (e) {
@@ -764,11 +786,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}
                         key={selectedNetwork ?? "no-network"}
+                        networkDescription={networkDescription}
                         neuroSanURL={neuroSanURL}
                         onChunkReceived={onChunkReceived}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
                         ref={chatRef}
+                        sampleQueries={sampleQueries}
                         setIsAwaitingLlm={setIsAwaitingLlm}
                         targetAgent={selectedNetwork}
                         userImage={userInfo.userImage}

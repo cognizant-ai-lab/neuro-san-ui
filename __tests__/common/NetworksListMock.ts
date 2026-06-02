@@ -73,8 +73,8 @@ export const TEMPORARY_NETWORK: TemporaryNetwork = {
     networkHocon: JSON.stringify(TEMP_NETWORK_AGENT_INFO, null, 2),
 }
 
-export const TEST_TOOL_SPOTIFY = "spotify_tool"
-export const TEST_TOOL_LAST_FM = "last_fm_tool"
+const TEST_TOOL_SPOTIFY = "spotify_tool"
+const TEST_TOOL_LAST_FM = "last_fm_tool"
 const TEST_TOOL_SOLVER = "math_solver_tool"
 const TEST_TOOL_CALCULATOR = "calculator_tool"
 
