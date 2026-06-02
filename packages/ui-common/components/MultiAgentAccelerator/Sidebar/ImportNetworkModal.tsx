@@ -41,6 +41,7 @@ import {jsonrepair} from "jsonrepair"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
 import {splitFilename} from "../../../utils/File"
+import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 
 // #region: Constants
 
@@ -153,11 +154,7 @@ export const formatFileSize = (bytes: number): string => {
  */
 export const filenameToNetworkName = (filename: string): string => {
     const {name: stem} = splitFilename(filename)
-    // Strip a trailing UUID suffix (8-4-4-4-12 hex blocks separated by _ or -)
-    const stemWithoutUuid = stem.replaceAll(
-        /[_-][\da-fA-F]{8}[_-][\da-fA-F]{4}[_-][\da-fA-F]{4}[_-][\da-fA-F]{4}[_-][\da-fA-F]{12}$/gu,
-        ""
-    )
+    const stemWithoutUuid = removeTrailingUuid(stem)
     const spaced = stemWithoutUuid.replaceAll(/[_-]+/gu, " ").toLowerCase()
     return spaced.trim()
 }
@@ -330,7 +327,10 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     const handleImport = () => {
         if (!parsedJson) return
-        onImport?.(networkName.trim(), parsedJson)
+        // The API echoes back agent_network_name as-is, and the UI splits on underscores to
+        // produce display names — so send underscores instead of spaces.
+        const apiName = networkName.trim().replaceAll(" ", "_")
+        onImport?.(apiName, parsedJson)
         onClose()
     }
 
@@ -373,19 +373,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                     paddingBottom: 1,
                 }}
             >
-                <Box
-                    aria-hidden="true"
-                    sx={{
-                        alignItems: "center",
-                        backgroundColor: "primary.main",
-                        borderRadius: 1,
-                        color: "primary.contrastText",
-                        display: "flex",
-                        padding: "6px",
-                    }}
-                >
-                    <FileUploadOutlinedIcon fontSize="small" />
-                </Box>
                 Import network definition
                 <IconButton
                     aria-label="close"
@@ -401,7 +388,20 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                 <Stepper
                     activeStep={activeStep}
                     id="import-network-modal-stepper"
-                    sx={{marginTop: 1}}
+                    sx={{
+                        marginTop: 1,
+                        // MUI v9 rejects the CSS named color "gray" it uses by default for
+                        // inactive steps/connectors — override with valid token values.
+                        "& .MuiStepIcon-root:not(.Mui-active):not(.Mui-completed)": {
+                            color: "var(--bs-gray-medium)",
+                        },
+                        "& .MuiStepConnector-line": {
+                            borderColor: "var(--bs-gray-light)",
+                        },
+                        "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
+                            color: "var(--bs-gray-medium)",
+                        },
+                    }}
                 >
                     {STEPS.map((label) => (
                         <Step key={label}>
@@ -423,24 +423,26 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                     >
                         <CloudUploadOutlinedIcon
                             id="import-network-modal-upload-icon"
-                            sx={{color: "text.secondary", fontSize: "3rem"}}
+                            sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
                         />
                         <Typography
                             id="import-network-modal-drop-text"
                             variant="subtitle1"
-                            sx={{fontWeight: "bold"}}
+                            sx={{color: "primary.main", fontWeight: "bold"}}
                         >
                             Drag &amp; drop a network definition
                         </Typography>
                         <Typography variant="body2">
                             {"or "}
                             <Link
+                                color="inherit"
                                 component="button"
                                 id="import-network-modal-browse-link"
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     handleBrowseClick()
                                 }}
+                                sx={{color: "var(--bs-secondary)"}}
                                 underline="hover"
                                 variant="body2"
                             >
@@ -452,7 +454,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                             variant="caption"
                             sx={{color: "text.secondary"}}
                         >
-                            Accepts .hocon &middot; .conf &middot; .json &middot; up to 5 MB
+                            Accepts .hocon and .json up to 5 MB.
                         </Typography>
                         <input
                             accept={ACCEPTED_MIME_TYPES}
@@ -537,7 +539,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                     <Typography
                                         id="import-network-modal-review-filename"
                                         variant="body2"
-                                        sx={{fontFamily: "monospace"}}
+                                        sx={{fontFamily: "monospace", minWidth: 0, wordBreak: "break-all"}}
                                     >
                                         {file?.name}
                                     </Typography>
