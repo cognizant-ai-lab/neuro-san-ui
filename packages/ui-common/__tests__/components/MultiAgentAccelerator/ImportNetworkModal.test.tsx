@@ -104,10 +104,7 @@ describe("ImportNetworkModal", () => {
 
     it("should display the accepted file type hint", () => {
         renderModal()
-        expect(screen.getByText(/Accepts .hocon/u)).toBeInTheDocument()
-        expect(screen.getByText(/\.conf/u)).toBeInTheDocument()
-        expect(screen.getByText(/\.json/u)).toBeInTheDocument()
-        expect(screen.getByText(/up to 5 MB/u)).toBeInTheDocument()
+        expect(screen.getByText(/Accepts \.hocon and \.json up to 5 MB\./u)).toBeInTheDocument()
     })
 
     it("should call onClose when Cancel button is clicked", async () => {
@@ -298,7 +295,7 @@ describe("ImportNetworkModal", () => {
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
         await user.click(await screen.findByRole("button", {name: /Import network/u}))
-        expect(onImportMock).toHaveBeenCalledWith("my network", expect.stringContaining('"agents"'))
+        expect(onImportMock).toHaveBeenCalledWith("my_network", expect.stringContaining('"agents"'))
     })
 
     it("should call onClose after Import network is clicked", async () => {
