@@ -2410,5 +2410,136 @@ describe("AgentFlow", () => {
             consoleDebugSpy.mockRestore()
             consoleErrorSpy.mockRestore()
         })
+
+        it("dismisses the cancelled banner immediately when its X button is clicked", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            })
+            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
+            })
+            fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-cancelled-info")).toBeInTheDocument()
+            })
+
+            // Click the X button — banner should disappear immediately without waiting for the timer
+            fireEvent.click(screen.getByRole("button", {name: /dismiss cancelled/iu}))
+
+            expect(container.querySelector("#test-flow-id-cancelled-info")).not.toBeInTheDocument()
+
+            jest.useRealTimers()
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("dismisses the applied banner immediately when its X button is clicked", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+            ;(sendChatQuery as jest.Mock).mockResolvedValue(undefined)
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
+            })
+
+            // Click the X button — banner should disappear immediately without waiting for the timer
+            fireEvent.click(screen.getByRole("button", {name: /dismiss applied/iu}))
+
+            expect(container.querySelector("#test-flow-id-applied-info")).not.toBeInTheDocument()
+
+            jest.useRealTimers()
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
+
+        it("clears a prior auto-dismiss timer when a second apply succeeds while cancelled banner is showing", async () => {
+            jest.useFakeTimers()
+            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+
+            // First apply: abort immediately so the cancelled banner appears
+            ;(sendChatQuery as jest.Mock).mockImplementationOnce(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
+            // Second apply: resolves immediately
+            ;(sendChatQuery as jest.Mock).mockResolvedValueOnce(undefined)
+
+            const {container} = renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            // First apply → stop & discard → cancelled banner
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "first change"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            })
+            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
+            })
+            fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
+
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-cancelled-info")).toBeInTheDocument()
+            })
+
+            // Second apply while cancelled banner (and its 5s timer) is still running
+            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "second change"}})
+            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // Applied banner should replace the cancelled banner
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
+                expect(container.querySelector("#test-flow-id-cancelled-info")).not.toBeInTheDocument()
+            })
+
+            jest.useRealTimers()
+            consoleDebugSpy.mockRestore()
+            consoleErrorSpy.mockRestore()
+        })
     })
 })
