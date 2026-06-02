@@ -54,7 +54,7 @@ import {
 } from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
-import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {AgentInfo, ChatMessage, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
@@ -189,11 +189,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Tracks how many times each agent has been involved in the conversation
     const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())
-    //common function to change the selected network and reset related state
-    const changeSelectedNetwork = useCallback((next: string | null) => {
-        setSelectedNetwork(next)
-        setAgentCounts(new Map())
-    }, [])
 
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
@@ -211,6 +206,15 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
     const [debugMode, setDebugMode] = useState<boolean>(false)
+
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+
+    //common function to change the selected network and reset related state
+    const changeSelectedNetwork = useCallback((next: string | null) => {
+        setSelectedNetwork(next)
+        setAgentCounts(new Map())
+        setChatMessages([])
+    }, [])
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -493,13 +497,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return () => window.removeEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
     }, [handleExternalTourRequest, networks, selectedNetwork])
 
-    const onChunkReceived = useCallback(
-        (chunk: string): boolean => {
-            // Extract ChatMessage structure
-            const chatMessage = chatMessageFromChunk(chunk)
-            if (!chatMessage) {
-                return true
-            }
+    const onChatMessageReceived = useCallback(
+        (chatMessage: ChatMessage) => {
+            setChatMessages((prev) => [...prev, chatMessage])
 
             // Conversations between agents
             const result = extractConversations(chatMessage, conversationsRef.current)
@@ -530,10 +530,23 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 // For now, we only care about the first one since that's the only active use case
                 setNewlyAddedTemporaryNetworks(new Set(upserted.map((network) => network.agentInfo.agent_name)))
             }
+        },
+        [isNetworkDesignerMode]
+    )
+
+    const onChunkReceived = useCallback(
+        (chunk: string): boolean => {
+            // Extract ChatMessage structure
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (!chatMessage) {
+                return true
+            }
+
+            onChatMessageReceived(chatMessage)
 
             return true
         },
-        [isNetworkDesignerMode]
+        [onChatMessageReceived]
     )
 
     /**
@@ -594,6 +607,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     )
 
     const onStreamingStarted = useCallback((): void => {
+        // Reset chat messages
+        setChatMessages([])
+
         // Reset agent counts
         setAgentCounts(new Map())
 
@@ -614,12 +630,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [haveShownPopup])
 
     const onStreamingComplete = useCallback(() => {
+        console.debug("Chat messages during streaming:", chatMessages)
         // When streaming is complete, clean up any refs and state
         conversationsRef.current = null
         setCurrentConversations(null)
         setAgentsInNetworkDesigner([])
         resetState()
-    }, [resetState])
+    }, [chatMessages, resetState])
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {

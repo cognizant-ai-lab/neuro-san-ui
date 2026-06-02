@@ -211,6 +211,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const [isHovered, setIsHovered] = useState(false)
 
+    const wrappedAgentName = agentName.replaceAll("_", "_\u200B")
     return (
         <>
             <AnimatedNode
@@ -292,20 +293,32 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 <Typography
                     id={`${agentId}-name`}
                     sx={{
+                        WebkitBoxOrient: "vertical",
+                        WebkitLineClamp: 4,
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 1,
+                        color: theme.palette.text.primary,
                         display: "-webkit-box",
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                        lineHeight: "1.4em",
+                        fontSize: "16px",
+                        fontWeight: 700,
+                        lineHeight: 1.3,
+                        maxHeight: "4.4em",
+                        mx: "auto",
+                        my: "auto",
                         overflow: "hidden",
+                        overflowWrap: "anywhere",
+                        px: 0.75,
+                        py: 0.45,
                         textAlign: "center",
                         textOverflow: "ellipsis",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 2,
+                        whiteSpace: "normal",
                         width: `${NODE_WIDTH}px`,
+                        wordBreak: "break-word",
                         zIndex: 10,
                     }}
                 >
-                    {agentName}
+                    {wrappedAgentName}
                 </Typography>
             </Tooltip>
         </>
