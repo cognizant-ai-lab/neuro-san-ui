@@ -19,6 +19,7 @@ import ChatBubbleOutlinedIcon from "@mui/icons-material/ChatBubbleOutlined"
 import CloseIcon from "@mui/icons-material/Close"
 import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
+import NotStartedIcon from "@mui/icons-material/NotStarted"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
@@ -118,6 +119,7 @@ export interface AgentFlowProps {
     readonly setThoughtBubbleEdges?: Dispatch<
         SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
     >
+    readonly toggleDebugMode?: () => void
 }
 
 type Layout = "radial" | "linear"
@@ -211,6 +213,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     onExitEditMode,
     onSaveAgent,
     thoughtBubbleEdges,
+    toggleDebugMode,
     setThoughtBubbleEdges,
 }) => {
     const theme = useTheme()
@@ -891,6 +894,23 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </ControlButton>
                     </span>
                 </Tooltip>
+                <Tooltip
+                    id="debug-mode-tooltip"
+                    title="Enter debug mode"
+                    placement="right"
+                >
+                    <span id="thought-bubble-span">
+                        <ControlButton
+                            id="debug-mode-button"
+                            onClick={() => toggleDebugMode()}
+                            style={{
+                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
+                            }}
+                        >
+                            <NotStartedIcon id="debug-icon" />
+                        </ControlButton>
+                    </span>
+                </Tooltip>
             </Controls>
         )
     }
@@ -932,32 +952,50 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     <Box
                         id={`${id}-network-title-bar`}
                         sx={{
-                            position: "absolute",
-                            top: 44,
+                            alignItems: "center",
+                            display: "flex",
+                            gap: 1,
                             left: "50%",
+                            pointerEvents: "none",
+                            position: "absolute",
+                            top: 0,
                             transform: "translateX(-50%)",
                             zIndex: getZIndex(1, theme),
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            pointerEvents: "none",
                         }}
                     >
                         <Typography
                             id={`${id}-network-title`}
                             variant="subtitle1"
                             sx={{
-                                fontWeight: "bold",
-                                backgroundColor: alpha(theme.palette.background.paper, 0.85),
-                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                letterSpacing: "0.01em",
+                                lineHeight: 1.35,
+
+                                // soft glass pill
+                                backgroundColor: alpha(
+                                    theme.palette.background.paper,
+                                    theme.palette.mode === "dark" ? 0.72 : 0.82
+                                ),
+                                backdropFilter: "blur(6px)",
+                                border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                                borderRadius: 2,
+
                                 color:
                                     theme.palette.mode === "dark"
                                         ? theme.palette.common.white
                                         : theme.palette.text.primary,
-                                px: 1.5,
-                                py: 0.25,
+
+                                px: 2,
+                                py: 0.45,
+
+                                // subtle elevation
+                                boxShadow:
+                                    theme.palette.mode === "dark"
+                                        ? `0 6px 20px ${alpha(theme.palette.common.black, 0.35)}`
+                                        : `0 6px 16px ${alpha(theme.palette.common.black, 0.12)}`,
+
                                 whiteSpace: "nowrap",
-                                maxWidth: 400,
+                                maxWidth: {xs: 220, sm: 320, md: 420},
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                             }}

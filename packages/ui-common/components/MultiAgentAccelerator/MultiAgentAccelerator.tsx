@@ -13,10 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
+import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import PlayArrowIcon from "@mui/icons-material/PlayArrow"
+import SkipNextIcon from "@mui/icons-material/SkipNext"
+import SkipPreviousIcon from "@mui/icons-material/SkipPrevious"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
 import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
@@ -204,6 +209,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
+
+    const [debugMode, setDebugMode] = useState<boolean>(false)
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -669,6 +676,69 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
+    const getDebugOverlay = () => {
+        return (
+            <Slide
+                direction="up"
+                in={debugMode}
+                mountOnEnter
+                unmountOnExit
+                timeout={500}
+            >
+                <Box
+                    sx={{
+                        border: "1px solid var(--bs-red)",
+                        borderRadius: "1rem",
+                        gap: 0.0,
+                        marginBottom: "1rem",
+                        marginTop: "4rem",
+                        padding: "0.5rem",
+                        width: "85%",
+                    }}
+                >
+                    <Typography>Debug</Typography>
+                    <Box>
+                        <IconButton sx={{padding: "0.25rem"}}>
+                            <SkipPreviousIcon
+                                sx={{
+                                    color: "var(--bs-white) !important",
+                                }}
+                            />
+                        </IconButton>
+                        <IconButton sx={{padding: "0.25rem"}}>
+                            <ChevronLeftIcon
+                                sx={{
+                                    color: "var(--bs-white) !important",
+                                }}
+                            />
+                        </IconButton>
+                        <IconButton sx={{padding: "0.25rem"}}>
+                            <PlayArrowIcon
+                                sx={{
+                                    color: "var(--bs-white) !important",
+                                }}
+                            />
+                        </IconButton>
+                        <IconButton sx={{padding: "0.25rem"}}>
+                            <ChevronRightIcon
+                                sx={{
+                                    color: "var(--bs-white) !important",
+                                }}
+                            />
+                        </IconButton>
+                        <IconButton>
+                            <SkipNextIcon
+                                sx={{
+                                    color: "var(--bs-white) !important",
+                                }}
+                            />
+                        </IconButton>
+                    </Box>
+                </Box>
+            </Slide>
+        )
+    }
+
     const getLeftPanel = () => {
         return (
             <Slide
@@ -684,22 +754,46 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     id="multi-agent-accelerator-grid-sidebar"
                     size={enableZenMode && isStreaming ? 0 : 3.25}
                     sx={{
+                        display: "flex",
+                        flexDirection: "column",
                         height: "100%",
+                        minHeight: 0, // critical for nested flex scrolling
                     }}
                 >
-                    <Sidebar
-                        customURLLocalStorage={customURLLocalStorage}
-                        customURLCallback={customURLCallback}
-                        id="multi-agent-accelerator-sidebar"
-                        isAwaitingLlm={isAwaitingLlm}
-                        networks={networks}
-                        networkIconSuggestions={networkIconSuggestions}
-                        newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onEditNetwork={handleEditNetwork}
-                        onDeleteNetwork={handleDeleteNetwork}
-                        setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
-                        temporaryNetworks={temporaryNetworks}
-                    />
+                    <Box
+                        sx={{
+                            flex: 1,
+                            minHeight: 0,
+                            overflow: "auto",
+                        }}
+                    >
+                        <Sidebar
+                            customURLLocalStorage={customURLLocalStorage}
+                            customURLCallback={customURLCallback}
+                            id="multi-agent-accelerator-sidebar"
+                            isAwaitingLlm={isAwaitingLlm}
+                            networks={networks}
+                            networkIconSuggestions={networkIconSuggestions}
+                            newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                            onEditNetwork={handleEditNetwork}
+                            onDeleteNetwork={handleDeleteNetwork}
+                            setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
+                            temporaryNetworks={temporaryNetworks}
+                        />
+                    </Box>
+
+                    {debugMode && (
+                        <Box
+                            sx={{
+                                flexShrink: 0,
+                                borderRightStyle: "solid",
+                                borderRightWidth: "0.75px",
+                                // marginTop: "1rem",
+                            }}
+                        >
+                            {getDebugOverlay()}
+                        </Box>
+                    )}
                 </Grid>
             </Slide>
         )
@@ -739,7 +833,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
-                            networkDisplayName={networkDisplayName || undefined}
+                            networkDisplayName={selectedNetwork || undefined}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
                             onEnterEditMode={() => setIsEditingNetwork(true)}
@@ -748,6 +842,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             onSaveAgent={onSaveAgent}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
+                            toggleDebugMode={() => setDebugMode((prev) => !prev)}
                         />
                     </Box>
                 </ReactFlowProvider>

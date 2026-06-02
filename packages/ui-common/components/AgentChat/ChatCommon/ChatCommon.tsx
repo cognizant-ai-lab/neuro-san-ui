@@ -911,10 +911,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         messages={toTurns(agentChatHistory.chatHistory)}
                     />
                 )}
+                <Typography sx={{fontWeight: "bold"}}>{targetAgent}</Typography>
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
                     {networkDescription}
                 </Box>
-                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>{agentGreeting}</Box>
+                <Box sx={{marginBottom: "0.5rem", marginTop: "0.75rem", color: "var(--bs-gray)"}}>{agentGreeting}</Box>
                 <SampleQueries
                     disabled={isAwaitingLlm}
                     handleSend={handleSend}
