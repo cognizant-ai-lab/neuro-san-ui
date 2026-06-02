@@ -433,12 +433,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Stop-confirm overlay state: null = not shown, "confirming" = dialog open, "cancelled" = brief info message
     const [stopState, setStopState] = useState<"confirming" | "cancelled" | "applied" | null>(null)
-    const cancelledTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    // Clear the cancelled-message timer on unmount
+    // Clear the banner timer on unmount
     useEffect(() => {
         return () => {
-            if (cancelledTimeoutRef.current) clearTimeout(cancelledTimeoutRef.current)
+            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
         }
     }, [])
 
@@ -454,13 +454,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         dockAbortControllerRef.current?.abort()
         dockAbortControllerRef.current = null
         setStopState("cancelled")
-        cancelledTimeoutRef.current = setTimeout(() => {
+        bannerTimeoutRef.current = setTimeout(() => {
             setStopState(null)
         }, 5_000)
     }, [])
 
-    const handleDismissCancelled = useCallback(() => {
-        if (cancelledTimeoutRef.current) clearTimeout(cancelledTimeoutRef.current)
+    const handleDismissBanner = useCallback(() => {
+        if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
         setStopState(null)
     }, [])
 
@@ -555,17 +555,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             )
             applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
             setDockPrompt("")
-            if (cancelledTimeoutRef.current) clearTimeout(cancelledTimeoutRef.current)
+            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
             setStopState("applied")
-            cancelledTimeoutRef.current = setTimeout(() => {
+            bannerTimeoutRef.current = setTimeout(() => {
                 setStopState(null)
             }, 5_000)
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
                 sendNotification(NotificationType.error, "Failed to apply network change.", String(e), undefined, null)
-            } else if (isAbort && !hasTimedOut) {
-                // User-initiated abort — silent (UI already shows the cancelled message)
             } else if (hasTimedOut) {
                 sendNotification(
                     NotificationType.error,
@@ -1091,7 +1089,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             <IconButton
                                 size="small"
                                 aria-label="dismiss applied message"
-                                onClick={handleDismissCancelled}
+                                onClick={handleDismissBanner}
                                 sx={{flexShrink: 0}}
                             >
                                 <CloseIcon fontSize="small" />
@@ -1126,7 +1124,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             <IconButton
                                 size="small"
                                 aria-label="dismiss cancelled message"
-                                onClick={handleDismissCancelled}
+                                onClick={handleDismissBanner}
                                 sx={{flexShrink: 0}}
                             >
                                 <CloseIcon fontSize="small" />
@@ -1349,11 +1347,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             sx={{
                                 whiteSpace: "nowrap",
                                 flexShrink: 0,
-                                ...(theme.palette.mode === "dark" && {
-                                    color: "common.white",
-                                    borderColor: "common.white",
-                                    "&:hover": {borderColor: "common.white"},
-                                }),
+                                color: theme.palette.common.white,
+                                borderColor: theme.palette.common.white,
+                                fontWeight: "bold",
+                                "&:hover": {
+                                    borderColor: theme.palette.error.main,
+                                    color: theme.palette.error.main,
+                                    backgroundColor: alpha(theme.palette.error.main, 0.08),
+                                },
                             }}
                         >
                             Stop

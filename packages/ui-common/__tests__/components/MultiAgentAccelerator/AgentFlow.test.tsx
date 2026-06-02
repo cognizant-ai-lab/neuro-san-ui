@@ -2489,7 +2489,7 @@ describe("AgentFlow", () => {
             consoleErrorSpy.mockRestore()
         })
 
-        it("clears a prior auto-dismiss timer when a second apply succeeds while cancelled banner is showing", async () => {
+        it("clears a prior timer when a second apply succeeds while cancelled banner is showing", async () => {
             jest.useFakeTimers()
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
