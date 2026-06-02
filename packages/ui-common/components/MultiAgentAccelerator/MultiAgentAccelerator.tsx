@@ -15,8 +15,11 @@ limitations under the License.
 */
 
 import StopCircle from "@mui/icons-material/StopCircle"
+import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
+import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid"
+import Paper from "@mui/material/Paper"
 import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
@@ -210,6 +213,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Track newly added temp networks so we can highlight them
     const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
+
+    // True while a file import is in-flight (after modal confirm, before the new network appears)
+    const [isImporting, setIsImporting] = useState<boolean>(false)
 
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
@@ -629,6 +635,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
      */
     const handleImportNetwork = useCallback(
         async (agentNetworkName: string, content: string): Promise<void> => {
+            setIsImporting(true)
             try {
                 const networkDef = hoconJsonToNetworkDefinition(content)
                 if (networkDef.length === 0) {
@@ -669,6 +676,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 }
             } catch (e: unknown) {
                 notifySaveError(agentNetworkName, e)
+            } finally {
+                setIsImporting(false)
             }
         },
         [changeSelectedNetwork, neuroSanURL, userInfo.userName]
@@ -1071,8 +1080,39 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
-
             {getDeleteNetworkConfirmationModal()}
+            <Backdrop
+                id="multi-agent-accelerator-import-backdrop"
+                open={isImporting}
+                sx={{zIndex: (t) => t.zIndex.modal + 1}}
+            >
+                <Paper
+                    elevation={6}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        paddingLeft: 4,
+                        paddingRight: 4,
+                        paddingTop: 2.5,
+                        paddingBottom: 2.5,
+                        borderRadius: 2,
+                        maxWidth: 480,
+                    }}
+                >
+                    <CircularProgress
+                        id="multi-agent-accelerator-import-spinner"
+                        size={24}
+                    />
+                    <Typography
+                        id="multi-agent-accelerator-import-title"
+                        variant="body1"
+                        sx={{fontWeight: "bold"}}
+                    >
+                        Importing network…
+                    </Typography>
+                </Paper>
+            </Backdrop>
             <Grid
                 id="multi-agent-accelerator-grid"
                 container

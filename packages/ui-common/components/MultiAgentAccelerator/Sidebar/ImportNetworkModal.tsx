@@ -145,10 +145,20 @@ export const formatFileSize = (bytes: number): string => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-/** Convert a filename stem to a display-friendly network name. */
+/** Convert a filename stem to a display-friendly network name.
+ *
+ * Strips a trailing UUID in the form `_xxxxxxxx_xxxx_xxxx_xxxx_xxxxxxxxxxxx`
+ * that neuro-san appends to exported filenames (e.g.
+ * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.hocon` → `my network`).
+ */
 export const filenameToNetworkName = (filename: string): string => {
     const {name: stem} = splitFilename(filename)
-    const spaced = stem.replaceAll(/[_-]+/gu, " ").toLowerCase()
+    // Strip a trailing UUID suffix (8-4-4-4-12 hex blocks separated by _ or -)
+    const stemWithoutUuid = stem.replaceAll(
+        /[_-][\da-fA-F]{8}[_-][\da-fA-F]{4}[_-][\da-fA-F]{4}[_-][\da-fA-F]{4}[_-][\da-fA-F]{12}$/gu,
+        ""
+    )
+    const spaced = stemWithoutUuid.replaceAll(/[_-]+/gu, " ").toLowerCase()
     return spaced.trim()
 }
 
