@@ -17,7 +17,7 @@ limitations under the License.
 /**
  * See main function description.
  */
-import {AIMessage, HumanMessage} from "@langchain/core/messages"
+import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
 import AccountTreeIcon from "@mui/icons-material/AccountTree"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
@@ -45,13 +45,11 @@ import {
 } from "react"
 import {v4 as uuid} from "uuid"
 
-import {AgentIntro} from "./AgentIntro"
-import {AgentMetadata} from "./AgentMetadata"
 import {ChatHistory} from "./ChatHistory"
-import {AGENT_IMAGE} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {Conversation} from "./Conversation"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
+import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
@@ -169,6 +167,16 @@ export interface ChatCommonProps {
      * to re-supply data that lives outside the IndexedDB slyData store (e.g. localStorage).
      */
     readonly extraSlyData?: Record<string, unknown>
+
+    /**
+     * Optional description of the network to display in the UI.
+     */
+    readonly networkDescription?: string
+
+    /**
+     * Sample queries for the current network that the user can "click to send"
+     */
+    readonly sampleQueries?: string[]
 }
 
 // Key for the chat history, which gets special treatment; always visible even if "show thinking" is off.
@@ -214,17 +222,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
+        networkDescription,
         neuroSanURL,
         onChunkReceived,
         onClose,
         onSend,
         onStreamingComplete,
         onStreamingStarted,
+        sampleQueries,
         setIsAwaitingLlm,
         setPreviousResponse,
         targetAgent,
         title,
-        userImage,
     } = props
     // MUI theme
     const theme = useTheme()
@@ -804,14 +813,25 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </>
     )
 
-    const agentIntro = (
-        <AgentIntro
-            agentDisplayName={agentDisplayName}
-            customAgentGreetings={customAgentGreetings}
-            key={targetAgent}
-            targetAgent={targetAgent}
-        />
-    )
+    const agentGreeting = customAgentGreetings[targetAgent] ?? "Hi, how can I help?"
+
+    const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
+        chatHistory
+            .filter((message) => message.type === "human" || message.type === "ai")
+            .map((message) => {
+                let role: MessageRole
+                if (message.type === "human") {
+                    role = MessageRole.User
+                } else if (message.type === "ai") {
+                    role = MessageRole.Agent
+                }
+                return {
+                    alwaysShow: true,
+                    id: message.id,
+                    text: message.content.toString(),
+                    role,
+                }
+            })
 
     const getResponseBox = () => (
         <Box
@@ -847,42 +867,29 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }}
                 tabIndex={-1}
             >
-                {/*{agentChatHistory?.chatHistory?.length > 0 && (*/}
-                {/*    <ChatHistory*/}
-                {/*        agentImage={AGENT_IMAGE}*/}
-                {/*        agentDisplayName={agentDisplayName}*/}
-                {/*        chatHistoryKey={CHAT_HISTORY_KEY}*/}
-                {/*        currentUser={currentUser}*/}
-                {/*        id={`${id}-chat-history`}*/}
-                {/*        messages={agentChatHistory.chatHistory}*/}
-                {/*        targetAgent={targetAgent}*/}
-                {/*        userImage={userImage}*/}
-                {/*    />*/}
-                {/*)}*/}
-                <Box sx={{marginBottom: "0.5rem", marginTop: "2rem", color: "var(--bs-gray)"}}>How can I help?</Box>
-                {/*For Neuro-san agents, intro goes above the metadata and conversation*/}
-                {/*{!isLegacyAgentType(targetAgent) && agentIntro}*/}
-                {/*{!isLegacyAgentType(targetAgent) && (*/}
-                <AgentMetadata
-                    disableQueries={isAwaitingLlm}
+                {agentChatHistory?.chatHistory?.length > 0 && (
+                    <ChatHistory
+                        chatHistoryKey={CHAT_HISTORY_KEY}
+                        id={`${id}-chat-history`}
+                        messages={toTurns(agentChatHistory.chatHistory)}
+                    />
+                )}
+                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
+                    {networkDescription}
+                </Box>
+                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>{agentGreeting}</Box>
+                <SampleQueries
+                    disabled={isAwaitingLlm}
                     handleSend={handleSend}
-                    currentUser={currentUser}
-                    id={`${id}-agent-metadata-display`}
-                    neuroSanURL={neuroSanURL}
-                    targetAgent={targetAgent}
+                    sampleQueries={sampleQueries}
                 />
-                {/*)}*/}
                 <Conversation
                     id={`${id}-conversation-display`}
-                    currentUser={currentUser}
                     finalAnswerRef={finalAnswerRef}
                     showThinking={showThinking}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
-                    userImage={userImage}
                 />
-                {/*For legacy agents, intro goes comes after the conversation as it's a continuous chat stream*/}
-                {isLegacyAgentType(targetAgent) && agentIntro}
                 {isAwaitingLlm && (
                     <Box
                         id="awaitingOutputContainer"

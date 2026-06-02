@@ -63,7 +63,6 @@ describe("Conversation", () => {
         render(
             <Conversation
                 id=""
-                currentUser=""
                 showThinking={false}
                 shouldWrapOutput={false}
                 turns={TURNS}
