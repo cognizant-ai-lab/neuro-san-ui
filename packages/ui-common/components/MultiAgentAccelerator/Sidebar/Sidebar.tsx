@@ -16,6 +16,7 @@ limitations under the License.
 import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined"
 import ClearIcon from "@mui/icons-material/Clear"
+import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
 import Box from "@mui/material/Box"
@@ -38,6 +39,7 @@ import {
 } from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
+import {ImportNetworkModal} from "./ImportNetworkModal"
 import {buildTreeViewItems} from "./TreeBuilder"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
@@ -148,6 +150,7 @@ export interface SidebarProps {
     readonly networks: readonly AgentInfo[]
     readonly onEditNetwork?: (network: string) => void
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
+    readonly onImportNetwork?: (name: string, content: string) => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
     readonly newlyAddedTemporaryNetworks?: Set<string>
@@ -167,6 +170,7 @@ export const Sidebar: FC<SidebarProps> = ({
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
     onEditNetwork,
+    onImportNetwork,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -181,6 +185,7 @@ export const Sidebar: FC<SidebarProps> = ({
     const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
+    const [importModalOpen, setImportModalOpen] = useState(false)
 
     const [expandedItems, setExpandedItems] = useState<string[]>([])
 
@@ -363,6 +368,23 @@ export const Sidebar: FC<SidebarProps> = ({
                             >
                                 <AddBoxRounded
                                     id="add-network-icon"
+                                    sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                                />
+                            </Tooltip>
+                        </Button>
+                        <Button
+                            aria-label="Import Network Definition"
+                            disabled={isAwaitingLlm}
+                            id="import-network-btn"
+                            onClick={() => setImportModalOpen(true)}
+                            sx={{display: "inline-block", minWidth: "40px"}}
+                        >
+                            <Tooltip
+                                title="Import a network definition file"
+                                placement="top"
+                            >
+                                <FileUploadOutlinedIcon
+                                    id="import-network-icon"
                                     sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
                                 />
                             </Tooltip>
@@ -556,6 +578,12 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Box>
                 )}
             </Popover>
+            <ImportNetworkModal
+                existingNetworkNames={temporaryNetworks.map((n) => n.agentNetworkName)}
+                isOpen={importModalOpen}
+                onClose={() => setImportModalOpen(false)}
+                onImport={onImportNetwork}
+            />
         </>
     )
 }

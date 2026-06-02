@@ -44,7 +44,7 @@ import {
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
-    sendNetworkDesignerUpdate,
+    sendNetworkDesignerUpsert,
 } from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
@@ -117,6 +117,64 @@ const notifySaveError = (agentName: string, e: unknown): void => {
             ? "The request timed out waiting for the server. Please try again."
             : String(e)
     sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
+}
+
+/**
+ * Converts a parsed network JSON (from a HOCON/JSON import file) into an array of
+ * AgentNetworkDefinitionEntry objects suitable for sendNetworkDesignerUpsert.
+ *
+ * Supports two neuro-san formats:
+ * 1. Native HOCON `tools[]` array – each entry has `name`, `function.description`,
+ *    `instructions`, `tools`, and optional `display_as` / `metadata`.
+ * 2. Exported `agents{}` dict – each key is the agent name, value has the same fields
+ *    (minus the explicit `name` key).
+ */
+const hoconJsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
+    const parsed = JSON.parse(jsonString) as Record<string, unknown>
+
+    // --- Format 1: native HOCON tools[] array ---
+    const toolsArray = parsed["tools"] as Record<string, unknown>[] | undefined
+    if (Array.isArray(toolsArray) && toolsArray.length > 0) {
+        return toolsArray
+            .filter((tool) => typeof tool["name"] === "string")
+            .map((tool) => {
+                const fn = tool["function"] as Record<string, unknown> | undefined
+                const meta = tool["metadata"] as Record<string, unknown> | undefined
+                return {
+                    origin: tool["name"] as string,
+                    tools: tool["tools"] as string[] | undefined,
+                    display_as: (tool["display_as"] as string | undefined) ?? "llm_agent",
+                    ...(meta !== undefined ? {metadata: meta} : {}),
+                    instructions: tool["instructions"] as string | undefined,
+                    description: fn?.["description"] as string | undefined,
+                }
+            })
+    }
+
+    // --- Format 2: agents{} dict (exported/converted JSON) ---
+    const agents = parsed["agents"] as Record<string, Record<string, unknown>> | undefined
+    if (agents !== undefined && Object.keys(agents).length > 0) {
+        return Object.entries(agents).map(([agentName, agentDef]) => ({
+            origin: agentName,
+            tools: agentDef["tools"] as string[] | undefined,
+            display_as: agentDef["display_as"] as string | undefined,
+            metadata: agentDef["metadata"] as Record<string, unknown> | undefined,
+            instructions: agentDef["instructions"] as string | undefined,
+            description: agentDef["description"] as string | undefined,
+        }))
+    }
+
+    return []
+}
+
+/**
+ * Returns the frontman agent name: the agent that is not listed as a tool by any other agent.
+ * Falls back to the first entry if every agent is referenced as a tool (unlikely but defensive).
+ */
+const findFrontman = (networkDef: AgentNetworkDefinitionEntry[]): string => {
+    const allTools = new Set(networkDef.flatMap((entry) => entry.tools ?? []))
+    const frontman = networkDef.find((entry) => entry.origin && !allTools.has(entry.origin))
+    return frontman?.origin ?? networkDef[0]?.origin ?? "agent"
 }
 
 // #endregion: Agent-save helpers
@@ -520,7 +578,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         ): Promise<void> => {
             try {
                 let newNetworks: TemporaryNetwork[] = []
-                await sendNetworkDesignerUpdate(
+                await sendNetworkDesignerUpsert(
                     neuroSanURL,
                     signal,
                     agentName,
@@ -562,6 +620,58 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
         },
         [neuroSanURL, userInfo.userName, selectedNetwork]
+    )
+
+    /**
+     * Handles an import from the ImportNetworkModal: converts the HOCON/JSON content to a
+     * network definition, streams it through the network designer to obtain a reservation,
+     * then upserts the result into the temporary-networks store and navigates to the new network.
+     */
+    const handleImportNetwork = useCallback(
+        async (agentNetworkName: string, content: string): Promise<void> => {
+            try {
+                const networkDef = hoconJsonToNetworkDefinition(content)
+                if (networkDef.length === 0) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to import "${agentNetworkName}".`,
+                        'The file does not contain an "agents" object.'
+                    )
+                    return
+                }
+                const frontman = findFrontman(networkDef)
+                const abortController = new AbortController()
+                let newNetworks: TemporaryNetwork[] = []
+                await sendNetworkDesignerUpsert(
+                    neuroSanURL,
+                    abortController.signal,
+                    frontman,
+                    networkDef,
+                    agentNetworkName,
+                    userInfo.userName,
+                    (chunk) => {
+                        newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
+                    }
+                )
+                if (newNetworks.length === 0) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to import "${agentNetworkName}".`,
+                        "The network designer did not return a reservation. Please try again."
+                    )
+                    return
+                }
+                useTempNetworksStore.getState().upsertTempNetworks(newNetworks)
+                const first = newNetworks[0]
+                if (first) {
+                    setNewlyAddedTemporaryNetworks(new Set([first.agentInfo.agent_name]))
+                    changeSelectedNetwork(first.agentInfo.agent_name)
+                }
+            } catch (e: unknown) {
+                notifySaveError(agentNetworkName, e)
+            }
+        },
+        [changeSelectedNetwork, neuroSanURL, userInfo.userName]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -673,8 +783,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onEditNetwork={handleEditNetwork}
                         onDeleteNetwork={handleDeleteNetwork}
+                        onEditNetwork={handleEditNetwork}
+                        onImportNetwork={handleImportNetwork}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />

@@ -393,6 +393,34 @@ describe("SideBar", () => {
         expect(settingsButton).toBeDisabled()
     })
 
+    it("should render the Import Network Definition button", async () => {
+        renderSidebarComponent()
+        await screen.findByRole("button", {name: /Import Network Definition/u})
+    })
+
+    it("should open the ImportNetworkModal when the import button is clicked", async () => {
+        renderSidebarComponent()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+        await screen.findByTestId("import-network-modal")
+    })
+
+    it("should close the ImportNetworkModal when Cancel is clicked", async () => {
+        renderSidebarComponent()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+        await screen.findByTestId("import-network-modal")
+
+        await user.click(screen.getByRole("button", {name: /cancel/iu}))
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    })
+
+    it("should disable the import button when isAwaitingLlm is true", async () => {
+        renderSidebarComponent({isAwaitingLlm: true})
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
     it("should display tooltip with customURLLocalStorage if provided", async () => {
         renderSidebarComponent({customURLLocalStorage: TOOLTIP_EXAMPLE_URL})
         const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)

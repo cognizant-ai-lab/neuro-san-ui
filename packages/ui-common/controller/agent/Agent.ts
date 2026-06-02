@@ -296,7 +296,7 @@ export const getAgentFunction = async (url: string, agent: string, userId: strin
  * Calls `onChunk` for each line received; callers are responsible for parsing
  * reservations / networks out of each chunk.
  */
-export const sendNetworkDesignerUpdate = async (
+export const sendNetworkDesignerUpsert = async (
     url: string,
     signal: AbortSignal,
     agentName: string,
