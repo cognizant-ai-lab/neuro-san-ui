@@ -53,7 +53,7 @@ export const addThoughtBubbleEdge = (
 
     // Enforce max limit - remove oldest if over limit
     if (thoughtBubbleEdges.size > MAX_GLOBAL_THOUGHT_BUBBLES) {
-        const entries = Array.from(thoughtBubbleEdges.entries())
+        const entries = [...thoughtBubbleEdges.entries()]
         const sorted = entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
         const toRemove = sorted.slice(0, sorted.length - MAX_GLOBAL_THOUGHT_BUBBLES)
 
@@ -73,7 +73,7 @@ export const removeThoughtBubbleEdge = (
 export const getThoughtBubbleEdges = (
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
 ): ThoughtBubbleEdgeShape[] => {
-    return Array.from(thoughtBubbleEdges.values()).map((item) => item.edge)
+    return [...thoughtBubbleEdges.values()].map((item) => item.edge)
 }
 
 // Helper function for plasma edges to check if two agents are in the same conversation
@@ -393,7 +393,7 @@ export const layoutLinear = (
     dagre.layout(dagreGraph)
 
     // Get x positions for the nodes in nodesTmp. Keep only unique values and sort numerically
-    const xPositions = Array.from(new Set(nodesTmp.map((node) => dagreGraph.node(node.id).x))).sort((a, b) => a - b)
+    const xPositions = [...new Set(nodesTmp.map((node) => dagreGraph.node(node.id).x))].sort((a, b) => a - b)
 
     // Convert dagre's layout to what our flow graph needs
     nodesTmp.forEach((node) => {

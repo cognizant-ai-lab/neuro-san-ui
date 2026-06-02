@@ -89,7 +89,7 @@ describe("AgentNode", () => {
         expect(parentDiv).toBeInTheDocument()
 
         // Check the background color of the associated node (the circle div)
-        const nodeDiv = Array.from(parentDiv.children).find((el) => el.tagName === "DIV") as HTMLDivElement
+        const nodeDiv = [...parentDiv.children].find((el) => el.tagName === "DIV") as HTMLDivElement
         expect(nodeDiv).toBeInTheDocument()
         const style = window.getComputedStyle(nodeDiv)
 

@@ -167,8 +167,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                             </Tooltip>
                             {isChild && tags?.length > 0 ? (
                                 <Tooltip
-                                    title={tags
-                                        .slice()
+                                    title={[...tags]
                                         .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
                                         .map((tag) => (
                                             <Chip

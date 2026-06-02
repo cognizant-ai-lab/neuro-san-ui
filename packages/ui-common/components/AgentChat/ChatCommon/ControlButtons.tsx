@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import DeleteOutline from "@mui/icons-material/DeleteOutline"
+import DeleteOutlined from "@mui/icons-material/DeleteOutlined"
 import Loop from "@mui/icons-material/Loop"
 import StopCircle from "@mui/icons-material/StopCircle"
 import {FC} from "react"
@@ -57,7 +57,7 @@ export const ControlButtons: FC<ControlButtonsProps> = ({
                 posBottom={8}
                 posRight={65}
             >
-                <DeleteOutline
+                <DeleteOutlined
                     fontSize="small"
                     id="stop-button-icon"
                     sx={{color: "var(--bs-white)"}}

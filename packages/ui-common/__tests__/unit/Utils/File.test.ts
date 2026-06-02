@@ -49,11 +49,11 @@ describe("getFileName", () => {
     })
 
     it("should return the file name when the path includes backslashes", () => {
-        expect(getFileName("C:\\Users\\JaneDoe\\Documents\\myfile.txt")).toBe("myfile.txt")
+        expect(getFileName(String.raw`C:\Users\JaneDoe\Documents\myfile.txt`)).toBe("myfile.txt")
     })
 
     it("should return the file name when the path includes both forward and back slashes", () => {
-        expect(getFileName("C:/Users/JaneDoe\\Documents/myfile.txt")).toBe("myfile.txt")
+        expect(getFileName(String.raw`C:/Users/JaneDoe\Documents/myfile.txt`)).toBe("myfile.txt")
     })
 
     it("should return nothing when the path ends with a forward slash", () => {
@@ -69,7 +69,7 @@ describe("getFileName", () => {
     })
 
     it("should return the file name when the path contains only one backslash", () => {
-        expect(getFileName("C:\\myfile.txt")).toBe("myfile.txt")
+        expect(getFileName(String.raw`C:\myfile.txt`)).toBe("myfile.txt")
     })
 
     it("should return the file name when the path contains only one forward slash", () => {

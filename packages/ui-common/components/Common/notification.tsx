@@ -79,7 +79,7 @@ export const sendNotification = (
     // Use some minor customization to be able to inject ids for testing
     const messageForId = message
         .replaceAll(" ", "-")
-        .replace(/[^a-zA-Z0-9-]/gu, "")
+        .replaceAll(/[^a-zA-Z0-9-]/gu, "")
         .toLowerCase()
     const baseId = `notification-message-${messageForId}-${NotificationType[variantType]}`
     const messageSpan = <span id={`${baseId}-span`}>{message}</span>

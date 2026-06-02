@@ -152,7 +152,7 @@ describe("AgentFlow", () => {
         expect(nodes).toHaveLength(3)
 
         const agentNames = NETWORK.map((agent) => agent.origin)
-        const nodesArray = Array.from(nodes)
+        const nodesArray = [...nodes]
 
         // Make sure each agent node is rendered at least. Structure in react-flow is:
         // <div class="react-flow__node"><div><p>agentName</p></div></div>

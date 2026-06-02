@@ -3,7 +3,7 @@
 // enables IDEs to type check this config file.
 // See: https://nextjs.org/docs/basic-features/typescript
 
-import path from "path"
+import path from "node:path"
 
 /* eslint-disable no-shadow */
 const __dirname = import.meta.dirname

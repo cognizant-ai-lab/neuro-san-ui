@@ -159,8 +159,8 @@ export const Navbar = ({
         <Grid
             id="nav-bar-container"
             container={true}
-            alignItems="center"
             sx={{
+                alignItems: "center",
                 ...MENU_ITEM_TEXT_PROPS,
                 padding: "0.5rem",
             }}

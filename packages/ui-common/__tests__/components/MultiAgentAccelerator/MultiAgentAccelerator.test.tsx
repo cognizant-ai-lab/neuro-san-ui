@@ -481,7 +481,7 @@ describe("Multi Agent Accelerator Page", () => {
         // Verify the conversations array contains the expected agent
         const conversationCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1][0]
         const hasAgent = conversationCall.some((conv: {agents: Set<string>}) =>
-            Array.from(conv.agents).includes(TEST_AGENT_MATH_GUY)
+            [...conv.agents].includes(TEST_AGENT_MATH_GUY)
         )
         expect(hasAgent).toBe(true)
     })

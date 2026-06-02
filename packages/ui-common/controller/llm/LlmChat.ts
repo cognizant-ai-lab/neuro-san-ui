@@ -73,10 +73,10 @@ const handleStreamingCallback = async (
             let newlineIndex
             while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
                 // Extract the complete line (without the newline)
-                const line = buffer.substring(0, newlineIndex).trim()
+                const line = buffer.slice(0, Math.max(0, newlineIndex)).trim()
 
                 // Keep the rest for next iteration
-                buffer = buffer.substring(newlineIndex + 1)
+                buffer = buffer.slice(Math.max(0, newlineIndex + 1))
 
                 // Skip empty lines
                 if (line.length > 0) {
