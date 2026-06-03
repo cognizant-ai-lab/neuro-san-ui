@@ -183,6 +183,7 @@ export interface ChatCommonProps {
 
     readonly debugStep?: number
     readonly debugMessages?: ChatMessage[]
+    readonly onClickChatMessage?: (messageNumber: number) => void
 }
 
 // Key for the chat history, which gets special treatment; always visible even if "show thinking" is off.
@@ -227,6 +228,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         debugStep,
         extraParams,
         extraSlyData,
+        onClickChatMessage,
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
@@ -976,19 +978,56 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             ➜
                         </Typography>
 
-                        <Typography
-                            component="span"
-                            sx={{
-                                fontSize: "0.8rem",
-                                lineHeight: 1.25,
-                                fontWeight: 700,
-                                textAlign: "right",
-                                pr: 0.25,
-                                fontVariantNumeric: "tabular-nums",
-                            }}
+                        <Tooltip
+                            title={`Show details for message ${index + 1}`}
+                            placement="top"
                         >
-                            #{index + 1}
-                        </Typography>
+                            <Typography
+                                component="span"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Show details for message ${index + 1}`}
+                                sx={{
+                                    fontSize: "0.8rem",
+                                    lineHeight: 1.25,
+                                    fontWeight: 700,
+                                    textAlign: "right",
+                                    pr: 0.25,
+                                    fontVariantNumeric: "tabular-nums",
+
+                                    cursor: "pointer",
+
+                                    // Keep resting state neutral for both active and inactive rows
+                                    color: "text.secondary",
+                                    textDecoration: "none",
+                                    textUnderlineOffset: "2px",
+                                    transition: "color 120ms ease, text-decoration-color 120ms ease",
+
+                                    // Lighter hover tone than primary.main
+                                    "&:hover": {
+                                        color: "primary.light",
+                                        textDecoration: "underline",
+                                    },
+
+                                    "&:focus-visible": {
+                                        color: "primary.light",
+                                        outline: `2px solid ${theme.palette.primary.main}`,
+                                        outlineOffset: 2,
+                                        borderRadius: 0.5,
+                                        textDecoration: "underline",
+                                    },
+                                }}
+                                onClick={() => onClickChatMessage?.(index)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault()
+                                        onClickChatMessage?.(index)
+                                    }
+                                }}
+                            >
+                                #{index + 1}
+                            </Typography>
+                        </Tooltip>
 
                         <Box
                             sx={{
@@ -1264,7 +1303,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         >
             {title && getTitle()}
             {getResponseBox()}
-            {getUserInputBox()}
+            {!debugMessages?.length && getUserInputBox()}
         </Box>
     )
 
