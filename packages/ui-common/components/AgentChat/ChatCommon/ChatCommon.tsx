@@ -1335,15 +1335,17 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 </Box>
             )}
 
-            <ControlButtons
-                enableClearChatButton={enableClearChatButton}
-                handleClearChat={handleClearChat}
-                handleSend={handleSend}
-                handleStop={handleStop}
-                isAwaitingLlm={isAwaitingLlm}
-                previousUserQuery={previousUserQuery}
-                shouldEnableRegenerateButton={shouldEnableRegenerateButton}
-            />
+            {!debugMessages?.length && (
+                <ControlButtons
+                    enableClearChatButton={enableClearChatButton}
+                    handleClearChat={handleClearChat}
+                    handleSend={handleSend}
+                    handleStop={handleStop}
+                    isAwaitingLlm={isAwaitingLlm}
+                    previousUserQuery={previousUserQuery}
+                    shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+                />
+            )}
         </Box>
     )
 
