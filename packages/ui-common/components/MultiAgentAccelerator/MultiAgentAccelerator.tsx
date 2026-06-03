@@ -29,6 +29,7 @@ import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {useJoyride} from "react-joyride"
+import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
@@ -63,6 +64,7 @@ import {TourPromptState, useTourStore} from "../../state/Tour"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
+import {HLJS_THEMES} from "../AgentChat/ChatCommon/SyntaxHighlighterThemes"
 import {SmallLlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
@@ -70,6 +72,8 @@ import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {MUIDialog} from "../Common/MUIDialog"
+
+const {atelierDuneDark} = HLJS_THEMES
 
 export interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
@@ -1512,9 +1516,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 >
                                     structure (Record&lt;string, unknown&gt;)
                                 </Typography>
-                                <Box sx={{...codeSx, mt: 0.5}}>
+                                <SyntaxHighlighter
+                                    id="syntax-highlighter-structure"
+                                    PreTag="div"
+                                    language="json"
+                                    style={atelierDuneDark}
+                                >
                                     {msg.structure ? JSON.stringify(msg.structure, null, 2) : "n/a"}
-                                </Box>
+                                </SyntaxHighlighter>
                             </Box>
 
                             {/* sly_data */}
@@ -1596,7 +1605,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 >
                                     raw (full ChatMessage JSON)
                                 </Typography>
-                                <Box sx={{...codeSx, mt: 0.5, maxHeight: 260}}>{JSON.stringify(msg, null, 2)}</Box>
+                                <SyntaxHighlighter
+                                    id="syntax-highlighter-structure"
+                                    PreTag="div"
+                                    language="json"
+                                    style={atelierDuneDark}
+                                >
+                                    {JSON.stringify(msg, null, 2)}
+                                </SyntaxHighlighter>
                             </Box>
                         </>
                     )
