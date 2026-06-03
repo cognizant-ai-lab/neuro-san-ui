@@ -1461,6 +1461,7 @@ __metadata:
     knip: "npm:6.3.1"
     prettier: "npm:3.8.2"
     react: "catalog:default"
+    react-draggable: "npm:^4.6.0"
     ts-jest: "npm:29.4.9"
     ts-node: "npm:10.9.2"
     typescript: "catalog:default"
@@ -1526,7 +1527,6 @@ __metadata:
     fix-esm-import-path: "npm:1.10.3"
     globals: "catalog:default"
     http-status: "catalog:default"
-    jsonrepair: "npm:3.8.0"
     lodash-es: "catalog:default"
     notistack: "catalog:default"
     openapi-typescript: "npm:7.8.0"
@@ -8395,15 +8395,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsonrepair@npm:3.8.0":
-  version: 3.8.0
-  resolution: "jsonrepair@npm:3.8.0"
-  bin:
-    jsonrepair: bin/cli.js
-  checksum: 10c0/24e90efde3f3683abb935b5b9dc9cacd9480eb897d3e2fc202ce594509c15af8c627755640f0bc36b9b8efdf13d291f8f7affee0eaf53ad7762a0e985582b867
-  languageName: node
-  linkType: hard
-
 "jsx-ast-utils@npm:^2.4.1 || ^3.0.0":
   version: 3.3.5
   resolution: "jsx-ast-utils@npm:3.3.5"
@@ -10087,6 +10078,19 @@ __metadata:
   peerDependencies:
     react: ^19.2.4
   checksum: 10c0/f0c63f1794dedb154136d4d0f59af00b41907f4859571c155940296808f4b94bf9c0c20633db75b5b2112ec13d8d7dd4f9bf57362ed48782f317b11d05a44f35
+  languageName: node
+  linkType: hard
+
+"react-draggable@npm:^4.6.0":
+  version: 4.6.0
+  resolution: "react-draggable@npm:4.6.0"
+  dependencies:
+    clsx: "npm:^2.1.1"
+    prop-types: "npm:^15.8.1"
+  peerDependencies:
+    react: ">= 16.3.0"
+    react-dom: ">= 16.3.0"
+  checksum: 10c0/4fc196136a86054f18a005d77a33d0bf214751b2534e38b76f8d588df865b8230b6084c1645040c243d83b191723fc133653ec372db45ab4bea0b1842c42a38a
   languageName: node
   linkType: hard
 

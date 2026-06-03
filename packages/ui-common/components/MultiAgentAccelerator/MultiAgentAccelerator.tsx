@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import CloseIcon from "@mui/icons-material/Close"
@@ -28,6 +29,7 @@ import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import Draggable from "react-draggable"
 import {useJoyride} from "react-joyride"
 import SyntaxHighlighter from "react-syntax-highlighter"
 
@@ -216,7 +218,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const debugPlayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
     const [detailChatMessageNumber, setDetailChatMessageNumber] = useState<number | null>(null)
-    const [showMessageDetailsPopper, setShowMessageDetailsPopper] = useState<boolean>(false)
+    const [showMessageDetailsPopper, setShowMessageDetailsPopper] = useState(false)
+    // state/refs
+    const messageDetailsNodeRef = useRef<HTMLDivElement | null>(null)
+    const [messageDetailsDelta, setMessageDetailsDelta] = useState({x: 0, y: 0})
+    const [messageDetailsPosition, setMessageDetailsPosition] = useState<{left: number; top: number} | null>(null)
 
     //common function to change the selected network and reset related state
     const changeSelectedNetwork = useCallback((next: string | null) => {
@@ -780,6 +786,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const onClickChatMessage = (messageNumber: number) => {
         setDetailChatMessageNumber(messageNumber)
+
+        const modalWidth = Math.min(window.innerWidth * 0.52, 760)
+        const modalHeight = window.innerHeight * 0.72
+        const left = Math.max(8, Math.round((window.innerWidth - modalWidth) / 2))
+        const topPos = Math.max(8, Math.round((window.innerHeight - modalHeight) / 2))
+
+        setMessageDetailsPosition({left, top: topPos})
+        setMessageDetailsDelta({x: 0, y: 0}) // reset drag offset each open
         setShowMessageDetailsPopper(true)
     }
 
@@ -1292,334 +1306,369 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         </Box>
     )
 
-    const getChatMessageDetailsPopper = () => (
-        <Box
-            role="dialog"
-            aria-modal="false"
-            aria-label="Message details"
-            sx={{
-                display: showMessageDetailsPopper ? "flex" : "none",
-                flexDirection: "column",
-                position: "absolute",
-                top: "8%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: {xs: "92%", sm: "78%", md: "52%", lg: "42%"},
-                maxWidth: 760,
-                maxHeight: "72%",
-                zIndex: getZIndex(2, theme),
+    const handleCloseMessageDetails = () => {
+        setShowMessageDetailsPopper(false)
+        setMessageDetailsPosition(null)
+        setMessageDetailsDelta({x: 0, y: 0})
+    }
 
-                // Softer, theme-consistent visual treatment
-                backgroundColor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2,
-                boxShadow: theme.shadows[8],
-                backdropFilter: "blur(2px)",
-                overflow: "hidden",
-            }}
-        >
-            {/* Header */}
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    px: 2,
-                    py: 1.5,
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[50],
+    const getChatMessageDetailsPopper = () => {
+        if (!showMessageDetailsPopper || !messageDetailsPosition) return null
+
+        return (
+            <Draggable
+                nodeRef={messageDetailsNodeRef}
+                handle=".message-details-header"
+                cancel='button, [role="button"], input, textarea, select, .no-drag'
+                position={messageDetailsDelta}
+                positionOffset={{x: messageDetailsPosition.left, y: messageDetailsPosition.top}}
+                onDrag={(_, data) => {
+                    const node = messageDetailsNodeRef.current
+                    const nodeWidth = node?.offsetWidth ?? 760
+                    const nodeHeight = node?.offsetHeight ?? Math.round(window.innerHeight * 0.72)
+
+                    const minX = -messageDetailsPosition.left
+                    const maxX = window.innerWidth - messageDetailsPosition.left - nodeWidth
+                    const minY = -messageDetailsPosition.top
+                    const maxY = window.innerHeight - messageDetailsPosition.top - nodeHeight
+
+                    const x = Math.min(Math.max(data.x, minX), maxX)
+                    const y = Math.min(Math.max(data.y, minY), maxY)
+
+                    setMessageDetailsDelta({x, y})
                 }}
             >
-                <Typography
-                    variant="subtitle1"
-                    sx={{fontWeight: 700, letterSpacing: 0.2}}
-                >
-                    Message Details
-                </Typography>
-
-                <IconButton
-                    aria-label="Close message details"
-                    onClick={() => setShowMessageDetailsPopper(false)}
-                    size="small"
+                <Box
+                    ref={messageDetailsNodeRef}
+                    role="dialog"
+                    aria-modal="false"
+                    aria-label="Message details"
                     sx={{
-                        color: theme.palette.text.secondary,
-                        "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
-                            color: theme.palette.text.primary,
-                        },
+                        display: "flex",
+                        flexDirection: "column",
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        width: {xs: "92%", sm: "78%", md: "52%", lg: "42%"},
+                        maxWidth: 760,
+                        maxHeight: "72%",
+                        zIndex: getZIndex(2, theme),
+                        backdropFilter: "blur(2px)",
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 2,
+                        boxShadow: theme.shadows[8],
+                        color: theme.palette.text.primary,
+                        overflow: "hidden",
                     }}
                 >
-                    <CloseIcon fontSize="small" />
-                </IconButton>
-            </Box>
+                    {/* Header */}
+                    <Box
+                        className="message-details-header"
+                        sx={{
+                            cursor: "move",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2,
+                            py: 1.5,
+                            borderBottom: `1px solid ${theme.palette.divider}`,
+                            backgroundColor:
+                                theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[50],
+                        }}
+                    >
+                        <Typography
+                            variant="subtitle1"
+                            sx={{fontWeight: 700, letterSpacing: 0.2}}
+                        >
+                            Message Details
+                        </Typography>
 
-            {/* Content */}
-            <Box
-                sx={{
-                    p: 2,
-                    overflowY: "auto",
-                    lineHeight: 1.55,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1.5,
-                }}
-            >
-                {(() => {
-                    const msg = chatMessages?.[detailChatMessageNumber ?? -1]
+                        <IconButton
+                            aria-label="Close message details"
+                            onClick={handleCloseMessageDetails}
+                            size="small"
+                            sx={{
+                                color: theme.palette.text.secondary,
+                                "&:hover": {
+                                    backgroundColor: theme.palette.action.hover,
+                                    color: theme.palette.text.primary,
+                                },
+                            }}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
 
-                    const sectionSx = {
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 1.5,
-                        p: 1.25,
-                        backgroundColor:
-                            theme.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : theme.palette.grey[50],
-                    } as const
+                    {/* Content */}
+                    <Box
+                        sx={{
+                            p: 2,
+                            overflowY: "auto",
+                            lineHeight: 1.55,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1.5,
+                        }}
+                    >
+                        {(() => {
+                            const msg = chatMessages?.[detailChatMessageNumber ?? -1]
 
-                    const codeSx = {
-                        fontFamily:
-                            "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
-                        fontSize: "0.78rem",
-                        p: 1,
-                        borderRadius: 1,
-                        border: `1px solid ${theme.palette.divider}`,
-                        backgroundColor: theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.03)",
-                        overflow: "auto",
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                    } as const
+                            const sectionSx = {
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1.5,
+                                p: 1.25,
+                                backgroundColor:
+                                    theme.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : theme.palette.grey[50],
+                            } as const
 
-                    if (!msg) {
-                        return <Typography variant="body1">No message selected.</Typography>
-                    }
+                            const codeSx = {
+                                fontFamily:
+                                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+                                fontSize: "0.78rem",
+                                p: 1,
+                                borderRadius: 1,
+                                border: `1px solid ${theme.palette.divider}`,
+                                backgroundColor:
+                                    theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.03)",
+                                overflow: "auto",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                            } as const
 
-                    return (
-                        <>
-                            <Typography
-                                variant="caption"
-                                sx={{color: theme.palette.text.secondary}}
-                            >
-                                Message #{(detailChatMessageNumber ?? 0) + 1}
-                            </Typography>
+                            if (!msg) {
+                                return <Typography variant="body1">No message selected.</Typography>
+                            }
 
-                            {/* Core */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    Core
-                                </Typography>
-                                <Typography variant="body2">
-                                    <strong>type:</strong> {msg.type ?? "n/a"}
-                                </Typography>
-                            </Box>
+                            return (
+                                <>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{color: theme.palette.text.secondary}}
+                                    >
+                                        Message #{(detailChatMessageNumber ?? 0) + 1}
+                                    </Typography>
 
-                            {/* Text (scrollable) */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    text
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        ...codeSx,
-                                        maxHeight: 240,
-                                        overflowY: "auto",
-                                        mt: 0.5,
-                                    }}
-                                >
-                                    {msg.text ?? "n/a"}
-                                </Box>
-                            </Box>
-
-                            {/* Origin[] */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    origin[] (Origin)
-                                </Typography>
-                                {msg.origin?.length ? (
-                                    <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
-                                        {msg.origin.map((o, i) => (
-                                            <Box
-                                                key={`origin-${i}`}
-                                                sx={codeSx}
-                                            >
-                                                {`[${i}] tool=${o?.tool ?? "n/a"} | instantiation_index=${o?.instantiation_index ?? "n/a"}`}
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                ) : (
-                                    <Typography variant="body2">n/a</Typography>
-                                )}
-                            </Box>
-
-                            {/* tool_result_origin[] */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    tool_result_origin[] (Origin)
-                                </Typography>
-                                {msg.tool_result_origin?.length ? (
-                                    <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
-                                        {msg.tool_result_origin.map((o, i) => (
-                                            <Box
-                                                key={`tool-origin-${i}`}
-                                                sx={codeSx}
-                                            >
-                                                {`[${i}] tool=${o?.tool ?? "n/a"} | instantiation_index=${o?.instantiation_index ?? "n/a"}`}
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                ) : (
-                                    <Typography variant="body2">n/a</Typography>
-                                )}
-                            </Box>
-
-                            {/* mime_data[] */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    mime_data[] (MimeData)
-                                </Typography>
-                                {msg.mime_data?.length ? (
-                                    <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
-                                        {msg.mime_data.map((m, i) => (
-                                            <Box
-                                                key={`mime-${i}`}
-                                                sx={codeSx}
-                                            >
-                                                <div>{`[${i}] mime_type=${m?.mime_type ?? "n/a"}`}</div>
-                                                <div>{`mime_bytes length=${m?.mime_bytes?.length ?? 0}`}</div>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                ) : (
-                                    <Typography variant="body2">n/a</Typography>
-                                )}
-                            </Box>
-
-                            {/* structure */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    structure (Record&lt;string, unknown&gt;)
-                                </Typography>
-                                <SyntaxHighlighter
-                                    id="syntax-highlighter-structure"
-                                    PreTag="div"
-                                    language="json"
-                                    style={atelierDuneDark}
-                                >
-                                    {msg.structure ? JSON.stringify(msg.structure, null, 2) : "n/a"}
-                                </SyntaxHighlighter>
-                            </Box>
-
-                            {/* sly_data */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    sly_data (Record&lt;string, unknown&gt;)
-                                </Typography>
-                                <Box sx={{...codeSx, mt: 0.5}}>
-                                    {msg.sly_data ? JSON.stringify(msg.sly_data, null, 2) : "n/a"}
-                                </Box>
-                            </Box>
-
-                            {/* chat_context */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    chat_context (ChatContext)
-                                </Typography>
-
-                                {msg.chat_context ? (
-                                    <>
+                                    {/* Core */}
+                                    <Box sx={sectionSx}>
                                         <Typography
-                                            variant="body2"
-                                            sx={{mt: 0.5}}
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
                                         >
-                                            <strong>chat_histories count:</strong>{" "}
-                                            {msg.chat_context.chat_histories?.length ?? 0}
+                                            Core
                                         </Typography>
+                                        <Typography variant="body2">
+                                            <strong>type:</strong> {msg.type ?? "n/a"}
+                                        </Typography>
+                                    </Box>
 
-                                        {msg.chat_context.chat_histories?.length ? (
-                                            <Box sx={{display: "flex", flexDirection: "column", gap: 1, mt: 1}}>
-                                                {msg.chat_context.chat_histories.map((h, hi) => (
+                                    {/* Text (scrollable) */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            text
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                ...codeSx,
+                                                maxHeight: 240,
+                                                overflowY: "auto",
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            {msg.text ?? "n/a"}
+                                        </Box>
+                                    </Box>
+
+                                    {/* Origin[] */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            origin[] (Origin)
+                                        </Typography>
+                                        {msg.origin?.length ? (
+                                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
+                                                {msg.origin.map((o, i) => (
                                                     <Box
-                                                        key={`history-${hi}`}
-                                                        sx={{
-                                                            border: `1px solid ${theme.palette.divider}`,
-                                                            borderRadius: 1,
-                                                            p: 1,
-                                                        }}
+                                                        key={`origin-${i}`}
+                                                        sx={codeSx}
                                                     >
-                                                        <Typography
-                                                            variant="caption"
-                                                            sx={{color: theme.palette.text.secondary}}
-                                                        >
-                                                            chat_histories[{hi}] (ChatHistory)
-                                                        </Typography>
-
-                                                        <Box sx={{...codeSx, mt: 0.5}}>
-                                                            {JSON.stringify(
-                                                                {
-                                                                    origin: h.origin,
-                                                                    messages_count: h.messages?.length ?? 0,
-                                                                    messages: h.messages,
-                                                                },
-                                                                null,
-                                                                2
-                                                            )}
-                                                        </Box>
+                                                        {`[${i}] tool=${o?.tool ?? "n/a"} | instantiation_index=${o?.instantiation_index ?? "n/a"}`}
                                                     </Box>
                                                 ))}
                                             </Box>
-                                        ) : null}
-                                    </>
-                                ) : (
-                                    <Typography variant="body2">n/a</Typography>
-                                )}
-                            </Box>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
 
-                            {/* Raw dump */}
-                            <Box sx={sectionSx}>
-                                <Typography
-                                    variant="overline"
-                                    sx={{fontWeight: 700, color: theme.palette.text.secondary}}
-                                >
-                                    raw (full ChatMessage JSON)
-                                </Typography>
-                                <SyntaxHighlighter
-                                    id="syntax-highlighter-structure"
-                                    PreTag="div"
-                                    language="json"
-                                    style={atelierDuneDark}
-                                >
-                                    {JSON.stringify(msg, null, 2)}
-                                </SyntaxHighlighter>
-                            </Box>
-                        </>
-                    )
-                })()}
-            </Box>
-        </Box>
-    )
+                                    {/* tool_result_origin[] */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            tool_result_origin[] (Origin)
+                                        </Typography>
+                                        {msg.tool_result_origin?.length ? (
+                                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
+                                                {msg.tool_result_origin.map((o, i) => (
+                                                    <Box
+                                                        key={`tool-origin-${i}`}
+                                                        sx={codeSx}
+                                                    >
+                                                        {`[${i}] tool=${o?.tool ?? "n/a"} | instantiation_index=${o?.instantiation_index ?? "n/a"}`}
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* mime_data[] */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            mime_data[] (MimeData)
+                                        </Typography>
+                                        {msg.mime_data?.length ? (
+                                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
+                                                {msg.mime_data.map((m, i) => (
+                                                    <Box
+                                                        key={`mime-${i}`}
+                                                        sx={codeSx}
+                                                    >
+                                                        <div>{`[${i}] mime_type=${m?.mime_type ?? "n/a"}`}</div>
+                                                        <div>{`mime_bytes length=${m?.mime_bytes?.length ?? 0}`}</div>
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* structure */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            structure (Record&lt;string, unknown&gt;)
+                                        </Typography>
+                                        <SyntaxHighlighter
+                                            id="syntax-highlighter-structure"
+                                            PreTag="div"
+                                            language="json"
+                                            style={atelierDuneDark}
+                                        >
+                                            {msg.structure ? JSON.stringify(msg.structure, null, 2) : "n/a"}
+                                        </SyntaxHighlighter>
+                                    </Box>
+
+                                    {/* sly_data */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            sly_data (Record&lt;string, unknown&gt;)
+                                        </Typography>
+                                        <Box sx={{...codeSx, mt: 0.5}}>
+                                            {msg.sly_data ? JSON.stringify(msg.sly_data, null, 2) : "n/a"}
+                                        </Box>
+                                    </Box>
+
+                                    {/* chat_context */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            chat_context (ChatContext)
+                                        </Typography>
+
+                                        {msg.chat_context ? (
+                                            <>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{mt: 0.5}}
+                                                >
+                                                    <strong>chat_histories count:</strong>{" "}
+                                                    {msg.chat_context.chat_histories?.length ?? 0}
+                                                </Typography>
+
+                                                {msg.chat_context.chat_histories?.length ? (
+                                                    <Box sx={{display: "flex", flexDirection: "column", gap: 1, mt: 1}}>
+                                                        {msg.chat_context.chat_histories.map((h, hi) => (
+                                                            <Box
+                                                                key={`history-${hi}`}
+                                                                sx={{
+                                                                    border: `1px solid ${theme.palette.divider}`,
+                                                                    borderRadius: 1,
+                                                                    p: 1,
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{color: theme.palette.text.secondary}}
+                                                                >
+                                                                    chat_histories[{hi}] (ChatHistory)
+                                                                </Typography>
+
+                                                                <Box sx={{...codeSx, mt: 0.5}}>
+                                                                    {JSON.stringify(
+                                                                        {
+                                                                            origin: h.origin,
+                                                                            messages_count: h.messages?.length ?? 0,
+                                                                            messages: h.messages,
+                                                                        },
+                                                                        null,
+                                                                        2
+                                                                    )}
+                                                                </Box>
+                                                            </Box>
+                                                        ))}
+                                                    </Box>
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* Raw dump */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            raw (full ChatMessage JSON)
+                                        </Typography>
+                                        <SyntaxHighlighter
+                                            id="syntax-highlighter-structure"
+                                            PreTag="div"
+                                            language="json"
+                                            style={atelierDuneDark}
+                                        >
+                                            {JSON.stringify(msg, null, 2)}
+                                        </SyntaxHighlighter>
+                                    </Box>
+                                </>
+                            )
+                        })()}
+                    </Box>
+                </Box>
+            </Draggable>
+        )
+    }
 
     return (
         <>
