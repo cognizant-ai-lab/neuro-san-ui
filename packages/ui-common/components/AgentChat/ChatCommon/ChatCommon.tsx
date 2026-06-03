@@ -927,26 +927,113 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         return `${safe}...`
     }
+
+    const MESSAGE_TYPE_LEGEND_ITEMS: {type: ChatMessageType; label: string; color: string}[] = [
+        {type: ChatMessageType.HUMAN, label: "Human", color: "#2FBF71"},
+        {type: ChatMessageType.AI, label: "AI", color: "#4F6EF7"},
+        {type: ChatMessageType.AGENT_FRAMEWORK, label: "Agent Framework", color: "#7A56E8"},
+        {type: ChatMessageType.SYSTEM, label: "System", color: "#F2B63D"},
+        {type: ChatMessageType.AGENT, label: "Agent", color: "#E25555"},
+        {type: ChatMessageType.AGENT_TOOL_RESULT, label: "Agent Tool Result", color: "#2F9FE8"},
+        {type: ChatMessageType.AGENT_PROGRESS, label: "Agent Progress", color: "#27BFA9"},
+        {type: ChatMessageType.UNKNOWN, label: "Unknown", color: "#8FA1B6"},
+    ]
+
+    const MESSAGE_TYPE_COLOR_FALLBACK = "#8FA1B6"
+
+    const getMessageTypeColor = (type?: ChatMessageType) =>
+        MESSAGE_TYPE_LEGEND_ITEMS.find((item) => item.type === type)?.color ?? MESSAGE_TYPE_COLOR_FALLBACK
+
+    const getLegend = () => (
+        <Box
+            sx={{
+                mb: "1.1rem",
+                px: 1,
+                py: 0.75,
+                borderRadius: "10px",
+                border: "1px solid rgba(79,110,247,0.28)",
+                background: "linear-gradient(180deg, rgba(79,110,247,0.10), rgba(79,110,247,0.03))",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+            }}
+        >
+            <Typography
+                component="div"
+                sx={{
+                    fontSize: "0.74rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    color: "text.secondary",
+                    mb: 0.55,
+                }}
+            >
+                Message Types
+            </Typography>
+
+            <Box
+                sx={{
+                    alignItems: "center",
+                    columnGap: "0.75rem",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    rowGap: "0.45rem",
+                }}
+            >
+                {MESSAGE_TYPE_LEGEND_ITEMS.map((item) => (
+                    <Box
+                        key={item.type}
+                        sx={{
+                            alignItems: "center",
+                            display: "inline-flex",
+                            columnGap: "0.35rem",
+                            px: 0.5,
+                            py: 0.15,
+                            borderRadius: "999px",
+                            backgroundColor: "rgba(255,255,255,0.04)",
+                        }}
+                    >
+                        <Box
+                            component="span"
+                            sx={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: "50%",
+                                backgroundColor: item.color,
+                                boxShadow: `0 0 0 1px rgba(255,255,255,0.22), 0 0 6px ${item.color}55`,
+                            }}
+                        />
+                        <Typography
+                            component="span"
+                            sx={{fontSize: "0.74rem", lineHeight: 1.2, color: "text.secondary"}}
+                        >
+                            {item.label}
+                        </Typography>
+                    </Box>
+                ))}
+            </Box>
+        </Box>
+    )
+
     const getDebugDisplay = () => (
         <Box sx={{padding: "1rem"}}>
             <Typography
                 sx={{
-                    fontWeight: 800,
-                    fontSize: "1.05rem",
-                    letterSpacing: "0.02em",
-                    mb: "1rem",
-                    px: 1,
-                    py: 0.35,
-                    display: "inline-block",
-                    borderRadius: "999px",
                     background: "linear-gradient(90deg, rgba(25,118,210,0.18), rgba(25,118,210,0.05))",
                     border: "1px solid rgba(25,118,210,0.35)",
+                    borderRadius: "999px",
                     color: "text.primary",
+                    display: "inline-block",
+                    fontSize: "1rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.02em",
+                    mb: "1rem",
+                    px: 1.5,
+                    py: 0.35,
                 }}
             >
                 Message History
             </Typography>
-
+            {getLegend()}
             {debugMessages.map((message, index) => {
                 const isActiveStep = index === debugStep
 
@@ -975,7 +1062,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             color: isActiveStep ? "text.primary" : "var(--bs-gray)",
                             columnGap: 0.25,
                             display: "grid",
-                            gridTemplateColumns: "1.0rem 2.6rem 1fr",
+                            gridTemplateColumns: "1rem 2.6rem minmax(0, 1fr)",
                             mb: 0.2,
                             mt: 0.2,
                             px: 1,
@@ -983,20 +1070,51 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             transition: "all 0.15s ease-in-out",
                         }}
                     >
-                        <Typography
-                            component="span"
+                        <Box
                             sx={{
-                                fontSize: "0.8rem",
-                                lineHeight: 1.25,
-                                fontWeight: 700,
-                                color: "success.main",
-                                textAlign: "center",
-                                visibility: isActiveStep ? "visible" : "hidden",
+                                alignItems: "center",
+                                alignSelf: "start",
+                                columnGap: "0.18rem",
+                                display: "grid",
+                                gridTemplateColumns: "auto auto",
+                                height: "1.1rem",
+                                justifyContent: "center",
+                                overflow: "visible",
+                                width: "1rem",
                             }}
                         >
-                            ➜
-                        </Typography>
+                            <Typography
+                                component="span"
+                                sx={{
+                                    color: "success.main",
+                                    fontSize: "0.8rem",
+                                    fontWeight: 700,
+                                    lineHeight: 1,
+                                    marginLeft: "0.2rem",
+                                    visibility: isActiveStep ? "visible" : "hidden",
+                                }}
+                            >
+                                ➜
+                            </Typography>
 
+                            <Tooltip
+                                title={message.type ?? "Unknown"}
+                                placement="top"
+                            >
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        backgroundColor: getMessageTypeColor(message.type),
+                                        borderRadius: "50%",
+                                        display: "inline-block",
+                                        height: isActiveStep ? 12 : 11,
+                                        marginLeft: "0.3rem",
+                                        opacity: isActiveStep ? 1 : 0.95,
+                                        width: isActiveStep ? 12 : 11,
+                                    }}
+                                />
+                            </Tooltip>
+                        </Box>
                         <Tooltip
                             title={`Show details for message ${index + 1}`}
                             placement="top"
