@@ -215,6 +215,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setSelectedNetwork(next)
         setAgentCounts(new Map())
         setChatMessages([])
+        setCurrentDebugStep(0)
     }, [])
 
     const customURLCallback = useCallback(
@@ -610,6 +611,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const onStreamingStarted = useCallback((): void => {
         // Reset chat messages
         setChatMessages([])
+        setCurrentDebugStep(0)
 
         // Reset agent counts
         setAgentCounts(new Map())
