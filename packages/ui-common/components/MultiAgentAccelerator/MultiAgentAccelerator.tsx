@@ -765,11 +765,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const handleDebugSingleStepBackwards = () => {
         setCurrentDebugStep((prev) => {
             if (prev > 0) {
-                // Reset state and replay all messages up to the new step
-                onStreamingComplete()
-                for (let i = 0; i < prev - 1; i += 1) {
-                    onChatMessageReceived(chatMessages[i])
-                }
+                onChatMessageReceived(chatMessages[prev - 1])
                 return prev - 1
             } else {
                 return prev
@@ -861,7 +857,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 0.75,
+                                gap: 1,
                                 opacity: isDebugDisabled ? 0.45 : 1,
                                 pointerEvents: isDebugDisabled ? "none" : "auto",
                                 filter: isDebugDisabled ? "grayscale(0.25)" : "none",
@@ -873,6 +869,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 aria-label="Skip to start"
                                 sx={iconButtonSx}
                                 onClick={handleDebugBeginning}
+                                disabled={isDebugDisabled}
                             >
                                 <SkipPreviousIcon fontSize="small" />
                             </IconButton>

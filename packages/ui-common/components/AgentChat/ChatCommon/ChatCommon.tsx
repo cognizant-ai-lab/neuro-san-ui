@@ -368,21 +368,24 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     useEffect(() => {
         if (!debugMessages?.length || debugStep === undefined) return
 
-        // Wait one frame so refs are set after render
         const rafId = requestAnimationFrame(() => {
+            const container = chatOutputRef.current as HTMLDivElement | null
             const activeRow = debugRowRefs.current[debugStep]
-            if (!activeRow) return
+            if (!container || !activeRow) return
 
-            activeRow.scrollIntoView({
+            // Compute row center relative to the scroll container, then center it
+            const containerRect = container.getBoundingClientRect()
+            const rowRect = activeRow.getBoundingClientRect()
+            const rowCenterInContainer = rowRect.top - containerRect.top + container.scrollTop + rowRect.height / 2
+            const targetScrollTop = rowCenterInContainer - container.clientHeight / 2
+
+            container.scrollTo({
+                top: Math.max(0, targetScrollTop),
                 behavior: "smooth",
-                block: "center",
-                inline: "nearest",
             })
         })
 
-        return () => {
-            cancelAnimationFrame(rafId)
-        }
+        return () => cancelAnimationFrame(rafId)
     }, [debugMessages, debugStep])
 
     const addTurn = useCallback((turn: ConversationTurn) => {
