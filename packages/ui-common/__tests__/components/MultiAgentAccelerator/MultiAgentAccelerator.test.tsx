@@ -76,6 +76,7 @@ const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
 const networkIconSuggestionsMock = jest.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
+let onImportNetwork: (name: string, content: string) => void
 let setSelectedNetwork: (network: string) => void
 
 // Mock dependencies
@@ -193,7 +194,6 @@ let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
 let onStreamingComplete: () => void
-let onImportNetwork: (name: string, content: string) => Promise<void>
 
 jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     __esModule: true,
@@ -342,9 +342,8 @@ describe("Multi Agent Accelerator Page", () => {
 
         await screen.findByText("Agent Networks")
 
-        let importPromise: Promise<void>
         await act(async () => {
-            importPromise = onImportNetwork(
+            onImportNetwork(
                 "Santas Workshop Ops",
                 JSON.stringify({
                     tools: [
@@ -365,7 +364,6 @@ describe("Multi Agent Accelerator Page", () => {
 
         await act(async () => {
             resolveSend()
-            await importPromise
         })
 
         await waitFor(() => {
