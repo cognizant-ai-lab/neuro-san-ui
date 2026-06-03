@@ -264,6 +264,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Ref for output text area, so we can auto scroll it
     const chatOutputRef = useRef(null)
 
+    const debugContainerRef = useRef<HTMLDivElement | null>(null)
     const debugRowRefs = useRef<Record<number, HTMLDivElement | null>>({})
 
     // Ref for user input text area, so we can handle shift-enter
@@ -365,27 +366,42 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [autoScrollEnabled, isAwaitingLlm, turns])
 
+    // effect
     useEffect(() => {
-        if (!debugMessages?.length || debugStep === undefined) return
+        if (!debugMessages?.length) return
+        if (debugStep === undefined || debugStep < 0 || debugStep >= debugMessages.length) return
 
-        const rafId = requestAnimationFrame(() => {
-            const container = chatOutputRef.current as HTMLDivElement | null
-            const activeRow = debugRowRefs.current[debugStep]
-            if (!container || !activeRow) return
+        const scrollActiveRowToCenter = () => {
+            const container = debugContainerRef.current
+            const row = debugRowRefs.current[debugStep]
+            if (!container || !row) return
 
-            // Compute row center relative to the scroll container, then center it
-            const containerRect = container.getBoundingClientRect()
-            const rowRect = activeRow.getBoundingClientRect()
-            const rowCenterInContainer = rowRect.top - containerRect.top + container.scrollTop + rowRect.height / 2
-            const targetScrollTop = rowCenterInContainer - container.clientHeight / 2
+            // If no overflow, there is nothing to scroll.
+            if (container.scrollHeight <= container.clientHeight) return
 
-            container.scrollTo({
-                top: Math.max(0, targetScrollTop),
-                behavior: "smooth",
-            })
+            const c = container.getBoundingClientRect()
+            const r = row.getBoundingClientRect()
+
+            const rowTopWithinScroll = r.top - c.top + container.scrollTop
+            const target = rowTopWithinScroll - container.clientHeight / 2 + r.height / 2
+            const max = container.scrollHeight - container.clientHeight
+            const top = Math.max(0, Math.min(target, max))
+
+            container.scrollTo({top, behavior: "smooth"})
+
+            // Fallback for environments where smooth scroll is ignored/flaky
+            if (Math.abs(container.scrollTop - top) > 2) {
+                container.scrollTop = top
+            }
+        }
+
+        // Run after paint; run twice to handle layout settling as content changes
+        const raf1 = requestAnimationFrame(() => {
+            scrollActiveRowToCenter()
+            requestAnimationFrame(scrollActiveRowToCenter)
         })
 
-        return () => cancelAnimationFrame(rafId)
+        return () => cancelAnimationFrame(raf1)
     }, [debugMessages, debugStep])
 
     const addTurn = useCallback((turn: ConversationTurn) => {
@@ -1102,6 +1118,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const getResponseBox = () => (
         <Box
             id="llm-response-div"
+            ref={debugContainerRef}
             sx={{
                 ...divStyle,
                 border: "var(--bs-border-width) var(--bs-border-style)",
