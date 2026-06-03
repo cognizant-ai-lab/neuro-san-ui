@@ -68,5 +68,8 @@
     },
     "resolutions": {
         "js-yaml": "4.1.1"
+    },
+    "dependencies": {
+        "react-draggable": "^4.6.0"
     }
 }

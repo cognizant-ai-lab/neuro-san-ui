@@ -147,7 +147,7 @@ const getEdgeProperties = (
         sourceHandle,
         target: targetId,
         targetHandle,
-        type: isAnimated ? "plasmaEdge" : undefined,
+        type: isAnimated ? "animatedEdge" : undefined,
     }
 }
 
@@ -262,7 +262,7 @@ export const layoutRadial = (
                 type: AGENT_NODE_TYPE_NAME,
                 data: {
                     agentCounts,
-                    agentName: cleanUpAgentName(nodeId),
+                    agentName: nodeId,
                     depth,
                     displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
                     // Use current conversations for node highlighting (cleared at end)

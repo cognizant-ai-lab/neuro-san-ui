@@ -14,15 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
+import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import CloseIcon from "@mui/icons-material/Close"
+import PlayArrowIcon from "@mui/icons-material/PlayArrow"
+import SkipNextIcon from "@mui/icons-material/SkipNext"
+import SkipPreviousIcon from "@mui/icons-material/SkipPrevious"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
 import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import Draggable from "react-draggable"
 import {useJoyride} from "react-joyride"
+import SyntaxHighlighter from "react-syntax-highlighter"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
@@ -49,7 +58,7 @@ import {
 } from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
-import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {AgentInfo, ChatMessage, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
@@ -57,6 +66,7 @@ import {TourPromptState, useTourStore} from "../../state/Tour"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
+import {HLJS_THEMES} from "../AgentChat/ChatCommon/SyntaxHighlighterThemes"
 import {SmallLlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
@@ -64,6 +74,8 @@ import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {MUIDialog} from "../Common/MUIDialog"
+
+const {atelierDuneDark} = HLJS_THEMES
 
 export interface MultiAgentAcceleratorProps {
     readonly userInfo: {userName: string; userImage: string}
@@ -84,6 +96,8 @@ const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape
 
 // We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
 export const SHOW_TOUR_DELAY_MS = 5000
+
+const DEBUG_PLAY_INTERVAL_MS = 1000
 
 // #region: Agent-save helpers
 
@@ -172,9 +186,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
 
-    // Track whether we've shown the info popup so we don't keep bugging the user with it
-    const [haveShownPopup, setHaveShownPopup] = useState<boolean>(false)
-
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
 
     // An extra set of quotes is making it in the string in local storage.
@@ -184,11 +195,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Tracks how many times each agent has been involved in the conversation
     const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())
-    //common function to change the selected network and reset related state
-    const changeSelectedNetwork = useCallback((next: string | null) => {
-        setSelectedNetwork(next)
-        setAgentCounts(new Map())
-    }, [])
 
     const conversationsRef = useRef<AgentConversation[] | null>(null)
 
@@ -204,6 +210,27 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
+
+    const [debugMode, setDebugMode] = useState<boolean>(false)
+    const [currentDebugStep, setCurrentDebugStep] = useState<number>(0)
+    // Add near existing debug state
+    const [isDebugPlaying, setIsDebugPlaying] = useState<boolean>(false)
+    const debugPlayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+    const [detailChatMessageNumber, setDetailChatMessageNumber] = useState<number | null>(null)
+    const [showMessageDetailsPopper, setShowMessageDetailsPopper] = useState(false)
+    // state/refs
+    const messageDetailsNodeRef = useRef<HTMLDivElement | null>(null)
+    const [messageDetailsDelta, setMessageDetailsDelta] = useState({x: 0, y: 0})
+    const [messageDetailsPosition, setMessageDetailsPosition] = useState<{left: number; top: number} | null>(null)
+
+    //common function to change the selected network and reset related state
+    const changeSelectedNetwork = useCallback((next: string | null) => {
+        setSelectedNetwork(next)
+        setAgentCounts(new Map())
+        setChatMessages([])
+        setCurrentDebugStep(0)
+    }, [])
 
     const customURLCallback = useCallback(
         (url: string) => {
@@ -486,14 +513,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return () => window.removeEventListener(TRIGGER_APP_TOUR_EVENT_NAME, handleExternalTourRequest)
     }, [handleExternalTourRequest, networks, selectedNetwork])
 
-    const onChunkReceived = useCallback(
-        (chunk: string): boolean => {
-            // Extract ChatMessage structure
-            const chatMessage = chatMessageFromChunk(chunk)
-            if (!chatMessage) {
-                return true
-            }
-
+    const onChatMessageReceived = useCallback(
+        (chatMessage: ChatMessage) => {
             // Conversations between agents
             const result = extractConversations(chatMessage, conversationsRef.current)
             if (result != null) {
@@ -523,10 +544,25 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 // For now, we only care about the first one since that's the only active use case
                 setNewlyAddedTemporaryNetworks(new Set(upserted.map((network) => network.agentInfo.agent_name)))
             }
+        },
+        [isNetworkDesignerMode]
+    )
+
+    const onChunkReceived = useCallback(
+        (chunk: string): boolean => {
+            // Extract ChatMessage structure
+            const chatMessage = chatMessageFromChunk(chunk)
+            if (!chatMessage) {
+                return true
+            }
+
+            setChatMessages((prev) => [...prev, chatMessage])
+
+            onChatMessageReceived(chatMessage)
 
             return true
         },
-        [isNetworkDesignerMode]
+        [onChatMessageReceived]
     )
 
     /**
@@ -587,6 +623,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     )
 
     const onStreamingStarted = useCallback((): void => {
+        // Reset chat messages
+        setChatMessages([])
+        setCurrentDebugStep(0)
+
         // Reset agent counts
         setAgentCounts(new Map())
 
@@ -596,15 +636,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Reset Agent Network Designer preview
         setAgentsInNetworkDesigner([])
 
-        // Show info popup only once per session
-        if (!haveShownPopup) {
-            sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
-            setHaveShownPopup(true)
-        }
-
         // Mark that streaming has started
         setIsStreaming(true)
-    }, [haveShownPopup])
+    }, [])
 
     const onStreamingComplete = useCallback(() => {
         // When streaming is complete, clean up any refs and state
@@ -612,7 +646,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setCurrentConversations(null)
         setAgentsInNetworkDesigner([])
         resetState()
-    }, [resetState])
+    }, [chatMessages, resetState])
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
@@ -669,6 +703,267 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
+    const stopDebugPlayback = useCallback(() => {
+        if (debugPlayIntervalRef.current) {
+            clearInterval(debugPlayIntervalRef.current)
+            debugPlayIntervalRef.current = null
+        }
+        setIsDebugPlaying(false)
+    }, [])
+
+    const handleDebugPlay = useCallback(() => {
+        if (!chatMessages?.length) return
+
+        // toggle off
+        if (isDebugPlaying) {
+            stopDebugPlayback()
+            return
+        }
+
+        // optional: restart if already at end
+        if (currentDebugStep >= chatMessages.length - 1) {
+            onStreamingComplete()
+            setCurrentDebugStep(0)
+        }
+
+        setIsDebugPlaying(true)
+
+        debugPlayIntervalRef.current = setInterval(() => {
+            setCurrentDebugStep((prev) => {
+                const next = prev + 1
+                const last = chatMessages.length - 1
+
+                if (next > last) {
+                    stopDebugPlayback()
+                    return prev
+                }
+
+                // Replay this single next message into derived UI state
+                onChatMessageReceived(chatMessages[next])
+
+                if (next === last) {
+                    stopDebugPlayback()
+                }
+
+                return next
+            })
+        }, DEBUG_PLAY_INTERVAL_MS)
+    }, [chatMessages, isDebugPlaying, currentDebugStep, onChatMessageReceived, onStreamingComplete, stopDebugPlayback])
+
+    const handleDebugSingleStepForward = () => {
+        if (currentDebugStep < chatMessages?.length - 1) {
+            onChatMessageReceived(chatMessages[currentDebugStep])
+            setCurrentDebugStep((prev) => prev + 1)
+        }
+    }
+
+    const handleDebugBeginning = () => {
+        setCurrentDebugStep(0)
+        onStreamingComplete()
+    }
+
+    const handleDebugSingleStepBackwards = () => {
+        setCurrentDebugStep((prev) => {
+            if (prev > 0) {
+                onChatMessageReceived(chatMessages[prev - 1])
+                return prev - 1
+            } else {
+                return prev
+            }
+        })
+    }
+
+    const handleDebugEnd = () => {
+        setCurrentDebugStep(chatMessages.length - 1)
+        for (const message of chatMessages.slice(currentDebugStep)) {
+            onChatMessageReceived(message)
+        }
+    }
+
+    const onClickChatMessage = (messageNumber: number) => {
+        setDetailChatMessageNumber(messageNumber)
+
+        const modalWidth = Math.min(window.innerWidth * 0.52, 760)
+        const modalHeight = window.innerHeight * 0.72
+        const left = Math.max(8, Math.round((window.innerWidth - modalWidth) / 2))
+        const topPos = Math.max(8, Math.round((window.innerHeight - modalHeight) / 2))
+
+        setMessageDetailsPosition({left, top: topPos})
+        setMessageDetailsDelta({x: 0, y: 0}) // reset drag offset each open
+        setShowMessageDetailsPopper(true)
+    }
+
+    const isDebugDisabled = !chatMessages || chatMessages.length === 0
+
+    const getDebugOverlay = () => {
+        const iconButtonSx = {
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1.5,
+            p: 0.5,
+            color: theme.palette.text.secondary,
+            backgroundColor: theme.palette.background.paper,
+            transition: "all 160ms ease",
+            "&:hover": {
+                backgroundColor: theme.palette.action.hover,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.text.secondary,
+            },
+        }
+
+        return (
+            <Slide
+                direction="up"
+                in={debugMode}
+                mountOnEnter
+                unmountOnExit
+                timeout={750}
+            >
+                <Box
+                    sx={{
+                        gap: 0.0,
+                        marginBottom: "1rem",
+                        marginTop: "4rem",
+                        padding: "0.5rem",
+                        width: "85%",
+                    }}
+                >
+                    <Box
+                        id="multi-agent-accelerator-debug-controls"
+                        sx={{
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderLeft: `3px solid ${theme.palette.warning.main}`,
+                            borderRadius: 2,
+                            backgroundColor: theme.palette.background.paper,
+                            boxShadow: theme.shadows[2],
+                            padding: "1rem",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                        }}
+                    >
+                        <Typography
+                            variant="overline"
+                            sx={{
+                                fontWeight: 700,
+                                letterSpacing: 0.8,
+                                lineHeight: 1,
+                                color: theme.palette.text.secondary,
+                            }}
+                        >
+                            Debug Controls
+                        </Typography>
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                opacity: isDebugDisabled ? 0.45 : 1,
+                                pointerEvents: isDebugDisabled ? "none" : "auto",
+                                filter: isDebugDisabled ? "grayscale(0.25)" : "none",
+                                transition: "opacity 160ms ease",
+                            }}
+                        >
+                            <IconButton
+                                size="small"
+                                aria-label="Skip to start"
+                                sx={iconButtonSx}
+                                onClick={handleDebugBeginning}
+                                disabled={isDebugDisabled}
+                            >
+                                <SkipPreviousIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Step back"
+                                sx={iconButtonSx}
+                                onClick={handleDebugSingleStepBackwards}
+                                disabled={isDebugDisabled}
+                            >
+                                <ChevronLeftIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label={isDebugPlaying ? "Stop playback" : "Play"}
+                                disabled={isDebugDisabled}
+                                sx={{
+                                    ...iconButtonSx,
+                                    color: theme.palette.primary.contrastText,
+                                    backgroundColor: isDebugPlaying
+                                        ? theme.palette.error.main
+                                        : theme.palette.primary.main,
+                                    borderColor: isDebugPlaying ? theme.palette.error.main : theme.palette.primary.main,
+                                    boxShadow: isDebugPlaying ? `0 0 0 2px ${theme.palette.error.light}` : undefined,
+                                    "&:hover": {
+                                        backgroundColor: isDebugPlaying
+                                            ? theme.palette.error.dark
+                                            : theme.palette.primary.dark,
+                                        borderColor: isDebugPlaying
+                                            ? theme.palette.error.dark
+                                            : theme.palette.primary.dark,
+                                        color: theme.palette.primary.contrastText,
+                                    },
+                                }}
+                                onClick={handleDebugPlay}
+                            >
+                                {isDebugPlaying ? <StopCircle fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Step forward"
+                                sx={iconButtonSx}
+                                disabled={isDebugDisabled}
+                                onClick={handleDebugSingleStepForward}
+                            >
+                                <ChevronRightIcon fontSize="small" />
+                            </IconButton>
+
+                            <IconButton
+                                size="small"
+                                aria-label="Skip to end"
+                                sx={iconButtonSx}
+                                onClick={handleDebugEnd}
+                                disabled={isDebugDisabled}
+                            >
+                                <SkipNextIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                        <Typography
+                            variant="overline"
+                            sx={{
+                                fontWeight: 700,
+                                letterSpacing: 0.8,
+                                lineHeight: 1,
+                                color: theme.palette.text.secondary,
+                            }}
+                        >
+                            Step: {isDebugDisabled ? "n/a" : `${currentDebugStep + 1} / ${chatMessages.length}`}
+                        </Typography>
+
+                        {isDebugDisabled && (
+                            <Typography
+                                id="multi-agent-accelerator-debug-disabled-hint"
+                                variant="caption"
+                                sx={{
+                                    display: "block",
+                                    mt: -0.5,
+                                    color: theme.palette.text.disabled,
+                                    fontStyle: "italic",
+                                    letterSpacing: 0.1,
+                                }}
+                            >
+                                No messages captured yet. Start a chat stream to enable debug controls.
+                            </Typography>
+                        )}
+                    </Box>
+                </Box>
+            </Slide>
+        )
+    }
+
     const getLeftPanel = () => {
         return (
             <Slide
@@ -684,22 +979,47 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     id="multi-agent-accelerator-grid-sidebar"
                     size={enableZenMode && isStreaming ? 0 : 3.25}
                     sx={{
+                        display: "flex",
+                        flexDirection: "column",
                         height: "100%",
+                        minHeight: 0, // critical for nested flex scrolling
                     }}
                 >
-                    <Sidebar
-                        customURLLocalStorage={customURLLocalStorage}
-                        customURLCallback={customURLCallback}
-                        id="multi-agent-accelerator-sidebar"
-                        isAwaitingLlm={isAwaitingLlm}
-                        networks={networks}
-                        networkIconSuggestions={networkIconSuggestions}
-                        newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onEditNetwork={handleEditNetwork}
-                        onDeleteNetwork={handleDeleteNetwork}
-                        setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
-                        temporaryNetworks={temporaryNetworks}
-                    />
+                    <Box
+                        sx={{
+                            flex: 1,
+                            minHeight: 0,
+                            overflow: "auto",
+                        }}
+                    >
+                        <Sidebar
+                            customURLLocalStorage={customURLLocalStorage}
+                            customURLCallback={customURLCallback}
+                            id="multi-agent-accelerator-sidebar"
+                            isAwaitingLlm={isAwaitingLlm}
+                            networks={networks}
+                            networkIconSuggestions={networkIconSuggestions}
+                            newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                            onEditNetwork={handleEditNetwork}
+                            onDeleteNetwork={handleDeleteNetwork}
+                            setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
+                            temporaryNetworks={temporaryNetworks}
+                        />
+                    </Box>
+
+                    {debugMode && (
+                        <Box
+                            id="multi-agent-accelerator-debug-overlay-container"
+                            sx={{
+                                borderRightStyle: "solid",
+                                borderRightWidth: "0.75px",
+                                padding: 0,
+                                margin: 0,
+                            }}
+                        >
+                            {getDebugOverlay()}
+                        </Box>
+                    )}
                 </Grid>
             </Slide>
         )
@@ -739,7 +1059,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
-                            networkDisplayName={networkDisplayName || undefined}
+                            networkDisplayName={selectedNetwork || undefined}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
                             onEnterEditMode={() => setIsEditingNetwork(true)}
@@ -748,6 +1068,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             onSaveAgent={onSaveAgent}
                             thoughtBubbleEdges={thoughtBubbleEdges}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
+                            toggleDebugMode={() => setDebugMode((prev) => !prev)}
                         />
                     </Box>
                 </ReactFlowProvider>
@@ -782,6 +1103,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 "Describe in plain language the network you would like to build.",
                         }}
                         currentUser={userInfo.userName}
+                        debugMessages={debugMode && chatMessages ? chatMessages : undefined}
+                        debugStep={debugMode ? currentDebugStep : undefined}
                         extraSlyData={extraSlyData}
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}
@@ -789,6 +1112,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networkDescription={networkDescription}
                         neuroSanURL={neuroSanURL}
                         onChunkReceived={onChunkReceived}
+                        onClickChatMessage={onClickChatMessage}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
                         ref={chatRef}
@@ -979,12 +1303,376 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         </Box>
     )
 
+    const handleCloseMessageDetails = () => {
+        setShowMessageDetailsPopper(false)
+        setMessageDetailsPosition(null)
+        setMessageDetailsDelta({x: 0, y: 0})
+    }
+
+    const getChatMessageDetailsPopper = () => {
+        if (!showMessageDetailsPopper || !messageDetailsPosition) return null
+
+        return (
+            <Draggable
+                nodeRef={messageDetailsNodeRef}
+                handle=".message-details-header"
+                cancel='button, [role="button"], input, textarea, select, .no-drag'
+                position={messageDetailsDelta}
+                positionOffset={{x: messageDetailsPosition.left, y: messageDetailsPosition.top}}
+                onDrag={(_, data) => {
+                    const node = messageDetailsNodeRef.current
+                    const nodeWidth = node?.offsetWidth ?? 760
+                    const nodeHeight = node?.offsetHeight ?? Math.round(window.innerHeight * 0.72)
+
+                    const minX = -messageDetailsPosition.left
+                    const maxX = window.innerWidth - messageDetailsPosition.left - nodeWidth
+                    const minY = -messageDetailsPosition.top
+                    const maxY = window.innerHeight - messageDetailsPosition.top - nodeHeight
+
+                    const x = Math.min(Math.max(data.x, minX), maxX)
+                    const y = Math.min(Math.max(data.y, minY), maxY)
+
+                    setMessageDetailsDelta({x, y})
+                }}
+            >
+                <Box
+                    ref={messageDetailsNodeRef}
+                    role="dialog"
+                    aria-modal="false"
+                    aria-label="Message details"
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        width: {xs: "92%", sm: "78%", md: "52%", lg: "42%"},
+                        maxWidth: 760,
+                        maxHeight: "72%",
+                        zIndex: getZIndex(2, theme),
+                        backdropFilter: "blur(2px)",
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 2,
+                        boxShadow: theme.shadows[8],
+                        color: theme.palette.text.primary,
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* Header */}
+                    <Box
+                        className="message-details-header"
+                        sx={{
+                            cursor: "move",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2,
+                            py: 1.5,
+                            borderBottom: `1px solid ${theme.palette.divider}`,
+                            backgroundColor:
+                                theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[50],
+                        }}
+                    >
+                        <Typography
+                            variant="subtitle1"
+                            sx={{fontWeight: 700, letterSpacing: 0.2}}
+                        >
+                            Message Details
+                        </Typography>
+
+                        <IconButton
+                            aria-label="Close message details"
+                            onClick={handleCloseMessageDetails}
+                            size="small"
+                            sx={{
+                                color: theme.palette.text.secondary,
+                                "&:hover": {
+                                    backgroundColor: theme.palette.action.hover,
+                                    color: theme.palette.text.primary,
+                                },
+                            }}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+
+                    {/* Content */}
+                    <Box
+                        sx={{
+                            p: 2,
+                            overflowY: "auto",
+                            lineHeight: 1.55,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1.5,
+                        }}
+                    >
+                        {(() => {
+                            const msg = chatMessages?.[detailChatMessageNumber ?? -1]
+
+                            const sectionSx = {
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1.5,
+                                p: 1.25,
+                                backgroundColor:
+                                    theme.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : theme.palette.grey[50],
+                            } as const
+
+                            const codeSx = {
+                                fontFamily:
+                                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+                                fontSize: "0.78rem",
+                                p: 1,
+                                borderRadius: 1,
+                                border: `1px solid ${theme.palette.divider}`,
+                                backgroundColor:
+                                    theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.03)",
+                                overflow: "auto",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                            } as const
+
+                            if (!msg) {
+                                return <Typography variant="body1">No message selected.</Typography>
+                            }
+
+                            return (
+                                <>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{color: theme.palette.text.secondary}}
+                                    >
+                                        Message #{(detailChatMessageNumber ?? 0) + 1}
+                                    </Typography>
+
+                                    {/* Core */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            Core
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            <strong>type:</strong> {msg.type ?? "n/a"}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Text (scrollable) */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            text
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                ...codeSx,
+                                                maxHeight: 240,
+                                                overflowY: "auto",
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            {msg.text ?? "n/a"}
+                                        </Box>
+                                    </Box>
+
+                                    {/* Origin[] */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            origin[] (Origin)
+                                        </Typography>
+                                        {msg.origin?.length ? (
+                                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
+                                                {msg.origin.map((o, i) => (
+                                                    <Box
+                                                        key={`origin-${i}`}
+                                                        sx={codeSx}
+                                                    >
+                                                        {`[${i}] tool=${o?.tool ?? "n/a"} | instantiation_index=${o?.instantiation_index ?? "n/a"}`}
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* tool_result_origin[] */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            tool_result_origin[] (Origin)
+                                        </Typography>
+                                        {msg.tool_result_origin?.length ? (
+                                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
+                                                {msg.tool_result_origin.map((o, i) => (
+                                                    <Box
+                                                        key={`tool-origin-${i}`}
+                                                        sx={codeSx}
+                                                    >
+                                                        {`[${i}] tool=${o?.tool ?? "n/a"} | instantiation_index=${o?.instantiation_index ?? "n/a"}`}
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* mime_data[] */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            mime_data[] (MimeData)
+                                        </Typography>
+                                        {msg.mime_data?.length ? (
+                                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.75, mt: 0.5}}>
+                                                {msg.mime_data.map((m, i) => (
+                                                    <Box
+                                                        key={`mime-${i}`}
+                                                        sx={codeSx}
+                                                    >
+                                                        <div>{`[${i}] mime_type=${m?.mime_type ?? "n/a"}`}</div>
+                                                        <div>{`mime_bytes length=${m?.mime_bytes?.length ?? 0}`}</div>
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* structure */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            structure (Record&lt;string, unknown&gt;)
+                                        </Typography>
+                                        <SyntaxHighlighter
+                                            id="syntax-highlighter-structure"
+                                            PreTag="div"
+                                            language="json"
+                                            style={atelierDuneDark}
+                                        >
+                                            {msg.structure ? JSON.stringify(msg.structure, null, 2) : "n/a"}
+                                        </SyntaxHighlighter>
+                                    </Box>
+
+                                    {/* sly_data */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            sly_data (Record&lt;string, unknown&gt;)
+                                        </Typography>
+                                        <Box sx={{...codeSx, mt: 0.5}}>
+                                            {msg.sly_data ? JSON.stringify(msg.sly_data, null, 2) : "n/a"}
+                                        </Box>
+                                    </Box>
+
+                                    {/* chat_context */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            chat_context (ChatContext)
+                                        </Typography>
+
+                                        {msg.chat_context ? (
+                                            <>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{mt: 0.5}}
+                                                >
+                                                    <strong>chat_histories count:</strong>{" "}
+                                                    {msg.chat_context.chat_histories?.length ?? 0}
+                                                </Typography>
+
+                                                {msg.chat_context.chat_histories?.length ? (
+                                                    <Box sx={{display: "flex", flexDirection: "column", gap: 1, mt: 1}}>
+                                                        {msg.chat_context.chat_histories.map((h, hi) => (
+                                                            <Box
+                                                                key={`history-${hi}`}
+                                                                sx={{
+                                                                    border: `1px solid ${theme.palette.divider}`,
+                                                                    borderRadius: 1,
+                                                                    p: 1,
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{color: theme.palette.text.secondary}}
+                                                                >
+                                                                    chat_histories[{hi}] (ChatHistory)
+                                                                </Typography>
+
+                                                                <Box sx={{...codeSx, mt: 0.5}}>
+                                                                    {JSON.stringify(
+                                                                        {
+                                                                            origin: h.origin,
+                                                                            messages_count: h.messages?.length ?? 0,
+                                                                            messages: h.messages,
+                                                                        },
+                                                                        null,
+                                                                        2
+                                                                    )}
+                                                                </Box>
+                                                            </Box>
+                                                        ))}
+                                                    </Box>
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <Typography variant="body2">n/a</Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* Raw dump */}
+                                    <Box sx={sectionSx}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{fontWeight: 700, color: theme.palette.text.secondary}}
+                                        >
+                                            raw (full ChatMessage JSON)
+                                        </Typography>
+                                        <SyntaxHighlighter
+                                            id="syntax-highlighter-structure"
+                                            PreTag="div"
+                                            language="json"
+                                            style={atelierDuneDark}
+                                        >
+                                            {JSON.stringify(msg, null, 2)}
+                                        </SyntaxHighlighter>
+                                    </Box>
+                                </>
+                            )
+                        })()}
+                    </Box>
+                </Box>
+            </Draggable>
+        )
+    }
+
     return (
         <>
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
-
+            {getChatMessageDetailsPopper()}
             {getDeleteNetworkConfirmationModal()}
             <Grid
                 id="multi-agent-accelerator-grid"

@@ -28,6 +28,8 @@ export const KNOWN_MESSAGE_TYPES: ChatMessageType[] = [
     ChatMessageType.AGENT_PROGRESS,
     ChatMessageType.HUMAN,
     ChatMessageType.SYSTEM,
+    ChatMessageType.AGENT_TOOL_RESULT,
+    ChatMessageType.UNKNOWN,
 ]
 
 // HUMAN omitted for plasma edges mainly for performance reasons. However, does it make sense for plasma to include
