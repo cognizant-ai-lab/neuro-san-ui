@@ -89,7 +89,8 @@ const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape
 
 // We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
 export const SHOW_TOUR_DELAY_MS = 5000
-
+// Add near other constants
+const DEBUG_PLAY_INTERVAL_MS = 1000
 // #region: Agent-save helpers
 
 /**
@@ -177,9 +178,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
 
-    // Track whether we've shown the info popup so we don't keep bugging the user with it
-    const [haveShownPopup, setHaveShownPopup] = useState<boolean>(false)
-
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
 
     // An extra set of quotes is making it in the string in local storage.
@@ -207,7 +205,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [debugMode, setDebugMode] = useState<boolean>(false)
     const [currentDebugStep, setCurrentDebugStep] = useState<number>(0)
-
+    // Add near existing debug state
+    const [isDebugPlaying, setIsDebugPlaying] = useState<boolean>(false)
+    const debugPlayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
 
     //common function to change the selected network and reset related state
@@ -688,12 +688,52 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
-    const handleDebugPlay = () => {
-        if (chatMessages?.length > 0) {
-            onChatMessageReceived(chatMessages[0])
-            setCurrentDebugStep(1)
+    const stopDebugPlayback = useCallback(() => {
+        if (debugPlayIntervalRef.current) {
+            clearInterval(debugPlayIntervalRef.current)
+            debugPlayIntervalRef.current = null
         }
-    }
+        setIsDebugPlaying(false)
+    }, [])
+
+    const handleDebugPlay = useCallback(() => {
+        if (!chatMessages?.length) return
+
+        // toggle off
+        if (isDebugPlaying) {
+            stopDebugPlayback()
+            return
+        }
+
+        // optional: restart if already at end
+        if (currentDebugStep >= chatMessages.length - 1) {
+            onStreamingComplete()
+            setCurrentDebugStep(0)
+        }
+
+        setIsDebugPlaying(true)
+
+        debugPlayIntervalRef.current = setInterval(() => {
+            setCurrentDebugStep((prev) => {
+                const next = prev + 1
+                const last = chatMessages.length - 1
+
+                if (next > last) {
+                    stopDebugPlayback()
+                    return prev
+                }
+
+                // Replay this single next message into derived UI state
+                onChatMessageReceived(chatMessages[next])
+
+                if (next === last) {
+                    stopDebugPlayback()
+                }
+
+                return next
+            })
+        }, DEBUG_PLAY_INTERVAL_MS)
+    }, [chatMessages, isDebugPlaying, currentDebugStep, onChatMessageReceived, onStreamingComplete, stopDebugPlayback])
 
     const handleDebugSingleStepForward = () => {
         if (currentDebugStep < chatMessages?.length - 1) {
@@ -821,22 +861,29 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
                             <IconButton
                                 size="small"
-                                aria-label="Play"
+                                aria-label={isDebugPlaying ? "Stop playback" : "Play"}
                                 disabled={isDebugDisabled}
                                 sx={{
                                     ...iconButtonSx,
                                     color: theme.palette.primary.contrastText,
-                                    backgroundColor: theme.palette.primary.main,
-                                    borderColor: theme.palette.primary.main,
+                                    backgroundColor: isDebugPlaying
+                                        ? theme.palette.error.main
+                                        : theme.palette.primary.main,
+                                    borderColor: isDebugPlaying ? theme.palette.error.main : theme.palette.primary.main,
+                                    boxShadow: isDebugPlaying ? `0 0 0 2px ${theme.palette.error.light}` : undefined,
                                     "&:hover": {
-                                        backgroundColor: theme.palette.primary.dark,
-                                        borderColor: theme.palette.primary.dark,
+                                        backgroundColor: isDebugPlaying
+                                            ? theme.palette.error.dark
+                                            : theme.palette.primary.dark,
+                                        borderColor: isDebugPlaying
+                                            ? theme.palette.error.dark
+                                            : theme.palette.primary.dark,
                                         color: theme.palette.primary.contrastText,
                                     },
                                 }}
                                 onClick={handleDebugPlay}
                             >
-                                <PlayArrowIcon fontSize="small" />
+                                {isDebugPlaying ? <StopCircle fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
                             </IconButton>
 
                             <IconButton
