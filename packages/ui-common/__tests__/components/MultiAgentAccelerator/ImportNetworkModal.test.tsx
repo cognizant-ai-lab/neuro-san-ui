@@ -355,6 +355,14 @@ describe("filenameToNetworkName", () => {
     it("should handle filename with no extension", () => {
         expect(filenameToNetworkName("mynetwork")).toBe("mynetwork")
     })
+    it("should strip trailing UUIDs from filenames", () => {
+        expect(filenameToNetworkName("autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.hocon")).toBe(
+            "autonomous venture studio ops"
+        )
+    })
+    it("should keep normal filenames unchanged aside from formatting", () => {
+        expect(filenameToNetworkName("my_network.hocon")).toBe("my network")
+    })
 })
 
 describe("findNonConflictingName", () => {

@@ -58,6 +58,7 @@ import {
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
+    sendNetworkDesignerUpsert,
     testConnection,
 } from "../../../controller/agent/Agent"
 import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -121,6 +122,7 @@ jest.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
             onDeleteNetwork = props.onDeleteNetwork
+            onImportNetwork = props.onImportNetwork
             setSelectedNetwork = props.setSelectedNetwork
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
@@ -191,6 +193,7 @@ let setIsAwaitingLlm: (val: boolean) => void
 let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
 let onStreamingComplete: () => void
+let onImportNetwork: (name: string, content: string) => Promise<void>
 
 jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     __esModule: true,
@@ -249,6 +252,7 @@ describe("Multi Agent Accelerator Page", () => {
             ],
         })
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
+        ;(sendNetworkDesignerUpsert as jest.Mock).mockResolvedValue([])
 
         // make extractConversations the real implementation
         ;(extractConversations as jest.Mock).mockImplementation(
@@ -316,6 +320,56 @@ describe("Multi Agent Accelerator Page", () => {
             expect(debugSpy).toHaveBeenCalledWith(
                 expect.stringMatching(new RegExp(`Unable to get list of Agent Networks.*${NEURO_SAN_SERVER_URL}`, "u"))
             )
+        })
+    })
+
+    it("should display the importing backdrop while a network import is in flight", async () => {
+        ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
+
+        let resolveSend: () => void
+        const sendPromise = new Promise<void>((resolve) => {
+            resolveSend = resolve
+        })
+
+        ;(sendNetworkDesignerUpsert as jest.Mock).mockImplementation(
+            async (_neuroSanUrl, _signal, _frontman, _networkDef, _agentNetworkName, _userName, onChunk) => {
+                onChunk(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
+                await sendPromise
+            }
+        )
+
+        renderMultiAgentAcceleratorPage()
+
+        await screen.findByText("Agent Networks")
+
+        let importPromise: Promise<void>
+        await act(async () => {
+            importPromise = onImportNetwork(
+                "Santas Workshop Ops",
+                JSON.stringify({
+                    tools: [
+                        {
+                            name: "frontman",
+                            function: {description: "Frontman description"},
+                            instructions: "Do the thing",
+                            tools: [],
+                        },
+                    ],
+                })
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).toBeVisible()
+        })
+
+        await act(async () => {
+            resolveSend()
+            await importPromise
+        })
+
+        await waitFor(() => {
+            expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).not.toBeVisible()
         })
     })
 

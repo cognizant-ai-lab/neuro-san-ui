@@ -1083,6 +1083,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getDeleteNetworkConfirmationModal()}
             <Backdrop
                 id="multi-agent-accelerator-import-backdrop"
+                data-testid="multi-agent-accelerator-import-backdrop"
                 open={isImporting}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
