@@ -1294,7 +1294,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         />
                     )}
                     <Typography sx={{fontWeight: "bold"}}>{targetAgent}</Typography>
-                    <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
+                    <Box sx={{marginBottom: "0rem", marginTop: "0.5rem", color: "var(--bs-gray)"}}>
                         {networkDescription}
                     </Box>
                     <Box sx={{marginBottom: "0.5rem", marginTop: "0.75rem", color: "var(--bs-gray)"}}>
