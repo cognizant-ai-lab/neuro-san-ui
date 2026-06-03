@@ -32,7 +32,8 @@ export enum StreamingUnit {
 
 const FAKE_IT = false
 const FAKE_RESPONSE_FILE = "/airbnb.json"
-const DEBUG_CHUNK_DELAY_MS = 100
+// const FAKE_RESPONSE_FILE = "/AND_ecommerce.json"
+const DEBUG_CHUNK_DELAY_MS = 60
 
 const handleStreamingCallback = async (
     res: Response,
