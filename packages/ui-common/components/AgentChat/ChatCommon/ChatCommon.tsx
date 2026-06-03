@@ -1015,221 +1015,235 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     )
 
     const getDebugDisplay = () => (
-        <Box sx={{padding: "1rem"}}>
-            <Typography
+        <Box sx={{height: "100%", display: "flex", flexDirection: "column"}}>
+            <Box
                 sx={{
-                    background: "linear-gradient(90deg, rgba(25,118,210,0.18), rgba(25,118,210,0.05))",
-                    border: "1px solid rgba(25,118,210,0.35)",
-                    borderRadius: "999px",
-                    color: "text.primary",
-                    display: "inline-block",
-                    fontSize: "1rem",
-                    fontWeight: 800,
-                    letterSpacing: "0.02em",
-                    mb: "1rem",
-                    px: 1.5,
-                    py: 0.35,
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 3,
+                    px: "1rem",
+                    pt: "1rem",
+                    pb: 0.5,
+                    backgroundColor: "background.paper",
                 }}
             >
-                Message History
-            </Typography>
-            {getLegend()}
-            {debugMessages.map((message, index) => {
-                const isActiveStep = index === debugStep
+                <Typography
+                    sx={{
+                        background: "linear-gradient(90deg, rgba(25,118,210,0.18), rgba(25,118,210,0.05))",
+                        border: "1px solid rgba(25,118,210,0.35)",
+                        borderRadius: "999px",
+                        color: "text.primary",
+                        display: "inline-block",
+                        fontSize: "1rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.02em",
+                        mb: "1rem",
+                        px: 1.5,
+                        py: 0.35,
+                    }}
+                >
+                    Message History
+                </Typography>
+                {getLegend()}
+            </Box>
+            <Box sx={{px: "1rem", pb: "1rem"}}>
+                {debugMessages.map((message, index) => {
+                    const isActiveStep = index === debugStep
 
-                const lines = extractConversations(message, [] as AgentConversation[])
-                    .map((conversation) => {
-                        const agents = [...conversation.agents.values()].filter(Boolean).join(", ")
-                        const text = (conversation.text ?? "").trim()
-                        if (!agents && !text) return null
-                        return `${agents || "Unknown agent"}: ${truncateWithEllipsis(text || "[no text]", 100)}`
-                    })
-                    .filter(Boolean)
+                    const lines = extractConversations(message, [] as AgentConversation[])
+                        .map((conversation) => {
+                            const agents = [...conversation.agents.values()].filter(Boolean).join(", ")
+                            const text = (conversation.text ?? "").trim()
+                            if (!agents && !text) return null
+                            return `${agents || "Unknown agent"}: ${truncateWithEllipsis(text || "[no text]", 100)}`
+                        })
+                        .filter(Boolean)
 
-                const displayText = lines.length > 0 ? lines.join("\n") : "[No conversation data for this message]"
+                    const displayText = lines.length > 0 ? lines.join("\n") : "[No conversation data for this message]"
 
-                return (
-                    <Box
-                        key={index}
-                        ref={(el: HTMLDivElement | null) => {
-                            debugRowRefs.current[index] = el
-                        }}
-                        sx={{
-                            alignItems: "start",
-                            backgroundColor: isActiveStep ? "rgba(76, 175, 80, 0.12)" : "transparent",
-                            border: isActiveStep ? "1px solid rgba(76, 175, 80, 0.45)" : "1px solid transparent",
-                            borderRadius: "8px",
-                            color: isActiveStep ? "text.primary" : "var(--bs-gray)",
-                            columnGap: 0.25,
-                            display: "grid",
-                            gridTemplateColumns: "1rem 2.6rem minmax(0, 1fr)",
-                            mb: 0.2,
-                            mt: 0.2,
-                            px: 1,
-                            py: 0.45,
-                            transition: "all 0.15s ease-in-out",
-                        }}
-                    >
+                    return (
                         <Box
+                            key={index}
+                            ref={(el: HTMLDivElement | null) => {
+                                debugRowRefs.current[index] = el
+                            }}
                             sx={{
-                                alignItems: "center",
-                                alignSelf: "start",
-                                columnGap: "0.18rem",
+                                alignItems: "start",
+                                backgroundColor: isActiveStep ? "rgba(76, 175, 80, 0.12)" : "transparent",
+                                border: isActiveStep ? "1px solid rgba(76, 175, 80, 0.45)" : "1px solid transparent",
+                                borderRadius: "8px",
+                                color: isActiveStep ? "text.primary" : "var(--bs-gray)",
+                                columnGap: 0.25,
                                 display: "grid",
-                                gridTemplateColumns: "auto auto",
-                                height: "1.1rem",
-                                justifyContent: "center",
-                                overflow: "visible",
-                                width: "1rem",
+                                gridTemplateColumns: "1rem 2.6rem minmax(0, 1fr)",
+                                mb: 0.2,
+                                mt: 0.2,
+                                px: 1,
+                                py: 0.45,
+                                transition: "all 0.15s ease-in-out",
                             }}
                         >
-                            <Typography
-                                component="span"
+                            <Box
                                 sx={{
-                                    color: "success.main",
-                                    fontSize: "0.8rem",
-                                    fontWeight: 700,
-                                    lineHeight: 1,
-                                    marginLeft: "0.2rem",
-                                    visibility: isActiveStep ? "visible" : "hidden",
+                                    alignItems: "center",
+                                    alignSelf: "start",
+                                    columnGap: "0.18rem",
+                                    display: "grid",
+                                    gridTemplateColumns: "auto auto",
+                                    height: "1.1rem",
+                                    justifyContent: "center",
+                                    overflow: "visible",
+                                    width: "1rem",
                                 }}
                             >
-                                ➜
-                            </Typography>
-
-                            <Tooltip
-                                title={message.type ?? "Unknown"}
-                                placement="top"
-                            >
-                                <Box
+                                <Typography
                                     component="span"
                                     sx={{
-                                        backgroundColor: getMessageTypeColor(message.type),
-                                        borderRadius: "50%",
-                                        display: "inline-block",
-                                        height: isActiveStep ? 12 : 11,
-                                        marginLeft: "0.3rem",
-                                        opacity: isActiveStep ? 1 : 0.95,
-                                        width: isActiveStep ? 12 : 11,
-                                    }}
-                                />
-                            </Tooltip>
-                        </Box>
-                        <Tooltip
-                            title={`Show details for message ${index + 1}`}
-                            placement="top"
-                        >
-                            <Typography
-                                component="span"
-                                role="button"
-                                tabIndex={0}
-                                aria-label={`Show details for message ${index + 1}`}
-                                sx={{
-                                    fontSize: "0.8rem",
-                                    lineHeight: 1.25,
-                                    fontWeight: 700,
-                                    textAlign: "right",
-                                    pr: 0.25,
-                                    fontVariantNumeric: "tabular-nums",
-
-                                    cursor: "pointer",
-
-                                    // Keep resting state neutral for both active and inactive rows
-                                    color: "text.secondary",
-                                    textDecoration: "none",
-                                    textUnderlineOffset: "2px",
-                                    transition: "color 120ms ease, text-decoration-color 120ms ease",
-
-                                    // Lighter hover tone than primary.main
-                                    "&:hover": {
-                                        color: "primary.light",
-                                        textDecoration: "underline",
-                                    },
-
-                                    "&:focus-visible": {
-                                        color: "primary.light",
-                                        outline: `2px solid ${theme.palette.primary.main}`,
-                                        outlineOffset: 2,
-                                        borderRadius: 0.5,
-                                        textDecoration: "underline",
-                                    },
-                                }}
-                                onClick={() => onClickChatMessage?.(index)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault()
-                                        onClickChatMessage?.(index)
-                                    }
-                                }}
-                            >
-                                #{index + 1}
-                            </Typography>
-                        </Tooltip>
-
-                        <Box
-                            sx={{
-                                fontSize: "0.8em",
-                                lineHeight: 1.25,
-                                fontStyle: lines.length === 0 ? "italic" : "normal",
-                                opacity: lines.length === 0 ? 0.8 : 1,
-                            }}
-                        >
-                            {lines.length === 0 ? (
-                                <Typography
-                                    component="div"
-                                    sx={{
-                                        fontSize: "inherit",
-                                        lineHeight: "inherit",
-                                        color: "text.secondary",
+                                        color: "success.main",
+                                        fontSize: "0.8rem",
+                                        fontWeight: 700,
+                                        lineHeight: 1,
+                                        marginLeft: "0.2rem",
+                                        visibility: isActiveStep ? "visible" : "hidden",
                                     }}
                                 >
-                                    {displayText}
+                                    ➜
                                 </Typography>
-                            ) : (
-                                lines.map((line, lineIndex) => {
-                                    const separator = ": "
-                                    const sepIndex = line.indexOf(separator)
-                                    const hasSeparator = sepIndex >= 0
-                                    const agentPart = hasSeparator ? line.slice(0, sepIndex) : line
-                                    const messagePart = hasSeparator ? line.slice(sepIndex + separator.length) : ""
 
-                                    return (
-                                        <Typography
-                                            key={lineIndex}
-                                            component="div"
-                                            sx={{
-                                                fontSize: "inherit",
-                                                lineHeight: "inherit",
-                                                fontWeight: isActiveStep ? 600 : 400,
-                                                mb: lineIndex < lines.length - 1 ? 0.15 : 0,
-                                            }}
-                                        >
-                                            <Box
-                                                component="span"
+                                <Tooltip
+                                    title={message.type ?? "Unknown"}
+                                    placement="top"
+                                >
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            backgroundColor: getMessageTypeColor(message.type),
+                                            borderRadius: "50%",
+                                            display: "inline-block",
+                                            height: isActiveStep ? 12 : 11,
+                                            marginLeft: "0.3rem",
+                                            opacity: isActiveStep ? 1 : 0.95,
+                                            width: isActiveStep ? 12 : 11,
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
+                            <Tooltip
+                                title={`Show details for message ${index + 1}`}
+                                placement="top"
+                            >
+                                <Typography
+                                    component="span"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Show details for message ${index + 1}`}
+                                    sx={{
+                                        fontSize: "0.8rem",
+                                        lineHeight: 1.25,
+                                        fontWeight: 700,
+                                        textAlign: "right",
+                                        pr: 0.25,
+                                        fontVariantNumeric: "tabular-nums",
+
+                                        cursor: "pointer",
+
+                                        // Keep resting state neutral for both active and inactive rows
+                                        color: "text.secondary",
+                                        textDecoration: "none",
+                                        textUnderlineOffset: "2px",
+                                        transition: "color 120ms ease, text-decoration-color 120ms ease",
+
+                                        // Lighter hover tone than primary.main
+                                        "&:hover": {
+                                            color: "primary.light",
+                                            textDecoration: "underline",
+                                        },
+
+                                        "&:focus-visible": {
+                                            color: "primary.light",
+                                            outline: `2px solid ${theme.palette.primary.main}`,
+                                            outlineOffset: 2,
+                                            borderRadius: 0.5,
+                                            textDecoration: "underline",
+                                        },
+                                    }}
+                                    onClick={() => onClickChatMessage?.(index)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault()
+                                            onClickChatMessage?.(index)
+                                        }
+                                    }}
+                                >
+                                    #{index + 1}
+                                </Typography>
+                            </Tooltip>
+
+                            <Box
+                                sx={{
+                                    fontSize: "0.8em",
+                                    lineHeight: 1.25,
+                                    fontStyle: lines.length === 0 ? "italic" : "normal",
+                                    opacity: lines.length === 0 ? 0.8 : 1,
+                                }}
+                            >
+                                {lines.length === 0 ? (
+                                    <Typography
+                                        component="div"
+                                        sx={{
+                                            fontSize: "inherit",
+                                            lineHeight: "inherit",
+                                            color: "text.secondary",
+                                        }}
+                                    >
+                                        {displayText}
+                                    </Typography>
+                                ) : (
+                                    lines.map((line, lineIndex) => {
+                                        const separator = ": "
+                                        const sepIndex = line.indexOf(separator)
+                                        const hasSeparator = sepIndex >= 0
+                                        const agentPart = hasSeparator ? line.slice(0, sepIndex) : line
+                                        const messagePart = hasSeparator ? line.slice(sepIndex + separator.length) : ""
+
+                                        return (
+                                            <Typography
+                                                key={lineIndex}
+                                                component="div"
                                                 sx={{
-                                                    color: "info.main", // subtle accent
-                                                    fontWeight: 700,
+                                                    fontSize: "inherit",
+                                                    lineHeight: "inherit",
+                                                    fontWeight: isActiveStep ? 600 : 400,
+                                                    mb: lineIndex < lines.length - 1 ? 0.15 : 0,
                                                 }}
                                             >
-                                                {agentPart}
-                                            </Box>
-                                            {hasSeparator ? ": " : ""}
-                                            <Box
-                                                component="span"
-                                                sx={{
-                                                    color: "text.primary",
-                                                }}
-                                            >
-                                                {messagePart}
-                                            </Box>
-                                        </Typography>
-                                    )
-                                })
-                            )}
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        color: "info.main", // subtle accent
+                                                        fontWeight: 700,
+                                                    }}
+                                                >
+                                                    {agentPart}
+                                                </Box>
+                                                {hasSeparator ? ": " : ""}
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        color: "text.primary",
+                                                    }}
+                                                >
+                                                    {messagePart}
+                                                </Box>
+                                            </Typography>
+                                        )
+                                    })
+                                )}
+                            </Box>
                         </Box>
-                    </Box>
-                )
-            })}
+                    )
+                })}
+            </Box>
         </Box>
     )
 
